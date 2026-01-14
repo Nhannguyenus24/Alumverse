@@ -4,10 +4,10 @@ import { OrganizationMember } from '../entities/OrganizationMember';
 import { VerificationRequest } from '../entities/VerificationRequest';
 
 /**
- * Repository interface for admin operations
+ * Data Access Object interface for admin operations
  * Handles user management, organization management, and content moderation
  */
-export interface IAdminRepository {
+export interface IAdminDAO {
   // User Management
   findAllUsers(
     page: number,

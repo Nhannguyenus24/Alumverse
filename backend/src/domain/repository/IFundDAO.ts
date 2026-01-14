@@ -4,9 +4,9 @@ import { FundDonation } from '../entities/FundDonation';
 import { FundExpense } from '../entities/FundExpense';
 
 /**
- * Repository interface for fund and donation management operations
+ * Data Access Object interface for fund and donation management operations
  */
-export interface IFundRepository {
+export interface IFundDAO {
   // Fund Management
   createFund(fundData: Partial<Fund>): Promise<Fund>;
   updateFund(fundId: number, fundData: Partial<Fund>): Promise<Fund>;

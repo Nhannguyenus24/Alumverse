@@ -7,10 +7,10 @@ import { Notification } from '../entities/Notification';
 import { PeerVerification } from '../entities/PeerVerification';
 
 /**
- * Repository interface for user-related operations
+ * Data Access Object interface for user-related operations
  * Handles user profiles, achievements, saved items, notifications, etc.
  */
-export interface IUserRepository {
+export interface IUserDAO {
   // Profile Management
   findGlobalProfileByUserId(userId: number): Promise<GlobalProfile | null>;
   updateGlobalProfile(

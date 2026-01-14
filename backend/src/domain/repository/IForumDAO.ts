@@ -2,9 +2,9 @@ import { ForumTopic } from '../entities/ForumTopic';
 import { ForumPost } from '../entities/ForumPost';
 
 /**
- * Repository interface for forum Q&A operations
+ * Data Access Object interface for forum Q&A operations
  */
-export interface IForumRepository {
+export interface IForumDAO {
   // Topic Management
   createTopic(topicData: Partial<ForumTopic>): Promise<ForumTopic>;
   updateTopic(
