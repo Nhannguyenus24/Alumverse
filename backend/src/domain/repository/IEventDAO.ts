@@ -3,9 +3,9 @@ import { EventInterest } from '../entities/EventInterest';
 import { EventTicket } from '../entities/EventTicket';
 
 /**
- * Repository interface for event management operations
+ * Data Access Object interface for event management operations
  */
-export interface IEventRepository {
+export interface IEventDAO {
   // Event CRUD
   createEvent(eventData: Partial<Event>): Promise<Event>;
   updateEvent(eventId: number, eventData: Partial<Event>): Promise<Event>;

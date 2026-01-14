@@ -3,9 +3,9 @@ import { GlobalProfile } from '../entities/GlobalProfile';
 import { GlobalIdentityVerification } from '../entities/GlobalIdentityVerification';
 
 /**
- * Repository interface for authentication and authorization operations
+ * Data Access Object interface for authentication and authorization operations
  */
-export interface IAuthRepository {
+export interface IAuthDAO {
   // User Registration & Login
   createUser(email: string, passwordHash: string): Promise<User>;
   findUserByEmail(email: string): Promise<User | null>;

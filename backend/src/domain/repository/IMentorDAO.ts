@@ -5,9 +5,9 @@ import { MentorshipSession } from '../entities/MentorshipSession';
 import { SessionFeedback } from '../entities/SessionFeedback';
 
 /**
- * Repository interface for mentorship operations
+ * Data Access Object interface for mentorship operations
  */
-export interface IMentorRepository {
+export interface IMentorDAO {
   // Mentor Profile Management
   createMentorProfile(
     profileData: Partial<MentorProfile>,

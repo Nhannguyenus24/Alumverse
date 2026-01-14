@@ -2,9 +2,9 @@ import { LearningResource } from '../entities/LearningResource';
 import { Job } from '../entities/Job';
 
 /**
- * Repository interface for learning resources and job posting operations
+ * Data Access Object interface for learning resources and job posting operations
  */
-export interface IResourceRepository {
+export interface IResourceDAO {
   // Learning Resource Management
   createLearningResource(
     resourceData: Partial<LearningResource>,
