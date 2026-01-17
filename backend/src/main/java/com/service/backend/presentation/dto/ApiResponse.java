@@ -1,4 +1,4 @@
-package com.service.backend.interfaces.dto;
+package com.service.backend.presentation.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

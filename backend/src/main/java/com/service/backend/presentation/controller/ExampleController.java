@@ -1,8 +1,9 @@
-package com.service.backend.interfaces.controller;
+package com.service.backend.presentation.controller;
 
-import com.service.backend.application.ExampleService;
-import com.service.backend.interfaces.dto.ExampleDto.GreetingDto;
-import com.service.backend.interfaces.dto.ApiResponse;
+import com.service.backend.presentation.dto.ApiResponse;
+import com.service.backend.presentation.dto.ExampleDto.GreetingDto;
+import com.service.backend.usecase.ExampleService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

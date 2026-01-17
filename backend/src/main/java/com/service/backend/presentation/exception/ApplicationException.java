@@ -1,4 +1,4 @@
-package com.service.backend.interfaces.exception;
+package com.service.backend.presentation.exception;
 
 import lombok.Getter;
 

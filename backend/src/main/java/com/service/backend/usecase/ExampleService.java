@@ -1,4 +1,4 @@
-package com.service.backend.application;
+package com.service.backend.usecase;
 
 import org.springframework.stereotype.Service;
 
