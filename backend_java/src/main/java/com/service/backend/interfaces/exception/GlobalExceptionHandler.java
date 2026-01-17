@@ -1,0 +1,44 @@
+package com.service.backend.interfaces.exception;
+
+import com.service.backend.interfaces.dto.ApiResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public Mono<ResponseEntity<?>> handleValidationException(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+        return Mono.just(
+                ResponseEntity
+                        .status(400)
+                        .body(new ApiResponse<>("Validation failed", errors))
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Mono<ResponseEntity<?>> handleGenericException(Exception ex) {
+        return Mono.just(
+                ResponseEntity
+                        .status(500)
+                        .body(new ApiResponse<>("Internal server error", ex.getMessage()))
+        );
+    }
+}
