@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="1ea057b0-2d2a-49fd-8a2c-2583b6a57545" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/backend/.gitattributes" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/mvnw" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/mvnw.cmd" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/run.ps1" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/run.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/BackendApplication.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/dao/AuthRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/domain/entity/GlobalIdentityVerification.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/domain/entity/GlobalProfile.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/domain/entity/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/domain/repository/IAuthRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/presentation/controller/AuthController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/presentation/dto/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/presentation/exception/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/authmodule/usecase/AuthService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/config/R2dbcConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/config/WebFluxConfig.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/dao/EventRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/domain/entity/Event.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/domain/entity/EventInterest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/domain/entity/EventTicket.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/domain/repository/IEventRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/presentation/controller/EventController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/presentation/dto/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/presentation/exception/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/eventmodule/usecase/EventService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/dao/UserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/AcademicRecord.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Achievement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/ForumPost.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/ForumTopic.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Fund.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/FundDonation.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/FundExpense.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/FundReceivingInfo.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Job.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/LearningResource.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/MemberRole.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/MentorAvailability.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/MentorExpertise.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/MentorProfile.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/MentorshipSession.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/News.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Notification.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Organization.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/OrganizationMember.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/PeerVerification.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Permission.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/Role.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/RolePermission.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/SavedItem.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/SessionFeedback.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/entity/VerificationRequest.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/AcademicStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/AccountStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/DegreeType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/ItemType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/MentorStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/RequestStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/ResourceType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/SourceOfFund.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/TicketStatus.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/enums/UserRole.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/repository/IAdminRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/repository/IForumRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/repository/IFundRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/repository/IMentorRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/repository/IResourceRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/domain/repository/IUserRepository.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/presentation/controller/ExampleController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/presentation/dto/ExampleDto.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/presentation/exception/.gitkeep" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/othermodule/usecase/ExampleService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/shared/dto/ApiResponse.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/shared/exception/ApplicationException.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/service/backend/shared/exception/GlobalExceptionHandler.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/resources/application.yaml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/test/java/com/service/backend/BackendApplicationTests.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 8
+}]]></component>
+  <component name="ProjectId" id="38UcdMLimYP64BuPL5ephbsEe5O" />
+  <component name="ProjectViewState">
+    <option name="autoscrollFromSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/tranductung/Desktop/DATN/Refactoring-and-Enhancing-the-Student-Alumni-System-for-HCMUS/backend"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.240" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="1ea057b0-2d2a-49fd-8a2c-2583b6a57545" name="Changes" comment="" />
+      <created>1768857678845</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1768857678845</updated>
+    </task>
+    <servers />
+  </component>
+</project>

@@ -1,0 +1,78 @@
+spring:
+  application:
+    name: main
+    
+  r2dbc:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    pool:
+      enabled: true # bật connection pooling
+      initial-size: 5 
+      max-size: 20 
+      max-idle-time: 30m
+
+  data:
+    r2dbc:
+      repositories:
+        enabled: true # cho phép dùng các repository với các hàm save, delete có sẵn
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        transport:
+          protocol: smtp
+
+frontend:
+  base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration_access: 3000000000 # milliseconds, tinh ra la = 3000s, dung de test login
+  expiration_refresh: 604800000 # milliseconds, tinh ra la = 7 * 24 * 60 * 1000
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    com.service.backend: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql: DEBUG
+
+# ---
+# # Development profile
+# spring:
+#   config:
+#     activate:
+#       on-profile: dev
+
+#   r2dbc:
+#     url: r2dbc:postgresql://localhost:5432/alumni_db
+#     username: postgres
+#     password: password
+
+# logging:
+#   level:
+#     root: DEBUG
+
+# ---
+# # Production profile
+# spring:
+#   config:
+#     activate:
+#       on-profile: prod
+
+# logging:
+#   level:
+#     root: WARN
+#     com.service.backend: INFO

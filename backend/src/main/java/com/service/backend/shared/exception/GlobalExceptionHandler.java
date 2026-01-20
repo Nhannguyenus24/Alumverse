@@ -32,6 +32,15 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ApplicationException.class)
+    public Mono<ResponseEntity<?>> handleApplicationException(ApplicationException ex) {
+        return Mono.just(
+                ResponseEntity
+                        .status(400)
+                        .body(new ApiResponse<>(ex.getMessage(), ex.getErrorCode()))
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public Mono<ResponseEntity<?>> handleGenericException(Exception ex) {
         return Mono.just(

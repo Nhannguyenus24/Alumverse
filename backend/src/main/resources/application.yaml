@@ -17,6 +17,23 @@ spring:
       repositories:
         enabled: true # cho phép dùng các repository với các hàm save, delete có sẵn
 
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+        transport:
+          protocol: smtp
+
+frontend:
+  base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+
 server:
   port: ${SERVER_PORT:8080}
 
