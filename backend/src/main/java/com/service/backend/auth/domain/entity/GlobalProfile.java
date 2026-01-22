@@ -1,4 +1,4 @@
-package com.service.backend.authmodule.domain.entity;
+package com.service.backend.auth.domain.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
