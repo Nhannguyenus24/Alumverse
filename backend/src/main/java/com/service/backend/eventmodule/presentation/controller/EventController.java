@@ -20,5 +20,5 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class EventController {
 
-    private final EventService eventService;
+    //private final EventService eventService;
 }

@@ -1,4 +1,4 @@
-package com.service.backend.authmodule.presentation.dto;
+package com.service.backend.auth.presentation.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

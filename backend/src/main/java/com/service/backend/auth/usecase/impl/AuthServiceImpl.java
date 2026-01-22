@@ -1,24 +1,24 @@
-package com.service.backend.authmodule.usecase.impl;
+package com.service.backend.auth.usecase.impl;
 
-import com.service.backend.authmodule.domain.entity.GlobalProfile;
-import com.service.backend.authmodule.domain.entity.OtpCode;
-import com.service.backend.authmodule.domain.entity.User;
-import com.service.backend.authmodule.domain.repository.IGlobalProfileRepository;
-import com.service.backend.authmodule.domain.repository.IOtpCodeRepository;
-import com.service.backend.authmodule.domain.repository.IUserRepository;
-import com.service.backend.authmodule.presentation.dto.LoginRequest;
-import com.service.backend.authmodule.presentation.dto.LoginResponse;
-import com.service.backend.authmodule.presentation.dto.RegisterRequest;
-import com.service.backend.authmodule.usecase.AuthService;
+import com.service.backend.auth.domain.entity.OtpCode;
+import com.service.backend.auth.domain.entity.RefreshToken;
+import com.service.backend.auth.domain.entity.User;
+import com.service.backend.auth.domain.repository.IGlobalProfileRepository;
+import com.service.backend.auth.domain.repository.IOtpCodeRepository;
+import com.service.backend.auth.domain.repository.IRefreshTokenRepository;
+import com.service.backend.auth.domain.repository.IUserRepository;
+import com.service.backend.auth.infrastructure.JwtUtil;
+import com.service.backend.auth.presentation.dto.LoginRequest;
+import com.service.backend.auth.presentation.dto.LoginResponse;
+import com.service.backend.auth.presentation.dto.RegisterRequest;
+import com.service.backend.auth.usecase.AuthService;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import com.service.backend.shared.mail.EmailService;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
 @Service
@@ -29,6 +29,10 @@ public class AuthServiceImpl implements AuthService {
     //private final IOtpCodeRepository otpCodeRepository;
     //private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+
+    private final IRefreshTokenRepository refreshTokenRepository;
+
+    private final JwtUtil jwtUtil;
 
     @Override
     public Mono<Void> register(RegisterRequest req) {
