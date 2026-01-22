@@ -1,6 +1,6 @@
 package com.service.backend.othermodule.domain.repository;
 
-import com.service.backend.authmodule.domain.entity.GlobalProfile;
+import com.service.backend.auth.domain.entity.GlobalProfile;
 import com.service.backend.othermodule.domain.entity.OrganizationMember;
 import com.service.backend.othermodule.domain.entity.AcademicRecord;
 import com.service.backend.othermodule.domain.entity.Achievement;
