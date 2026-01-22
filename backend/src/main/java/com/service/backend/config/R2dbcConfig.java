@@ -9,7 +9,6 @@ import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration
-@EnableR2dbcAuditing
 @EnableTransactionManagement
 public class R2dbcConfig {
 

@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Service layer for event management operations
  */
-@Service
+//@Service
 @RequiredArgsConstructor
 public class EventService {
 
