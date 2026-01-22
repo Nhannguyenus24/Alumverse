@@ -10,10 +10,15 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 
+import com.service.backend.authmodule.presentation.dto.LoginRequest;
+import com.service.backend.authmodule.presentation.dto.LoginResponse;
+
+
 /**
  * Service layer for authentication and authorization operations
  */
-@Service
-@RequiredArgsConstructor
-public class AuthService {
+public interface AuthService {
+    Mono<Void> register(RegisterRequest req);
+
+    Mono<LoginResponse> login(LoginRequest req);
 }
