@@ -4,14 +4,13 @@ import com.service.backend.eventmodule.domain.entity.Event;
 import com.service.backend.eventmodule.domain.entity.EventInterest;
 import com.service.backend.eventmodule.domain.entity.EventTicket;
 import com.service.backend.eventmodule.domain.repository.IEventRepository;
+import com.service.backend.eventmodule.presentation.dto.response.EventStatisticsResponse;
+import com.service.backend.eventmodule.presentation.dto.response.PaginatedResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Repository
@@ -21,6 +20,9 @@ public class EventRepository implements IEventRepository {
     private final EventR2dbcRepository eventRepo;
     private final EventInterestR2dbcRepository interestRepo;
     private final EventTicketR2dbcRepository ticketRepo;
+
+    private static final String STATUS_REGISTERED = "REGISTERED";
+    private static final String STATUS_CHECKED_IN = "CHECKED_IN";
 
     @Override
     public Mono<Event> createEvent(Event eventData) {
@@ -58,12 +60,12 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
-    public Mono<Map<String, Object>> findEventsByOrganization(Long organizationId, int page, int limit, Map<String, Object> filters) {
+    public Mono<PaginatedResponse<Event>> findEventsByOrganization(Long organizationId, int page, int limit) {
         int offset = page * limit;
         return eventRepo.findByOrganizationIdWithPagination(organizationId, limit, offset)
                 .collectList()
                 .zipWith(eventRepo.countByOrganizationId(organizationId))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "events"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
 
     @Override
@@ -79,34 +81,34 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
-    public Mono<Map<String, Object>> findUpcomingEvents(Long organizationId, int page, int limit) {
+    public Mono<PaginatedResponse<Event>> findUpcomingEvents(Long organizationId, int page, int limit) {
         int offset = page * limit;
         LocalDateTime now = LocalDateTime.now();
         return eventRepo.findUpcomingEvents(organizationId, now, limit, offset)
                 .collectList()
                 .zipWith(eventRepo.countUpcomingEvents(organizationId, now))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "events"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
 
     @Override
-    public Mono<Map<String, Object>> findPastEvents(Long organizationId, int page, int limit) {
+    public Mono<PaginatedResponse<Event>> findPastEvents(Long organizationId, int page, int limit) {
         int offset = page * limit;
         LocalDateTime now = LocalDateTime.now();
         return eventRepo.findPastEvents(organizationId, now, limit, offset)
                 .collectList()
                 .zipWith(eventRepo.countPastEvents(organizationId, now))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "events"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
 
     @Override
-    public Mono<Map<String, Object>> searchEvents(Long organizationId, String keyword, int page, int limit) {
+    public Mono<PaginatedResponse<Event>> searchEvents(Long organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         return eventRepo.searchEvents(organizationId, keyword, limit, offset)
                 .collectList()
                 .zipWith(eventRepo.countSearchEvents(organizationId, keyword))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "events"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
-    
+
     @Override
     public Mono<EventInterest> addEventInterest(Long eventId, Long memberId) {
         EventInterest interest = EventInterest.builder()
@@ -126,12 +128,12 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
-    public Mono<Map<String, Object>> findEventInterests(Long eventId, int page, int limit) {
+    public Mono<PaginatedResponse<EventInterest>> findEventInterests(Long eventId, int page, int limit) {
         int offset = page * limit;
         return interestRepo.findByEventIdWithPagination(eventId, limit, offset)
                 .collectList()
                 .zipWith(interestRepo.countByEventId(eventId))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "interests"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
 
     @Override
@@ -150,7 +152,7 @@ public class EventRepository implements IEventRepository {
     @Override
     public Mono<EventTicket> registerTicket(EventTicket ticketData) {
         ticketData.setTicketCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        ticketData.setStatus("REGISTERED");
+        ticketData.setStatus(STATUS_REGISTERED);
         ticketData.setRegisteredAt(LocalDateTime.now());
         return ticketRepo.save(ticketData);
     }
@@ -173,25 +175,22 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
-    public Mono<Map<String, Object>> findTicketsByEvent(Long eventId, int page, int limit) {
+    public Mono<PaginatedResponse<EventTicket>> findTicketsByEvent(Long eventId, int page, int limit) {
         int offset = page * limit;
         return ticketRepo.findByEventIdWithPagination(eventId, limit, offset)
                 .collectList()
                 .zipWith(ticketRepo.countByEventId(eventId))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "tickets"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
 
     @Override
-    public Mono<Map<String, Object>> findTicketsByMember(Long memberId, int page, int limit) {
+    public Mono<PaginatedResponse<EventTicket>> findTicketsByMember(Long memberId, int page, int limit) {
         int offset = page * limit;
         return ticketRepo.findByMemberIdWithPagination(memberId, limit, offset)
                 .collectList()
                 .zipWith(ticketRepo.countByMemberId(memberId))
-                .map(tuple -> buildPaginatedResponse(tuple.getT1(), tuple.getT2(), page, limit, "tickets"));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
     }
-
-    private static final String STATUS_REGISTERED = "REGISTERED";
-    private static final String STATUS_CHECKED_IN = "CHECKED_IN";
 
     @Override
     public Mono<Long> countRegisteredTickets(Long eventId) {
@@ -199,7 +198,7 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
-    public Mono<Map<String, Object>> getEventStatistics(Long eventId) {
+    public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return eventRepo.findById(eventId)
                 .zipWith(ticketRepo.countByEventIdAndStatus(eventId, STATUS_REGISTERED))
                 .zipWith(ticketRepo.countByEventIdAndStatus(eventId, STATUS_CHECKED_IN))
@@ -208,23 +207,14 @@ public class EventRepository implements IEventRepository {
                     Long registeredCount = tuple.getT1().getT2();
                     Long checkedInCount = tuple.getT2();
 
-                    Map<String, Object> stats = new HashMap<>();
-                    stats.put("eventId", eventId);
-                    stats.put("interestedCount", event.getInterestedCount());
-                    stats.put("registeredCount", registeredCount);
-                    stats.put("checkedInCount", checkedInCount);
-                    stats.put("maxCapacity", event.getMaxCapacity());
-                    stats.put("availableSlots", event.getMaxCapacity() != null ? event.getMaxCapacity() - registeredCount : null);
-                    return stats;
+                    return EventStatisticsResponse.builder()
+                            .eventId(eventId)
+                            .interestedCount(event.getInterestedCount())
+                            .registeredCount(registeredCount)
+                            .checkedInCount(checkedInCount)
+                            .maxCapacity(event.getMaxCapacity())
+                            .availableSlots(event.getMaxCapacity() != null ? event.getMaxCapacity() - registeredCount : null)
+                            .build();
                 });
-    }
-
-     private <T> Map<String, Object> buildPaginatedResponse(List<T> items, Long total, int page, int limit, String key) {
-        Map<String, Object> result = new HashMap<>();
-        result.put(key, items);
-        result.put("total", total);
-        result.put("page", page);
-        result.put("limit", limit);
-        return result;
     }
 }

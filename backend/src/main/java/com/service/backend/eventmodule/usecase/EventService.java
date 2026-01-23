@@ -4,11 +4,12 @@ import com.service.backend.eventmodule.domain.entity.Event;
 import com.service.backend.eventmodule.domain.entity.EventInterest;
 import com.service.backend.eventmodule.domain.entity.EventTicket;
 import com.service.backend.eventmodule.domain.repository.IEventRepository;
+import com.service.backend.eventmodule.presentation.dto.response.EventStatisticsResponse;
+import com.service.backend.eventmodule.presentation.dto.response.PaginatedResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -43,8 +44,8 @@ public class EventService {
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Event not found with id: " + eventId)));
     }
 
-    public Mono<Map<String, Object>> getEventsByOrganization(int page, int limit, Map<String, Object> filters) {
-        return eventRepository.findEventsByOrganization(MOCK_ORGANIZATION_ID, page, limit, filters);
+    public Mono<PaginatedResponse<Event>> getEventsByOrganization(int page, int limit) {
+        return eventRepository.findEventsByOrganization(MOCK_ORGANIZATION_ID, page, limit);
     }
 
     public Mono<Event> publishEvent(Long eventId) {
@@ -59,15 +60,15 @@ public class EventService {
                 .flatMap(event -> eventRepository.unpublishEvent(eventId));
     }
 
-    public Mono<Map<String, Object>> getUpcomingEvents(int page, int limit) {
+    public Mono<PaginatedResponse<Event>> getUpcomingEvents(int page, int limit) {
         return eventRepository.findUpcomingEvents(MOCK_ORGANIZATION_ID, page, limit);
     }
 
-    public Mono<Map<String, Object>> getPastEvents(int page, int limit) {
+    public Mono<PaginatedResponse<Event>> getPastEvents(int page, int limit) {
         return eventRepository.findPastEvents(MOCK_ORGANIZATION_ID, page, limit);
     }
 
-    public Mono<Map<String, Object>> searchEvents(String keyword, int page, int limit) {
+    public Mono<PaginatedResponse<Event>> searchEvents(String keyword, int page, int limit) {
         return eventRepository.searchEvents(MOCK_ORGANIZATION_ID, keyword, page, limit);
     }
 
@@ -93,7 +94,7 @@ public class EventService {
         return eventRepository.checkUserInterest(eventId, MOCK_MEMBER_ID);
     }
 
-    public Mono<Map<String, Object>> getEventInterests(Long eventId, int page, int limit) {
+    public Mono<PaginatedResponse<EventInterest>> getEventInterests(Long eventId, int page, int limit) {
         return eventRepository.findEventInterests(eventId, page, limit);
     }
 
@@ -143,15 +144,15 @@ public class EventService {
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Ticket not found with code: " + ticketCode)));
     }
 
-    public Mono<Map<String, Object>> getTicketsByEvent(Long eventId, int page, int limit) {
+    public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int limit) {
         return eventRepository.findTicketsByEvent(eventId, page, limit);
     }
 
-    public Mono<Map<String, Object>> getMyTickets(int page, int limit) {
+    public Mono<PaginatedResponse<EventTicket>> getMyTickets(int page, int limit) {
         return eventRepository.findTicketsByMember(MOCK_MEMBER_ID, page, limit);
     }
 
-    public Mono<Map<String, Object>> getEventStatistics(Long eventId) {
+    public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return eventRepository.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Event not found with id: " + eventId)))
                 .flatMap(event -> eventRepository.getEventStatistics(eventId));
