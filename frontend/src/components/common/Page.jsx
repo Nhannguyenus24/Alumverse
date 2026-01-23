@@ -1,20 +1,18 @@
-import { Box, Container } from "@mui/material";
+import { Helmet } from 'react-helmet-async';
+import { forwardRef } from 'react';
+import { Box } from '@mui/material';
 
-const Page = ({ 
-  children, 
-  maxWidth = "lg",
-  sx = {},
-  disableContainer = false 
-}) => {
-  if (disableContainer) {
-    return <Box sx={{ ...sx }}>{children}</Box>;
-  }
+const Page = forwardRef(({ children, title = '', meta, ...other }, ref) => (
+  <>
+    <Helmet>
+      <title>{`${title}`}</title>
+      {meta}
+    </Helmet>
 
-  return (
-    <Container maxWidth={maxWidth} sx={{ py: 3, ...sx }}>
+    <Box ref={ref} {...other}>
       {children}
-    </Container>
-  );
-};
+    </Box>
+  </>
+));
 
 export default Page;

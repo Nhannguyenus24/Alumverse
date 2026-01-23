@@ -1,6 +1,14 @@
+import Page from '../components/common/Page';
+
 const DashboardPage = () => {
   return (
-    <div>DashboardPage</div>
-  )
-}
-export default DashboardPage
+    <Page
+      title="Dashboard"
+      meta={<meta name="description" content="Dashboard page" />}
+    >
+      <div>DashboardPage</div>
+    </Page>
+  );
+};
+
+export default DashboardPage;
