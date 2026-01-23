@@ -118,14 +118,14 @@ public class EventService {
                 });
     }
 
-    public Mono<EventTicket> cancelTicket(Long ticketId) {
-        return eventRepository.findTicketByCode(ticketId.toString())
+    public Mono<EventTicket> cancelTicket(String ticketCode) {
+        return eventRepository.findTicketByCode(ticketCode)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Ticket not found")))
-                .flatMap(ticket -> eventRepository.cancelTicket(ticketId));
+                .flatMap(ticket -> eventRepository.cancelTicket(ticket.getId()));
     }
 
-    public Mono<EventTicket> checkInTicket(Long ticketId) {
-        return eventRepository.findTicketByCode(ticketId.toString())
+    public Mono<EventTicket> checkInTicket(String ticketCode) {
+        return eventRepository.findTicketByCode(ticketCode)
                 .switchIfEmpty(Mono.error(new NoSuchElementException("Ticket not found")))
                 .flatMap(ticket -> {
                     if ("CANCELLED".equals(ticket.getStatus())) {
@@ -134,7 +134,7 @@ public class EventService {
                     if ("CHECKED_IN".equals(ticket.getStatus())) {
                         return Mono.error(new IllegalStateException("Ticket already checked in"));
                     }
-                    return eventRepository.checkInTicket(ticketId);
+                    return eventRepository.checkInTicket(ticket.getId());
                 });
     }
 

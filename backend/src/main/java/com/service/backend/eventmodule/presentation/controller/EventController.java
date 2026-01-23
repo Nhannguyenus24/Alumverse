@@ -166,15 +166,15 @@ public class EventController {
                 .map(registeredTicket -> new ApiResponse<>("Registered successfully", registeredTicket));
     }
 
-    @PostMapping("/tickets/{ticketId}/cancel")
-    public Mono<ApiResponse<EventTicket>> cancelTicket(@PathVariable Long ticketId) {
-        return eventService.cancelTicket(ticketId)
+    @PostMapping("/tickets/{ticketCode}/cancel")
+    public Mono<ApiResponse<EventTicket>> cancelTicket(@PathVariable String ticketCode) {
+        return eventService.cancelTicket(ticketCode)
                 .map(ticket -> new ApiResponse<>("Ticket cancelled successfully", ticket));
     }
 
-    @PostMapping("/tickets/{ticketId}/check-in")
-    public Mono<ApiResponse<EventTicket>> checkInTicket(@PathVariable Long ticketId) {
-        return eventService.checkInTicket(ticketId)
+    @PostMapping("/tickets/{ticketCode}/check-in")
+    public Mono<ApiResponse<EventTicket>> checkInTicket(@PathVariable String ticketCode) {
+        return eventService.checkInTicket(ticketCode)
                 .map(ticket -> new ApiResponse<>("Checked in successfully", ticket));
     }
 
