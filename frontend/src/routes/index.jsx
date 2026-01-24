@@ -19,7 +19,6 @@ const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
 const RegisterPage = Loadable(lazy(() => import('../pages/RegisterPage')));
 const DashboardPage = Loadable(lazy(() => import('../pages/DashboardPage')));
 const NotFoundPage = Loadable(lazy(() => import('../pages/NotFoundPage')));
-const UiPlaygroundPage = Loadable(lazy(() => import('../pages/UiPlaygroundPage')));
 const UnauthorizedPage = Loadable(
   lazy(() => import('../pages/UnauthorizedPage'))
 );
@@ -38,10 +37,6 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
-      },
-      {
-        path: 'ui',
-        element: <UiPlaygroundPage />,
       },
       {
         path: 'dashboard',
