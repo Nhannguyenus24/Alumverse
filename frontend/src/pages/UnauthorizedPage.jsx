@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { Box, Typography, Button, Container } from '@mui/material';
-import Page from '../components/common/Page';
+import Page from '../components/Page';
 
 const UnauthorizedPage = () => {
   return (

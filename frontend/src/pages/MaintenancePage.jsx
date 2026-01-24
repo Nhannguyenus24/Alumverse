@@ -2,7 +2,7 @@ import { Box, Container, Typography, Chip, Stack, Card } from '@mui/material';
 import BuildIcon from '@mui/icons-material/Build';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import UpdateIcon from '@mui/icons-material/Update';
-import Page from '../components/common/Page';
+import Page from '../components/Page';
 
 export default function MaintenancePage() {
   const maintenanceUpdates = [

@@ -1,6 +1,6 @@
 import { Outlet } from "react-router";
 import { Box } from "@mui/material";
-import Page from "../components/common/Page";
+import Page from "../components/Page";
 
 const MainLayout = () => {
   return (

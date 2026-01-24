@@ -1,7 +1,7 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import Page from '../components/common/Page';
+import Page from '../components/Page';
 
 export default function ServerErrorPage() {
 	const navigate = useNavigate();

@@ -4,7 +4,7 @@ import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import ProtectedRoute from './ProtectedRoute';
 import PublicRoute from './PublicRoute';
-import LoadingScreen from '../components/common/LoadingScreen';
+import LoadingScreen from '../components/LoadingScreen';
 
 const Loadable = (Component) => (props) =>
   (

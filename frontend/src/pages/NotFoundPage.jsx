@@ -1,6 +1,6 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
-import Page from '../components/common/Page';
+import Page from '../components/Page';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 
 export default function NotFoundPage() {

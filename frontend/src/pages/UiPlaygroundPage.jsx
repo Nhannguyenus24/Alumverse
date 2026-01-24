@@ -17,19 +17,19 @@ import {
   Typography,
 } from '@mui/material';
 
-import Page from '../components/common/Page';
-import Breadcrumb from '../components/common/Breadcrumb';
-import Chart from '../components/common/Chart';
-import ConfirmDialog from '../components/common/ConfirmDialog';
-import ConsentDialog from '../components/common/ConsentDialog';
-import EmojiPicker from '../components/common/EmojiPicker';
-import LoadingScreen from '../components/common/LoadingScreen';
-import Logo from '../components/common/Logo';
-import ProgressBar from '../components/common/ProgressBar';
-import ReCaptcha from '../components/common/ReCaptcha';
-import Scrollbar from '../components/common/Scrollbar';
-import Table from '../components/common/Table';
-import WYSIWYG from '../components/common/WYSIWYG';
+import Page from '../components/Page';
+import Breadcrumb from '../components/Breadcrumb';
+import Chart from '../components/Chart';
+import ConfirmDialog from '../components/ConfirmDialog';
+import ConsentDialog from '../components/ConsentDialog';
+import EmojiPicker from '../components/EmojiPicker';
+import LoadingScreen from '../components/LoadingScreen';
+import Logo from '../components/Logo';
+import ProgressBar from '../components/ProgressBar';
+import ReCaptcha from '../components/ReCaptcha';
+import Scrollbar from '../components/Scrollbar';
+import Table from '../components/Table';
+import WYSIWYG from '../components/WYSIWYG';
 
 import { useNotification } from '../hooks/useNotification';
 
