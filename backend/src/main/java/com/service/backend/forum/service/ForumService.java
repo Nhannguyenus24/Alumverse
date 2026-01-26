@@ -2,18 +2,11 @@ package com.service.backend.forum.service;
 
 import java.time.LocalDateTime;
 
+import com.service.backend.forum.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.service.backend.forum.dto.CreateForumCategoryRequest;
-import com.service.backend.forum.dto.CreateForumPostRequest;
-import com.service.backend.forum.dto.CreateForumTopicRequest;
-import com.service.backend.forum.dto.ForumCategoryDTO;
-import com.service.backend.forum.dto.ForumPostDTO;
-import com.service.backend.forum.dto.ForumTopicDTO;
-import com.service.backend.forum.dto.UpdateForumCategoryRequest;
-import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.entities.ForumCategory;
 import com.service.backend.forum.entities.ForumPost;
 import com.service.backend.forum.entities.ForumTopic;
@@ -38,6 +31,19 @@ public class ForumService {
         this.forumCategoryRepository = forumCategoryRepository;
         this.forumTopicRepository = forumTopicRepository;
         this.forumPostRepository = forumPostRepository;
+    }
+
+    // Helper method to calculate PageInfo
+    private PageInfo calculatePageInfo(int currentPage, int pageSize, long totalItems) {
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        return PageInfo.builder()
+                .currentPage(currentPage)
+                .pageSize(pageSize)
+                .totalPage(totalPages)
+                .totalItem((int) totalItems)
+                .hasNext(currentPage < totalPages - 1)
+                .hasPrevious(currentPage > 0)
+                .build();
     }
 
     // Category methods
@@ -109,12 +115,24 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topic by title: {}", title, error));
     }
 
-    public Flux<ForumTopicDTO> findTopicsByCategoryId(Integer categoryId, int page, int size) {
+    public Mono<ForumTopicPageResponse> findTopicsByCategoryId(Integer categoryId, int page, int size) {
         log.info("Finding forum topics for category ID: {}, page: {}, size: {}", categoryId, page, size);
         long offset = (long) page * size;
+        
         return forumTopicRepository.findByCategoryIdWithPagination(categoryId, size, offset)
                 .map(this::convertToTopicDTO)
-                .doOnComplete(() -> log.info("Successfully retrieved forum topics for category ID: {}", categoryId))
+                .collectList()
+                .zipWith(forumTopicRepository.countByCategoryId(categoryId))
+                .map(tuple -> {
+                    var topics = tuple.getT1();
+                    var totalItems = tuple.getT2();
+                    var pageInfo = calculatePageInfo(page, size, totalItems);
+                    return ForumTopicPageResponse.builder()
+                            .items(topics)
+                            .pageInfo(pageInfo)
+                            .build();
+                })
+                .doOnSuccess(result -> log.info("Successfully retrieved forum topics for category ID: {}", categoryId))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
@@ -166,7 +184,7 @@ public class ForumService {
     }
 
     // Post methods
-    public Flux<ForumPostDTO> findPostsByTopicId(Integer topicId, int page, int size) {
+    public Mono<ForumPostPageResponse> findPostsByTopicId(Integer topicId, int page, int size) {
         log.info("Finding forum posts for topic ID: {}, page: {}, size: {}", topicId, page, size);
         
         // Fire and forget: increment view count for topic
@@ -178,7 +196,18 @@ public class ForumService {
         long offset = (long) page * size;
         return forumPostRepository.findByTopicIdWithPagination(topicId, size, offset)
                 .map(this::convertToPostDTO)
-                .doOnComplete(() -> log.info("Successfully retrieved forum posts for topic ID: {}", topicId))
+                .collectList()
+                .zipWith(forumPostRepository.countByTopicId(topicId))
+                .map(tuple -> {
+                    var posts = tuple.getT1();
+                    var totalItems = tuple.getT2();
+                    var pageInfo = calculatePageInfo(page, size, totalItems);
+                    return ForumPostPageResponse.builder()
+                            .items(posts)
+                            .pageInfo(pageInfo)
+                            .build();
+                })
+                .doOnSuccess(result -> log.info("Successfully retrieved forum posts for topic ID: {}", topicId))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
 
