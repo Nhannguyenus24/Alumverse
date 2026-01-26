@@ -1,11 +1,18 @@
-import { RouterProvider } from "react-router/dom";
-import { router } from "./routes";
-import NotistackProvider from "./components/common/NotistackProvider";
+import { RouterProvider } from 'react-router/dom';
+import { HelmetProvider } from 'react-helmet-async';
+import { router } from './routes';
+import NotistackProvider from './components/NotistackProvider';
+import ThemeProvider from './theme';
+
 const App = () => {
   return (
-    <NotistackProvider>
-      <RouterProvider router={router} />
-    </NotistackProvider>
+    <HelmetProvider>
+      <ThemeProvider>
+        <NotistackProvider>
+          <RouterProvider router={router} />
+        </NotistackProvider>
+      </ThemeProvider>
+    </HelmetProvider>
   );
 };
 
