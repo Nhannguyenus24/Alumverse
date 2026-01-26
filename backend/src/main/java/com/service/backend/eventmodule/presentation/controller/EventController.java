@@ -31,19 +31,7 @@ public class EventController {
 
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Event>>> createEvent(@Valid @RequestBody CreateEventRequest request) {
-        Event event = Event.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .bannerUrl(request.getBannerUrl())
-                .location(request.getLocation())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .registrationStartAt(request.getRegistrationStartAt())
-                .registrationEndAt(request.getRegistrationEndAt())
-                .maxCapacity(request.getMaxCapacity())
-                .build();
-
-        return eventService.createEvent(event)
+        return eventService.createEvent(request)
                 .map(createdEvent -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Event created successfully", createdEvent)));
@@ -53,19 +41,7 @@ public class EventController {
     public Mono<ResponseEntity<ApiResponse<Event>>> updateEvent(
             @PathVariable @Min(1) Long eventId,
             @Valid @RequestBody UpdateEventRequest request) {
-        Event event = Event.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .bannerUrl(request.getBannerUrl())
-                .location(request.getLocation())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .registrationStartAt(request.getRegistrationStartAt())
-                .registrationEndAt(request.getRegistrationEndAt())
-                .maxCapacity(request.getMaxCapacity())
-                .build();
-
-        return eventService.updateEvent(eventId, event)
+        return eventService.updateEvent(eventId, request)
                 .map(updatedEvent -> ResponseEntity
                         .ok(new ApiResponse<>("Event updated successfully", updatedEvent)));
     }
@@ -172,13 +148,7 @@ public class EventController {
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> registerForEvent(
             @PathVariable @Min(1) Long eventId,
             @Valid @RequestBody(required = false) RegisterTicketRequest request) {
-        EventTicket ticket = EventTicket.builder()
-                .guestName(request != null ? request.getGuestName() : null)
-                .guestEmail(request != null ? request.getGuestEmail() : null)
-                .guestPhone(request != null ? request.getGuestPhone() : null)
-                .build();
-
-        return eventService.registerForEvent(eventId, ticket)
+        return eventService.registerForEvent(eventId, request)
                 .map(registeredTicket -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Registered successfully", registeredTicket)));
