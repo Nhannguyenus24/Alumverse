@@ -1,20 +1,37 @@
-import { createBrowserRouter } from "react-router";
-import MainLayout from "../layouts/MainLayout";
-import AuthLayout from "../layouts/AuthLayout";
-import ProtectedRoute from "./ProtectedRoute";
-import PublicRoute from "./PublicRoute";
+import { Suspense, lazy } from 'react';
+import { createBrowserRouter } from 'react-router';
+import MainLayout from '../layouts/MainLayout';
+import AuthLayout from '../layouts/AuthLayout';
+import ProtectedRoute from './ProtectedRoute';
+import PublicRoute from './PublicRoute';
+import LoadingScreen from '../components/LoadingScreen';
 
-// Pages
-import HomePage from "../pages/HomePage";
-import LoginPage from "../pages/LoginPage";
-import RegisterPage from "../pages/RegisterPage";
-import DashboardPage from "../pages/DashboardPage";
-import NotFoundPage from "../pages/NotFoundPage";
-import UnauthorizedPage from "../pages/UnauthorizedPage";
+const Loadable = (Component) => (props) =>
+  (
+    <Suspense fallback={<LoadingScreen />}>
+      <Component {...props} />
+    </Suspense>
+  );
+
+// Lazy load pages
+const HomePage = Loadable(lazy(() => import('../pages/HomePage')));
+const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
+const RegisterPage = Loadable(lazy(() => import('../pages/RegisterPage')));
+const DashboardPage = Loadable(lazy(() => import('../pages/DashboardPage')));
+const NotFoundPage = Loadable(lazy(() => import('../pages/NotFoundPage')));
+const UnauthorizedPage = Loadable(
+  lazy(() => import('../pages/UnauthorizedPage'))
+);
+const ServerErrorPage = Loadable(
+  lazy(() => import('../pages/ServerErrorPage'))
+);
+const MaintenancePage = Loadable(
+  lazy(() => import('../pages/MaintenancePage'))
+);
 
 export const router = createBrowserRouter([
   {
-    path: "/",
+    path: '/',
     element: <MainLayout />,
     children: [
       {
@@ -22,7 +39,7 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: "dashboard",
+        path: 'dashboard',
         element: (
           <ProtectedRoute>
             <DashboardPage />
@@ -30,17 +47,25 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "unauthorized",
+        path: 'unauthorized',
         element: <UnauthorizedPage />,
+      },
+      {
+        path: '500',
+        element: <ServerErrorPage />,
+      },
+      {
+        path: 'maintenance',
+        element: <MaintenancePage />,
       },
     ],
   },
   {
-    path: "/auth",
+    path: '/auth',
     element: <AuthLayout />,
     children: [
       {
-        path: "login",
+        path: 'login',
         element: (
           <PublicRoute>
             <LoginPage />
@@ -48,7 +73,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "register",
+        path: 'register',
         element: (
           <PublicRoute>
             <RegisterPage />
@@ -58,7 +83,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "*",
+    path: '*',
     element: <NotFoundPage />,
   },
 ]);
