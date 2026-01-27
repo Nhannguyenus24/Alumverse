@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
                         .pathMatchers(
-                                "/auth/api/authentication/**"
+                                "**"
                         ).permitAll()
                         .anyExchange().authenticated()
                 )
