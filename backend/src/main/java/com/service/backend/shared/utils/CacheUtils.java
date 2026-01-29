@@ -27,7 +27,7 @@ public class CacheUtils {
     }
 
     /**
-     * Get value from cache by key (Reactive)
+     * Get value from cache by key
      *
      * @param cacheName Cache name
      * @param key       Cache key
@@ -46,7 +46,7 @@ public class CacheUtils {
     }
 
     /**
-     * Put value into cache (Reactive)
+     * Put value into cache
      *
      * @param cacheName Cache name
      * @param key       Cache key
@@ -69,7 +69,7 @@ public class CacheUtils {
     }
 
     /**
-     * Evict specific key from cache (Reactive)
+     * Evict specific key from cache
      *
      * @param cacheName Cache name
      * @param key       Cache key to evict
@@ -87,7 +87,7 @@ public class CacheUtils {
     }
 
     /**
-     * Clear all entries from a cache (Reactive)
+     * Clear all entries from a cache
      *
      * @param cacheName Cache name to clear
      * @return Mono<Void> completing when operation is done
@@ -104,7 +104,7 @@ public class CacheUtils {
     }
 
     /**
-     * Get or compute value with custom TTL (Reactive)
+     * Get or compute value with custom TTL
      *
      * @param cacheName Cache name
      * @param key       Cache key
@@ -133,7 +133,7 @@ public class CacheUtils {
     }
 
     /**
-     * Put value with custom TTL (Reactive)
+     * Put value with custom TTL
      *
      * @param cacheName Cache name
      * @param key       Cache key
@@ -153,7 +153,7 @@ public class CacheUtils {
 
 
     /**
-     * Get cache statistics (Reactive)
+     * Get cache statistics
      *
      * @param cacheName Cache name
      * @return Mono of cache statistics as string
@@ -169,7 +169,7 @@ public class CacheUtils {
     }
 
     /**
-     * Check if key exists in cache (Reactive)
+     * Check if key exists in cache
      *
      * @param cacheName Cache name
      * @param key       Cache key
@@ -186,7 +186,7 @@ public class CacheUtils {
     }
 
     /**
-     * Create a cache with specific configuration (Reactive)
+     * Create a cache with specific configuration
      *
      * @param cacheName    Cache name
      * @param ttl          Time to live
@@ -212,7 +212,7 @@ public class CacheUtils {
     }
 
     /**
-     * Remove cache (Reactive)
+     * Remove cache
      *
      * @param cacheName Cache name to remove
      * @return Mono<Void> completing when operation is done
@@ -229,7 +229,7 @@ public class CacheUtils {
     }
 
     /**
-     * Get all cache names (Reactive)
+     * Get all cache names
      *
      * @return Mono containing set of all cache names
      */
@@ -238,7 +238,7 @@ public class CacheUtils {
     }
 
     /**
-     * Get cache size (Reactive)
+     * Get cache size
      *
      * @param cacheName Cache name
      * @return Mono<Long> containing the cache size
