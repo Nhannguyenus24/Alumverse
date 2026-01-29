@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="gateway-service"/>
-    <springProperty scope="context" name="lokiUrl" source="logging.loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="backend"/>
     
     <!-- Console Appender with colored pattern -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>
-                %highlight(%level)|%green(%d{yyyy-MM-dd HH:mm:ss})|%blue(%thread)|%yellow(%logger{36})|%msg%n
+                %highlight(%level)|%cyan(%d{yyyy-MM-dd HH:mm:ss})|%yellow(%thread)|%magenta(%logger{0})|%msg%n
             </pattern>
             <charset>UTF-8</charset>
         </encoder>
@@ -15,15 +14,6 @@
 
     <!-- Root logger -->
     <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="CONSOLE" level="INFO" />
     </root>
-
-    <!-- Service specific loggers -->
-    <logger name="gateway" level="DEBUG"/>
-    <logger name="com.auction" level="DEBUG"/>
-    
-    <!-- Reduce verbosity of some libraries -->
-    <logger name="org.springframework" level="INFO"/>
-    <logger name="io.grpc" level="INFO"/>
-    <logger name="reactor" level="INFO"/>
 </configuration>
