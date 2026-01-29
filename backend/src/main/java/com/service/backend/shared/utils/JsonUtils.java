@@ -7,8 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.protobuf.util.JsonFormat;
-import com.google.protobuf.Message;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,17 +29,6 @@ public class JsonUtils {
     public static String toJson(Object obj) {
         if (obj == null) {
             return null;
-        }
-
-        // Protobuf → JsonFormat
-        if (obj instanceof Message message) {
-            try {
-                return JsonFormat.printer()
-                        .omittingInsignificantWhitespace()
-                        .print(message);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to serialize protobuf to JSON", e);
-            }
         }
 
         // Object → Jackson

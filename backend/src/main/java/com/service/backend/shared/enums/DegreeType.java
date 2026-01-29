@@ -1,4 +1,4 @@
-package com.service.backend.othermodule.domain.enums;
+package com.service.backend.shared.enums;
 
 public enum DegreeType {
     HIGH_SCHOOL("High School"),

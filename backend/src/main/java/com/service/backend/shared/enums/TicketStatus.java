@@ -1,4 +1,4 @@
-package com.service.backend.othermodule.domain.enums;
+package com.service.backend.shared.enums;
 
 public enum TicketStatus {
     REGISTERED("Registered"),
