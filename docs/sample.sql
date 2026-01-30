@@ -41,71 +41,27 @@ INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "featur
 ('HCMUS - Engineering', 'eng-hcmus', 'https://api.example.com/logos/eng.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', NOW() - INTERVAL '340 days');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
-INSERT INTO "organization_members" ("organization_id", "user_id", "display_name", "org_specific_avatar_url", "verification_level", "is_trusted_verifier", "status", "joined_at") VALUES
+INSERT INTO "organization_members" ("organization_id", "user_id", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
 -- CS Department Members
-(1, 1, 'Admin CS', 'https://api.example.com/avatars/cs_admin.jpg', 3, true, 'Active', NOW() - INTERVAL '365 days'),
-(1, 2, 'John Doe', 'https://api.example.com/avatars/john_cs.jpg', 2, true, 'Active', NOW() - INTERVAL '90 days'),
-(1, 4, 'Nguyễn Văn A', 'https://api.example.com/avatars/nguyena_cs.jpg', 1, false, 'Active', NOW() - INTERVAL '45 days'),
-(1, 6, 'Phạm Văn C', 'https://api.example.com/avatars/phamc_cs.jpg', 2, true, 'Active', NOW() - INTERVAL '200 days'),
+(1, 1, 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
 
 -- IT Department Members
-(2, 3, 'Jane Smith', 'https://api.example.com/avatars/jane_it.jpg', 2, true, 'Active', NOW() - INTERVAL '60 days'),
-(2, 5, 'Trần Thị B', 'https://api.example.com/avatars/tranb_it.jpg', 1, false, 'Active', NOW() - INTERVAL '30 days'),
-(2, 8, 'Lê Văn E', 'https://api.example.com/avatars/lee_it.jpg', 2, true, 'Active', NOW() - INTERVAL '180 days'),
-(2, 9, 'Dương Thị F', 'https://api.example.com/avatars/duongf_it.jpg', 1, false, 'Active', NOW() - INTERVAL '15 days'),
+(2, 3, 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
 
 -- BA Department Members
-(3, 7, 'Hoàng Thị D', 'https://api.example.com/avatars/hoangd_ba.jpg', 2, true, 'Active', NOW() - INTERVAL '100 days'),
-(3, 10, 'Võ Văn G', 'https://api.example.com/avatars/vog_ba.jpg', 1, false, 'Pending', NOW() - INTERVAL '3 days'),
+(3, 7, 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, 1, false, 'pending', NOW() - INTERVAL '3 days', NOW()),
 
 -- Engineering Department Members
-(4, 1, 'Admin Eng', 'https://api.example.com/avatars/eng_admin.jpg', 3, true, 'Active', NOW() - INTERVAL '340 days');
+(4, 1, 3, true, 'active', NOW() - INTERVAL '340 days', NOW());
 
--- ============= ROLES DATA =============
-INSERT INTO "roles" ("name", "description") VALUES
-('Admin', 'System administrator with full permissions'),
-('Moderator', 'Can moderate forum and manage events'),
-('Mentor', 'Senior member who can mentor others'),
-('Alumni', 'Graduated members'),
-('Student', 'Current students'),
-('Guest', 'Limited access guest account');
 
--- ============= PERMISSIONS DATA =============
-INSERT INTO "permissions" ("slug", "name") VALUES
-('manage_users', 'Manage Users'),
-('manage_roles', 'Manage Roles'),
-('manage_events', 'Manage Events'),
-('manage_forum', 'Manage Forum'),
-('manage_jobs', 'Manage Jobs'),
-('manage_funds', 'Manage Funds'),
-('create_news', 'Create News'),
-('approve_verification', 'Approve Verification'),
-('view_reports', 'View Reports'),
-('manage_learning', 'Manage Learning Resources');
-
--- ============= ROLE PERMISSIONS DATA =============
-INSERT INTO "role_permissions" ("role_id", "permission_id") VALUES
-(1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10),
-(2, 3), (2, 4), (2, 7), (2, 9),
-(3, 3), (3, 7),
-(4, 3), (4, 7),
-(5, 3), (5, 7);
-
--- ============= MEMBER ROLES DATA =============
-INSERT INTO "member_roles" ("member_id", "role_id", "assigned_at") VALUES
-(1, 1, NOW() - INTERVAL '365 days'),
-(2, 3, NOW() - INTERVAL '90 days'),
-(2, 4, NOW() - INTERVAL '90 days'),
-(3, 3, NOW() - INTERVAL '60 days'),
-(4, 5, NOW() - INTERVAL '45 days'),
-(5, 4, NOW() - INTERVAL '30 days'),
-(6, 3, NOW() - INTERVAL '200 days'),
-(6, 4, NOW() - INTERVAL '200 days'),
-(7, 3, NOW() - INTERVAL '100 days'),
-(8, 3, NOW() - INTERVAL '180 days'),
-(8, 4, NOW() - INTERVAL '180 days'),
-(9, 5, NOW() - INTERVAL '15 days'),
-(10, 2, NOW() - INTERVAL '3 days');
 
 -- ============= ACADEMIC RECORDS DATA =============
 INSERT INTO "academic_records" ("member_id", "student_code", "degree_type", "class_name", "start_year", "graduated_year", "status") VALUES
@@ -300,27 +256,27 @@ INSERT INTO "notifications" ("member_id", "title", "message", "target_url", "is_
 (6, 'Event Registration Confirmed', 'Your registration for Database Design Seminar has been confirmed', '/events/3', true, NOW() - INTERVAL '6 days');
 
 -- ============= FORUM CATEGORIES DATA =============
-INSERT INTO "forum_categories" ("organization_id", "name", "description", "created_at", "updated_at") VALUES
-(1, 'General Discussion', 'General topics and announcements', NOW() - INTERVAL '365 days', NOW()),
-(1, 'Technical Help', 'Questions and help with programming', NOW() - INTERVAL '365 days', NOW()),
-(1, 'Job & Career', 'Job opportunities and career advice', NOW() - INTERVAL '365 days', NOW()),
-(2, 'General Discussion', 'General topics and announcements', NOW() - INTERVAL '360 days', NOW()),
-(2, 'Technical Help', 'Questions and help with programming', NOW() - INTERVAL '360 days', NOW()),
-(2, 'Alumni Stories', 'Share your success stories', NOW() - INTERVAL '360 days', NOW()),
-(3, 'Business Topics', 'Business and management discussions', NOW() - INTERVAL '350 days', NOW()),
-(4, 'Engineering Projects', 'Share and discuss engineering projects', NOW() - INTERVAL '340 days', NOW());
+INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES
+(NULL, 1, 'General Discussion', 'General topics and announcements', NOW() - INTERVAL '365 days', NOW()),
+(NULL, 1, 'Technical Help', 'Questions and help with programming', NOW() - INTERVAL '365 days', NOW()),
+(NULL, 1, 'Job & Career', 'Job opportunities and career advice', NOW() - INTERVAL '365 days', NOW()),
+(NULL, 2, 'General Discussion', 'General topics and announcements', NOW() - INTERVAL '360 days', NOW()),
+(NULL, 2, 'Technical Help', 'Questions and help with programming', NOW() - INTERVAL '360 days', NOW()),
+(NULL, 2, 'Alumni Stories', 'Share your success stories', NOW() - INTERVAL '360 days', NOW()),
+(NULL, 3, 'Business Topics', 'Business and management discussions', NOW() - INTERVAL '350 days', NOW()),
+(NULL, 4, 'Engineering Projects', 'Share and discuss engineering projects', NOW() - INTERVAL '340 days', NOW());
 
 -- ============= FORUM TOPICS DATA =============
-INSERT INTO "forum_topics" ("organization_id", "category_id", "created_by_member_id", "title", "description", "view_count", "created_at", "updated_at") VALUES
-(1, 1, 2, 'Welcome to CS Alumni Network', 'This is our official CS alumni community. Feel free to introduce yourself!', 156, NOW() - INTERVAL '355 days', NOW() - INTERVAL '10 days'),
-(1, 2, 4, 'React Hooks vs Class Components - Best Practices', 'Discussion about modern React patterns and best practices', 89, NOW() - INTERVAL '45 days', NOW() - INTERVAL '5 days'),
-(1, 3, 6, 'Job Search Strategy for New Graduates', 'Tips and tricks for landing your first job in tech', 234, NOW() - INTERVAL '30 days', NOW() - INTERVAL '2 days'),
-(1, 2, 6, 'Database Optimization Techniques', 'Share your database optimization experiences', 156, NOW() - INTERVAL '25 days', NOW() - INTERVAL '8 days'),
-(2, 2, 5, 'Getting Started with Node.js', 'Beginner-friendly discussion on Node.js development', 78, NOW() - INTERVAL '20 days', NOW() - INTERVAL '3 days'),
-(2, 6, 3, 'From Startup to IPO - My Journey', 'Jane shares her entrepreneurial journey and lessons learned', 412, NOW() - INTERVAL '15 days', NOW() - INTERVAL '1 day'),
-(2, 5, 8, 'Microservices Architecture Discussion', 'Advanced topics on building scalable microservices', 145, NOW() - INTERVAL '12 days', NOW() - INTERVAL '4 days'),
-(3, 7, 7, 'Leadership Lessons from Successful Entrepreneurs', 'Learning from business leaders', 93, NOW() - INTERVAL '10 days', NOW() - INTERVAL '6 days'),
-(4, 8, 6, 'Sustainable Engineering for the Future', 'Discussing eco-friendly engineering solutions', 67, NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days');
+INSERT INTO "forum_topics" ("organization_id", "title", "created_by_member_id", "category_id", "view_count", "created_at", "updated_at") VALUES
+(1, 'Welcome to CS Alumni Network', 2, 1, 156, NOW() - INTERVAL '355 days', NOW() - INTERVAL '10 days'),
+(1, 'React Hooks vs Class Components - Best Practices', 4, 2, 89, NOW() - INTERVAL '45 days', NOW() - INTERVAL '5 days'),
+(1, 'Job Search Strategy for New Graduates', 6, 3, 234, NOW() - INTERVAL '30 days', NOW() - INTERVAL '2 days'),
+(1, 'Database Optimization Techniques', 6, 2, 156, NOW() - INTERVAL '25 days', NOW() - INTERVAL '8 days'),
+(2, 'Getting Started with Node.js', 5, 5, 78, NOW() - INTERVAL '20 days', NOW() - INTERVAL '3 days'),
+(2, 'From Startup to IPO - My Journey', 3, 6, 412, NOW() - INTERVAL '15 days', NOW() - INTERVAL '1 day'),
+(2, 'Microservices Architecture Discussion', 8, 5, 145, NOW() - INTERVAL '12 days', NOW() - INTERVAL '4 days'),
+(3, 'Leadership Lessons from Successful Entrepreneurs', 7, 7, 93, NOW() - INTERVAL '10 days', NOW() - INTERVAL '6 days'),
+(4, 'Sustainable Engineering for the Future', 6, 8, 67, NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days');
 
 -- ============= FORUM POSTS DATA =============
 INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to_post_id", "created_at", "updated_at") VALUES
