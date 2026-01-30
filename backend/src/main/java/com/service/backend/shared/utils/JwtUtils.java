@@ -21,7 +21,7 @@ public class JwtUtils {
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
 
-    public String generateAccessToken(Integer userId, String email, String role) {
+    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl) {
         try {
             Instant now = Instant.now();
             Instant expiryDate = now.plusMillis(accessTokenExpirationMs);
@@ -30,6 +30,8 @@ public class JwtUtils {
                     .subject(String.valueOf(userId))
                     .claim("email", email)
                     .claim("role", role)
+                    .claim("username", userName)
+                    .claim("avatar", avatarUrl)
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(expiryDate))
                     .build();
