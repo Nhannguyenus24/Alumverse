@@ -1,9 +1,9 @@
 package com.service.backend.shared.enums;
 
 public enum MentorStatus {
-    AVAILABLE("Available"),
-    BUSY("Busy"),
-    OFFLINE("Offline");
+    AVAILABLE("available"),
+    BUSY("busy"),
+    OFFLINE("offline");
 
     private final String value;
 

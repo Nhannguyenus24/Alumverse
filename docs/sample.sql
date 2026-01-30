@@ -1,17 +1,17 @@
 -- Sample Data for Student Alumni System
 
 -- ============= USERS DATA =============
-INSERT INTO "users" ("email", "password_hash", "is_active", "created_at", "updated_at") VALUES
-('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW(), NOW()),
-('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '90 days', NOW()),
-('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '60 days', NOW()),
-('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '45 days', NOW()),
-('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '30 days', NOW()),
-('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '20 days', NOW()),
-('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', false, NOW() - INTERVAL '10 days', NOW()),
-('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '5 days', NOW()),
-('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW() - INTERVAL '2 days', NOW()),
-('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', true, NOW(), NOW());
+INSERT INTO "users" ("email", "password_hash", "is_active", "created_at", "updated_at", "user_name") VALUES
+('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW(), NOW(), 'admin'),
+('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '90 days', NOW(), 'johndoe'),
+('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '60 days', NOW(), 'janesmith'),
+('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '45 days', NOW(), 'nguyenvana'),
+('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '30 days', NOW(), 'tranthib'),
+('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '20 days', NOW(), 'phamvanc'),
+('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '10 days', NOW(), 'hoangthid'),
+('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '5 days', NOW(), 'levane'),
+('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '2 days', NOW(), 'duongthif'),
+('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW(), NOW(), 'vovang');
 
 -- ============= GLOBAL PROFILES DATA =============
 INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "avatar_url", "bio", "dob", "gender", "settings") VALUES
