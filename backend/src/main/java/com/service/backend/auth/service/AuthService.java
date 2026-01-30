@@ -7,21 +7,36 @@ import org.springframework.stereotype.Service;
 
 import com.service.backend.auth.entity.User;
 import com.service.backend.auth.repository.AuthRepository;
+import com.service.backend.shared.service.EmailService;
+import com.service.backend.shared.utils.CacheUtils;
 
 import reactor.core.publisher.Mono;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
 
 @Service
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+    private static final String OTP_CACHE_NAME = "otp_verification";
+    private static final Duration OTP_TTL = Duration.ofMinutes(5);
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final CacheUtils cacheUtils;
+    private final Random random;
         
-    public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder, 
+                      EmailService emailService, CacheUtils cacheUtils) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.cacheUtils = cacheUtils;
+        this.random = new Random();
     }
 
-    public Mono<User> register(String email, String userName, String password) {
+    public Mono<Void> register(String email, String userName, String password) {
         logger.info("Registering new user with email: {} and username: {}", email, userName);
 
         Mono<Boolean> emailCheck = authRepository.existsByEmail(email);
@@ -36,10 +51,9 @@ public class AuthService {
                     if (usernameExists) return Mono.error(new RuntimeException("Username already exists"));
 
                     String hashedPassword = passwordEncoder.encode(password);
-                    return authRepository.registerNewUser(email, userName, hashedPassword);
+                    return authRepository.registerNewUser(email, userName, hashedPassword)
+                            .doOnSuccess(user -> logger.info("User registered successfully: {}", email));
                 })
-                .then(authRepository.findByEmail(email))
-                .doOnSuccess(user -> logger.info("User registered successfully: {}", email))
                 .doOnError(e -> logger.error("Registration failed: {}", email, e));
     }
 
@@ -101,5 +115,72 @@ public class AuthService {
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
                 .doOnError(error -> logger.error("Password change error for user id: {}", userId, error));
+    }
+
+    public Mono<Void> sendOtpVerification(String email) {
+        logger.info("Sending OTP verification to email: {}", email);
+
+        return authRepository.findByEmail(email)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                .flatMap(user -> {
+                    // Generate random 6-digit OTP
+                    String otp = String.format("%06d", random.nextInt(1000000));
+                    logger.info("Generated OTP for email: {}", email);
+
+                    // Cache OTP and userId with TTL
+                    Map<String, Object> cacheData = new HashMap<>();
+                    cacheData.put("otp", otp);
+                    cacheData.put("userId", user.getId());
+
+                    return cacheUtils.putWithTtl(OTP_CACHE_NAME, email, cacheData, OTP_TTL)
+                            .then(Mono.defer(() -> {
+                                // Send OTP via email
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put("otp", otp);
+                                variables.put("email", email);
+
+                                return emailService.sendHtmlEmail(
+                                        email,
+                                        "Email Verification - OTP Code",
+                                        "otpVerification",
+                                        variables
+                                );
+                            }))
+                            .doOnSuccess(v -> logger.info("OTP sent successfully to email: {}", email));
+                })
+                .doOnError(error -> logger.error("Failed to send OTP to email: {}", email, error));
+    }
+
+    public Mono<Void> verifyOtpAndActivate(String email, String otp) {
+        logger.info("Verifying OTP for email: {}", email);
+
+        return cacheUtils.get(OTP_CACHE_NAME, email)
+                .switchIfEmpty(Mono.error(new RuntimeException("OTP expired or not found")))
+                .flatMap(cachedData -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> cacheMap = (Map<String, Object>) cachedData;
+                    String cachedOtp = (String) cacheMap.get("otp");
+                    Integer userId = ((Number) cacheMap.get("userId")).intValue();
+
+                    if (!cachedOtp.equals(otp)) {
+                        logger.warn("Invalid OTP provided for email: {}", email);
+                        return Mono.error(new RuntimeException("Invalid OTP"));
+                    }
+
+                    logger.info("OTP verified successfully for email: {}", email);
+
+                    return authRepository.activateUserById(userId)
+                            .doOnSuccess(v -> logger.info("User account activated for email: {}", email));
+                })
+                .doOnError(error -> logger.error("OTP verification failed for email: {}", email, error));
+    }
+
+    /**
+     * Get user by ID
+     */
+    public Mono<User> getUserById(Integer userId) {
+        return authRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                .doOnError(error -> logger.error("Error retrieving user with ID: {}", userId, error));
     }
 }

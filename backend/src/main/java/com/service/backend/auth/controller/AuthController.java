@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseCookie;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -16,7 +17,8 @@ import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.LoginRequest;
 import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.LoginResponse;
-import com.service.backend.auth.entity.User;
+import com.service.backend.auth.dto.SendOtpRequest;
+import com.service.backend.auth.dto.VerifyOtpRequest;
 import com.service.backend.auth.service.AuthService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.JwtUtils;
@@ -42,11 +44,11 @@ public class AuthController {
      * Register a new user
      */
     @PostMapping("/register")
-    public Mono<ResponseEntity<ApiResponse<User>>> register(
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
         return authService.register(request.getEmail(), request.getUserName(), request.getPassword())
-                .map(user -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", user)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), null))));
+                .map(ignore -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true)))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
     }
 
     /**
@@ -129,5 +131,68 @@ public class AuthController {
         return Mono.just(ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body(new ApiResponse<>("Logout successful", true)));
+    }
+
+    /**
+     * Refresh access token using refresh token from cookie
+     */
+    @PostMapping("/refresh")
+    public Mono<ResponseEntity<ApiResponse<LoginResponse>>> refresh(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("Refresh token not found", null)));
+        }
+
+        try {
+            // Validate refresh token and get user ID
+            Integer userId = jwtUtils.getUserIdFromToken(refreshToken);
+            
+            // Retrieve user information by ID
+            return authService.getUserById(userId)
+                    .map(user -> {
+                        String accessToken = jwtUtils.generateAccessToken(
+                                user.getId(),
+                                user.getEmail(),
+                                user.getRole().name(),
+                                user.getUserName(),
+                                user.getAvatarUrl()
+                        );
+
+                        LoginResponse loginResponse = LoginResponse.builder()
+                                .accessToken(accessToken)
+                                .build();
+
+                        return ResponseEntity.ok(new ApiResponse<>("Access token refreshed successfully", loginResponse));
+                    })
+                    .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new ApiResponse<>(error.getMessage(), null))));
+        } catch (Exception e) {
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponse<>("Invalid or expired refresh token", null)));
+        }
+    }
+
+    /**
+     * Send OTP verification code to user's email
+     */
+    @PostMapping("/send-otp")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> sendOtp(
+            @Valid @RequestBody SendOtpRequest request) {
+        return authService.sendOtpVerification(request.getEmail())
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("OTP sent successfully", true))))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    /**
+     * Verify OTP code and activate user account
+     */
+    @PostMapping("/verify-otp")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyOtp(
+            @Valid @RequestBody VerifyOtpRequest request) {
+        return authService.verifyOtpAndActivate(request.getEmail(), request.getOtp())
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("OTP verified and account activated successfully", true))))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
     }
 }

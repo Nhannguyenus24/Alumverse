@@ -44,7 +44,6 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject(subject);
 
-            // Tạo context cho template
             Context context = new Context();
             context.setVariables(variables);
 

@@ -2,16 +2,13 @@ package com.service.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,44 +35,29 @@ public class SecurityConfig {
         return source;
     }
 
-
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         http
                 // Enable CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
                 // Disable CSRF for stateless REST API
-                .csrf(AbstractHttpConfigurer::disable)
-
-                // Session management - stateless
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                // Security headers
-                .headers(headers -> headers
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
-                        )
-                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
-                )
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
 
                 // Authorization rules
-                .authorizeHttpRequests(auth -> auth
+                .authorizeExchange(auth -> auth
                         // Public endpoints - no authentication required
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
                                 "/api/guest/**",
                                 "/api-docs/**",
-                                "/api/**" // in dev mode only
+                                "/**" // in dev mode only
                         ).permitAll()
 
                         // All other requests require authentication
-                        .anyRequest().authenticated());
+                        .anyExchange().authenticated());
 
         return http.build();
     }
