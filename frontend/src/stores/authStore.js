@@ -1,24 +1,27 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const initialState = {
+  user: null,
+  token: null,
+  loading: false,
+  error: null,
+};
+
 const useAuthStore = create(
   persist(
     (set) => ({
-      isAuthenticated: false,
-      isLoading: false,
-      user: null,
-      token: null,
+      ...initialState,
 
-      setAuthenticated: (value) => set({ isAuthenticated: value }),
-      setIsLoading: (value) => set({ isLoading: value }),
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
-      reset: () => set({ isAuthenticated: false, user: null, token: null, isLoading: false }),
+      setLoading: (loading) => set({ loading }),
+      setError: (error) => set({ error }),
+      reset: () => set(initialState),
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        isAuthenticated: state.isAuthenticated,
         user: state.user,
         token: state.token,
       }),
