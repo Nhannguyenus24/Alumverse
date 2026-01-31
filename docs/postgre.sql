@@ -7,7 +7,7 @@ CREATE TABLE "users" (
   "role" varchar,
   "avatar_url" varchar,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "global_profiles" (
@@ -36,7 +36,7 @@ CREATE TABLE "organizations" (
   "logo_url" varchar,
   "brand_config" json,
   "features_config" json,
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "organization_members" (
@@ -47,7 +47,7 @@ CREATE TABLE "organization_members" (
   "is_trusted_verifier" boolean DEFAULT false,
   "status" varchar DEFAULT 'active',
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "academic_records" (
