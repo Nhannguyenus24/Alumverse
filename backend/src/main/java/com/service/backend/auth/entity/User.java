@@ -1,41 +1,50 @@
-package com.service.backend.auth.domain.entity;
+package com.service.backend.auth.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
+
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
+
+import com.service.backend.shared.enums.UserRole;
+import com.service.backend.shared.enums.UserStatus;
 
 import java.time.LocalDateTime;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Table("users")
 public class User {
-
+        
     @Id
-    private Long id;
+    private Integer id;
 
+    @Column("email")
     private String email;
 
     @Column("password_hash")
     private String passwordHash;
 
-    @Column("is_active")
-    @Builder.Default
-    private Boolean isActive = true;
+    @Column("user_name")
+    private String userName;
 
-    @CreatedDate
+    @Column("status")
+    private UserStatus status;
+
+    @Column("role")
+    private UserRole role;
+
+    @Column("avatar_url")
+    private String avatarUrl;
+
     @Column("created_at")
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     @Column("updated_at")
     private LocalDateTime updatedAt;
 }
