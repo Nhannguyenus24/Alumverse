@@ -1,10 +1,10 @@
 package com.service.backend.shared.enums;
 
 public enum ItemType {
-    NEWS("News"),
-    EVENT("Event"),
-    JOB("Job"),
-    RESOURCE("Resource");
+    NEWS("news"),
+    EVENT("event"),
+    JOB("job"),
+    RESOURCE("resource");
 
     private final String value;
 

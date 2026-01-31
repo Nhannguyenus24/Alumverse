@@ -1,11 +1,11 @@
 package com.service.backend.shared.enums;
 
 public enum UserRole {
-    ADMIN("ADMIN"),
-    STUDENT("STUDENT"),
-    ALUMNI("ALUMNI"),
-    STAFF("STAFF"),
-    GUEST("GUEST");
+    ADMIN("admin"),
+    STUDENT("student"),
+    ALUMNI("alumni"),
+    STAFF("staff"),
+    GUEST("guest");
 
     private final String value;
 
