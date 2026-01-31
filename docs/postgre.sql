@@ -318,50 +318,6 @@ CREATE UNIQUE INDEX ON "event_interests" ("event_id", "member_id");
 
 CREATE UNIQUE INDEX ON "saved_items" ("member_id", "item_type", "item_id");
 
-COMMENT ON COLUMN "users"."email" IS 'Tài khoản đăng nhập duy nhất';
-
-COMMENT ON COLUMN "global_profiles"."full_name" IS 'Tên thật theo CCCD';
-
-COMMENT ON COLUMN "global_profiles"."avatar_url" IS 'Avatar';
-
-COMMENT ON COLUMN "global_profiles"."settings" IS 'Language, Theme preferences';
-
-COMMENT ON COLUMN "global_identity_verifications"."extracted_data" IS 'Dữ liệu trích xuất từ thẻ chip';
-
-COMMENT ON COLUMN "organizations"."name" IS 'Tên Khoa/Viện/Trường';
-
-COMMENT ON COLUMN "organizations"."slug" IS 'sub domain';
-
-COMMENT ON COLUMN "organizations"."brand_config" IS 'Màu sắc, Banner tùy chỉnh';
-
-COMMENT ON COLUMN "organizations"."features_config" IS 'Mentorship, Job, Fund...';
-
-COMMENT ON COLUMN "organization_members"."display_name" IS 'Tên hiển thị tại Org này';
-
-COMMENT ON COLUMN "organization_members"."status" IS 'Active, Pending, Banned';
-
-COMMENT ON COLUMN "academic_records"."student_code" IS 'MSSV tại trường này';
-
-COMMENT ON COLUMN "academic_records"."degree_type" IS 'Cử nhân, Thạc sĩ...';
-
-COMMENT ON COLUMN "academic_records"."class_name" IS 'Lớp K60, QH-2015';
-
-COMMENT ON COLUMN "academic_records"."status" IS 'Graduated, Studying, Dropped';
-
-COMMENT ON COLUMN "event_tickets"."member_id" IS 'Null if guest';
-
-COMMENT ON COLUMN "event_tickets"."status" IS 'Registered, Checked_in, Cancelled';
-
-COMMENT ON COLUMN "saved_items"."item_type" IS 'news, job, event, learning';
-
-COMMENT ON COLUMN "achievements"."status" IS 'Pending, Approved';
-
-COMMENT ON COLUMN "jobs"."how_to_apply" IS 'Email or Link';
-
-COMMENT ON COLUMN "learning_resources"."type" IS 'Course, Ebook, Video';
-
-COMMENT ON COLUMN "fund_receiving_infos"."type" IS 'Bank, Momo';
-
 ALTER TABLE "global_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 ALTER TABLE "global_identity_verifications" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
