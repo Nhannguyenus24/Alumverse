@@ -1,35 +1,64 @@
 package com.service.backend.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
-//import com.service.main.filter.HeaderAuthenticationFilter;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
-@EnableReactiveMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    //private final HeaderAuthenticationFilter headerFilter;
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://localhost:8080"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 
     @Bean
-    public SecurityWebFilterChain filterChain(ServerHttpSecurity http) {
-        return http
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        http
+                // Enable CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // Disable CSRF for stateless REST API
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .authorizeExchange(exchanges -> exchanges
+
+                // Authorization rules
+                .authorizeExchange(auth -> auth
+                        // Public endpoints - no authentication required
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers(
-                                "**"
+                                "/api/auth/**",
+                                "/swagger-ui/**",
+                                "/api/guest/**",
+                                "/api-docs/**",
+                                "/**" // in dev mode only
                         ).permitAll()
-                        .anyExchange().authenticated()
-                )
-                //.addFilterAt(headerFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-                .build();
+
+                        // All other requests require authentication
+                        .anyExchange().authenticated());
+
+        return http.build();
     }
 }

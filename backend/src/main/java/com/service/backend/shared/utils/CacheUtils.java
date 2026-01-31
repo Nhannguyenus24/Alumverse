@@ -234,7 +234,7 @@ public class CacheUtils {
      * @return Mono containing set of all cache names
      */
     public Mono<java.util.Set<String>> getAllCacheNames() {
-        return Mono.fromCallable(() -> caches.keySet());
+        return Mono.fromCallable(caches::keySet);
     }
 
     /**
