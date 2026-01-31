@@ -7,7 +7,7 @@ CREATE TABLE "users" (
   "role" varchar,
   "avatar_url" varchar,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "global_profiles" (
@@ -36,7 +36,7 @@ CREATE TABLE "organizations" (
   "logo_url" varchar,
   "brand_config" json,
   "features_config" json,
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "organization_members" (
@@ -47,7 +47,7 @@ CREATE TABLE "organization_members" (
   "is_trusted_verifier" boolean DEFAULT false,
   "status" varchar DEFAULT 'active',
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "academic_records" (
@@ -317,50 +317,6 @@ CREATE UNIQUE INDEX ON "peer_verifications" ("target_member_id", "verifier_membe
 CREATE UNIQUE INDEX ON "event_interests" ("event_id", "member_id");
 
 CREATE UNIQUE INDEX ON "saved_items" ("member_id", "item_type", "item_id");
-
-COMMENT ON COLUMN "users"."email" IS 'Tài khoản đăng nhập duy nhất';
-
-COMMENT ON COLUMN "global_profiles"."full_name" IS 'Tên thật theo CCCD';
-
-COMMENT ON COLUMN "global_profiles"."avatar_url" IS 'Avatar';
-
-COMMENT ON COLUMN "global_profiles"."settings" IS 'Language, Theme preferences';
-
-COMMENT ON COLUMN "global_identity_verifications"."extracted_data" IS 'Dữ liệu trích xuất từ thẻ chip';
-
-COMMENT ON COLUMN "organizations"."name" IS 'Tên Khoa/Viện/Trường';
-
-COMMENT ON COLUMN "organizations"."slug" IS 'sub domain';
-
-COMMENT ON COLUMN "organizations"."brand_config" IS 'Màu sắc, Banner tùy chỉnh';
-
-COMMENT ON COLUMN "organizations"."features_config" IS 'Mentorship, Job, Fund...';
-
-COMMENT ON COLUMN "organization_members"."display_name" IS 'Tên hiển thị tại Org này';
-
-COMMENT ON COLUMN "organization_members"."status" IS 'Active, Pending, Banned';
-
-COMMENT ON COLUMN "academic_records"."student_code" IS 'MSSV tại trường này';
-
-COMMENT ON COLUMN "academic_records"."degree_type" IS 'Cử nhân, Thạc sĩ...';
-
-COMMENT ON COLUMN "academic_records"."class_name" IS 'Lớp K60, QH-2015';
-
-COMMENT ON COLUMN "academic_records"."status" IS 'Graduated, Studying, Dropped';
-
-COMMENT ON COLUMN "event_tickets"."member_id" IS 'Null if guest';
-
-COMMENT ON COLUMN "event_tickets"."status" IS 'Registered, Checked_in, Cancelled';
-
-COMMENT ON COLUMN "saved_items"."item_type" IS 'news, job, event, learning';
-
-COMMENT ON COLUMN "achievements"."status" IS 'Pending, Approved';
-
-COMMENT ON COLUMN "jobs"."how_to_apply" IS 'Email or Link';
-
-COMMENT ON COLUMN "learning_resources"."type" IS 'Course, Ebook, Video';
-
-COMMENT ON COLUMN "fund_receiving_infos"."type" IS 'Bank, Momo';
 
 ALTER TABLE "global_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 

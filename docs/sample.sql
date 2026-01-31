@@ -1,30 +1,30 @@
 -- Sample Data for Student Alumni System
 
 -- ============= USERS DATA =============
-INSERT INTO "users" ("email", "password_hash", "is_active", "created_at", "updated_at", "user_name") VALUES
-('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW(), NOW(), 'admin'),
-('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '90 days', NOW(), 'johndoe'),
-('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '60 days', NOW(), 'janesmith'),
-('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '45 days', NOW(), 'nguyenvana'),
-('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '30 days', NOW(), 'tranthib'),
-('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '20 days', NOW(), 'phamvanc'),
-('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '10 days', NOW(), 'hoangthid'),
-('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '5 days', NOW(), 'levane'),
-('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW() - INTERVAL '2 days', NOW(), 'duongthif'),
-('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'active', NOW(), NOW(), 'vovang');
+INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "avatar_url", "created_at", "updated_at") VALUES
+('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'active', 'admin', 'https://api.example.com/avatars/admin.jpg', NOW(), NOW()),
+('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'active', 'alumni', 'https://api.example.com/avatars/john.jpg', NOW() - INTERVAL '90 days', NOW()),
+('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'active', 'alumni', 'https://api.example.com/avatars/jane.jpg', NOW() - INTERVAL '60 days', NOW()),
+('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'active', 'student', 'https://api.example.com/avatars/nguyena.jpg', NOW() - INTERVAL '45 days', NOW()),
+('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'active', 'alumni', 'https://api.example.com/avatars/tranb.jpg', NOW() - INTERVAL '30 days', NOW()),
+('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'active', 'alumni', 'https://api.example.com/avatars/phamc.jpg', NOW() - INTERVAL '20 days', NOW()),
+('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'active', 'alumni', 'https://api.example.com/avatars/hoangd.jpg', NOW() - INTERVAL '10 days', NOW()),
+('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'active', 'alumni', 'https://api.example.com/avatars/lee.jpg', NOW() - INTERVAL '5 days', NOW()),
+('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'active', 'student', 'https://api.example.com/avatars/duongf.jpg', NOW() - INTERVAL '2 days', NOW()),
+('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'active', 'alumni', 'https://api.example.com/avatars/vog.jpg', NOW(), NOW());
 
 -- ============= GLOBAL PROFILES DATA =============
-INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "avatar_url", "bio", "dob", "gender", "settings") VALUES
-(1, 'Admin User', '0901234567', 'https://api.example.com/avatars/admin.jpg', 'System Administrator', '1990-01-15', 'Male', '{"language":"vi","theme":"dark"}'),
-(2, 'John Doe', '0912345678', 'https://api.example.com/avatars/john.jpg', 'Software Engineer & Alumni', '1995-05-20', 'Male', '{"language":"en","theme":"light"}'),
-(3, 'Jane Smith', '0923456789', 'https://api.example.com/avatars/jane.jpg', 'Product Manager', '1996-08-10', 'Female', '{"language":"en","theme":"light"}'),
-(4, 'Nguyễn Văn A', '0934567890', 'https://api.example.com/avatars/nguyena.jpg', 'Student - Computer Science', '2002-03-15', 'Male', '{"language":"vi","theme":"dark"}'),
-(5, 'Trần Thị B', '0945678901', 'https://api.example.com/avatars/tranb.jpg', 'Recent Graduate - IT', '2001-07-22', 'Female', '{"language":"vi","theme":"light"}'),
-(6, 'Phạm Văn C', '0956789012', 'https://api.example.com/avatars/phamc.jpg', 'Senior Developer at Tech Corp', '1998-11-08', 'Male', '{"language":"vi","theme":"dark"}'),
-(7, 'Hoàng Thị D', '0967890123', 'https://api.example.com/avatars/hoangd.jpg', 'Business Analyst', '1999-02-14', 'Female', '{"language":"vi","theme":"light"}'),
-(8, 'Lê Văn E', '0978901234', 'https://api.example.com/avatars/lee.jpg', 'Startup Founder', '1997-09-30', 'Male', '{"language":"vi","theme":"dark"}'),
-(9, 'Dương Thị F', '0989012345', 'https://api.example.com/avatars/duongf.jpg', 'Data Scientist', '2000-04-17', 'Female', '{"language":"vi","theme":"light"}'),
-(10, 'Võ Văn G', '0990123456', 'https://api.example.com/avatars/vog.jpg', 'UX/UI Designer', '1999-12-05', 'Male', '{"language":"vi","theme":"dark"}');
+INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "gender", "settings") VALUES
+(1, 'Admin User', '0901234567', 'System Administrator', '1990-01-15', 'Male', '{"language":"vi","theme":"dark"}'),
+(2, 'John Doe', '0912345678', 'Software Engineer & Alumni', '1995-05-20', 'Male', '{"language":"en","theme":"light"}'),
+(3, 'Jane Smith', '0923456789', 'Product Manager', '1996-08-10', 'Female', '{"language":"en","theme":"light"}'),
+(4, 'Nguyễn Văn A', '0934567890', 'Student - Computer Science', '2002-03-15', 'Male', '{"language":"vi","theme":"dark"}'),
+(5, 'Trần Thị B', '0945678901', 'Recent Graduate - IT', '2001-07-22', 'Female', '{"language":"vi","theme":"light"}'),
+(6, 'Phạm Văn C', '0956789012', 'Senior Developer at Tech Corp', '1998-11-08', 'Male', '{"language":"vi","theme":"dark"}'),
+(7, 'Hoàng Thị D', '0967890123', 'Business Analyst', '1999-02-14', 'Female', '{"language":"vi","theme":"light"}'),
+(8, 'Lê Văn E', '0978901234', 'Startup Founder', '1997-09-30', 'Male', '{"language":"vi","theme":"dark"}'),
+(9, 'Dương Thị F', '0989012345', 'Data Scientist', '2000-04-17', 'Female', '{"language":"vi","theme":"light"}'),
+(10, 'Võ Văn G', '0990123456', 'UX/UI Designer', '1999-12-05', 'Male', '{"language":"vi","theme":"dark"}');
 
 -- ============= GLOBAL IDENTITY VERIFICATIONS DATA =============
 INSERT INTO "global_identity_verifications" ("user_id", "citizen_id", "extracted_data", "verified_at", "provider") VALUES
