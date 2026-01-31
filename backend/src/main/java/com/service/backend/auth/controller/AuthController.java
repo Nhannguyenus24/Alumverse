@@ -1,9 +1,11 @@
 package com.service.backend.auth.controller;
 
+import java.time.Duration;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,8 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.LoginRequest;
-import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.LoginResponse;
+import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.SendOtpRequest;
 import com.service.backend.auth.dto.VerifyOtpRequest;
 import com.service.backend.auth.service.AuthService;
@@ -25,7 +27,6 @@ import com.service.backend.shared.utils.JwtUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import java.time.Duration;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -140,38 +141,16 @@ public class AuthController {
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> refresh(
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
         
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>("Refresh token not found", null)));
-        }
+        return authService.refreshAccessToken(refreshToken)
+                .map(accessToken -> {
+                    LoginResponse loginResponse = LoginResponse.builder()
+                            .accessToken(accessToken)
+                            .build();
 
-        try {
-            // Validate refresh token and get user ID
-            Integer userId = jwtUtils.getUserIdFromToken(refreshToken);
-            
-            // Retrieve user information by ID
-            return authService.getUserById(userId)
-                    .map(user -> {
-                        String accessToken = jwtUtils.generateAccessToken(
-                                user.getId(),
-                                user.getEmail(),
-                                user.getRole().name(),
-                                user.getUserName(),
-                                user.getAvatarUrl()
-                        );
-
-                        LoginResponse loginResponse = LoginResponse.builder()
-                                .accessToken(accessToken)
-                                .build();
-
-                        return ResponseEntity.ok(new ApiResponse<>("Access token refreshed successfully", loginResponse));
-                    })
-                    .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                            .body(new ApiResponse<>(error.getMessage(), null))));
-        } catch (Exception e) {
-            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>("Invalid or expired refresh token", null)));
-        }
+                    return ResponseEntity.ok(new ApiResponse<>("Access token refreshed successfully", loginResponse));
+                })
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(error.getMessage(), null))));
     }
 
     /**

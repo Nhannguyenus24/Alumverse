@@ -1,5 +1,10 @@
 package com.service.backend.auth.service;
 
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,10 +16,6 @@ import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
 
 import reactor.core.publisher.Mono;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
 
 @Service
 public class AuthService {
@@ -25,14 +26,17 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final CacheUtils cacheUtils;
+    private final com.service.backend.shared.utils.JwtUtils jwtUtils;
     private final Random random;
         
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder, 
-                      EmailService emailService, CacheUtils cacheUtils) {
+                      EmailService emailService, CacheUtils cacheUtils,
+                      com.service.backend.shared.utils.JwtUtils jwtUtils) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.cacheUtils = cacheUtils;
+        this.jwtUtils = jwtUtils;
         this.random = new Random();
     }
 
@@ -103,6 +107,7 @@ public class AuthService {
         logger.info("Changing password for user id: {}", userId);
 
         return authRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
                 .flatMap(user -> {
                     if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
                         logger.warn("Password change failed - invalid old password for user id: {}", userId);
@@ -113,7 +118,6 @@ public class AuthService {
                     return authRepository.updatePasswordById(userId, hashedPassword)
                             .doOnSuccess(v -> logger.info("Password changed successfully for user id: {}", userId));
                 })
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
                 .doOnError(error -> logger.error("Password change error for user id: {}", userId, error));
     }
 
@@ -176,11 +180,37 @@ public class AuthService {
     }
 
     /**
-     * Get user by ID
+     * Refresh access token using refresh token
      */
-    public Mono<User> getUserById(Integer userId) {
-        return authRepository.findById(userId)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
-                .doOnError(error -> logger.error("Error retrieving user with ID: {}", userId, error));
+    public Mono<String> refreshAccessToken(String refreshToken) {
+        logger.info("Refreshing access token");
+
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return Mono.error(new RuntimeException("Refresh token not found"));
+        }
+
+        try {
+            // Validate refresh token and get user ID
+            Integer userId = jwtUtils.getUserIdFromToken(refreshToken);
+            
+            // Retrieve user information and generate new access token
+            return authRepository.findById(userId)
+                    .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                    .map(user -> {
+                        String accessToken = jwtUtils.generateAccessToken(
+                                user.getId(),
+                                user.getEmail(),
+                                user.getRole().name(),
+                                user.getUserName(),
+                                user.getAvatarUrl()
+                        );
+                        logger.info("Access token refreshed successfully for user id: {}", userId);
+                        return accessToken;
+                    })
+                    .doOnError(error -> logger.error("Failed to refresh token for user id: {}", userId, error));
+        } catch (Exception e) {
+            logger.error("Invalid or expired refresh token", e);
+            return Mono.error(new RuntimeException("Invalid or expired refresh token"));
+        }
     }
 }
