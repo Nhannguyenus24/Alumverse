@@ -24,6 +24,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/admin/users")
 @Validated
@@ -129,7 +131,7 @@ public class AdminUserController {
      * Get user verification requests
      */
     @GetMapping("/{userId}/verification-requests")
-    public Mono<ResponseEntity<ApiResponse<Object>>> getUserVerificationRequests(
+    public Mono<ResponseEntity<ApiResponse<List<Object>>>> getUserVerificationRequests(
             @PathVariable Integer userId) {
         return adminUserService.getUserVerificationRequests(userId)
                 .collectList()
@@ -144,7 +146,7 @@ public class AdminUserController {
      * Get peer verifications for a user
      */
     @GetMapping("/{userId}/peer-verifications")
-    public Mono<ResponseEntity<ApiResponse<Object>>> getPeerVerifications(
+    public Mono<ResponseEntity<ApiResponse<List<Object>>>> getPeerVerifications(
             @PathVariable Integer userId) {
         return adminUserService.getPeerVerifications(userId)
                 .collectList()

@@ -3,6 +3,7 @@ package com.service.backend.forum.service;
 import java.time.LocalDateTime;
 
 import com.service.backend.forum.dto.*;
+import com.service.backend.shared.dto.PageInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
