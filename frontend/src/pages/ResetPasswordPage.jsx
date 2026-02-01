@@ -1,35 +1,39 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
-import { Box, Typography, Button, FormControlLabel, Checkbox } from '@mui/material';
+import { Box, Typography, Button } from '@mui/material';
 import Page from '../components/Page';
 import Input from '../components/Input';
-import { loginSchema } from '../schemas/authSchemas';
+import { changePasswordSchema } from '../schemas/authSchemas';
 import { useAuth } from '../hooks/useAuth';
 
-const LoginPage = () => {
+const ResetPasswordPage = () => {
   const navigate = useNavigate();
-  const { login, isLoading: loading, error, setError } = useAuth();
+  const { resetPassword, isLoading: loading, error, setError } = useAuth();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { oldPassword: '', newPassword: '', confirmNewPassword: '' },
   });
 
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ email: data.email, password: data.password });
+    const result = await resetPassword({
+      oldPassword: data.oldPassword,
+      newPassword: data.newPassword,
+      confirmNewPassword: data.confirmNewPassword,
+    });
     if (result?.ok) navigate('/dashboard', { replace: true });
   };
 
   return (
     <Page
-      title="Đăng nhập"
-      meta={<meta name="description" content="Đăng nhập vào hệ thống" />}
+      title="Đổi mật khẩu"
+      meta={<meta name="description" content="Đặt lại mật khẩu" />}
     >
       <Box
         component="form"
@@ -49,7 +53,7 @@ const LoginPage = () => {
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
-          Đăng nhập
+          Đổi mật khẩu
         </Typography>
 
         {error && (
@@ -59,37 +63,33 @@ const LoginPage = () => {
         )}
 
         <Input
-          label="Email"
-          placeholder="email@example.com"
-          type="email"
-          error={!!errors.email}
-          helperText={errors.email?.message}
-          {...register('email')}
-        />
-        <Input
-          label="Mật khẩu"
+          label="Mật khẩu hiện tại"
           placeholder="••••••••"
           type="password"
-          error={!!errors.password}
-          helperText={errors.password?.message}
-          {...register('password')}
+          error={!!errors.oldPassword}
+          helperText={errors.oldPassword?.message}
+          {...register('oldPassword')}
+        />
+        <Input
+          label="Mật khẩu mới"
+          placeholder="••••••••"
+          type="password"
+          error={!!errors.newPassword}
+          helperText={errors.newPassword?.message}
+          {...register('newPassword')}
+        />
+        <Input
+          label="Nhập lại mật khẩu mới"
+          placeholder="••••••••"
+          type="password"
+          error={!!errors.confirmNewPassword}
+          helperText={errors.confirmNewPassword?.message}
+          {...register('confirmNewPassword')}
         />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-          <FormControlLabel
-            control={<Checkbox size="small" color="primary" />}
-            label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
-          />
-          <Typography
-            component={Link}
-            to="/auth/forgot-password"
-            variant="body2"
-            color="primary.main"
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-          >
-            Quên mật khẩu?
-          </Typography>
-        </Box>
+        <Typography variant="body2" color="text.secondary" textAlign="center">
+          Nếu bạn không muốn đổi mật khẩu, bỏ qua trang này.
+        </Typography>
 
         <Button
           type="submit"
@@ -100,20 +100,19 @@ const LoginPage = () => {
           disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+          {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-          Bạn chưa có tài khoản?{' '}
           <Typography
             component={Link}
-            to="/auth/register"
+            to="/dashboard"
             variant="body2"
             color="primary.main"
             fontWeight={600}
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
-            Đăng ký ngay!
+            Quay lại trang chủ
           </Typography>
         </Typography>
       </Box>
@@ -121,4 +120,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default ResetPasswordPage;

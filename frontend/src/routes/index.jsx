@@ -17,6 +17,13 @@ const Loadable = (Component) => (props) =>
 const HomePage = Loadable(lazy(() => import('../pages/HomePage')));
 const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
 const RegisterPage = Loadable(lazy(() => import('../pages/RegisterPage')));
+const SignupCodePage = Loadable(lazy(() => import('../pages/SignupCodePage')));
+const ForgotPasswordPage = Loadable(
+  lazy(() => import('../pages/ForgotPasswordPage'))
+);
+const ResetPasswordPage = Loadable(
+  lazy(() => import('../pages/ResetPasswordPage'))
+);
 const DashboardPage = Loadable(lazy(() => import('../pages/DashboardPage')));
 const NotFoundPage = Loadable(lazy(() => import('../pages/NotFoundPage')));
 const UnauthorizedPage = Loadable(
@@ -28,7 +35,6 @@ const ServerErrorPage = Loadable(
 const MaintenancePage = Loadable(
   lazy(() => import('../pages/MaintenancePage'))
 );
-
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -77,6 +83,30 @@ export const router = createBrowserRouter([
         element: (
           <PublicRoute>
             <RegisterPage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: 'signup-code',
+        element: (
+          <PublicRoute>
+            <SignupCodePage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: 'forgot-password',
+        element: (
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: 'reset-password',
+        element: (
+          <PublicRoute>
+            <ResetPasswordPage />
           </PublicRoute>
         ),
       },

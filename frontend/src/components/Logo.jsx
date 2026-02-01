@@ -1,33 +1,43 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography } from '@mui/material';
 
-const Logo = ({ size = "medium", variant = "text" }) => {
+const Logo = ({ size = 'medium', variant = 'text', src, alt = 'Logo', sx, ...rest }) => {
   const sizes = {
-    small: { fontSize: "1.5rem", height: 32 },
-    medium: { fontSize: "2rem", height: 40 },
-    large: { fontSize: "3rem", height: 60 },
+    small: { fontSize: '1.5rem', height: 32 },
+    medium: { fontSize: '2rem', height: 40 },
+    large: { fontSize: '3rem', height: 60 },
+    xlarge: { fontSize: '3.5rem', height: 96 },
   };
 
   const currentSize = sizes[size] || sizes.medium;
 
-  if (variant === "image") {
-    // return (
-    //   <Box
-    //     component="img"
-    //     src="/logo.png"
-    //     alt="Logo"
-    //     sx={{ height: currentSize.height, width: "auto" }}
-    //   />
-    // );
+  if (variant === 'image' && src) {
+    return (
+      <Box
+        component="img"
+        src={src}
+        alt={alt}
+        sx={{
+          height: currentSize.height,
+          width: 'auto',
+          display: 'block',
+          cursor: 'pointer',
+          ...sx,
+        }}
+        {...rest}
+      />
+    );
   }
 
   return (
     <Box
       sx={{
-        display: "flex",
-        alignItems: "center",
+        display: 'flex',
+        alignItems: 'center',
         gap: 1,
-        cursor: "pointer",
+        cursor: 'pointer',
+        ...sx,
       }}
+      {...rest}
     >
       <Typography
         variant="h4"
@@ -35,7 +45,7 @@ const Logo = ({ size = "medium", variant = "text" }) => {
         sx={{
           fontWeight: 700,
           fontSize: currentSize.fontSize,
-          color: "#1976d2",
+          color: 'primary.main',
         }}
       >
         HCMUS Alumni
