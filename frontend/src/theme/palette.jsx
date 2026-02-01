@@ -5,19 +5,19 @@ function createGradient(color1, color2) {
 }
 
 const PRIMARY = {
-  lighter: '#C8FACD',
-  light: '#5BE584',
-  main: '#1976d2',
-  dark: '#007B55',
-  darker: '#005249',
+  lighter: '#B3C9E0',
+  light: '#2E5A8A',
+  main: '#012B59',
+  dark: '#01234D',
+  darker: '#011A38',
 };
 
 const SECONDARY = {
-  lighter: '#D6E4FF',
-  light: '#84A9FF',
-  main: '#3366FF',
-  dark: '#1939B7',
-  darker: '#091A7A',
+  lighter: '#ECEFF1',
+  light: '#B0BEC5',
+  main: '#607D8B',
+  dark: '#455A64',
+  darker: '#37474F',
 };
 
 const INFO = {
@@ -81,10 +81,24 @@ const GRADIENTS = {
   error: createGradient(ERROR.light, ERROR.main),
 };
 
+const FOOTER = {
+  main: '#0D3B66',
+  dark: '#0A2540',
+  contrastText: '#fff',
+};
+
+const TERTIARY = {
+  main: '#212B36',
+  dark: '#161C24',
+  contrastText: '#fff',
+};
+
 const COMMON = {
   common: { black: '#000', white: '#fff' },
   primary: { ...PRIMARY, contrastText: '#fff' },
   secondary: { ...SECONDARY, contrastText: '#fff' },
+  tertiary: { ...TERTIARY },
+  footer: { ...FOOTER },
   info: { ...INFO, contrastText: '#fff' },
   success: { ...SUCCESS, contrastText: GREY[800] },
   warning: { ...WARNING, contrastText: GREY[800] },

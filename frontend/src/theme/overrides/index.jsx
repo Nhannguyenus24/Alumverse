@@ -3,13 +3,17 @@ import Table from './Table';
 import Button from './Button';
 import Card from './Card';
 import Paper from './Paper';
+import TextField from './TextField';
 
-export default function ComponentsOverrides(theme) {
+const ComponentsOverrides = (theme) => {
   return Object.assign(
     Breadcrumbs(theme),
     Table(theme),
     Button(theme),
     Card(theme),
-    Paper(theme)
+    Paper(theme),
+    TextField(theme)
   );
-}
+};
+
+export default ComponentsOverrides;
