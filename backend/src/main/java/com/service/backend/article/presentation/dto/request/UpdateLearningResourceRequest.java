@@ -1,0 +1,28 @@
+package com.service.backend.article.presentation.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.URL;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateLearningResourceRequest {
+
+    @NotBlank
+    @Size(min = 3, max = 255)
+    private String title;
+
+    @Size(max = 50)
+    private String type;
+
+    @URL
+    private String linkUrl;
+
+    private String description;
+}
