@@ -1,7 +1,7 @@
 package com.service.backend.article.usecase;
 
+import com.service.backend.article.dao.SavedItemR2dbcRepository;
 import com.service.backend.article.domain.entity.SavedItem;
-import com.service.backend.article.domain.repository.ISavedItemRepository;
 import com.service.backend.article.presentation.dto.request.SaveItemRequest;
 import com.service.backend.article.presentation.dto.response.PaginatedResponse;
 import com.service.backend.article.presentation.dto.response.SavedCheckResponse;
@@ -12,16 +12,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class SavedItemService {
 
-    private final ISavedItemRepository savedItemRepository;
+    private final SavedItemR2dbcRepository savedItemRepository;
 
     private static final Integer MOCK_MEMBER_ID = 1;
 
     public Mono<SavedItemResponse> saveItem(SaveItemRequest request) {
-        return savedItemRepository.isSaved(MOCK_MEMBER_ID, request.getItemType(), request.getItemId())
+        return savedItemRepository.existsByMemberIdAndItemTypeAndItemId(MOCK_MEMBER_ID, request.getItemType(), request.getItemId())
                 .flatMap(isSaved -> {
                     if (isSaved) {
                         return Mono.error(new ApplicationException(ErrorCode.ITEM_ALREADY_SAVED, "Item already saved"));
@@ -32,6 +34,7 @@ public class SavedItemService {
                             .itemType(request.getItemType())
                             .itemId(request.getItemId())
                             .note(request.getNote())
+                            .savedAt(LocalDateTime.now())
                             .build();
 
                     return savedItemRepository.save(savedItem)
@@ -40,37 +43,40 @@ public class SavedItemService {
     }
 
     public Mono<Boolean> unsaveItem(String itemType, Integer itemId) {
-        return savedItemRepository.isSaved(MOCK_MEMBER_ID, itemType, itemId)
+        return savedItemRepository.existsByMemberIdAndItemTypeAndItemId(MOCK_MEMBER_ID, itemType, itemId)
                 .flatMap(isSaved -> {
                     if (!isSaved) {
                         return Mono.error(new ApplicationException(ErrorCode.SAVED_ITEM_NOT_FOUND, "Saved item not found"));
                     }
-                    return savedItemRepository.unsave(MOCK_MEMBER_ID, itemType, itemId);
+                    return savedItemRepository.deleteByMemberIdAndItemTypeAndItemId(MOCK_MEMBER_ID, itemType, itemId)
+                            .thenReturn(true);
                 });
     }
 
     public Mono<SavedCheckResponse> checkSaved(String itemType, Integer itemId) {
-        return savedItemRepository.isSaved(MOCK_MEMBER_ID, itemType, itemId)
+        return savedItemRepository.existsByMemberIdAndItemTypeAndItemId(MOCK_MEMBER_ID, itemType, itemId)
                 .map(isSaved -> SavedCheckResponse.builder().isSaved(isSaved).build());
     }
 
     public Mono<PaginatedResponse<SavedItemResponse>> getMySavedItems(int page, int limit) {
-        return savedItemRepository.findByMemberId(MOCK_MEMBER_ID, page, limit)
-                .map(paginatedResponse -> PaginatedResponse.of(
-                        paginatedResponse.getItems().stream().map(SavedItemResponse::from).toList(),
-                        paginatedResponse.getTotal(),
-                        paginatedResponse.getPage(),
-                        paginatedResponse.getLimit()
+        int offset = page * limit;
+        return savedItemRepository.findByMemberIdWithPagination(MOCK_MEMBER_ID, limit, offset)
+                .collectList()
+                .zipWith(savedItemRepository.countByMemberId(MOCK_MEMBER_ID))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(SavedItemResponse::from).toList(),
+                        tuple.getT2(), page, limit
                 ));
     }
 
     public Mono<PaginatedResponse<SavedItemResponse>> getMySavedItemsByType(String itemType, int page, int limit) {
-        return savedItemRepository.findByMemberIdAndItemType(MOCK_MEMBER_ID, itemType, page, limit)
-                .map(paginatedResponse -> PaginatedResponse.of(
-                        paginatedResponse.getItems().stream().map(SavedItemResponse::from).toList(),
-                        paginatedResponse.getTotal(),
-                        paginatedResponse.getPage(),
-                        paginatedResponse.getLimit()
+        int offset = page * limit;
+        return savedItemRepository.findByMemberIdAndItemType(MOCK_MEMBER_ID, itemType, limit, offset)
+                .collectList()
+                .zipWith(savedItemRepository.countByMemberIdAndItemType(MOCK_MEMBER_ID, itemType))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(SavedItemResponse::from).toList(),
+                        tuple.getT2(), page, limit
                 ));
     }
 }
