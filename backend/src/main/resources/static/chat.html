@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Test Interface - 1:1 & Group Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #1976d2;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info span {
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .login-section {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .login-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: #1565c0;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #757575;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h3 {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: 1px solid #ddd;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .refresh-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .conversations-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .conversation-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .conversation-item:hover {
+            background: #f5f5f5;
+        }
+
+        .conversation-item.active {
+            background: #e3f2fd;
+            border-left: 3px solid #1976d2;
+        }
+
+        .conversation-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .conversation-preview {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+        }
+
+        .chat-header h3 {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .chat-header .group-id {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.sent {
+            align-items: flex-end;
+        }
+
+        .message.received {
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+
+        .message.sent .message-bubble {
+            background: #1976d2;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received .message-bubble {
+            background: #e0e0e0;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #999;
+            margin-top: 5px;
+            padding: 0 5px;
+        }
+
+        .input-area {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            background: white;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .input-area input:focus {
+            border-color: #1976d2;
+        }
+
+        .input-area button {
+            padding: 10px 20px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .input-area button:hover {
+            background: #1565c0;
+        }
+
+        .input-area button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .status-bar {
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .ws-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .status-dot.connected {
+            background: #4caf50;
+        }
+
+        .status-dot.disconnected {
+            background: #f44336;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        .create-chat-section {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .create-chat-section input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .create-chat-section button {
+            width: 100%;
+            padding: 8px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .create-chat-section button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header" id="header">
+        <h1>💬 Chat Test Interface</h1>
+        <div class="user-info" id="userInfo" style="display: none;">
+            <span id="userEmail"></span>
+            <button class="logout-btn" onclick="logout()">Đăng xuất</button>
+        </div>
+    </div>
+
+    <!-- Login Section -->
+    <div class="login-section" id="loginSection">
+        <h2>Đăng nhập để sử dụng Chat</h2>
+        <div class="form-group">
+            <label>Email:</label>
+            <input type="email" id="loginEmail" placeholder="your-email@example.com" value="admin@example.com">
+        </div>
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" id="loginPassword" placeholder="Nhập mật khẩu">
+        </div>
+        <button class="btn" onclick="login()">Đăng nhập</button>
+        <div id="loginError" class="error-message"></div>
+    </div>
+
+    <!-- Main Chat Interface -->
+    <div class="main-container" id="mainContainer" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>Cuộc trò chuyện</h3>
+                <button class="refresh-btn" onclick="loadConversations()">🔄</button>
+            </div>
+            
+            <div class="create-chat-section">
+                <input type="number" id="targetMemberId" placeholder="Nhập Member ID để tạo chat">
+                <button onclick="createPrivateChat()">Tạo chat 1-1</button>
+            </div>
+
+            <div class="conversations-list" id="conversationsList">
+                <div class="loading">Đang tải...</div>
+            </div>
+        </div>
+
+        <!-- Chat Window -->
+        <div class="chat-window">
+            <div class="chat-header" id="chatHeader" style="display: none;">
+                <h3 id="chatTitle">Chọn một cuộc trò chuyện</h3>
+                <div class="group-id" id="chatGroupId"></div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="empty-state">
+                    <div class="empty-state-icon">💬</div>
+                    <div>Chọn một cuộc trò chuyện để bắt đầu</div>
+                </div>
+            </div>
+
+            <div class="input-area" id="inputArea" style="display: none;">
+                <input type="text" id="messageInput" placeholder="Nhập tin nhắn..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()" id="sendBtn">Gửi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar" style="display: none;">
+        <div class="ws-status">
+            <div class="status-dot" id="wsStatusDot"></div>
+            <span id="wsStatusText">Chưa kết nối</span>
+        </div>
+        <!-- Các nút kết nối/ngắt kết nối WebSocket đã được loại bỏ vì WebSocket tự động connect -->
+    </div>
+
+    <script>
+        // Global state
+        let token = null;
+        let currentUserId = null;
+        let currentGroupId = null;
+        let ws = null;
+        let conversations = [];
+        let messages = {};
+
+        const API_BASE = 'http://localhost:8080/api';
+        const WS_URL = 'ws://localhost:8080/ws/chat';
+
+        // Initialize
+        window.onload = function() {
+            loadTokenFromStorage();
+        };
+
+        // ========== Authentication ==========
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            if (!email || !password) {
+                errorDiv.textContent = 'Vui lòng nhập email và mật khẩu';
+                return;
+            }
+
+            errorDiv.textContent = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data && data.data.accessToken) {
+                    token = data.data.accessToken;
+                    currentUserId = data.data.user?.id || extractUserIdFromToken(token);
+                    
+                    localStorage.setItem('jwt_token', token);
+                    localStorage.setItem('user_email', email);
+                    localStorage.setItem('user_id', currentUserId);
+
+                    showChatInterface();
+                    loadConversations();
+                    // Tự động kết nối WebSocket ngay sau khi đăng nhập thành công
+                    connectWebSocket();
+                } else {
+                    errorDiv.textContent = data.message || 'Đăng nhập thất bại';
+                }
+            } catch (error) {
+                errorDiv.textContent = `Lỗi: ${error.message}`;
+            }
+        }
+
+        function loadTokenFromStorage() {
+            token = localStorage.getItem('jwt_token');
+            const email = localStorage.getItem('user_email');
+            currentUserId = localStorage.getItem('user_id');
+
+            if (token && currentUserId) {
+                document.getElementById('loginEmail').value = email || '';
+                showChatInterface();
+                loadConversations();
+                // Khi reload trang mà vẫn còn token, tự động kết nối WebSocket lại
+                connectWebSocket();
+            }
+        }
+
+        function logout() {
+            token = null;
+            currentUserId = null;
+            localStorage.removeItem('jwt_token');
+            localStorage.removeItem('user_email');
+            localStorage.removeItem('user_id');
+
+            console.log('[Chat] Logging out, closing WebSocket if open...');
+            disconnectWebSocket();
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById('statusBar').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+        }
+
+        function showChatInterface() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'flex';
+            document.getElementById('statusBar').style.display = 'flex';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('userEmail').textContent = localStorage.getItem('user_email') || 'User';
+        }
+
+        function extractUserIdFromToken(token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.userId || payload.sub || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // ========== REST API Calls ==========
+        async function loadConversations() {
+            if (!token) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/groups?type=PRIVATE`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data) {
+                    conversations = data.data;
+                    renderConversations();
+                } else {
+                    console.error('Failed to load conversations:', data);
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        async function createPrivateChat() {
+            const targetMemberId = document.getElementById('targetMemberId').value;
+            if (!targetMemberId || !token) {
+                alert('Vui lòng nhập Member ID');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/private`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ targetMemberId: parseInt(targetMemberId) })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data) {
+                    loadConversations();
+                    selectConversation(data.data.id);
+                    document.getElementById('targetMemberId').value = '';
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể tạo chat'));
+                }
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
+        async function loadMessages(groupId) {
+            if (!token || !groupId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/groups/${groupId}/messages?page=0&size=50`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data) {
+                    // Backend đã trả về danh sách messages theo created_at ASC (cũ -> mới),
+                    // nên không cần reverse ở frontend. Giữ nguyên thứ tự để hiển thị đúng.
+                    messages[groupId] = data.data;
+                    renderMessages(groupId);
+                } else {
+                    console.error('Failed to load messages:', data);
+                }
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        // ========== UI Rendering ==========
+        function renderConversations() {
+            const listDiv = document.getElementById('conversationsList');
+            
+            if (conversations.length === 0) {
+                listDiv.innerHTML = '<div class="loading">Chưa có cuộc trò chuyện nào</div>';
+                return;
+            }
+
+            listDiv.innerHTML = conversations.map(group => {
+                const isActive = currentGroupId === group.id;
+                return `
+                    <div class="conversation-item ${isActive ? 'active' : ''}" onclick="selectConversation(${group.id})">
+                        <div class="conversation-name">Chat #${group.id} ${group.type === 'GROUP' ? `(${group.title || 'No title'})` : ''}</div>
+                        <div class="conversation-preview">${group.type}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMessages(groupId) {
+            const container = document.getElementById('messagesContainer');
+            const groupMessages = messages[groupId] || [];
+
+            if (groupMessages.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">💬</div><div>Chưa có tin nhắn nào</div></div>';
+                return;
+            }
+
+            container.innerHTML = groupMessages.map(msg => {
+                const isSent = msg.senderMemberId == currentUserId;
+                const time = new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                
+                return `
+                    <div class="message ${isSent ? 'sent' : 'received'}">
+                        <div class="message-bubble">${escapeHtml(msg.content)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>
+                `;
+            }).join('');
+
+            scrollToBottom();
+        }
+
+        function addMessageToUI(message) {
+            if (message.groupId !== currentGroupId) return;
+
+            const container = document.getElementById('messagesContainer');
+            const isSent = message.senderMemberId == currentUserId;
+            const time = new Date(message.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isSent ? 'sent' : 'received'}`;
+            messageDiv.innerHTML = `
+                <div class="message-bubble">${escapeHtml(message.content)}</div>
+                <div class="message-time">${time}</div>
+            `;
+
+            container.appendChild(messageDiv);
+            scrollToBottom();
+
+            // Update messages array
+            if (!messages[message.groupId]) {
+                messages[message.groupId] = [];
+            }
+            messages[message.groupId].push(message);
+        }
+
+        function selectConversation(groupId) {
+            currentGroupId = groupId;
+            const group = conversations.find(g => g.id === groupId);
+
+            // Update UI
+            document.getElementById('chatHeader').style.display = 'block';
+            document.getElementById('chatTitle').textContent = group 
+                ? `Chat #${groupId} (${group.type})` 
+                : `Chat #${groupId}`;
+            document.getElementById('chatGroupId').textContent = `Group ID: ${groupId}`;
+            document.getElementById('inputArea').style.display = 'flex';
+
+            // Load messages
+            loadMessages(groupId);
+
+            // Re-render conversations to show active state
+            renderConversations();
+
+            // Join WebSocket group if connected
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                joinGroup(groupId);
+            }
+        }
+
+        function scrollToBottom() {
+            const container = document.getElementById('messagesContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== WebSocket ==========
+        function connectWebSocket() {
+            if (!token) {
+                alert('Vui lòng đăng nhập trước');
+                return;
+            }
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                return;
+            }
+
+            // Note: Browser WebSocket không hỗ trợ custom headers
+            // Cần dùng query parameter hoặc modify backend handler
+            
+            // Cách tốt nhất: modify backend để support query parameter
+            // Tạm thời thử connect với query parameter
+            const wsUrl = `${WS_URL}?token=${encodeURIComponent(token)}`;
+            
+            updateWsStatus('connecting', 'Đang kết nối...');
+            
+            console.log('[Chat] Connecting WebSocket to:', wsUrl);
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                updateWsStatus('connected', 'Đã kết nối');
+                console.log('[Chat] WebSocket connected');
+
+                // Auto join current group if selected
+                if (currentGroupId) {
+                    joinGroup(currentGroupId);
+                }
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                } catch (e) {
+                    console.error('Error parsing WebSocket message:', e);
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateWsStatus('error', 'Lỗi kết nối');
+            };
+
+            ws.onclose = function() {
+                updateWsStatus('disconnected', 'Đã ngắt kết nối');
+                console.log('[Chat] WebSocket disconnected');
+                ws = null;
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                console.log('[Chat] Closing WebSocket connection...');
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function updateWsStatus(status, text) {
+            const dot = document.getElementById('wsStatusDot');
+            const textEl = document.getElementById('wsStatusText');
+            
+            dot.className = 'status-dot';
+            if (status === 'connected') {
+                dot.classList.add('connected');
+            } else {
+                dot.classList.add('disconnected');
+            }
+            
+            textEl.textContent = text;
+        }
+
+        function joinGroup(groupId) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                console.warn('WebSocket not connected');
+                return;
+            }
+
+            const message = {
+                type: 'JOIN_GROUP',
+                groupId: groupId
+            };
+
+            ws.send(JSON.stringify(message));
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const content = input.value.trim();
+
+            if (!content || !currentGroupId) return;
+
+            // Send via WebSocket
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'SEND_MESSAGE',
+                    groupId: currentGroupId,
+                    content: content,
+                    messageType: 'TEXT'
+                };
+
+                ws.send(JSON.stringify(message));
+                input.value = '';
+            } else {
+                alert('WebSocket chưa kết nối. Vui lòng kết nối WebSocket trước.');
+            }
+        }
+
+        function handleWebSocketMessage(data) {
+            console.log('Received WebSocket message:', data);
+
+            switch (data.type) {
+                case 'JOINED_GROUP':
+                    console.log('Joined group:', data.groupId);
+                    break;
+
+                case 'MESSAGE_CREATED':
+                    if (data.payload) {
+                        addMessageToUI(data.payload);
+                    }
+                    break;
+
+                case 'ERROR':
+                    alert('Lỗi: ' + data.message);
+                    break;
+
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
