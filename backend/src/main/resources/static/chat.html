@@ -432,8 +432,13 @@
             </div>
             
             <div class="create-chat-section">
-                <input type="number" id="targetMemberId" placeholder="Nhập Member ID để tạo chat">
+                <input type="number" id="targetMemberId" placeholder="Nhập Member ID để tạo chat 1-1">
                 <button onclick="createPrivateChat()">Tạo chat 1-1</button>
+            </div>
+
+            <div class="create-chat-section">
+                <input type="text" id="groupMemberIds" placeholder="Nhập Member IDs cho group, ví dụ: 2,3,4">
+                <button onclick="createGroupChat()">Tạo group chat</button>
             </div>
 
             <div class="conversations-list" id="conversationsList">
@@ -444,8 +449,18 @@
         <!-- Chat Window -->
         <div class="chat-window">
             <div class="chat-header" id="chatHeader" style="display: none;">
-                <h3 id="chatTitle">Chọn một cuộc trò chuyện</h3>
-                <div class="group-id" id="chatGroupId"></div>
+                <div>
+                    <h3 id="chatTitle">Chọn một cuộc trò chuyện</h3>
+                    <div class="group-id" id="chatGroupId"></div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-secondary" style="padding: 6px 10px; font-size: 12px;" onclick="leaveCurrentGroup()">
+                        Rời group
+                    </button>
+                    <button class="btn-secondary" style="padding: 6px 10px; font-size: 12px; background-color: #d32f2f;" onclick="deleteCurrentGroup()">
+                        Xóa group
+                    </button>
+                </div>
             </div>
 
             <div class="messages-container" id="messagesContainer">
@@ -583,20 +598,31 @@
             if (!token) return;
 
             try {
-                const response = await fetch(`${API_BASE}/chat/groups?type=PRIVATE`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                // Load cả PRIVATE và GROUP chats để có thể test group chat
+                const [privateRes, groupRes] = await Promise.all([
+                    fetch(`${API_BASE}/chat/groups?type=PRIVATE`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
+                    fetch(`${API_BASE}/chat/groups?type=GROUP`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
 
-                const data = await response.json();
+                const [privateData, groupData] = await Promise.all([
+                    privateRes.json(),
+                    groupRes.json()
+                ]);
 
-                if (response.ok && data.data) {
-                    conversations = data.data;
-                    renderConversations();
-                } else {
-                    console.error('Failed to load conversations:', data);
+                let allGroups = [];
+                if (privateRes.ok && privateData.data) {
+                    allGroups = allGroups.concat(privateData.data);
                 }
+                if (groupRes.ok && groupData.data) {
+                    allGroups = allGroups.concat(groupData.data);
+                }
+
+                conversations = allGroups;
+                renderConversations();
             } catch (error) {
                 console.error('Error loading conversations:', error);
             }
@@ -627,6 +653,52 @@
                     document.getElementById('targetMemberId').value = '';
                 } else {
                     alert('Lỗi: ' + (data.message || 'Không thể tạo chat'));
+                }
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
+        // Tạo GROUP chat cơ bản để test
+        async function createGroupChat() {
+            const raw = document.getElementById('groupMemberIds').value;
+            if (!raw || !token) {
+                alert('Vui lòng nhập danh sách Member IDs (ví dụ: 2,3,4)');
+                return;
+            }
+
+            const memberIds = raw
+                .split(',')
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0)
+                .map((s) => Number(s))
+                .filter((n) => !Number.isNaN(n) && n > 0);
+
+            if (memberIds.length === 0) {
+                alert('Danh sách Member IDs không hợp lệ');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/groups`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ memberIds })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data) {
+                    alert('Tạo group chat thành công. Group ID: ' + data.data.id);
+                    document.getElementById('groupMemberIds').value = '';
+                    await loadConversations();
+                    selectConversation(data.data.id);
+                } else {
+                    alert('Lỗi khi tạo group: ' + (data.message || 'Không rõ nguyên nhân'));
+                    console.error('Create group error:', data);
                 }
             } catch (error) {
                 alert('Lỗi: ' + error.message);
@@ -731,11 +803,13 @@
             const group = conversations.find(g => g.id === groupId);
 
             // Update UI
-            document.getElementById('chatHeader').style.display = 'block';
+            document.getElementById('chatHeader').style.display = 'flex';
             document.getElementById('chatTitle').textContent = group 
                 ? `Chat #${groupId} (${group.type})` 
                 : `Chat #${groupId}`;
-            document.getElementById('chatGroupId').textContent = `Group ID: ${groupId}`;
+            document.getElementById('chatGroupId').textContent = group
+                ? `Group ID: ${groupId} | Type: ${group.type}`
+                : `Group ID: ${groupId}`;
             document.getElementById('inputArea').style.display = 'flex';
 
             // Load messages
@@ -823,6 +897,93 @@
             }
         }
 
+        // Rời group hiện tại (API: DELETE /api/chat/groups/{groupId}/leave)
+        async function leaveCurrentGroup() {
+            if (!currentGroupId) {
+                alert('Chưa chọn group nào');
+                return;
+            }
+            if (!token) {
+                alert('Vui lòng đăng nhập lại');
+                return;
+            }
+
+            if (!confirm('Bạn có chắc muốn rời group #' + currentGroupId + ' ?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/groups/${currentGroupId}/leave`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    alert('Đã rời group thành công');
+                    // Xóa group hiện tại khỏi UI
+                    conversations = conversations.filter((g) => g.id !== currentGroupId);
+                    currentGroupId = null;
+                    document.getElementById('messagesContainer').innerHTML =
+                        '<div class="empty-state"><div class="empty-state-icon">💬</div><div>Chọn một cuộc trò chuyện để bắt đầu</div></div>';
+                    document.getElementById('chatHeader').style.display = 'none';
+                    document.getElementById('inputArea').style.display = 'none';
+                    renderConversations();
+                } else {
+                    alert('Lỗi khi rời group: ' + (data.message || 'Không rõ nguyên nhân'));
+                    console.error('Leave group error:', data);
+                }
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
+        // Xóa group hiện tại (API: DELETE /api/chat/groups/{groupId})
+        async function deleteCurrentGroup() {
+            if (!currentGroupId) {
+                alert('Chưa chọn group nào');
+                return;
+            }
+            if (!token) {
+                alert('Vui lòng đăng nhập lại');
+                return;
+            }
+
+            if (!confirm('Bạn có chắc muốn XÓA group #' + currentGroupId + ' ? (Chỉ owner mới xóa được)')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/chat/groups/${currentGroupId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok) {
+                    alert('Đã xóa group thành công');
+                    conversations = conversations.filter((g) => g.id !== currentGroupId);
+                    currentGroupId = null;
+                    document.getElementById('messagesContainer').innerHTML =
+                        '<div class="empty-state"><div class="empty-state-icon">💬</div><div>Chọn một cuộc trò chuyện để bắt đầu</div></div>';
+                    document.getElementById('chatHeader').style.display = 'none';
+                    document.getElementById('inputArea').style.display = 'none';
+                    renderConversations();
+                } else {
+                    alert('Lỗi khi xóa group: ' + (data.message || 'Không rõ nguyên nhân'));
+                    console.error('Delete group error:', data);
+                }
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+
         function updateWsStatus(status, text) {
             const dot = document.getElementById('wsStatusDot');
             const textEl = document.getElementById('wsStatusText');
@@ -848,6 +1009,7 @@
                 groupId: groupId
             };
 
+            console.log('[Chat] Sending JOIN_GROUP for groupId=', groupId);
             ws.send(JSON.stringify(message));
         }
 
@@ -866,6 +1028,7 @@
                     messageType: 'TEXT'
                 };
 
+                console.log('[Chat] Sending SEND_MESSAGE:', message);
                 ws.send(JSON.stringify(message));
                 input.value = '';
             } else {
@@ -878,7 +1041,7 @@
 
             switch (data.type) {
                 case 'JOINED_GROUP':
-                    console.log('Joined group:', data.groupId);
+                    console.log('[Chat] Joined group:', data.groupId);
                     break;
 
                 case 'MESSAGE_CREATED':
