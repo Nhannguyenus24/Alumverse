@@ -127,7 +127,7 @@ const Footer = () => {
           </Box>
 
           {/* Right: Social */}
-          <Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <Typography
               variant="subtitle1"
               fontWeight={700}

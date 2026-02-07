@@ -42,8 +42,7 @@ const AuthLayout = () => {
             variant="image"
             src="/logo_alumverse.png"
             alt="ALUMVERSE HCMUS"
-            size="xlarge"
-            sx={{ height: { xs: 40, sm: 56, md: 96 } }}
+            size="large"
           />
         </Box>
 
