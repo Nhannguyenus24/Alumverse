@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { Box, Container, Typography, Button } from "@mui/material";
 import Page from "../components/Page";
 
-const BANNER_IMG = "/home_page.png";
+const BANNER_IMG = "/home_page/home_page.png";
 const LEADERS_IMG = "/cac_the_he_kt_ht.png";
 
 const HISTORY_SECTIONS = [
@@ -57,6 +57,7 @@ const IntroducePage = () => {
         />
       }
     >
+      <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
       {/* Hero + absolute content frame wrapper */}
       <Box
         sx={{
@@ -206,6 +207,7 @@ const IntroducePage = () => {
 
       {/* Placeholder space so page scrolls and frame content is not cut off */}
       <Box sx={{ minHeight: { xs: 5125, md: 2500 } }} />
+      </Container>
     </Page>
   );
 };

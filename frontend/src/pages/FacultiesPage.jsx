@@ -1,7 +1,7 @@
+import { Link } from "react-router";
 import { Box, Container, Typography } from "@mui/material";
 import Page from "../components/Page";
 
-const CARD_YELLOW = "#FFDB39";
 const BANNER_BLUE = "#012B59";
 
 const FACULTIES = [
@@ -11,6 +11,7 @@ const FACULTIES = [
     logo: "/faculty_logo/cntt.png",
     truongKhoa: "TS. Đình Bá Tiến",
     phoTruongKhoa: "PGS.TS. Nguyễn Văn Vũ, TS. Lâm Quang Vũ",
+    to: "/cac-khoa/cong-nghe-thong-tin",
   },
   {
     type: "KHOA",
@@ -18,6 +19,7 @@ const FACULTIES = [
     logo: "/faculty_logo/vat_li.png",
     truongKhoa: "PGS. TS. Huỳnh Văn Tuấn",
     phoTruongKhoa: "PGS. TS. Trần Thiện Thanh",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -25,6 +27,7 @@ const FACULTIES = [
     logo: "/faculty_logo/dia_chat.png",
     truongKhoa: "PGS. TS. Phạm Trung Hiếu",
     phoTruongKhoa: "",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -32,6 +35,7 @@ const FACULTIES = [
     logo: "/faculty_logo/toan_tin.png",
     truongKhoa: "PGS. TS. Mai Hoàng Biên",
     phoTruongKhoa: "TS. Hoàng Văn Hà, ThS. Võ Đức Cẩm Hài",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -39,6 +43,7 @@ const FACULTIES = [
     logo: "/faculty_logo/dtvt.png",
     truongKhoa: "TS. Bùi Trọng Tú",
     phoTruongKhoa: "TS. Đặng Lê Khoa, ThS. Cao Trần Bảo Thương",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -46,6 +51,7 @@ const FACULTIES = [
     logo: "/faculty_logo/vat_lieu.png",
     truongKhoa: "PGS.TS. Trần Thị Thanh Vân",
     phoTruongKhoa: "PGS. TS. Hà Thúc Chỉ Nhân",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -53,6 +59,7 @@ const FACULTIES = [
     logo: "/faculty_logo/hoa_hoc.png",
     truongKhoa: "PGS.TS. Nguyễn Trung Nhân",
     phoTruongKhoa: "PGS.TS. Nguyễn Công Tránh, ThS. Nguyễn Thu Hương",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -60,6 +67,7 @@ const FACULTIES = [
     logo: "/faculty_logo/sinh_hoc.png",
     truongKhoa: "PGS.TS. Quách Ngô Diễm Phương",
     phoTruongKhoa: "PGS. TS. Trương Hải Nhung",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -67,6 +75,7 @@ const FACULTIES = [
     logo: "/faculty_logo/moi_truong.png",
     truongKhoa: "PGS. TS. Đào Nguyên Khôi",
     phoTruongKhoa: "TS. Lê Hoàng Anh",
+    to: "#",
   },
   {
     type: "KHOA",
@@ -74,6 +83,7 @@ const FACULTIES = [
     logo: "/faculty_logo/khoa_hoc_lien_nganh.png",
     truongKhoa: "PGS.TS. Nguyễn Tuyết Phương",
     phoTruongKhoa: "",
+    to: "#",
   },
   {
     type: "VIỆN",
@@ -81,6 +91,7 @@ const FACULTIES = [
     logo: "/faculty_logo/vien_te_bao_goc.png",
     truongKhoa: "PGS.TS. Phạm Vân Phúc",
     phoTruongKhoa: "",
+    to: "#",
   },
 ];
 
@@ -95,36 +106,45 @@ const FacultiesPage = () => {
         />
       }
     >
-      <Box sx={{ pt: { xs: "56px", md: "64px" } }} />
-      <Box
+      <Container
+        maxWidth={false}
+        disableGutters
         sx={{
-          backgroundColor: BANNER_BLUE,
-          py: { xs: 3, md: 4 },
-          width: "100%",
+          pt: { xs: "56px", md: "64px" },
+          px: 0,
+          display: "flex",
+          flexDirection: "column",
         }}
       >
-        <Typography
-          variant="h1"
-          component="h2"
+        <Box
           sx={{
-            color: "#fff",
-            fontWeight: 700,
-            textAlign: "center",
-            fontSize: { xs: "1.75rem", sm: "2rem", md: "2.25rem" },
-            textTransform: "uppercase",
+            backgroundColor: BANNER_BLUE,
+            py: { xs: 3, md: 4 },
+            width: "100%",
           }}
         >
-          CÁC KHOA
-        </Typography>
-      </Box>
+          <Typography
+            variant="h1"
+            component="h2"
+            sx={{
+              color: "#fff",
+              fontWeight: 700,
+              textAlign: "center",
+              fontSize: { xs: "1.75rem", sm: "2rem", md: "2.25rem" },
+              textTransform: "uppercase",
+            }}
+          >
+            CÁC KHOA
+          </Typography>
+        </Box>
 
-      <Container
-        maxWidth="lg"
-        sx={{
-          py: 4,
-          px: { xs: 2, sm: 3 },
-        }}
-      >
+        <Container
+          maxWidth="lg"
+          sx={{
+            py: 4,
+            px: { xs: 2, sm: 3 },
+          }}
+        >
         <Box
           sx={{
             display: "flex",
@@ -146,6 +166,8 @@ const FacultiesPage = () => {
           {FACULTIES.map((faculty) => (
             <Box
               key={faculty.name}
+              component={Link}
+              to={faculty.to}
               sx={{
                 display: "flex",
                 flexDirection: "column",
@@ -154,6 +176,10 @@ const FacultiesPage = () => {
                 overflow: "hidden",
                 height: 280,
                 flexShrink: 0,
+                textDecoration: "none",
+                color: "inherit",
+                cursor: "pointer",
+                "&:hover": { boxShadow: "0 4px 16px rgba(0,0,0,0.15)" },
               }}
             >
                 <Box
@@ -204,6 +230,7 @@ const FacultiesPage = () => {
             </Box>
           ))}
         </Box>
+        </Container>
       </Container>
     </Page>
   );

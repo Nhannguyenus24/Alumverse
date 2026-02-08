@@ -1,13 +1,13 @@
 import { Outlet } from "react-router";
-import { Box } from "@mui/material";
-import Page from "../components/Page";
+import { Box, Container } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 const MainLayout = () => {
   return (
-    <Page>
-      <Box
+      <Container
+        maxWidth={false}
+        disableGutters
         sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
       >
         <Header />
@@ -15,8 +15,7 @@ const MainLayout = () => {
           <Outlet />
         </Box>
         <Footer />
-      </Box>
-    </Page>
+      </Container>
   );
 };
 

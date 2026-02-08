@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router';
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import Logo from '../components/Logo';
 
 const AuthLayout = () => {
   return (
-    <Box
+    <Container
+      maxWidth={false}
+      disableGutters
       sx={{
         minHeight: '100vh',
         display: 'flex',
@@ -90,7 +92,7 @@ const AuthLayout = () => {
           display: { xs: 'none', md: 'block' },
         }}
       />
-    </Box>
+    </Container>
   );
 };
 

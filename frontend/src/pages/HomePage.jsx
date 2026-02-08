@@ -87,6 +87,7 @@ const HomePage = () => {
         />
       }
     >
+      <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
       {/* Hero */}
       <Box
         sx={{
@@ -458,6 +459,7 @@ const HomePage = () => {
           </Box>
         </Container>
       </Box>
+      </Container>
     </Page>
   );
 };
