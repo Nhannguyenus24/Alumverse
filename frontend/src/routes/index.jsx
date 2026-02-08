@@ -35,6 +35,7 @@ const ServerErrorPage = Loadable(
 const MaintenancePage = Loadable(
   lazy(() => import('../pages/MaintenancePage'))
 );
+const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'gioi-thieu',
+        element: <IntroducePage />,
       },
       {
         path: 'dashboard',

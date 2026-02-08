@@ -90,8 +90,8 @@ const HomePage = () => {
       <Box
         sx={{
           position: "relative",
-          height: "100vh",
-          minHeight: "100vh",
+          height: { xs: "100svh", md: "100vh" },
+          minHeight: { xs: 480, md: "100vh" },
           backgroundImage: `url(${HERO_BG})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -108,23 +108,30 @@ const HomePage = () => {
           },
         }}
       >
-        <Container sx={{ position: "relative", zIndex: 1, py: 6 }}>
+        <Container
+          sx={{
+            position: "relative",
+            zIndex: 1,
+            py: { xs: 4, sm: 5, md: 6 },
+            px: { xs: 2, sm: 3 },
+          }}
+        >
           <Box
             sx={{
               display: "grid",
               gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: 4,
+              gap: { xs: 3, md: 4 },
               alignItems: "center",
             }}
           >
-            <Box>
+            <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
               <Typography
                 variant="h2"
                 component="h1"
                 fontWeight={800}
                 sx={{
-                  fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
-                  letterSpacing: 2,
+                  fontSize: { xs: "1.75rem", sm: "2.5rem", md: "3.5rem", lg: "4rem" },
+                  letterSpacing: { xs: 1, md: 2 },
                   mb: 2,
                 }}
               >
@@ -133,10 +140,11 @@ const HomePage = () => {
               <Typography
                 variant="body1"
                 sx={{
-                  fontSize: { xs: "1rem", md: "1.125rem" },
+                  fontSize: { xs: "0.875rem", sm: "1rem", md: "1.125rem" },
                   lineHeight: 1.7,
                   mb: 3,
                   maxWidth: 520,
+                  mx: { xs: "auto", md: 0 },
                   color: "rgba(255,255,255,0.95)",
                 }}
               >
@@ -144,24 +152,26 @@ const HomePage = () => {
                 sinh viên và các cơ hội nghề nghiệp. Đồng hành cùng Trường Đại
                 học Khoa học Tự nhiên, ĐHQG-HCM.
               </Typography>
-              <Button
-                component={Link}
-                to="/gioi-thieu"
-                variant="outlined"
-                size="large"
-                sx={{
-                  borderColor: "#fff",
-                  color: "#fff",
-                  fontWeight: 600,
-                  px: 3,
-                  "&:hover": {
+              <Box sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
+                <Button
+                  component={Link}
+                  to="/gioi-thieu"
+                  variant="outlined"
+                  size="large"
+                  sx={{
                     borderColor: "#fff",
-                    backgroundColor: "rgba(255,255,255,0.1)",
-                  },
-                }}
-              >
-                Giới thiệu
-              </Button>
+                    color: "#fff",
+                    fontWeight: 600,
+                    px: { xs: 2.5, md: 3 },
+                    "&:hover": {
+                      borderColor: "#fff",
+                      backgroundColor: "rgba(255,255,255,0.1)",
+                    },
+                  }}
+                >
+                  Giới thiệu
+                </Button>
+              </Box>
             </Box>
             {isDesktop && (
               <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -183,14 +193,14 @@ const HomePage = () => {
       </Box>
 
       {/* Khám phá */}
-      <Box sx={{ py: { xs: 6, md: 8 }, backgroundColor: "#fff" }}>
-        <Container>
+      <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="h1"
             fontWeight={700}
             color="primary.main"
             textAlign="center"
-            sx={{ mb: 4 }}
+            sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
             KHÁM PHÁ
           </Typography>
@@ -202,7 +212,7 @@ const HomePage = () => {
                 sm: "repeat(2, 1fr)",
                 md: "repeat(4, 1fr)",
               },
-              gap: 3,
+              gap: { xs: 2, sm: 3 },
               alignItems: "stretch",
             }}
           >
@@ -218,8 +228,8 @@ const HomePage = () => {
                     borderRadius: 2,
                     boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
                     textAlign: "center",
-                    py: 3,
-                    px: 2.5,
+                    py: { xs: 2.5, md: 3 },
+                    px: { xs: 2, md: 2.5 },
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
@@ -233,8 +243,8 @@ const HomePage = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      mb: 2,
-                      minHeight: 56,
+                      mb: { xs: 1.5, md: 2 },
+                      minHeight: { xs: 48, md: 56 },
                     }}
                   >
                     <Box
@@ -242,8 +252,8 @@ const HomePage = () => {
                       src={iconSrc}
                       alt=""
                       sx={{
-                        width: 48,
-                        height: 48,
+                        width: { xs: 40, md: 48 },
+                        height: { xs: 40, md: 48 },
                         objectFit: "contain",
                       }}
                     />
@@ -252,7 +262,7 @@ const HomePage = () => {
                     variant="subtitle1"
                     fontWeight={700}
                     color="primary.main"
-                    sx={{ mb: 1.5, fontSize: "1rem" }}
+                    sx={{ mb: { xs: 1, md: 1.5 }, fontSize: { xs: "0.9375rem", md: "1rem" } }}
                   >
                     {title}
                   </Typography>
@@ -261,7 +271,7 @@ const HomePage = () => {
                     color="text.secondary"
                     sx={{
                       lineHeight: 1.6,
-                      fontSize: "0.875rem",
+                      fontSize: { xs: "0.8125rem", md: "0.875rem" },
                       maxWidth: 240,
                       mx: "auto",
                     }}
@@ -276,14 +286,14 @@ const HomePage = () => {
       </Box>
 
       {/* Tin tức & Sự kiện */}
-      <Box sx={{ py: { xs: 6, md: 8 }, backgroundColor: "#fff" }}>
-        <Container>
+      <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="h1"
             fontWeight={700}
             color="primary.main"
             textAlign="center"
-            sx={{ mb: 4 }}
+            sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
             TIN TỨC & SỰ KIỆN
           </Typography>
@@ -295,7 +305,7 @@ const HomePage = () => {
                 sm: "repeat(2, 1fr)",
                 md: "repeat(3, 1fr)",
               },
-              gap: 3,
+              gap: { xs: 2, sm: 3 },
             }}
           >
             {PLACEHOLDER_NEWS.map(({ title, date }) => (
@@ -315,19 +325,19 @@ const HomePage = () => {
                 <CardMedia
                   component="div"
                   sx={{
-                    height: 180,
+                    height: { xs: 140, sm: 160, md: 180 },
                     backgroundColor: "grey.200",
                   }}
                 />
-                <CardContent sx={{ py: 2 }}>
+                <CardContent sx={{ py: { xs: 1.5, md: 2 }, px: { xs: 1.5, md: 2 } }}>
                   <Typography
                     variant="subtitle1"
                     fontWeight={600}
-                    sx={{ mb: 0.5 }}
+                    sx={{ mb: 0.5, fontSize: { xs: "0.9375rem", md: "1rem" } }}
                   >
                     {title}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.8125rem", md: "0.875rem" } }}>
                     {date}
                   </Typography>
                 </CardContent>
@@ -338,22 +348,22 @@ const HomePage = () => {
       </Box>
 
       {/* Cựu sinh viên tiêu biểu */}
-      <Box sx={{ py: { xs: 6, md: 8 }, backgroundColor: "#fff" }}>
-        <Container>
+      <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="h1"
             fontWeight={700}
             color="primary.main"
             textAlign="center"
-            sx={{ mb: 4 }}
+            sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
             CỰU SINH VIÊN TIÊU BIỂU
           </Typography>
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
-              gap: 4,
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+              gap: { xs: 2, sm: 3, md: 4 },
             }}
           >
             {PLACEHOLDER_ALUMNI.map(({ name, role }) => (
@@ -365,28 +375,28 @@ const HomePage = () => {
                   borderColor: "divider",
                   borderRadius: 2,
                   textAlign: "center",
-                  py: 3,
-                  px: 2,
+                  py: { xs: 2.5, md: 3 },
+                  px: { xs: 1.5, md: 2 },
                 }}
               >
                 <Box
                   sx={{
-                    width: 80,
-                    height: 80,
+                    width: { xs: 64, md: 80 },
+                    height: { xs: 64, md: 80 },
                     borderRadius: "50%",
                     bgcolor: "grey.300",
                     mx: "auto",
-                    mb: 1.5,
+                    mb: { xs: 1, md: 1.5 },
                   }}
                 />
                 <Typography
                   variant="subtitle1"
                   fontWeight={600}
-                  sx={{ mb: 0.5 }}
+                  sx={{ mb: 0.5, fontSize: { xs: "0.9375rem", md: "1rem" } }}
                 >
                   {name}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.8125rem", md: "0.875rem" } }}>
                   {role}
                 </Typography>
               </Card>
@@ -396,23 +406,23 @@ const HomePage = () => {
       </Box>
 
       {/* Đối tác */}
-      <Box sx={{ py: { xs: 5, md: 6 }, backgroundColor: "#fff" }}>
-        <Container>
+      <Box sx={{ py: { xs: 4, sm: 5, md: 6 }, backgroundColor: "#fff" }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="h5"
             textAlign="center"
             color="text.primary"
-            sx={{ mb: 3 }}
+            sx={{ mb: { xs: 2, md: 3 }, fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" } }}
           >
             Hơn 100+ doanh nghiệp liên kết
           </Typography>
           <Box
             sx={{
               display: "flex",
-              flexWrap: "nowrap",
-              justifyContent: "space-evenly",
+              flexWrap: { xs: "wrap", md: "nowrap" },
+              justifyContent: { xs: "center", md: "space-evenly" },
               alignItems: "center",
-              gap: { xs: 1.5, sm: 2, md: 3 },
+              gap: { xs: 2, sm: 2.5, md: 3 },
               py: 2,
               px: 0,
             }}
@@ -424,10 +434,10 @@ const HomePage = () => {
                 src={src}
                 alt={name}
                 sx={{
-                  width: { xs: 64, sm: 72, md: 80 },
-                  height: { xs: 32, sm: 36, md: 40 },
+                  width: { xs: 56, sm: 64, md: 72 },
+                  height: { xs: 28, sm: 32, md: 36 },
                   objectFit: "contain",
-                  flexShrink: 1,
+                  flexShrink: 0,
                 }}
               />
             ))}

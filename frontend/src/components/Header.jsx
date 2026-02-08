@@ -15,7 +15,6 @@ import {
   ListItemText,
   Collapse,
   Divider,
-  useScrollTrigger,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
@@ -54,17 +53,11 @@ const NAV_ITEMS = [
   { label: 'Quyên góp', href: '/quyen-gop' },
 ];
 
-const Header = ({ transparent = false }) => {
+const Header = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const { isAuthenticated, user } = useAuth();
-
-  const scrolledPastHero = useScrollTrigger({
-    disableHysteresis: true,
-    threshold: 80,
-  });
-  const isTransparent = transparent && !scrolledPastHero;
 
   const [anchorHoatDong, setAnchorHoatDong] = useState(null);
   const [anchorPhatTrien, setAnchorPhatTrien] = useState(null);
@@ -86,46 +79,28 @@ const Header = ({ transparent = false }) => {
   };
   const handleCloseMenu = (setter) => () => setter(null);
 
-  const appBarSx = isTransparent
-    ? {
-        backgroundColor: 'transparent',
-        color: '#fff',
-        boxShadow: 'none',
-        borderBottom: 'none',
-        transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
-      }
-    : {
+  const navButtonSx = {
+    color: 'text.primary',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    textTransform: 'none',
+    px: 1.5,
+    minWidth: 0,
+    flexShrink: 0,
+    '&:hover': { backgroundColor: 'action.hover' },
+  };
+
+  return (
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
         backgroundColor: 'background.paper',
         color: 'text.primary',
         borderBottom: 1,
         borderColor: 'divider',
-        transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
-      };
-
-  const navButtonSx = isTransparent
-    ? {
-        color: '#fff',
-        fontWeight: 500,
-        fontSize: '0.9375rem',
-        textTransform: 'none',
-        px: 1.5,
-        minWidth: 0,
-        flexShrink: 0,
-        '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' },
-      }
-    : {
-        color: 'text.primary',
-        fontWeight: 500,
-        fontSize: '0.9375rem',
-        textTransform: 'none',
-        px: 1.5,
-        minWidth: 0,
-        flexShrink: 0,
-        '&:hover': { backgroundColor: 'action.hover' },
-      };
-
-  return (
-    <AppBar position="fixed" elevation={0} sx={appBarSx}>
+      }}
+    >
       <Toolbar
         sx={{
           minHeight: { xs: 56, md: 64 },
@@ -141,11 +116,6 @@ const Header = ({ transparent = false }) => {
               src={LOGO_SRC}
               alt="Alumverse"
               size="medium"
-              sx={{
-                ...(isTransparent && {
-                  filter: 'brightness(0) invert(1)',
-                }),
-              }}
             />
           </Link>
         </Box>
@@ -231,7 +201,7 @@ const Header = ({ transparent = false }) => {
                 sx={{
                   fontSize: '0.875rem',
                   fontWeight: 600,
-                  color: isTransparent ? '#fff' : 'primary.main',
+                  color: 'primary.main',
                   mr: 1,
                   cursor: 'pointer',
                 }}
@@ -244,14 +214,14 @@ const Header = ({ transparent = false }) => {
                   <IconButton
                     size="small"
                     aria-label="Thông báo"
-                    sx={{ color: isTransparent ? '#fff' : 'text.primary' }}
+                    sx={{ color: 'text.primary' }}
                   >
                     <NotificationsOutlinedIcon fontSize="small" />
                   </IconButton>
                   <IconButton
                     size="small"
                     aria-label="Tin nhắn"
-                    sx={{ color: isTransparent ? '#fff' : 'text.primary' }}
+                    sx={{ color: 'text.primary' }}
                   >
                     <EmailOutlinedIcon fontSize="small" />
                   </IconButton>
@@ -259,7 +229,6 @@ const Header = ({ transparent = false }) => {
                     displayName={displayName}
                     displayRole={displayRole}
                     avatarUrl={user?.avatarUrl}
-                    transparent={isTransparent}
                   />
                 </>
               ) : (
@@ -268,17 +237,9 @@ const Header = ({ transparent = false }) => {
                     component={Link}
                     to="/auth/register"
                     variant="outlined"
+                    color="primary"
                     size="small"
-                    sx={{
-                      fontWeight: 600,
-                      ...(isTransparent
-                        ? {
-                            borderColor: '#fff',
-                            color: '#fff',
-                            '&:hover': { borderColor: '#fff', backgroundColor: 'rgba(255,255,255,0.1)' },
-                          }
-                        : { color: 'primary' }),
-                    }}
+                    sx={{ fontWeight: 600 }}
                   >
                     Đăng ký
                   </Button>
@@ -288,14 +249,7 @@ const Header = ({ transparent = false }) => {
                     variant="contained"
                     color="primary"
                     size="small"
-                    sx={{
-                      fontWeight: 600,
-                      ...(isTransparent && {
-                        backgroundColor: '#fff',
-                        color: 'primary.main',
-                        '&:hover': { backgroundColor: 'grey.100' },
-                      }),
-                    }}
+                    sx={{ fontWeight: 600 }}
                   >
                     Đăng nhập
                   </Button>
@@ -306,7 +260,7 @@ const Header = ({ transparent = false }) => {
             <IconButton
               aria-label="Mở menu"
               onClick={handleDrawerToggle}
-              sx={{ color: isTransparent ? '#fff' : 'text.primary' }}
+              sx={{ color: 'text.primary' }}
             >
               <MenuIcon />
             </IconButton>

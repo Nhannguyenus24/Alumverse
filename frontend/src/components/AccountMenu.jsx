@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Box, Typography, Menu, MenuItem } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 
-const AccountMenu = ({ displayName, displayRole, avatarUrl, transparent = false }) => {
+const AccountMenu = ({ displayName, displayRole, avatarUrl }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
 
@@ -53,13 +53,13 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, transparent = false 
           <Typography
             variant="body2"
             fontWeight={600}
-            sx={{ color: transparent ? '#fff' : 'text.primary', lineHeight: 1.25 }}
+            sx={{ color: 'text.primary', lineHeight: 1.25 }}
           >
             {displayName}
           </Typography>
           <Typography
             variant="caption"
-            sx={{ color: transparent ? 'rgba(255,255,255,0.9)' : 'primary.main', lineHeight: 1.25 }}
+            sx={{ color: 'primary.main', lineHeight: 1.25 }}
           >
             {displayRole}
           </Typography>
