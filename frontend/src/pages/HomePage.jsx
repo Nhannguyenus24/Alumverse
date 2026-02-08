@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import {
   Box,
   Container,
+  Stack,
   Typography,
   Button,
   Card,
@@ -13,28 +14,28 @@ import {
 import Page from "../components/Page";
 import Logo from "../components/Logo";
 
-const HERO_BG = "/home_page.png";
-const HERO_LOGO = "/home_page_alum.png";
+const HERO_BG = "/home_page/home_page.png";
+const HERO_LOGO = "/home_page/home_page_alum.png";
 
 const EXPLORE_ITEMS = [
   {
-    iconSrc: "/ho_tro_tu_van.svg",
+    iconSrc: "/icons/ho_tro_tu_van.svg",
     title: "Hỗ trợ & Tư vấn",
     description: "Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.",
   },
   {
-    iconSrc: "/ket_noi_csv.svg",
+    iconSrc: "/icons/ket_noi_csv.svg",
     title: "Kết nối cựu sinh viên",
     description:
       "Kết nối cộng đồng cựu sinh viên, chia sẻ kiến thức và kinh nghiệm.",
   },
   {
-    iconSrc: "/tim_kiem_csv.svg",
+    iconSrc: "/icons/tim_kiem_csv.svg",
     title: "Tìm kiếm cựu sinh viên",
     description: "Dễ dàng tìm kiếm và kết nối với cựu sinh viên.",
   },
   {
-    iconSrc: "/su_kien_hoi_thao.svg",
+    iconSrc: "/icons/su_kien_hoi_thao.svg",
     title: "Sự kiện & Hội thảo",
     description: "Tham gia sự kiện mở rộng mối quan hệ và cơ hội nghề nghiệp.",
   },
@@ -60,16 +61,16 @@ const PLACEHOLDER_ALUMNI = [
 ];
 
 const PARTNER_LOGOS = [
-  { name: "VNG", src: "/vng.png" },
-  { name: "FPT", src: "/fpt.png" },
-  { name: "TMA", src: "/tma.png" },
-  { name: "KMS", src: "/kms.png" },
-  { name: "HLC", src: "/hlc.png" },
-  { name: "BOSCH", src: "/bosch.png" },
-  { name: "Shopee", src: "/shopee.png" },
-  { name: "ELCA", src: "/elca.png" },
-  { name: "dek", src: "/dek.png" },
-  { name: "AXON", src: "/axon.png" },
+  { name: "VNG", src: "/company_logo/vng.png" },
+  { name: "FPT", src: "/company_logo/fpt.png" },
+  { name: "TMA", src: "/company_logo/tma.png" },
+  { name: "KMS", src: "/company_logo/kms.png" },
+  { name: "HLC", src: "/company_logo/hlc.png" },
+  { name: "BOSCH", src: "/company_logo/bosch.png" },
+  { name: "Shopee", src: "/company_logo/shopee.png" },
+  { name: "ELCA", src: "/company_logo/elca.png" },
+  { name: "dek", src: "/company_logo/dek.png" },
+  { name: "AXON", src: "/company_logo/axon.png" },
 ];
 
 const HomePage = () => {
@@ -116,15 +117,13 @@ const HomePage = () => {
             px: { xs: 2, sm: 3 },
           }}
         >
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-              gap: { xs: 3, md: 4 },
-              alignItems: "center",
-            }}
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={{ xs: 3, md: 4 }}
+            alignItems="center"
+            sx={{ width: "100%" }}
           >
-            <Box sx={{ textAlign: { xs: "center", md: "left" } }}>
+            <Box sx={{ textAlign: { xs: "center", md: "left" }, flex: { md: "1 1 50%" } }}>
               <Typography
                 variant="h2"
                 component="h1"
@@ -174,7 +173,7 @@ const HomePage = () => {
               </Box>
             </Box>
             {isDesktop && (
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Box sx={{ display: "flex", justifyContent: "center", flex: "1 1 50%" }}>
                 <Logo
                   variant="image"
                   src={HERO_LOGO}
@@ -188,7 +187,7 @@ const HomePage = () => {
                 />
               </Box>
             )}
-          </Box>
+          </Stack>
         </Container>
       </Box>
 
@@ -204,23 +203,26 @@ const HomePage = () => {
           >
             KHÁM PHÁ
           </Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(4, 1fr)",
-              },
-              gap: { xs: 2, sm: 3 },
-              alignItems: "stretch",
-            }}
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            useFlexGap
+            spacing={{ xs: 2, sm: 3 }}
+            sx={{ alignItems: "stretch" }}
           >
             {EXPLORE_ITEMS.map((item) => {
               const { iconSrc, title, description } = item;
               return (
-                <Card
+                <Box
                   key={item.title}
+                  sx={{
+                    flex: "1 1 100%",
+                    minWidth: 0,
+                    "@media (min-width:600px)": { flex: "1 1 calc(50% - 12px)" },
+                    "@media (min-width:900px)": { flex: "1 1 calc(25% - 18px)" },
+                  }}
+                >
+                <Card
                   elevation={0}
                   sx={{
                     border: 1,
@@ -279,9 +281,10 @@ const HomePage = () => {
                     {description}
                   </Typography>
                 </Card>
+                </Box>
               );
             })}
-          </Box>
+          </Stack>
         </Container>
       </Box>
 
@@ -297,20 +300,23 @@ const HomePage = () => {
           >
             TIN TỨC & SỰ KIỆN
           </Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                sm: "repeat(2, 1fr)",
-                md: "repeat(3, 1fr)",
-              },
-              gap: { xs: 2, sm: 3 },
-            }}
+          <Stack
+            direction="row"
+            flexWrap="wrap"
+            useFlexGap
+            spacing={{ xs: 2, sm: 3 }}
           >
             {PLACEHOLDER_NEWS.map(({ title, date }) => (
-              <Card
+              <Box
                 key={title}
+                sx={{
+                  flex: "1 1 100%",
+                  minWidth: 0,
+                  "@media (min-width:600px)": { flex: "1 1 calc(50% - 12px)" },
+                  "@media (min-width:900px)": { flex: "1 1 calc(33.333% - 16px)" },
+                }}
+              >
+              <Card
                 component={Link}
                 to="/hoat-dong/tin-tuc"
                 sx={{
@@ -342,8 +348,9 @@ const HomePage = () => {
                   </Typography>
                 </CardContent>
               </Card>
+              </Box>
             ))}
-          </Box>
+          </Stack>
         </Container>
       </Box>
 
@@ -359,16 +366,22 @@ const HomePage = () => {
           >
             CỰU SINH VIÊN TIÊU BIỂU
           </Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
-              gap: { xs: 2, sm: 3, md: 4 },
-            }}
+          <Stack
+            direction="row"
+            flexWrap="nowrap"
+            useFlexGap
+            spacing={{ xs: 1.5, sm: 2, md: 4 }}
+            sx={{ overflow: "hidden" }}
           >
             {PLACEHOLDER_ALUMNI.map(({ name, role }) => (
-              <Card
+              <Box
                 key={name}
+                sx={{
+                  flex: "1 1 0",
+                  minWidth: 0,
+                }}
+              >
+              <Card
                 elevation={0}
                 sx={{
                   border: 1,
@@ -400,8 +413,9 @@ const HomePage = () => {
                   {role}
                 </Typography>
               </Card>
+              </Box>
             ))}
-          </Box>
+          </Stack>
         </Container>
       </Box>
 

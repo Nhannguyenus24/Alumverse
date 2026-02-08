@@ -1,4 +1,4 @@
-import { Box, Container, Typography, IconButton } from '@mui/material';
+import { Box, Container, Stack, Typography, IconButton } from '@mui/material';
 import Logo from './Logo';
 
 const FOOTER_BG = '#0F213A';
@@ -65,26 +65,24 @@ const Footer = () => {
       }}
     >
       <Container maxWidth="lg">
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
-            gap: { xs: 3, md: 4 },
-            alignItems: { md: 'flex-start' },
-          }}
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={{ xs: 3, md: 4 }}
+          alignItems={{ md: 'flex-start' }}
+          sx={{ flexWrap: 'wrap' }}
         >
           {/* Left: Logos + copyright */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: { xs: 'none', md: '1 1 0' }, minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Logo
                 variant="image"
-                src="/logo_alumverse_short.png"
+                src="/school_logo/logo_alumverse_short.png"
                 alt="AlumVerse"
                 size="xlarge"
               />
               <Logo
                 variant="image"
-                src="/logo_dhkhtn_white.png"
+                src="/school_logo/logo_dhkhtn_white.png"
                 alt="Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
                 size="large"
               />
@@ -101,7 +99,7 @@ const Footer = () => {
           </Box>
 
           {/* Middle: Contact */}
-          <Box>
+          <Box sx={{ flex: { xs: 'none', md: '1 1 0' }, minWidth: 0 }}>
             <Typography
               variant="subtitle1"
               fontWeight={700}
@@ -127,7 +125,7 @@ const Footer = () => {
           </Box>
 
           {/* Right: Social */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flex: { xs: 'none', md: '1 1 0' }, minWidth: 0 }}>
             <Typography
               variant="subtitle1"
               fontWeight={700}
@@ -143,7 +141,7 @@ const Footer = () => {
               ))}
             </Box>
           </Box>
-        </Box>
+        </Stack>
       </Container>
     </Box>
   );

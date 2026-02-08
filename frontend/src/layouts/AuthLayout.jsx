@@ -40,7 +40,7 @@ const AuthLayout = () => {
         >
           <Logo
             variant="image"
-            src="/logo_alumverse.png"
+            src="/school_logo/logo_alumverse.png"
             alt="ALUMVERSE HCMUS"
             size="large"
           />

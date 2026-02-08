@@ -36,6 +36,7 @@ const MaintenancePage = Loadable(
   lazy(() => import('../pages/MaintenancePage'))
 );
 const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
+const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
       {
         path: 'gioi-thieu',
         element: <IntroducePage />,
+      },
+      {
+        path: 'cac-khoa',
+        element: <FacultiesPage />,
       },
       {
         path: 'dashboard',

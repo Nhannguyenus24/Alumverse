@@ -29,7 +29,7 @@ import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import { useAuth } from '../hooks/useAuth';
 
-const LOGO_SRC = '/logo_alumverse.png';
+const LOGO_SRC = '/school_logo/logo_alumverse.png';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
