@@ -1,10 +1,12 @@
 import { Outlet } from 'react-router';
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import Logo from '../components/Logo';
 
 const AuthLayout = () => {
   return (
-    <Box
+    <Container
+      maxWidth={false}
+      disableGutters
       sx={{
         minHeight: '100vh',
         display: 'flex',
@@ -40,10 +42,9 @@ const AuthLayout = () => {
         >
           <Logo
             variant="image"
-            src="/logo_alumverse.png"
+            src="/school_logo/logo_alumverse.png"
             alt="ALUMVERSE HCMUS"
-            size="xlarge"
-            sx={{ height: { xs: 40, sm: 56, md: 96 } }}
+            size="large"
           />
         </Box>
 
@@ -91,7 +92,7 @@ const AuthLayout = () => {
           display: { xs: 'none', md: 'block' },
         }}
       />
-    </Box>
+    </Container>
   );
 };
 

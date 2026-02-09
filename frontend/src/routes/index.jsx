@@ -35,6 +35,9 @@ const ServerErrorPage = Loadable(
 const MaintenancePage = Loadable(
   lazy(() => import('../pages/MaintenancePage'))
 );
+const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
+const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
+const FacultyCNTTPage = Loadable(lazy(() => import('../pages/FacultyCNTTPage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -43,6 +46,18 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'gioi-thieu',
+        element: <IntroducePage />,
+      },
+      {
+        path: 'cac-khoa',
+        element: <FacultiesPage />,
+      },
+      {
+        path: 'cac-khoa/cong-nghe-thong-tin',
+        element: <FacultyCNTTPage />,
       },
       {
         path: 'dashboard',
