@@ -7,7 +7,15 @@ export default function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <Page title="404 Not Found">
+    <Page
+      title="404 Not Found"
+      meta={
+        <meta
+          name="description"
+          content="Trang không tồn tại - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+        />
+      }
+    >
       <Container maxWidth="md">
         <Box
           sx={{

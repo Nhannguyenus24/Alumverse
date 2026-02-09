@@ -11,7 +11,15 @@ export default function ServerErrorPage() {
 	};
 
 	return (
-		<Page title="500 Internal Server Error">
+		<Page
+			title="500 Internal Server Error"
+			meta={
+				<meta
+					name="description"
+					content="Lỗi máy chủ - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+				/>
+			}
+		>
 			<Container maxWidth="md">
 				<Box
 					sx={{
