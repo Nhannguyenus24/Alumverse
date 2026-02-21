@@ -5,7 +5,10 @@ public enum ErrorCode {
     INVALID_PASSWORD,
     USER_NOT_FOUND,
 
-    // Event modularr
+    RESOURCES_NOT_FOUND,
+    FORBIDDEN,
+
+    // Event modular
     EVENT_NOT_FOUND,
     TICKET_NOT_FOUND,
     EVENT_FULLY_BOOKED,
