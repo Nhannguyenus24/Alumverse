@@ -1,17 +1,21 @@
 -- Sample Data for Student Alumni System
 
 -- ============= USERS DATA =============
+-- password to login is 123 for the last 3
 INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "avatar_url", "created_at", "updated_at") VALUES
-('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'active', 'admin', 'https://api.example.com/avatars/admin.jpg', NOW(), NOW()),
-('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'active', 'alumni', 'https://api.example.com/avatars/john.jpg', NOW() - INTERVAL '90 days', NOW()),
-('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'active', 'alumni', 'https://api.example.com/avatars/jane.jpg', NOW() - INTERVAL '60 days', NOW()),
-('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'active', 'student', 'https://api.example.com/avatars/nguyena.jpg', NOW() - INTERVAL '45 days', NOW()),
-('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'active', 'alumni', 'https://api.example.com/avatars/tranb.jpg', NOW() - INTERVAL '30 days', NOW()),
-('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'active', 'alumni', 'https://api.example.com/avatars/phamc.jpg', NOW() - INTERVAL '20 days', NOW()),
-('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'active', 'alumni', 'https://api.example.com/avatars/hoangd.jpg', NOW() - INTERVAL '10 days', NOW()),
-('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'active', 'alumni', 'https://api.example.com/avatars/lee.jpg', NOW() - INTERVAL '5 days', NOW()),
-('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'active', 'student', 'https://api.example.com/avatars/duongf.jpg', NOW() - INTERVAL '2 days', NOW()),
-('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'active', 'alumni', 'https://api.example.com/avatars/vog.jpg', NOW(), NOW());
+('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/admin.jpg', NOW(), NOW()),
+('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/john.jpg', NOW() - INTERVAL '90 days', NOW()),
+('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/jane.jpg', NOW() - INTERVAL '60 days', NOW()),
+('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/nguyena.jpg', NOW() - INTERVAL '45 days', NOW()),
+('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/tranb.jpg', NOW() - INTERVAL '30 days', NOW()),
+('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/phamc.jpg', NOW() - INTERVAL '20 days', NOW()),
+('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/hoangd.jpg', NOW() - INTERVAL '10 days', NOW()),
+('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/lee.jpg', NOW() - INTERVAL '5 days', NOW()),
+('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/duongf.jpg', NOW() - INTERVAL '2 days', NOW()),
+('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/vog.jpg', NOW(), NOW()),
+('test@hcmus.edu.vn', '$2a$12$17uOd82WRe.vjwZdgh1dbO26T5KhSjbGcSWW.A1KDMc5ssn2yKr7C', 'testuser', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/test.jpg', NOW(), NOW()),
+('bui.van.h@hcmus.edu.vn', '$2a$12$17uOd82WRe.vjwZdgh1dbO26T5KhSjbGcSWW.A1KDMc5ssn2yKr7C', 'buivanh', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/buih.jpg', NOW(), NOW()),
+('ly.thi.i@hcmus.edu.vn', '$2a$12$17uOd82WRe.vjwZdgh1dbO26T5KhSjbGcSWW.A1KDMc5ssn2yKr7C', 'lythii', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/lyi.jpg', NOW(), NOW());
 
 -- ============= GLOBAL PROFILES DATA =============
 INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "gender", "settings") VALUES
@@ -24,7 +28,10 @@ INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "g
 (7, 'Hoàng Thị D', '0967890123', 'Business Analyst', '1999-02-14', 'Female', '{"language":"vi","theme":"light"}'),
 (8, 'Lê Văn E', '0978901234', 'Startup Founder', '1997-09-30', 'Male', '{"language":"vi","theme":"dark"}'),
 (9, 'Dương Thị F', '0989012345', 'Data Scientist', '2000-04-17', 'Female', '{"language":"vi","theme":"light"}'),
-(10, 'Võ Văn G', '0990123456', 'UX/UI Designer', '1999-12-05', 'Male', '{"language":"vi","theme":"dark"}');
+(10, 'Võ Văn G', '0990123456', 'UX/UI Designer', '1999-12-05', 'Male', '{"language":"vi","theme":"dark"}'),
+(11, 'Test User', '0900000000', 'Test Account', '2000-01-01', 'Male', '{"language":"vi","theme":"light"}'),
+(12, 'Bùi Văn H', '0901111111', 'Student - Computer Science', '2001-06-20', 'Male', '{"language":"vi","theme":"light"}'),
+(13, 'Lý Thị I', '0902222222', 'Student - Information Technology', '2002-09-12', 'Female', '{"language":"vi","theme":"dark"}');
 
 -- ============= GLOBAL IDENTITY VERIFICATIONS DATA =============
 INSERT INTO "global_identity_verifications" ("user_id", "citizen_id", "extracted_data", "verified_at", "provider") VALUES

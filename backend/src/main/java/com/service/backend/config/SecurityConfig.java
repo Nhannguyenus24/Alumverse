@@ -48,16 +48,19 @@ public class SecurityConfig {
                 .authorizeExchange(auth -> auth
                         // Public endpoints - no authentication required
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers(
-                                "/api/auth/**",
-                                "/swagger-ui/**",
-                                "/api/guest/**",
-                                "/api-docs/**",
-                                "/**" // in dev mode only
-                        ).permitAll()
+//                        .pathMatchers(
+//                                "/api/auth/**",
+//                                "/swagger-ui/**",
+//                                "/api/guest/**",
+//                                "/api-docs/**",
+//                                "/websocket-test.html",
+//                                "/*.html",
+//                                "/static/**",
+//                                "/**" // in dev mode only - must be last
+//                        ).permitAll()
 
                         // All other requests require authentication
-                        .anyExchange().authenticated());
+                        .anyExchange().permitAll());
 
         return http.build();
     }
