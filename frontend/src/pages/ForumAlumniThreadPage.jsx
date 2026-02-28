@@ -9,7 +9,10 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import SentimentSatisfiedAltOutlinedIcon from '@mui/icons-material/SentimentSatisfiedAltOutlined';
+import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Page from '../components/Page';
+import { useAuth } from '../hooks/useAuth';
 import Breadcrumb from '../components/Breadcrumb';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
@@ -44,6 +47,8 @@ const MOCK_REPLIES = Array.from({ length: 3 }).map((_, index) => ({
 
 const ForumAlumniThreadPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
 
   const handleFilterChange = useCallback(
@@ -143,19 +148,101 @@ const ForumAlumniThreadPage = () => {
                   >
                     {thread.title}
                   </Typography>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-                      gap: 1,
-                      maxWidth: 260,
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', flex: '0 0 calc(50% - 4px)' }}>
+                  {isAdmin ? (
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' },
+                        gap: 1,
+                        width: '100%',
+                        maxWidth: { xs: 300, sm: 360 },
+                        minWidth: { xs: 240, sm: 320 },
+                      }}
+                    >
                       <Button
                         fullWidth
+                        variant="contained"
+                        size="small"
+                        startIcon={<NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />}
+                        sx={{
+                          bgcolor: '#374151',
+                          color: 'white',
+                          '&:hover': { bgcolor: '#4B5563' },
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Theo dõi
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        size="small"
+                        startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
+                        sx={{
+                          borderColor: 'black',
+                          color: 'black',
+                          bgcolor: 'white',
+                          '&:hover': { borderColor: 'black', bgcolor: 'grey.50' },
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Sửa
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="success"
+                        size="small"
+                        startIcon={<PushPinOutlinedIcon sx={{ fontSize: 18, color: 'white' }} />}
+                        sx={{ whiteSpace: 'nowrap', color: 'white' }}
+                      >
+                        Ghim
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Trả lời
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="error"
+                        size="small"
+                        startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+                        sx={{ whiteSpace: 'nowrap' }}
+                      >
+                        Xóa
+                      </Button>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="small"
+                        startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
+                        sx={{
+                          bgcolor: '#EAB308',
+                          color: 'white',
+                          '&:hover': { bgcolor: '#CA8A04' },
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Khóa
+                      </Button>
+                    </Box>
+                  ) : (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                        justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                      }}
+                    >
+                      <Button
                         variant="outlined"
                         color="primary"
                         size="small"
@@ -163,10 +250,7 @@ const ForumAlumniThreadPage = () => {
                       >
                         Theo dõi
                       </Button>
-                    </Box>
-                    <Box sx={{ display: 'flex', flex: '0 0 calc(50% - 4px)' }}>
                       <Button
-                        fullWidth
                         variant="contained"
                         color="primary"
                         size="small"
@@ -175,29 +259,7 @@ const ForumAlumniThreadPage = () => {
                         Trả lời
                       </Button>
                     </Box>
-                    <Box sx={{ display: 'flex', flex: '0 0 calc(50% - 4px)' }}>
-                      <Button
-                        fullWidth
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
-                      >
-                        Sửa
-                      </Button>
-                    </Box>
-                    <Box sx={{ display: 'flex', flex: '0 0 calc(50% - 4px)' }}>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        color="error"
-                        size="small"
-                        startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                      >
-                        Xóa
-                      </Button>
-                    </Box>
-                  </Box>
+                  )}
                 </Box>
 
                 <Box
@@ -294,7 +356,27 @@ const ForumAlumniThreadPage = () => {
                         <Typography variant="caption" color="text.secondary">
                           {reply.createdAt}
                         </Typography>
-                        {isOwn && (
+                        {isAdmin ? (
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="error"
+                              startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+                            >
+                              Xóa
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="success"
+                              startIcon={<PushPinOutlinedIcon sx={{ fontSize: 18, color: 'white' }} />}
+                              sx={{ color: 'white' }}
+                            >
+                              Ghim
+                            </Button>
+                          </Box>
+                        ) : isOwn ? (
                           <Box sx={{ display: 'flex', gap: 1 }}>
                             <Button
                               size="small"
@@ -313,7 +395,7 @@ const ForumAlumniThreadPage = () => {
                               Xóa
                             </Button>
                           </Box>
-                        )}
+                        ) : null}
                       </Box>
                       <Typography
                         variant="body2"
