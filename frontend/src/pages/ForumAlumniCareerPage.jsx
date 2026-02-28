@@ -126,7 +126,13 @@ const ForumAlumniCareerPage = () => {
                     <Button variant="outlined" color="primary">
                       Theo dõi
                     </Button>
-                    <Button variant="contained" color="primary">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() =>
+                        navigate('/dien-dan/cuu-sinh-vien/huong-nghiep/tao-bai-dang')
+                      }
+                    >
                       Tạo bài đăng
                     </Button>
                   </Box>

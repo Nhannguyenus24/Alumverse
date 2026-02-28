@@ -45,6 +45,9 @@ const ForumAlumniCareerPage = Loadable(
 const ForumAlumniThreadPage = Loadable(
   lazy(() => import('../pages/ForumAlumniThreadPage'))
 );
+const ForumAlumniCreatePostPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniCreatePostPage'))
+);
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -60,23 +63,37 @@ export const router = createBrowserRouter([
       },
       {
         path: 'dien-dan',
-        element: <ForumPage />,
-      },
-      {
-        path: 'dien-dan/cuu-sinh-vien/huong-nghiep',
-        element: <ForumAlumniCareerPage />,
-      },
-      {
-        path: 'dien-dan/cuu-sinh-vien/huong-nghiep/:threadId',
-        element: <ForumAlumniThreadPage />,
+        children: [
+          {
+            index: true,
+            element: <ForumPage />,
+          },
+          {
+            path: 'cuu-sinh-vien/huong-nghiep',
+            element: <ForumAlumniCareerPage />,
+          },
+          {
+            path: 'cuu-sinh-vien/huong-nghiep/:threadId',
+            element: <ForumAlumniThreadPage />,
+          },
+          {
+            path: 'cuu-sinh-vien/huong-nghiep/tao-bai-dang',
+            element: <ForumAlumniCreatePostPage />,
+          },
+        ],
       },
       {
         path: 'cac-khoa',
-        element: <FacultiesPage />,
-      },
-      {
-        path: 'cac-khoa/cong-nghe-thong-tin',
-        element: <FacultyCNTTPage />,
+        children: [
+          {
+            index: true,
+            element: <FacultiesPage />,
+          },
+          {
+            path: 'cong-nghe-thong-tin',
+            element: <FacultyCNTTPage />,
+          },
+        ],
       },
       {
         path: 'dashboard',
