@@ -38,6 +38,7 @@ const MaintenancePage = Loadable(
 const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
 const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
 const FacultyCNTTPage = Loadable(lazy(() => import('../pages/FacultyCNTTPage')));
+const ForumPage = Loadable(lazy(() => import('../pages/ForumPage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -50,6 +51,10 @@ export const router = createBrowserRouter([
       {
         path: 'gioi-thieu',
         element: <IntroducePage />,
+      },
+      {
+        path: 'dien-dan',
+        element: <ForumPage />,
       },
       {
         path: 'cac-khoa',
