@@ -26,7 +26,13 @@ const ForumSection = ({ title, boards = [] }) => {
           color: '#fff',
         }}
       >
-        <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: 22 }} />
+        <ChatBubbleOutlineOutlinedIcon
+          sx={{
+            fontSize: 22,
+            color: '#fff',
+            '& path': { fill: 'none', stroke: '#fff', strokeWidth: 1.5 },
+          }}
+        />
         <Typography
           variant="subtitle1"
           fontWeight={900}
