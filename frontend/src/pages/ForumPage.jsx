@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Container,
   Stack,
   Typography,
 } from '@mui/material';
+import { useNavigate } from 'react-router';
 import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
@@ -135,6 +136,18 @@ const SECTIONS = [
 
 const ForumPage = () => {
   const [selectedFilterId, setSelectedFilterId] = useState('all');
+  const navigate = useNavigate();
+
+  const handleFilterChange = useCallback(
+    (id) => {
+      if (id === 'alumni') {
+        navigate('/dien-dan/cuu-sinh-vien/huong-nghiep');
+        return;
+      }
+      setSelectedFilterId(id);
+    },
+    [navigate]
+  );
 
   const visibleSections = useMemo(() => {
     if (selectedFilterId === 'all') return SECTIONS;
@@ -168,7 +181,7 @@ const ForumPage = () => {
               <ForumFilterPanel
                 filters={FILTERS}
                 selectedId={selectedFilterId}
-                onChange={setSelectedFilterId}
+                onChange={handleFilterChange}
               />
               <ForumSponsoredCard
                 title="Sponsored"

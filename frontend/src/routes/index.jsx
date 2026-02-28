@@ -39,6 +39,9 @@ const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
 const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
 const FacultyCNTTPage = Loadable(lazy(() => import('../pages/FacultyCNTTPage')));
 const ForumPage = Loadable(lazy(() => import('../pages/ForumPage')));
+const ForumAlumniCareerPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniCareerPage'))
+);
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -55,6 +58,10 @@ export const router = createBrowserRouter([
       {
         path: 'dien-dan',
         element: <ForumPage />,
+      },
+      {
+        path: 'dien-dan/cuu-sinh-vien/huong-nghiep',
+        element: <ForumAlumniCareerPage />,
       },
       {
         path: 'cac-khoa',
