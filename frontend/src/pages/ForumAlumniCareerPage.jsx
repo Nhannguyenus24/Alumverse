@@ -54,9 +54,10 @@ const ForumAlumniCareerPage = () => {
           pt: { xs: '56px', md: '64px' },
           pb: { xs: 4, md: 6 },
           backgroundColor: '#F3F6FB',
+          overflowX: 'hidden',
         }}
       >
-        <Container maxWidth="xl" sx={{ pt: { xs: 3, md: 4 }, px: { xs: 3, lg: 6 } }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -90,7 +91,7 @@ const ForumAlumniCareerPage = () => {
             >
               <Box
                 sx={{
-                  px: { xs: 2, md: 3 },
+                  px: { xs: 1.5, sm: 2, md: 3 },
                   py: { xs: 1.5, md: 2 },
                   borderBottom: 1,
                   borderColor: 'divider',
@@ -118,12 +119,22 @@ const ForumAlumniCareerPage = () => {
                     component="h1"
                     fontWeight={800}
                     color="primary.main"
-                    sx={{ fontSize: { xs: '1.5rem', md: '1.75rem' } }}
+                    sx={{
+                      fontSize: { xs: '1.35rem', sm: '1.5rem', md: '1.75rem' },
+                      wordBreak: 'break-word',
+                    }}
                   >
                     HƯỚNG NGHIỆP
                   </Typography>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="outlined" color="primary">
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 1,
+                      width: { xs: '100%', sm: 'auto' },
+                    }}
+                  >
+                    <Button variant="outlined" color="primary" fullWidth={false} sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>
                       Theo dõi
                     </Button>
                     <Button
@@ -132,6 +143,7 @@ const ForumAlumniCareerPage = () => {
                       onClick={() =>
                         navigate('/dien-dan/cuu-sinh-vien/huong-nghiep/tao-bai-dang')
                       }
+                      sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                     >
                       Tạo bài đăng
                     </Button>
@@ -147,8 +159,8 @@ const ForumAlumniCareerPage = () => {
                       navigate(`/dien-dan/cuu-sinh-vien/huong-nghiep/${post.id}`)
                     }
                     sx={{
-                      px: { xs: 2, md: 3 },
-                      py: 2,
+                      px: { xs: 1.5, sm: 2, md: 3 },
+                      py: { xs: 1.5, md: 2 },
                       display: 'flex',
                       flexDirection: { xs: 'column', md: 'row' },
                       alignItems: { xs: 'flex-start', md: 'center' },
@@ -204,8 +216,13 @@ const ForumAlumniCareerPage = () => {
                         <Typography
                           variant="subtitle1"
                           fontWeight={600}
-                          sx={{ fontSize: { xs: '0.95rem', md: '1rem' } }}
-                          noWrap
+                          sx={{
+                            fontSize: { xs: '0.95rem', md: '1rem' },
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
                         >
                           {post.title}
                         </Typography>
@@ -218,13 +235,14 @@ const ForumAlumniCareerPage = () => {
                     <Box
                       sx={{
                         display: 'flex',
+                        flexWrap: 'wrap',
                         alignItems: 'center',
-                        gap: 3,
+                        gap: { xs: 2, md: 3 },
                         ml: { md: 'auto' },
                         flexShrink: 0,
                       }}
                     >
-                      <Box sx={{ textAlign: 'center', minWidth: 72 }}>
+                      <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           Lượt xem
                         </Typography>
@@ -232,7 +250,7 @@ const ForumAlumniCareerPage = () => {
                           {post.views}
                         </Typography>
                       </Box>
-                      <Box sx={{ textAlign: 'center', minWidth: 72 }}>
+                      <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           Thảo luận
                         </Typography>
@@ -245,7 +263,7 @@ const ForumAlumniCareerPage = () => {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1,
-                          minWidth: 160,
+                          minWidth: { xs: 120, sm: 160 },
                           justifyContent: 'flex-end',
                         }}
                       >

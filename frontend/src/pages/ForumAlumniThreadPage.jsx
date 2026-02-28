@@ -79,9 +79,10 @@ const ForumAlumniThreadPage = () => {
           pt: { xs: '56px', md: '64px' },
           pb: { xs: 4, md: 6 },
           backgroundColor: '#F3F6FB',
+          overflowX: 'hidden',
         }}
       >
-        <Container maxWidth="xl" sx={{ pt: { xs: 3, md: 4 }, px: { xs: 3, lg: 6 } }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -124,7 +125,7 @@ const ForumAlumniThreadPage = () => {
                 {/* Header + main thread */}
                 <Box
                   sx={{
-                    px: { xs: 2, md: 3 },
+                    px: { xs: 1.5, sm: 2, md: 3 },
                     py: { xs: 1.5, md: 2 },
                     borderBottom: 1,
                     borderColor: 'divider',
@@ -144,7 +145,10 @@ const ForumAlumniThreadPage = () => {
                     variant="h5"
                     component="h1"
                     fontWeight={800}
-                    sx={{ fontSize: { xs: '1.4rem', md: '1.6rem' } }}
+                    sx={{
+                      fontSize: { xs: '1.2rem', sm: '1.4rem', md: '1.6rem' },
+                      wordBreak: 'break-word',
+                    }}
                   >
                     {thread.title}
                   </Typography>
@@ -303,9 +307,11 @@ const ForumAlumniThreadPage = () => {
                   <Box
                     key={reply.id}
                     sx={{
-                      px: { xs: 2, md: 3 },
-                      py: 2.5,
+                      px: { xs: 1.5, sm: 2, md: 3 },
+                      py: { xs: 2, md: 2.5 },
                       display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: { xs: 'center', sm: 'flex-start' },
                       gap: 2,
                       borderTop: 1,
                       borderColor: 'divider',
@@ -313,7 +319,7 @@ const ForumAlumniThreadPage = () => {
                   >
                     <Box
                       sx={{
-                        width: 110,
+                        width: { xs: 'auto', sm: 110 },
                         flexShrink: 0,
                         display: 'flex',
                         flexDirection: 'column',
@@ -323,8 +329,8 @@ const ForumAlumniThreadPage = () => {
                     >
                       <Box
                         sx={{
-                          width: 64,
-                          height: 64,
+                          width: { xs: 48, sm: 64 },
+                          height: { xs: 48, sm: 64 },
                           borderRadius: '50%',
                           bgcolor: 'primary.main',
                           color: 'primary.contrastText',
@@ -347,17 +353,19 @@ const ForumAlumniThreadPage = () => {
                       <Box
                         sx={{
                           display: 'flex',
-                          alignItems: 'center',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'flex-start', sm: 'center' },
                           justifyContent: 'space-between',
                           mb: 1,
                           gap: 1.5,
+                          width: '100%',
                         }}
                       >
                         <Typography variant="caption" color="text.secondary">
                           {reply.createdAt}
                         </Typography>
                         {isAdmin ? (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                             <Button
                               size="small"
                               variant="contained"
@@ -377,7 +385,7 @@ const ForumAlumniThreadPage = () => {
                             </Button>
                           </Box>
                         ) : isOwn ? (
-                          <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                             <Button
                               size="small"
                               variant="outlined"
@@ -414,13 +422,14 @@ const ForumAlumniThreadPage = () => {
                       <Box
                         sx={{
                           display: 'flex',
-                          alignItems: 'center',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'flex-start', sm: 'center' },
                           justifyContent: 'space-between',
                           flexWrap: 'wrap',
                           gap: 1.5,
                         }}
                       >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <FavoriteBorderIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                             <Typography variant="caption" color="text.secondary">
@@ -474,8 +483,8 @@ const ForumAlumniThreadPage = () => {
               {/* Reply editor */}
               <Box
                 sx={{
-                  px: { xs: 2, md: 3 },
-                  py: 2.5,
+                  px: { xs: 1.5, sm: 2, md: 3 },
+                  py: { xs: 2, md: 2.5 },
                   borderTop: 1,
                   borderColor: 'divider',
                 }}
@@ -483,26 +492,27 @@ const ForumAlumniThreadPage = () => {
                 <Box
                   sx={{
                     display: 'flex',
-                    alignItems: 'flex-start',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'center', sm: 'flex-start' },
                     gap: 2,
                   }}
                 >
                   {/* Left: avatar column */}
                   <Box
                     sx={{
-                      width: 110,
+                      width: { xs: 'auto', sm: 110 },
                       flexShrink: 0,
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
+                      flexDirection: { xs: 'row', sm: 'column' },
+                      alignItems: { xs: 'center', sm: 'center' },
                       gap: 1,
-                      pt: 0.5,
+                      pt: { sm: 0.5 },
                     }}
                   >
                     <Box
                       sx={{
-                        width: 56,
-                        height: 56,
+                        width: { xs: 40, sm: 56 },
+                        height: { xs: 40, sm: 56 },
                         borderRadius: '50%',
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
@@ -514,16 +524,18 @@ const ForumAlumniThreadPage = () => {
                     >
                       <PersonIcon sx={{ fontSize: 30 }} />
                     </Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      Nguyễn Văn An
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Alumni
-                    </Typography>
+                    <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        Nguyễn Văn An
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Alumni
+                      </Typography>
+                    </Box>
                   </Box>
 
                   {/* Right: editor */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
                     <WYSIWYG
                       value={editorValue}
                       onChange={setEditorValue}

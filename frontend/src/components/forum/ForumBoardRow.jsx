@@ -22,7 +22,7 @@ const ForumBoardRow = ({ board }) => {
   const last = board?.lastPost;
 
   return (
-    <Box sx={{ px: { xs: 1.75, md: 2.75 }, py: { xs: 2, md: 2.4 } }}>
+    <Box sx={{ px: { xs: 1.5, sm: 1.75, md: 2.75 }, py: { xs: 1.5, sm: 2, md: 2.4 } }}>
       <Box
         sx={{
           display: 'flex',
@@ -41,16 +41,29 @@ const ForumBoardRow = ({ board }) => {
               variant="subtitle1"
               fontWeight={800}
               color="text.primary"
-              sx={{ fontSize: { xs: '0.95rem', md: '1rem' } }}
-              noWrap
+              sx={{
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: { xs: 2, md: 1 },
+                WebkitBoxOrient: 'vertical',
+              }}
             >
               {board?.name}
             </Typography>
             <Typography
               variant="body2"
               color="text.secondary"
-              sx={{ lineHeight: 1.5, fontSize: { xs: '0.85rem', md: '0.9rem' } }}
-              noWrap
+              sx={{
+                lineHeight: 1.5,
+                fontSize: { xs: '0.85rem', md: '0.9rem' },
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: { xs: 2, md: 1 },
+                WebkitBoxOrient: 'vertical',
+              }}
             >
               {board?.description}
             </Typography>

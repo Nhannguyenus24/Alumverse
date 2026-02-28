@@ -241,9 +241,10 @@ const ForumPage = () => {
           pt: { xs: '56px', md: '64px' },
           pb: { xs: 4, md: 6 },
           backgroundColor: '#F3F6FB',
+          overflowX: 'hidden',
         }}
       >
-        <Container maxWidth="xl" sx={{ pt: { xs: 3, md: 4 }, px: { xs: 3, lg: 6 } }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -266,7 +267,15 @@ const ForumPage = () => {
               />
             </Stack>
 
-            <Stack spacing={3} sx={{ flex: 1, minWidth: 0 }}>
+            <Stack
+              spacing={3}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                width: '100%',
+                px: { xs: 1.5, sm: 2, md: 2.75 },
+              }}
+            >
               <Box
                 sx={{
                   display: 'flex',
@@ -318,11 +327,18 @@ const ForumPage = () => {
                       border: 1,
                       borderColor: 'divider',
                       borderRadius: 0,
-                      p: 2,
+                      p: { xs: 1.5, sm: 2 },
                       backgroundColor: '#fff',
                     }}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'center' },
+                        gap: 2,
+                      }}
+                    >
                       <AddIcon sx={{ fontSize: 36, color: 'primary.main', flexShrink: 0 }} />
                       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <TextField
@@ -365,10 +381,11 @@ const ForumPage = () => {
                     >
                       <Box
                         sx={{
-                          px: { xs: 2, md: 2.75 },
-                          py: { xs: 1.4, md: 1.7 },
+                          px: { xs: 1.5, sm: 2, md: 2.75 },
+                          py: { xs: 1.2, sm: 1.4, md: 1.7 },
                           display: 'flex',
-                          alignItems: 'center',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'flex-start', sm: 'center' },
                           justifyContent: 'space-between',
                           gap: 1,
                           backgroundColor: '#0B4D8D',
@@ -414,11 +431,13 @@ const ForumPage = () => {
                           <Box
                             key={board.id}
                             sx={{
-                              px: { xs: 2, md: 2.75 },
+                              px: { xs: 1.5, sm: 2, md: 2.75 },
                               py: 1.5,
                               display: 'flex',
-                              alignItems: 'center',
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              alignItems: { xs: 'flex-start', sm: 'center' },
                               justifyContent: 'space-between',
+                              gap: 1,
                               borderBottom: idx === topic.boards.length - 1 ? 0 : 1,
                               borderColor: 'divider',
                             }}
@@ -454,13 +473,20 @@ const ForumPage = () => {
                         ))}
                         <Box
                           sx={{
-                            px: { xs: 2, md: 2.75 },
+                            px: { xs: 1.5, sm: 2, md: 2.75 },
                             py: 2,
                             borderTop: 1,
                             borderColor: 'divider',
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexDirection: { xs: 'column', sm: 'row' },
+                              alignItems: { xs: 'stretch', sm: 'center' },
+                              gap: 2,
+                            }}
+                          >
                             <AddIcon sx={{ fontSize: 36, color: 'primary.main', flexShrink: 0 }} />
                             <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                               <TextField

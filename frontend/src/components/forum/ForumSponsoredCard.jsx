@@ -26,11 +26,11 @@ const ForumSponsoredCard = ({ title = 'Sponsored', imageSrc, imageAlt = '', capt
           src={imageSrc}
           alt={imageAlt}
           sx={{
-            height: 160,
+            height: { xs: 140, sm: 160 },
             objectFit: 'cover',
           }}
         />
-        <CardContent sx={{ py: 1.25, px: 1.5 }}>
+        <CardContent sx={{ py: { xs: 1, sm: 1.25 }, px: { xs: 1.25, sm: 1.5 } }}>
           <Typography variant="body2" fontWeight={600} color="text.primary">
             {caption}
           </Typography>

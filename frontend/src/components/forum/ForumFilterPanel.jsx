@@ -22,7 +22,7 @@ const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
         boxShadow: 'none',
       }}
     >
-      <Box sx={{ p: 1 }}>
+      <Box sx={{ p: { xs: 0.75, sm: 1 } }}>
         <List disablePadding>
           {filters.map((f) => {
             const selected = f.id === selectedId;
@@ -32,18 +32,18 @@ const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
                 onClick={() => onChange?.(f.id)}
                 sx={{
                   borderRadius: 1,
-                  py: 1.35,
-                  px: 1.25,
+                  py: { xs: 1, sm: 1.35 },
+                  px: { xs: 1, sm: 1.25 },
                   '&:hover': { backgroundColor: 'action.hover' },
                 }}
               >
                 <ListItemIcon
                   sx={{
-                    minWidth: 36,
+                    minWidth: { xs: 32, sm: 36 },
                     color: selected ? '#0B4D8D' : 'text.primary',
                   }}
                 >
-                  <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: 22 }} />
+                  <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
                 </ListItemIcon>
                 <ListItemText
                   primary={

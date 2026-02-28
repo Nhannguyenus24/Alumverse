@@ -70,9 +70,10 @@ const ForumAlumniCreatePostPage = () => {
           pt: { xs: '56px', md: '64px' },
           pb: { xs: 4, md: 6 },
           backgroundColor: '#F3F6FB',
+          overflowX: 'hidden',
         }}
       >
-        <Container maxWidth="xl" sx={{ pt: { xs: 3, md: 4 }, px: { xs: 3, lg: 6 } }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
             sx={{
               display: 'flex',
@@ -156,28 +157,31 @@ const ForumAlumniCreatePostPage = () => {
                 <Box
                   sx={{
                     display: 'flex',
-                    alignItems: 'stretch',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    alignItems: { xs: 'center', md: 'stretch' },
                   }}
                 >
                   {/* Avatar column */}
                   <Box
                     sx={{
-                      width: 140,
+                      width: { xs: '100%', md: 140 },
                       flexShrink: 0,
                       display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'flex-start',
+                      flexDirection: { xs: 'row', md: 'column' },
+                      alignItems: { xs: 'center', md: 'center' },
+                      justifyContent: { xs: 'center', md: 'flex-start' },
                       gap: 1,
-                      py: 3,
-                      borderRight: 1,
+                      py: { xs: 2, md: 3 },
+                      px: { xs: 2, md: 0 },
+                      borderRight: { xs: 0, md: 1 },
+                      borderBottom: { xs: 1, md: 0 },
                       borderColor: 'divider',
                     }}
                   >
                     <Box
                       sx={{
-                        width: 64,
-                        height: 64,
+                        width: { xs: 48, md: 64 },
+                        height: { xs: 48, md: 64 },
                         borderRadius: '50%',
                         bgcolor: 'primary.main',
                         color: 'primary.contrastText',
@@ -188,12 +192,14 @@ const ForumAlumniCreatePostPage = () => {
                     >
                       <PersonIcon sx={{ fontSize: 34 }} />
                     </Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      Nguyễn Văn An
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Alumni
-                    </Typography>
+                    <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
+                      <Typography variant="body2" fontWeight={600}>
+                        Nguyễn Văn An
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Alumni
+                      </Typography>
+                    </Box>
                   </Box>
 
                   {/* Title + editor */}
@@ -244,6 +250,7 @@ const ForumAlumniCreatePostPage = () => {
                 <Box
                   sx={{
                     display: 'flex',
+                    flexDirection: { xs: 'column-reverse', sm: 'row' },
                     justifyContent: 'flex-end',
                     gap: 1,
                     px: { xs: 2, md: 2.5 },
@@ -252,10 +259,22 @@ const ForumAlumniCreatePostPage = () => {
                     borderColor: 'divider',
                   }}
                 >
-                  <Button variant="outlined" color="inherit" onClick={handleCancel}>
+                  <Button
+                    variant="outlined"
+                    color="inherit"
+                    onClick={handleCancel}
+                    fullWidth={false}
+                    sx={{ width: { xs: '100%', sm: 'auto' } }}
+                  >
                     Hủy
                   </Button>
-                  <Button variant="contained" color="primary" onClick={handleSubmit}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSubmit}
+                    fullWidth={false}
+                    sx={{ width: { xs: '100%', sm: 'auto' } }}
+                  >
                     Đăng
                   </Button>
                 </Box>

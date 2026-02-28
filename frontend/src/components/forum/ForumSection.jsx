@@ -17,8 +17,8 @@ const ForumSection = ({ title, boards = [] }) => {
     >
       <Box
         sx={{
-          px: { xs: 2, md: 2.75 },
-          py: { xs: 1.4, md: 1.7 },
+          px: { xs: 1.5, sm: 2, md: 2.75 },
+          py: { xs: 1.2, sm: 1.4, md: 1.7 },
           display: 'flex',
           alignItems: 'center',
           gap: 1,
