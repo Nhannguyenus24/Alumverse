@@ -2,7 +2,7 @@ import { Breadcrumbs, Link, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
-const Breadcrumb = ({ items = [], uppercase = false, color = 'text' }) => {
+const Breadcrumb = ({ items = [], uppercase = false, color = 'text', fontSize }) => {
   const navigate = useNavigate();
 
   // Maximum 3 levels
@@ -18,6 +18,7 @@ const Breadcrumb = ({ items = [], uppercase = false, color = 'text' }) => {
   const typographySx = {
     ...(uppercase && { textTransform: 'uppercase' }),
     color: textColor,
+    ...(fontSize && { fontSize }),
   };
 
   const linkSx = {
@@ -25,6 +26,7 @@ const Breadcrumb = ({ items = [], uppercase = false, color = 'text' }) => {
     textDecoration: 'none',
     color: linkColor,
     ...(uppercase && { textTransform: 'uppercase' }),
+    ...(fontSize && { fontSize }),
     '&:hover': {
       textDecoration: 'underline',
     },

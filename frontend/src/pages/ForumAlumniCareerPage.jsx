@@ -137,6 +137,9 @@ const ForumAlumniCareerPage = () => {
                 {POSTS.map((post) => (
                   <Box
                     key={post.id}
+                    onClick={() =>
+                      navigate(`/dien-dan/cuu-sinh-vien/huong-nghiep/${post.id}`)
+                    }
                     sx={{
                       px: { xs: 2, md: 3 },
                       py: 2,
@@ -146,6 +149,10 @@ const ForumAlumniCareerPage = () => {
                       gap: { xs: 1.5, md: 3 },
                       borderTop: 1,
                       borderColor: 'divider',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
                     }}
                   >
                     <Box

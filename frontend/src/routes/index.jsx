@@ -42,6 +42,9 @@ const ForumPage = Loadable(lazy(() => import('../pages/ForumPage')));
 const ForumAlumniCareerPage = Loadable(
   lazy(() => import('../pages/ForumAlumniCareerPage'))
 );
+const ForumAlumniThreadPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniThreadPage'))
+);
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -62,6 +65,10 @@ export const router = createBrowserRouter([
       {
         path: 'dien-dan/cuu-sinh-vien/huong-nghiep',
         element: <ForumAlumniCareerPage />,
+      },
+      {
+        path: 'dien-dan/cuu-sinh-vien/huong-nghiep/:threadId',
+        element: <ForumAlumniThreadPage />,
       },
       {
         path: 'cac-khoa',
