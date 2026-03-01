@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useLocation } from 'react-router';
 import {
   AppBar,
   Toolbar,
@@ -30,6 +30,7 @@ import AccountMenu from './AccountMenu';
 import { useAuth } from '../hooks/useAuth';
 
 const LOGO_SRC = '/school_logo/logo_alumverse.png';
+const LOGO_SRC_WHITE = '/school_logo/logo_alumverse_white.png';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
@@ -56,8 +57,11 @@ const NAV_ITEMS = [
 const Header = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const { isAuthenticated, user } = useAuth();
+
+  const isAdminOnForum = user?.role === 'ADMIN' && location.pathname.startsWith('/dien-dan');
 
   const [anchorHoatDong, setAnchorHoatDong] = useState(null);
   const [anchorPhatTrien, setAnchorPhatTrien] = useState(null);
@@ -65,7 +69,8 @@ const Header = () => {
   const [expandedNav, setExpandedNav] = useState({});
 
   const displayName = user?.userName ?? 'User';
-  const displayRole = user?.role ?? 'Student';
+  const rawRole = user?.role ?? 'Student';
+  const displayRole = rawRole ? rawRole.charAt(0) + rawRole.slice(1).toLowerCase() : 'Student';
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
   const closeDrawer = () => setMobileOpen(false);
@@ -79,15 +84,17 @@ const Header = () => {
   };
   const handleCloseMenu = (setter) => () => setter(null);
 
+  const headerTextColor = isAdminOnForum ? 'primary.contrastText' : 'text.primary';
+
   const navButtonSx = {
-    color: 'text.primary',
+    color: headerTextColor,
     fontWeight: 500,
     fontSize: '0.9375rem',
     textTransform: 'none',
     px: 1.5,
     minWidth: 0,
     flexShrink: 0,
-    '&:hover': { backgroundColor: 'action.hover' },
+    '&:hover': { backgroundColor: isAdminOnForum ? 'rgba(255,255,255,0.08)' : 'action.hover' },
   };
 
   return (
@@ -95,10 +102,10 @@ const Header = () => {
       position="fixed"
       elevation={0}
       sx={{
-        backgroundColor: 'background.paper',
-        color: 'text.primary',
+        backgroundColor: isAdminOnForum ? 'primary.main' : 'background.paper',
+        color: isAdminOnForum ? 'primary.contrastText' : 'text.primary',
         borderBottom: 1,
-        borderColor: 'divider',
+        borderColor: isAdminOnForum ? 'transparent' : 'divider',
       }}
     >
       <Toolbar
@@ -113,7 +120,7 @@ const Header = () => {
           <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
             <Logo
               variant="image"
-              src={LOGO_SRC}
+              src={isAdminOnForum ? LOGO_SRC_WHITE : LOGO_SRC}
               alt="Alumverse"
               size="medium"
             />
@@ -201,7 +208,7 @@ const Header = () => {
                 sx={{
                   fontSize: '0.875rem',
                   fontWeight: 600,
-                  color: 'primary.main',
+                  color: isAdminOnForum ? 'primary.contrastText' : 'primary.main',
                   mr: 1,
                   cursor: 'pointer',
                 }}
@@ -214,14 +221,14 @@ const Header = () => {
                   <IconButton
                     size="small"
                     aria-label="Thông báo"
-                    sx={{ color: 'text.primary' }}
+                    sx={{ color: headerTextColor }}
                   >
                     <NotificationsOutlinedIcon fontSize="small" />
                   </IconButton>
                   <IconButton
                     size="small"
                     aria-label="Tin nhắn"
-                    sx={{ color: 'text.primary' }}
+                    sx={{ color: headerTextColor }}
                   >
                     <EmailOutlinedIcon fontSize="small" />
                   </IconButton>
@@ -229,6 +236,7 @@ const Header = () => {
                     displayName={displayName}
                     displayRole={displayRole}
                     avatarUrl={user?.avatarUrl}
+                    contrastMode={isAdminOnForum}
                   />
                 </>
               ) : (
@@ -260,7 +268,7 @@ const Header = () => {
             <IconButton
               aria-label="Mở menu"
               onClick={handleDrawerToggle}
-              sx={{ color: 'text.primary' }}
+              sx={{ color: headerTextColor }}
             >
               <MenuIcon />
             </IconButton>
