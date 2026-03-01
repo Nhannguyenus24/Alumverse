@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import Page from "../components/Page";
 import Logo from "../components/Logo";
+import FitBot from "../components/FitBot";
 
 const HERO_BG = "/home_page/home_page.png";
 const HERO_LOGO = "/home_page/home_page_alum.png";
@@ -460,6 +461,7 @@ const HomePage = () => {
         </Container>
       </Box>
       </Container>
+      <FitBot />
     </Page>
   );
 };
