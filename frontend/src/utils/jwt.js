@@ -17,6 +17,7 @@ export function decodeJwtPayload(token) {
       email: parsed.email,
       userName: parsed.username ?? parsed.userName,
       avatarUrl: parsed.avatar ?? parsed.avatarUrl,
+      role: parsed.role,
     };
   } catch {
     return null;
@@ -37,5 +38,6 @@ export function userFromAccessToken(token) {
     email: payload.email,
     userName: payload.userName,
     avatarUrl: payload.avatarUrl,
+    role: payload.role,
   };
 }
