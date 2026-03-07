@@ -52,13 +52,16 @@ const NAV_ITEMS = [
   },
   { label: 'Diễn đàn', href: '/dien-dan' },
   { label: 'Quyên góp', href: '/quyen-gop' },
+  { label: 'Liên hệ', href: '/lien-he' },
 ];
 
 const Header = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  // Show full nav only from this width up; below = hamburger (avoids cramped nav)
+const HEADER_DESKTOP_BREAKPOINT = 1280;
+const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
   const { isAuthenticated, user } = useAuth();
 
   const isAdminOnForum = user?.role === 'ADMIN' && location.pathname.startsWith('/dien-dan');

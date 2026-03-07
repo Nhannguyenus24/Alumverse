@@ -48,6 +48,7 @@ const ForumAlumniThreadPage = Loadable(
 const ForumAlumniCreatePostPage = Loadable(
   lazy(() => import('../pages/ForumAlumniCreatePostPage'))
 );
+const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -81,6 +82,10 @@ export const router = createBrowserRouter([
             element: <ForumAlumniCreatePostPage />,
           },
         ],
+      },
+      {
+        path: 'lien-he',
+        element: <ContactPage />,
       },
       {
         path: 'cac-khoa',
