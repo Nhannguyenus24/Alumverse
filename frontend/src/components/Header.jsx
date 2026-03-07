@@ -34,34 +34,37 @@ const LOGO_SRC_WHITE = '/school_logo/logo_alumverse_white.png';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
-  { label: 'Giới thiệu', href: '/gioi-thieu' },
-  { label: 'Vinh danh', href: '/vinh-danh' },
+  { label: 'Giới thiệu', href: '/introduction' },
+  { label: 'Vinh danh', href: '/honors' },
   {
     label: 'Hoạt động',
     children: [
-      { label: 'Sự kiện', href: '/hoat-dong/su-kien' },
-      { label: 'Tin tức', href: '/hoat-dong/tin-tuc' },
+      { label: 'Sự kiện', href: '/activities/events' },
+      { label: 'Tin tức', href: '/activities/news' },
     ],
   },
   {
     label: 'Phát triển',
     children: [
-      { label: 'Học bổng', href: '/phat-trien/hoc-bong' },
-      { label: 'Hợp tác', href: '/phat-trien/hop-tac' },
+      { label: 'Học bổng', href: '/development/scholarships' },
+      { label: 'Hợp tác', href: '/development/partnership' },
     ],
   },
-  { label: 'Diễn đàn', href: '/dien-dan' },
-  { label: 'Quyên góp', href: '/quyen-gop' },
+  { label: 'Diễn đàn', href: '/forum' },
+  { label: 'Quyên góp', href: '/donate' },
+  { label: 'Liên hệ', href: '/contact' },
 ];
 
 const Header = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
+  // Show full nav only from this width up; below = hamburger (avoids cramped nav)
+const HEADER_DESKTOP_BREAKPOINT = 1280;
+const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
   const { isAuthenticated, user } = useAuth();
 
-  const isAdminOnForum = user?.role === 'ADMIN' && location.pathname.startsWith('/dien-dan');
+  const isAdminOnForum = user?.role === 'ADMIN' && location.pathname.startsWith('/forum');
 
   const [anchorHoatDong, setAnchorHoatDong] = useState(null);
   const [anchorPhatTrien, setAnchorPhatTrien] = useState(null);

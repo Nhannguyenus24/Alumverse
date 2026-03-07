@@ -48,6 +48,7 @@ const ForumAlumniThreadPage = Loadable(
 const ForumAlumniCreatePostPage = Loadable(
   lazy(() => import('../pages/ForumAlumniCreatePostPage'))
 );
+const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -69,18 +70,32 @@ export const router = createBrowserRouter([
             element: <ForumPage />,
           },
           {
-            path: 'alumni/career',
-            element: <ForumAlumniCareerPage />,
-          },
-          {
-            path: 'alumni/career/:threadId',
-            element: <ForumAlumniThreadPage />,
-          },
-          {
-            path: 'alumni/career/create-post',
-            element: <ForumAlumniCreatePostPage />,
+            path: 'alumni',
+            children: [
+              {
+                path: 'career',
+                children: [
+                  {
+                    index: true,
+                    element: <ForumAlumniCareerPage />,
+                  },
+                  {
+                    path: 'create-post',
+                    element: <ForumAlumniCreatePostPage />,
+                  },
+                  {
+                    path: ':threadId',
+                    element: <ForumAlumniThreadPage />,
+                  },
+                ],
+              },
+            ],
           },
         ],
+      },
+      {
+        path: 'contact',
+        element: <ContactPage />,
       },
       {
         path: 'faculties',

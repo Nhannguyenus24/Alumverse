@@ -54,11 +54,11 @@ const ForumAlumniThreadPage = () => {
   const handleFilterChange = useCallback(
     (id) => {
       if (id === 'all') {
-        navigate('/dien-dan');
+        navigate('/forum');
         return;
       }
       if (id === 'alumni') {
-        navigate('/dien-dan/cuu-sinh-vien/huong-nghiep');
+        navigate('/forum/alumni/career');
         return;
       }
     },
@@ -108,8 +108,8 @@ const ForumAlumniThreadPage = () => {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Breadcrumb
                 items={[
-                  { label: 'Cựu sinh viên', path: '/dien-dan/cuu-sinh-vien/huong-nghiep' },
-                  { label: 'Hướng nghiệp', path: '/dien-dan/cuu-sinh-vien/huong-nghiep' },
+                  { label: 'Cựu sinh viên', path: '/forum/alumni/career' },
+                  { label: 'Hướng nghiệp', path: '/forum/alumni/career' },
                 ]}
                 uppercase
                 color="primary"

@@ -11,7 +11,7 @@ const FACULTIES = [
     logo: "/faculty_logo/cntt.png",
     truongKhoa: "TS. Đình Bá Tiến",
     phoTruongKhoa: "PGS.TS. Nguyễn Văn Vũ, TS. Lâm Quang Vũ",
-    to: "/cac-khoa/cong-nghe-thong-tin",
+    to: "/faculties/information-technology",
   },
   {
     type: "KHOA",
