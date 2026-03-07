@@ -59,43 +59,53 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: 'gioi-thieu',
+        path: 'introduction',
         element: <IntroducePage />,
       },
       {
-        path: 'dien-dan',
+        path: 'forum',
         children: [
           {
             index: true,
             element: <ForumPage />,
           },
           {
-            path: 'cuu-sinh-vien/huong-nghiep',
-            element: <ForumAlumniCareerPage />,
-          },
-          {
-            path: 'cuu-sinh-vien/huong-nghiep/:threadId',
-            element: <ForumAlumniThreadPage />,
-          },
-          {
-            path: 'cuu-sinh-vien/huong-nghiep/tao-bai-dang',
-            element: <ForumAlumniCreatePostPage />,
+            path: 'alumni',
+            children: [
+              {
+                path: 'career',
+                children: [
+                  {
+                    index: true,
+                    element: <ForumAlumniCareerPage />,
+                  },
+                  {
+                    path: 'create-post',
+                    element: <ForumAlumniCreatePostPage />,
+                  },
+                  {
+                    path: ':threadId',
+                    element: <ForumAlumniThreadPage />,
+                  },
+                ],
+              },
+            ],
           },
         ],
       },
       {
-        path: 'lien-he',
+        path: 'contact',
         element: <ContactPage />,
       },
       {
-        path: 'cac-khoa',
+        path: 'faculties',
         children: [
           {
             index: true,
             element: <FacultiesPage />,
           },
           {
-            path: 'cong-nghe-thong-tin',
+            path: 'information-technology',
             element: <FacultyCNTTPage />,
           },
         ],

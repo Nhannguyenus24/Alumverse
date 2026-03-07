@@ -38,11 +38,11 @@ const ForumAlumniCreatePostPage = () => {
   const handleFilterChange = useCallback(
     (id) => {
       if (id === 'all') {
-        navigate('/dien-dan');
+        navigate('/forum');
         return;
       }
       if (id === 'alumni') {
-        navigate('/dien-dan/cuu-sinh-vien/huong-nghiep');
+        navigate('/forum/alumni/career');
         return;
       }
     },
@@ -50,12 +50,11 @@ const ForumAlumniCreatePostPage = () => {
   );
 
   const handleCancel = () => {
-    navigate('/dien-dan/cuu-sinh-vien/huong-nghiep');
+    navigate('/forum/alumni/career');
   };
 
   const handleSubmit = () => {
-    // TODO: wire up API later
-    navigate('/dien-dan/cuu-sinh-vien/huong-nghiep');
+    navigate('/forum/alumni/career');
   };
 
   return (
