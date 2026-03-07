@@ -58,39 +58,39 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: 'gioi-thieu',
+        path: 'introduction',
         element: <IntroducePage />,
       },
       {
-        path: 'dien-dan',
+        path: 'forum',
         children: [
           {
             index: true,
             element: <ForumPage />,
           },
           {
-            path: 'cuu-sinh-vien/huong-nghiep',
+            path: 'alumni/career',
             element: <ForumAlumniCareerPage />,
           },
           {
-            path: 'cuu-sinh-vien/huong-nghiep/:threadId',
+            path: 'alumni/career/:threadId',
             element: <ForumAlumniThreadPage />,
           },
           {
-            path: 'cuu-sinh-vien/huong-nghiep/tao-bai-dang',
+            path: 'alumni/career/create-post',
             element: <ForumAlumniCreatePostPage />,
           },
         ],
       },
       {
-        path: 'cac-khoa',
+        path: 'faculties',
         children: [
           {
             index: true,
             element: <FacultiesPage />,
           },
           {
-            path: 'cong-nghe-thong-tin',
+            path: 'information-technology',
             element: <FacultyCNTTPage />,
           },
         ],

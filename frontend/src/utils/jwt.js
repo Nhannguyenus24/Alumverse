@@ -18,6 +18,7 @@ export function decodeJwtPayload(token) {
       userName: parsed.username ?? parsed.userName,
       avatarUrl: parsed.avatar ?? parsed.avatarUrl,
       role: parsed.role,
+      exp: parsed.exp,
     };
   } catch {
     return null;
@@ -41,3 +42,30 @@ export function userFromAccessToken(token) {
     role: payload.role,
   };
 }
+
+/**
+ * Check if token is expired
+ * @param {string} token - JWT access token
+ * @returns {boolean} true if token is expired, false otherwise
+ */
+export function isTokenExpired(token) {
+  if (!token) return true;
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return true;
+  // exp is in seconds, convert to milliseconds
+  return Date.now() >= payload.exp * 1000;
+}
+
+/**
+ * Get seconds until token expires
+ * @param {string} token - JWT access token
+ * @returns {number} seconds until expiration, 0 if already expired or invalid
+ */
+export function getSecondsUntilExpire(token) {
+  if (!token) return 0;
+  const payload = decodeJwtPayload(token);
+  if (!payload || !payload.exp) return 0;
+  const secondsUntilExpire = Math.floor(payload.exp - Date.now() / 1000);
+  return Math.max(0, secondsUntilExpire);
+}
+
