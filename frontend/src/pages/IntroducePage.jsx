@@ -189,7 +189,7 @@ const IntroducePage = () => {
             >
               <Button
                 component={Link}
-                to="/cac-khoa"
+                to="/faculties"
                 variant="contained"
                 size="large"
                 sx={{

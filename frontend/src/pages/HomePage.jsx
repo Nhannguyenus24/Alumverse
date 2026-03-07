@@ -156,7 +156,7 @@ const HomePage = () => {
               <Box sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
                 <Button
                   component={Link}
-                  to="/gioi-thieu"
+                  to="/introduction"
                   variant="outlined"
                   size="large"
                   sx={{
@@ -320,7 +320,7 @@ const HomePage = () => {
               >
               <Card
                 component={Link}
-                to="/hoat-dong/tin-tuc"
+                to="/activities/news"
                 sx={{
                   textDecoration: "none",
                   color: "inherit",

@@ -164,7 +164,7 @@ const ForumPage = () => {
   const handleFilterChange = useCallback(
     (id) => {
       if (id === 'alumni') {
-        navigate('/dien-dan/cuu-sinh-vien/huong-nghiep');
+        navigate('/forum/alumni/career');
         return;
       }
       setSelectedFilterId(id);
@@ -225,7 +225,6 @@ const ForumPage = () => {
   };
 
   const handleSaveTopics = () => {
-    // TODO: call API to persist
     handleCloseManageMode();
   };
 

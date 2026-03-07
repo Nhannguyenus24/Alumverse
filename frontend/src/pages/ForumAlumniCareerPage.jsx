@@ -32,7 +32,7 @@ const ForumAlumniCareerPage = () => {
   const handleFilterChange = useCallback(
     (id) => {
       if (id === 'all') {
-        navigate('/dien-dan');
+        navigate('/forum');
         return;
       }
       if (id === 'alumni') {
@@ -99,7 +99,7 @@ const ForumAlumniCareerPage = () => {
               >
                 <Breadcrumb
                   items={[
-                    { label: 'Cựu sinh viên', path: '/dien-dan/cuu-sinh-vien/huong-nghiep' },
+                    { label: 'Cựu sinh viên', path: '/forum/alumni/career' },
                     { label: 'Hướng nghiệp' },
                   ]}
                   uppercase
@@ -141,7 +141,7 @@ const ForumAlumniCareerPage = () => {
                       variant="contained"
                       color="primary"
                       onClick={() =>
-                        navigate('/dien-dan/cuu-sinh-vien/huong-nghiep/tao-bai-dang')
+                        navigate('/forum/alumni/career/create-post')
                       }
                       sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                     >
@@ -156,7 +156,7 @@ const ForumAlumniCareerPage = () => {
                   <Box
                     key={post.id}
                     onClick={() =>
-                      navigate(`/dien-dan/cuu-sinh-vien/huong-nghiep/${post.id}`)
+                      navigate(`/forum/alumni/career/${post.id}`)
                     }
                     sx={{
                       px: { xs: 1.5, sm: 2, md: 3 },
