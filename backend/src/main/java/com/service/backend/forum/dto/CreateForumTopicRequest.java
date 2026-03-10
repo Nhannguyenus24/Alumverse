@@ -1,5 +1,6 @@
 package com.service.backend.forum.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class CreateForumTopicRequest {
     
     @NotNull(message = "Organization ID is required")
+    @Min(value = 1, message = "Organization ID must be greater than 0")
     private Integer organizationId;
     
     @NotBlank(message = "Topic title is required")
@@ -22,8 +24,10 @@ public class CreateForumTopicRequest {
     private String title;
     
     @NotNull(message = "Creator member ID is required")
+    @Min(value = 1, message = "Creator member ID must be greater than 0")
     private Integer createdByMemberId;
     
     @NotNull(message = "Category ID is required")
+    @Min(value = 1, message = "Category ID must be greater than 0")
     private Integer categoryId;
 }

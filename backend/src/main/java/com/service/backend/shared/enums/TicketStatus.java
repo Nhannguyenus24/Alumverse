@@ -1,9 +1,9 @@
 package com.service.backend.shared.enums;
 
 public enum TicketStatus {
-    REGISTERED("registered"),
-    CHECKED_IN("checked_in"),
-    CANCELLED("cancelled");
+    registered("registered"),
+    checked_in("checked_in"),
+    cancelled("cancelled");
 
     private final String value;
 

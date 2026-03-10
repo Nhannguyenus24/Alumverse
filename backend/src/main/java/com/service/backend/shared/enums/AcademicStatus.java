@@ -1,9 +1,9 @@
 package com.service.backend.shared.enums;
 
 public enum AcademicStatus {
-    GRADUATED("graduated"),
-    STUDYING("studying"),
-    DROPPED("dropped");
+    graduated("graduated"),
+    studying("studying"),
+    dropped("dropped");
 
     private final String value;
 

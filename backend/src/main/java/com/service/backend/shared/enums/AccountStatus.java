@@ -1,9 +1,9 @@
 package com.service.backend.shared.enums;
 
 public enum AccountStatus {
-    ACTIVE("active"),
-    PENDING("pending"),
-    BANNED("banned");
+    active("active"),
+    pending("pending"),
+    banned("banned");
 
     private final String value;
 

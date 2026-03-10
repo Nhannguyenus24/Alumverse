@@ -2,6 +2,8 @@ package com.service.backend.filter;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,7 @@ import reactor.core.publisher.Mono;
 @Order(-100) // Run before Spring Security filters
 public class HeaderAuthenticationFilter implements WebFilter {
 
+    private static final Logger logger = LoggerFactory.getLogger(HeaderAuthenticationFilter.class);
     private final JwtUtils jwtUtils;
 
     public HeaderAuthenticationFilter(
@@ -34,7 +37,6 @@ public class HeaderAuthenticationFilter implements WebFilter {
         String path = exchange.getRequest().getPath().value();
         
         // Skip authentication for public endpoints
-        // No ko pass ngay cho nay
         if (path.startsWith("/api/auth/") ||
             path.startsWith("/swagger-ui") ||
             path.startsWith("/webjars/") ||
@@ -54,6 +56,7 @@ public class HeaderAuthenticationFilter implements WebFilter {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            logger.warn("No valid Bearer token found for {}", path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
             String errorResponse = "{\"message\":\"Request is not authenticated\",\"error\":\"UNAUTHORIZED\"}";
@@ -86,16 +89,18 @@ public class HeaderAuthenticationFilter implements WebFilter {
 
         } catch (RuntimeException e) {
             // Token validation failed (invalid, expired, or malformed)
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
-            
             String message = e.getMessage();
             String errorCode = "INVALID_TOKEN";
+            
+            logger.error("Token validation failed for path: {} - Error: {}", path, message, e);
             
             // Provide specific error code for expired tokens to enable client refresh logic
             if (message != null && message.contains("expired")) {
                 errorCode = "TOKEN_EXPIRED";
+                logger.warn("Token has expired for path: {}", path);
             }
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
             
             String errorResponse = "{\"message\":\"" + (message != null ? message : "Token validation failed") 
                     + "\",\"error\":\"" + errorCode + "\"}";
