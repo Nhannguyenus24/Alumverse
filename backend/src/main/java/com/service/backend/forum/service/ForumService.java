@@ -2,11 +2,21 @@ package com.service.backend.forum.service;
 
 import java.time.LocalDateTime;
 
-import com.service.backend.forum.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.forum.dto.CreateForumCategoryRequest;
+import com.service.backend.forum.dto.CreateForumPostRequest;
+import com.service.backend.forum.dto.CreateForumTopicRequest;
+import com.service.backend.forum.dto.ForumCategoryDTO;
+import com.service.backend.forum.dto.ForumPostDTO;
+import com.service.backend.forum.dto.ForumPostPageResponse;
+import com.service.backend.forum.dto.ForumTopicDTO;
+import com.service.backend.forum.dto.ForumTopicPageResponse;
+import com.service.backend.forum.dto.PageInfo;
+import com.service.backend.forum.dto.UpdateForumCategoryRequest;
+import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.entities.ForumCategory;
 import com.service.backend.forum.entities.ForumPost;
 import com.service.backend.forum.entities.ForumTopic;
@@ -138,17 +148,26 @@ public class ForumService {
 
     public Mono<ForumTopicDTO> createTopic(CreateForumTopicRequest request) {
         log.info("Creating forum topic: {}", request.getTitle());
-        ForumTopic topic = ForumTopic.builder()
-                .organizationId(request.getOrganizationId())
-                .title(request.getTitle())
-                .createdByMemberId(request.getCreatedByMemberId())
-                .categoryId(request.getCategoryId())
-                .viewCount(0)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
         
-        return forumTopicRepository.save(topic)
+        // Verify category exists before creating topic
+        return forumCategoryRepository.findById(request.getCategoryId())
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.error("Category not found with ID: {}", request.getCategoryId());
+                    return Mono.error(new RuntimeException("Category not found with ID: " + request.getCategoryId()));
+                }))
+                .flatMap(category -> {
+                    ForumTopic topic = ForumTopic.builder()
+                            .organizationId(request.getOrganizationId())
+                            .title(request.getTitle())
+                            .createdByMemberId(request.getCreatedByMemberId())
+                            .categoryId(request.getCategoryId())
+                            .viewCount(0)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    
+                    return forumTopicRepository.save(topic);
+                })
                 .map(this::convertToTopicDTO)
                 .doOnSuccess(result -> log.info("Successfully created forum topic with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
@@ -213,17 +232,32 @@ public class ForumService {
 
     public Mono<ForumPostDTO> createPost(CreateForumPostRequest request) {
         log.info("Creating forum post for topic ID: {}, author: {}", request.getTopicId(), request.getAuthorMemberId());
-        ForumPost post = ForumPost.builder()
-                .topicId(request.getTopicId())
-                .authorMemberId(request.getAuthorMemberId())
-                .content(request.getContent())
-                .answerToPostId(request.getAnswerToPostId())
-                .isBanned(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
-                .build();
         
-        return forumPostRepository.save(post)
+        // Validate topicId is valid (not 0 or negative)
+        if (request.getTopicId() == null || request.getTopicId() <= 0) {
+            log.warn("Invalid topic ID: {}", request.getTopicId());
+            return Mono.error(new RuntimeException("Invalid topic ID: must be greater than 0"));
+        }
+        
+        // Verify topic exists before creating post
+        return forumTopicRepository.findById(request.getTopicId())
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.error("Topic not found with ID: {}", request.getTopicId());
+                    return Mono.error(new RuntimeException("Topic not found with ID: " + request.getTopicId()));
+                }))
+                .flatMap(topic -> {
+                    ForumPost post = ForumPost.builder()
+                            .topicId(request.getTopicId())
+                            .authorMemberId(request.getAuthorMemberId())
+                            .content(request.getContent())
+                            .answerToPostId(request.getAnswerToPostId())
+                            .isBanned(false)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    
+                    return forumPostRepository.save(post);
+                })
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("Successfully created forum post with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum post for topic ID: {}", request.getTopicId(), error));

@@ -14,6 +14,8 @@ import com.service.backend.auth.entity.User;
 import com.service.backend.auth.repository.AuthRepository;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.JwtUtils;
 
 import reactor.core.publisher.Mono;
 
@@ -26,12 +28,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final CacheUtils cacheUtils;
-    private final com.service.backend.shared.utils.JwtUtils jwtUtils;
+    private final JwtUtils jwtUtils;
     private final Random random;
         
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder, 
                       EmailService emailService, CacheUtils cacheUtils,
-                      com.service.backend.shared.utils.JwtUtils jwtUtils) {
+                      JwtUtils jwtUtils) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -70,7 +72,7 @@ public class AuthService {
                         logger.info("Login successful for email: {}", email);
                         return Mono.just(user);
                     }
-
+                    logger.info(JsonUtils.toJson(user));
                     logger.warn("Login failed - invalid password for email: {}", email);
                     return Mono.error(new RuntimeException("Invalid email or password"));
                 })

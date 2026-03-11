@@ -1,9 +1,9 @@
 package com.service.backend.shared.enums;
 
 public enum RequestStatus {
-    PENDING("pending"),
-    APPROVED("approved"),
-    REJECTED("rejected");
+    pending("pending"),
+    approved("approved"),
+    rejected("rejected");
 
     private final String value;
 
