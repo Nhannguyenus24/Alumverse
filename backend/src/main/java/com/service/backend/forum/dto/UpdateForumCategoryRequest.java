@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @Data
 @NoArgsConstructor
@@ -13,8 +14,10 @@ import lombok.NoArgsConstructor;
 public class UpdateForumCategoryRequest {
     
     @Size(min = 3, max = 100, message = "Category name must be between 3 and 100 characters")
+    @Schema(example = "Thông báo học vụ")
     private String name;
     
     @Size(max = 500, message = "Description must not exceed 500 characters")
+    @Schema(example = "Thông báo về lịch học, lịch thi, nghỉ học, ...")
     private String description;
 }
