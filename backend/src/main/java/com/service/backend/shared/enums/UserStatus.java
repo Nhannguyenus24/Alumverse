@@ -1,14 +1,14 @@
 package com.service.backend.shared.enums;
 
 public enum UserStatus {
-    ACTIVE("active"),
-    INACTIVE("inactive"),
-    BANNED("banned"),
-    SUSPENDED("suspended"),
-    DELETED("deleted"),
-    DISABLED("disabled"),
-    PENDING("pending"),
-    UNVERIFIED("unverified");
+    active("active"),
+    inactive("inactive"),
+    banned("banned"),
+    suspended("suspended"),
+    deleted("deleted"),
+    disabled("disabled"),
+    pending("pending"),
+    unverified("unverified");
 
     private final String status;
 
