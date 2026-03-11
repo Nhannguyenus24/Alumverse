@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import io.swagger.v3.oas.annotations.Parameter;
 import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.LoginRequest;
 import com.service.backend.auth.dto.LoginResponse;
@@ -98,7 +98,7 @@ public class AuthController {
      */
     @PostMapping("/activate/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> activateUser(
-            @io.swagger.v3.oas.annotations.Parameter(example = "123")
+            @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
         return authService.activateUser(userId)
                 .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("User activated successfully", true))))
@@ -110,7 +110,7 @@ public class AuthController {
      */
     @PutMapping("/password/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> changePassword(
-            @io.swagger.v3.oas.annotations.Parameter(example = "123")
+            @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(userId, request.getOldPassword(), request.getNewPassword())
