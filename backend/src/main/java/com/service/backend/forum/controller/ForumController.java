@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
+import io.swagger.v3.oas.annotations.Parameter;
 import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
@@ -48,6 +48,7 @@ public class ForumController {
      */
     @GetMapping("/category")
     public Mono<ResponseEntity<ApiResponse<List<ForumCategoryDTO>>>> getAllCategoriesByOrganization(
+            @Parameter(example = "1")
             @RequestParam @NotNull(message = "Organization ID is required") Integer organizationId) {
         return forumService.findAllCategoriesByOrganizationId(organizationId)
                 .collectList()
@@ -95,7 +96,9 @@ public class ForumController {
      * Find forum topic by title
      */
     @GetMapping("/topic/search")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> getTopicByTitle(@RequestParam String title) {
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> getTopicByTitle(
+            @Parameter(example = "Hỏi đáp về đăng ký môn học")
+            @RequestParam String title) {
         return forumService.findTopicByTitle(title)
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Topic found successfully", topic)))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
@@ -106,8 +109,11 @@ public class ForumController {
      */
     @GetMapping("/topic")
     public Mono<ResponseEntity<ApiResponse<ForumTopicPageResponse>>> getTopicsByCategoryId(
+            @Parameter(example = "2")
             @RequestParam Integer categoryId,
+            @Parameter(example = "0")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") int size) {
         return forumService.findTopicsByCategoryId(categoryId, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Topics retrieved successfully", response)))
@@ -155,8 +161,11 @@ public class ForumController {
      */
     @GetMapping("/post")
     public Mono<ResponseEntity<ApiResponse<ForumPostPageResponse>>> getPostsByTopicId(
+            @Parameter(example = "10")
             @RequestParam @NotNull(message = "Topic ID is required") Integer topicId,
+            @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be greater than or equal to 0") int page,
+            @Parameter(example = "20")
             @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be greater than 0") int size) {
         return forumService.findPostsByTopicId(topicId, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Posts retrieved successfully", response)))
