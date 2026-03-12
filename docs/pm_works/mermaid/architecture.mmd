@@ -1,0 +1,33 @@
+%% Alumnverse - Kiến trúc hệ thống (Mẫu Mermaid)
+%% Export: mermaid.live hoặc VS Code Mermaid extension -> PNG/SVG
+%% Đặt output vào pm_works/images/diagrams/
+
+flowchart TB
+    subgraph Client["Client"]
+        Web[Web App - React/Vite]
+    end
+
+    subgraph Server["Backend - Spring WebFlux"]
+        API[API Gateway / Controllers]
+        Auth[AuthController]
+        Forum[ForumController]
+        Event[EventController]
+        Chat[ChatController]
+        Article[News/Job/Achievement/LearningResource]
+    end
+
+    subgraph Data["Data"]
+        DB[(PostgreSQL - R2DBC)]
+    end
+
+    Web --> API
+    API --> Auth
+    API --> Forum
+    API --> Event
+    API --> Chat
+    API --> Article
+    Auth --> DB
+    Forum --> DB
+    Event --> DB
+    Chat --> DB
+    Article --> DB
