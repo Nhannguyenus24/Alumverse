@@ -1,0 +1,333 @@
+% ĐỀ CƯƠNG THỰC TẬP DỰ ÁN TỐT NGHIỆP - ALUMNVERSE
+% Có thể copy sang Overleaf để biên dịch
+% Compiler: XeLaTeX (cần fontspec, polyglossia)
+
+\documentclass[12pt,a4paper]{article}
+
+% Font & Vietnamese (theo quy định HCMUS/FIT)
+% Cỡ chữ 13pt: dùng Scale 13/12 vì article không hỗ trợ 13pt trực tiếp
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\setmainfont{Times New Roman}[Scale=1.083]
+
+% Layout
+\usepackage{geometry}
+\geometry{a4paper, left=2cm, right=2cm, top=3.5cm, bottom=3.5cm}
+
+% Nội dung thường: cỡ chữ 13pt (Scale từ 12pt), giãn dòng 1.5 (chuẩn đồ án tốt nghiệp VN)
+% Font: Times New Roman (đã đặt ở trên)
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{framed}
+\usepackage{enumitem}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+\renewcommand{\baselinestretch}{1.5}
+
+\graphicspath{{./Pictures/}}
+
+\titleformat{\section}
+{\Large\bfseries}
+{\thesection.}{0.5em}{}
+
+\titleformat{\subsection}
+{\large\bfseries}
+{\thesubsection}{0.5em}{}
+
+\begin{document}
+% ================= TRANG BÌA =================
+
+\begin{titlepage}
+\begin{center}
+
+% Logo + tên trường
+\begin{minipage}{0.4\textwidth}
+\includegraphics[width=6.5cm]{logo_fit.png}
+\end{minipage}
+\begin{minipage}{0.55\textwidth}
+\begin{center}
+{\normalsize\textbf{TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN}}\\
+{\normalsize\textbf{KHOA CÔNG NGHỆ THÔNG TIN}}
+\end{center}
+\end{minipage}
+
+\vspace{1cm}
+
+{\Large\bfseries
+ĐỀ CƯƠNG THỰC TẬP DỰ ÁN TỐT NGHIỆP
+}
+
+\vspace{1cm}
+
+{\LARGE\bfseries
+ALUMNVERSE: CẢI TIẾN HỆ THỐNG KẾT NỐI SINH VIÊN VÀ CỰU SINH VIÊN TRƯỜNG ĐH KHOA HỌC TỰ NHIÊN, ĐHQG-HCM
+}
+\vspace{0.4cm}
+
+{\large \bfseries\textit{(Alumnverse: Refactoring and Enhancing the Student–Alumni System for HCMUS)}}
+
+
+\vspace{1cm}
+
+\begin{flushleft}
+
+\textbf{1. THÔNG TIN CHUNG}\\
+\textbf{Người hướng dẫn:}\\
+-- ThS. Hồ Tuấn Thanh\\
+-- ThS. Nguyễn Lê Hoàng Dũng
+
+\textbf{Nhóm sinh viên thực hiện:}\\
+22127151 - Lâm Tiến Huy\\
+22127240 - Trần Tiến Lợi\\
+22127290 - Nguyễn Thị Thu Ngân\\
+22127306 - Nguyễn Trọng Nhân\\
+22127442 - Trần Đức Tùng\\
+22127408 - Kha Vĩnh Thuận
+
+\textbf{Loại đề tài:} Ứng dụng
+
+\textbf{Thời gian thực hiện:} Từ 01/2026 đến 06/2026
+
+\end{flushleft}
+
+\vfill
+
+\begin{center}
+TP. Hồ Chí Minh, 2026
+\end{center}
+
+\end{center}
+
+\end{titlepage}
+
+% ========== HEADER & FOOTER ==========
+\pagestyle{fancy}
+\fancyhf{}
+\rfoot{\textbf{\thepage}}
+
+% ========== 2. NỘI DUNG CHÍNH ==========
+\setcounter{section}{1}
+\section{Nội dung chính}
+% ========== 2.1. GIỚI THIỆU ĐỀ TÀI ==========
+\subsection{Giới thiệu đề tài}
+
+Cựu sinh viên (alumni) là nguồn lực quan trọng cho sự phát triển của các trường đại học. Theo Obeng-Ofori và Kwarteng (2021) [1] và UniSel Alumni [2], alumni đóng vai trò thiết yếu: role model, career mentor, cung cấp chuyên môn, hỗ trợ phát triển nghề nghiệp, tuyển sinh, gây quỹ và nâng cao uy tín trường. Mạng lưới alumni hiệu quả giúp kết nối sinh viên -- cựu sinh viên và tạo giá trị đóng góp thực sự.
+
+\textbf{Phân tích hệ thống cũ:} Ứng dụng trước (Prior app 2021) thiên về mô hình mạng xã hội (tìm kiếm CSV, CLB/nhóm, follow, group chat, diễn đàn). Các trang alumni tương tự trên mạng xã hội thường chỉ đăng thông tin một chiều, không có hoạt động gắn kết cụ thể; hơn nữa đặc tính của các trang alumni không phải là ứng dụng để sử dụng thường xuyên, hàng ngày. Dựa trên dữ liệu khảo sát các cộng đồng alumni tương tự (nguồn: Proposed Features for AlumnVerse [3]), tỉ lệ engagement rất thấp (Bảng~\ref{tab:engagement}). Cộng đồng lớn thường ``quan sát, ít trao đổi'', không phát huy đủ giá trị cốt lõi của alumni. Vì vậy nhóm quyết định thay đổi hướng tiếp cận.
+
+\begin{table}[H]
+\centering
+\caption{Phân tích tỉ lệ engagement của các trang alumni tương tự (nguồn: Proposed Features for AlumnVerse)}
+\label{tab:engagement}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|p{5cm}|r|{\raggedleft\arraybackslash}p{3cm}|p{2.8cm}|}
+\hline
+\textbf{Trường / Nhóm} & \textbf{Số người} & \textbf{Lượt tương tác/ bài} & \textbf{Tỉ lệ engagement ước lượng} \\
+\hline
+Cựu SV \& SV ĐH Sư Phạm Kỹ Thuật & 138.000 & 5--18 & $\approx$ 0,009--0,013\% \\
+\hline
+UEH Alumni & 9.600 & 12+ & $\approx$ 0,12\% \\
+\hline
+Cựu SV ĐH Luật & 6.100 & $\sim$8 & $\approx$ 0,13\% \\
+\hline
+Cựu SV Trường Kiến (UAH) & 15.000 & $<$23 & $\approx$ 0,15\% \\
+\hline
+Cựu SV Khoa KH\&CN Vật liệu -- HCMUS (MSTA) & 2.700 & $\sim$9 & $\approx$ 0,33\% \\
+\hline
+\end{tabular}%
+}
+\end{table}
+
+\textit{Nhận xét:} Các trang định hướng mạng xã hội thường có độ engagement thấp, không phát triển theo hướng người dùng hàng ngày.
+
+\textbf{Thay đổi hướng tiếp cận:} Alumnverse chuyển sang tập trung vào \textbf{giá trị đóng góp cốt lõi} -- đặc biệt \textbf{mentorship} (hướng dẫn nghề nghiệp, matchmaking mentor--mentee), cơ hội việc làm, chia sẻ chuyên môn, đóng góp/gây quỹ, và vinh danh thành tựu -- thay vì mô hình ``like, follow'' thuần túy.
+
+\textbf{Khảo sát người dùng:} Dự án đã thực hiện khảo sát khoảng 100 người (sinh viên và cựu sinh viên HCMUS) về độ phù hợp tính năng và gợi ý cho Alumnverse. Kết quả hỗ trợ hướng phát triển mentorship, forum Q\&A, networking event, cơ hội nghề nghiệp và kênh đóng góp minh bạch.
+
+\textbf{Ý tưởng giải quyết:} Tái cấu trúc hệ thống, chuyển từ kiến trúc microservices sang \textbf{monolithic} (frontend React, backend Spring WebFlux), thiết kế lại cơ sở dữ liệu, triển khai các module: xác thực, diễn đàn, sự kiện, tin nhắn, nội dung (tin tức, việc làm, thành tựu), \textbf{mentorship}, và \textbf{bộ công cụ multi-tenant} cho phép các khoa khác trong HCMUS tạo trang alumni riêng theo subdomain.
+
+\textbf{Ý nghĩa thực tiễn:} Alumnverse hướng tới \textbf{hệ thống chạy thực tế} -- triển khai production, phục vụ người dùng thật (sinh viên, cựu sinh viên HCMUS) -- không chỉ dừng ở đồ án demo. Hệ thống hỗ trợ HCMUS quản lý mạng lưới alumni, tạo kênh kết nối có giá trị, đồng thời cung cấp \textbf{khung tính năng} tái sử dụng cho nhiều khoa.
+
+% ========== 2.2. MỤC TIÊU ĐỀ TÀI ==========
+\subsection{Mục tiêu đề tài}
+
+\textbf{Mục tiêu chính:}
+
+\begin{enumerate}
+    \item Xây dựng \textbf{hệ thống chạy thực tế} -- triển khai lên môi trường production, phục vụ người dùng thật, không chỉ là đồ án demo deploy tạm thời.
+    \item Tái cấu trúc hệ thống sinh viên -- cựu sinh viên theo kiến trúc hiện đại, dễ mở rộng và bảo trì.
+    \item Nâng cao trải nghiệm người dùng qua giao diện web responsive (máy tính và trình duyệt trên điện thoại).
+    \item Triển khai các tính năng cốt lõi: xác thực, diễn đàn, sự kiện, tin nhắn, quản lý nội dung, tìm kiếm, mentorship.
+\end{enumerate}
+
+\textbf{Mục tiêu cụ thể:}
+
+\begin{itemize}
+    \item Phân tích và đánh giá hệ thống hiện tại, xác định điểm cần cải thiện.
+    \item Thiết kế kiến trúc monolithic mới (frontend SPA + backend API reactive), hỗ trợ multi-tenant.
+    \item Triển khai module xác thực (đăng ký, đăng nhập, OTP, quên mật khẩu), xác minh danh tính người dùng (đối với alumni, sinh viên).
+    \item Triển khai phân quyền: master admin quản lý toàn bộ hệ thống Alumnverse; vai trò quản lý của khoa (giáo vụ) quản trị trang alumni của từng khoa.
+    \item Triển khai diễn đàn (category, topic, post), đặc biệt diễn đàn sự nghiệp alumni.
+    \item Triển khai quản lý sự kiện (CRUD, đăng ký tham dự, vé, check-in).
+    \item Triển khai tin nhắn (chat riêng, nhóm).
+    \item Triển khai quản lý nội dung: tin tức, tài nguyên học tập, việc làm, thành tựu.
+    \item Triển khai \textbf{tìm kiếm}: tìm kiếm cựu sinh viên, nội dung diễn đàn, tin tức, việc làm.
+    \item Triển khai \textbf{mentorship}: đăng ký mentor, matchmaking, đặt lịch, theo dõi tiến độ, feedback.
+    \item Triển khai \textbf{trang thiết lập admin} (multi-tenant): tạo trang khoa mới, cấu hình bố cục/màu sắc, chọn tính năng, preview, launch.
+    \item Kiểm thử và đánh giá hệ thống.
+\end{itemize}
+
+\textbf{Kiến thức/kỹ năng đạt được:}
+
+\begin{itemize}
+    \item \textbf{Kiến thức:} Kiến trúc phần mềm, REST API, reactive programming, quản lý phiên (JWT).
+    \item \textbf{Kỹ thuật:} React, Spring Boot WebFlux, PostgreSQL, Docker.
+    \item \textbf{Kỹ năng:} Phân tích yêu cầu, thiết kế hệ thống, làm việc nhóm, quản lý thời gian.
+\end{itemize}
+
+% ========== 2.3. PHẠM VI CỦA ĐỀ TÀI ==========
+\subsection{Phạm vi của đề tài}
+
+\textbf{Đối tượng nghiên cứu/thực hiện:}
+
+\begin{itemize}
+    \item Hệ thống Alumnverse (mã nguồn tại repository dự án).
+    \item Người dùng: sinh viên, cựu sinh viên, quản trị viên.
+    \item Dữ liệu: thông tin người dùng, diễn đàn, sự kiện, tin nhắn, tin tức, việc làm, thành tựu.
+\end{itemize}
+
+\textbf{Đặc điểm:}
+
+Multi-tenant: Alumnverse cung cấp bộ công cụ chung (khung tính năng) để các khoa khác trong HCMUS có thể tạo trang alumni riêng theo subdomain (vd: \texttt{cntt.alumnverse.hcmus.edu.vn}).
+
+\textbf{Hình thức triển khai:}
+
+\begin{itemize}
+    \item Web application responsive -- chạy trên trình duyệt máy tính và \textbf{trình duyệt trên điện thoại} (không phát triển ứng dụng native riêng).
+    \item Phạm vi đơn vị: HCMUS (Khoa CNTT triển khai đầu tiên, các khoa khác khi có nhu cầu).
+    \item Các tính năng nâng cao (AI moderation, chatbot phức tạp) có thể nằm ngoài phạm vi ban đầu.
+\end{itemize}
+
+% ========== 2.4. CÁCH TIẾP CẬN DỰ KIẾN ==========
+\subsection{Cách tiếp cận dự kiến}
+
+Dự án triển khai theo SDLC (Software Development Life Cycle -- vòng đời phát triển phần mềm), kết hợp phương pháp tăng tiến (Agile), chia thành các giai đoạn:
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|p{2.2cm}|p{\dimexpr\textwidth-4.5cm}|}
+\hline
+\textbf{Giai đoạn} & \textbf{Nội dung} \\
+\hline
+1. Phân tích & Khảo sát hệ thống hiện tại, thu thập yêu cầu (khảo sát $\sim$100 người), phân tích use case \\
+\hline
+2. Thiết kế & Thiết kế kiến trúc, cơ sở dữ liệu, giao diện (responsive) \\
+\hline
+3. Triển khai & Phát triển theo từng module (Auth $\rightarrow$ Forum $\rightarrow$ Event $\rightarrow$ Chat $\rightarrow$ Articles $\rightarrow$ Mentorship) \\
+\hline
+4. Kiểm thử & Unit test, integration test, kiểm thử chấp nhận \\
+\hline
+5. Vận hành & Triển khai production, vận hành thử với người dùng thật \\
+\hline
+6. Tài liệu & Viết báo cáo, hướng dẫn sử dụng, vận hành \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Công nghệ sử dụng:} React 19, Vite 7, Material UI 7, Spring Boot 3.5, WebFlux, R2DBC, PostgreSQL, Docker Compose.
+
+
+% ========== 2.5. KẾT QUẢ THỰC HIỆN DỰ KIẾN CỦA ĐỀ TÀI ==========
+\subsection{Kết quả thực hiện dự kiến của đề tài}
+
+\begin{enumerate}
+    \item \textbf{Hệ thống Alumnverse chạy thực tế} -- Triển khai production, phục vụ người dùng thật; web responsive (máy tính và trình duyệt trên điện thoại).
+    \item \textbf{Mã nguồn hệ thống} -- Repository hoàn chỉnh (frontend + backend), có thể chạy qua Docker Compose.
+    \item \textbf{Báo cáo đồ án} -- Mô tả phân tích, thiết kế, triển khai, đánh giá.
+    \item \textbf{Tài liệu} -- Hướng dẫn cài đặt, sử dụng, vận hành.
+    \item \textbf{Đo lường và metrics} -- Đồ án đề ra các hoạt động có thể đo lường bằng người dùng thực tế: (i) Thu thập thông số người dùng thực (số đăng ký, lượt truy cập, phiên hoạt động); (ii) Định nghĩa metrics cho đồ án (engagement rate, số mentorship match, lượt đăng bài diễn đàn, tham dự sự kiện); (iii) Báo cáo số liệu từ môi trường production với người dùng thật.
+\end{enumerate}
+
+% ========== 2.6. KẾ HOẠCH THỰC HIỆN ==========
+\subsection{Kế hoạch thực hiện}
+
+Dưới đây là lịch trình thực hiện dự án Alumnverse từ tháng 01/2026 đến tháng 06/2026, chia thành 6 sprint theo tháng:
+
+\textbf{Sprint 1} (01/2026):
+\begin{itemize}[leftmargin=*, nosep]
+    \item Tìm hiểu, giới hạn phạm vi; Nghiên cứu công nghệ
+    \item Khảo sát hệ thống cũ, phân tích yêu cầu
+    \item Hoàn thiện đề cương (lễ Tết)
+\end{itemize}
+
+\textbf{Sprint 2} (02/2026):
+\begin{itemize}[leftmargin=*, nosep]
+    \item Thiết kế kiến trúc, DB sơ bộ; Thiết kế chi tiết (DB, API spec)
+    \item Thiết kế giao diện, wireframe
+    \item Lập đề cương đề tài (\textbf{đề cương hoàn thành, duyệt}); Setup project, chuẩn bị triển khai
+\end{itemize}
+
+\textbf{Sprint 3} (03/2026):
+\begin{itemize}[leftmargin=*, nosep]
+    \item Triển khai Auth (đăng ký, đăng nhập, OTP, quên mật khẩu), phân quyền
+    \item Forum: category, topic, post; Forum Alumni Career, tìm kiếm
+\end{itemize}
+
+\textbf{Sprint 4} (04/2026):
+\begin{itemize}[leftmargin=*, nosep]
+    \item Event: CRUD, đăng ký, vé, check-in
+    \item Chat riêng, nhóm
+    \item Tin tức, việc làm, thành tựu; Tìm kiếm CSV, nội dung
+    \item Mentorship: đăng ký, matchmaking
+\end{itemize}
+
+\textbf{Sprint 5} (05/2026):
+\begin{itemize}[leftmargin=*, nosep]
+    \item Mentorship: đặt lịch, feedback
+    \item Trang thiết lập admin (tạo trang khoa); Cấu hình bố cục, chọn tính năng, preview, launch
+    \item Kiểm thử tổng hợp, sửa lỗi, tối ưu
+    \item Triển khai production; Cho user dùng thử, thu thập feedback
+\end{itemize}
+
+\textbf{Sprint 6} (06/2026):
+\begin{itemize}[leftmargin=*, nosep]
+    \item Tiếp tục cho user dùng thử
+    \item Viết báo cáo, tài liệu hướng dẫn
+    \item Hoàn thiện báo cáo, demo
+    \item Chuẩn bị bảo vệ, dự phòng
+\end{itemize}
+
+\vspace{0.5em}
+\noindent\textit{(Điều chỉnh theo kế hoạch thực tế của Khoa.)}
+
+% ========== 2.7. TÀI LIỆU THAM KHẢO ==========
+\subsection{Tài liệu tham khảo}
+
+\begin{enumerate}
+    \item D. Obeng-Ofori and H. O. Kwarteng, ``Enhancing the Role of Alumni in the Growth of Higher Education Institutions,'' \textit{International Journal of Multidisciplinary Studies and Innovative Research}, vol. 4, pp. 40--48, 2021. doi: 10.21681/IJMSIR-1.3.831.049173-20201.
+    
+    \item UniSel Alumni, ``Role of Alumni in University Development,'' 2015. \url{https://uniselalumni.wixsite.com/uniselalumniconnect/single-post/2015/10/15/role-of-alumni-in-university-development}
+\end{enumerate}
+
+\textbf{Nguồn bổ sung:} [3] Proposed Features for AlumnVerse (context/) -- dữ liệu phân tích engagement; [NEW] Alumverse Features.xlsx, [Cũ] Danh sách nghiệp vụ (Prior app 2021).xlsx, Khảo sát nhu cầu và mức độ gắn kết -- HCMUS (context/).
+
+% ========== XÁC NHẬN (2 cột) ==========
+\vspace{2cm}
+\begin{center}
+\begin{tabular}{>{\centering\arraybackslash}p{0.5\textwidth}>{\centering\arraybackslash}p{0.5\textwidth}}
+\textbf{XÁC NHẬN\\ CỦA NGƯỜI HƯỚNG DẪN} & {\textbf{\textit{TP. Hồ Chí Minh, ngày \ldots\ldots tháng \ldots\ldots năm 2026}}\textbf{NHÓM SINH VIÊN THỰC HIỆN}} \\[0.8cm]
+(Ký và ghi rõ họ tên) & (Ký và ghi rõ họ tên) \\[2.5cm]
+\end{tabular}\\[0.5cm]
+\end{center}
+
+\end{document}

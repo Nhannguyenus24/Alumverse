@@ -1,0 +1,91 @@
+% ============================================================
+% BÁO CÁO ĐỒ ÁN TỐT NGHIỆP - ALUMNVERSE
+% Tham khảo: bao_cao_tot_nghiep.pdf (cấu trúc, trình bày)
+% Chỉnh sửa theo quy định Khoa FIT HCMUS
+% ============================================================
+
+\documentclass[12pt,a4paper]{report}
+\usepackage[utf8]{vietnam}
+\usepackage[vietnamese]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{float}
+
+% Hình ảnh: đặt trong pm_works/images/diagrams/, ví dụ:
+% \includegraphics[width=0.8\textwidth]{../images/diagrams/arch.png}
+
+\geometry{left=2.5cm, right=2cm, top=2.5cm, bottom=2.5cm}
+\setlength{\parindent}{0pt}
+\renewcommand{\baselinestretch}{1.5}
+
+\title{
+    \textbf{ALUMNVERSE: REFACTORING AND ENHANCING THE STUDENT-ALUMNI SYSTEM FOR HCMUS}\\[0.5em]
+    \large Đồ án tốt nghiệp
+}
+\author{
+    Sinh viên thực hiện: [Họ tên] \quad MSSV: [MSSV]\\[0.5em]
+    Giảng viên hướng dẫn: [GVHD]
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% ==================== PHẦN MỞ ĐẦU (số La Mã) ====================
+\pagenumbering{roman}
+\setcounter{page}{2}
+
+\input{front/loi-cam-on}
+\clearpage
+
+\input{front/tom-tat}
+\clearpage
+
+\tableofcontents
+\clearpage
+
+\listoffigures
+\addcontentsline{toc}{chapter}{Danh mục hình}
+\clearpage
+
+\listoftables
+\addcontentsline{toc}{chapter}{Danh mục bảng}
+\clearpage
+
+% ==================== NỘI DUNG CHÍNH (số Ả Rập) ====================
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter{Tổng quan}
+\input{chapters/01-tong-quan}
+
+\chapter{Phân tích và thiết kế hệ thống}
+\input{chapters/02-phan-tich-thiet-ke}
+
+\chapter{Triển khai}
+\input{chapters/03-trien-khai}
+
+\chapter{Kiểm thử và đánh giá}
+\input{chapters/04-kiem-thu-danh-gia}
+
+\chapter{Kết luận và hướng phát triển}
+\input{chapters/05-ket-luan}
+
+% ==================== TÀI LIỆU THAM KHẢO ====================
+\bibliographystyle{plain}
+\bibliography{references}
+\addcontentsline{toc}{chapter}{Tài liệu tham khảo}
+
+% ==================== PHỤ LỤC ====================
+\appendix
+\input{appendix/phu-luc}
+
+\end{document}
