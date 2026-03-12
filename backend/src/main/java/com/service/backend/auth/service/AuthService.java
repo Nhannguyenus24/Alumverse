@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -123,6 +123,12 @@ public class AuthService {
                 .doOnError(error -> logger.error("Password change error for user id: {}", userId, error));
     }
 
+    public Mono<List<Integer>> getOrganizationIdByUserId(Integer userId) {
+        logger.info("Getting organization ID for user id: {}", userId);
+        return authRepository.getOrganizationIdByUserId(userId)
+                .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
+    }
+
     public Mono<Void> sendOtpVerification(String email) {
         logger.info("Sending OTP verification to email: {}", email);
 
@@ -198,16 +204,34 @@ public class AuthService {
             // Retrieve user information and generate new access token
             return authRepository.findById(userId)
                     .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
-                    .map(user -> {
-                        String accessToken = jwtUtils.generateAccessToken(
-                                user.getId(),
-                                user.getEmail(),
-                                user.getRole().name(),
-                                user.getUserName(),
-                                user.getAvatarUrl()
-                        );
-                        logger.info("Access token refreshed successfully for user id: {}", userId);
-                        return accessToken;
+                    .flatMap(user -> {
+                        // Get organization ID from organization_members table
+                        return authRepository.getOrganizationIdByUserId(userId)
+                                .map(orgId -> {
+                                    String accessToken = jwtUtils.generateAccessToken(
+                                            user.getId(),
+                                            user.getEmail(),
+                                            user.getRole().name(),
+                                            user.getUserName(),
+                                            user.getAvatarUrl(),
+                                            orgId
+                                    );
+                                    logger.info("Access token refreshed successfully for user id: {}", userId);
+                                    return accessToken;
+                                })
+                                .switchIfEmpty(Mono.defer(() -> {
+                                    // If user is not part of any organization, pass null
+                                    String accessToken = jwtUtils.generateAccessToken(
+                                            user.getId(),
+                                            user.getEmail(),
+                                            user.getRole().name(),
+                                            user.getUserName(),
+                                            user.getAvatarUrl(),
+                                            null
+                                    );
+                                    logger.info("Access token refreshed successfully for user id: {} (no organization)", userId);
+                                    return Mono.just(accessToken);
+                                }));
                     })
                     .doOnError(error -> logger.error("Failed to refresh token for user id: {}", userId, error));
         } catch (Exception e) {
