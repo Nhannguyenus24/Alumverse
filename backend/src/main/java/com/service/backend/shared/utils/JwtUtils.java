@@ -1,13 +1,19 @@
 package com.service.backend.shared.utils;
 
-import com.nimbusds.jose.*;
+import java.text.ParseException;
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
+
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import java.text.ParseException;
-import java.time.Instant;
-import java.util.Date;
 
 public class JwtUtils {
 
@@ -21,7 +27,7 @@ public class JwtUtils {
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
     }
 
-    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl) {
+    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, List<Integer> organizationId) {
         try {
             Instant now = Instant.now();
             Instant expiryDate = now.plusMillis(accessTokenExpirationMs);
@@ -32,6 +38,7 @@ public class JwtUtils {
                     .claim("role", role)
                     .claim("username", userName)
                     .claim("avatar", avatarUrl)
+                    .claim("organizationId", organizationId)
                     .issueTime(Date.from(now))
                     .expirationTime(Date.from(expiryDate))
                     .build();
@@ -138,6 +145,25 @@ public class JwtUtils {
             return expirationTime != null && expirationTime.before(new Date());
         } catch (Exception e) {
             return true;
+        }
+    }
+
+    /**
+     * Get organization ID from token (returns null if not present)
+     */
+    public Integer getOrganizationIdFromToken(String token) {
+        try {
+            JWTClaimsSet claims = validateToken(token);
+            Object orgId = claims.getClaim("organizationId");
+            if (orgId == null) {
+                return null;
+            }
+            if (orgId instanceof Number) {
+                return ((Number) orgId).intValue();
+            }
+            return Integer.valueOf(orgId.toString());
+        } catch (Exception e) {
+            return null;
         }
     }
 }

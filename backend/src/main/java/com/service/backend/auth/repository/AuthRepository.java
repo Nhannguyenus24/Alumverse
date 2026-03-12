@@ -1,11 +1,15 @@
 package com.service.backend.auth.repository;
 
+import java.util.List;
+
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import com.service.backend.auth.entity.User;
+
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -104,4 +108,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
            "VALUES (:email, :userName, :passwordHash, 'alumni', 'unverified', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Void> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
+    
+    /**
+     * Get organization ID for a user from organization_members table
+     * Returns null if user is not a member of any organization
+     */
+    @Query("SELECT om.organization_id FROM organization_members om WHERE om.user_id = :userId")
+    Mono<List<Integer>> getOrganizationIdByUserId(@Param("userId") Integer userId);
 }

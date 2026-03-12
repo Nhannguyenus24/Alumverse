@@ -2,6 +2,7 @@ package com.service.backend.auth.service;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -123,6 +124,12 @@ public class AuthService {
                 .doOnError(error -> logger.error("Password change error for user id: {}", userId, error));
     }
 
+    public Mono<List<Integer>> getOrganizationIdByUserId(Integer userId) {
+        logger.info("Getting organization ID for user id: {}", userId);
+        return authRepository.getOrganizationIdByUserId(userId)
+                .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
+    }
+
     public Mono<Void> sendOtpVerification(String email) {
         logger.info("Sending OTP verification to email: {}", email);
 
@@ -198,17 +205,22 @@ public class AuthService {
             // Retrieve user information and generate new access token
             return authRepository.findById(userId)
                     .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
-                    .map(user -> {
-                        String accessToken = jwtUtils.generateAccessToken(
-                                user.getId(),
-                                user.getEmail(),
-                                user.getRole().name(),
-                                user.getUserName(),
-                                user.getAvatarUrl()
-                        );
-                        logger.info("Access token refreshed successfully for user id: {}", userId);
-                        return accessToken;
-                    })
+                    .flatMap(user -> 
+                        authRepository.getOrganizationIdByUserId(userId)
+                                .defaultIfEmpty(null)
+                                .map(organizationId -> {
+                                    String accessToken = jwtUtils.generateAccessToken(
+                                            user.getId(),
+                                            user.getEmail(),
+                                            user.getRole().name(),
+                                            user.getUserName(),
+                                            user.getAvatarUrl(),
+                                            organizationId
+                                    );
+                                    logger.info("Access token refreshed successfully for user id: {}", userId);
+                                    return accessToken;
+                                })
+                    )
                     .doOnError(error -> logger.error("Failed to refresh token for user id: {}", userId, error));
         } catch (Exception e) {
             logger.error("Invalid or expired refresh token", e);

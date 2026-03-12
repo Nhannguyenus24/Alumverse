@@ -63,32 +63,37 @@ public class AuthController {
                 .switchIfEmpty(Mono.defer(() -> 
                     authService.loginByUserName(request.getEmail(), request.getPassword())
                 ))
-                .map(user -> {
-                    String accessToken = jwtUtils.generateAccessToken(
-                            user.getId(),
-                            user.getEmail(),
-                            user.getRole().name(),
-                            user.getUserName(),
-                            user.getAvatarUrl()
-                    );
-                    String refreshToken = jwtUtils.generateRefreshToken(user.getId());
+                .flatMap(user ->
+                    authService.getOrganizationIdByUserId(user.getId())
+                            .defaultIfEmpty(null)
+                            .map(organizationId -> {
+                                String accessToken = jwtUtils.generateAccessToken(
+                                        user.getId(),
+                                        user.getEmail(),
+                                        user.getRole().name(),
+                                        user.getUserName(),
+                                        user.getAvatarUrl(),
+                                        organizationId
+                                );
+                                String refreshToken = jwtUtils.generateRefreshToken(user.getId());
 
-                    ResponseCookie refreshTokenCookie = ResponseCookie
-                            .from("refreshToken", refreshToken)
-                            .httpOnly(true)
-                            // .secure(true) // turn on when in https
-                            .maxAge(Duration.ofDays(7))
-                            .sameSite("Lax")
-                            .build();
+                                ResponseCookie refreshTokenCookie = ResponseCookie
+                                        .from("refreshToken", refreshToken)
+                                        .httpOnly(true)
+                                        // .secure(true) // turn on when in https
+                                        .maxAge(Duration.ofDays(7))
+                                        .sameSite("Lax")
+                                        .build();
 
-                    LoginResponse loginResponse = LoginResponse.builder()
-                            .accessToken(accessToken)
-                            .build();
+                                LoginResponse loginResponse = LoginResponse.builder()
+                                        .accessToken(accessToken)
+                                        .build();
 
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                            .body(new ApiResponse<>("Login successful", loginResponse));
-                })
+                                return ResponseEntity.ok()
+                                        .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                                        .body(new ApiResponse<>("Login successful", loginResponse));
+                            })
+                )
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(error.getMessage(), null))));
     }
