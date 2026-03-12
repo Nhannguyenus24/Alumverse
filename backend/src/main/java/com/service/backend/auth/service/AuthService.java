@@ -207,7 +207,7 @@ public class AuthService {
                     .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
                     .flatMap(user -> 
                         authRepository.getOrganizationIdByUserId(userId)
-                                .defaultIfEmpty(null)
+                                .defaultIfEmpty(List.of())
                                 .map(organizationId -> {
                                     String accessToken = jwtUtils.generateAccessToken(
                                             user.getId(),
