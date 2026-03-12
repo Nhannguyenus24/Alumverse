@@ -1,0 +1,31 @@
+%% ERD mẫu - Alumnverse
+%% Export sang PNG/SVG để dùng trong LaTeX
+
+erDiagram
+    USER ||--o{ PROFILE : has
+    USER ||--o{ EVENT_ATTENDANCE : attends
+    USER {
+        int id PK
+        string email
+        string password_hash
+        datetime created_at
+    }
+    PROFILE {
+        int id PK
+        int user_id FK
+        string full_name
+        string student_id
+        string cohort
+    }
+    EVENT ||--o{ EVENT_ATTENDANCE : has
+    EVENT {
+        int id PK
+        string title
+        datetime start_time
+        string location
+    }
+    EVENT_ATTENDANCE {
+        int user_id FK
+        int event_id FK
+        string status
+    }
