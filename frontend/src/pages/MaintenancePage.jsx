@@ -21,7 +21,15 @@ export default function MaintenancePage() {
   ];
 
   return (
-    <Page title="Under Maintenance">
+    <Page
+      title="Under Maintenance"
+      meta={
+        <meta
+          name="description"
+          content="Hệ thống đang bảo trì - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+        />
+      }
+    >
       <Box
         sx={{
           minHeight: '100vh',

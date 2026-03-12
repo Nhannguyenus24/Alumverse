@@ -17,6 +17,13 @@ const Loadable = (Component) => (props) =>
 const HomePage = Loadable(lazy(() => import('../pages/HomePage')));
 const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
 const RegisterPage = Loadable(lazy(() => import('../pages/RegisterPage')));
+const SignupCodePage = Loadable(lazy(() => import('../pages/SignupCodePage')));
+const ForgotPasswordPage = Loadable(
+  lazy(() => import('../pages/ForgotPasswordPage'))
+);
+const ResetPasswordPage = Loadable(
+  lazy(() => import('../pages/ResetPasswordPage'))
+);
 const DashboardPage = Loadable(lazy(() => import('../pages/DashboardPage')));
 const NotFoundPage = Loadable(lazy(() => import('../pages/NotFoundPage')));
 const UnauthorizedPage = Loadable(
@@ -28,7 +35,20 @@ const ServerErrorPage = Loadable(
 const MaintenancePage = Loadable(
   lazy(() => import('../pages/MaintenancePage'))
 );
-
+const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
+const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
+const FacultyCNTTPage = Loadable(lazy(() => import('../pages/FacultyCNTTPage')));
+const ForumPage = Loadable(lazy(() => import('../pages/ForumPage')));
+const ForumAlumniCareerPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniCareerPage'))
+);
+const ForumAlumniThreadPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniThreadPage'))
+);
+const ForumAlumniCreatePostPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniCreatePostPage'))
+);
+const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -37,6 +57,58 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'introduction',
+        element: <IntroducePage />,
+      },
+      {
+        path: 'forum',
+        children: [
+          {
+            index: true,
+            element: <ForumPage />,
+          },
+          {
+            path: 'alumni',
+            children: [
+              {
+                path: 'career',
+                children: [
+                  {
+                    index: true,
+                    element: <ForumAlumniCareerPage />,
+                  },
+                  {
+                    path: 'create-post',
+                    element: <ForumAlumniCreatePostPage />,
+                  },
+                  {
+                    path: ':threadId',
+                    element: <ForumAlumniThreadPage />,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: 'contact',
+        element: <ContactPage />,
+      },
+      {
+        path: 'faculties',
+        children: [
+          {
+            index: true,
+            element: <FacultiesPage />,
+          },
+          {
+            path: 'information-technology',
+            element: <FacultyCNTTPage />,
+          },
+        ],
       },
       {
         path: 'dashboard',
@@ -77,6 +149,30 @@ export const router = createBrowserRouter([
         element: (
           <PublicRoute>
             <RegisterPage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: 'signup-code',
+        element: (
+          <PublicRoute>
+            <SignupCodePage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: 'forgot-password',
+        element: (
+          <PublicRoute>
+            <ForgotPasswordPage />
+          </PublicRoute>
+        ),
+      },
+      {
+        path: 'reset-password',
+        element: (
+          <PublicRoute>
+            <ResetPasswordPage />
           </PublicRoute>
         ),
       },

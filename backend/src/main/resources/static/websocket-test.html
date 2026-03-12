@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket SecurityContext Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #log {
+            background-color: #f5f5f5;
+            padding: 10px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-info {
+            color: #2196F3;
+        }
+        .log-success {
+            color: #4CAF50;
+        }
+        .log-error {
+            color: #f44336;
+        }
+        .log-warn {
+            color: #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebSocket SecurityContext Test</h1>
+        
+        <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <h3>Bước 1: Lấy JWT Token</h3>
+            <div>
+                <label>Email:</label>
+                <input type="email" id="email" placeholder="your-email@example.com" value="admin@example.com">
+            </div>
+            <div>
+                <label>Password:</label>
+                <input type="password" id="password" placeholder="Enter password">
+            </div>
+            <button onclick="login()" style="background-color: #2196F3;">Login để lấy Token</button>
+            <button onclick="loadTokenFromStorage()" style="background-color: #9C27B0;">Lấy Token từ LocalStorage</button>
+        </div>
+        
+        <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <h3>Bước 2: JWT Token</h3>
+            <div>
+                <label>JWT Token (paste vào đây hoặc login ở trên):</label>
+                <input type="text" id="token" placeholder="Token sẽ tự động điền sau khi login" style="font-size: 11px;">
+                <button onclick="copyToken()" style="background-color: #FF9800; width: auto; margin-top: 5px;">Copy Token</button>
+            </div>
+        </div>
+        
+        <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <h3>Bước 3: Kết nối WebSocket</h3>
+            <div>
+                <label>WebSocket URL:</label>
+                <input type="text" id="wsUrl" value="ws://localhost:8080/ws/chat" placeholder="ws://localhost:8080/ws/chat">
+            </div>
+        
+            <div>
+                <label>Connection Method:</label>
+                <select id="method">
+                    <option value="query">Query Parameter (?token=...) - Khuyến nghị</option>
+                    <option value="header">Header (Authorization: Bearer token) - Browser không hỗ trợ</option>
+                </select>
+            </div>
+            
+            <div>
+                <button id="connectBtn" onclick="connect()">Connect WebSocket</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+                <button onclick="clearLog()">Clear Log</button>
+            </div>
+        </div>
+        
+        <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <h3>Bước 4: Gửi Message</h3>
+            <div>
+                <label>Send Message:</label>
+                <input type="text" id="message" placeholder="Type a message">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+        
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        const logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+
+        // Load token from localStorage khi trang load
+        window.onload = function() {
+            loadTokenFromStorage();
+        };
+
+        // Login để lấy token
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                log('Vui lòng nhập email và password', 'error');
+                return;
+            }
+
+            log('Đang đăng nhập...', 'info');
+
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.data && data.data.accessToken) {
+                    const token = data.data.accessToken;
+                    document.getElementById('token').value = token;
+                    
+                    // Lưu vào localStorage
+                    localStorage.setItem('jwt_token', token);
+                    localStorage.setItem('user_email', email);
+                    
+                    log('✓ Login thành công! Token đã được lưu.', 'success');
+                    log(`Token: ${token.substring(0, 50)}...`, 'info');
+                } else {
+                    log(`✗ Login thất bại: ${data.message || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`✗ Lỗi khi login: ${error.message}`, 'error');
+                log('Kiểm tra xem backend đã chạy chưa (http://localhost:8080)', 'warn');
+            }
+        }
+
+        // Lấy token từ localStorage
+        function loadTokenFromStorage() {
+            const token = localStorage.getItem('jwt_token');
+            const email = localStorage.getItem('user_email');
+            
+            if (token) {
+                document.getElementById('token').value = token;
+                if (email) {
+                    document.getElementById('email').value = email;
+                }
+                log('✓ Đã load token từ LocalStorage', 'success');
+            } else {
+                log('Không tìm thấy token trong LocalStorage. Vui lòng login.', 'warn');
+            }
+        }
+
+        // Copy token
+        function copyToken() {
+            const token = document.getElementById('token').value;
+            if (token) {
+                navigator.clipboard.writeText(token).then(() => {
+                    log('✓ Token đã được copy vào clipboard', 'success');
+                }).catch(err => {
+                    log(`✗ Lỗi khi copy: ${err.message}`, 'error');
+                });
+            } else {
+                log('Không có token để copy', 'error');
+            }
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            const wsUrl = document.getElementById('wsUrl').value;
+            const method = document.getElementById('method').value;
+
+            if (!token) {
+                log('Please enter a JWT token', 'error');
+                return;
+            }
+
+            let url = wsUrl;
+            
+            if (method === 'query') {
+                url += `?token=${encodeURIComponent(token)}`;
+                log(`Connecting to: ${url}`, 'info');
+                ws = new WebSocket(url);
+            } else {
+                // Method: header
+                log(`Connecting to: ${url}`, 'info');
+                log('Note: Browser WebSocket API cannot set custom headers directly', 'warn');
+                log('Trying to connect...', 'info');
+                ws = new WebSocket(url);
+            }
+
+            ws.onopen = function() {
+                log('✓ WebSocket connection opened!', 'success');
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('disconnectBtn').disabled = false;
+                
+                // Send a test message
+                setTimeout(() => {
+                    sendMessage();
+                }, 1000);
+            };
+
+            ws.onmessage = function(event) {
+                log(`Received: ${event.data}`, 'success');
+            };
+
+            ws.onerror = function(error) {
+                log(`✗ WebSocket error: ${error}`, 'error');
+            };
+
+            ws.onclose = function() {
+                log('WebSocket connection closed', 'warn');
+                document.getElementById('connectBtn').disabled = false;
+                document.getElementById('disconnectBtn').disabled = true;
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                log('Disconnected', 'info');
+            }
+        }
+
+        function sendMessage() {
+            const message = document.getElementById('message').value || 'Test message';
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(message);
+                log(`Sent: ${message}`, 'info');
+            } else {
+                log('WebSocket is not connected', 'error');
+            }
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('message').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -4,7 +4,15 @@ import Page from '../components/Page';
 
 const UnauthorizedPage = () => {
   return (
-    <Page title="403 Unauthorized">
+    <Page
+      title="403 Unauthorized"
+      meta={
+        <meta
+          name="description"
+          content="Không có quyền truy cập - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+        />
+      }
+    >
       <Container maxWidth="md">
         <Box
           sx={{

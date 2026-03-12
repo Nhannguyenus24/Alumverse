@@ -1,17 +1,17 @@
 package com.service.backend.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
-import org.springframework.http.HttpMethod;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -51,13 +51,22 @@ public class SecurityConfig {
                         .pathMatchers(
                                 "/api/auth/**",
                                 "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/webjars/**",
                                 "/api/guest/**",
-                                "/api-docs/**",
-                                "/**" // in dev mode only
+                                "/websocket-test.html",
+                                "/*.html",
+                                "/*.css",
+                                "/*.js",
+                                "/*.png",
+                                "/*.ico",
+                                "/static/**"
                         ).permitAll()
 
                         // All other requests require authentication
-                        .anyExchange().authenticated());
+                        // .anyExchange().authenticated());
+                        .anyExchange().permitAll()); // Temporary: allow all requests for development
 
         return http.build();
     }

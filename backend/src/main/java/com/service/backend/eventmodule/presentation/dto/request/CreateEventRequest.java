@@ -1,4 +1,7 @@
+
 package com.service.backend.eventmodule.presentation.dto.request;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
@@ -21,27 +24,36 @@ public class CreateEventRequest {
 
     @NotBlank()
     @Size(min = 3, max = 255)
+    @Schema(example = "Hội thảo AI 2026")
     private String title;
 
     @Size(max = 5000)
+    @Schema(example = "Sự kiện chia sẻ về trí tuệ nhân tạo và ứng dụng thực tiễn năm 2026.")
     private String description;
 
     @URL()
+    @Schema(example = "https://example.com/banner.jpg")
     private String bannerUrl;
 
     @Size(max = 500)
+    @Schema(example = "Hội trường A, Đại học Khoa học Tự nhiên")
     private String location;
 
     @NotNull()
+    @Schema(example = "2026-05-20T08:00:00")
     private LocalDateTime startTime;
 
     @NotNull()
+    @Schema(example = "2026-05-20T17:00:00")
     private LocalDateTime endTime;
 
+    @Schema(example = "2026-05-01T00:00:00")
     private LocalDateTime registrationStartAt;
 
+    @Schema(example = "2026-05-18T23:59:59")
     private LocalDateTime registrationEndAt;
 
     @Min(value = 1)
+    @Schema(example = "300")
     private Integer maxCapacity;
 }
