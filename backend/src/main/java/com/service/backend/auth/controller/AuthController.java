@@ -1,6 +1,7 @@
 package com.service.backend.auth.controller;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -65,7 +66,7 @@ public class AuthController {
                 ))
                 .flatMap(user ->
                     authService.getOrganizationIdByUserId(user.getId())
-                            .defaultIfEmpty(null)
+                            .defaultIfEmpty(List.of()) // Return empty list if user has no organizations
                             .map(organizationId -> {
                                 String accessToken = jwtUtils.generateAccessToken(
                                         user.getId(),
