@@ -6,8 +6,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,10 +27,10 @@ public class Organization {
     private String logoUrl;
     
     @Column("brand_config")
-    private JsonNode brandConfig;
+    private String brandConfig;
     
     @Column("features_config")
-    private JsonNode featuresConfig;
+    private String featuresConfig;
     
     @Column("created_at")
     private LocalDateTime createdAt;
