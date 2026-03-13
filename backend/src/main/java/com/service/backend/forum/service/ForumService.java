@@ -14,7 +14,7 @@ import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostPageResponse;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.forum.dto.ForumTopicPageResponse;
-import com.service.backend.forum.dto.PageInfo;
+import com.service.backend.shared.dto.PageInfo;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.entities.ForumCategory;

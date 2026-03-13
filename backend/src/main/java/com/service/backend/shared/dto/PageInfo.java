@@ -1,4 +1,4 @@
-package com.service.backend.forum.dto;
+package com.service.backend.shared.dto;
 
 import lombok.Builder;
 import lombok.Getter;
