@@ -9,6 +9,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import Page from '../components/Page';
 import { useAuth } from '../hooks/useAuth';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
+import { useForumTopics, useForumTopicsForCategories } from '../hooks/forum/useForumTopics';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import ForumSection from '../components/forum/ForumSection';
@@ -156,7 +157,47 @@ const ForumPage = () => {
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending } = useForumCategories(organizationId);
 
-  const sections = SECTIONS;
+  const isAllSelected = selectedFilterId === 'all';
+  const categoryId = useMemo(() => {
+    if (selectedFilterId.startsWith('category-')) {
+      const id = parseInt(selectedFilterId.replace('category-', ''), 10);
+      return Number.isNaN(id) ? null : id;
+    }
+    return null;
+  }, [selectedFilterId]);
+
+  const categoryIds = useMemo(
+    () => (isAllSelected && categories?.length ? categories.map((c) => c.id) : []),
+    [isAllSelected, categories]
+  );
+
+  const { topics: topicsSingle } = useForumTopics(categoryId, 0, 10);
+  const { topics: topicsAll } = useForumTopicsForCategories(categoryIds, 0, 10);
+
+  const topics = isAllSelected ? topicsAll : topicsSingle;
+
+  const sections = useMemo(() => {
+    if (!topics?.length) return SECTIONS;
+
+    const topicBoards = topics.map((t) => ({
+      id: `topic-${t.id}`,
+      name: t.title,
+      description: '',
+      threadCount: t.viewCount ?? '-',
+      discussionCount: '-',
+      lastPost: null,
+    }));
+
+    return SECTIONS.map((s) => {
+      if (s.id === 'main' || s.id === 'alumni') {
+        return {
+          ...s,
+          boards: topicBoards,
+        };
+      }
+      return s;
+    });
+  }, [topics]);
 
   const filters = useMemo(() => {
     if (isPending && !categories?.length) {
@@ -181,9 +222,10 @@ const ForumPage = () => {
   );
 
   const visibleSections = useMemo(() => {
+    if (categories?.length) return sections;
     if (selectedFilterId === 'all') return sections;
     return sections.filter((s) => (s.filterIds ?? []).includes(selectedFilterId));
-  }, [selectedFilterId, sections]);
+  }, [selectedFilterId, sections, categories]);
 
   const handleOpenManageMode = () => {
     setManageTopics(sectionsToManageTopics(sections));
