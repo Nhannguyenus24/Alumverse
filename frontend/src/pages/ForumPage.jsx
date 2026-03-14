@@ -1,14 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import {
-  Box,
-  Button,
-  Container,
-  IconButton,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
@@ -17,6 +8,7 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import SaveIcon from '@mui/icons-material/Save';
 import Page from '../components/Page';
 import { useAuth } from '../hooks/useAuth';
+import { useForumCategories } from '../hooks/forum/useForumCategories';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import ForumSection from '../components/forum/ForumSection';
@@ -161,6 +153,22 @@ const ForumPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
+  const organizationId = user?.organizationId ?? 1;
+  const { categories, isPending } = useForumCategories(organizationId);
+
+  const sections = SECTIONS;
+
+  const filters = useMemo(() => {
+    if (isPending && !categories?.length) {
+      return FILTERS;
+    }
+    if (!categories?.length) return FILTERS;
+    return [
+      { id: 'all', label: 'Tất cả' },
+      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+    ];
+  }, [categories, isPending]);
+
   const handleFilterChange = useCallback(
     (id) => {
       if (id === 'alumni') {
@@ -173,12 +181,12 @@ const ForumPage = () => {
   );
 
   const visibleSections = useMemo(() => {
-    if (selectedFilterId === 'all') return SECTIONS;
-    return SECTIONS.filter((s) => (s.filterIds ?? []).includes(selectedFilterId));
-  }, [selectedFilterId]);
+    if (selectedFilterId === 'all') return sections;
+    return sections.filter((s) => (s.filterIds ?? []).includes(selectedFilterId));
+  }, [selectedFilterId, sections]);
 
   const handleOpenManageMode = () => {
-    setManageTopics(sectionsToManageTopics(SECTIONS));
+    setManageTopics(sectionsToManageTopics(sections));
     setNewMainTopic('');
     setNewSubTopics({});
     setIsManageMode(true);
@@ -253,11 +261,7 @@ const ForumPage = () => {
             }}
           >
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-              <ForumFilterPanel
-                filters={FILTERS}
-                selectedId={selectedFilterId}
-                onChange={handleFilterChange}
-              />
+              <ForumFilterPanel filters={filters} selectedId={selectedFilterId} onChange={handleFilterChange} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
