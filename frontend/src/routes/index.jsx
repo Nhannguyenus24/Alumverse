@@ -61,6 +61,12 @@ const HonorsAchievementsPage = Loadable(
 const HonorsRequestAchievementsPage = Loadable(
   lazy(() => import('../pages/HonorsRequestAchievementsPage'))
 );
+const PostArticlePage = Loadable(
+  lazy(() => import('../pages/PostArticlePage'))
+);
+const ArticlePage = Loadable(
+  lazy(() => import('../pages/ArticlePage'))
+);
 
 export const router = createBrowserRouter([
   {
@@ -130,6 +136,14 @@ export const router = createBrowserRouter([
             element: <HonorsRequestAchievementsPage />,
           },
         ],
+      },
+      {
+        path: 'post',
+        element: <PostArticlePage />,
+      },
+      {
+        path: 'article',
+        element: <ArticlePage />,
       },
       {
         path: 'faculties',
