@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -13,43 +13,84 @@ import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Page from '../components/Page';
 import { useAuth } from '../hooks/useAuth';
+import { useForumPosts } from '../hooks/forum/useForumPosts';
+import { useForumCategories } from '../hooks/forum/useForumCategories';
 import Breadcrumb from '../components/Breadcrumb';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import WYSIWYG from '../components/WYSIWYG';
 
-const FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'alumni', label: 'Cựu sinh viên' },
-  { id: 'jobs', label: 'Việc làm' },
-  { id: 'events', label: 'Hoạt động' },
-  { id: 'tech', label: 'Công nghệ' },
-  { id: 'courses', label: 'Học phần' },
-  { id: 'admissions', label: 'Tuyển sinh' },
-];
-
-const MOCK_THREAD = {
-  title: 'Ngành Hệ thống thông tin ra có thể có nghề nghiệp nào phù hợp?',
-  authorName: 'Nguyễn Văn An',
-  role: 'Alumni',
-  createdAt: '15 phút trước',
+const formatPostDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
-const MOCK_REPLIES = Array.from({ length: 3 }).map((_, index) => ({
-  id: index + 1,
-  authorName: 'Nguyễn Văn An',
+const FALLBACK_THREAD = {
+  title: 'Chủ đề',
+  authorName: '—',
   role: 'Alumni',
-  createdAt: '15:00, 03/07/2025',
-  content:
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.',
-  reactionsSummary: 'Jessie Walsh, Dave Carson và 32 others',
-}));
+  createdAt: '—',
+};
 
 const ForumAlumniThreadPage = () => {
   const navigate = useNavigate();
+  const { threadId } = useParams();
+  const topicId = useMemo(() => {
+    const id = parseInt(threadId, 10);
+    return Number.isNaN(id) ? null : id;
+  }, [threadId]);
+
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
+
+  const organizationId = user?.organizationId ?? 1;
+  const { categories } = useForumCategories(organizationId);
+
+  const filters = useMemo(() => {
+    if (!categories?.length) {
+      return [{ id: 'all', label: 'Tất cả' }];
+    }
+    return [
+      { id: 'all', label: 'Tất cả' },
+      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+    ];
+  }, [categories]);
+
+  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, 0, 20);
+
+  const thread = useMemo(() => {
+    const first = posts.find((p) => !p.answerToPostId) ?? posts[0];
+    if (!first) return FALLBACK_THREAD;
+    const title =
+      first.content?.length > 60 ? `${first.content.slice(0, 60)}...` : first.content || FALLBACK_THREAD.title;
+    return {
+      title,
+      authorName: `Thành viên #${first.authorMemberId ?? '—'}`,
+      role: 'Alumni',
+      createdAt: formatPostDate(first.createdAt),
+    };
+  }, [posts]);
+
+  const replies = useMemo(
+    () =>
+      posts.map((p) => ({
+        id: p.id,
+        authorName: `Thành viên #${p.authorMemberId ?? '—'}`,
+        role: 'Alumni',
+        createdAt: formatPostDate(p.createdAt),
+        content: p.content ?? '',
+        reactionsSummary: '',
+      })),
+    [posts]
+  );
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -57,15 +98,13 @@ const ForumAlumniThreadPage = () => {
         navigate('/forum');
         return;
       }
-      if (id === 'alumni') {
-        navigate('/forum/alumni/career');
+      if (id?.startsWith('category-')) {
+        navigate('/forum', { state: { selectedFilterId: id } });
         return;
       }
     },
     [navigate]
   );
-
-  const thread = MOCK_THREAD;
 
   return (
     <Page
@@ -93,8 +132,8 @@ const ForumAlumniThreadPage = () => {
           >
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
               <ForumFilterPanel
-                filters={FILTERS}
-                selectedId="alumni"
+                filters={filters}
+                selectedId="all"
                 onChange={handleFilterChange}
               />
               <ForumSponsoredCard
@@ -108,8 +147,8 @@ const ForumAlumniThreadPage = () => {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Breadcrumb
                 items={[
-                  { label: 'Cựu sinh viên', path: '/forum/alumni/career' },
-                  { label: 'Hướng nghiệp', path: '/forum/alumni/career' },
+                  { label: 'Diễn đàn', path: '/forum' },
+                  { label: thread.title },
                 ]}
                 uppercase
                 color="primary"
@@ -301,7 +340,16 @@ const ForumAlumniThreadPage = () => {
 
               {/* Replies */}
               <Box>
-                {MOCK_REPLIES.map((reply, index) => {
+                {postsPending ? (
+                  <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
+                    <Typography color="text.secondary">Đang tải bài viết...</Typography>
+                  </Box>
+                ) : postsError ? (
+                  <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
+                    <Typography color="error">Không thể tải bài viết.</Typography>
+                  </Box>
+                ) : (
+                replies.map((reply, index) => {
                   const isOwn = index === 0;
                   return (
                   <Box
@@ -474,10 +522,11 @@ const ForumAlumniThreadPage = () => {
                             Cảm xúc
                           </Button>
                         </Box>
+                        </Box>
                       </Box>
-                    </Box>
                   </Box>
-                )})}
+                );
+                }) )}
               </Box>
 
               {/* Reply editor */}
@@ -526,10 +575,10 @@ const ForumAlumniThreadPage = () => {
                     </Box>
                     <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
                       <Typography variant="body2" fontWeight={600}>
-                        Nguyễn Văn An
+                        {user?.userName ?? 'User'}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Alumni
+                        {(user?.role ?? 'Student').toString().toLowerCase()}
                       </Typography>
                     </Box>
                   </Box>

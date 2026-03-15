@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -6,28 +6,42 @@ import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import Breadcrumb from '../components/Breadcrumb';
+import { useAuth } from '../hooks/useAuth';
+import { useForumCategories } from '../hooks/forum/useForumCategories';
+import { useForumTopics } from '../hooks/forum/useForumTopics';
 
-const FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'alumni', label: 'Cựu sinh viên' },
-  { id: 'jobs', label: 'Việc làm' },
-  { id: 'events', label: 'Hoạt động' },
-  { id: 'tech', label: 'Công nghệ' },
-  { id: 'courses', label: 'Học phần' },
-  { id: 'admissions', label: 'Tuyển sinh' },
-];
+const CAREER_CATEGORY_ID = 1;
 
-const POSTS = Array.from({ length: 6 }).map((_, index) => ({
-  id: index + 1,
-  title: 'Ngành Hệ thống thông tin ra có thể có nghề nghiệp nào phù hợp?',
-  authorName: 'Nguyễn Văn An',
-  createdAt: '15 phút trước',
-  views: 80,
-  replies: 15,
-}));
+const formatTopicDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Vừa xong';
+  if (diffMins < 60) return `${diffMins} phút trước`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} giờ trước`;
+  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
 
 const ForumAlumniCareerPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId ?? 1;
+  const { categories } = useForumCategories(organizationId);
+
+  const filters = useMemo(() => {
+    if (!categories?.length) {
+      return [{ id: 'all', label: 'Tất cả' }];
+    }
+    return [
+      { id: 'all', label: 'Tất cả' },
+      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+    ];
+  }, [categories]);
+
+  const { topics, isPending, isError } = useForumTopics(CAREER_CATEGORY_ID, 0, 20);
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -35,7 +49,8 @@ const ForumAlumniCareerPage = () => {
         navigate('/forum');
         return;
       }
-      if (id === 'alumni') {
+      if (id?.startsWith('category-')) {
+        navigate('/forum', { state: { selectedFilterId: id } });
         return;
       }
     },
@@ -68,8 +83,8 @@ const ForumAlumniCareerPage = () => {
           >
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
               <ForumFilterPanel
-                filters={FILTERS}
-                selectedId="alumni"
+                filters={filters}
+                selectedId="all"
                 onChange={handleFilterChange}
               />
               <ForumSponsoredCard
@@ -152,11 +167,35 @@ const ForumAlumniCareerPage = () => {
               </Box>
 
               <Box>
-                {POSTS.map((post) => (
+                {isPending && !topics.length && (
                   <Box
-                    key={post.id}
+                    sx={{
+                      px: { xs: 1.5, sm: 2, md: 3 },
+                      py: { xs: 1.5, md: 2 },
+                      borderTop: 1,
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Typography color="text.secondary">Đang tải chủ đề...</Typography>
+                  </Box>
+                )}
+                {isError && !isPending && !topics.length && (
+                  <Box
+                    sx={{
+                      px: { xs: 1.5, sm: 2, md: 3 },
+                      py: { xs: 1.5, md: 2 },
+                      borderTop: 1,
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Typography color="error">Không thể tải danh sách chủ đề.</Typography>
+                  </Box>
+                )}
+                {topics.map((topic) => (
+                  <Box
+                    key={topic.id}
                     onClick={() =>
-                      navigate(`/forum/alumni/career/${post.id}`)
+                      navigate(`/forum/alumni/career/${topic.id}`)
                     }
                     sx={{
                       px: { xs: 1.5, sm: 2, md: 3 },
@@ -227,7 +266,7 @@ const ForumAlumniCareerPage = () => {
                           {post.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {post.authorName} • {post.createdAt}
+                          {`Thành viên #${topic.createdByMemberId ?? '—'}`} • {formatTopicDate(topic.createdAt)}
                         </Typography>
                       </Box>
                     </Box>
@@ -247,7 +286,7 @@ const ForumAlumniCareerPage = () => {
                           Lượt xem
                         </Typography>
                         <Typography variant="body2" fontWeight={800}>
-                          {post.views}
+                          {topic.viewCount ?? 0}
                         </Typography>
                       </Box>
                       <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
@@ -255,7 +294,7 @@ const ForumAlumniCareerPage = () => {
                           Thảo luận
                         </Typography>
                         <Typography variant="body2" fontWeight={800}>
-                          {post.replies}
+                          —
                         </Typography>
                       </Box>
                       <Box
@@ -284,10 +323,10 @@ const ForumAlumniCareerPage = () => {
                         </Box>
                         <Box sx={{ textAlign: 'left' }}>
                           <Typography variant="body2" fontWeight={600}>
-                            {post.authorName}
+                            {`Thành viên #${topic.createdByMemberId ?? '—'}`}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {post.createdAt}
+                            {formatTopicDate(topic.updatedAt ?? topic.createdAt)}
                           </Typography>
                         </Box>
                       </Box>

@@ -2,7 +2,7 @@ import { Box, Paper, Typography } from '@mui/material';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import ForumBoardRow from './ForumBoardRow';
 
-const ForumSection = ({ title, boards = [] }) => {
+const ForumSection = ({ title, boards = [], onBoardClick }) => {
   return (
     <Paper
       elevation={0}
@@ -51,7 +51,10 @@ const ForumSection = ({ title, boards = [] }) => {
               borderColor: 'divider',
             }}
           >
-            <ForumBoardRow board={b} />
+            <ForumBoardRow
+              board={b}
+              onClick={onBoardClick ? () => onBoardClick(b) : undefined}
+            />
           </Box>
         ))}
       </Box>
