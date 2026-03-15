@@ -369,7 +369,7 @@ public class ForumService {
         return forumPostReactionRepository.countLikesByPostId(postId)
                 .zipWith(forumPostReactionRepository.countDislikesByPostId(postId))
                 .map(tuple -> {
-                    java.util.Map<String, Long> map = new java.util.HashMap<String, Long>();
+                    java.util.Map<String, Long> map = new java.util.HashMap<>();
                     map.put("likes", tuple.getT1());
                     map.put("dislikes", tuple.getT2());
                     return map;

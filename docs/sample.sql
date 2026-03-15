@@ -303,6 +303,114 @@ INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to
 (7, 8, 'Microservices bring agility but also complexity. Event-driven architecture helps manage inter-service communication.', NULL, NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days'),
 (8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
 
+-- ============= FORUM POST REACTIONS DATA (LIKES/DISLIKES) =============
+INSERT INTO "forum_post_reactions" ("post_id", "member_id", "reaction_type", "created_at") VALUES
+-- Post 1 (John's welcome post) - Positive reception
+(1, 3, true, NOW() - INTERVAL '354 days'),
+(1, 4, true, NOW() - INTERVAL '353 days'),
+(1, 5, true, NOW() - INTERVAL '352 days'),
+(1, 7, true, NOW() - INTERVAL '351 days'),
+(1, 8, true, NOW() - INTERVAL '350 days'),
+(1, 9, true, NOW() - INTERVAL '349 days'),
+
+-- Post 2 (Jane's response) - Very positive
+(2, 2, true, NOW() - INTERVAL '353 days'),
+(2, 4, true, NOW() - INTERVAL '352 days'),
+(2, 5, true, NOW() - INTERVAL '351 days'),
+(2, 6, true, NOW() - INTERVAL '350 days'),
+(2, 8, true, NOW() - INTERVAL '349 days'),
+
+-- Post 3 (React Hooks question) - Good discussion
+(3, 2, true, NOW() - INTERVAL '43 days'),
+(3, 5, true, NOW() - INTERVAL '42 days'),
+(3, 7, true, NOW() - INTERVAL '41 days'),
+(3, 9, true, NOW() - INTERVAL '40 days'),
+(3, 10, true, NOW() - INTERVAL '39 days'),
+
+-- Post 4 (React Hooks answer) - Very helpful
+(4, 2, true, NOW() - INTERVAL '42 days'),
+(4, 3, true, NOW() - INTERVAL '41 days'),
+(4, 4, true, NOW() - INTERVAL '40 days'),
+(4, 5, true, NOW() - INTERVAL '39 days'),
+(4, 7, true, NOW() - INTERVAL '38 days'),
+(4, 8, true, NOW() - INTERVAL '37 days'),
+(4, 9, true, NOW() - INTERVAL '36 days'),
+(4, 10, true, NOW() - INTERVAL '35 days'),
+
+-- Post 5 (Job search tips) - Useful content
+(5, 2, true, NOW() - INTERVAL '28 days'),
+(5, 4, true, NOW() - INTERVAL '27 days'),
+(5, 5, true, NOW() - INTERVAL '26 days'),
+(5, 7, true, NOW() - INTERVAL '25 days'),
+(5, 9, true, NOW() - INTERVAL '24 days'),
+
+-- Post 6 (Job search thanks) - Grateful response
+(6, 2, true, NOW() - INTERVAL '26 days'),
+(6, 3, true, NOW() - INTERVAL '25 days'),
+(6, 6, true, NOW() - INTERVAL '24 days'),
+
+-- Post 7 (Database indexing) - Technical excellence
+(7, 2, true, NOW() - INTERVAL '23 days'),
+(7, 3, true, NOW() - INTERVAL '22 days'),
+(7, 4, true, NOW() - INTERVAL '21 days'),
+(7, 5, true, NOW() - INTERVAL '20 days'),
+(7, 6, true, NOW() - INTERVAL '19 days'),
+(7, 8, true, NOW() - INTERVAL '18 days'),
+(7, 9, true, NOW() - INTERVAL '17 days'),
+(7, 2, false, NOW() - INTERVAL '16 days'),
+
+-- Post 8 (Database partitioning) - Valuable addition
+(8, 2, true, NOW() - INTERVAL '22 days'),
+(8, 4, true, NOW() - INTERVAL '21 days'),
+(8, 5, true, NOW() - INTERVAL '20 days'),
+(8, 7, false, NOW() - INTERVAL '19 days'),
+
+-- Post 9 (Node.js benefits) - Great insights
+(9, 2, true, NOW() - INTERVAL '18 days'),
+(9, 3, true, NOW() - INTERVAL '17 days'),
+(9, 4, true, NOW() - INTERVAL '16 days'),
+(9, 6, true, NOW() - INTERVAL '15 days'),
+(9, 7, true, NOW() - INTERVAL '14 days'),
+(9, 8, false, NOW() - INTERVAL '13 days'),
+
+-- Post 10 (Node.js beginner question)
+(10, 2, true, NOW() - INTERVAL '17 days'),
+(10, 5, true, NOW() - INTERVAL '16 days'),
+(10, 6, true, NOW() - INTERVAL '15 days'),
+
+-- Post 11 (Startup journey story) - Inspiring
+(11, 2, true, NOW() - INTERVAL '13 days'),
+(11, 4, false, NOW() - INTERVAL '12 days'),
+(11, 5, true, NOW() - INTERVAL '11 days'),
+(11, 6, true, NOW() - INTERVAL '10 days'),
+(11, 7, true, NOW() - INTERVAL '9 days'),
+(11, 9, true, NOW() - INTERVAL '8 days'),
+
+-- Post 12 (Follow-up question on startup)
+(12, 2, true, NOW() - INTERVAL '12 days'),
+(12, 3, true, NOW() - INTERVAL '11 days'),
+(12, 6, true, NOW() - INTERVAL '10 days'),
+
+-- Post 13 (Startup challenges answer) - Valuable insights
+(13, 2, true, NOW() - INTERVAL '11 days'),
+(13, 3, true, NOW() - INTERVAL '10 days'),
+(13, 4, true, NOW() - INTERVAL '9 days'),
+(13, 5, true, NOW() - INTERVAL '8 days'),
+(13, 7, true, NOW() - INTERVAL '7 days'),
+
+-- Post 14 (Microservices architecture) - Technical discussion
+(14, 2, true, NOW() - INTERVAL '10 days'),
+(14, 3, true, NOW() - INTERVAL '9 days'),
+(14, 5, true, NOW() - INTERVAL '8 days'),
+(14, 6, true, NOW() - INTERVAL '7 days'),
+
+-- Post 15 (Leadership wisdom) - Inspiring
+(15, 2, true, NOW() - INTERVAL '8 days'),
+(15, 3, true, NOW() - INTERVAL '7 days'),
+(15, 5, true, NOW() - INTERVAL '6 days'),
+(15, 6, true, NOW() - INTERVAL '5 days'),
+(15, 8, true, NOW() - INTERVAL '4 days');
+
 -- ============= PEER VERIFICATIONS DATA =============
 INSERT INTO "peer_verifications" ("target_member_id", "verifier_member_id", "created_at") VALUES
 (2, 4, NOW() - INTERVAL '40 days'),
