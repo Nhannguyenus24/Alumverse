@@ -49,6 +49,8 @@ const ForumAlumniCreatePostPage = Loadable(
   lazy(() => import('../pages/ForumAlumniCreatePostPage'))
 );
 const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
+
+
 export const router = createBrowserRouter([
   {
     path: '/',
