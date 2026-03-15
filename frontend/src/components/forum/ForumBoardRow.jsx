@@ -18,11 +18,19 @@ const StatCell = ({ label, value, showLabel = true }) => {
   );
 };
 
-const ForumBoardRow = ({ board }) => {
+const ForumBoardRow = ({ board, onClick }) => {
   const last = board?.lastPost;
 
   return (
-    <Box sx={{ px: { xs: 1.5, sm: 1.75, md: 2.75 }, py: { xs: 1.5, sm: 2, md: 2.4 } }}>
+    <Box
+      sx={{
+        px: { xs: 1.5, sm: 1.75, md: 2.75 },
+        py: { xs: 1.5, sm: 2, md: 2.4 },
+        cursor: onClick ? 'pointer' : 'default',
+      }}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       <Box
         sx={{
           display: 'flex',
