@@ -1,5 +1,5 @@
 const typography = {
-	fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+	fontFamily: '"Nunito", "Montserrat","Roboto", "Helvetica", "Arial", sans-serif',
 	fontWeightRegular: 400,
 	fontWeightMedium: 600,
 	fontWeightBold: 700,
