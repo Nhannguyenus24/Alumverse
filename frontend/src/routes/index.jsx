@@ -49,6 +49,19 @@ const ForumAlumniCreatePostPage = Loadable(
   lazy(() => import('../pages/ForumAlumniCreatePostPage'))
 );
 const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
+const HonorsPage = Loadable(
+  lazy(() => import('../pages/HonorsPage'))
+);
+const HonorsAlumniPage = Loadable(
+  lazy(() => import('../pages/HonorsAlumniPage'))
+);
+const HonorsAchievementsPage = Loadable(
+  lazy(() => import('../pages/HonorsAchievementsPage'))
+);
+const HonorsRequestAchievementsPage = Loadable(
+  lazy(() => import('../pages/HonorsRequestAchievementsPage'))
+);
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -96,6 +109,27 @@ export const router = createBrowserRouter([
       {
         path: 'contact',
         element: <ContactPage />,
+      },
+      {
+        path: 'honors',
+        children: [
+          {
+            index: true,
+            element: <HonorsPage />,
+          },
+          {
+            path: 'alumni',
+            element: <HonorsAlumniPage />,
+          },
+          {
+            path: 'achievements',
+            element: <HonorsAchievementsPage />,
+          },
+          {
+            path: 'request-achievements',
+            element: <HonorsRequestAchievementsPage />,
+          },
+        ],
       },
       {
         path: 'faculties',
