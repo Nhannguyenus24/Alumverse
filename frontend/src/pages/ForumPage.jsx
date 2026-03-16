@@ -56,10 +56,28 @@ const ForumPage = () => {
 
   useEffect(() => {
     const fromState = location.state?.selectedFilterId;
-    if (fromState && (fromState === 'all' || fromState.startsWith('category-'))) {
-      setSelectedFilterId(fromState);
-      navigate(location.pathname, { replace: true, state: {} });
+    if (!fromState || !(fromState === 'all' || fromState.startsWith('category-'))) {
+      return;
     }
+
+    // Sử dụng transition để tránh cascade render mạnh
+    const id = window.requestIdleCallback
+      ? window.requestIdleCallback(() => {
+          setSelectedFilterId(fromState);
+          navigate(location.pathname, { replace: true, state: {} });
+        })
+      : window.setTimeout(() => {
+          setSelectedFilterId(fromState);
+          navigate(location.pathname, { replace: true, state: {} });
+        }, 0);
+
+    return () => {
+      if (window.cancelIdleCallback && typeof id === 'number') {
+        window.cancelIdleCallback(id);
+      } else {
+        window.clearTimeout(id);
+      }
+    };
   }, [location.pathname, location.state?.selectedFilterId, navigate]);
   const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics(SECTIONS));
   const [newMainTopic, setNewMainTopic] = useState('');
@@ -163,9 +181,14 @@ const ForumPage = () => {
   const handleBoardClick = useCallback(
     (board) => {
       if (!board?.topicId) return;
-      navigate(`/forum/alumni/career/${board.topicId}`);
+      navigate(`/forum/alumni/career/${board.topicId}`, {
+        state: {
+          topicTitle: board.name,
+          selectedFilterId,
+        },
+      });
     },
-    [navigate]
+    [navigate, selectedFilterId]
   );
 
   const handleOpenManageMode = () => {
@@ -581,9 +604,16 @@ const ForumPage = () => {
 
                   <Box>
                     {topicsSingle.map((topic) => (
-                      <Box
-                        key={topic.id}
-                        onClick={() => navigate(`/forum/alumni/career/${topic.id}`)}
+                  <Box
+                    key={topic.id}
+                    onClick={() =>
+                      navigate(`/forum/alumni/career/${topic.id}`, {
+                        state: {
+                          topicTitle: topic.title,
+                          selectedFilterId: `category-${selectedCategory?.id ?? topic.categoryId}`,
+                        },
+                      })
+                    }
                         sx={{
                           px: { xs: 1.5, sm: 2, md: 3 },
                           py: { xs: 1.5, md: 2 },

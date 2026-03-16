@@ -195,7 +195,9 @@ const ForumAlumniCareerPage = () => {
                   <Box
                     key={topic.id}
                     onClick={() =>
-                      navigate(`/forum/alumni/career/${topic.id}`)
+                      navigate(`/forum/alumni/career/${topic.id}`, {
+                        state: { topicTitle: topic.title, selectedFilterId: 'alumni' },
+                      })
                     }
                     sx={{
                       px: { xs: 1.5, sm: 2, md: 3 },

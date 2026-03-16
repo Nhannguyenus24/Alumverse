@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -50,6 +50,7 @@ const FILTERS = [
 ];
 
 const ForumAlumniThreadPage = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { threadId } = useParams();
   const topicId = useMemo(() => {
@@ -63,10 +64,32 @@ const ForumAlumniThreadPage = () => {
 
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
+  const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
 
-  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, 0, 20);
+  const memberId = user?.id ?? null;
+  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, 0, 20);
   const { createPost, isPending: createPending, isError: createIsError, errorMessage: createErrorMessage } =
     useCreateForumPost();
+
+  const stripHtml = useCallback((value) => {
+    if (value == null) return '';
+    const s = String(value);
+    return s.replace(/<[^>]*>/g, '').trim();
+  }, []);
+
+  const thread = useMemo(() => {
+    const topicTitleFromState = location.state?.topicTitle;
+    const title =
+      (typeof topicTitleFromState === 'string' && topicTitleFromState.trim()) ? topicTitleFromState : FALLBACK_THREAD.title;
+
+    const firstPost = posts?.[0] ?? null;
+    return {
+      title,
+      authorName: firstPost?.authorMemberId ? `Thành viên #${firstPost.authorMemberId}` : FALLBACK_THREAD.authorName,
+      role: 'Alumni',
+      createdAt: firstPost?.createdAt ? formatPostDate(firstPost.createdAt) : FALLBACK_THREAD.createdAt,
+    };
+  }, [location.state?.topicTitle, posts]);
 
   const replies = useMemo(
     () =>
@@ -75,10 +98,10 @@ const ForumAlumniThreadPage = () => {
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
         createdAt: formatPostDate(post.createdAt),
-        content: post.content,
+        content: stripHtml(post.content),
         reactionsSummary: post.isLike ? 'Bạn đã thích bài viết này' : '',
       })),
-    [posts]
+    [posts, stripHtml]
   );
 
   const filters = useMemo(() => {
@@ -113,6 +136,10 @@ const ForumAlumniThreadPage = () => {
         navigate('/forum');
         return;
       }
+      if (id === 'alumni') {
+        navigate('/forum/alumni/career');
+        return;
+      }
       if (id?.startsWith('category-')) {
         navigate('/forum', { state: { selectedFilterId: id } });
         return;
@@ -121,7 +148,21 @@ const ForumAlumniThreadPage = () => {
     [navigate]
   );
 
-  const thread = FALLBACK_THREAD;
+  const selectedFilterId = useMemo(() => {
+    const allFilterIds = filters.map((f) => f.id);
+    return allFilterIds.includes(selectedFilterIdFromState) ? selectedFilterIdFromState : 'all';
+  }, [filters, selectedFilterIdFromState]);
+
+  const parentBreadcrumbLabel = useMemo(() => {
+    if (selectedFilterId === 'all') return 'Diễn đàn';
+    if (selectedFilterId === 'alumni') return 'Cựu sinh viên';
+    if (selectedFilterId.startsWith('category-')) {
+      const id = parseInt(selectedFilterId.replace('category-', ''), 10);
+      const cat = categories?.find((c) => c.id === id);
+      return cat?.name ?? 'Diễn đàn';
+    }
+    return 'Diễn đàn';
+  }, [selectedFilterId, categories]);
 
   return (
     <Page
@@ -150,7 +191,7 @@ const ForumAlumniThreadPage = () => {
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
               <ForumFilterPanel
                 filters={filters}
-                selectedId="all"
+                selectedId={selectedFilterId}
                 onChange={handleFilterChange}
               />
               <ForumSponsoredCard
@@ -164,7 +205,10 @@ const ForumAlumniThreadPage = () => {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Breadcrumb
                 items={[
-                  { label: 'Diễn đàn', path: '/forum' },
+                  {
+                    label: parentBreadcrumbLabel,
+                    path: selectedFilterId === 'alumni' ? '/forum/alumni/career' : '/forum',
+                  },
                   { label: thread.title },
                 ]}
                 uppercase
