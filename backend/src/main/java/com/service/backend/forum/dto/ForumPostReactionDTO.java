@@ -11,14 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ForumPostDTO {
+public class ForumPostReactionDTO {
     private Integer id;
-    private Integer topicId;
-    private Integer authorMemberId;
-    private String content;
-    private Integer answerToPostId;
-    private Boolean isBanned;
-    private Boolean isLike;
+    private Integer postId;
+    private Integer memberId;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

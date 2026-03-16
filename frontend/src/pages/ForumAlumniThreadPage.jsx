@@ -13,10 +13,10 @@ import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Page from '../components/Page';
 import { useAuth } from '../hooks/useAuth';
-import { useForumPosts } from '../hooks/forum/useForumPosts';
-import { useForumCategories } from '../hooks/forum/useForumCategories';
-import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
 import Breadcrumb from '../components/Breadcrumb';
+import { useForumCategories } from '../hooks/forum/useForumCategories';
+import { useForumPosts } from '../hooks/forum/useForumPosts';
+import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import WYSIWYG from '../components/WYSIWYG';
@@ -40,6 +40,16 @@ const FALLBACK_THREAD = {
   createdAt: '—',
 };
 
+const FILTERS = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'alumni', label: 'Cựu sinh viên' },
+  { id: 'jobs', label: 'Việc làm' },
+  { id: 'events', label: 'Hoạt động' },
+  { id: 'tech', label: 'Công nghệ' },
+  { id: 'courses', label: 'Học phần' },
+  { id: 'admissions', label: 'Tuyển sinh' },
+];
+
 const ForumAlumniThreadPage = () => {
   const navigate = useNavigate();
   const { threadId } = useParams();
@@ -53,51 +63,50 @@ const ForumAlumniThreadPage = () => {
   const [editorValue, setEditorValue] = useState('');
 
   const organizationId = user?.organizationId ?? 1;
-  const { categories } = useForumCategories(organizationId);
+  const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
+
+  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, 0, 20);
+  const { createPost, isPending: createPending, isError: createIsError, errorMessage: createErrorMessage } =
+    useCreateForumPost();
+
+  const replies = useMemo(
+    () =>
+      (posts ?? []).map((post) => ({
+        id: post.id,
+        authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
+        role: 'Alumni',
+        createdAt: formatPostDate(post.createdAt),
+        content: post.content,
+        reactionsSummary: post.isLike ? 'Bạn đã thích bài viết này' : '',
+      })),
+    [posts]
+  );
 
   const filters = useMemo(() => {
-    if (!categories?.length) {
-      return [{ id: 'all', label: 'Tất cả' }];
+    if (categoriesPending && !categories?.length) {
+      return FILTERS;
     }
+    if (!categories?.length) return FILTERS;
     return [
       { id: 'all', label: 'Tất cả' },
       ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
     ];
-  }, [categories]);
+  }, [categories, categoriesPending]);
 
-  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, 0, 20);
-  const {
-    createPost,
-    isPending: createPending,
-    isError: createIsError,
-    errorMessage: createErrorMessage,
-  } = useCreateForumPost();
+  const handleSubmit = async () => {
+    const trimmed = (editorValue ?? '').trim();
+    if (!trimmed || !topicId || !user?.id) return;
 
-  const thread = useMemo(() => {
-    const first = posts.find((p) => !p.answerToPostId) ?? posts[0];
-    if (!first) return FALLBACK_THREAD;
-    const title =
-      first.content?.length > 60 ? `${first.content.slice(0, 60)}...` : first.content || FALLBACK_THREAD.title;
-    return {
-      title,
-      authorName: `Thành viên #${first.authorMemberId ?? '—'}`,
-      role: 'Alumni',
-      createdAt: formatPostDate(first.createdAt),
+    const payload = {
+      topicId,
+      authorMemberId: user.id,
+      content: trimmed,
+      answerToPostId: null,
     };
-  }, [posts]);
 
-  const replies = useMemo(
-    () =>
-      posts.map((p) => ({
-        id: p.id,
-        authorName: `Thành viên #${p.authorMemberId ?? '—'}`,
-        role: 'Alumni',
-        createdAt: formatPostDate(p.createdAt),
-        content: p.content ?? '',
-        reactionsSummary: '',
-      })),
-    [posts]
-  );
+    await createPost(payload);
+    setEditorValue('');
+  };
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -113,19 +122,7 @@ const ForumAlumniThreadPage = () => {
     [navigate]
   );
 
-  const handleSubmit = useCallback(async () => {
-    const content = (editorValue ?? '').trim();
-    if (!topicId || !user?.id || !content) return;
-
-    await createPost({
-      topicId,
-      authorMemberId: user.id,
-      content,
-      answerToPostId: null,
-    });
-
-    setEditorValue('');
-  }, [createPost, editorValue, topicId, user?.id]);
+  const thread = FALLBACK_THREAD;
 
   return (
     <Page
