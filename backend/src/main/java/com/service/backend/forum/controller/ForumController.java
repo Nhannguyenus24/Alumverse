@@ -1,6 +1,7 @@
 package com.service.backend.forum.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
+import com.service.backend.forum.dto.CreateForumPostReactionRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostPageResponse;
+import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.forum.dto.ForumTopicPageResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
@@ -31,6 +34,7 @@ import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -227,5 +231,48 @@ public class ForumController {
                 .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post deleted successfully", null))))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
     }
+
+    // ========== REACTION ENDPOINTS (LIKE/DISLIKE) ==========
+
+    /**
+     * Like or dislike a forum post
+     */
+    @PostMapping("/post/react")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> reactToPost(
+            @Valid @RequestBody CreateForumPostReactionRequest request) {
+        return forumService.reactToPost(request)
+                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Reaction added successfully", reaction)))
+                .onErrorResume(error -> {
+                    if ("REACTION_REMOVED".equals(error.getMessage())) {
+                        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Reaction removed successfully", null)));
+                    }
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null)));
+                });
+    }
+
+    /**
+     * Get reaction counts for a post
+     */
+    @GetMapping("/post/{postId}/reactions/count")
+    public Mono<ResponseEntity<ApiResponse<Map<String, Long>>>> getPostReactionCounts(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
+        return forumService.getPostReactionCounts(postId)
+                .map(counts -> ResponseEntity.ok(new ApiResponse<>("Reaction counts retrieved successfully", counts)))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+    }
+
+    /**
+     * Get user's reaction for a specific post
+     */
+    @GetMapping("/post/{postId}/reactions/user")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> getUserReaction(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId,
+            @Parameter(example = "1")
+            @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
+        return forumService.getUserReaction(postId, memberId)
+                .map(reaction -> ResponseEntity.ok(new ApiResponse<>("User reaction retrieved successfully", reaction)))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("No reaction found", null))));
+    }
+
 }
 

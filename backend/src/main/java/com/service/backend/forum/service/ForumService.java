@@ -9,9 +9,11 @@ import org.springframework.stereotype.Service;
 import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
+import com.service.backend.forum.dto.CreateForumPostReactionRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostPageResponse;
+import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.forum.dto.ForumTopicPageResponse;
 import com.service.backend.shared.dto.PageInfo;
@@ -19,9 +21,11 @@ import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.entities.ForumCategory;
 import com.service.backend.forum.entities.ForumPost;
+import com.service.backend.forum.entities.ForumPostReaction;
 import com.service.backend.forum.entities.ForumTopic;
 import com.service.backend.forum.repository.ForumCategoryRepository;
 import com.service.backend.forum.repository.ForumPostRepository;
+import com.service.backend.forum.repository.ForumPostReactionRepository;
 import com.service.backend.forum.repository.ForumTopicRepository;
 
 import reactor.core.publisher.Flux;
@@ -34,13 +38,16 @@ public class ForumService {
     private final ForumCategoryRepository forumCategoryRepository;
     private final ForumTopicRepository forumTopicRepository;
     private final ForumPostRepository forumPostRepository;
+    private final ForumPostReactionRepository forumPostReactionRepository;
 
     public ForumService(ForumCategoryRepository forumCategoryRepository,
                         ForumTopicRepository forumTopicRepository,
-                        ForumPostRepository forumPostRepository) {
+                        ForumPostRepository forumPostRepository,
+                        ForumPostReactionRepository forumPostReactionRepository) {
         this.forumCategoryRepository = forumCategoryRepository;
         this.forumTopicRepository = forumTopicRepository;
         this.forumPostRepository = forumPostRepository;
+        this.forumPostReactionRepository = forumPostReactionRepository;
     }
 
     // Helper method to calculate PageInfo
@@ -250,7 +257,7 @@ public class ForumService {
                             .topicId(request.getTopicId())
                             .authorMemberId(request.getAuthorMemberId())
                             .content(request.getContent())
-                            .answerToPostId(request.getAnswerToPostId())
+                            .answerToPostId(null)
                             .isBanned(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
@@ -294,6 +301,94 @@ public class ForumService {
                 .doOnError(error -> log.error("Error creating answer to post ID: {}", postId, error));
     }
 
+    // ========== REACTION METHODS (LIKE/DISLIKE) ==========
+
+    /**
+     * Like or dislike a forum post
+     */
+    public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
+        log.info("Adding reaction to post ID: {}, member: {}, type: {}", 
+                request.getPostId(), request.getMemberId(), request.getReactionType());
+        
+        // Validate post exists
+        return forumPostRepository.findById(request.getPostId())
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.error("Post not found with ID: {}", request.getPostId());
+                    return Mono.error(new RuntimeException("Post not found with ID: " + request.getPostId()));
+                }))
+                .flatMap(post -> {
+                    // Check if reaction already exists
+                    return forumPostReactionRepository.findByPostIdAndMemberId(
+                            request.getPostId(), request.getMemberId())
+                            .flatMap(existingReaction -> {
+                                // If reaction exists and is the same type, remove it
+                                if (existingReaction.getReactionType().equals(request.getReactionType())) {
+                                    log.info("Removing existing reaction from post ID: {}, member: {}", 
+                                            request.getPostId(), request.getMemberId());
+                                    return forumPostReactionRepository.deleteByPostIdAndMemberId(
+                                            request.getPostId(), request.getMemberId())
+                                            .then(Mono.error(new RuntimeException("Reaction removed")));
+                                } else {
+                                    // Update reaction type
+                                    existingReaction.setReactionType(request.getReactionType());
+                                    return forumPostReactionRepository.save(existingReaction);
+                                }
+                            })
+                            .onErrorResume(error -> {
+                                if ("Reaction removed".equals(error.getMessage())) {
+                                    return Mono.error(new RuntimeException("REACTION_REMOVED"));
+                                }
+                                // No existing reaction, create new one
+                                return Mono.just(post)
+                                        .flatMap(p -> {
+                                            ForumPostReaction reaction = ForumPostReaction.builder()
+                                                    .postId(request.getPostId())
+                                                    .memberId(request.getMemberId())
+                                                    .reactionType(request.getReactionType())
+                                                    .createdAt(LocalDateTime.now())
+                                                    .build();
+                                            return forumPostReactionRepository.save(reaction);
+                                        });
+                            });
+                })
+                .map(this::convertToReactionDTO)
+                .doOnSuccess(result -> log.info("Successfully added reaction to post ID: {}", request.getPostId()))
+                .doOnError(error -> {
+                    if (!"REACTION_REMOVED".equals(error.getMessage())) {
+                        log.error("Error adding reaction to post ID: {}", request.getPostId(), error);
+                    }
+                });
+    }
+
+    /**
+     * Get reaction counts for a post (likes and dislikes)
+     */
+    public Mono<java.util.Map<String, Long>> getPostReactionCounts(Integer postId) {
+        log.info("Getting reaction counts for post ID: {}", postId);
+        
+        return forumPostReactionRepository.countLikesByPostId(postId)
+                .zipWith(forumPostReactionRepository.countDislikesByPostId(postId))
+                .map(tuple -> {
+                    java.util.Map<String, Long> map = new java.util.HashMap<>();
+                    map.put("likes", tuple.getT1());
+                    map.put("dislikes", tuple.getT2());
+                    return map;
+                })
+                .doOnSuccess(result -> log.info("Retrieved reaction counts for post ID: {}", postId))
+                .doOnError(error -> log.error("Error getting reaction counts for post ID: {}", postId, error));
+    }
+
+    /**
+     * Get user's reaction for a specific post
+     */
+    public Mono<ForumPostReactionDTO> getUserReaction(Integer postId, Integer memberId) {
+        log.info("Getting user reaction for post ID: {}, member: {}", postId, memberId);
+        return forumPostReactionRepository.findByPostIdAndMemberId(postId, memberId)
+                .map(this::convertToReactionDTO)
+                .doOnSuccess(result -> log.info("Found user reaction for post ID: {}", postId))
+                .doOnError(error -> log.debug("No reaction found for post ID: {} by member: {}", postId, memberId));
+    }
+
     // Helper methods to convert entities to DTOs
     private ForumCategoryDTO convertToCategoryDTO(ForumCategory category) {
         return ForumCategoryDTO.builder()
@@ -329,6 +424,16 @@ public class ForumService {
                 .isBanned(post.getIsBanned())
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
+                .build();
+    }
+
+    private ForumPostReactionDTO convertToReactionDTO(ForumPostReaction reaction) {
+        return ForumPostReactionDTO.builder()
+                .id(reaction.getId())
+                .postId(reaction.getPostId())
+                .memberId(reaction.getMemberId())
+                .reactionType(reaction.getReactionType())
+                .createdAt(reaction.getCreatedAt())
                 .build();
     }
 }
