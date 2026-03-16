@@ -22,18 +22,28 @@ const fetchForumPosts = async ({ queryKey }) => {
 };
 
 export const useForumPosts = (topicId, memberId, page = 0, size = 20) => {
-  const {
-    data,
-    isPending,
-    isError,
-    error,
-  } = useQuery({
+  const { data, isPending, isError, error } = useQuery({
     queryKey: ["forumPosts", { topicId, page, size, memberId }],
     queryFn: fetchForumPosts,
     enabled: !!topicId,
   });
 
-  const posts = data?.items ?? [];
+  const rawPosts = data?.items ?? [];
+
+  const posts = Array.isArray(rawPosts)
+    ? [...rawPosts].sort((a, b) => {
+        const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+
+        if (aTime !== bTime) {
+          return aTime - bTime;
+        }
+
+        const aId = typeof a?.id === "number" ? a.id : 0;
+        const bId = typeof b?.id === "number" ? b.id : 0;
+        return aId - bId;
+      })
+    : [];
   const pageInfo = data?.pageInfo ?? null;
   const errorMessage =
     isError && error

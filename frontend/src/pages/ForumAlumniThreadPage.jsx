@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router';
 import { Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import FavoriteIcon from '@mui/icons-material/Favorite';
 import ModeCommentOutlinedIcon from '@mui/icons-material/ModeCommentOutlined';
 import ReplyOutlinedIcon from '@mui/icons-material/ReplyOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
@@ -22,6 +23,7 @@ import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import { useForumPostReactionCount } from '../hooks/forum/useForumPostReactionCount';
 import { useForumPostUserReaction } from '../hooks/forum/useForumPostUserReaction';
+import { useReactToForumPost } from '../hooks/forum/useReactToForumPost';
 
 const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) => {
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
@@ -30,19 +32,21 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) =>
     isPending: userReactionPending,
     isError: userReactionError,
   } = useForumPostUserReaction(reply.id, memberId);
+  const {
+    toggleReaction,
+    isPending: reactPending,
+    isError: reactIsError,
+    errorMessage: reactErrorMessage,
+  } = useReactToForumPost(reply.id, memberId);
 
   const isOwn = index === 0;
 
-  const likesDisplay = likesPending ? '...' : likesError ? '—' : likes;
-
-  let reactionsSummary = '';
-  if (userReactionPending) {
-    reactionsSummary = 'Đang tải trạng thái cảm xúc...';
-  } else if (userReactionError) {
-    reactionsSummary = 'Không thể tải trạng thái cảm xúc.';
-  } else if (hasReaction) {
-    reactionsSummary = 'Bạn đã thích bài viết này';
-  }
+  const isLiked = !!hasReaction;
+  const likesDisplay = likesPending
+    ? '...'
+    : likesError
+    ? '—'
+    : likes;
 
   const hasParent = !!parentPost;
 
@@ -187,9 +191,6 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) =>
             </Typography>
           </Box>
         ) : null}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-          {reactionsSummary}
-        </Typography>
         <Box
           sx={{
             display: 'flex',
@@ -201,12 +202,38 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) =>
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <FavoriteBorderIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => toggleReaction()}
+              disabled={reactPending || !memberId}
+              sx={{
+                minWidth: 0,
+                p: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                color: isLiked ? 'error.main' : 'text.secondary',
+              }}
+            >
+              {isLiked ? (
+                <FavoriteIcon
+                  sx={{
+                    fontSize: 18,
+                    color: 'error.main',
+                  }}
+                />
+              ) : (
+                <FavoriteBorderIcon
+                  sx={{
+                    fontSize: 18,
+                  }}
+                />
+              )}
+              <Typography variant="caption">
                 {likesDisplay}
               </Typography>
-            </Box>
+            </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <ModeCommentOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               <Typography variant="caption" color="text.secondary">
@@ -237,15 +264,12 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) =>
             >
               Trả lời
             </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              color="primary"
-              startIcon={<SentimentSatisfiedAltOutlinedIcon sx={{ fontSize: 18 }} />}
-            >
-              Cảm xúc
-            </Button>
           </Box>
+          {reactIsError ? (
+            <Typography variant="caption" color="error">
+              {reactErrorMessage ?? 'Không thể cập nhật cảm xúc.'}
+            </Typography>
+          ) : null}
         </Box>
       </Box>
     </Box>
