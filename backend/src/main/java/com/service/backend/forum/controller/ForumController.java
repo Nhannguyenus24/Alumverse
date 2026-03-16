@@ -170,8 +170,10 @@ public class ForumController {
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be greater than or equal to 0") int page,
             @Parameter(example = "20")
-            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be greater than 0") int size) {
-        return forumService.findPostsByTopicId(topicId, page, size)
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be greater than 0") int size,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer memberId) {
+        return forumService.findPostsByTopicId(topicId, page, size, memberId)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Posts retrieved successfully", response)))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
     }
@@ -235,16 +237,16 @@ public class ForumController {
     // ========== REACTION ENDPOINTS (LIKE/DISLIKE) ==========
 
     /**
-     * Like or dislike a forum post
+     * Like or unlike a forum post
      */
     @PostMapping("/post/react")
     public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> reactToPost(
             @Valid @RequestBody CreateForumPostReactionRequest request) {
         return forumService.reactToPost(request)
-                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Reaction added successfully", reaction)))
+                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Like added successfully", reaction)))
                 .onErrorResume(error -> {
                     if ("REACTION_REMOVED".equals(error.getMessage())) {
-                        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Reaction removed successfully", null)));
+                        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null)));
                     }
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null)));
                 });

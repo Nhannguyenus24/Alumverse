@@ -27,9 +27,6 @@ public class ForumPostReaction {
     @Column("member_id")
     private Integer memberId;
     
-    @Column("reaction_type")
-    private Boolean reactionType; // true = LIKE, false = DISLIKE
-    
     @Column("created_at")
     private LocalDateTime createdAt;
 }

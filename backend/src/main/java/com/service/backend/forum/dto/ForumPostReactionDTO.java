@@ -15,6 +15,5 @@ public class ForumPostReactionDTO {
     private Integer id;
     private Integer postId;
     private Integer memberId;
-    private Boolean reactionType; // true = LIKE, false = DISLIKE
     private LocalDateTime createdAt;
 }
