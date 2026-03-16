@@ -210,8 +210,8 @@ public class ForumService {
     }
 
     // Post methods
-    public Mono<ForumPostPageResponse> findPostsByTopicId(Integer topicId, int page, int size) {
-        log.info("Finding forum posts for topic ID: {}, page: {}, size: {}", topicId, page, size);
+    public Mono<ForumPostPageResponse> findPostsByTopicId(Integer topicId, int page, int size, Integer memberId) {
+        log.info("Finding forum posts for topic ID: {}, page: {}, size: {}, memberId: {}", topicId, page, size, memberId);
         
         // Fire and forget: increment view count for topic
         forumTopicRepository.incrementViewCount(topicId)
@@ -221,7 +221,16 @@ public class ForumService {
         
         long offset = (long) page * size;
         return forumPostRepository.findByTopicIdWithPagination(topicId, size, offset)
-                .map(this::convertToPostDTO)
+                .flatMap(post -> {
+                    // If memberId is provided, check if user has liked this post
+                    if (memberId != null) {
+                        return forumPostReactionRepository.findByPostIdAndMemberId(post.getId(), memberId)
+                                .map(reaction -> convertToPostDTO(post, true))
+                                .switchIfEmpty(Mono.just(convertToPostDTO(post, false)));
+                    } else {
+                        return Mono.just(convertToPostDTO(post, false));
+                    }
+                })
                 .collectList()
                 .zipWith(forumPostRepository.countByTopicId(topicId))
                 .map(tuple -> {
@@ -304,11 +313,11 @@ public class ForumService {
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
     /**
-     * Like or dislike a forum post
+     * Like or unlike a forum post (toggle)
      */
     public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
-        log.info("Adding reaction to post ID: {}, member: {}, type: {}", 
-                request.getPostId(), request.getMemberId(), request.getReactionType());
+        log.info("Adding/removing like to post ID: {}, member: {}", 
+                request.getPostId(), request.getMemberId());
         
         // Validate post exists
         return forumPostRepository.findById(request.getPostId())
@@ -321,61 +330,48 @@ public class ForumService {
                     return forumPostReactionRepository.findByPostIdAndMemberId(
                             request.getPostId(), request.getMemberId())
                             .flatMap(existingReaction -> {
-                                // If reaction exists and is the same type, remove it
-                                if (existingReaction.getReactionType().equals(request.getReactionType())) {
-                                    log.info("Removing existing reaction from post ID: {}, member: {}", 
-                                            request.getPostId(), request.getMemberId());
-                                    return forumPostReactionRepository.deleteByPostIdAndMemberId(
-                                            request.getPostId(), request.getMemberId())
-                                            .then(Mono.error(new RuntimeException("Reaction removed")));
-                                } else {
-                                    // Update reaction type
-                                    existingReaction.setReactionType(request.getReactionType());
-                                    return forumPostReactionRepository.save(existingReaction);
-                                }
+                                // If reaction exists, remove it (unlike)
+                                log.info("Removing existing like from post ID: {}, member: {}", 
+                                        request.getPostId(), request.getMemberId());
+                                return forumPostReactionRepository.deleteByPostIdAndMemberId(
+                                        request.getPostId(), request.getMemberId())
+                                        .then(Mono.<ForumPostReaction>error(new RuntimeException("REACTION_REMOVED")));
                             })
-                            .onErrorResume(error -> {
-                                if ("Reaction removed".equals(error.getMessage())) {
-                                    return Mono.error(new RuntimeException("REACTION_REMOVED"));
-                                }
-                                // No existing reaction, create new one
-                                return Mono.just(post)
-                                        .flatMap(p -> {
-                                            ForumPostReaction reaction = ForumPostReaction.builder()
-                                                    .postId(request.getPostId())
-                                                    .memberId(request.getMemberId())
-                                                    .reactionType(request.getReactionType())
-                                                    .createdAt(LocalDateTime.now())
-                                                    .build();
-                                            return forumPostReactionRepository.save(reaction);
-                                        });
-                            });
+                            .switchIfEmpty(Mono.defer(() -> {
+                                // No existing reaction, create new one (like)
+                                log.info("Creating new like for post ID: {}, member: {}", 
+                                        request.getPostId(), request.getMemberId());
+                                ForumPostReaction reaction = ForumPostReaction.builder()
+                                        .postId(request.getPostId())
+                                        .memberId(request.getMemberId())
+                                        .createdAt(LocalDateTime.now())
+                                        .build();
+                                return forumPostReactionRepository.save(reaction);
+                            }));
                 })
                 .map(this::convertToReactionDTO)
-                .doOnSuccess(result -> log.info("Successfully added reaction to post ID: {}", request.getPostId()))
+                .doOnSuccess(result -> log.info("Successfully toggled like for post ID: {}", request.getPostId()))
                 .doOnError(error -> {
                     if (!"REACTION_REMOVED".equals(error.getMessage())) {
-                        log.error("Error adding reaction to post ID: {}", request.getPostId(), error);
+                        log.error("Error toggling like for post ID: {}", request.getPostId(), error);
                     }
                 });
     }
 
     /**
-     * Get reaction counts for a post (likes and dislikes)
+     * Get like count for a post
      */
     public Mono<java.util.Map<String, Long>> getPostReactionCounts(Integer postId) {
-        log.info("Getting reaction counts for post ID: {}", postId);
+        log.info("Getting like count for post ID: {}", postId);
         
-        return forumPostReactionRepository.countLikesByPostId(postId)
-                .zipWith(forumPostReactionRepository.countDislikesByPostId(postId))
-                .map(tuple -> {
+        return forumPostReactionRepository.countReactionsByPostId(postId)
+                .map(count -> {
                     java.util.Map<String, Long> map = new java.util.HashMap<>();
-                    map.put("likes", tuple.getT1());
-                    map.put("dislikes", tuple.getT2());
+                    map.put("likes", count);
                     return map;
                 })
-                .doOnSuccess(result -> log.info("Retrieved reaction counts for post ID: {}", postId))
-                .doOnError(error -> log.error("Error getting reaction counts for post ID: {}", postId, error));
+                .doOnSuccess(result -> log.info("Retrieved like count for post ID: {}", postId))
+                .doOnError(error -> log.error("Error getting like count for post ID: {}", postId, error));
     }
 
     /**
@@ -415,6 +411,10 @@ public class ForumService {
     }
 
     private ForumPostDTO convertToPostDTO(ForumPost post) {
+        return convertToPostDTO(post, false);
+    }
+
+    private ForumPostDTO convertToPostDTO(ForumPost post, Boolean isLike) {
         return ForumPostDTO.builder()
                 .id(post.getId())
                 .topicId(post.getTopicId())
@@ -422,6 +422,7 @@ public class ForumService {
                 .content(post.getContent())
                 .answerToPostId(post.getAnswerToPostId())
                 .isBanned(post.getIsBanned())
+                .isLike(isLike)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .build();
@@ -432,7 +433,6 @@ public class ForumService {
                 .id(reaction.getId())
                 .postId(reaction.getPostId())
                 .memberId(reaction.getMemberId())
-                .reactionType(reaction.getReactionType())
                 .createdAt(reaction.getCreatedAt())
                 .build();
     }

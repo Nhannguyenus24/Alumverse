@@ -24,16 +24,10 @@ public interface ForumPostReactionRepository extends R2dbcRepository<ForumPostRe
     Flux<ForumPostReaction> findByPostId(Integer postId);
     
     /**
-     * Count likes for a post (reaction_type = true)
+     * Count likes (reactions) for a post
      */
-    @Query("SELECT COUNT(*) FROM forum_post_reactions WHERE post_id = :postId AND reaction_type = true")
-    Mono<Long> countLikesByPostId(@Param("postId") Integer postId);
-    
-    /**
-     * Count dislikes for a post (reaction_type = false)
-     */
-    @Query("SELECT COUNT(*) FROM forum_post_reactions WHERE post_id = :postId AND reaction_type = false")
-    Mono<Long> countDislikesByPostId(@Param("postId") Integer postId);
+    @Query("SELECT COUNT(*) FROM forum_post_reactions WHERE post_id = :postId")
+    Mono<Long> countReactionsByPostId(@Param("postId") Integer postId);
     
     /**
      * Delete reaction by post id and member id
