@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -17,12 +17,13 @@ import Breadcrumb from '../components/Breadcrumb';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
 import { useForumPosts } from '../hooks/forum/useForumPosts';
 import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
+import { useAnswerToForumPost } from '../hooks/forum/useAnswerToForumPost';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import { useForumPostReactionCount } from '../hooks/forum/useForumPostReactionCount';
 import { useForumPostUserReaction } from '../hooks/forum/useForumPostUserReaction';
 
-const ForumReply = ({ reply, index, isAdmin, memberId }) => {
+const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) => {
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
   const {
     hasReaction,
@@ -43,6 +44,8 @@ const ForumReply = ({ reply, index, isAdmin, memberId }) => {
     reactionsSummary = 'Bạn đã thích bài viết này';
   }
 
+  const hasParent = !!parentPost;
+
   return (
     <Box
       sx={{
@@ -54,6 +57,7 @@ const ForumReply = ({ reply, index, isAdmin, memberId }) => {
         gap: 2,
         borderTop: 1,
         borderColor: 'divider',
+        ...(hasParent ? { bgcolor: 'grey.50' } : null),
       }}
     >
       <Box
@@ -151,6 +155,38 @@ const ForumReply = ({ reply, index, isAdmin, memberId }) => {
         >
           {reply.content}
         </Typography>
+        {hasParent ? (
+          <Box
+            sx={{
+              mb: 1.5,
+              px: 1.25,
+              py: 1,
+              borderLeft: 3,
+              borderLeftColor: 'primary.main',
+              bgcolor: 'common.white',
+              border: 1,
+              borderColor: 'divider',
+              maxWidth: '100%',
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Trả lời {parentPost.authorName ?? `bài viết #${parentPost.id}`}
+            </Typography>
+            <Typography
+              variant="body2"
+              color="text.primary"
+              sx={{
+                mt: 0.25,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {parentPost.content || '—'}
+            </Typography>
+          </Box>
+        ) : null}
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
           {reactionsSummary}
         </Typography>
@@ -197,6 +233,7 @@ const ForumReply = ({ reply, index, isAdmin, memberId }) => {
               variant="contained"
               color="primary"
               startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+              onClick={() => onReply?.(reply)}
             >
               Trả lời
             </Button>
@@ -256,6 +293,8 @@ const ForumAlumniThreadPage = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
+  const editorRef = useRef(null);
 
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
@@ -265,6 +304,12 @@ const ForumAlumniThreadPage = () => {
   const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, 0, 20);
   const { createPost, isPending: createPending, isError: createIsError, errorMessage: createErrorMessage } =
     useCreateForumPost();
+  const {
+    answerToPost,
+    isPending: answerPending,
+    isError: answerIsError,
+    errorMessage: answerErrorMessage,
+  } = useAnswerToForumPost();
 
   const stripHtml = useCallback((value) => {
     if (value == null) return '';
@@ -290,6 +335,8 @@ const ForumAlumniThreadPage = () => {
     () =>
       (posts ?? []).map((post) => ({
         id: post.id,
+        answerToPostId: post.answerToPostId ?? null,
+        authorMemberId: post.authorMemberId ?? null,
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
         createdAt: formatPostDate(post.createdAt),
@@ -297,6 +344,29 @@ const ForumAlumniThreadPage = () => {
       })),
     [posts, stripHtml]
   );
+
+  const replyMap = useMemo(() => {
+    const m = new Map();
+    for (const r of replies) m.set(r.id, r);
+    return m;
+  }, [replies]);
+
+  const handleReply = useCallback((reply) => {
+    if (!reply?.id) return;
+    setReplyTo({
+      postId: reply.id,
+      authorName: reply.authorName ?? '',
+      content: reply.content ?? '',
+    });
+
+    window.setTimeout(() => {
+      editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      const input = editorRef.current?.querySelector?.('textarea');
+      input?.focus?.();
+    }, 0);
+  }, []);
+
+  const handleCancelReply = useCallback(() => setReplyTo(null), []);
 
   const filters = useMemo(() => {
     if (categoriesPending && !categories?.length) {
@@ -317,10 +387,15 @@ const ForumAlumniThreadPage = () => {
       topicId,
       authorMemberId: user.id,
       content: trimmed,
-      answerToPostId: null,
+      answerToPostId: replyTo?.postId ?? null,
     };
 
-    await createPost(payload);
+    if (replyTo?.postId) {
+      await answerToPost({ postId: replyTo.postId, payload });
+      setReplyTo(null);
+    } else {
+      await createPost(payload);
+    }
     setEditorValue('');
   };
 
@@ -611,6 +686,8 @@ const ForumAlumniThreadPage = () => {
                       index={index}
                       isAdmin={isAdmin}
                       memberId={memberId}
+                      onReply={handleReply}
+                      parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
                     />
                   ))
                 )}
@@ -671,7 +748,51 @@ const ForumAlumniThreadPage = () => {
                   </Box>
 
                   {/* Right: editor */}
-                  <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+                  <Box ref={editorRef} sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+                    {replyTo ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1,
+                          mb: 1,
+                          borderLeft: 3,
+                          borderLeftColor: 'primary.main',
+                          bgcolor: 'grey.50',
+                          border: 1,
+                          borderColor: 'divider',
+                          p: 1.25,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: { xs: 'flex-start', sm: 'center' },
+                            justifyContent: 'space-between',
+                            gap: 1,
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            Đang trả lời {replyTo.authorName || `bài viết #${replyTo.postId}`}
+                          </Typography>
+                          <Button size="small" variant="text" onClick={handleCancelReply}>
+                            Huỷ
+                          </Button>
+                        </Box>
+                        <Typography
+                          variant="body2"
+                          color="text.primary"
+                          sx={{
+                            overflow: 'hidden',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {replyTo.content || '—'}
+                        </Typography>
+                      </Box>
+                    ) : null}
                     <TextField
                       fullWidth
                       multiline
@@ -680,9 +801,9 @@ const ForumAlumniThreadPage = () => {
                       onChange={(e) => setEditorValue(e.target.value)}
                       placeholder="Write something"
                     />
-                    {createIsError ? (
+                    {answerIsError || createIsError ? (
                       <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                        {createErrorMessage ?? 'Không thể đăng bài viết.'}
+                        {answerErrorMessage ?? createErrorMessage ?? 'Không thể đăng bài viết.'}
                       </Typography>
                     ) : null}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
@@ -690,9 +811,15 @@ const ForumAlumniThreadPage = () => {
                         variant="contained"
                         color="primary"
                         onClick={handleSubmit}
-                        disabled={createPending || !topicId || !user?.id || !(editorValue ?? '').trim()}
+                        disabled={
+                          createPending ||
+                          answerPending ||
+                          !topicId ||
+                          !user?.id ||
+                          !(editorValue ?? '').trim()
+                        }
                       >
-                        {createPending ? 'Đang đăng...' : 'Đăng'}
+                        {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
                       </Button>
                     </Box>
                   </Box>
