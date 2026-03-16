@@ -15,6 +15,7 @@ import Page from '../components/Page';
 import { useAuth } from '../hooks/useAuth';
 import { useForumPosts } from '../hooks/forum/useForumPosts';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
+import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
 import Breadcrumb from '../components/Breadcrumb';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
@@ -65,6 +66,12 @@ const ForumAlumniThreadPage = () => {
   }, [categories]);
 
   const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, 0, 20);
+  const {
+    createPost,
+    isPending: createPending,
+    isError: createIsError,
+    errorMessage: createErrorMessage,
+  } = useCreateForumPost();
 
   const thread = useMemo(() => {
     const first = posts.find((p) => !p.answerToPostId) ?? posts[0];
@@ -105,6 +112,20 @@ const ForumAlumniThreadPage = () => {
     },
     [navigate]
   );
+
+  const handleSubmit = useCallback(async () => {
+    const content = (editorValue ?? '').trim();
+    if (!topicId || !user?.id || !content) return;
+
+    await createPost({
+      topicId,
+      authorMemberId: user.id,
+      content,
+      answerToPostId: null,
+    });
+
+    setEditorValue('');
+  }, [createPost, editorValue, topicId, user?.id]);
 
   return (
     <Page
@@ -591,9 +612,19 @@ const ForumAlumniThreadPage = () => {
                       placeholder="Write something"
                       height={180}
                     />
+                    {createIsError ? (
+                      <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                        {createErrorMessage ?? 'Không thể đăng bài viết.'}
+                      </Typography>
+                    ) : null}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-                      <Button variant="contained" color="primary">
-                        Đăng
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleSubmit}
+                        disabled={createPending || !topicId || !user?.id || !(editorValue ?? '').trim()}
+                      >
+                        {createPending ? 'Đang đăng...' : 'Đăng'}
                       </Button>
                     </Box>
                   </Box>
