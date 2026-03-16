@@ -16,7 +16,4 @@ public class CreateForumPostReactionRequest {
     
     @NotNull(message = "Member ID is required")
     private Integer memberId;
-    
-    @NotNull(message = "Reaction type is required")
-    private Boolean reactionType; // true = LIKE, false = DISLIKE
 }
