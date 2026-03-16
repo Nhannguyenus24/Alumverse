@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import ModeCommentOutlinedIcon from '@mui/icons-material/ModeCommentOutlined';
@@ -19,7 +19,6 @@ import { useForumPosts } from '../hooks/forum/useForumPosts';
 import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
-import WYSIWYG from '../components/WYSIWYG';
 
 const formatPostDate = (iso) => {
   if (!iso) return '—';
@@ -603,11 +602,13 @@ const ForumAlumniThreadPage = () => {
 
                   {/* Right: editor */}
                   <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
-                    <WYSIWYG
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={6}
                       value={editorValue}
-                      onChange={setEditorValue}
+                      onChange={(e) => setEditorValue(e.target.value)}
                       placeholder="Write something"
-                      height={180}
                     />
                     {createIsError ? (
                       <Typography variant="body2" color="error" sx={{ mt: 1 }}>

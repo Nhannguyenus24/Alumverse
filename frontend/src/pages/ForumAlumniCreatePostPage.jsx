@@ -13,7 +13,6 @@ import PersonIcon from '@mui/icons-material/Person';
 import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
-import WYSIWYG from '../components/WYSIWYG';
 
 const FILTERS = [
   { id: 'all', label: 'Tất cả' },
@@ -235,11 +234,13 @@ const ForumAlumniCreatePostPage = () => {
                     </Box>
 
                     <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2 }}>
-                      <WYSIWYG
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={8}
                         value={content}
-                        onChange={setContent}
+                        onChange={(e) => setContent(e.target.value)}
                         placeholder="Write something"
-                        height={220}
                       />
                     </Box>
                   </Box>
