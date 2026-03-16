@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
@@ -51,34 +51,16 @@ const sectionsToManageTopics = (sections) =>
 const ForumPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [selectedFilterId, setSelectedFilterId] = useState('all');
-  const [isManageMode, setIsManageMode] = useState(false);
 
-  useEffect(() => {
+  const [selectedFilterId, setSelectedFilterId] = useState(() => {
     const fromState = location.state?.selectedFilterId;
-    if (!fromState || !(fromState === 'all' || fromState.startsWith('category-'))) {
-      return;
+    if (fromState && (fromState === 'all' || fromState.startsWith('category-'))) {
+      return fromState;
     }
+    return 'all';
+  });
 
-    // Sử dụng transition để tránh cascade render mạnh
-    const id = window.requestIdleCallback
-      ? window.requestIdleCallback(() => {
-          setSelectedFilterId(fromState);
-          navigate(location.pathname, { replace: true, state: {} });
-        })
-      : window.setTimeout(() => {
-          setSelectedFilterId(fromState);
-          navigate(location.pathname, { replace: true, state: {} });
-        }, 0);
-
-    return () => {
-      if (window.cancelIdleCallback && typeof id === 'number') {
-        window.cancelIdleCallback(id);
-      } else {
-        window.clearTimeout(id);
-      }
-    };
-  }, [location.pathname, location.state?.selectedFilterId, navigate]);
+  const [isManageMode, setIsManageMode] = useState(false);
   const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics(SECTIONS));
   const [newMainTopic, setNewMainTopic] = useState('');
   const [newSubTopics, setNewSubTopics] = useState({});
