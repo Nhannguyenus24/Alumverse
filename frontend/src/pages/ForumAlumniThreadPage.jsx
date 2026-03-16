@@ -19,6 +19,201 @@ import { useForumPosts } from '../hooks/forum/useForumPosts';
 import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+import { useForumPostReactionCount } from '../hooks/forum/useForumPostReactionCount';
+import { useForumPostUserReaction } from '../hooks/forum/useForumPostUserReaction';
+
+const ForumReply = ({ reply, index, isAdmin, memberId }) => {
+  const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
+  const {
+    hasReaction,
+    isPending: userReactionPending,
+    isError: userReactionError,
+  } = useForumPostUserReaction(reply.id, memberId);
+
+  const isOwn = index === 0;
+
+  const likesDisplay = likesPending ? '...' : likesError ? '—' : likes;
+
+  let reactionsSummary = '';
+  if (userReactionPending) {
+    reactionsSummary = 'Đang tải trạng thái cảm xúc...';
+  } else if (userReactionError) {
+    reactionsSummary = 'Không thể tải trạng thái cảm xúc.';
+  } else if (hasReaction) {
+    reactionsSummary = 'Bạn đã thích bài viết này';
+  }
+
+  return (
+    <Box
+      sx={{
+        px: { xs: 1.5, sm: 2, md: 3 },
+        py: { xs: 2, md: 2.5 },
+        display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'center', sm: 'flex-start' },
+        gap: 2,
+        borderTop: 1,
+        borderColor: 'divider',
+      }}
+    >
+      <Box
+        sx={{
+          width: { xs: 'auto', sm: 110 },
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
+        <Box
+          sx={{
+            width: { xs: 48, sm: 64 },
+            height: { xs: 48, sm: 64 },
+            borderRadius: '50%',
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <PersonIcon sx={{ fontSize: 36 }} />
+        </Box>
+        <Typography variant="body2" fontWeight={600}>
+          {reply.authorName}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {reply.role}
+        </Typography>
+      </Box>
+
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            mb: 1,
+            gap: 1.5,
+            width: '100%',
+          }}
+        >
+          <Typography variant="caption" color="text.secondary">
+            {reply.createdAt}
+          </Typography>
+          {isAdmin ? (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+              >
+                Xóa
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                startIcon={<PushPinOutlinedIcon sx={{ fontSize: 18, color: 'white' }} />}
+                sx={{ color: 'white' }}
+              >
+                Ghim
+              </Button>
+            </Box>
+          ) : isOwn ? (
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
+              >
+                Sửa
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+              >
+                Xóa
+              </Button>
+            </Box>
+          ) : null}
+        </Box>
+        <Typography
+          variant="body2"
+          color="text.primary"
+          sx={{ mb: 1.5, lineHeight: 1.7 }}
+        >
+          {reply.content}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+          {reactionsSummary}
+        </Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <FavoriteBorderIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary">
+                {likesDisplay}
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <ModeCommentOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary">
+                8
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary">
+                Chia sẻ
+              </Typography>
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              flexWrap: 'wrap',
+              justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            }}
+          >
+            <Button
+              size="small"
+              variant="contained"
+              color="primary"
+              startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+            >
+              Trả lời
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="primary"
+              startIcon={<SentimentSatisfiedAltOutlinedIcon sx={{ fontSize: 18 }} />}
+            >
+              Cảm xúc
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
 
 const formatPostDate = (iso) => {
   if (!iso) return '—';
@@ -99,7 +294,6 @@ const ForumAlumniThreadPage = () => {
         role: 'Alumni',
         createdAt: formatPostDate(post.createdAt),
         content: stripHtml(post.content),
-        reactionsSummary: post.isLike ? 'Bạn đã thích bài viết này' : '',
       })),
     [posts, stripHtml]
   );
@@ -410,184 +604,16 @@ const ForumAlumniThreadPage = () => {
                     <Typography color="error">Không thể tải bài viết.</Typography>
                   </Box>
                 ) : (
-                replies.map((reply, index) => {
-                  const isOwn = index === 0;
-                  return (
-                  <Box
-                    key={reply.id}
-                    sx={{
-                      px: { xs: 1.5, sm: 2, md: 3 },
-                      py: { xs: 2, md: 2.5 },
-                      display: 'flex',
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      alignItems: { xs: 'center', sm: 'flex-start' },
-                      gap: 2,
-                      borderTop: 1,
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: { xs: 'auto', sm: 110 },
-                        flexShrink: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 1,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: { xs: 48, sm: 64 },
-                          height: { xs: 48, sm: 64 },
-                          borderRadius: '50%',
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <PersonIcon sx={{ fontSize: 36 }} />
-                      </Box>
-                      <Typography variant="body2" fontWeight={600}>
-                        {reply.authorName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {reply.role}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          alignItems: { xs: 'flex-start', sm: 'center' },
-                          justifyContent: 'space-between',
-                          mb: 1,
-                          gap: 1.5,
-                          width: '100%',
-                        }}
-                      >
-                        <Typography variant="caption" color="text.secondary">
-                          {reply.createdAt}
-                        </Typography>
-                        {isAdmin ? (
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="error"
-                              startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                            >
-                              Xóa
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="success"
-                              startIcon={<PushPinOutlinedIcon sx={{ fontSize: 18, color: 'white' }} />}
-                              sx={{ color: 'white' }}
-                            >
-                              Ghim
-                            </Button>
-                          </Box>
-                        ) : isOwn ? (
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                              startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
-                            >
-                              Sửa
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              color="error"
-                              startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                            >
-                              Xóa
-                            </Button>
-                          </Box>
-                        ) : null}
-                      </Box>
-                      <Typography
-                        variant="body2"
-                        color="text.primary"
-                        sx={{ mb: 1.5, lineHeight: 1.7 }}
-                      >
-                        {reply.content}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mb: 1.5 }}
-                      >
-                        {reply.reactionsSummary}
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          alignItems: { xs: 'flex-start', sm: 'center' },
-                          justifyContent: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: 1.5,
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <FavoriteBorderIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                            <Typography variant="caption" color="text.secondary">
-                              32
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <ModeCommentOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                            <Typography variant="caption" color="text.secondary">
-                              8
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                            <Typography variant="caption" color="text.secondary">
-                              Chia sẻ
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            gap: 1,
-                            flexWrap: 'wrap',
-                            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-                          }}
-                        >
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="primary"
-                            startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                          >
-                            Trả lời
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            color="primary"
-                            startIcon={<SentimentSatisfiedAltOutlinedIcon sx={{ fontSize: 18 }} />}
-                          >
-                            Cảm xúc
-                          </Button>
-                        </Box>
-                        </Box>
-                      </Box>
-                  </Box>
-                );
-                }) )}
+                  replies.map((reply, index) => (
+                    <ForumReply
+                      key={reply.id}
+                      reply={reply}
+                      index={index}
+                      isAdmin={isAdmin}
+                      memberId={memberId}
+                    />
+                  ))
+                )}
               </Box>
 
               {/* Reply editor */}
