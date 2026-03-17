@@ -67,6 +67,12 @@ const PostArticlePage = Loadable(
 const ArticlePage = Loadable(
   lazy(() => import('../pages/ArticlePage'))
 );
+const NotificationPage = Loadable(
+  lazy(() => import('../pages/NotificationPage'))
+);
+const SettingPage = Loadable(
+  lazy(() => import('../pages/SettingPage'))
+);
 
 export const router = createBrowserRouter([
   {
@@ -144,6 +150,18 @@ export const router = createBrowserRouter([
       {
         path: 'article',
         element: <ArticlePage />,
+      },
+      {
+        path: 'notifications',
+        element: <NotificationPage />,
+      },
+      {
+        path: 'settings',
+        element: (
+          <ProtectedRoute>
+            <SettingPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'faculties',
