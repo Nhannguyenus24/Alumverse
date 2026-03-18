@@ -79,4 +79,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     @Modifying
     @Query("UPDATE forum_posts SET answer_to_post_id = :answerToPostId, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> setAnswerToPost(@Param("id") Integer id, @Param("answerToPostId") Integer answerToPostId);
+
+    /**
+     * Clear all answer references to a specific post (set to NULL)
+     * This prevents foreign key constraint violation when deleting a post
+     */
+    @Modifying
+    @Query("UPDATE forum_posts SET answer_to_post_id = NULL, updated_at = CURRENT_TIMESTAMP WHERE answer_to_post_id = :postId")
+    Mono<Integer> clearAnswerReferences(@Param("postId") Integer postId);
 }
