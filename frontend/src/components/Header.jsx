@@ -22,6 +22,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
+import Notification from './Notification';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PersonIcon from '@mui/icons-material/Person';
@@ -220,13 +221,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
 
               {isAuthenticated ? (
                 <>
-                  <IconButton
-                    size="small"
-                    aria-label="Thông báo"
-                    sx={{ color: headerTextColor }}
-                  >
-                    <NotificationsOutlinedIcon fontSize="small" />
-                  </IconButton>
+                  <Notification />
                   <IconButton
                     size="small"
                     aria-label="Tin nhắn"
