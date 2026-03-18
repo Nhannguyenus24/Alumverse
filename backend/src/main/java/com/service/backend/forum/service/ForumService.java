@@ -266,7 +266,7 @@ public class ForumService {
                             .topicId(request.getTopicId())
                             .authorMemberId(request.getAuthorMemberId())
                             .content(request.getContent())
-                            .answerToPostId(null)
+                            .answerToPostId(request.getAnswerToPostId())
                             .isBanned(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
@@ -297,7 +297,13 @@ public class ForumService {
 
     public Mono<Void> deletePost(Integer id) {
         log.info("Deleting forum post ID: {}", id);
-        return forumPostRepository.deleteById(id)
+        return forumPostRepository.clearAnswerReferences(id)
+                .flatMap(count -> {
+                    if (count > 0) {
+                        log.info("Cleared {} answer references for post ID: {}", count, id);
+                    }
+                    return forumPostRepository.deleteById(id);
+                })
                 .doOnSuccess(result -> log.info("Successfully deleted forum post ID: {}", id))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
     }
@@ -306,6 +312,10 @@ public class ForumService {
         log.info("Creating answer to post ID: {}", postId);
         request.setAnswerToPostId(postId);
         return createPost(request)
+                .map(result -> {
+                    result.setAnswerToPostId(postId);
+                    return result;
+                })
                 .doOnSuccess(result -> log.info("Successfully created answer to post ID: {}", postId))
                 .doOnError(error -> log.error("Error creating answer to post ID: {}", postId, error));
     }
