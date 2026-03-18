@@ -1,16 +1,18 @@
 package com.service.backend.auth.service;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import com.service.backend.auth.constants.AuthConstants;
 import com.service.backend.auth.entity.User;
 import com.service.backend.auth.repository.AuthRepository;
 import com.service.backend.shared.service.EmailService;
@@ -23,14 +25,13 @@ import reactor.core.publisher.Mono;
 @Service
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
-    private static final String OTP_CACHE_NAME = "otp_verification";
     private static final Duration OTP_TTL = Duration.ofMinutes(5);
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final CacheUtils cacheUtils;
     private final JwtUtils jwtUtils;
-    private final Random random;
+    private final SecureRandom secureRandom;
         
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder, 
                       EmailService emailService, CacheUtils cacheUtils,
@@ -40,7 +41,7 @@ public class AuthService {
         this.emailService = emailService;
         this.cacheUtils = cacheUtils;
         this.jwtUtils = jwtUtils;
-        this.random = new Random();
+        this.secureRandom = new SecureRandom();
     }
 
     public Mono<Void> register(String email, String userName, String password) {
@@ -54,8 +55,8 @@ public class AuthService {
                     boolean emailExists = tuple.getT1();
                     boolean usernameExists = tuple.getT2();
 
-                    if (emailExists) return Mono.error(new RuntimeException("Email already registered"));
-                    if (usernameExists) return Mono.error(new RuntimeException("Username already exists"));
+                    if (emailExists) return Mono.error(new RuntimeException(AuthConstants.ERROR_EMAIL_ALREADY_REGISTERED));
+                    if (usernameExists) return Mono.error(new RuntimeException(AuthConstants.ERROR_USERNAME_ALREADY_EXISTS));
 
                     String hashedPassword = passwordEncoder.encode(password);
                     return authRepository.registerNewUser(email, userName, hashedPassword)
@@ -75,9 +76,9 @@ public class AuthService {
                     }
                     logger.info(JsonUtils.toJson(user));
                     logger.warn("Login failed - invalid password for email: {}", email);
-                    return Mono.error(new RuntimeException("Invalid email or password"));
+                    return Mono.error(new RuntimeException(AuthConstants.ERROR_INVALID_CREDENTIALS));
                 })
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException(AuthConstants.ERROR_USER_NOT_FOUND)))
                 .doOnError(error -> logger.error("Login error for email: {}", email, error));
     }
 
@@ -92,9 +93,9 @@ public class AuthService {
                     }
 
                     logger.warn("Login failed - invalid password for username: {}", userName);
-                    return Mono.error(new RuntimeException("Invalid username or password"));
+                    return Mono.error(new RuntimeException(AuthConstants.ERROR_INVALID_USERNAME_CREDENTIALS));
                 })
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException(AuthConstants.ERROR_USER_NOT_FOUND)))
                 .doOnError(error -> logger.error("Login error for username: {}", userName, error));
     }
 
@@ -110,11 +111,11 @@ public class AuthService {
         logger.info("Changing password for user id: {}", userId);
 
         return authRepository.findById(userId)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException(AuthConstants.ERROR_USER_NOT_FOUND)))
                 .flatMap(user -> {
                     if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
                         logger.warn("Password change failed - invalid old password for user id: {}", userId);
-                        return Mono.error(new RuntimeException("Invalid old password"));
+                        return Mono.error(new RuntimeException(AuthConstants.ERROR_INVALID_OLD_PASSWORD));
                     }
 
                     String hashedPassword = passwordEncoder.encode(newPassword);
@@ -134,28 +135,29 @@ public class AuthService {
         logger.info("Sending OTP verification to email: {}", email);
 
         return authRepository.findByEmail(email)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
+                .switchIfEmpty(Mono.error(new RuntimeException(AuthConstants.ERROR_USER_NOT_FOUND)))
                 .flatMap(user -> {
-                    // Generate random 6-digit OTP
-                    String otp = String.format("%06d", random.nextInt(1000000));
+                    // Generate cryptographically secure 6-digit OTP
+                    String otp = String.format("%0" + AuthConstants.OTP_LENGTH + "d", 
+                            secureRandom.nextInt(AuthConstants.OTP_MAX_VALUE));
                     logger.info("Generated OTP for email: {}", email);
 
                     // Cache OTP and userId with TTL
                     Map<String, Object> cacheData = new HashMap<>();
-                    cacheData.put("otp", otp);
-                    cacheData.put("userId", user.getId());
+                    cacheData.put(AuthConstants.OTP_CACHE_OTP_FIELD, otp);
+                    cacheData.put(AuthConstants.OTP_CACHE_USER_ID_FIELD, user.getId());
 
-                    return cacheUtils.putWithTtl(OTP_CACHE_NAME, email, cacheData, OTP_TTL)
+                    return cacheUtils.putWithTtl(AuthConstants.OTP_CACHE_KEY, email, cacheData, OTP_TTL)
                             .then(Mono.defer(() -> {
                                 // Send OTP via email
                                 Map<String, Object> variables = new HashMap<>();
-                                variables.put("otp", otp);
+                                variables.put(AuthConstants.OTP_CACHE_OTP_FIELD, otp);
                                 variables.put("email", email);
 
                                 return emailService.sendHtmlEmail(
                                         email,
-                                        "Email Verification - OTP Code",
-                                        "otpVerification",
+                                        AuthConstants.OTP_EMAIL_SUBJECT,
+                                        AuthConstants.OTP_EMAIL_TEMPLATE,
                                         variables
                                 );
                             }))
@@ -167,17 +169,17 @@ public class AuthService {
     public Mono<Void> verifyOtpAndActivate(String email, String otp) {
         logger.info("Verifying OTP for email: {}", email);
 
-        return cacheUtils.get(OTP_CACHE_NAME, email)
-                .switchIfEmpty(Mono.error(new RuntimeException("OTP expired or not found")))
+        return cacheUtils.get(AuthConstants.OTP_CACHE_KEY, email)
+                .switchIfEmpty(Mono.error(new RuntimeException(AuthConstants.ERROR_OTP_EXPIRED_NOT_FOUND)))
                 .flatMap(cachedData -> {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> cacheMap = (Map<String, Object>) cachedData;
-                    String cachedOtp = (String) cacheMap.get("otp");
-                    Integer userId = ((Number) cacheMap.get("userId")).intValue();
+                    String cachedOtp = (String) cacheMap.get(AuthConstants.OTP_CACHE_OTP_FIELD);
+                    Integer userId = ((Number) cacheMap.get(AuthConstants.OTP_CACHE_USER_ID_FIELD)).intValue();
 
                     if (!cachedOtp.equals(otp)) {
                         logger.warn("Invalid OTP provided for email: {}", email);
-                        return Mono.error(new RuntimeException("Invalid OTP"));
+                        return Mono.error(new RuntimeException(AuthConstants.ERROR_INVALID_OTP));
                     }
 
                     logger.info("OTP verified successfully for email: {}", email);
@@ -194,37 +196,33 @@ public class AuthService {
     public Mono<String> refreshAccessToken(String refreshToken) {
         logger.info("Refreshing access token");
 
-        if (refreshToken == null || refreshToken.isEmpty()) {
-            return Mono.error(new RuntimeException("Refresh token not found"));
+        if (!StringUtils.hasText(refreshToken)) {
+            return Mono.error(new RuntimeException(AuthConstants.ERROR_REFRESH_TOKEN_NOT_FOUND));
         }
 
-        try {
-            // Validate refresh token and get user ID
-            Integer userId = jwtUtils.getUserIdFromToken(refreshToken);
-            
-            // Retrieve user information and generate new access token
-            return authRepository.findById(userId)
-                    .switchIfEmpty(Mono.error(new RuntimeException("User not found")))
-                    .flatMap(user -> 
-                        authRepository.getOrganizationIdByUserId(userId)
-                                .defaultIfEmpty(List.of())
-                                .map(organizationId -> {
-                                    String accessToken = jwtUtils.generateAccessToken(
-                                            user.getId(),
-                                            user.getEmail(),
-                                            user.getRole().name(),
-                                            user.getUserName(),
-                                            user.getAvatarUrl(),
-                                            organizationId
-                                    );
-                                    logger.info("Access token refreshed successfully for user id: {}", userId);
-                                    return accessToken;
-                                })
-                    )
-                    .doOnError(error -> logger.error("Failed to refresh token for user id: {}", userId, error));
-        } catch (Exception e) {
-            logger.error("Invalid or expired refresh token", e);
-            return Mono.error(new RuntimeException("Invalid or expired refresh token"));
-        }
+        // Use reactive approach: wrap token validation in Mono.fromCallable
+        return Mono.fromCallable(() -> jwtUtils.getUserIdFromToken(refreshToken))
+                .onErrorMap(e -> new RuntimeException(AuthConstants.ERROR_INVALID_REFRESH_TOKEN, e))
+                .flatMap(userId -> 
+                    authRepository.findById(userId)
+                            .switchIfEmpty(Mono.error(new RuntimeException(AuthConstants.ERROR_USER_NOT_FOUND)))
+                            .flatMap(user -> 
+                                authRepository.getOrganizationIdByUserId(userId)
+                                        .defaultIfEmpty(List.of())
+                                        .map(organizationId -> {
+                                            String accessToken = jwtUtils.generateAccessToken(
+                                                    user.getId(),
+                                                    user.getEmail(),
+                                                    user.getRole().name(),
+                                                    user.getUserName(),
+                                                    user.getAvatarUrl(),
+                                                    organizationId
+                                            );
+                                            logger.info("Access token refreshed successfully for user id: {}", userId);
+                                            return accessToken;
+                                        })
+                            )
+                            .doOnError(error -> logger.error("Failed to refresh token", error))
+                );
     }
 }
