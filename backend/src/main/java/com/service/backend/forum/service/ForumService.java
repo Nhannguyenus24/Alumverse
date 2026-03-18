@@ -1,6 +1,12 @@
 package com.service.backend.forum.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,30 +221,41 @@ public class ForumService {
         
         // Fire and forget: increment view count for topic
         forumTopicRepository.incrementViewCount(topicId)
-                .doOnSuccess(count -> log.debug("Incremented view count for topic ID: {}", topicId))
-                .doOnError(error -> log.warn("Failed to increment view count for topic ID: {}", topicId, error))
+                .onErrorResume(error -> {
+                    log.warn("Failed to increment view count for topic ID: {}", topicId, error);
+                    return Mono.empty();
+                })
                 .subscribe();
         
         long offset = (long) page * size;
-        return forumPostRepository.findByTopicIdWithPagination(topicId, size, offset)
-                .flatMap(post -> {
-                    // If memberId is provided, check if user has liked this post
-                    if (memberId != null) {
-                        return forumPostReactionRepository.findByPostIdAndMemberId(post.getId(), memberId)
-                                .map(reaction -> convertToPostDTO(post, true))
-                                .switchIfEmpty(Mono.just(convertToPostDTO(post, false)));
-                    } else {
-                        return Mono.just(convertToPostDTO(post, false));
-                    }
-                })
-                .collectList()
-                .zipWith(forumPostRepository.countByTopicId(topicId))
+        
+        // Fetch posts and total count in parallel
+        Mono<List<ForumPost>> postsMono = forumPostRepository
+                .findByTopicIdWithPagination(topicId, size, offset)
+                .collectList();
+        
+        Mono<Long> countMono = forumPostRepository.countByTopicId(topicId);
+        
+        // Fetch liked post IDs if memberId is provided (single batch query instead of N+1)
+        Mono<Set<Integer>> likedPostIdsMono = memberId != null
+                ? forumPostReactionRepository.findLikedPostIdsByTopicAndMember(topicId, memberId)
+                    .collect(Collectors.toSet())
+                : Mono.just(new HashSet<>());
+        
+        return Mono.zip(postsMono, countMono, likedPostIdsMono)
                 .map(tuple -> {
                     var posts = tuple.getT1();
                     var totalItems = tuple.getT2();
+                    var likedPostIds = tuple.getT3();
+                    
+                    // Convert posts to DTOs using pre-fetched liked post IDs
+                    var postDTOs = posts.stream()
+                            .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
+                            .collect(Collectors.toList());
+                    
                     var pageInfo = calculatePageInfo(page, size, totalItems);
                     return ForumPostPageResponse.builder()
-                            .items(posts)
+                            .items(postDTOs)
                             .pageInfo(pageInfo)
                             .build();
                 })
@@ -371,12 +388,12 @@ public class ForumService {
     /**
      * Get like count for a post
      */
-    public Mono<java.util.Map<String, Long>> getPostReactionCounts(Integer postId) {
+    public Mono<Map<String, Long>> getPostReactionCounts(Integer postId) {
         log.info("Getting like count for post ID: {}", postId);
         
         return forumPostReactionRepository.countReactionsByPostId(postId)
                 .map(count -> {
-                    java.util.Map<String, Long> map = new java.util.HashMap<>();
+                    Map<String, Long> map = new HashMap<>();
                     map.put("likes", count);
                     return map;
                 })

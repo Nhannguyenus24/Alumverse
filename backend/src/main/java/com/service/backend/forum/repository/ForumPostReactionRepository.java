@@ -33,4 +33,18 @@ public interface ForumPostReactionRepository extends R2dbcRepository<ForumPostRe
      * Delete reaction by post id and member id
      */
     Mono<Void> deleteByPostIdAndMemberId(Integer postId, Integer memberId);
+    
+    /**
+     * Find all post IDs that a member has reacted to in a specific topic
+     * Optimizes N+1 query problem by fetching all likes in one query
+     */
+    @Query("""
+        SELECT DISTINCT fpr.post_id FROM forum_post_reactions fpr
+        INNER JOIN forum_posts fp ON fpr.post_id = fp.id
+        WHERE fp.topic_id = :topicId AND fpr.member_id = :memberId
+    """)
+    Flux<Integer> findLikedPostIdsByTopicAndMember(
+            @Param("topicId") Integer topicId,
+            @Param("memberId") Integer memberId
+    );
 }
