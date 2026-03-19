@@ -73,6 +73,15 @@ const NotificationPage = Loadable(
 const SettingPage = Loadable(
   lazy(() => import('../pages/SettingPage'))
 );
+const DonationPage = Loadable(
+  lazy(() => import('../pages/DonationPage'))
+);
+const DetailDonationPage = Loadable(
+  lazy(() => import('../pages/DetailDonationPage'))
+);
+const CreateDonationPage = Loadable(
+  lazy(() => import('../pages/CreateDonationPage'))
+);
 
 export const router = createBrowserRouter([
   {
@@ -173,6 +182,23 @@ export const router = createBrowserRouter([
           {
             path: 'information-technology',
             element: <FacultyCNTTPage />,
+          },
+        ],
+      },
+      {
+        path: 'donations',
+        children: [
+          {
+            index: true,
+            element: <DonationPage />,
+          },
+          {
+            path: 'create',
+            element: <CreateDonationPage />,
+          },
+          {
+            path: ':id',
+            element: <DetailDonationPage />,
           },
         ],
       },
