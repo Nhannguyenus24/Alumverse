@@ -100,6 +100,14 @@ const ForumPage = () => {
       threadCount: t.viewCount ?? '-',
       discussionCount: '-',
       lastPost: null,
+      topicSummary: {
+        id: t.id,
+        title: t.title,
+        createdByMemberId: t.createdByMemberId ?? null,
+        createdAt: t.createdAt ?? null,
+        viewCount: t.viewCount ?? null,
+        categoryId: t.categoryId ?? null,
+      },
     }));
 
     return SECTIONS.map((s) => {
@@ -166,6 +174,7 @@ const ForumPage = () => {
       navigate(`/forum/alumni/career/${board.topicId}`, {
         state: {
           topicTitle: board.name,
+          topicSummary: board.topicSummary,
           selectedFilterId,
         },
       });
@@ -592,6 +601,14 @@ const ForumPage = () => {
                       navigate(`/forum/alumni/career/${topic.id}`, {
                         state: {
                           topicTitle: topic.title,
+                          topicSummary: {
+                            id: topic.id,
+                            title: topic.title,
+                            createdByMemberId: topic.createdByMemberId ?? null,
+                            createdAt: topic.createdAt ?? null,
+                            viewCount: topic.viewCount ?? null,
+                            categoryId: topic.categoryId ?? null,
+                          },
                           selectedFilterId: `category-${selectedCategory?.id ?? topic.categoryId}`,
                         },
                       })

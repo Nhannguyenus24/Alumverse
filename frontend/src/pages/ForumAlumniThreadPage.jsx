@@ -342,18 +342,34 @@ const ForumAlumniThreadPage = () => {
   }, []);
 
   const thread = useMemo(() => {
+    const topicSummary = location.state?.topicSummary;
+    const titleFromSummary =
+      typeof topicSummary?.title === 'string' && topicSummary.title.trim() ? topicSummary.title.trim() : null;
     const topicTitleFromState = location.state?.topicTitle;
-    const title =
-      (typeof topicTitleFromState === 'string' && topicTitleFromState.trim()) ? topicTitleFromState : FALLBACK_THREAD.title;
+    const titleFromLegacy =
+      typeof topicTitleFromState === 'string' && topicTitleFromState.trim() ? topicTitleFromState.trim() : null;
+    const title = titleFromSummary ?? titleFromLegacy ?? FALLBACK_THREAD.title;
 
     const firstPost = posts?.[0] ?? null;
+
+    const authorFromPost = firstPost?.authorMemberId
+      ? `Thành viên #${firstPost.authorMemberId}`
+      : null;
+    const authorFromTopic =
+      topicSummary?.createdByMemberId != null
+        ? `Thành viên #${topicSummary.createdByMemberId}`
+        : null;
+
+    const createdFromPost = firstPost?.createdAt ? formatPostDate(firstPost.createdAt) : null;
+    const createdFromTopic = topicSummary?.createdAt ? formatPostDate(topicSummary.createdAt) : null;
+
     return {
       title,
-      authorName: firstPost?.authorMemberId ? `Thành viên #${firstPost.authorMemberId}` : FALLBACK_THREAD.authorName,
+      authorName: authorFromPost ?? authorFromTopic ?? FALLBACK_THREAD.authorName,
       role: 'Alumni',
-      createdAt: firstPost?.createdAt ? formatPostDate(firstPost.createdAt) : FALLBACK_THREAD.createdAt,
+      createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
     };
-  }, [location.state?.topicTitle, posts]);
+  }, [location.state?.topicTitle, location.state?.topicSummary, posts]);
 
   const replies = useMemo(
     () =>
@@ -682,12 +698,20 @@ const ForumAlumniThreadPage = () => {
                     <PersonIcon sx={{ fontSize: 26 }} />
                   </Box>
                   <Box>
-                    <Typography variant="body2" fontWeight={600}>
-                      {thread.authorName}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {thread.createdAt}
-                    </Typography>
+                    {postsPending && !location.state?.topicSummary ? (
+                      <Typography variant="body2" color="text.secondary">
+                        Đang tải thông tin chủ đề...
+                      </Typography>
+                    ) : (
+                      <>
+                        <Typography variant="body2" fontWeight={600}>
+                          {thread.authorName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {thread.createdAt}
+                        </Typography>
+                      </>
+                    )}
                   </Box>
                 </Box>
               </Box>

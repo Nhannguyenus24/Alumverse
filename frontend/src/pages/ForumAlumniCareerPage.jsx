@@ -196,7 +196,18 @@ const ForumAlumniCareerPage = () => {
                     key={topic.id}
                     onClick={() =>
                       navigate(`/forum/alumni/career/${topic.id}`, {
-                        state: { topicTitle: topic.title, selectedFilterId: 'alumni' },
+                        state: {
+                          topicTitle: topic.title,
+                          topicSummary: {
+                            id: topic.id,
+                            title: topic.title,
+                            createdByMemberId: topic.createdByMemberId ?? null,
+                            createdAt: topic.createdAt ?? null,
+                            viewCount: topic.viewCount ?? null,
+                            categoryId: topic.categoryId ?? null,
+                          },
+                          selectedFilterId: 'alumni',
+                        },
                       })
                     }
                     sx={{
@@ -265,7 +276,7 @@ const ForumAlumniCareerPage = () => {
                             WebkitBoxOrient: 'vertical',
                           }}
                         >
-                          {post.title}
+                          {topic.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {`Thành viên #${topic.createdByMemberId ?? '—'}`} • {formatTopicDate(topic.createdAt)}
