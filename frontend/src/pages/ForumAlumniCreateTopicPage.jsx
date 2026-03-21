@@ -16,6 +16,7 @@ import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import { useAuth } from '../hooks/useAuth';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
 import { useCreateForumTopic } from '../hooks/forum/useCreateForumTopic';
+import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
 
 const SUBJECT_OPTIONS = ['Hướng nghiệp', 'Kinh nghiệm làm việc', 'Câu chuyện truyền cảm hứng'];
 
@@ -39,6 +40,8 @@ const ForumAlumniCreateTopicPage = () => {
     isError: createTopicIsError,
     errorMessage: createTopicErrorMessage,
   } = useCreateForumTopic();
+  const { createPost } = useCreateForumPost();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const filters = useMemo(() => {
     if (!categories?.length) {
       return [{ id: 'all', label: 'Tất cả' }];
@@ -86,6 +89,7 @@ const ForumAlumniCreateTopicPage = () => {
   const handleSubmit = async () => {
     setSubmitError(null);
     const trimmedTitle = (title ?? '').trim();
+    const trimmedContent = (content ?? '').trim();
     const categoryId = parseInt(selectedSubSubject, 10);
     if (!trimmedTitle) {
       setSubmitError('Vui lòng nhập tiêu đề chủ đề.');
@@ -107,18 +111,47 @@ const ForumAlumniCreateTopicPage = () => {
       categoryId,
     };
 
-    const createdTopic = await createTopic(payload);
-    if (!createdTopic?.id) {
-      setSubmitError('Tạo chủ đề thất bại.');
-      return;
+    setIsSubmitting(true);
+    let createdTopic = null;
+    let openingPostError = null;
+    try {
+      createdTopic = await createTopic(payload);
+      if (!createdTopic?.id) {
+        setSubmitError('Tạo chủ đề thất bại.');
+        return;
+      }
+      if (trimmedContent) {
+        try {
+          await createPost({
+            topicId: createdTopic.id,
+            authorMemberId: user.id,
+            content: trimmedContent,
+            answerToPostId: null,
+          });
+        } catch (postErr) {
+          openingPostError =
+            postErr?.response?.data?.message ??
+            postErr?.message ??
+            'Không thể đăng nội dung mở đầu.';
+        }
+      }
+      navigate(`/forum/alumni/career/${createdTopic.id}`, {
+        state: {
+          topicTitle: createdTopic.title,
+          topicSummary: createdTopic,
+          selectedFilterId: `category-${createdTopic.categoryId}`,
+          ...(openingPostError ? { openingPostError } : {}),
+        },
+      });
+    } catch (topicErr) {
+      setSubmitError(
+        topicErr?.response?.data?.message ??
+          topicErr?.message ??
+          'Tạo chủ đề thất bại.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-    navigate(`/forum/alumni/career/${createdTopic.id}`, {
-      state: {
-        topicTitle: createdTopic.title,
-        topicSummary: createdTopic,
-        selectedFilterId: `category-${createdTopic.categoryId}`,
-      },
-    });
   };
 
   return (
@@ -348,6 +381,7 @@ const ForumAlumniCreateTopicPage = () => {
                     variant="outlined"
                     color="inherit"
                     onClick={handleCancel}
+                    disabled={isSubmitting}
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
@@ -358,6 +392,7 @@ const ForumAlumniCreateTopicPage = () => {
                     color="primary"
                     onClick={handleSubmit}
                     disabled={
+                      isSubmitting ||
                       createTopicPending ||
                       !user?.id ||
                       !(title ?? '').trim() ||
@@ -366,7 +401,7 @@ const ForumAlumniCreateTopicPage = () => {
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
-                    {createTopicPending ? 'Đang tạo...' : 'Tạo chủ đề'}
+                    {isSubmitting || createTopicPending ? 'Đang tạo...' : 'Tạo chủ đề'}
                   </Button>
                 </Box>
               </Box>

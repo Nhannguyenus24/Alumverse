@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -323,6 +323,10 @@ const ForumAlumniThreadPage = () => {
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
   const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
+  const openingPostErrorFromState =
+    typeof location.state?.openingPostError === 'string'
+      ? location.state.openingPostError.trim()
+      : '';
 
   const memberId = user?.id ?? null;
   const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, 0, 20);
@@ -524,6 +528,11 @@ const ForumAlumniThreadPage = () => {
                 color="primary"
                 fontSize="0.8rem"
               />
+              {openingPostErrorFromState ? (
+                <Alert severity="warning" sx={{ mt: 1.5, mb: 0 }}>
+                  Chủ đề đã được tạo nhưng không thể đăng nội dung mở đầu: {openingPostErrorFromState}
+                </Alert>
+              ) : null}
               <Box
                 sx={{
                   backgroundColor: '#fff',
