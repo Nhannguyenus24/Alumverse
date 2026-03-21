@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import ProtectedRoute from './ProtectedRoute';
@@ -45,8 +45,8 @@ const ForumAlumniCareerPage = Loadable(
 const ForumAlumniThreadPage = Loadable(
   lazy(() => import('../pages/ForumAlumniThreadPage'))
 );
-const ForumAlumniCreatePostPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniCreatePostPage'))
+const ForumAlumniCreateTopicPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniCreateTopicPage'))
 );
 const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
 const HonorsPage = Loadable(
@@ -115,7 +115,11 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: 'create-post',
-                    element: <ForumAlumniCreatePostPage />,
+                    element: <Navigate to="/forum/alumni/career/create-topic" replace />,
+                  },
+                  {
+                    path: 'create-topic',
+                    element: <ForumAlumniCreateTopicPage />,
                   },
                   {
                     path: ':threadId',

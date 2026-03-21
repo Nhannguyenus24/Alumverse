@@ -7,12 +7,11 @@ import {
   Stack,
   TextField,
   Typography,
-  MenuItem
+  MenuItem,
 } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 import Page from '../components/Page';
-import WYSIWYG from '../components/WYSIWYG';
 
 const CHANNEL_OPTIONS = ['Cựu sinh viên', 'Kênh thành tựu'];
 const TOPIC_OPTIONS = ['Education', 'Jobs', 'Chances'];
@@ -165,13 +164,15 @@ const PostArticlePage = () => {
                 }}
               />
 
-              {/* WYSIWYG EDITOR */}
+              {/* CONTENT INPUT */}
               <Box sx={{ mt: 2 }}>
-                <WYSIWYG
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={10}
                   value={content}
-                  onChange={setContent}
+                  onChange={(e) => setContent(e.target.value)}
                   placeholder="Bắt đầu viết nội dung tại đây..."
-                  height={400}
                 />
               </Box>
 
