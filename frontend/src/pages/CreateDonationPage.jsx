@@ -12,7 +12,6 @@ import {
 import Page from '../components/Page';
 import Input from '../components/Input';
 import Dropdown from '../components/Dropdown';
-import WYSIWYG from '../components/WYSIWYG';
 
 const CreateDonationPage = () => {
   const navigate = useNavigate();
@@ -78,7 +77,7 @@ const CreateDonationPage = () => {
     }
   };
 
-  // Handle WYSIWYG editor change
+  // Handle content editor change
   const handleContentChange = (value) => {
     setFormData((prev) => ({ ...prev, content: value }));
     if (errors.content) {
@@ -351,7 +350,7 @@ const CreateDonationPage = () => {
               />
             </Box>
 
-            {/* Rich Text Editor */}
+            {/* Content Input */}
             <Box sx={{ mb: 4 }}>
               <Typography
                 variant="subtitle2"
@@ -364,22 +363,19 @@ const CreateDonationPage = () => {
                 sx={{
                   border: errors.content ? '2px solid #d32f2f' : '1px solid #e0e0e0',
                   borderRadius: 1,
-                  '& .ql-container': {
-                    fontSize: '16px',
-                    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                  },
-                  '& .ql-editor': {
-                    minHeight: '300px',
-                    maxHeight: '500px',
-                    overflowY: 'auto',
-                  },
                 }}
               >
-                <WYSIWYG
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={12}
                   value={formData.content}
-                  onChange={handleContentChange}
+                  onChange={(e) => handleContentChange(e.target.value)}
                   placeholder="Nhập nội dung bài đăng..."
-                  height={300}
+                  variant="outlined"
+                  sx={{
+                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                  }}
                 />
               </Box>
               {errors.content && (
