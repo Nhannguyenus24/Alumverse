@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { Alert, Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -349,7 +349,9 @@ const ForumAlumniThreadPage = () => {
     isPending: deletePending,
     errorMessage: deleteErrorMessage,
   } = useDeleteForumPost();
-  const { showSuccess, showError } = useNotification();
+  const { showSuccess, showError, showWarning } = useNotification();
+  const hasShownPostsErrorRef = useRef(false);
+  const hasShownOpeningErrorRef = useRef(false);
 
   const stripHtml = useCallback((value) => {
     if (value == null) return '';
@@ -466,14 +468,46 @@ const ForumAlumniThreadPage = () => {
       answerToPostId: replyTo?.postId ?? null,
     };
 
-    if (replyTo?.postId) {
-      await answerToPost({ postId: replyTo.postId, payload });
-      setReplyTo(null);
-    } else {
-      await createPost(payload);
+    try {
+      if (replyTo?.postId) {
+        await answerToPost({ postId: replyTo.postId, payload });
+        setReplyTo(null);
+        showSuccess('Trả lời thành công.');
+      } else {
+        await createPost(payload);
+        showSuccess('Đăng bài viết thành công.');
+      }
+      setEditorValue('');
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ??
+        err?.message ??
+        (replyTo?.postId ? 'Không thể gửi trả lời.' : 'Không thể đăng bài viết.');
+      showError(message);
     }
-    setEditorValue('');
   };
+
+  useEffect(() => {
+    if (postsError) {
+      if (!hasShownPostsErrorRef.current) {
+        showError('Không thể tải bài viết.');
+        hasShownPostsErrorRef.current = true;
+      }
+      return;
+    }
+    hasShownPostsErrorRef.current = false;
+  }, [postsError, showError]);
+
+  useEffect(() => {
+    if (openingPostErrorFromState) {
+      if (!hasShownOpeningErrorRef.current) {
+        showWarning(`Nội dung mở đầu chưa đăng được: ${openingPostErrorFromState}`);
+        hasShownOpeningErrorRef.current = true;
+      }
+      return;
+    }
+    hasShownOpeningErrorRef.current = false;
+  }, [openingPostErrorFromState, showWarning]);
 
   const handleFilterChange = useCallback(
     (id) => {

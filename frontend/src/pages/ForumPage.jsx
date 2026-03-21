@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
@@ -12,6 +12,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import { useAuth } from '../hooks/useAuth';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
 import { useForumTopics, useForumTopicsForCategories } from '../hooks/forum/useForumTopics';
+import { useNotification } from '../hooks/useNotification';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import ForumSection from '../components/forum/ForumSection';
@@ -51,6 +52,8 @@ const sectionsToManageTopics = (sections) =>
 const ForumPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { showError, showSuccess, showWarning, showInfo } = useNotification();
+  const hasShownTopicsErrorRef = useRef(false);
 
   const [selectedFilterId, setSelectedFilterId] = useState(() => {
     const fromState = location.state?.selectedFilterId;
@@ -84,10 +87,22 @@ const ForumPage = () => {
     [isAllSelected, categories]
   );
 
-  const { topics: topicsSingle } = useForumTopics(categoryId, 0, 10);
-  const { topics: topicsAll } = useForumTopicsForCategories(categoryIds, 0, 10);
+  const { topics: topicsSingle, isError: topicsSingleIsError } = useForumTopics(categoryId, 0, 10);
+  const { topics: topicsAll, isError: topicsAllIsError } = useForumTopicsForCategories(categoryIds, 0, 10);
 
   const topics = isAllSelected ? topicsAll : topicsSingle;
+  const topicsIsError = isAllSelected ? topicsAllIsError : topicsSingleIsError;
+
+  useEffect(() => {
+    if (topicsIsError) {
+      if (!hasShownTopicsErrorRef.current) {
+        showError('Không thể tải danh sách chủ đề.');
+        hasShownTopicsErrorRef.current = true;
+      }
+      return;
+    }
+    hasShownTopicsErrorRef.current = false;
+  }, [topicsIsError, showError]);
 
   const sections = useMemo(() => {
     if (!topics?.length) return SECTIONS;
@@ -193,17 +208,24 @@ const ForumPage = () => {
 
   const handleAddMainTopic = () => {
     const trimmed = newMainTopic.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      showWarning('Vui lòng nhập tên chủ đề chính.');
+      return;
+    }
     setManageTopics((prev) => [
       ...prev,
       { id: `topic-${Date.now()}`, title: trimmed.toUpperCase(), boards: [] },
     ]);
     setNewMainTopic('');
+    showSuccess('Đã thêm chủ đề chính.');
   };
 
   const handleAddSubTopic = (topicId) => {
     const value = newSubTopics[topicId]?.trim() ?? '';
-    if (!value) return;
+    if (!value) {
+      showWarning('Vui lòng nhập tên chủ đề con.');
+      return;
+    }
     setManageTopics((prev) =>
       prev.map((t) =>
         t.id === topicId
@@ -215,10 +237,12 @@ const ForumPage = () => {
       )
     );
     setNewSubTopics((prev) => ({ ...prev, [topicId]: '' }));
+    showSuccess('Đã thêm chủ đề con.');
   };
 
   const handleDeleteTopic = (topicId) => {
     setManageTopics((prev) => prev.filter((t) => t.id !== topicId));
+    showInfo('Đã xóa chủ đề.');
   };
 
   const handleDeleteBoard = (topicId, boardId) => {
@@ -227,10 +251,12 @@ const ForumPage = () => {
         t.id === topicId ? { ...t, boards: t.boards.filter((b) => b.id !== boardId) } : t
       )
     );
+    showInfo('Đã xóa chủ đề con.');
   };
 
   const handleSaveTopics = () => {
     handleCloseManageMode();
+    showSuccess('Đã lưu thay đổi chủ đề.');
   };
 
   return (

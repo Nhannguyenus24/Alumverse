@@ -17,6 +17,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
 import { useCreateForumTopic } from '../hooks/forum/useCreateForumTopic';
 import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
+import { useNotification } from '../hooks/useNotification';
 
 const SUBJECT_OPTIONS = ['Hướng nghiệp', 'Kinh nghiệm làm việc', 'Câu chuyện truyền cảm hứng'];
 
@@ -34,6 +35,7 @@ const ForumAlumniCreateTopicPage = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [submitError, setSubmitError] = useState(null);
+  const { showSuccess, showError, showWarning } = useNotification();
   const {
     createTopic,
     isPending: createTopicPending,
@@ -93,14 +95,17 @@ const ForumAlumniCreateTopicPage = () => {
     const categoryId = parseInt(selectedSubSubject, 10);
     if (!trimmedTitle) {
       setSubmitError('Vui lòng nhập tiêu đề chủ đề.');
+      showWarning('Vui lòng nhập tiêu đề chủ đề.');
       return;
     }
     if (!user?.id) {
       setSubmitError('Không xác định được người tạo chủ đề.');
+      showError('Không xác định được người tạo chủ đề.');
       return;
     }
     if (Number.isNaN(categoryId) || categoryId <= 0) {
       setSubmitError('Vui lòng chọn chủ đề phụ hợp lệ.');
+      showWarning('Vui lòng chọn chủ đề phụ hợp lệ.');
       return;
     }
 
@@ -118,6 +123,7 @@ const ForumAlumniCreateTopicPage = () => {
       createdTopic = await createTopic(payload);
       if (!createdTopic?.id) {
         setSubmitError('Tạo chủ đề thất bại.');
+        showError('Tạo chủ đề thất bại.');
         return;
       }
       if (trimmedContent) {
@@ -135,6 +141,10 @@ const ForumAlumniCreateTopicPage = () => {
             'Không thể đăng nội dung mở đầu.';
         }
       }
+      showSuccess('Tạo chủ đề thành công.');
+      if (openingPostError) {
+        showWarning(`Chủ đề đã tạo nhưng nội dung mở đầu lỗi: ${openingPostError}`);
+      }
       navigate(`/forum/alumni/career/${createdTopic.id}`, {
         state: {
           topicTitle: createdTopic.title,
@@ -144,11 +154,12 @@ const ForumAlumniCreateTopicPage = () => {
         },
       });
     } catch (topicErr) {
-      setSubmitError(
+      const message =
         topicErr?.response?.data?.message ??
-          topicErr?.message ??
-          'Tạo chủ đề thất bại.'
-      );
+        topicErr?.message ??
+        'Tạo chủ đề thất bại.';
+      setSubmitError(message);
+      showError(message);
     } finally {
       setIsSubmitting(false);
     }
