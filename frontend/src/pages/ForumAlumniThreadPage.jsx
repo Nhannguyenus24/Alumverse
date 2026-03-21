@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Box, Button, Container, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -10,7 +10,6 @@ import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNone
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import SentimentSatisfiedAltOutlinedIcon from '@mui/icons-material/SentimentSatisfiedAltOutlined';
-import PushPinOutlinedIcon from '@mui/icons-material/PushPinOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Page from '../components/Page';
 import { useAuth } from '../hooks/useAuth';
@@ -26,6 +25,7 @@ import { useForumPostUserReaction } from '../hooks/forum/useForumPostUserReactio
 import { useReactToForumPost } from '../hooks/forum/useReactToForumPost';
 import { useDeleteForumPost } from '../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../hooks/forum/useDeleteForumTopic';
+import { useUpdateForumTopic } from '../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../hooks/useNotification';
 
 const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting }) => {
@@ -125,15 +125,6 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
                 disabled={isDeleting}
               >
                 Xóa
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="success"
-                startIcon={<PushPinOutlinedIcon sx={{ fontSize: 18, color: 'white' }} />}
-                sx={{ color: 'white' }}
-              >
-                Ghim
               </Button>
             </Box>
           ) : isOwn ? (
@@ -326,6 +317,10 @@ const ForumAlumniThreadPage = () => {
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const editorRef = useRef(null);
+  const [isEditTopicOpen, setIsEditTopicOpen] = useState(false);
+  const [editTopicTitle, setEditTopicTitle] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [threadTitleOverride, setThreadTitleOverride] = useState('');
 
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
@@ -355,6 +350,11 @@ const ForumAlumniThreadPage = () => {
     isPending: deleteTopicPending,
     errorMessage: deleteTopicErrorMessage,
   } = useDeleteForumTopic();
+  const {
+    updateTopic,
+    isPending: updateTopicPending,
+    errorMessage: updateTopicErrorMessage,
+  } = useUpdateForumTopic();
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
@@ -372,7 +372,7 @@ const ForumAlumniThreadPage = () => {
     const topicTitleFromState = location.state?.topicTitle;
     const titleFromLegacy =
       typeof topicTitleFromState === 'string' && topicTitleFromState.trim() ? topicTitleFromState.trim() : null;
-    const title = titleFromSummary ?? titleFromLegacy ?? FALLBACK_THREAD.title;
+    const title = threadTitleOverride || titleFromSummary || titleFromLegacy || FALLBACK_THREAD.title;
 
     const firstPost = posts?.[0] ?? null;
 
@@ -393,7 +393,7 @@ const ForumAlumniThreadPage = () => {
       role: 'Alumni',
       createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
     };
-  }, [location.state?.topicTitle, location.state?.topicSummary, posts]);
+  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride]);
 
   const replies = useMemo(
     () =>
@@ -475,6 +475,47 @@ const ForumAlumniThreadPage = () => {
       showError(message);
     }
   }, [deleteTopic, deleteTopicErrorMessage, navigate, selectedFilterIdFromState, showError, showSuccess, topicId]);
+
+  const handleOpenEditTopic = useCallback(() => {
+    const topicSummary = location.state?.topicSummary;
+    setEditTopicTitle((thread.title ?? '').trim());
+    setEditCategoryId(String(topicSummary?.categoryId ?? categories?.[0]?.id ?? ''));
+    setIsEditTopicOpen(true);
+  }, [categories, location.state?.topicSummary, thread.title]);
+
+  const handleCloseEditTopic = useCallback(() => {
+    if (updateTopicPending) return;
+    setIsEditTopicOpen(false);
+  }, [updateTopicPending]);
+
+  const handleSaveEditTopic = useCallback(async () => {
+    const trimmedTitle = (editTopicTitle ?? '').trim();
+    const parsedCategoryId = parseInt(editCategoryId, 10);
+    if (!topicId || !trimmedTitle || Number.isNaN(parsedCategoryId) || parsedCategoryId <= 0) {
+      showWarning('Vui lòng nhập tiêu đề và chọn chủ đề phụ hợp lệ.');
+      return;
+    }
+
+    try {
+      const updatedTopic = await updateTopic({
+        topicId,
+        payload: {
+          title: trimmedTitle,
+          categoryId: parsedCategoryId,
+        },
+      });
+      setThreadTitleOverride(updatedTopic?.title ?? trimmedTitle);
+      setIsEditTopicOpen(false);
+      showSuccess('Cập nhật chủ đề thành công.');
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ??
+        updateTopicErrorMessage ??
+        err?.message ??
+        'Không thể cập nhật chủ đề.';
+      showError(message);
+    }
+  }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
 
   const filters = useMemo(() => {
     if (categoriesPending && !categories?.length) {
@@ -696,6 +737,7 @@ const ForumAlumniThreadPage = () => {
                         variant="outlined"
                         size="small"
                         startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={handleOpenEditTopic}
                         sx={{
                           borderColor: 'black',
                           color: 'black',
@@ -705,16 +747,6 @@ const ForumAlumniThreadPage = () => {
                         }}
                       >
                         Sửa
-                      </Button>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        startIcon={<PushPinOutlinedIcon sx={{ fontSize: 18, color: 'white' }} />}
-                        sx={{ whiteSpace: 'nowrap', color: 'white' }}
-                      >
-                        Ghim
                       </Button>
                       <Button
                         fullWidth
@@ -987,6 +1019,44 @@ const ForumAlumniThreadPage = () => {
           </Box>
         </Container>
       </Container>
+      <Dialog open={isEditTopicOpen} onClose={handleCloseEditTopic} fullWidth maxWidth="sm">
+        <DialogTitle>Chỉnh sửa chủ đề</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}>
+          <TextField
+            variant="standard"
+            size="small"
+            label="Tiêu đề"
+            value={editTopicTitle}
+            onChange={(e) => setEditTopicTitle(e.target.value)}
+            fullWidth
+            autoFocus
+          />
+          <TextField
+            select
+            variant="standard"
+            size="small"
+            label="Chủ đề phụ"
+            value={editCategoryId}
+            onChange={(e) => setEditCategoryId(e.target.value)}
+            fullWidth
+            disabled={!categories?.length}
+          >
+            {(categories ?? []).map((category) => (
+              <MenuItem key={category.id} value={String(category.id)}>
+                {category.name}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditTopic} disabled={updateTopicPending}>
+            Hủy
+          </Button>
+          <Button onClick={handleSaveEditTopic} variant="contained" disabled={updateTopicPending}>
+            {updateTopicPending ? 'Đang lưu...' : 'Lưu'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Page>
   );
 };
