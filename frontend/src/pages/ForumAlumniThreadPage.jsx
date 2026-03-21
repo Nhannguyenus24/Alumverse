@@ -24,8 +24,10 @@ import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import { useForumPostReactionCount } from '../hooks/forum/useForumPostReactionCount';
 import { useForumPostUserReaction } from '../hooks/forum/useForumPostUserReaction';
 import { useReactToForumPost } from '../hooks/forum/useReactToForumPost';
+import { useDeleteForumPost } from '../hooks/forum/useDeleteForumPost';
+import { useNotification } from '../hooks/useNotification';
 
-const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) => {
+const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting }) => {
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
   const {
     hasReaction,
@@ -118,6 +120,8 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) =>
                 variant="contained"
                 color="error"
                 startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+                onClick={() => onDelete?.(reply)}
+                disabled={isDeleting}
               >
                 Xóa
               </Button>
@@ -146,6 +150,8 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost }) =>
                 variant="contained"
                 color="error"
                 startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+                onClick={() => onDelete?.(reply)}
+                disabled={isDeleting}
               >
                 Xóa
               </Button>
@@ -338,6 +344,12 @@ const ForumAlumniThreadPage = () => {
     isError: answerIsError,
     errorMessage: answerErrorMessage,
   } = useAnswerToForumPost();
+  const {
+    deletePost,
+    isPending: deletePending,
+    errorMessage: deleteErrorMessage,
+  } = useDeleteForumPost();
+  const { showSuccess, showError } = useNotification();
 
   const stripHtml = useCallback((value) => {
     if (value == null) return '';
@@ -411,6 +423,26 @@ const ForumAlumniThreadPage = () => {
   }, []);
 
   const handleCancelReply = useCallback(() => setReplyTo(null), []);
+  const handleDeletePost = useCallback(
+    async (reply) => {
+      if (!reply?.id) return;
+      try {
+        await deletePost(reply.id);
+        if (replyTo?.postId === reply.id) {
+          setReplyTo(null);
+        }
+        showSuccess('Xóa bài viết thành công.');
+      } catch (err) {
+        const message =
+          err?.response?.data?.message ??
+          deleteErrorMessage ??
+          err?.message ??
+          'Không thể xóa bài viết.';
+        showError(message);
+      }
+    },
+    [deletePost, deleteErrorMessage, replyTo?.postId, showError, showSuccess]
+  );
 
   const filters = useMemo(() => {
     if (categoriesPending && !categories?.length) {
@@ -744,6 +776,8 @@ const ForumAlumniThreadPage = () => {
                       isAdmin={isAdmin}
                       memberId={memberId}
                       onReply={handleReply}
+                      onDelete={handleDeletePost}
+                      isDeleting={deletePending}
                       parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
                     />
                   ))
