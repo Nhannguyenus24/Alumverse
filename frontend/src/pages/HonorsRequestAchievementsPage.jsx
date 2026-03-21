@@ -10,7 +10,6 @@ import {
 } from '@mui/material';
 
 import Page from '../components/Page';
-import WYSIWYG from '../components/WYSIWYG';
 
 const RequestAchievementsPage = () => {
   const navigate = useNavigate();
@@ -98,15 +97,15 @@ const RequestAchievementsPage = () => {
                 }}
               />
 
-              {/* WYSIWYG EDITOR */}
-              <Box>
-                <WYSIWYG
-                  value={content}
-                  onChange={setContent}
-                  placeholder="Write something"
-                  height={260}
-                />
-              </Box>
+            {/* CONTENT INPUT */}
+              <TextField
+                fullWidth
+                multiline
+                minRows={6}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write something"
+              />
 
               {/* ACTION BUTTONS */}
               <Box

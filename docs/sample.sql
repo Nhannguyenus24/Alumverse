@@ -357,7 +357,7 @@ INSERT INTO "forum_post_reactions" ("post_id", "member_id", "created_at") VALUES
 (7, 6, NOW() - INTERVAL '19 days'),
 (7, 8, NOW() - INTERVAL '18 days'),
 (7, 9, NOW() - INTERVAL '17 days'),
-(7, 2, NOW() - INTERVAL '16 days'),
+(7, 10, NOW() - INTERVAL '16 days'),
 
 -- Post 8 (Database partitioning) - Valuable addition
 (8, 2, NOW() - INTERVAL '22 days'),

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
@@ -12,6 +12,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import { useAuth } from '../hooks/useAuth';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
 import { useForumTopics, useForumTopicsForCategories } from '../hooks/forum/useForumTopics';
+import { useNotification } from '../hooks/useNotification';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
 import ForumSection from '../components/forum/ForumSection';
@@ -51,16 +52,18 @@ const sectionsToManageTopics = (sections) =>
 const ForumPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [selectedFilterId, setSelectedFilterId] = useState('all');
-  const [isManageMode, setIsManageMode] = useState(false);
+  const { showError, showSuccess, showWarning, showInfo } = useNotification();
+  const hasShownTopicsErrorRef = useRef(false);
 
-  useEffect(() => {
+  const [selectedFilterId, setSelectedFilterId] = useState(() => {
     const fromState = location.state?.selectedFilterId;
     if (fromState && (fromState === 'all' || fromState.startsWith('category-'))) {
-      setSelectedFilterId(fromState);
-      navigate(location.pathname, { replace: true, state: {} });
+      return fromState;
     }
-  }, [location.pathname, location.state?.selectedFilterId, navigate]);
+    return 'all';
+  });
+
+  const [isManageMode, setIsManageMode] = useState(false);
   const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics(SECTIONS));
   const [newMainTopic, setNewMainTopic] = useState('');
   const [newSubTopics, setNewSubTopics] = useState({});
@@ -84,10 +87,22 @@ const ForumPage = () => {
     [isAllSelected, categories]
   );
 
-  const { topics: topicsSingle } = useForumTopics(categoryId, 0, 10);
-  const { topics: topicsAll } = useForumTopicsForCategories(categoryIds, 0, 10);
+  const { topics: topicsSingle, isError: topicsSingleIsError } = useForumTopics(categoryId, 0, 10);
+  const { topics: topicsAll, isError: topicsAllIsError } = useForumTopicsForCategories(categoryIds, 0, 10);
 
   const topics = isAllSelected ? topicsAll : topicsSingle;
+  const topicsIsError = isAllSelected ? topicsAllIsError : topicsSingleIsError;
+
+  useEffect(() => {
+    if (topicsIsError) {
+      if (!hasShownTopicsErrorRef.current) {
+        showError('Không thể tải danh sách chủ đề.');
+        hasShownTopicsErrorRef.current = true;
+      }
+      return;
+    }
+    hasShownTopicsErrorRef.current = false;
+  }, [topicsIsError, showError]);
 
   const sections = useMemo(() => {
     if (!topics?.length) return SECTIONS;
@@ -100,6 +115,14 @@ const ForumPage = () => {
       threadCount: t.viewCount ?? '-',
       discussionCount: '-',
       lastPost: null,
+      topicSummary: {
+        id: t.id,
+        title: t.title,
+        createdByMemberId: t.createdByMemberId ?? null,
+        createdAt: t.createdAt ?? null,
+        viewCount: t.viewCount ?? null,
+        categoryId: t.categoryId ?? null,
+      },
     }));
 
     return SECTIONS.map((s) => {
@@ -163,9 +186,15 @@ const ForumPage = () => {
   const handleBoardClick = useCallback(
     (board) => {
       if (!board?.topicId) return;
-      navigate(`/forum/alumni/career/${board.topicId}`);
+      navigate(`/forum/alumni/career/${board.topicId}`, {
+        state: {
+          topicTitle: board.name,
+          topicSummary: board.topicSummary,
+          selectedFilterId,
+        },
+      });
     },
-    [navigate]
+    [navigate, selectedFilterId]
   );
 
   const handleOpenManageMode = () => {
@@ -179,17 +208,24 @@ const ForumPage = () => {
 
   const handleAddMainTopic = () => {
     const trimmed = newMainTopic.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      showWarning('Vui lòng nhập tên chủ đề chính.');
+      return;
+    }
     setManageTopics((prev) => [
       ...prev,
       { id: `topic-${Date.now()}`, title: trimmed.toUpperCase(), boards: [] },
     ]);
     setNewMainTopic('');
+    showSuccess('Đã thêm chủ đề chính.');
   };
 
   const handleAddSubTopic = (topicId) => {
     const value = newSubTopics[topicId]?.trim() ?? '';
-    if (!value) return;
+    if (!value) {
+      showWarning('Vui lòng nhập tên chủ đề con.');
+      return;
+    }
     setManageTopics((prev) =>
       prev.map((t) =>
         t.id === topicId
@@ -201,10 +237,12 @@ const ForumPage = () => {
       )
     );
     setNewSubTopics((prev) => ({ ...prev, [topicId]: '' }));
+    showSuccess('Đã thêm chủ đề con.');
   };
 
   const handleDeleteTopic = (topicId) => {
     setManageTopics((prev) => prev.filter((t) => t.id !== topicId));
+    showInfo('Đã xóa chủ đề.');
   };
 
   const handleDeleteBoard = (topicId, boardId) => {
@@ -213,10 +251,12 @@ const ForumPage = () => {
         t.id === topicId ? { ...t, boards: t.boards.filter((b) => b.id !== boardId) } : t
       )
     );
+    showInfo('Đã xóa chủ đề con.');
   };
 
   const handleSaveTopics = () => {
     handleCloseManageMode();
+    showSuccess('Đã lưu thay đổi chủ đề.');
   };
 
   return (
@@ -570,7 +610,7 @@ const ForumPage = () => {
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() => navigate('/forum/alumni/career/create-post')}
+                          onClick={() => navigate('/forum/alumni/career/create-topic')}
                           sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                         >
                           Tạo bài đăng
@@ -581,9 +621,24 @@ const ForumPage = () => {
 
                   <Box>
                     {topicsSingle.map((topic) => (
-                      <Box
-                        key={topic.id}
-                        onClick={() => navigate(`/forum/alumni/career/${topic.id}`)}
+                  <Box
+                    key={topic.id}
+                    onClick={() =>
+                      navigate(`/forum/alumni/career/${topic.id}`, {
+                        state: {
+                          topicTitle: topic.title,
+                          topicSummary: {
+                            id: topic.id,
+                            title: topic.title,
+                            createdByMemberId: topic.createdByMemberId ?? null,
+                            createdAt: topic.createdAt ?? null,
+                            viewCount: topic.viewCount ?? null,
+                            categoryId: topic.categoryId ?? null,
+                          },
+                          selectedFilterId: `category-${selectedCategory?.id ?? topic.categoryId}`,
+                        },
+                      })
+                    }
                         sx={{
                           px: { xs: 1.5, sm: 2, md: 3 },
                           py: { xs: 1.5, md: 2 },

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Box,
@@ -13,27 +13,62 @@ import PersonIcon from '@mui/icons-material/Person';
 import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
-import WYSIWYG from '../components/WYSIWYG';
-
-const FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'alumni', label: 'Cựu sinh viên' },
-  { id: 'jobs', label: 'Việc làm' },
-  { id: 'events', label: 'Hoạt động' },
-  { id: 'tech', label: 'Công nghệ' },
-  { id: 'courses', label: 'Học phần' },
-  { id: 'admissions', label: 'Tuyển sinh' },
-];
+import { useAuth } from '../hooks/useAuth';
+import { useForumCategories } from '../hooks/forum/useForumCategories';
+import { useCreateForumTopic } from '../hooks/forum/useCreateForumTopic';
+import { useCreateForumPost } from '../hooks/forum/useCreateForumPost';
+import { useNotification } from '../hooks/useNotification';
 
 const SUBJECT_OPTIONS = ['Hướng nghiệp', 'Kinh nghiệm làm việc', 'Câu chuyện truyền cảm hứng'];
-const SUB_SUBJECT_OPTIONS = ['Tư vấn ngành nghề', 'Chia sẻ lộ trình', 'Khác'];
 
-const ForumAlumniCreatePostPage = () => {
+const ForumAlumniCreateTopicPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const organizationId = user?.organizationId ?? 1;
+  const {
+    categories,
+    isPending: categoriesPending,
+    isError: categoriesIsError,
+  } = useForumCategories(organizationId);
   const [subject, setSubject] = useState(SUBJECT_OPTIONS[0]);
-  const [subSubject, setSubSubject] = useState(SUB_SUBJECT_OPTIONS[0]);
+  const [subSubject, setSubSubject] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [submitError, setSubmitError] = useState(null);
+  const { showSuccess, showError, showWarning } = useNotification();
+  const {
+    createTopic,
+    isPending: createTopicPending,
+    isError: createTopicIsError,
+    errorMessage: createTopicErrorMessage,
+  } = useCreateForumTopic();
+  const { createPost } = useCreateForumPost();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const filters = useMemo(() => {
+    if (!categories?.length) {
+      return [{ id: 'all', label: 'Tất cả' }];
+    }
+    return [
+      { id: 'all', label: 'Tất cả' },
+      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+    ];
+  }, [categories]);
+  const subSubjectOptions = (categories ?? []).map((category) => ({
+    value: String(category.id),
+    label: category.name,
+  }));
+  const hasSelectedSubSubject = subSubjectOptions.some((opt) => opt.value === subSubject);
+  const selectedSubSubject = hasSelectedSubSubject
+    ? subSubject
+    : (subSubjectOptions[0]?.value ?? '');
+  const selectedSidebarFilterId = filters.some((f) => f.id === `category-${selectedSubSubject}`)
+    ? `category-${selectedSubSubject}`
+    : 'all';
+  const displayName =
+    user?.userName?.trim?.() ||
+    user?.email?.trim?.() ||
+    (user?.id ? `Thành viên #${user.id}` : 'Người dùng');
+  const displayRole = user?.role ? String(user.role).toLowerCase() : 'guest';
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -41,8 +76,8 @@ const ForumAlumniCreatePostPage = () => {
         navigate('/forum');
         return;
       }
-      if (id === 'alumni') {
-        navigate('/forum/alumni/career');
+      if (id?.startsWith('category-')) {
+        navigate('/forum', { state: { selectedFilterId: id } });
         return;
       }
     },
@@ -53,14 +88,87 @@ const ForumAlumniCreatePostPage = () => {
     navigate('/forum/alumni/career');
   };
 
-  const handleSubmit = () => {
-    navigate('/forum/alumni/career');
+  const handleSubmit = async () => {
+    setSubmitError(null);
+    const trimmedTitle = (title ?? '').trim();
+    const trimmedContent = (content ?? '').trim();
+    const categoryId = parseInt(selectedSubSubject, 10);
+    if (!trimmedTitle) {
+      setSubmitError('Vui lòng nhập tiêu đề chủ đề.');
+      showWarning('Vui lòng nhập tiêu đề chủ đề.');
+      return;
+    }
+    if (!user?.id) {
+      setSubmitError('Không xác định được người tạo chủ đề.');
+      showError('Không xác định được người tạo chủ đề.');
+      return;
+    }
+    if (Number.isNaN(categoryId) || categoryId <= 0) {
+      setSubmitError('Vui lòng chọn chủ đề phụ hợp lệ.');
+      showWarning('Vui lòng chọn chủ đề phụ hợp lệ.');
+      return;
+    }
+
+    const payload = {
+      organizationId,
+      title: trimmedTitle,
+      createdByMemberId: user.id,
+      categoryId,
+    };
+
+    setIsSubmitting(true);
+    let createdTopic = null;
+    let openingPostError = null;
+    try {
+      createdTopic = await createTopic(payload);
+      if (!createdTopic?.id) {
+        setSubmitError('Tạo chủ đề thất bại.');
+        showError('Tạo chủ đề thất bại.');
+        return;
+      }
+      if (trimmedContent) {
+        try {
+          await createPost({
+            topicId: createdTopic.id,
+            authorMemberId: user.id,
+            content: trimmedContent,
+            answerToPostId: null,
+          });
+        } catch (postErr) {
+          openingPostError =
+            postErr?.response?.data?.message ??
+            postErr?.message ??
+            'Không thể đăng nội dung mở đầu.';
+        }
+      }
+      showSuccess('Tạo chủ đề thành công.');
+      if (openingPostError) {
+        showWarning(`Chủ đề đã tạo nhưng nội dung mở đầu lỗi: ${openingPostError}`);
+      }
+      navigate(`/forum/alumni/career/${createdTopic.id}`, {
+        state: {
+          topicTitle: createdTopic.title,
+          topicSummary: createdTopic,
+          selectedFilterId: `category-${createdTopic.categoryId}`,
+          ...(openingPostError ? { openingPostError } : {}),
+        },
+      });
+    } catch (topicErr) {
+      const message =
+        topicErr?.response?.data?.message ??
+        topicErr?.message ??
+        'Tạo chủ đề thất bại.';
+      setSubmitError(message);
+      showError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Page
-      title="Tạo bài đăng - Cựu sinh viên"
-      meta={<meta name="description" content="Tạo bài đăng mới - Diễn đàn Cựu sinh viên" />}
+      title="Tạo chủ đề - Cựu sinh viên"
+      meta={<meta name="description" content="Tạo chủ đề mới - Diễn đàn Cựu sinh viên" />}
     >
       <Container
         maxWidth={false}
@@ -83,8 +191,8 @@ const ForumAlumniCreatePostPage = () => {
           >
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
               <ForumFilterPanel
-                filters={FILTERS}
-                selectedId="alumni"
+                filters={filters}
+                selectedId={selectedSidebarFilterId}
                 onChange={handleFilterChange}
               />
               <ForumSponsoredCard
@@ -103,7 +211,7 @@ const ForumAlumniCreatePostPage = () => {
                 color="primary.main"
                 sx={{ mb: 2.5, fontSize: { xs: '1.6rem', md: '1.9rem' }, letterSpacing: 1 }}
               >
-                TẠO BÀI ĐĂNG
+                TẠO CHỦ ĐỀ MỚI
               </Typography>
 
               {/* Subject selectors */}
@@ -133,15 +241,30 @@ const ForumAlumniCreatePostPage = () => {
                   select
                   fullWidth
                   label="Chủ đề phụ"
-                  value={subSubject}
+                  value={selectedSubSubject}
                   onChange={(e) => setSubSubject(e.target.value)}
                   size="small"
+                  disabled={categoriesPending || categoriesIsError || !categories.length}
                 >
-                  {SUB_SUBJECT_OPTIONS.map((opt) => (
-                    <MenuItem key={opt} value={opt}>
-                      {opt}
+                  {categoriesPending ? (
+                    <MenuItem value="" disabled>
+                      Đang tải chủ đề phụ...
                     </MenuItem>
-                  ))}
+                  ) : categoriesIsError ? (
+                    <MenuItem value="" disabled>
+                      Không tải được chủ đề phụ
+                    </MenuItem>
+                  ) : !categories.length ? (
+                    <MenuItem value="" disabled>
+                      Không có chủ đề phụ
+                    </MenuItem>
+                  ) : (
+                    subSubjectOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))
+                  )}
                 </TextField>
               </Box>
 
@@ -193,10 +316,10 @@ const ForumAlumniCreatePostPage = () => {
                     </Box>
                     <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
                       <Typography variant="body2" fontWeight={600}>
-                        Nguyễn Văn An
+                        {displayName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Alumni
+                        {displayRole}
                       </Typography>
                     </Box>
                   </Box>
@@ -223,7 +346,7 @@ const ForumAlumniCreatePostPage = () => {
                         variant="standard"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Title"
+                        placeholder="Tiêu đề chủ đề"
                         InputProps={{
                           disableUnderline: true,
                           sx: {
@@ -235,12 +358,19 @@ const ForumAlumniCreatePostPage = () => {
                     </Box>
 
                     <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2 }}>
-                      <WYSIWYG
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={8}
                         value={content}
-                        onChange={setContent}
-                        placeholder="Write something"
-                        height={220}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="Nội dung mở đầu"
                       />
+                      {submitError || createTopicIsError ? (
+                        <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                          {submitError ?? createTopicErrorMessage ?? 'Không thể tạo chủ đề.'}
+                        </Typography>
+                      ) : null}
                     </Box>
                   </Box>
                 </Box>
@@ -262,6 +392,7 @@ const ForumAlumniCreatePostPage = () => {
                     variant="outlined"
                     color="inherit"
                     onClick={handleCancel}
+                    disabled={isSubmitting}
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
@@ -271,10 +402,17 @@ const ForumAlumniCreatePostPage = () => {
                     variant="contained"
                     color="primary"
                     onClick={handleSubmit}
+                    disabled={
+                      isSubmitting ||
+                      createTopicPending ||
+                      !user?.id ||
+                      !(title ?? '').trim() ||
+                      !selectedSubSubject
+                    }
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
-                    Đăng
+                    {isSubmitting || createTopicPending ? 'Đang tạo...' : 'Tạo chủ đề'}
                   </Button>
                 </Box>
               </Box>
@@ -286,5 +424,4 @@ const ForumAlumniCreatePostPage = () => {
   );
 };
 
-export default ForumAlumniCreatePostPage;
-
+export default ForumAlumniCreateTopicPage;

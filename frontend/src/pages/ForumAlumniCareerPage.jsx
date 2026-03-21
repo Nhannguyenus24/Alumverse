@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -9,6 +9,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import { useAuth } from '../hooks/useAuth';
 import { useForumCategories } from '../hooks/forum/useForumCategories';
 import { useForumTopics } from '../hooks/forum/useForumTopics';
+import { useNotification } from '../hooks/useNotification';
 
 const CAREER_CATEGORY_ID = 1;
 
@@ -28,6 +29,8 @@ const formatTopicDate = (iso) => {
 const ForumAlumniCareerPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showError } = useNotification();
+  const hasShownTopicsErrorRef = useRef(false);
   const organizationId = user?.organizationId ?? 1;
   const { categories } = useForumCategories(organizationId);
 
@@ -42,6 +45,17 @@ const ForumAlumniCareerPage = () => {
   }, [categories]);
 
   const { topics, isPending, isError } = useForumTopics(CAREER_CATEGORY_ID, 0, 20);
+
+  useEffect(() => {
+    if (isError) {
+      if (!hasShownTopicsErrorRef.current) {
+        showError('Không thể tải danh sách chủ đề.');
+        hasShownTopicsErrorRef.current = true;
+      }
+      return;
+    }
+    hasShownTopicsErrorRef.current = false;
+  }, [isError, showError]);
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -156,7 +170,7 @@ const ForumAlumniCareerPage = () => {
                       variant="contained"
                       color="primary"
                       onClick={() =>
-                        navigate('/forum/alumni/career/create-post')
+                        navigate('/forum/alumni/career/create-topic')
                       }
                       sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                     >
@@ -195,7 +209,20 @@ const ForumAlumniCareerPage = () => {
                   <Box
                     key={topic.id}
                     onClick={() =>
-                      navigate(`/forum/alumni/career/${topic.id}`)
+                      navigate(`/forum/alumni/career/${topic.id}`, {
+                        state: {
+                          topicTitle: topic.title,
+                          topicSummary: {
+                            id: topic.id,
+                            title: topic.title,
+                            createdByMemberId: topic.createdByMemberId ?? null,
+                            createdAt: topic.createdAt ?? null,
+                            viewCount: topic.viewCount ?? null,
+                            categoryId: topic.categoryId ?? null,
+                          },
+                          selectedFilterId: 'alumni',
+                        },
+                      })
                     }
                     sx={{
                       px: { xs: 1.5, sm: 2, md: 3 },
@@ -263,7 +290,7 @@ const ForumAlumniCareerPage = () => {
                             WebkitBoxOrient: 'vertical',
                           }}
                         >
-                          {post.title}
+                          {topic.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
                           {`Thành viên #${topic.createdByMemberId ?? '—'}`} • {formatTopicDate(topic.createdAt)}
