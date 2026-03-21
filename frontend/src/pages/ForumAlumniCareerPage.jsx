@@ -156,7 +156,7 @@ const ForumAlumniCareerPage = () => {
                       variant="contained"
                       color="primary"
                       onClick={() =>
-                        navigate('/forum/alumni/career/create-post')
+                        navigate('/forum/alumni/career/create-topic')
                       }
                       sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                     >

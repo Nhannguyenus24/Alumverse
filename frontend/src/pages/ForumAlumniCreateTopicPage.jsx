@@ -27,7 +27,7 @@ const FILTERS = [
 const SUBJECT_OPTIONS = ['Hướng nghiệp', 'Kinh nghiệm làm việc', 'Câu chuyện truyền cảm hứng'];
 const SUB_SUBJECT_OPTIONS = ['Tư vấn ngành nghề', 'Chia sẻ lộ trình', 'Khác'];
 
-const ForumAlumniCreatePostPage = () => {
+const ForumAlumniCreateTopicPage = () => {
   const navigate = useNavigate();
   const [subject, setSubject] = useState(SUBJECT_OPTIONS[0]);
   const [subSubject, setSubSubject] = useState(SUB_SUBJECT_OPTIONS[0]);
@@ -58,8 +58,8 @@ const ForumAlumniCreatePostPage = () => {
 
   return (
     <Page
-      title="Tạo bài đăng - Cựu sinh viên"
-      meta={<meta name="description" content="Tạo bài đăng mới - Diễn đàn Cựu sinh viên" />}
+      title="Tạo chủ đề - Cựu sinh viên"
+      meta={<meta name="description" content="Tạo chủ đề mới - Diễn đàn Cựu sinh viên" />}
     >
       <Container
         maxWidth={false}
@@ -102,7 +102,7 @@ const ForumAlumniCreatePostPage = () => {
                 color="primary.main"
                 sx={{ mb: 2.5, fontSize: { xs: '1.6rem', md: '1.9rem' }, letterSpacing: 1 }}
               >
-                TẠO BÀI ĐĂNG
+                TẠO CHỦ ĐỀ MỚI
               </Typography>
 
               {/* Subject selectors */}
@@ -222,7 +222,7 @@ const ForumAlumniCreatePostPage = () => {
                         variant="standard"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Title"
+                        placeholder="Tiêu đề chủ đề"
                         InputProps={{
                           disableUnderline: true,
                           sx: {
@@ -240,7 +240,7 @@ const ForumAlumniCreatePostPage = () => {
                         minRows={8}
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        placeholder="Write something"
+                        placeholder="Nội dung mở đầu"
                       />
                     </Box>
                   </Box>
@@ -275,7 +275,7 @@ const ForumAlumniCreatePostPage = () => {
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
-                    Đăng
+                    Tạo chủ đề
                   </Button>
                 </Box>
               </Box>
@@ -287,5 +287,4 @@ const ForumAlumniCreatePostPage = () => {
   );
 };
 
-export default ForumAlumniCreatePostPage;
-
+export default ForumAlumniCreateTopicPage;
