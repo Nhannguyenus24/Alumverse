@@ -25,6 +25,7 @@ import { useForumPostReactionCount } from '../hooks/forum/useForumPostReactionCo
 import { useForumPostUserReaction } from '../hooks/forum/useForumPostUserReaction';
 import { useReactToForumPost } from '../hooks/forum/useReactToForumPost';
 import { useDeleteForumPost } from '../hooks/forum/useDeleteForumPost';
+import { useDeleteForumTopic } from '../hooks/forum/useDeleteForumTopic';
 import { useNotification } from '../hooks/useNotification';
 
 const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting }) => {
@@ -349,6 +350,11 @@ const ForumAlumniThreadPage = () => {
     isPending: deletePending,
     errorMessage: deleteErrorMessage,
   } = useDeleteForumPost();
+  const {
+    deleteTopic,
+    isPending: deleteTopicPending,
+    errorMessage: deleteTopicErrorMessage,
+  } = useDeleteForumTopic();
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
@@ -445,6 +451,30 @@ const ForumAlumniThreadPage = () => {
     },
     [deletePost, deleteErrorMessage, replyTo?.postId, showError, showSuccess]
   );
+
+  const handleDeleteTopic = useCallback(async () => {
+    if (!topicId) return;
+    try {
+      await deleteTopic(topicId);
+      showSuccess('Xóa chủ đề thành công.');
+      if (selectedFilterIdFromState?.startsWith?.('category-')) {
+        navigate('/forum', { state: { selectedFilterId: selectedFilterIdFromState } });
+        return;
+      }
+      if (selectedFilterIdFromState === 'alumni') {
+        navigate('/forum/alumni/career');
+        return;
+      }
+      navigate('/forum');
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ??
+        deleteTopicErrorMessage ??
+        err?.message ??
+        'Không thể xóa chủ đề.';
+      showError(message);
+    }
+  }, [deleteTopic, deleteTopicErrorMessage, navigate, selectedFilterIdFromState, showError, showSuccess, topicId]);
 
   const filters = useMemo(() => {
     if (categoriesPending && !categories?.length) {
@@ -702,9 +732,11 @@ const ForumAlumniThreadPage = () => {
                         color="error"
                         size="small"
                         startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={handleDeleteTopic}
+                        disabled={deleteTopicPending}
                         sx={{ whiteSpace: 'nowrap' }}
                       >
-                        Xóa
+                        {deleteTopicPending ? 'Đang xóa...' : 'Xóa'}
                       </Button>
                       <Button
                         fullWidth
