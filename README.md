@@ -1,6 +1,6 @@
 # Refactoring-and-Enhancing-the-Student-Alumni-System-for-HCMUS
 
-VNU HCMUS FIT Graduation Project — **Alumnverse**
+VNU HCMUS FIT Graduation Project — **AlumVerse**
 
 ## Tài liệu đồ án
 
