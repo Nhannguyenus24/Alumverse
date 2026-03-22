@@ -187,31 +187,52 @@ const SUGGESTIONS = [
   'Liên hệ với administrative office',
 ];
 
-// Mock API response generator
-const getMockResponse = (userMessage) => {
-  const lowerMessage = userMessage.toLowerCase();
+// SSE response handler
+const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
+  // Construct the API endpoint and query parameters
+  const apiEndpoint = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat/stream`;
+  const params = new URLSearchParams({
+    message: userMessage,
+  });
 
-  if (lowerMessage.includes('khoa') || lowerMessage.includes('cntt') || lowerMessage.includes('it')) {
-    return 'Khoa CNTT của chúng tôi là một trong những khoa hàng đầu, cung cấp các chương trình đào tạo về lập trình, AI, và công nghệ thông tin. Bạn muốn biết thêm về các ngành học cụ thể không?';
+  try {
+    // Create EventSource connection
+    const eventSource = new EventSource(`${apiEndpoint}?${params.toString()}`);
+
+    eventSource.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.content) {
+          onChunk(data.content);
+        }
+      } catch (e) {
+        console.error('Error parsing SSE message:', e);
+      }
+    });
+
+    eventSource.addEventListener('end', () => {
+      eventSource.close();
+      onComplete();
+    });
+
+    eventSource.addEventListener('error', (error) => {
+      console.error('SSE Error:', error);
+      eventSource.close();
+      onError(error);
+    });
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      eventSource.close();
+      onError(error);
+    };
+
+    return eventSource;
+  } catch (error) {
+    console.error('Error creating EventSource:', error);
+    onError(error);
+    return null;
   }
-
-  if (lowerMessage.includes('học bổng') || lowerMessage.includes('scholarship')) {
-    return 'Chúng tôi cung cấp nhiều loại học bổng cho sinh viên xuất sắc, bao gồm học bổng toàn phần và bán phần. Vui lòng truy cập trang web của chúng tôi để biết thêm chi tiết!';
-  }
-
-  if (lowerMessage.includes('tuyển sinh') || lowerMessage.includes('admission') || lowerMessage.includes('enrollment')) {
-    return 'Quy trình tuyển sinh của trường gồm các bước: 1) Nộp hồ sơ, 2) Dự thi đầu vào, 3) Phỏng vấn. Kỳ tuyển sinh năm nay bắt đầu vào tháng 5. Bạn cần giúp đỡ gì thêm?';
-  }
-
-  if (lowerMessage.includes('sinh viên') || lowerMessage.includes('student')) {
-    return 'Chúng tôi có rất nhiều hoạt động dành cho sinh viên, từ các câu lạc bộ, sự kiện thể thao đến các chương trình trao đổi quốc tế. Có điều gì bạn quan tâm không?';
-  }
-
-  if (lowerMessage.includes('cảm ơn') || lowerMessage.includes('thank')) {
-    return 'Vui lòng! Nếu bạn có thêm câu hỏi nào khác, cứ thoải mái hỏi tôi. Tôi luôn sẵn sàng giúp đỡ!';
-  }
-
-  return 'Cảm ơn bạn đã hỏi! Đó là một câu hỏi thú vị. Nếu bạn có thêm câu hỏi cụ thể hoặc cần thông tin chi tiết hơn, vui lòng để lại tin nhắn hoặc liên hệ với phòng tư vấn của chúng tôi.';
 };
 
 export default function FitBot() {
@@ -232,7 +253,8 @@ export default function FitBot() {
   const messageEndRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
   const suggestionHideTimeoutRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+  const eventSourceRef = useRef(null);
+  const charIndexRef = useRef(0);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -240,6 +262,21 @@ export default function FitBot() {
       messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isTyping, isChatOpen]);
+
+  // Cleanup SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+      if (suggestionTimeoutRef.current) {
+        clearTimeout(suggestionTimeoutRef.current);
+      }
+      if (suggestionHideTimeoutRef.current) {
+        clearTimeout(suggestionHideTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Show random suggestion at random interval
   useEffect(() => {
@@ -298,65 +335,93 @@ export default function FitBot() {
     // Show typing indicator
     setIsTyping(true);
 
-    // Simulate API call with delay
-    typingTimeoutRef.current = setTimeout(() => {
-      const botResponse = getMockResponse(textToSend);
-      
-      // Typewriter effect
-      let currentIndex = 0;
-      const botMessageId = Date.now() + 1;
-      let displayedText = '';
+    // Add placeholder bot message
+    const botMessageId = Date.now() + 1;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: botMessageId,
+        text: '',
+        isBot: true,
+        timestamp: new Date(),
+      },
+    ]);
 
-      const typeChar = () => {
-        if (currentIndex < botResponse.length) {
-          displayedText += botResponse[currentIndex];
-          currentIndex++;
+    let fullResponse = '';
+    charIndexRef.current = 0;
+    let charQueue = '';
 
-          setMessages((prev) => {
-            const updatedMessages = [...prev];
-            const botMessageIndex = updatedMessages.findIndex(
-              (msg) => msg.id === botMessageId
-            );
+    const typeNextCharacters = () => {
+      if (charQueue.length > 0) {
+        const charsToAdd = charQueue.substring(0, 3); // Add up to 3 chars at a time
+        fullResponse += charsToAdd;
+        charQueue = charQueue.substring(3);
 
-            if (botMessageIndex >= 0) {
-              updatedMessages[botMessageIndex].text = displayedText;
-            } else {
-              updatedMessages.push({
-                id: botMessageId,
-                text: displayedText,
-                isBot: true,
-                timestamp: new Date(),
-              });
-            }
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          const botMessageIndex = updatedMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+          if (botMessageIndex >= 0) {
+            updatedMessages[botMessageIndex].text = fullResponse;
+          }
+          return updatedMessages;
+        });
 
-            return updatedMessages;
-          });
-
-          setTimeout(typeChar, 50); // 50ms per character for smooth typewriter effect
-        } else {
-          setIsTyping(false);
+        setTimeout(typeNextCharacters, 30);
+      } else {
+        // Check if more data is coming from SSE
+        if (eventSourceRef.current && !eventSourceRef.current.closed) {
+          setTimeout(typeNextCharacters, 30);
         }
-      };
+      }
+    };
 
-      // Initialize bot message with empty text
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: botMessageId,
-          text: '',
-          isBot: true,
-          timestamp: new Date(),
-        },
-      ]);
-
-      typeChar();
-    }, 1000 + Math.random() * 1000); // 1-2 seconds delay
+    // Stream response from server via SSE
+    streamSSEResponse(
+      textToSend,
+      (chunk) => {
+        // On chunk received, add to queue for typing effect
+        charQueue += chunk;
+        if (!document.hidden) {
+          typeNextCharacters();
+        }
+      },
+      () => {
+        // On complete
+        setIsTyping(false);
+        eventSourceRef.current = null;
+      },
+      (error) => {
+        // On error - show fallback message
+        console.error('Chat error:', error);
+        const errorMessage =
+          'Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.';
+        fullResponse = errorMessage;
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          const botMessageIndex = updatedMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+          if (botMessageIndex >= 0) {
+            updatedMessages[botMessageIndex].text = errorMessage;
+          }
+          return updatedMessages;
+        });
+        setIsTyping(false);
+        eventSourceRef.current = null;
+      }
+    );
   };
 
   const handleClose = () => {
     setIsChatOpen(false);
     setIsTyping(false);
-    clearTimeout(typingTimeoutRef.current);
+    // Close SSE connection if active
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
   };
 
   return (

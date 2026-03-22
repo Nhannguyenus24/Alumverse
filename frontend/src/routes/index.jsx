@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import MainLayout from '../layouts/MainLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import ProtectedRoute from './ProtectedRoute';
@@ -45,10 +45,44 @@ const ForumAlumniCareerPage = Loadable(
 const ForumAlumniThreadPage = Loadable(
   lazy(() => import('../pages/ForumAlumniThreadPage'))
 );
-const ForumAlumniCreatePostPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniCreatePostPage'))
+const ForumAlumniCreateTopicPage = Loadable(
+  lazy(() => import('../pages/ForumAlumniCreateTopicPage'))
 );
 const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
+const HonorsPage = Loadable(
+  lazy(() => import('../pages/HonorsPage'))
+);
+const HonorsAlumniPage = Loadable(
+  lazy(() => import('../pages/HonorsAlumniPage'))
+);
+const HonorsAchievementsPage = Loadable(
+  lazy(() => import('../pages/HonorsAchievementsPage'))
+);
+const HonorsRequestAchievementsPage = Loadable(
+  lazy(() => import('../pages/HonorsRequestAchievementsPage'))
+);
+const PostArticlePage = Loadable(
+  lazy(() => import('../pages/PostArticlePage'))
+);
+const ArticlePage = Loadable(
+  lazy(() => import('../pages/ArticlePage'))
+);
+const NotificationPage = Loadable(
+  lazy(() => import('../pages/NotificationPage'))
+);
+const SettingPage = Loadable(
+  lazy(() => import('../pages/SettingPage'))
+);
+const DonationPage = Loadable(
+  lazy(() => import('../pages/DonationPage'))
+);
+const DetailDonationPage = Loadable(
+  lazy(() => import('../pages/DetailDonationPage'))
+);
+const CreateDonationPage = Loadable(
+  lazy(() => import('../pages/CreateDonationPage'))
+);
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -81,7 +115,11 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: 'create-post',
-                    element: <ForumAlumniCreatePostPage />,
+                    element: <Navigate to="/forum/alumni/career/create-topic" replace />,
+                  },
+                  {
+                    path: 'create-topic',
+                    element: <ForumAlumniCreateTopicPage />,
                   },
                   {
                     path: ':threadId',
@@ -98,6 +136,47 @@ export const router = createBrowserRouter([
         element: <ContactPage />,
       },
       {
+        path: 'honors',
+        children: [
+          {
+            index: true,
+            element: <HonorsPage />,
+          },
+          {
+            path: 'alumni',
+            element: <HonorsAlumniPage />,
+          },
+          {
+            path: 'achievements',
+            element: <HonorsAchievementsPage />,
+          },
+          {
+            path: 'request-achievements',
+            element: <HonorsRequestAchievementsPage />,
+          },
+        ],
+      },
+      {
+        path: 'post',
+        element: <PostArticlePage />,
+      },
+      {
+        path: 'article',
+        element: <ArticlePage />,
+      },
+      {
+        path: 'notifications',
+        element: <NotificationPage />,
+      },
+      {
+        path: 'settings',
+        element: (
+          <ProtectedRoute>
+            <SettingPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'faculties',
         children: [
           {
@@ -107,6 +186,23 @@ export const router = createBrowserRouter([
           {
             path: 'information-technology',
             element: <FacultyCNTTPage />,
+          },
+        ],
+      },
+      {
+        path: 'donations',
+        children: [
+          {
+            index: true,
+            element: <DonationPage />,
+          },
+          {
+            path: 'create',
+            element: <CreateDonationPage />,
+          },
+          {
+            path: ':id',
+            element: <DetailDonationPage />,
           },
         ],
       },

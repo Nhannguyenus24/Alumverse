@@ -1,6 +1,7 @@
 package com.service.backend.auth.controller;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import io.swagger.v3.oas.annotations.Parameter;
 import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.LoginRequest;
 import com.service.backend.auth.dto.LoginResponse;
@@ -63,32 +64,37 @@ public class AuthController {
                 .switchIfEmpty(Mono.defer(() -> 
                     authService.loginByUserName(request.getEmail(), request.getPassword())
                 ))
-                .map(user -> {
-                    String accessToken = jwtUtils.generateAccessToken(
-                            user.getId(),
-                            user.getEmail(),
-                            user.getRole().name(),
-                            user.getUserName(),
-                            user.getAvatarUrl()
-                    );
-                    String refreshToken = jwtUtils.generateRefreshToken(user.getId());
+                .flatMap(user ->
+                    authService.getOrganizationIdByUserId(user.getId())
+                            .defaultIfEmpty(List.of()) // Return empty list if user has no organizations
+                            .map(organizationId -> {
+                                String accessToken = jwtUtils.generateAccessToken(
+                                        user.getId(),
+                                        user.getEmail(),
+                                        user.getRole().name(),
+                                        user.getUserName(),
+                                        user.getAvatarUrl(),
+                                        organizationId
+                                );
+                                String refreshToken = jwtUtils.generateRefreshToken(user.getId());
 
-                    ResponseCookie refreshTokenCookie = ResponseCookie
-                            .from("refreshToken", refreshToken)
-                            .httpOnly(true)
-                            // .secure(true) // turn on when in https
-                            .maxAge(Duration.ofDays(7))
-                            .sameSite("Lax")
-                            .build();
+                                ResponseCookie refreshTokenCookie = ResponseCookie
+                                        .from("refreshToken", refreshToken)
+                                        .httpOnly(true)
+                                        // .secure(true) // turn on when in https
+                                        .maxAge(Duration.ofDays(7))
+                                        .sameSite("Lax")
+                                        .build();
 
-                    LoginResponse loginResponse = LoginResponse.builder()
-                            .accessToken(accessToken)
-                            .build();
+                                LoginResponse loginResponse = LoginResponse.builder()
+                                        .accessToken(accessToken)
+                                        .build();
 
-                    return ResponseEntity.ok()
-                            .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                            .body(new ApiResponse<>("Login successful", loginResponse));
-                })
+                                return ResponseEntity.ok()
+                                        .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                                        .body(new ApiResponse<>("Login successful", loginResponse));
+                            })
+                )
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(error.getMessage(), null))));
     }
@@ -98,6 +104,7 @@ public class AuthController {
      */
     @PostMapping("/activate/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> activateUser(
+            @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
         return authService.activateUser(userId)
                 .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("User activated successfully", true))))
@@ -109,6 +116,7 @@ public class AuthController {
      */
     @PutMapping("/password/{userId}")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> changePassword(
+            @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(userId, request.getOldPassword(), request.getNewPassword())

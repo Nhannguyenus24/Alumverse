@@ -1,0 +1,28 @@
+package com.service.backend.mentorship.dao;
+
+import com.service.backend.mentorship.domain.entity.MentorAvailability;
+import org.springframework.data.r2dbc.repository.Modifying;
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
+
+@Repository
+public interface MentorAvailabilityR2dbcRepository extends ReactiveCrudRepository<MentorAvailability, Integer> {
+
+    @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId ORDER BY start_time ASC")
+    Flux<MentorAvailability> findByMentorMemberId(Integer mentorMemberId);
+
+    @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND status = 'Available' AND start_time > :now ORDER BY start_time ASC")
+    Flux<MentorAvailability> findAvailableSlots(Integer mentorMemberId, LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE mentor_availabilities SET status = :status WHERE id = :id")
+    Mono<Integer> updateStatus(Integer id, String status);
+
+    @Query("DELETE FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND id = :id")
+    Mono<Void> deleteByMentorMemberIdAndId(Integer mentorMemberId, Integer id);
+}

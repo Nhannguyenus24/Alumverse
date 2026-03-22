@@ -1,60 +1,80 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { Box, Typography, Menu, MenuItem } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
+import { useState } from "react";
+import { Link } from "react-router";
+import {
+  Box,
+  Typography,
+  Menu,
+  MenuItem,
+  Divider,
+  Avatar,
+} from "@mui/material";
+import PersonIcon from "@mui/icons-material/Person";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import { useAuth } from "../hooks/useAuth";
 
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const { logout } = useAuth();
 
-  const handleOpen = (e) => {
-    e.stopPropagation();
-    setAnchorEl(e.currentTarget);
+  const handleOpen = (event) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
   };
   const handleClose = () => setAnchorEl(null);
 
+  const handleLogout = async () => {
+    handleClose();
+    await logout();
+  };
+
   const avatarSx = {
-    borderRadius: '50%',
-    bgcolor: 'primary.main',
-    color: 'primary.contrastText',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: "50%",
+    bgcolor: "primary.main",
+    color: "primary.contrastText",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   return (
     <>
       <Box
         sx={{
-          display: 'flex',
-          alignItems: 'center',
+          display: "flex",
+          alignItems: "center",
           gap: 1,
           ml: 0.5,
-          cursor: 'pointer',
+          cursor: "pointer",
         }}
         onClick={handleOpen}
         aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        aria-controls={open ? 'account-menu' : undefined}
+        aria-expanded={open ? "true" : undefined}
+        aria-controls={open ? "account-menu" : undefined}
       >
         <Box sx={{ width: 36, height: 36, ...avatarSx }}>
           {avatarUrl ? (
-            <Box
-              component="img"
+            <Avatar
               src={avatarUrl}
-              alt=""
-              sx={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+              alt={displayName}
+              sx={{ width: "100%", height: "100%" }}
             />
           ) : (
             <PersonIcon sx={{ fontSize: 22 }} />
           )}
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+          }}
+        >
           <Typography
             variant="body2"
             fontWeight={600}
             sx={{
-              color: contrastMode ? 'primary.contrastText' : 'text.primary',
+              color: contrastMode ? "primary.contrastText" : "text.primary",
               lineHeight: 1.25,
             }}
           >
@@ -63,7 +83,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           <Typography
             variant="caption"
             sx={{
-              color: contrastMode ? 'primary.contrastText' : 'primary.main',
+              color: contrastMode ? "primary.contrastText" : "primary.main",
               lineHeight: 1.25,
             }}
           >
@@ -77,65 +97,93 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
         slotProps={{
           paper: {
             sx: {
               mt: 1.5,
-              minWidth: 240,
-              backgroundColor: 'grey.900',
-              color: '#fff',
-              borderRadius: 1,
-              boxShadow: 8,
-              '& .MuiMenuItem-root': {
+              minWidth: 260,
+              bgcolor: "background.paper",
+              color: "text.primary",
+              borderRadius: 2,
+              overflow: "hidden",
+              "& .MuiMenuItem-root": {
                 py: 1.25,
+                px: 1.75,
+                gap: 1.25,
               },
             },
           },
         }}
-        MenuListProps={{ disablePadding: true }}
+        MenuListProps={{
+          disablePadding: true,
+          sx: { py: 0.5 },
+        }}
       >
-        <Box sx={{ px: 2, py: 1.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box sx={{ width: 40, height: 40, flexShrink: 0, ...avatarSx }}>
-            {avatarUrl ? (
-              <Box
-                component="img"
-                src={avatarUrl}
-                alt=""
-                sx={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-              />
-            ) : (
-              <PersonIcon sx={{ fontSize: 24 }} />
-            )}
-          </Box>
-          <Box>
-            <Typography variant="body1" fontWeight={600} sx={{ color: 'grey.100' }}>
+        <Box
+          sx={{
+            px: 2,
+            pt: 1.5,
+            pb: 1.25,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+          }}
+        >
+          <Avatar
+            src={avatarUrl || undefined}
+            sx={{ ...avatarSx, width: 40, height: 40 }}
+          >
+            {!avatarUrl && <PersonIcon sx={{ fontSize: 22 }} />}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              noWrap
+              sx={{ lineHeight: 1.3, letterSpacing: 0.1 }}
+            >
               {displayName}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'primary.main' }}>
-              {displayRole}
-            </Typography>
+            {displayRole && (
+              <Typography
+                variant="caption"
+                sx={{ opacity: 0.85, display: "block", mt: 0.25 }}
+                noWrap
+              >
+                {displayRole}
+              </Typography>
+            )}
           </Box>
         </Box>
+
+        <Divider sx={{ borderColor: "divider", mx: 1.5 }} />
+
         <MenuItem
           component={Link}
           to="/dashboard"
           onClick={handleClose}
           sx={{
-            borderTop: 1,
-            borderColor: 'grey.700',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            color: 'grey.200',
-            '&:hover': { backgroundColor: 'grey.800' },
+            borderTop: "none",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          <Box sx={{ width: 32, height: 32, flexShrink: 0, ...avatarSx }}>
-            <PersonIcon sx={{ fontSize: 18 }} />
-          </Box>
-          <Typography variant="body2">Profile</Typography>
+          <PersonIcon fontSize="small" />
+          <Typography variant="body2">Hồ sơ của tôi</Typography>
+        </MenuItem>
+
+        <Divider sx={{ borderColor: "divider", mx: 1.5, my: 0.5 }} />
+
+        <MenuItem
+          onClick={handleLogout}
+          sx={{
+            color: "error.main",
+          }}
+        >
+          <LogoutRoundedIcon fontSize="small" />
+          <Typography variant="body2">Đăng xuất</Typography>
         </MenuItem>
       </Menu>
     </>

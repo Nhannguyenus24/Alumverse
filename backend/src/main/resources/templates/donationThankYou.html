@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Cảm Ơn Về Danh Nghĩa Quyên Góp - Hệ Thống Alumni HCMUS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: white;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0 0 0;
+        }
+
+        .content {
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .greeting {
+            background-color: #f0f7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .greeting p {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .donation-box {
+            background-color: #f9f9f9;
+            border: 2px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+
+        .donation-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .donation-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            border-top: 2px solid #667eea;
+            padding-top: 12px;
+            color: #667eea;
+        }
+
+        .donation-label {
+            color: #666;
+        }
+
+        .donation-value {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .impact-section {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+
+        .impact-section strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .recognition {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #e65100;
+        }
+
+        .action-button {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .action-button a {
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .action-button a:hover {
+            background-color: #5568d3;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .footer p {
+            margin: 5px 0;
+        }
+
+        .contact {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Cảm Ơn Về Danh Nghĩa Quyên Góp</h1>
+            <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
+        </div>
+
+        <div class="content">
+            <div class="greeting">
+                <p><strong>Kính chào <span th:text="${donorName}">Quý Khách</span>!</strong></p>
+                <p>Chúng tôi xin gửi lời cảm ơn chân thành nhất vì sự ủng hộ và đóng góp chung tay của bạn cho sự phát triển của Trường Đại học Khoa học Tự nhiên - HCMUS.</p>
+            </div>
+
+            <div class="donation-box">
+                <div class="donation-item">
+                    <span class="donation-label">Ngày quyên góp:</span>
+                    <span class="donation-value" th:text="${donationDate}">20/03/2026</span>
+                </div>
+                <div class="donation-item">
+                    <span class="donation-label">Số tiền quyên góp:</span>
+                    <span class="donation-value" th:text="${donationAmount}">1,000,000 VND</span>
+                </div>
+                <div class="donation-item">
+                    <span class="donation-label">Mục đích quyên góp:</span>
+                    <span class="donation-value" th:text="${donationPurpose}">Hỗ trợ sinh viên có hoàn cảnh khó khăn</span>
+                </div>
+                <div class="donation-item">
+                    <span class="donation-label">Mã tham chiếu:</span>
+                    <span class="donation-value" th:text="${referenceNumber}">SKS-2026-001234</span>
+                </div>
+            </div>
+
+            <div class="impact-section">
+                <strong>💡 Những tác động của sự quyên góp của bạn:</strong>
+                Đóng góp của bạn sẽ giúp chúng tôi:
+                <ul style="margin: 8px 0; padding-left: 20px;">
+                    <li>Hỗ trợ sinh viên xuất sắc nhưng có hoàn cảnh khó khăn</li>
+                    <li>Phát triển cơ sở vật chất và thiết bị giáo dục</li>
+                    <li>Tố chức các chương trình giao lưu, hội thảo</li>
+                    <li>Nâng cao chất lượng giáo dục và đào tạo</li>
+                </ul>
+            </div>
+
+            <div class="recognition">
+                <strong>🌟 Sự công nhận:</strong> Tên quý khách sẽ được ghi danh trong sổ nhân sĩ ủng hộ giáo dục và có cơ hội xác nhận công khai nếu muốn.
+            </div>
+
+            <div class="action-button">
+                <a href="javascript:void(0);" th:href="@{/alumni/donation-history}">Xem Lịch Sử Quyên Góp</a>
+            </div>
+
+            <div class="contact">
+                <strong>Cần hỗ trợ?</strong> Vui lòng liên hệ: support@alumni.hcmus.edu.vn hoặc gọi 1900-123-456
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
+            <p>Email này được gửi tự động. Vui lòng không trả lời trực tiếp.</p>
+        </div>
+    </div>
+</body>
+</html>
