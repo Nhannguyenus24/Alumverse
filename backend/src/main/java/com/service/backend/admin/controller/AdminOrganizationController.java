@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.service.backend.admin.dto.OrganizationPageResponse;
-import com.service.backend.admin.entities.Organization;
+import com.service.backend.admin.entity.Organization;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminOrganizationService;
 import com.service.backend.shared.dto.ApiResponse;
 
@@ -37,7 +37,7 @@ public class AdminOrganizationController {
      * Get all organizations with pagination
      */
     @GetMapping
-    public Mono<ResponseEntity<ApiResponse<OrganizationPageResponse>>> getAllOrganizations(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Organization>>>> getAllOrganizations(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
         return organizationService.getAllOrganizations(page, size)

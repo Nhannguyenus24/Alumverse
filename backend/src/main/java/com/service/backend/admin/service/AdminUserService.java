@@ -4,9 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.service.backend.admin.dto.PagedResponse;
 import com.service.backend.admin.dto.UserResponse;
-import com.service.backend.admin.repository.AdminUserRepository;
+import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.auth.entity.User;
 
 import reactor.core.publisher.Flux;
@@ -25,7 +25,7 @@ public class AdminUserService {
     /**
      * Get users in organization with pagination
      */
-    public Mono<PagedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
+    public Mono<PaginatedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
         logger.info("Fetching users for organization: {} with page: {}, size: {}", organizationId, page, size);
         
         int offset = page * size;
@@ -37,18 +37,7 @@ public class AdminUserService {
         Mono<Long> totalCount = adminUserRepository.countUsersByOrganization(organizationId);
         
         return Mono.zip(usersFlux.collectList(), totalCount)
-                .map(tuple -> {
-                    int totalPages = (int) Math.ceil((double) tuple.getT2() / size);
-                    return PagedResponse.<UserResponse>builder()
-                            .items(tuple.getT1())
-                            .totalItems(tuple.getT2())
-                            .totalPages(totalPages)
-                            .currentPage(page)
-                            .pageSize(size)
-                            .hasNext(page < totalPages - 1)
-                            .hasPrevious(page > 0)
-                            .build();
-                })
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(response -> logger.info("Successfully fetched {} users from organization {}", 
                         response.getItems().size(), organizationId))
                 .doOnError(error -> logger.error("Error fetching users for organization: {}", organizationId, error));
@@ -57,7 +46,7 @@ public class AdminUserService {
     /**
      * Get all users with pagination
      */
-    public Mono<PagedResponse<UserResponse>> getAllUsers(int page, int size) {
+    public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size) {
         logger.info("Fetching all users with page: {}, size: {}", page, size);
         
         int offset = page * size;
@@ -69,18 +58,7 @@ public class AdminUserService {
         Mono<Long> totalCount = adminUserRepository.countAllUsers();
         
         return Mono.zip(usersFlux.collectList(), totalCount)
-                .map(tuple -> {
-                    int totalPages = (int) Math.ceil((double) tuple.getT2() / size);
-                    return PagedResponse.<UserResponse>builder()
-                            .items(tuple.getT1())
-                            .totalItems(tuple.getT2())
-                            .totalPages(totalPages)
-                            .currentPage(page)
-                            .pageSize(size)
-                            .hasNext(page < totalPages - 1)
-                            .hasPrevious(page > 0)
-                            .build();
-                })
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(response -> logger.info("Successfully fetched {} users", response.getItems().size()))
                 .doOnError(error -> logger.error("Error fetching all users", error));
     }

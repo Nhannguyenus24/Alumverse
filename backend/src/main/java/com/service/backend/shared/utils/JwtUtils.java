@@ -1,7 +1,7 @@
 package com.service.backend.shared.utils;
 
-import java.text.ParseException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -15,91 +15,63 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
+import java.text.ParseException;
+
 public class JwtUtils {
 
-    private final String jwtSecret;
+    private static final JWSHeader JWT_HEADER = new JWSHeader(JWSAlgorithm.HS256);
+
     private final long accessTokenExpirationMs;
     private final long refreshTokenExpirationMs;
+    private final JWSSigner signer;
+    private final JWSVerifier verifier;
 
     public JwtUtils(String jwtSecret, long accessTokenExpirationMs, long refreshTokenExpirationMs) {
-        this.jwtSecret = jwtSecret;
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        try {
+            byte[] secretKeyBytes = jwtSecret.getBytes();
+            this.signer = new MACSigner(secretKeyBytes);
+            this.verifier = new MACVerifier(secretKeyBytes);
+        } catch (JOSEException e) {
+            throw new IllegalStateException("Failed to initialize JWT signer/verifier", e);
+        }
     }
 
     public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, List<Integer> organizationId) {
-        try {
-            Instant now = Instant.now();
-            Instant expiryDate = now.plusMillis(accessTokenExpirationMs);
-
-            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                    .subject(String.valueOf(userId))
-                    .claim("email", email)
-                    .claim("role", role)
-                    .claim("username", userName)
-                    .claim("avatar", avatarUrl)
-                    .claim("organizationId", organizationId)
-                    .issueTime(Date.from(now))
-                    .expirationTime(Date.from(expiryDate))
-                    .build();
-
-            SignedJWT signedJWT = new SignedJWT(
-                    new JWSHeader(JWSAlgorithm.HS256),
-                    claimsSet
-            );
-
-            JWSSigner signer = new MACSigner(jwtSecret.getBytes());
-            signedJWT.sign(signer);
-
-            return signedJWT.serialize();
-        } catch (JOSEException e) {
-            throw new RuntimeException("Error generating access token", e);
-        }
+        Instant now = Instant.now();
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject(String.valueOf(userId))
+                .claim("email", email)
+                .claim("role", role)
+                .claim("username", userName)
+                .claim("avatar", avatarUrl)
+                .claim("organizationId", organizationId)
+                .issueTime(Date.from(now))
+                .expirationTime(Date.from(now.plusMillis(accessTokenExpirationMs)))
+                .build();
+        return signAndSerialize(claimsSet);
     }
 
-    /**
-     * Generate refresh token (7 days)
-     */
     public String generateRefreshToken(Integer userId) {
-        try {
-            Instant now = Instant.now();
-            Instant expiryDate = now.plusMillis(refreshTokenExpirationMs);
-
-            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                    .subject(String.valueOf(userId))
-                    .issueTime(Date.from(now))
-                    .expirationTime(Date.from(expiryDate))
-                    .build();
-
-            SignedJWT signedJWT = new SignedJWT(
-                    new JWSHeader(JWSAlgorithm.HS256),
-                    claimsSet
-            );
-
-            JWSSigner signer = new MACSigner(jwtSecret.getBytes());
-            signedJWT.sign(signer);
-
-            return signedJWT.serialize();
-        } catch (JOSEException e) {
-            throw new RuntimeException("Error generating refresh token", e);
-        }
+        Instant now = Instant.now();
+        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                .subject(String.valueOf(userId))
+                .issueTime(Date.from(now))
+                .expirationTime(Date.from(now.plusMillis(refreshTokenExpirationMs)))
+                .build();
+        return signAndSerialize(claimsSet);
     }
 
-    /**
-     * Validate and parse JWT token
-     */
     public JWTClaimsSet validateToken(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
-            JWSVerifier verifier = new MACVerifier(jwtSecret.getBytes());
 
             if (!signedJWT.verify(verifier)) {
                 throw new RuntimeException("Invalid token signature");
             }
 
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
-
-            // Check expiration
             Date expirationTime = claims.getExpirationTime();
             if (expirationTime != null && expirationTime.before(new Date())) {
                 throw new RuntimeException("Token has expired");
@@ -111,59 +83,36 @@ public class JwtUtils {
         }
     }
 
-    /**
-     * Get user ID from token
-     */
     public Integer getUserIdFromToken(String token) {
-        JWTClaimsSet claims = validateToken(token);
-        return Integer.valueOf(claims.getSubject());
+        return Integer.valueOf(validateToken(token).getSubject());
     }
 
-    /**
-     * Get email from token
-     */
     public String getEmailFromToken(String token) {
-        JWTClaimsSet claims = validateToken(token);
-        return (String) claims.getClaim("email");
+        return (String) validateToken(token).getClaim("email");
     }
 
-    /**
-     * Get role from token
-     */
     public String getRoleFromToken(String token) {
-        JWTClaimsSet claims = validateToken(token);
-        return (String) claims.getClaim("role");
+        return (String) validateToken(token).getClaim("role");
     }
 
-    /**
-     * Check if token is expired
-     */
-    public boolean isTokenExpired(String token) {
-        try {
-            JWTClaimsSet claims = validateToken(token);
-            Date expirationTime = claims.getExpirationTime();
-            return expirationTime != null && expirationTime.before(new Date());
-        } catch (Exception e) {
-            return true;
+    @SuppressWarnings("unchecked")
+    public List<Integer> getOrganizationIdsFromToken(String token) {
+        Object orgIds = validateToken(token).getClaim("organizationId");
+        if (orgIds instanceof List<?>) {
+            return ((List<Number>) orgIds).stream()
+                    .map(Number::intValue)
+                    .toList();
         }
+        return Collections.emptyList();
     }
 
-    /**
-     * Get organization ID from token (returns null if not present)
-     */
-    public Integer getOrganizationIdFromToken(String token) {
+    private String signAndSerialize(JWTClaimsSet claimsSet) {
         try {
-            JWTClaimsSet claims = validateToken(token);
-            Object orgId = claims.getClaim("organizationId");
-            if (orgId == null) {
-                return null;
-            }
-            if (orgId instanceof Number) {
-                return ((Number) orgId).intValue();
-            }
-            return Integer.valueOf(orgId.toString());
-        } catch (Exception e) {
-            return null;
+            SignedJWT signedJWT = new SignedJWT(JWT_HEADER, claimsSet);
+            signedJWT.sign(signer);
+            return signedJWT.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error signing JWT token", e);
         }
     }
 }

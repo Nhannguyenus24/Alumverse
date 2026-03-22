@@ -18,21 +18,20 @@ import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
-import com.service.backend.forum.dto.ForumPostPageResponse;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
-import com.service.backend.forum.dto.ForumTopicPageResponse;
-import com.service.backend.shared.dto.PageInfo;
+import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.entities.ForumCategory;
 import com.service.backend.forum.entities.ForumPost;
 import com.service.backend.forum.entities.ForumPostReaction;
 import com.service.backend.forum.entities.ForumTopic;
-import com.service.backend.forum.repository.ForumCategoryRepository;
-import com.service.backend.forum.repository.ForumPostRepository;
-import com.service.backend.forum.repository.ForumPostReactionRepository;
-import com.service.backend.forum.repository.ForumTopicRepository;
+import com.service.backend.forum.dao.ForumCategoryRepository;
+import com.service.backend.forum.dao.ForumPostRepository;
+import com.service.backend.forum.dao.ForumPostReactionRepository;
+import com.service.backend.forum.dao.ForumTopicRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -54,19 +53,6 @@ public class ForumService {
         this.forumTopicRepository = forumTopicRepository;
         this.forumPostRepository = forumPostRepository;
         this.forumPostReactionRepository = forumPostReactionRepository;
-    }
-
-    // Helper method to calculate PageInfo
-    private PageInfo calculatePageInfo(int currentPage, int pageSize, long totalItems) {
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        return PageInfo.builder()
-                .currentPage(currentPage)
-                .pageSize(pageSize)
-                .totalPage(totalPages)
-                .totalItem((int) totalItems)
-                .hasNext(currentPage < totalPages - 1)
-                .hasPrevious(currentPage > 0)
-                .build();
     }
 
     // Category methods
@@ -99,7 +85,7 @@ public class ForumService {
         return forumCategoryRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum category not found with ID: {}", id);
-                    return Mono.error(new RuntimeException("Forum category not found with ID: " + id));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(category -> {
                     if (request.getName() != null) {
@@ -138,7 +124,7 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topic by title: {}", title, error));
     }
 
-    public Mono<ForumTopicPageResponse> findTopicsByCategoryId(Integer categoryId, int page, int size) {
+    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, int page, int size) {
         log.info("Finding forum topics for category ID: {}, page: {}, size: {}", categoryId, page, size);
         long offset = (long) page * size;
         
@@ -146,15 +132,7 @@ public class ForumService {
                 .map(this::convertToTopicDTO)
                 .collectList()
                 .zipWith(forumTopicRepository.countByCategoryId(categoryId))
-                .map(tuple -> {
-                    var topics = tuple.getT1();
-                    var totalItems = tuple.getT2();
-                    var pageInfo = calculatePageInfo(page, size, totalItems);
-                    return ForumTopicPageResponse.builder()
-                            .items(topics)
-                            .pageInfo(pageInfo)
-                            .build();
-                })
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(result -> log.info("Successfully retrieved forum topics for category ID: {}", categoryId))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
@@ -166,7 +144,7 @@ public class ForumService {
         return forumCategoryRepository.findById(request.getCategoryId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Category not found with ID: {}", request.getCategoryId());
-                    return Mono.error(new RuntimeException("Category not found with ID: " + request.getCategoryId()));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(category -> {
                     ForumTopic topic = ForumTopic.builder()
@@ -191,7 +169,7 @@ public class ForumService {
         return forumTopicRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum topic not found with ID: {}", id);
-                    return Mono.error(new RuntimeException("Forum topic not found with ID: " + id));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(topic -> {
                     if (request.getTitle() != null) {
@@ -216,7 +194,7 @@ public class ForumService {
     }
 
     // Post methods
-    public Mono<ForumPostPageResponse> findPostsByTopicId(Integer topicId, int page, int size, Integer memberId) {
+    public Mono<PaginatedResponse<ForumPostDTO>> findPostsByTopicId(Integer topicId, int page, int size, Integer memberId) {
         log.info("Finding forum posts for topic ID: {}, page: {}, size: {}, memberId: {}", topicId, page, size, memberId);
         
         // Fire and forget: increment view count for topic
@@ -248,16 +226,11 @@ public class ForumService {
                     var totalItems = tuple.getT2();
                     var likedPostIds = tuple.getT3();
                     
-                    // Convert posts to DTOs using pre-fetched liked post IDs
                     var postDTOs = posts.stream()
                             .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
                             .collect(Collectors.toList());
                     
-                    var pageInfo = calculatePageInfo(page, size, totalItems);
-                    return ForumPostPageResponse.builder()
-                            .items(postDTOs)
-                            .pageInfo(pageInfo)
-                            .build();
+                    return PaginatedResponse.of(postDTOs, totalItems, page, size);
                 })
                 .doOnSuccess(result -> log.info("Successfully retrieved forum posts for topic ID: {}", topicId))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
@@ -269,14 +242,14 @@ public class ForumService {
         // Validate topicId is valid (not 0 or negative)
         if (request.getTopicId() == null || request.getTopicId() <= 0) {
             log.warn("Invalid topic ID: {}", request.getTopicId());
-            return Mono.error(new RuntimeException("Invalid topic ID: must be greater than 0"));
+            return Mono.error(new RuntimeException(ErrorCode.INVALID_TOPIC_ID.getMessage()));
         }
         
         // Verify topic exists before creating post
         return forumTopicRepository.findById(request.getTopicId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Topic not found with ID: {}", request.getTopicId());
-                    return Mono.error(new RuntimeException("Topic not found with ID: " + request.getTopicId()));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(topic -> {
                     ForumPost post = ForumPost.builder()
@@ -350,7 +323,7 @@ public class ForumService {
         return forumPostRepository.findById(request.getPostId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Post not found with ID: {}", request.getPostId());
-                    return Mono.error(new RuntimeException("Post not found with ID: " + request.getPostId()));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(post -> {
                     // Check if reaction already exists
