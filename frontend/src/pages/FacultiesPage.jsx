@@ -110,7 +110,6 @@ const FacultiesPage = () => {
         maxWidth={false}
         disableGutters
         sx={{
-          pt: { xs: "56px", md: "64px" },
           px: 0,
           display: "flex",
           flexDirection: "column",

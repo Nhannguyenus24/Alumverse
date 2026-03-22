@@ -48,11 +48,11 @@ const NAV_ITEMS = [
     label: 'Phát triển',
     children: [
       { label: 'Học bổng', href: '/development/scholarships' },
-      { label: 'Hợp tác', href: '/development/partnership' },
+      { label: 'Cố vấn', href: '/development/mentorship/chat' },
     ],
   },
   { label: 'Diễn đàn', href: '/forum' },
-  { label: 'Quyên góp', href: '/donate' },
+  { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
 ];
 
