@@ -84,6 +84,16 @@ const CreateDonationPage = Loadable(
 );
 const MentorshipPage = Loadable(lazy(() => import('../pages/MentorshipPage')));
 
+const MentorshipPage = Loadable(
+  lazy(() => import('../pages/MentorshipPage'))
+);
+const MentorshipSearchPage = Loadable(
+  lazy(() => import('../pages/MentorshipSearchPage'))
+);
+const MentorshipProfilePage = Loadable(
+  lazy(() => import('../pages/MentorshipProfilePage'))
+);
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -156,6 +166,40 @@ export const router = createBrowserRouter([
             element: <HonorsRequestAchievementsPage />,
           },
         ],
+      },
+      {
+        path: 'chances',
+        children: [
+          {
+            index: true,
+          },
+          {
+            path: 'mentorship',
+            children: [
+              {
+                index: true,
+                element: <MentorshipPage />,
+              },
+              {
+                path: 'search',
+                element: <MentorshipSearchPage />,
+              },
+              {
+                path: 'dashboard'
+              },
+              {
+                path: 'profile',
+                element: <MentorshipProfilePage />,
+              },
+              {
+                path: 'calendar'
+              },
+              {
+                path: 'appointment'
+              },
+            ],
+          }
+        ]
       },
       {
         path: 'post',
