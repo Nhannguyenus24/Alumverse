@@ -82,6 +82,7 @@ const DetailDonationPage = Loadable(
 const CreateDonationPage = Loadable(
   lazy(() => import('../pages/CreateDonationPage'))
 );
+const MentorshipPage = Loadable(lazy(() => import('../pages/MentorshipPage')));
 
 const MentorshipPage = Loadable(
   lazy(() => import('../pages/MentorshipPage'))
@@ -230,6 +231,24 @@ export const router = createBrowserRouter([
           {
             path: 'information-technology',
             element: <FacultyCNTTPage />,
+          },
+        ],
+      },
+      {
+        path: 'development',
+        children: [
+          // {
+          //   path: 'scholarships',
+          //   element: <ScholarshipsPage />,
+          // },
+          {
+            path: 'mentorship',
+            children: [
+              {
+                path: 'chat',
+                element: <MentorshipPage />,
+              },
+            ],
           },
         ],
       },

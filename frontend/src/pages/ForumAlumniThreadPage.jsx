@@ -623,7 +623,6 @@ const ForumAlumniThreadPage = () => {
         maxWidth={false}
         disableGutters
         sx={{
-          pt: { xs: '56px', md: '64px' },
           pb: { xs: 4, md: 6 },
           backgroundColor: '#F3F6FB',
           overflowX: 'hidden',
