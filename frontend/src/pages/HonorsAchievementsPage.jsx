@@ -111,7 +111,6 @@ const HonorsPage = () => {
         maxWidth={false}
         disableGutters
         sx={{
-          pt: { xs: '56px', md: '64px' },
           pb: 6,
           backgroundColor: '#F3F6FB',
         }}
