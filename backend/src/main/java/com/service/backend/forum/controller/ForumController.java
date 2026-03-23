@@ -22,10 +22,9 @@ import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
-import com.service.backend.forum.dto.ForumPostPageResponse;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
-import com.service.backend.forum.dto.ForumTopicPageResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.service.ForumService;
@@ -112,7 +111,7 @@ public class ForumController {
      * Find forum topics by category id with pagination
      */
     @GetMapping("/topic")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicPageResponse>>> getTopicsByCategoryId(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumTopicDTO>>>> getTopicsByCategoryId(
             @Parameter(example = "2")
             @RequestParam Integer categoryId,
             @Parameter(example = "0")
@@ -164,7 +163,7 @@ public class ForumController {
      * Find forum posts by topic id with pagination
      */
     @GetMapping("/post")
-    public Mono<ResponseEntity<ApiResponse<ForumPostPageResponse>>> getPostsByTopicId(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> getPostsByTopicId(
             @Parameter(example = "10")
             @RequestParam @NotNull(message = "Topic ID is required") Integer topicId,
             @Parameter(example = "0")

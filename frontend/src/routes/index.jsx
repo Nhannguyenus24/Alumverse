@@ -13,85 +13,99 @@ const Loadable = (Component) => (props) =>
     </Suspense>
   );
 
-// Lazy load pages
-const HomePage = Loadable(lazy(() => import('../pages/HomePage')));
-const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
-const RegisterPage = Loadable(lazy(() => import('../pages/RegisterPage')));
-const SignupCodePage = Loadable(lazy(() => import('../pages/SignupCodePage')));
+// Public pages
+const HomePage = Loadable(lazy(() => import('../pages/public/HomePage')));
+const IntroducePage = Loadable(lazy(() => import('../pages/public/IntroducePage')));
+const ContactPage = Loadable(lazy(() => import('../pages/public/ContactPage')));
+const FacultiesPage = Loadable(lazy(() => import('../pages/public/FacultiesPage')));
+
+// Authentication pages
+const LoginPage = Loadable(lazy(() => import('../pages/authentication/LoginPage')));
+const RegisterPage = Loadable(lazy(() => import('../pages/authentication/RegisterPage')));
+const SignupCodePage = Loadable(lazy(() => import('../pages/authentication/SignupCodePage')));
 const ForgotPasswordPage = Loadable(
-  lazy(() => import('../pages/ForgotPasswordPage'))
+  lazy(() => import('../pages/authentication/ForgotPasswordPage'))
 );
 const ResetPasswordPage = Loadable(
-  lazy(() => import('../pages/ResetPasswordPage'))
+  lazy(() => import('../pages/authentication/ResetPasswordPage'))
 );
-const DashboardPage = Loadable(lazy(() => import('../pages/DashboardPage')));
-const NotFoundPage = Loadable(lazy(() => import('../pages/NotFoundPage')));
-const UnauthorizedPage = Loadable(
-  lazy(() => import('../pages/UnauthorizedPage'))
-);
-const ServerErrorPage = Loadable(
-  lazy(() => import('../pages/ServerErrorPage'))
-);
-const MaintenancePage = Loadable(
-  lazy(() => import('../pages/MaintenancePage'))
-);
-const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
-const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
-const FacultyCNTTPage = Loadable(lazy(() => import('../pages/FacultyCNTTPage')));
-const ForumPage = Loadable(lazy(() => import('../pages/ForumPage')));
+
+// Alumni pages
+const DashboardPage = Loadable(lazy(() => import('../pages/alumni/DashboardPage')));
+const FacultyCNTTPage = Loadable(lazy(() => import('../pages/alumni/FacultyCNTTPage')));
+const ForumPage = Loadable(lazy(() => import('../pages/alumni/ForumPage')));
 const ForumAlumniCareerPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniCareerPage'))
+  lazy(() => import('../pages/alumni/ForumAlumniCareerPage'))
 );
 const ForumAlumniThreadPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniThreadPage'))
+  lazy(() => import('../pages/alumni/ForumAlumniThreadPage'))
 );
 const ForumAlumniCreateTopicPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniCreateTopicPage'))
-);
-const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
-const HonorsPage = Loadable(
-  lazy(() => import('../pages/HonorsPage'))
-);
-const HonorsAlumniPage = Loadable(
-  lazy(() => import('../pages/HonorsAlumniPage'))
-);
-const HonorsAchievementsPage = Loadable(
-  lazy(() => import('../pages/HonorsAchievementsPage'))
-);
-const HonorsRequestAchievementsPage = Loadable(
-  lazy(() => import('../pages/HonorsRequestAchievementsPage'))
-);
-const PostArticlePage = Loadable(
-  lazy(() => import('../pages/PostArticlePage'))
+  lazy(() => import('../pages/alumni/ForumAlumniCreateTopicPage'))
 );
 const ArticlePage = Loadable(
-  lazy(() => import('../pages/ArticlePage'))
+  lazy(() => import('../pages/alumni/ArticlePage'))
 );
-const NotificationPage = Loadable(
-  lazy(() => import('../pages/NotificationPage'))
+
+// Admin pages
+const CreateDonationPage = Loadable(
+  lazy(() => import('../pages/admin/CreateDonationPage'))
 );
-const SettingPage = Loadable(
-  lazy(() => import('../pages/SettingPage'))
-);
+
+// Donation pages
 const DonationPage = Loadable(
-  lazy(() => import('../pages/DonationPage'))
+  lazy(() => import('../pages/donation/DonationPage'))
 );
 const DetailDonationPage = Loadable(
-  lazy(() => import('../pages/DetailDonationPage'))
+  lazy(() => import('../pages/alumni/DetailDonationPage'))
 );
-const CreateDonationPage = Loadable(
-  lazy(() => import('../pages/CreateDonationPage'))
-);
-const MentorshipPage = Loadable(lazy(() => import('../pages/MentorshipPage')));
 
+// Honors pages
+const HonorsPage = Loadable(
+  lazy(() => import('../pages/honors/HonorsPage'))
+);
+const HonorsAlumniPage = Loadable(
+  lazy(() => import('../pages/honors/HonorsAlumniPage'))
+);
+const HonorsAchievementsPage = Loadable(
+  lazy(() => import('../pages/honors/HonorsAchievementsPage'))
+);
+const HonorsRequestAchievementsPage = Loadable(
+  lazy(() => import('../pages/honors/HonorsRequestAchievementsPage'))
+);
+
+// Mentorship pages
 const MentorshipPage = Loadable(
-  lazy(() => import('../pages/MentorshipPage'))
+  lazy(() => import('../pages/mentorship/MentorshipPage'))
 );
 const MentorshipSearchPage = Loadable(
-  lazy(() => import('../pages/MentorshipSearchPage'))
+  lazy(() => import('../pages/mentorship/MentorshipSearchPage'))
 );
 const MentorshipProfilePage = Loadable(
-  lazy(() => import('../pages/MentorshipProfilePage'))
+  lazy(() => import('../pages/mentorship/MentorshipProfilePage'))
+);
+
+// User pages
+const PostArticlePage = Loadable(
+  lazy(() => import('../pages/user/PostArticlePage'))
+);
+const NotificationPage = Loadable(
+  lazy(() => import('../pages/user/NotificationPage'))
+);
+const SettingPage = Loadable(
+  lazy(() => import('../pages/user/SettingPage'))
+);
+
+// Error pages
+const NotFoundPage = Loadable(lazy(() => import('../pages/error/NotFoundPage')));
+const UnauthorizedPage = Loadable(
+  lazy(() => import('../pages/error/UnauthorizedPage'))
+);
+const ServerErrorPage = Loadable(
+  lazy(() => import('../pages/error/ServerErrorPage'))
+);
+const MaintenancePage = Loadable(
+  lazy(() => import('../pages/error/MaintenancePage'))
 );
 
 export const router = createBrowserRouter([
@@ -247,6 +261,7 @@ export const router = createBrowserRouter([
               {
                 path: 'chat',
                 element: <MentorshipPage />,
+                handle: { hideFooter: true },
               },
             ],
           },
