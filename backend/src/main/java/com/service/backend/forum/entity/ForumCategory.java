@@ -1,4 +1,4 @@
-package com.service.backend.forum.entities;
+package com.service.backend.forum.entity;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +20,9 @@ public class ForumCategory {
     
     @Id
     private Integer id;
+
+    @Column("parent_id")
+    private Integer parentId;
     
     @Column("organization_id")
     private Integer organizationId;
