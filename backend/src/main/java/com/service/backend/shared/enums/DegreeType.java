@@ -1,11 +1,11 @@
 package com.service.backend.shared.enums;
 
 public enum DegreeType {
-    high_school("high school"),
-    associate("associate"),
-    bachelor("bachelor"),
-    master("master"),
-    doctorate("doctorate");
+    HIGH_SCHOOL("HIGH SCHOOL"),
+    ASSOCIATE("ASSOCIATE"),
+    BACHELOR("BACHELOR"),
+    MASTER("MASTER"),
+    DOCTORATE("DOCTORATE");
 
     private final String value;
 
