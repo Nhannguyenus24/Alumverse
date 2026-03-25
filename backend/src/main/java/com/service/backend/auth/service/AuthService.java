@@ -21,6 +21,7 @@ import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 public class AuthService {
@@ -65,9 +66,10 @@ public class AuthService {
                     if (emailExists) return Mono.error(new RuntimeException(ErrorCode.EMAIL_ALREADY_REGISTERED.getMessage()));
                     if (usernameExists) return Mono.error(new RuntimeException(ErrorCode.USERNAME_ALREADY_EXISTS.getMessage()));
 
-                    String hashedPassword = passwordEncoder.encode(password);
-                    return authRepository.registerNewUser(email, userName, hashedPassword)
-                            .doOnSuccess(user -> logger.info("User registered successfully: {}", email));
+                    return Mono.fromCallable(() -> passwordEncoder.encode(password))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword ->
+                                    authRepository.registerNewUser(email, userName, hashedPassword));
                 })
                 .doOnError(e -> logger.error("Registration failed: {}", email, e));
     }
@@ -192,7 +194,8 @@ public class AuthService {
                     logger.info("OTP verified successfully for email: {}", email);
 
                     return authRepository.activateUserById(userId)
-                            .doOnSuccess(v -> logger.info("User account activated for email: {}", email));
+                            .doOnSuccess(v -> logger.info("User account activated for email: {}", email))
+                            .then(cacheUtils.evict(OTP_CACHE_KEY, email));
                 })
                 .doOnError(error -> logger.error("OTP verification failed for email: {}", email, error));
     }
