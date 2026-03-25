@@ -12,60 +12,39 @@ import {
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import SendIcon from '@mui/icons-material/Send';
 import MoodIcon from '@mui/icons-material/Mood';
-
-const MOCK_CHATS = [
-  {
-    id: 'c1',
-    name: 'Nguyễn Văn An',
-    lastMessage: 'Tin nhắn đã tới đây.',
-    timeLabel: '1m',
-    unread: true,
-    lastSeen: '1m',
-  },
-  {
-    id: 'c2',
-    name: 'Nguyễn Văn An',
-    lastMessage: 'Tin nhắn đã tới đây.',
-    timeLabel: '1m',
-    unread: false,
-    lastSeen: '2m',
-  },
-  {
-    id: 'c3',
-    name: 'Nguyễn Văn An',
-    lastMessage: 'Tin nhắn đã tới đây.',
-    timeLabel: '1m',
-    unread: true,
-    lastSeen: '5m',
-  },
-  {
-    id: 'c4',
-    name: 'Nguyễn Văn An',
-    lastMessage: 'Tin nhắn đã tới đây.',
-    timeLabel: '1m',
-    unread: false,
-    lastSeen: '1h',
-  },
-];
+import { useChatGroups } from '../../hooks/mentorship/useChatGroups';
 
 const LOREM =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
 
-const MOCK_MESSAGES_BY_CHAT = {
-  c1: [
-    { id: 'm1', fromPeer: true, body: LOREM },
-    { id: 'm2', fromPeer: true, body: LOREM },
-    { id: 'm3', fromPeer: false, body: 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.' },
-    { id: 'm4', fromPeer: false, body: 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore.' },
-    { id: 'm5', fromPeer: true, body: LOREM },
-  ],
-  c2: [
-    { id: 'm1', fromPeer: true, body: 'Xin chào, mình có thể hỗ trợ lịch mentorship tuần này.' },
-    { id: 'm2', fromPeer: false, body: 'Dạ em cảm ơn anh.' },
-  ],
-  c3: [{ id: 'm1', fromPeer: true, body: 'Bạn kiểm tra lại email nhé.' }],
-  c4: [{ id: 'm1', fromPeer: false, body: 'Ok ạ.' }],
-};
+function formatRelativeTime(iso) {
+  if (!iso) return '';
+  const date = new Date(iso);
+  const diffMs = Date.now() - date.getTime();
+  const diffM = Math.floor(diffMs / 60000);
+
+  if (!Number.isFinite(diffM) || diffM < 0) return '';
+  if (diffM <= 1) return '1m';
+  if (diffM < 60) return `${diffM}m`;
+
+  const diffH = Math.floor(diffM / 60);
+  if (diffH < 24) return `${diffH}h`;
+
+  const diffD = Math.floor(diffH / 24);
+  return `${diffD}d`;
+}
+
+function getChatDisplayName(chat) {
+  return chat?.title ?? `Private chat #${chat?.id ?? ''}`;
+}
+
+function getBootstrapMessages(chat) {
+  const name = getChatDisplayName(chat);
+  return [
+    { id: `boot-${chat?.id}-1`, fromPeer: true, body: `Xin chào! Đây là cuộc trò chuyện ${name}.` },
+    { id: `boot-${chat?.id}-2`, fromPeer: false, body: LOREM },
+  ];
+}
 
 function initials(name) {
   const parts = name.trim().split(/\s+/);
@@ -76,25 +55,46 @@ function initials(name) {
 
 const MentorshipChatPage = () => {
   const theme = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState(MOCK_CHATS[0].id);
+  const [selectedId, setSelectedId] = useState(null);
   const [draft, setDraft] = useState('');
-  const [messagesByChat, setMessagesByChat] = useState(() => ({
-    ...MOCK_MESSAGES_BY_CHAT,
-  }));
+  const [messagesByChat, setMessagesByChat] = useState({});
   const messagesEndRef = useRef(null);
 
+  const { chatGroups, isPending, isError, errorMessage } = useChatGroups('PRIVATE');
+
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 650);
-    return () => clearTimeout(t);
-  }, []);
+    if (isPending) return;
+    if (!chatGroups?.length) {
+      setSelectedId(null);
+      return;
+    }
+
+    setSelectedId((prev) => {
+      if (prev != null && chatGroups.some((g) => g.id === prev)) return prev;
+      return chatGroups[0]?.id ?? null;
+    });
+  }, [chatGroups, isPending]);
 
   const selectedChat = useMemo(
-    () => MOCK_CHATS.find((c) => c.id === selectedId) ?? MOCK_CHATS[0],
-    [selectedId]
+    () => chatGroups.find((c) => c.id === selectedId) ?? null,
+    [chatGroups, selectedId]
   );
 
-  const messages = messagesByChat[selectedId] ?? [];
+  const selectedChatName = selectedChat ? getChatDisplayName(selectedChat) : 'Private chat';
+  const selectedChatLastSeen = selectedChat
+    ? formatRelativeTime(selectedChat.updatedAt ?? selectedChat.createdAt)
+    : '';
+
+  const messages = selectedId == null ? [] : messagesByChat[selectedId] ?? [];
+
+  useEffect(() => {
+    if (selectedId == null || !selectedChat) return;
+
+    setMessagesByChat((prev) => {
+      if (prev[selectedId]) return prev;
+      return { ...prev, [selectedId]: getBootstrapMessages(selectedChat) };
+    });
+  }, [selectedId, selectedChat]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -103,6 +103,8 @@ const MentorshipChatPage = () => {
   const handleSend = () => {
     const text = draft.trim();
     if (!text) return;
+    if (selectedId == null) return;
+
     const msgId = `local-${Date.now()}`;
     setMessagesByChat((prev) => ({
       ...prev,
@@ -146,7 +148,7 @@ const MentorshipChatPage = () => {
             </Typography>
           </Box>
           <Box sx={{ flex: 1, overflow: 'auto' }}>
-            {loading
+            {isPending
               ? Array.from({ length: 5 }).map((_, i) => (
                   <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5 }}>
                     <Skeleton variant="circular" width={44} height={44} />
@@ -156,70 +158,84 @@ const MentorshipChatPage = () => {
                     </Box>
                   </Box>
                 ))
-              : MOCK_CHATS.map((chat) => {
-                  const active = chat.id === selectedId;
-                  return (
-                    <Box
-                      key={chat.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedId(chat.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setSelectedId(chat.id);
-                        }
-                      }}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        px: 2,
-                        py: 1.5,
-                        cursor: 'pointer',
-                        bgcolor: active ? theme.palette.action.selected : 'transparent',
-                        '&:hover': { bgcolor: theme.palette.action.hover },
-                      }}
-                    >
-                      <Avatar
+              : chatGroups.length === 0
+                ? (
+                    <Box sx={{ p: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {isError ? errorMessage ?? 'Unable to load chat groups' : 'No private chats found.'}
+                      </Typography>
+                    </Box>
+                  )
+                : chatGroups.map((chat) => {
+                    const active = chat.id === selectedId;
+                    const chatName = getChatDisplayName(chat);
+                    const timeLabel = formatRelativeTime(chat.updatedAt ?? chat.createdAt) || '—';
+                    return (
+                      <Box
+                        key={chat.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedId(chat.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedId(chat.id);
+                          }
+                        }}
                         sx={{
-                          width: 44,
-                          height: 44,
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          fontSize: '0.9375rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          px: 2,
+                          py: 1.5,
+                          cursor: 'pointer',
+                          bgcolor: active ? theme.palette.action.selected : 'transparent',
+                          '&:hover': { bgcolor: theme.palette.action.hover },
                         }}
                       >
-                        {initials(chat.name)}
-                      </Avatar>
-                      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.25 }}>
-                        <Typography variant="subtitle2" noWrap fontWeight={600}>
-                          {chat.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                          {chat.lastMessage}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          {chat.timeLabel}
-                        </Typography>
-                        {chat.unread ? (
-                          <Box
-                            sx={{
-                              width: 8,
-                              height: 8,
-                              borderRadius: '50%',
-                              bgcolor: 'error.main',
-                            }}
-                          />
-                        ) : (
+                        <Avatar
+                          sx={{
+                            width: 44,
+                            height: 44,
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            fontSize: '0.9375rem',
+                          }}
+                        >
+                          {initials(chatName)}
+                        </Avatar>
+                        <Box
+                          sx={{
+                            flex: 1,
+                            minWidth: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 0.25,
+                          }}
+                        >
+                          <Typography variant="subtitle2" noWrap fontWeight={600}>
+                            {chatName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {timeLabel === '—' ? 'No messages yet.' : `Updated ${timeLabel} ago`}
+                          </Typography>
+                        </Box>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end',
+                            gap: 0.5,
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            {timeLabel}
+                          </Typography>
                           <Box sx={{ width: 8, height: 8 }} />
-                        )}
+                        </Box>
                       </Box>
-                    </Box>
-                  );
-                })}
+                    );
+                  })}
           </Box>
         </Box>
 
@@ -233,7 +249,7 @@ const MentorshipChatPage = () => {
             bgcolor: bg,
           }}
         >
-          {loading ? (
+          {isPending ? (
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 2, gap: 2 }}>
               <Skeleton height={48} />
               <Skeleton variant="rounded" height={72} sx={{ alignSelf: 'flex-start', width: '72%' }} />
@@ -255,14 +271,14 @@ const MentorshipChatPage = () => {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
                   <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-                    {initials(selectedChat.name)}
+                        {initials(selectedChatName)}
                   </Avatar>
                   <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <Typography variant="subtitle1" fontWeight={600} noWrap>
-                      {selectedChat.name}
+                          {selectedChatName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {selectedChat.lastSeen}
+                          {selectedChatLastSeen}
                     </Typography>
                   </Box>
                 </Box>
@@ -303,7 +319,7 @@ const MentorshipChatPage = () => {
                           color: 'primary.contrastText',
                         }}
                       >
-                        {initials(selectedChat.name)}
+                        {initials(selectedChatName)}
                       </Avatar>
                     )}
                     <Box
