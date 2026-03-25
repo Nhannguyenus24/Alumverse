@@ -74,7 +74,7 @@ function initials(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const MentorshipChatView = () => {
+const MentorshipChatPage = () => {
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState(MOCK_CHATS[0].id);
@@ -384,4 +384,4 @@ const MentorshipChatView = () => {
   );
 };
 
-export default MentorshipChatView;
+export default MentorshipChatPage;
