@@ -1,8 +1,8 @@
 package com.service.backend.shared.enums;
 
 public enum SourceOfFund {
-    momo("momo"),
-    bank("bank");
+    MOMO("MOMO"),
+    BANK("BANK");
 
     private final String value;
 
