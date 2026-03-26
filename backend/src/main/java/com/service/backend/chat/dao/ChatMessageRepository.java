@@ -23,6 +23,20 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
     @Query("SELECT COUNT(*) FROM chat_messages WHERE group_id = :groupId")
     Mono<Long> countByGroupId(Long groupId);
 
+    @Query("""
+            INSERT INTO chat_messages (group_id, sender_member_id, content, message_type, metadata, created_at)
+            VALUES (:groupId, :senderMemberId, :content, :messageType, CAST(:metadata AS jsonb), :createdAt)
+            RETURNING id, group_id, sender_member_id, content, message_type, metadata::text AS metadata, created_at, edited_at, deleted_at
+            """)
+    Mono<ChatMessage> insertMessage(
+            Long groupId,
+            Long senderMemberId,
+            String content,
+            String messageType,
+            String metadata,
+            java.time.LocalDateTime createdAt
+    );
+
     @Modifying
     @Query("DELETE FROM chat_messages WHERE group_id = :groupId")
     Mono<Void> deleteByGroupId(Long groupId);
