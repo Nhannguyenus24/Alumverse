@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   Avatar,
@@ -14,9 +14,21 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import SendIcon from "@mui/icons-material/Send";
 import MoodIcon from "@mui/icons-material/Mood";
 import { useChatGroups } from "../../hooks/mentorship/useChatGroups";
+import useAuthStore from "../../stores/authStore";
+import { useChatWebSocket } from "../../hooks/mentorship/useChatWebSocket";
+import { useChatMessages } from "../../hooks/mentorship/useChatMessages";
 
-const LOREM =
-  "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+function toUiMessage(message, currentUserId) {
+  if (!message) return null;
+  return {
+    id: message.id,
+    fromPeer:
+      currentUserId != null ? message.senderMemberId !== currentUserId : true,
+    body: message.content ?? "",
+    createdAt: message.createdAt ?? null,
+    metadata: message.metadata ?? null,
+  };
+}
 
 function formatRelativeTime(iso) {
   if (!iso) return "";
@@ -39,18 +51,6 @@ function getChatDisplayName(chat) {
   return chat?.title ?? `Private chat #${chat?.id ?? ""}`;
 }
 
-function getBootstrapMessages(chat) {
-  const name = getChatDisplayName(chat);
-  return [
-    {
-      id: `boot-${chat?.id}-1`,
-      fromPeer: true,
-      body: `Xin chào! Đây là cuộc trò chuyện ${name}.`,
-    },
-    { id: `boot-${chat?.id}-2`, fromPeer: false, body: LOREM },
-  ];
-}
-
 function initials(name) {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 0) return "?";
@@ -62,9 +62,11 @@ const MentorshipChatPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { chatId } = useParams();
+  const { token, user } = useAuthStore();
   const [draft, setDraft] = useState("");
   const [messagesByChat, setMessagesByChat] = useState({});
   const messagesEndRef = useRef(null);
+  const prevChatIdRef = useRef(null);
 
   const { chatGroups, isPending, isError, errorMessage } =
     useChatGroups("PRIVATE");
@@ -99,14 +101,64 @@ const MentorshipChatPage = () => {
   const selectedChatLastSeen = selectedChat
     ? formatRelativeTime(selectedChat.updatedAt ?? selectedChat.createdAt)
     : "";
+  const {
+    messages: historyMessages,
+    isPending: isHistoryLoading,
+  } = useChatMessages(activeChatId, 0, 20);
+
+  const handleWsEvent = useCallback(
+    (event) => {
+      if (!event || typeof event !== "object") return;
+      if (event.type !== "MESSAGE_CREATED") return;
+      const payload = event.payload;
+      const groupId = payload?.groupId;
+      if (groupId == null) return;
+
+      const ui = toUiMessage(payload, user?.id);
+      if (!ui) return;
+
+      setMessagesByChat((prev) => {
+        const current = prev[groupId] ?? [];
+        if (current.some((m) => m.id === ui.id)) return prev;
+        return { ...prev, [groupId]: [...current, ui] };
+      });
+    },
+    [user?.id],
+  );
+
+  const {
+    status: wsStatus,
+    isOpen,
+    joinGroup,
+    leaveGroup,
+    sendMessage,
+  } = useChatWebSocket({ token, onEvent: handleWsEvent });
+
+  const mappedHistoryMessages = useMemo(
+    () =>
+      historyMessages
+        .map((m) => toUiMessage(m, user?.id))
+        .filter(Boolean),
+    [historyMessages, user?.id],
+  );
 
   const messages = useMemo(() => {
     if (activeChatId == null) return [];
-    const existing = messagesByChat[activeChatId];
-    if (existing) return existing;
-    if (!selectedChat) return [];
-    return getBootstrapMessages(selectedChat);
-  }, [activeChatId, messagesByChat, selectedChat]);
+    return messagesByChat[activeChatId] ?? mappedHistoryMessages;
+  }, [activeChatId, mappedHistoryMessages, messagesByChat]);
+
+
+  useEffect(() => {
+    if (activeChatId == null) return;
+    if (!isOpen) return;
+
+    const prevId = prevChatIdRef.current;
+    if (prevId != null && prevId !== activeChatId) {
+      leaveGroup(prevId);
+    }
+    joinGroup(activeChatId);
+    prevChatIdRef.current = activeChatId;
+  }, [activeChatId, isOpen, joinGroup, leaveGroup]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -116,17 +168,10 @@ const MentorshipChatPage = () => {
     const text = draft.trim();
     if (!text) return;
     if (activeChatId == null) return;
-
-    const msgId = `local-${Date.now()}`;
-    setMessagesByChat((prev) => ({
-      ...prev,
-      [activeChatId]: [
-        ...(prev[activeChatId] ??
-          (selectedChat ? getBootstrapMessages(selectedChat) : []) ??
-          []),
-        { id: msgId, fromPeer: false, body: text },
-      ],
-    }));
+    sendMessage({
+      groupId: activeChatId,
+      content: text,
+    });
     setDraft("");
   };
 
@@ -271,9 +316,9 @@ const MentorshipChatPage = () => {
                       gap: 0.5,
                     }}
                   >
-                    <Typography variant="caption" color="text.secondary">
-                      {timeLabel}
-                    </Typography>
+                    <IconButton size="small" aria-label="Chat options">
+                      <MoreHorizIcon fontSize="small" />
+                    </IconButton>
                     <Box sx={{ width: 8, height: 8 }} />
                   </Box>
                 </Box>
@@ -324,7 +369,7 @@ const MentorshipChatPage = () => {
           <>
             <Box
               sx={{
-                display: "flex",
+                display: { xs: "none", md: "flex" },
                 alignItems: "center",
                 justifyContent: "space-between",
                 px: 2,
@@ -357,6 +402,19 @@ const MentorshipChatPage = () => {
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {selectedChatLastSeen}
+                    {token ? (
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ ml: 1 }}
+                      >
+                        •{" "}
+                        {isOpen
+                          ? "Realtime: connected"
+                          : `Realtime: ${wsStatus}`}
+                      </Typography>
+                    ) : null}
                   </Typography>
                 </Box>
               </Box>
@@ -376,51 +434,76 @@ const MentorshipChatPage = () => {
                 gap: 1.5,
               }}
             >
-              {messages.map((msg) => (
-                <Box
-                  key={msg.id}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: msg.fromPeer ? "flex-start" : "flex-end",
-                    alignItems: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  {msg.fromPeer && (
-                    <Avatar
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        fontSize: "0.75rem",
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      {initials(selectedChatName)}
-                    </Avatar>
-                  )}
+              {isHistoryLoading ? (
+                <>
+                  <Skeleton
+                    variant="rounded"
+                    height={56}
+                    sx={{ alignSelf: "flex-start", width: "72%" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    height={48}
+                    sx={{ alignSelf: "flex-end", width: "64%" }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    height={56}
+                    sx={{ alignSelf: "flex-start", width: "72%" }}
+                  />
+                </>
+              ) : messages.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No messages yet.
+                </Typography>
+              ) : (
+                messages.map((msg) => (
                   <Box
+                    key={msg.id}
                     sx={{
-                      maxWidth: { xs: "85%", sm: "72%" },
-                      px: 1.25,
-                      py: 1,
-                      borderRadius: 2,
-                      bgcolor: msg.fromPeer ? grey200 : "primary.main",
-                      color: msg.fromPeer
-                        ? "text.primary"
-                        : "primary.contrastText",
+                      display: "flex",
+                      flexDirection: "row",
+                      justifyContent: msg.fromPeer ? "flex-start" : "flex-end",
+                      alignItems: "flex-end",
+                      gap: 1,
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{ wordBreak: "break-word" }}
+                    {msg.fromPeer && (
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          fontSize: "0.75rem",
+                          bgcolor: "primary.main",
+                          color: "primary.contrastText",
+                        }}
+                      >
+                        {initials(selectedChatName)}
+                      </Avatar>
+                    )}
+                    <Box
+                      sx={{
+                        maxWidth: { xs: "85%", sm: "72%" },
+                        px: 1.25,
+                        py: 1,
+                        borderRadius: 2,
+                        bgcolor: msg.fromPeer ? grey200 : "primary.main",
+                        color: msg.fromPeer
+                          ? "text.primary"
+                          : "primary.contrastText",
+                        opacity: msg.pending ? 0.7 : 1,
+                      }}
                     >
-                      {msg.body}
-                    </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{ wordBreak: "break-word" }}
+                      >
+                        {msg.body}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                ))
+              )}
               <div ref={messagesEndRef} />
             </Box>
 
@@ -474,6 +557,7 @@ const MentorshipChatPage = () => {
                   color="primary"
                   aria-label="Send"
                   onClick={handleSend}
+                  disabled={!token || activeChatId == null}
                   sx={{
                     bgcolor: "primary.main",
                     color: "primary.contrastText",
