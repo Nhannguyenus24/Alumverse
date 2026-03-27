@@ -149,16 +149,18 @@ public class ChatService {
                         return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Sender is not a member of this chat group"));
                     }
 
-                    ChatMessage message = ChatMessage.builder()
-                            .groupId(groupId)
-                            .senderMemberId(senderMemberId)
-                            .content(content)
-                            .messageType(messageType != null ? messageType : "TEXT")
-                            .metadata(metadata)
-                            .createdAt(LocalDateTime.now())
-                            .build();
+                    LocalDateTime now = LocalDateTime.now();
+                    String finalMessageType = messageType != null ? messageType : "TEXT";
+                    String finalMetadata = metadata != null ? metadata : "null";
 
-                    return chatMessageRepository.save(message);
+                    return chatMessageRepository.insertMessage(
+                            groupId,
+                            senderMemberId,
+                            content,
+                            finalMessageType,
+                            finalMetadata,
+                            now
+                    );
                 });
     }
 

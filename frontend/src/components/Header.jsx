@@ -48,7 +48,7 @@ const NAV_ITEMS = [
     label: 'Phát triển',
     children: [
       { label: 'Học bổng', href: '/development/scholarships' },
-      { label: 'Cố vấn', href: '/development/mentorship/chat' },
+      { label: 'Cố vấn', href: '/development/mentorship' },
     ],
   },
   { label: 'Diễn đàn', href: '/forum' },
