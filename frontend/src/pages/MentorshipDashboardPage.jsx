@@ -1,0 +1,323 @@
+import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router';
+import {
+  Box,
+  Button,
+  Container,
+  Stack,
+  Typography,
+  Card,
+  Avatar
+} from '@mui/material';
+
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import GroupsIcon from '@mui/icons-material/Groups';
+import SchoolIcon from '@mui/icons-material/School';
+import WorkIcon from '@mui/icons-material/Work';
+
+import Page from '../components/Page';
+import ForumFilterPanel from '../components/forum/ForumFilterPanel';
+import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+
+/* ================= DATA ================= */
+
+const SIDEBAR_TABS = [
+  { id: 'growth', label: 'Phát triển', icon: <TrendingUpIcon /> },
+  { id: 'mentorship', label: 'Cố vấn', icon: <GroupsIcon /> },
+  { id: 'learning', label: 'Cơ hội học tập', icon: <SchoolIcon /> },
+  { id: 'jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
+];
+
+const TOP_TABS = [
+  { label: 'Giới thiệu', path: '/chances/mentorship' },
+  { label: 'Tìm kiếm', path: '/chances/mentorship/search' },
+  { label: 'Dashboard', path: '/chances/mentorship/dashboard' },
+  { label: 'Profile', path: '/chances/mentorship/profile' },
+  { label: 'Lịch cá nhân', path: '/chances/mentorship/calendar' },
+  { label: 'Đăng ký', path: '/chances/mentorship/appointment' },
+];
+
+const STATS = [
+  { value: '4.9', label: 'đánh giá' },
+  { value: '128', label: 'buổi họp' },
+  { value: '3', label: 'cuộc họp trong tuần' },
+];
+
+/* ================= COMPONENT ================= */
+
+const MentorshipDashboardPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [selectedSidebar, setSelectedSidebar] = useState('mentorship');
+
+  return (
+    <Page title="Cố vấn">
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{
+          pt: { xs: '56px', md: '64px' },
+          pb: 6,
+          backgroundColor: '#F3F6FB',
+        }}
+      >
+        <Container maxWidth="xl" sx={{ pt: 4, px: { xs: 2, lg: 6 } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 3,
+            }}
+          >
+
+            {/* SIDEBAR */}
+            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
+              <ForumFilterPanel
+                filters={SIDEBAR_TABS}
+                selectedId={selectedSidebar}
+                onChange={setSelectedSidebar}
+              />
+
+              <ForumSponsoredCard
+                title="Sponsored"
+                imageSrc="/forum/metro_station.png"
+                imageAlt="HCMC Metro"
+                caption="HCMC Metro Opening"
+              />
+            </Stack>
+
+            {/* MAIN CONTENT */}
+            <Stack spacing={4} sx={{ flex: 1 }}>
+
+              {/* HEADER */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                }}
+              >
+                <Typography
+                  variant="h1"
+                  fontWeight={800}
+                  color="primary.main"
+                  sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+                >
+                  CỐ VẤN
+                </Typography>
+
+                <Button variant="contained">
+                  Trở thành cố vấn
+                </Button>
+              </Box>
+
+              {/* TOP TAB SWITCH */}
+              <Stack direction="row" spacing={1.5} flexWrap="wrap">
+                {TOP_TABS.map((tab) => {
+                  const isActive =
+                    tab.path === '/chances/mentorship'
+                      ? location.pathname === tab.path
+                      : location.pathname.startsWith(tab.path);
+
+                  return (
+                    <Button
+                      key={tab.label}
+                      variant={isActive ? 'contained' : 'outlined'}
+                      onClick={() => navigate(tab.path)}
+                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                    >
+                      {tab.label}
+                    </Button>
+                  );
+                })}
+              </Stack>
+
+              {/* DESCRIPTION */}
+              <Typography>
+                Chào mừng quay lại, Username! Hãy xem thành tích mentorship của bạn nhé!
+              </Typography>
+
+              {/* STATS */}
+              <Box
+                sx={{
+                  backgroundColor: 'primary.main',
+                  borderRadius: 1,
+                  px: { xs: 3, md: 6 },
+                  py: { xs: 3, md: 4 },
+                  display: 'grid',
+                  gridTemplateColumns: {
+                    xs: '1fr',
+                    sm: '1fr 1fr 1fr',
+                  },
+                  gap: 3,
+                  textAlign: 'center',
+                }}
+              >
+                {STATS.map((item, i) => (
+                  <Box key={i}>
+                    <Typography variant="h2" fontWeight={700} color="common.white">
+                      {item.value}
+                    </Typography>
+                    <Typography variant="body2" color="common.white">
+                      {item.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              {/* ================= YÊU CẦU ================= */}
+              <Box>
+                <Header title="Yêu cầu chờ duyệt" />
+
+                <Grid2x2>
+                  {[1, 2, 3, 4].map((i) => (
+                    <RequestCard key={i} />
+                  ))}
+                </Grid2x2>
+              </Box>
+
+              {/* ================= MENTEES ================= */}
+              <Box>
+                <Header title="Mentee của bạn" />
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 2 }}>
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <MenteeCard key={i} />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* ================= BOTTOM ================= */}
+              <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+
+                {/* LEFT: LỊCH */}
+                <Box sx={{ flex: 1 }}>
+                  <Header title="Lịch" />
+
+                  <Stack spacing={2}>
+                    {[1, 2, 3].map((i) => (
+                      <ScheduleCard key={i} />
+                    ))}
+                  </Stack>
+                </Box>
+
+                {/* RIGHT: ĐÁNH GIÁ */}
+                <Box sx={{ flex: 1 }}>
+                  <Header title="Đánh giá" right="4.9 (124 reviews)" />
+
+                  <Stack spacing={2}>
+                    {[1, 2].map((i) => (
+                      <ReviewCard key={i} />
+                    ))}
+                  </Stack>
+                </Box>
+
+              </Box>
+
+            </Stack>
+          </Box>
+        </Container>
+      </Container>
+    </Page>
+  );
+};
+
+/* ================= REUSABLE ================= */
+
+const Header = ({ title, right }) => (
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Typography variant="h4" fontWeight={700}>{title}</Typography>
+    <Stack direction="row" spacing={1} alignItems="center">
+      {right && <Typography color="primary.main">{right}</Typography>}
+      <Button size="small">Xem thêm</Button>
+    </Stack>
+  </Box>
+);
+
+const Grid2x2 = ({ children }) => (
+  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+    {children}
+  </Box>
+);
+
+const RequestCard = () => (
+  <Card sx={{ p: 2 }}>
+    <Stack spacing={1}>
+      <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" spacing={2}>
+          <Avatar />
+          <Box>
+            <Typography fontWeight={700}>Winter Falls</Typography>
+            <Typography variant="body2">Junior in Computer Science</Typography>
+          </Box>
+        </Stack>
+        <Typography variant="caption">2 ngày trước</Typography>
+      </Stack>
+
+      <Typography fontWeight={600}>
+        Lịch: Thứ 5, 17h00 - 18h00
+      </Typography>
+
+      <Typography>Muốn học thêm về android.</Typography>
+
+      <Stack direction="row" justifyContent="flex-end" spacing={1}>
+        <Button variant="contained" color="inherit">Từ chối</Button>
+        <Button variant="contained">Chấp nhận</Button>
+      </Stack>
+    </Stack>
+  </Card>
+);
+
+const MenteeCard = () => (
+  <Stack direction="row" spacing={2}>
+    <Avatar />
+    <Box>
+      <Typography fontWeight={700}>Winter Falls</Typography>
+      <Typography variant="body2">Junior in Computer Science</Typography>
+    </Box>
+  </Stack>
+);
+
+const ScheduleCard = () => (
+  <Card sx={{ p: 2 }}>
+    <Stack direction="row" spacing={2} alignItems="center">
+      <Box sx={{ width: 80, height: 80, background: '#ddd' }} />
+      <Box sx={{ flex: 1 }}>
+        <Typography fontWeight={700}>Mock Interview</Typography>
+        <Typography>Tran Viet Bao Hoang</Typography>
+        <Typography variant="caption">
+          Thứ 5, 17h00 - 18h00
+        </Typography>
+      </Box>
+      <Button variant="contained">Vào cuộc họp</Button>
+    </Stack>
+  </Card>
+);
+
+const ReviewCard = () => (
+  <Card sx={{ p: 2 }}>
+    <Stack spacing={1}>
+      <Stack direction="row" justifyContent="space-between">
+        <Stack direction="row" spacing={2}>
+          <Avatar />
+          <Box>
+            <Typography fontWeight={700}>Winter Falls</Typography>
+            <Typography variant="caption">2 ngày trước</Typography>
+          </Box>
+        </Stack>
+        <Stack direction="row">
+          {[1,2,3,4,5].map(i => <StarBorderIcon key={i} />)}
+        </Stack>
+      </Stack>
+
+      <Typography>
+        Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+      </Typography>
+    </Stack>
+  </Card>
+);
+
+export default MentorshipDashboardPage;

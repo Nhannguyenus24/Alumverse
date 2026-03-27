@@ -82,7 +82,6 @@ const DetailDonationPage = Loadable(
 const CreateDonationPage = Loadable(
   lazy(() => import('../pages/CreateDonationPage'))
 );
-const MentorshipPage = Loadable(lazy(() => import('../pages/MentorshipPage')));
 
 const MentorshipPage = Loadable(
   lazy(() => import('../pages/MentorshipPage'))
@@ -92,6 +91,12 @@ const MentorshipSearchPage = Loadable(
 );
 const MentorshipProfilePage = Loadable(
   lazy(() => import('../pages/MentorshipProfilePage'))
+);
+const MentorshipDashboardPage = Loadable(
+  lazy(() => import('../pages/MentorshipDashboardPage'))
+);
+const MentorshipYourCalendarPage = Loadable(
+  lazy(() => import('../pages/MentorshipYourCalendarPage'))
 );
 
 export const router = createBrowserRouter([
@@ -185,14 +190,16 @@ export const router = createBrowserRouter([
                 element: <MentorshipSearchPage />,
               },
               {
-                path: 'dashboard'
+                path: 'dashboard',
+                element: <MentorshipDashboardPage />,
               },
               {
                 path: 'profile',
                 element: <MentorshipProfilePage />,
               },
               {
-                path: 'calendar'
+                path: 'calendar',
+                element: <MentorshipYourCalendarPage />,
               },
               {
                 path: 'appointment'
