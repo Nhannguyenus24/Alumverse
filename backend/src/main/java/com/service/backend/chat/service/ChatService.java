@@ -1,5 +1,6 @@
 package com.service.backend.chat.service;
 
+import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.entity.ChatGroup;
 import com.service.backend.chat.entity.ChatGroupMember;
 import com.service.backend.chat.entity.ChatMessage;
@@ -7,6 +8,7 @@ import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
 import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.exception.ApplicationException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -43,12 +45,65 @@ public class ChatService {
         }
 
         return chatGroupRepository.findPrivateChatBetweenMembers(memberAId, memberBId)
-                .switchIfEmpty(createPrivateChat(memberAId, memberBId));
+                .switchIfEmpty(createNewPrivateChat(memberAId, memberBId));
+    }
+
+    public Mono<ChatGroup> getPrivateChat(Long memberAId, Long memberBId) {
+        if (memberAId == null || memberBId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member IDs must not be null"));
+        }
+
+        if (memberAId.equals(memberBId)) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Cannot get private chat with yourself"));
+        }
+
+        return chatGroupRepository.findPrivateChatBetweenMembers(memberAId, memberBId);
+    }
+
+    public Mono<ChatGroup> createNewPrivateChat(Long memberAId, Long memberBId) {
+        if (memberAId == null || memberBId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member IDs must not be null"));
+        }
+
+        if (memberAId.equals(memberBId)) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Cannot create private chat with yourself"));
+        }
+
+        return createPrivateChat(memberAId, memberBId);
+    }
+
+    public Mono<List<ChatGroup>> getListChatGroupsByType(Long memberId, String type) {
+        if (memberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
+        }
+
+        return chatGroupMemberRepository.findByMemberId(memberId)
+                .map(ChatGroupMember::getGroupId)
+                .distinct()
+                .flatMap(chatGroupRepository::findById)
+                .filter(group -> type == null || type.equalsIgnoreCase(group.getType()))
+                .collectList();
+    }
+
+    public Mono<List<ChatGroup>> getListPrivateChats(Long memberId) {
+        if (memberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
+        }
+
+        return getListChatGroupsByType(memberId, ChatType.PRIVATE.getValue());
+    }
+
+    public Mono<List<ChatGroup>> getListGroupChats(Long memberId) {
+        if (memberId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
+        }
+
+        return getListChatGroupsByType(memberId, ChatType.GROUP.getValue());
     }
 
     private Mono<ChatGroup> createPrivateChat(Long memberAId, Long memberBId) {
         ChatGroup newGroup = ChatGroup.builder()
-                .type("PRIVATE")
+                .type(ChatType.PRIVATE.getValue())
                 .title(null)
                 .createdBy(memberAId)
                 .createdAt(LocalDateTime.now())
@@ -143,7 +198,7 @@ public class ChatService {
         LocalDateTime now = LocalDateTime.now();
 
         ChatGroup group = ChatGroup.builder()
-                .type("GROUP")
+                .type(ChatType.GROUP.getValue())
                 .title(null)
                 .createdBy(creatorMemberId)
                 .createdAt(now)
@@ -251,6 +306,31 @@ public class ChatService {
      */
     public Flux<ChatGroupMember> getGroupMembers(Long groupId) {
         return chatGroupMemberRepository.findByGroupId(groupId);
+    }
+
+    /**
+     * Get chat group metadata including title, created_by, created_at, and members.
+     */
+    public Mono<ChatGroupMetadataResponse> getChatGroupMetadata(Long groupId) {
+        if (groupId == null) {
+            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID must not be null"));
+        }
+
+        return chatGroupRepository.findById(groupId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Chat group not found")))
+                .flatMap(group -> chatGroupMemberRepository.findByGroupId(groupId)
+                        .collectList()
+                        .map(members -> ChatGroupMetadataResponse.builder()
+                                .id(group.getId())
+                                .type(group.getType())
+                                .title(group.getTitle())
+                                .createdBy(group.getCreatedBy())
+                                .createdAt(group.getCreatedAt())
+                                .updatedAt(group.getUpdatedAt())
+                                .members(members)
+                                .build()
+                        )
+                );
     }
 
     /**
