@@ -22,7 +22,7 @@ public class ChatGroup {
     @Id
     private Long id;
 
- 
+
     private String type;
 
     private String title;
