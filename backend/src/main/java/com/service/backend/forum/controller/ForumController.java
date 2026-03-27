@@ -6,7 +6,6 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -95,16 +94,6 @@ public class ForumController {
                 .onErrorResume(this::handleError);
     }
 
-    /**
-     * Delete forum category
-     */
-    @DeleteMapping("/category/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deleteCategory(
-            @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id) {
-        return forumService.deleteCategory(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum category deleted successfully", null))))
-                .onErrorResume(this::handleError);
-    }
 
     // ========== TOPIC ENDPOINTS ==========
 
@@ -156,17 +145,6 @@ public class ForumController {
             @Valid @RequestBody UpdateForumTopicRequest request) {
         return forumService.updateTopic(id, request)
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)))
-                .onErrorResume(this::handleError);
-    }
-
-    /**
-     * Delete forum topic by id
-     */
-    @DeleteMapping("/topic/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deleteTopic(
-            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id) {
-        return forumService.deleteTopic(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum topic deleted successfully", null))))
                 .onErrorResume(this::handleError);
     }
 

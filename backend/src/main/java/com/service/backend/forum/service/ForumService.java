@@ -101,12 +101,6 @@ public class ForumService {
                 .doOnError(error -> log.error("Error updating forum category ID: {}", id, error));
     }
 
-    public Mono<Void> deleteCategory(Integer id) {
-        return forumCategoryRepository.deleteById(id)
-                .doOnSuccess(result -> log.info("Successfully deleted forum category ID: {}", id))
-                .doOnError(error -> log.error("Error deleting forum category ID: {}", id, error));
-    }
-
     // Topic methods
     public Mono<ForumTopicDTO> findTopicByTitle(String title) {
         return forumTopicRepository.findByTitle(title)
@@ -178,12 +172,6 @@ public class ForumService {
                 .map(this::convertToTopicDTO)
                 .doOnSuccess(result -> log.info("Successfully updated forum topic ID: {}", id))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
-    }
-
-    public Mono<Void> deleteTopic(Integer id) {
-        return forumTopicRepository.deleteById(id)
-                .doOnSuccess(result -> log.info("Successfully deleted forum topic ID: {}", id))
-                .doOnError(error -> log.error("Error deleting forum topic ID: {}", id, error));
     }
 
     // Post methods
