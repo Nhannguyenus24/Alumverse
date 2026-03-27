@@ -65,8 +65,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // All other requests require authentication
-                        // .anyExchange().authenticated());
-                        .anyExchange().permitAll()); // Temporary: allow all requests for development
+                        .anyExchange().authenticated());
 
         return http.build();
     }

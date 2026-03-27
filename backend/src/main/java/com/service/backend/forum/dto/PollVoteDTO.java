@@ -11,12 +11,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ForumCategoryDTO {
+public class PollVoteDTO {
     private Integer id;
-    private Integer parentId;
-    private Integer organizationId;
-    private String name;
-    private String description;
+    private Integer pollId;
+    private Integer pollOptionId;
+    private Integer memberId;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

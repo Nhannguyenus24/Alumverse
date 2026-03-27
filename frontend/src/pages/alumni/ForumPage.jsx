@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
@@ -6,65 +6,40 @@ import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutline
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import SaveIcon from '@mui/icons-material/Save';
-import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
-import Breadcrumb from '../../components/Breadcrumb';
 import { useAuth } from '../../hooks/useAuth';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
-import { useForumTopics, useForumTopicsForCategories } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import ForumSection from '../../components/forum/ForumSection';
 
-const FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'alumni', label: 'Cựu sinh viên' },
-  { id: 'jobs', label: 'Việc làm' },
-  { id: 'events', label: 'Hoạt động' },
-  { id: 'tech', label: 'Công nghệ' },
-  { id: 'courses', label: 'Học phần' },
-  { id: 'admissions', label: 'Tuyển sinh' },
-];
-
-const SECTIONS = [
-  {
-    id: 'main',
-    title: 'CHÍNH',
-    filterIds: ['all'],
-    boards: [],
-  },
-  {
-    id: 'alumni',
-    title: 'CỰU SINH VIÊN',
-    filterIds: ['all', 'alumni', 'jobs', 'events', 'tech', 'courses', 'admissions'],
-    boards: [],
-  },
-];
-
 const sectionsToManageTopics = (sections) =>
   sections.map((s) => ({
     id: s.id,
     title: s.title,
-    boards: s.boards.map((b) => ({ id: b.id, name: b.name, description: b.description ?? '' })),
+    boards: s.boards.map((b) => ({
+      id: b.id,
+      name: b.name,
+      description: b.description ?? '',
+    })),
   }));
 
 const ForumPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { showError, showSuccess, showWarning, showInfo } = useNotification();
-  const hasShownTopicsErrorRef = useRef(false);
+  const { showSuccess, showWarning, showInfo } = useNotification();
 
-  const [selectedFilterId, setSelectedFilterId] = useState(() => {
-    const fromState = location.state?.selectedFilterId;
-    if (fromState && (fromState === 'all' || fromState.startsWith('category-'))) {
-      return fromState;
+  const selectedFilterId = useMemo(() => {
+    const sid = location.state?.selectedFilterId;
+    if (sid === 'all' || (typeof sid === 'string' && sid.startsWith('parent-'))) {
+      return sid;
     }
     return 'all';
-  });
+  }, [location.state?.selectedFilterId]);
 
   const [isManageMode, setIsManageMode] = useState(false);
-  const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics(SECTIONS));
+  const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics([]));
   const [newMainTopic, setNewMainTopic] = useState('');
   const [newSubTopics, setNewSubTopics] = useState({});
   const { user } = useAuth();
@@ -73,132 +48,106 @@ const ForumPage = () => {
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending } = useForumCategories(organizationId);
 
-  const isAllSelected = selectedFilterId === 'all';
-  const categoryId = useMemo(() => {
-    if (selectedFilterId.startsWith('category-')) {
-      const id = parseInt(selectedFilterId.replace('category-', ''), 10);
-      return Number.isNaN(id) ? null : id;
-    }
-    return null;
-  }, [selectedFilterId]);
-
-  const categoryIds = useMemo(
-    () => (isAllSelected && categories?.length ? categories.map((c) => c.id) : []),
-    [isAllSelected, categories]
-  );
-
-  const { topics: topicsSingle, isError: topicsSingleIsError } = useForumTopics(categoryId, 0, 10);
-  const { topics: topicsAll, isError: topicsAllIsError } = useForumTopicsForCategories(categoryIds, 0, 10);
-
-  const topics = isAllSelected ? topicsAll : topicsSingle;
-  const topicsIsError = isAllSelected ? topicsAllIsError : topicsSingleIsError;
-
   useEffect(() => {
-    if (topicsIsError) {
-      if (!hasShownTopicsErrorRef.current) {
-        showError('Không thể tải danh sách chủ đề.');
-        hasShownTopicsErrorRef.current = true;
+    const sid = location.state?.selectedFilterId;
+    if (typeof sid === 'string' && sid.startsWith('category-')) {
+      const cid = parseInt(sid.replace('category-', ''), 10);
+      if (!Number.isNaN(cid) && cid > 0) {
+        navigate(`/forum/category/${cid}`, {
+          replace: true,
+          state: { ...location.state, selectedFilterId: undefined },
+        });
       }
-      return;
     }
-    hasShownTopicsErrorRef.current = false;
-  }, [topicsIsError, showError]);
+  }, [location.state, navigate]);
 
-  const sections = useMemo(() => {
-    if (!topics?.length) return SECTIONS;
+  const parentCategories = useMemo(() => {
+    const list = (categories ?? []).filter((c) => c.parentId == null);
+    list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+    return list;
+  }, [categories]);
 
-    const topicBoards = topics.map((t) => ({
-      id: `topic-${t.id}`,
-      topicId: t.id,
-      name: t.title,
-      description: '',
-      threadCount: t.viewCount ?? '-',
-      discussionCount: '-',
-      lastPost: null,
-      topicSummary: {
-        id: t.id,
-        title: t.title,
-        createdByMemberId: t.createdByMemberId ?? null,
-        createdAt: t.createdAt ?? null,
-        viewCount: t.viewCount ?? null,
-        categoryId: t.categoryId ?? null,
-      },
-    }));
-
-    return SECTIONS.map((s) => {
-      if (s.id === 'main' || s.id === 'alumni') {
-        return {
-          ...s,
-          boards: topicBoards,
-        };
+  const childrenByParentId = useMemo(() => {
+    const map = new Map();
+    for (const c of categories ?? []) {
+      if (c.parentId != null) {
+        const arr = map.get(c.parentId) ?? [];
+        arr.push(c);
+        map.set(c.parentId, arr);
       }
-      return s;
-    });
-  }, [topics]);
+    }
+    for (const [, arr] of map) {
+      arr.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
+    }
+    return map;
+  }, [categories]);
 
   const filters = useMemo(() => {
     if (isPending && !categories?.length) {
-      return FILTERS;
+      return [{ id: 'all', label: 'Tất cả' }];
     }
-    if (!categories?.length) return FILTERS;
-    return [
-      { id: 'all', label: 'Tất cả' },
-      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
-    ];
-  }, [categories, isPending]);
+    return [{ id: 'all', label: 'Tất cả' }, ...parentCategories.map((p) => ({ id: `parent-${p.id}`, label: p.name }))];
+  }, [categories, isPending, parentCategories]);
+
+  const sections = useMemo(() => {
+    return parentCategories.map((parent) => ({
+      id: `section-${parent.id}`,
+      title: (parent.name || '').toUpperCase(),
+      parentId: parent.id,
+      boards: (childrenByParentId.get(parent.id) ?? []).map((sub) => ({
+        id: `cat-${sub.id}`,
+        categoryId: sub.id,
+        name: sub.name,
+        description: sub.description ?? '',
+        threadCount: '-',
+        discussionCount: '-',
+        lastPost: null,
+      })),
+    }));
+  }, [parentCategories, childrenByParentId]);
+
+  const visibleSections = useMemo(() => {
+    if (selectedFilterId === 'all') return sections;
+    if (selectedFilterId.startsWith('parent-')) {
+      const pid = parseInt(selectedFilterId.replace('parent-', ''), 10);
+      if (Number.isNaN(pid)) return sections;
+      return sections.filter((s) => s.parentId === pid);
+    }
+    return sections;
+  }, [selectedFilterId, sections]);
 
   const handleFilterChange = useCallback(
     (id) => {
-      if (id === 'alumni') {
-        navigate('/forum/alumni/career');
-        return;
-      }
-      setSelectedFilterId(id);
+      navigate('.', { replace: true, state: { ...(location.state ?? {}), selectedFilterId: id } });
     },
-    [navigate]
+    [navigate, location.state]
   );
-
-  const isCategoryView = selectedFilterId.startsWith('category-');
-  const selectedCategory = useMemo(
-    () => categories?.find((c) => c.id === categoryId) ?? null,
-    [categories, categoryId]
-  );
-
-  const formatTopicDate = useCallback((iso) => {
-    if (!iso) return '—';
-    const d = new Date(iso);
-    const now = new Date();
-    const diffMs = now - d;
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Vừa xong';
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  }, []);
-
-  const visibleSections = useMemo(() => {
-    if (categories?.length) return sections;
-    if (selectedFilterId === 'all') return sections;
-    return sections.filter((s) => (s.filterIds ?? []).includes(selectedFilterId));
-  }, [selectedFilterId, sections, categories]);
 
   const handleBoardClick = useCallback(
     (board) => {
-      if (!board?.topicId) return;
-      navigate(`/forum/alumni/career/${board.topicId}`, {
+      const cid = board?.categoryId;
+      if (cid == null) return;
+      navigate(`/forum/category/${cid}`, {
         state: {
-          topicTitle: board.name,
-          topicSummary: board.topicSummary,
-          selectedFilterId,
+          selectedFilterId:
+            board.parentSectionId != null ? `parent-${board.parentSectionId}` : selectedFilterId,
         },
       });
     },
     [navigate, selectedFilterId]
   );
 
+  const boardsForSection = useCallback(
+    (section) =>
+      section.boards.map((b) => ({
+        ...b,
+        parentSectionId: section.parentId,
+      })),
+    []
+  );
+
   const handleOpenManageMode = () => {
-    setManageTopics(sectionsToManageTopics(sections));
+    setManageTopics(sectionsToManageTopics(visibleSections));
     setNewMainTopic('');
     setNewSubTopics({});
     setIsManageMode(true);
@@ -301,7 +250,6 @@ const ForumPage = () => {
                 px: { xs: 1.5, sm: 2, md: 2.75 },
               }}
             >
-              {!isCategoryView && (
               <Box
                 sx={{
                   display: 'flex',
@@ -323,8 +271,8 @@ const ForumPage = () => {
                 >
                   DIỄN ĐÀN
                 </Typography>
-                {isAdmin && (
-                  isManageMode ? (
+                {isAdmin &&
+                  (isManageMode ? (
                     <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                       <Button variant="outlined" color="primary" onClick={handleCloseManageMode}>
                         Huỷ
@@ -342,10 +290,8 @@ const ForumPage = () => {
                     >
                       Thay đổi chủ đề
                     </Button>
-                  )
-                )}
+                  ))}
               </Box>
-              )}
               {isManageMode ? (
                 <>
                   <Paper
@@ -436,11 +382,7 @@ const ForumPage = () => {
                           </Typography>
                         </Box>
                         <Box sx={{ display: 'flex', gap: 0.5 }}>
-                          <IconButton
-                            size="small"
-                            sx={{ color: '#fff' }}
-                            aria-label="Sửa chủ đề"
-                          >
+                          <IconButton size="small" sx={{ color: '#fff' }} aria-label="Sửa chủ đề">
                             <EditOutlinedIcon fontSize="small" />
                           </IconButton>
                           <IconButton
@@ -480,11 +422,7 @@ const ForumPage = () => {
                               )}
                             </Box>
                             <Box sx={{ display: 'flex', gap: 0.5 }}>
-                              <IconButton
-                                size="small"
-                                sx={{ color: 'text.primary' }}
-                                aria-label="Sửa chủ đề con"
-                              >
+                              <IconButton size="small" sx={{ color: 'text.primary' }} aria-label="Sửa chủ đề con">
                                 <EditOutlinedIcon fontSize="small" />
                               </IconButton>
                               <IconButton
@@ -548,225 +486,12 @@ const ForumPage = () => {
                     </Paper>
                   ))}
                 </>
-              ) : isCategoryView ? (
-                <Box
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    backgroundColor: '#fff',
-                    border: 1,
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      px: { xs: 1.5, sm: 2, md: 3 },
-                      py: { xs: 1.5, md: 2 },
-                      borderBottom: 1,
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Breadcrumb
-                      items={[
-                        { label: 'Diễn đàn', path: '/forum' },
-                        { label: selectedCategory?.name ?? 'Chủ đề' },
-                      ]}
-                      uppercase
-                      color="primary"
-                    />
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', sm: 'row' },
-                        alignItems: { xs: 'flex-start', sm: 'center' },
-                        justifyContent: 'space-between',
-                        gap: 2,
-                      }}
-                    >
-                      <Typography
-                        variant="h4"
-                        component="h1"
-                        fontWeight={800}
-                        color="primary.main"
-                        sx={{
-                          fontSize: { xs: '1.35rem', sm: '1.5rem', md: '1.75rem' },
-                          wordBreak: 'break-word',
-                        }}
-                      >
-                        {(selectedCategory?.name ?? 'Chủ đề').toUpperCase()}
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexDirection: { xs: 'column', sm: 'row' },
-                          gap: 1,
-                          width: { xs: '100%', sm: 'auto' },
-                        }}
-                      >
-                        <Button variant="outlined" color="primary" sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>
-                          Theo dõi
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => navigate('/forum/alumni/career/create-topic')}
-                          sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
-                        >
-                          Tạo bài đăng
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  <Box>
-                    {topicsSingle.map((topic) => (
-                  <Box
-                    key={topic.id}
-                    onClick={() =>
-                      navigate(`/forum/alumni/career/${topic.id}`, {
-                        state: {
-                          topicTitle: topic.title,
-                          topicSummary: {
-                            id: topic.id,
-                            title: topic.title,
-                            createdByMemberId: topic.createdByMemberId ?? null,
-                            createdAt: topic.createdAt ?? null,
-                            viewCount: topic.viewCount ?? null,
-                            categoryId: topic.categoryId ?? null,
-                          },
-                          selectedFilterId: `category-${selectedCategory?.id ?? topic.categoryId}`,
-                        },
-                      })
-                    }
-                        sx={{
-                          px: { xs: 1.5, sm: 2, md: 3 },
-                          py: { xs: 1.5, md: 2 },
-                          display: 'flex',
-                          flexDirection: { xs: 'column', md: 'row' },
-                          alignItems: { xs: 'flex-start', md: 'center' },
-                          gap: { xs: 1.5, md: 3 },
-                          borderTop: 1,
-                          borderColor: 'divider',
-                          cursor: 'pointer',
-                          '&:hover': { backgroundColor: 'action.hover' },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: '50%',
-                              bgcolor: 'primary.main',
-                              color: 'primary.contrastText',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Typography variant="subtitle2" fontWeight={700}>
-                              A
-                            </Typography>
-                          </Box>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                              sx={{
-                                fontSize: { xs: '0.95rem', md: '1rem' },
-                                overflow: 'hidden',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                              }}
-                            >
-                              {topic.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Thành viên #{topic.createdByMemberId ?? '—'} • {formatTopicDate(topic.createdAt)}
-                            </Typography>
-                          </Box>
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            alignItems: 'center',
-                            gap: { xs: 2, md: 3 },
-                            ml: { md: 'auto' },
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Lượt xem
-                            </Typography>
-                            <Typography variant="body2" fontWeight={800}>
-                              {topic.viewCount ?? 0}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Thảo luận
-                            </Typography>
-                            <Typography variant="body2" fontWeight={800}>
-                              —
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              minWidth: { xs: 120, sm: 160 },
-                              justifyContent: 'flex-end',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                              }}
-                            >
-                              <PersonIcon sx={{ fontSize: 18 }} />
-                            </Box>
-                            <Box sx={{ textAlign: 'left' }}>
-                              <Typography variant="body2" fontWeight={600}>
-                                Thành viên #{topic.createdByMemberId ?? '—'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {formatTopicDate(topic.updatedAt ?? topic.createdAt)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
               ) : (
                 visibleSections.map((section) => (
                   <ForumSection
                     key={section.id}
                     title={section.title}
-                    boards={section.boards}
+                    boards={boardsForSection(section)}
                     onBoardClick={handleBoardClick}
                   />
                 ))
@@ -780,4 +505,3 @@ const ForumPage = () => {
 };
 
 export default ForumPage;
-

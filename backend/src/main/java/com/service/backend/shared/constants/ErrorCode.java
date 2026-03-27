@@ -11,15 +11,20 @@ public enum ErrorCode {
     FORBIDDEN("Bạn không có quyền truy cập"),
 
     // Auth module
-    EMAIL_ALREADY_REGISTERED("Email already registered"),
+    EMAIL_OR_USERNAME_ALREADY_REGISTERED("Email or username already registered"),
     USERNAME_ALREADY_EXISTS("Username already exists"),
     INVALID_CREDENTIALS("Invalid email or password"),
     INVALID_USERNAME_CREDENTIALS("Invalid username or password"),
     INVALID_OLD_PASSWORD("Invalid old password"),
     OTP_EXPIRED_NOT_FOUND("OTP expired or not found"),
     INVALID_OTP("Invalid OTP"),
+    ACCOUNT_NOT_VERIFIED("Account is not verified. Please verify your email with OTP."),
     REFRESH_TOKEN_NOT_FOUND("Refresh token not found"),
     INVALID_REFRESH_TOKEN("Invalid or expired refresh token"),
+    ACCESS_TOKEN_NOT_FOUND("Access token not found"),
+    INVALID_ACCESS_TOKEN("Invalid or expired access token"),
+    ERROR_SIGNING_JWT_TOKEN("Error signing JWT token"),
+    ERROR_VALIDATE_JWT_TOKEN("Error validating JWT token"),
 
     // Event module
     EVENT_NOT_FOUND("Không tìm thấy sự kiện"),

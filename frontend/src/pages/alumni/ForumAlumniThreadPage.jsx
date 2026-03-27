@@ -27,6 +27,9 @@ import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../../hooks/useNotification';
+import { usePollsByTopic } from '../../hooks/forum/usePollsByTopic';
+import PollSection from '../../components/forum/PollSection';
+import CreatePollDialog from '../../components/forum/CreatePollDialog';
 
 const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting }) => {
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
@@ -355,6 +358,8 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
+
+  const { polls, isPending: pollsPending, isError: pollsError, errorMessage: pollsErrorMessage, refetch: refetchPolls } = usePollsByTopic(topicId, memberId);
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
@@ -603,20 +608,44 @@ const ForumAlumniThreadPage = () => {
     return allFilterIds.includes(selectedFilterIdFromState) ? selectedFilterIdFromState : 'all';
   }, [filters, selectedFilterIdFromState]);
 
-  const parentBreadcrumbLabel = useMemo(() => {
-    if (selectedFilterId === 'all') return 'Diễn đàn';
-    if (selectedFilterId === 'alumni') return 'Cựu sinh viên';
-    if (selectedFilterId.startsWith('category-')) {
-      const id = parseInt(selectedFilterId.replace('category-', ''), 10);
-      const cat = categories?.find((c) => c.id === id);
-      return cat?.name ?? 'Diễn đàn';
+  const activeCategory = useMemo(() => {
+    const categoryId = location.state?.topicSummary?.categoryId;
+    if (categoryId != null) {
+      return categories?.find((c) => c.id === categoryId) ?? null;
     }
-    return 'Diễn đàn';
-  }, [selectedFilterId, categories]);
+    return null;
+  }, [categories, location.state?.topicSummary?.categoryId]);
+
+  const parentCategory = useMemo(() => {
+    if (!activeCategory?.parentId) return null;
+    return categories?.find((c) => c.id === activeCategory.parentId) ?? null;
+  }, [activeCategory, categories]);
+
+  const breadcrumbItems = useMemo(() => {
+    const items = [];
+    if (parentCategory) {
+      items.push({
+        label: parentCategory.name,
+        path: '/forum',
+        state: { selectedFilterId: `parent-${parentCategory.id}` },
+      });
+    }
+    if (activeCategory) {
+      items.push({
+        label: activeCategory.name,
+        path: `/forum/alumni/career/${activeCategory.id}`,
+        state: {
+          selectedFilterId: activeCategory.parentId != null ? `parent-${activeCategory.parentId}` : `parent-${activeCategory.id}`,
+        },
+      });
+    }
+    items.push({ label: thread.title });
+    return items;
+  }, [activeCategory, parentCategory, thread.title]);
 
   return (
     <Page
-      title={`Diễn đàn - ${thread.title}`}
+      title={`${thread.title}`}
       meta={<meta name="description" content="Chi tiết chủ đề Hướng nghiệp" />}
     >
       <Container
@@ -653,13 +682,7 @@ const ForumAlumniThreadPage = () => {
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Breadcrumb
-                items={[
-                  {
-                    label: parentBreadcrumbLabel,
-                    path: selectedFilterId === 'alumni' ? '/forum/alumni/career' : '/forum',
-                  },
-                  { label: thread.title },
-                ]}
+                items={breadcrumbItems}
                 uppercase
                 color="primary"
                 fontSize="0.8rem"

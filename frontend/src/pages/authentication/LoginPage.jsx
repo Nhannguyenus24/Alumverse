@@ -10,7 +10,7 @@ import { useAuth } from '../../hooks/useAuth';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading: loading, error, setError } = useAuth();
+  const { login, isLoading: loading, error, setError, forgotPassword } = useAuth();
 
   const redirectTo = location.state?.from?.pathname || '/dashboard';
 
@@ -26,7 +26,13 @@ const LoginPage = () => {
   const onSubmit = async (data) => {
     setError(null);
     const result = await login({ email: data.email, password: data.password });
-    if (result?.ok) navigate(redirectTo, { replace: true });
+    if (result?.ok) {
+      navigate(redirectTo, { replace: true });
+    } else if (result?.error && result.error.includes('Account is not verified')) {
+      // Account chưa verified → gửi OTP rồi chuyển đến trang nhập mã
+      await forgotPassword({ email: data.email });
+      navigate('/auth/signup-code', { state: { email: data.email } });
+    }
   };
 
   return (
