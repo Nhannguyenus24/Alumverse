@@ -11,6 +11,7 @@ import {
   useTheme,
 } from "@mui/material";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
 import MoodIcon from "@mui/icons-material/Mood";
 import { useChatGroups } from "../../hooks/mentorship/useChatGroups";
@@ -76,11 +77,12 @@ const MentorshipChatPage = () => {
     return n != null && Number.isFinite(n) ? n : null;
   }, [chatId]);
 
+  /** Chỉ gắn chat khi URL có `:chatId`; không tự chọn chat đầu khi vào `/chat`. */
   const activeChatId = useMemo(() => {
     if (isPending) return null;
     if (!chatGroups?.length) return null;
-    if (paramId != null && chatGroups.some((g) => g.id === paramId))
-      return paramId;
+    if (paramId == null) return null;
+    if (chatGroups.some((g) => g.id === paramId)) return paramId;
     return chatGroups[0]?.id ?? null;
   }, [chatGroups, isPending, paramId]);
 
@@ -179,6 +181,14 @@ const MentorshipChatPage = () => {
   const paper = theme.palette.background.paper;
   const grey200 = theme.palette.grey[200];
   const sidebarWidth = { xs: "100%", md: 320 };
+
+  /** Không skeleton ở khung chính khi URL chưa có `:chatId`. */
+  const mainView = useMemo(() => {
+    if (isPending && paramId != null) return "loading";
+    if (isPending && paramId == null) return "empty";
+    if (activeChatId == null) return "empty";
+    return "chat";
+  }, [isPending, paramId, activeChatId]);
 
   return (
     <Box
@@ -338,7 +348,7 @@ const MentorshipChatPage = () => {
           bgcolor: bg,
         }}
       >
-        {isPending ? (
+        {mainView === "loading" ? (
           <Box
             sx={{
               flex: 1,
@@ -364,6 +374,60 @@ const MentorshipChatPage = () => {
               height={72}
               sx={{ alignSelf: "flex-start", width: "72%" }}
             />
+          </Box>
+        ) : mainView === "empty" ? (
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              px: 3,
+              py: 4,
+              textAlign: "center",
+              gap: 1.5,
+            }}
+          >
+            <ChatBubbleOutlineIcon
+              sx={{ fontSize: 56, color: "text.disabled", opacity: 0.85 }}
+              aria-hidden
+            />
+            {isPending && paramId == null ? (
+              <>
+                <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                  Cuộc trò chuyện
+                </Typography>
+                <Typography variant="body2" color="text.secondary" maxWidth={360}>
+                  Đang tải danh sách chat…
+                </Typography>
+              </>
+            ) : chatGroups.length === 0 ? (
+              <>
+                <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                  Chưa có cuộc trò chuyện
+                </Typography>
+                <Typography variant="body2" color="text.secondary" maxWidth={360}>
+                  {isError
+                    ? (errorMessage ?? "Không tải được danh sách. Thử lại sau.")
+                    : "Khi có cuộc trò chuyện riêng, bạn sẽ thấy ở cột bên trái."}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+                  Chọn cuộc trò chuyện
+                </Typography>
+                <Typography variant="body2" color="text.secondary" maxWidth={360}>
+                  Chọn một mục trong danh sách bên trái để xem và gửi tin nhắn. Hoặc mở trực
+                  tiếp bằng đường dẫn có mã chat (ví dụ{" "}
+                  <Typography component="span" variant="body2" fontFamily="monospace">
+                    /development/mentorship/chat/1
+                  </Typography>
+                  ).
+                </Typography>
+              </>
+            )}
           </Box>
         ) : (
           <>
