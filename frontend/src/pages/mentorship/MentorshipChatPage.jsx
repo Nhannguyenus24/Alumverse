@@ -46,6 +46,23 @@ function getChatDisplayName(chat) {
   return `Private chat #${chat?.id ?? ""}`;
 }
 
+function mergeHistoryAndRealtime(history, realtime) {
+  if (realtime == null || realtime.length === 0) return history;
+  const byId = new Map();
+  for (const m of history) {
+    if (m?.id != null) byId.set(m.id, m);
+  }
+  for (const m of realtime) {
+    if (m?.id != null && !byId.has(m.id)) byId.set(m.id, m);
+  }
+  return Array.from(byId.values()).sort((a, b) => {
+    const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    if (ta !== tb) return ta - tb;
+    return Number(a.id ?? 0) - Number(b.id ?? 0);
+  });
+}
+
 const MentorshipChatPage = () => {
   const theme = useTheme();
   const queryClient = useQueryClient();
@@ -89,10 +106,8 @@ const MentorshipChatPage = () => {
   const selectedChatLastSeen = selectedChat
     ? formatRelativeTime(selectedChat.updatedAt ?? selectedChat.createdAt)
     : "";
-  const {
-    messages: historyMessages,
-    isPending: isHistoryLoading,
-  } = useChatMessages(activeChatId, 0, 20);
+  const { messages: historyMessages, isPending: isHistoryLoading } =
+    useChatMessages(activeChatId, 0, 20);
 
   const handleWsEvent = useCallback(
     (event) => {
@@ -124,16 +139,14 @@ const MentorshipChatPage = () => {
   } = useChatWebSocket({ token, onEvent: handleWsEvent });
 
   const mappedHistoryMessages = useMemo(
-    () =>
-      historyMessages
-        .map((m) => toUiMessage(m, user?.id))
-        .filter(Boolean),
+    () => historyMessages.map((m) => toUiMessage(m, user?.id)).filter(Boolean),
     [historyMessages, user?.id],
   );
 
   const messages = useMemo(() => {
     if (activeChatId == null) return [];
-    return messagesByChat[activeChatId] ?? mappedHistoryMessages;
+    const realtime = messagesByChat[activeChatId];
+    return mergeHistoryAndRealtime(mappedHistoryMessages, realtime);
   }, [activeChatId, mappedHistoryMessages, messagesByChat]);
 
   useEffect(() => {
