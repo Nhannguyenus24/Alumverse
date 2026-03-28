@@ -1,0 +1,110 @@
+package com.service.backend.article.usecase;
+
+import com.service.backend.article.dao.AchievementR2dbcRepository;
+import com.service.backend.article.entity.Achievement;
+import com.service.backend.article.dto.CreateAchievementRequest;
+import com.service.backend.article.dto.UpdateAchievementRequest;
+import com.service.backend.article.dto.AchievementResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+
+@Service
+@RequiredArgsConstructor
+public class AchievementService {
+
+    private final AchievementR2dbcRepository achievementRepository;
+
+    private static final Integer MOCK_MEMBER_ID = 1;
+
+    public Mono<AchievementResponse> create(CreateAchievementRequest request) {
+        Achievement achievement = Achievement.builder()
+                .memberId(MOCK_MEMBER_ID)
+                .title(request.getTitle())
+                .description(request.getDescription())
+                .imageUrl(request.getImageUrl())
+                .awardedDate(request.getAwardedDate())
+                .status(request.getStatus())
+                .build();
+
+        return achievementRepository.save(achievement)
+                .map(AchievementResponse::from);
+    }
+
+    public Mono<AchievementResponse> update(Integer id, UpdateAchievementRequest request) {
+        return achievementRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .flatMap(existing -> {
+                    existing.setTitle(request.getTitle());
+                    existing.setDescription(request.getDescription());
+                    existing.setImageUrl(request.getImageUrl());
+                    existing.setAwardedDate(request.getAwardedDate());
+                    existing.setStatus(request.getStatus());
+                    return achievementRepository.save(existing);
+                })
+                .map(AchievementResponse::from);
+    }
+
+    public Mono<Boolean> delete(Integer id) {
+        return achievementRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .flatMap(existing -> achievementRepository.deleteById(id).thenReturn(true));
+    }
+
+    public Mono<AchievementResponse> getById(Integer id) {
+        return achievementRepository.findById(id)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
+                .map(AchievementResponse::from);
+    }
+
+    public Mono<PaginatedResponse<AchievementResponse>> getAll(int page, int limit) {
+        int offset = page * limit;
+        return achievementRepository.findAllWithPagination(limit, offset)
+                .collectList()
+                .zipWith(achievementRepository.countAll())
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
+    }
+
+    public Mono<PaginatedResponse<AchievementResponse>> getByMemberId(Integer memberId, int page, int limit) {
+        int offset = page * limit;
+        return achievementRepository.findByMemberId(memberId, limit, offset)
+                .collectList()
+                .zipWith(achievementRepository.countByMemberId(memberId))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
+    }
+
+    public Mono<PaginatedResponse<AchievementResponse>> getMyAchievements(int page, int limit) {
+        return getByMemberId(MOCK_MEMBER_ID, page, limit);
+    }
+
+    public Mono<PaginatedResponse<AchievementResponse>> getByStatus(String status, int page, int limit) {
+        int offset = page * limit;
+        return achievementRepository.findByStatus(status, limit, offset)
+                .collectList()
+                .zipWith(achievementRepository.countByStatus(status))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
+    }
+
+    public Mono<PaginatedResponse<AchievementResponse>> search(String keyword, int page, int limit) {
+        int offset = page * limit;
+        return achievementRepository.searchAchievements(keyword, limit, offset)
+                .collectList()
+                .zipWith(achievementRepository.countSearchAchievements(keyword))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
+    }
+}

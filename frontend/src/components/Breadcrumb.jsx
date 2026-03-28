@@ -54,7 +54,10 @@ const Breadcrumb = ({ items = [], uppercase = false, color = 'text', fontSize })
             key={index}
             component="button"
             variant="caption"
-            onClick={() => item.path && navigate(item.path)}
+            onClick={() =>
+              item.path &&
+              navigate(item.path, item.state != null ? { state: item.state } : undefined)
+            }
             sx={linkSx}
           >
             {item.label}

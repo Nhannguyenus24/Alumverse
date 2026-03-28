@@ -1,37 +1,29 @@
-import { Outlet, useLocation } from "react-router";
-import { Box, Container } from "@mui/material";
+import { Outlet, useLocation, useMatches } from "react-router";
+import { Box, Toolbar } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
-/** Routes that use full-height chat UI without site footer */
-const FOOTER_HIDDEN_PREFIX = "/development/mentorship/chat";
-
 const MainLayout = () => {
-  const { pathname } = useLocation();
-  const showFooter = !pathname.startsWith(FOOTER_HIDDEN_PREFIX);
+  const matches = useMatches();
+  const hideFooter = matches.some((m) => m.handle?.hideFooter);
 
   return (
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <Header />
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: 0,
+        }}
       >
-        <Header />
-        <Box
-          component="main"
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            minHeight: 0,
-            // Offset fixed AppBar (Header Toolbar: 56px xs, 64px md+)
-            pt: { xs: '56px', md: '64px' },
-          }}
-        >
-          <Outlet />
-        </Box>
-        {showFooter && <Footer />}
-      </Container>
+        <Toolbar />
+        <Outlet />
+      </Box>
+      {!hideFooter && <Footer />}
+    </Box>
   );
 };
 

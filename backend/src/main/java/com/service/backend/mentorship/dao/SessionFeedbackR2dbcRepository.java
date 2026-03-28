@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dao;
 
-import com.service.backend.mentorship.domain.entity.SessionFeedback;
+import com.service.backend.mentorship.entity.SessionFeedback;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;

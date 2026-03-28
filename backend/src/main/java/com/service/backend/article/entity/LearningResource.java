@@ -1,0 +1,46 @@
+package com.service.backend.article.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("learning_resources")
+public class LearningResource {
+
+    @Id
+    @Column("id")
+    private Integer id;
+
+    @Column("organization_id")
+    private Integer organizationId;
+
+    @Column("uploader_member_id")
+    private Integer uploaderMemberId;
+
+    @Column("title")
+    private String title;
+
+    @Column("type")
+    private String type;
+
+    @Column("link_url")
+    private String linkUrl;
+
+    @Column("description")
+    private String description;
+
+    @CreatedDate
+    @Column("created_at")
+    private LocalDateTime createdAt;
+}
