@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import {
   Avatar,
@@ -14,7 +15,7 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
 import MoodIcon from "@mui/icons-material/Mood";
-import { useChatGroups } from "../../hooks/mentorship/useChatGroups";
+import { usePrivateChats } from "../../hooks/mentorship/usePrivateChats";
 import useAuthStore from "../../stores/authStore";
 import { useChatWebSocket } from "../../hooks/mentorship/useChatWebSocket";
 import { useChatMessages } from "../../hooks/mentorship/useChatMessages";
@@ -49,7 +50,16 @@ function formatRelativeTime(iso) {
 }
 
 function getChatDisplayName(chat) {
-  return chat?.title ?? `Private chat #${chat?.id ?? ""}`;
+  if (chat?.peerUserName) return chat.peerUserName;
+  if (chat?.title) return chat.title;
+  return `Private chat #${chat?.id ?? ""}`;
+}
+
+function getChatListPreview(chat) {
+  const raw = chat?.lastMessagePreview;
+  if (raw == null || String(raw).trim() === "") return "Chưa có tin nhắn";
+  const s = String(raw).replace(/\s+/g, " ").trim();
+  return s.length > 80 ? `${s.slice(0, 80)}…` : s;
 }
 
 function initials(name) {
@@ -61,6 +71,7 @@ function initials(name) {
 
 const MentorshipChatPage = () => {
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { chatId } = useParams();
   const { token, user } = useAuthStore();
@@ -69,8 +80,7 @@ const MentorshipChatPage = () => {
   const messagesEndRef = useRef(null);
   const prevChatIdRef = useRef(null);
 
-  const { chatGroups, isPending, isError, errorMessage } =
-    useChatGroups("PRIVATE");
+  const { privateChats, isPending, isError, errorMessage } = usePrivateChats();
 
   const paramId = useMemo(() => {
     const n = chatId != null ? Number(chatId) : null;
@@ -80,11 +90,11 @@ const MentorshipChatPage = () => {
   /** Chỉ gắn chat khi URL có `:chatId`; không tự chọn chat đầu khi vào `/chat`. */
   const activeChatId = useMemo(() => {
     if (isPending) return null;
-    if (!chatGroups?.length) return null;
+    if (!privateChats?.length) return null;
     if (paramId == null) return null;
-    if (chatGroups.some((g) => g.id === paramId)) return paramId;
-    return chatGroups[0]?.id ?? null;
-  }, [chatGroups, isPending, paramId]);
+    if (privateChats.some((g) => g.id === paramId)) return paramId;
+    return privateChats[0]?.id ?? null;
+  }, [privateChats, isPending, paramId]);
 
   useEffect(() => {
     if (activeChatId == null) return;
@@ -93,8 +103,8 @@ const MentorshipChatPage = () => {
   }, [activeChatId, navigate, paramId]);
 
   const selectedChat = useMemo(
-    () => chatGroups.find((c) => c.id === activeChatId) ?? null,
-    [chatGroups, activeChatId],
+    () => privateChats.find((c) => c.id === activeChatId) ?? null,
+    [privateChats, activeChatId],
   );
 
   const selectedChatName = selectedChat
@@ -124,8 +134,9 @@ const MentorshipChatPage = () => {
         if (current.some((m) => m.id === ui.id)) return prev;
         return { ...prev, [groupId]: [...current, ui] };
       });
+      queryClient.invalidateQueries({ queryKey: ["privateChats"] });
     },
-    [user?.id],
+    [user?.id, queryClient],
   );
 
   const {
@@ -166,6 +177,18 @@ const MentorshipChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeChatId, messages.length]);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
+
   const handleSend = () => {
     const text = draft.trim();
     if (!text) return;
@@ -181,6 +204,7 @@ const MentorshipChatPage = () => {
   const paper = theme.palette.background.paper;
   const grey200 = theme.palette.grey[200];
   const sidebarWidth = { xs: "100%", md: 320 };
+  const chatShellHeight = `calc(100dvh - ${theme.mixins.toolbar.minHeight ?? 64}px)`;
 
   /** Không skeleton ở khung chính khi URL chưa có `:chatId`. */
   const mainView = useMemo(() => {
@@ -195,7 +219,8 @@ const MentorshipChatPage = () => {
       sx={{
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
-        flex: 1,
+        height: chatShellHeight,
+        maxHeight: chatShellHeight,
         minHeight: 0,
         width: "100%",
         overflow: "hidden",
@@ -214,7 +239,10 @@ const MentorshipChatPage = () => {
           },
           bgcolor: paper,
           flexShrink: 0,
-          maxHeight: { xs: 240, md: "none" },
+          minHeight: 0,
+          height: { xs: "auto", md: "100%" },
+          maxHeight: { xs: 240, md: "100%" },
+          overflow: "hidden",
         }}
       >
         <Box
@@ -228,7 +256,15 @@ const MentorshipChatPage = () => {
             Chats
           </Typography>
         </Box>
-        <Box sx={{ flex: 1, overflow: "auto" }}>
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            overflowX: "hidden",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           {isPending ? (
             Array.from({ length: 5 }).map((_, i) => (
               <Box
@@ -248,7 +284,7 @@ const MentorshipChatPage = () => {
                 </Box>
               </Box>
             ))
-          ) : chatGroups.length === 0 ? (
+          ) : privateChats.length === 0 ? (
             <Box sx={{ p: 2 }}>
               <Typography variant="body2" color="text.secondary">
                 {isError
@@ -257,11 +293,10 @@ const MentorshipChatPage = () => {
               </Typography>
             </Box>
           ) : (
-            chatGroups.map((chat) => {
+            privateChats.map((chat) => {
               const active = chat.id === activeChatId;
               const chatName = getChatDisplayName(chat);
-              const timeLabel =
-                formatRelativeTime(chat.updatedAt ?? chat.createdAt) || "—";
+              const preview = getChatListPreview(chat);
               return (
                 <Box
                   key={chat.id}
@@ -313,9 +348,7 @@ const MentorshipChatPage = () => {
                       {chatName}
                     </Typography>
                     <Typography variant="body2" color="text.secondary" noWrap>
-                      {timeLabel === "—"
-                        ? "No messages yet."
-                        : `Updated ${timeLabel} ago`}
+                      {preview}
                     </Typography>
                   </Box>
                   <Box
@@ -345,6 +378,8 @@ const MentorshipChatPage = () => {
           flexDirection: "column",
           flex: 1,
           minWidth: 0,
+          minHeight: 0,
+          overflow: "hidden",
           bgcolor: bg,
         }}
       >
@@ -402,7 +437,7 @@ const MentorshipChatPage = () => {
                   Đang tải danh sách chat…
                 </Typography>
               </>
-            ) : chatGroups.length === 0 ? (
+            ) : privateChats.length === 0 ? (
               <>
                 <Typography variant="subtitle1" fontWeight={600} color="text.primary">
                   Chưa có cuộc trò chuyện
@@ -490,7 +525,9 @@ const MentorshipChatPage = () => {
             <Box
               sx={{
                 flex: 1,
-                overflow: "auto",
+                minHeight: 0,
+                overflowY: "auto",
+                overflowX: "hidden",
                 px: 2,
                 py: 2,
                 display: "flex",
