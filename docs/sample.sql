@@ -434,3 +434,42 @@ INSERT INTO "peer_verifications" ("target_member_id", "verifier_member_id", "cre
 (8, 3, NOW() - INTERVAL '175 days'),
 (8, 6, NOW() - INTERVAL '170 days'),
 (10, 7, NOW() - INTERVAL '2 days');
+
+-- ============= POLL DATA =============
+-- Sample Poll 1: Topic selection poll
+INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
+(1, 1, 2, 'Best Programming Language for 2026?', 'Vote for your favorite programming language for upcoming projects', false, true, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');
+
+-- Add options for poll 1
+INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "created_at", "updated_at") VALUES
+(1, 'Python', 5, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+(1, 'JavaScript/TypeScript', 8, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
+(1, 'Java', 4, NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days'),
+(1, 'Go', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days'),
+(1, 'Rust', 6, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 day');
+
+-- Sample poll votes (member 4, 6, 9, 2, 5 voting)
+INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "created_at") VALUES
+(1, 2, 4, NOW() - INTERVAL '4 days'),
+(1, 2, 6, NOW() - INTERVAL '3 days'),
+(1, 1, 9, NOW() - INTERVAL '2 days'),
+(1, 5, 2, NOW() - INTERVAL '1 day'),
+(1, 1, 5, NOW());
+
+-- Sample Poll 2: When should we have the next meetup?
+INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
+(2, 1, 3, 'When is the best time for next meetup?', 'Help us schedule the next alumni meetup', false, true, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
+
+-- Add options for poll 2
+INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "created_at", "updated_at") VALUES
+(2, 'Weekend (Saturday or Sunday)', 12, NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
+(2, 'Weekday Evening (after work)', 8, NOW() - INTERVAL '2 days', NOW()),
+(2, 'Weekday Lunch (12-2pm)', 3, NOW() - INTERVAL '2 days', NOW()),
+(2, 'No preference', 5, NOW() - INTERVAL '2 days', NOW());
+
+-- Sample poll votes
+INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "created_at") VALUES
+(2, 1, 2, NOW() - INTERVAL '2 days'),
+(2, 1, 4, NOW() - INTERVAL '1 day'),
+(2, 2, 6, NOW() - INTERVAL '1 day'),
+(2, 1, 8, NOW());

@@ -1,6 +1,7 @@
 package com.service.backend.forum.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,12 +12,16 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ForumCategoryDTO {
+public class PollDTO {
     private Integer id;
-    private Integer parentId;
+    private Integer topicId;
     private Integer organizationId;
-    private String name;
+    private Integer createdByMemberId;
+    private String title;
     private String description;
+    private Boolean allowMultipleVotes;
+    private Boolean isActive;
+    private List<PollOptionDTO> options;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
