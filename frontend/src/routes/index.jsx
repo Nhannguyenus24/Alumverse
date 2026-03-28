@@ -297,6 +297,11 @@ export const router = createBrowserRouter([
                 path: "chat",
                 children: [
                   {
+                    index: true,
+                    element: <MentorshipChatPage />,
+                    handle: { hideFooter: true },
+                  },
+                  {
                     path: ":chatId",
                     element: <MentorshipChatPage />,
                     handle: { hideFooter: true },

@@ -1,6 +1,9 @@
 package com.service.backend.chat.service;
 
+import com.service.backend.auth.dao.AuthRepository;
+import com.service.backend.auth.entity.User;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
+import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.entity.ChatGroup;
 import com.service.backend.chat.entity.ChatGroupMember;
 import com.service.backend.chat.entity.ChatMessage;
@@ -15,6 +18,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -23,15 +27,18 @@ public class ChatService {
     private final ChatGroupRepository chatGroupRepository;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final AuthRepository authRepository;
 
     public ChatService(
         ChatGroupRepository cGRepo,
         ChatGroupMemberRepository cGMRepo,
-        ChatMessageRepository cMRepo
+        ChatMessageRepository cMRepo,
+        AuthRepository authRepository
     ) {
         this.chatGroupMemberRepository = cGMRepo;
         this.chatGroupRepository = cGRepo;
         this.chatMessageRepository = cMRepo;
+        this.authRepository = authRepository;
     }
 
 
@@ -85,12 +92,82 @@ public class ChatService {
                 .collectList();
     }
 
-    public Mono<List<ChatGroup>> getListPrivateChats(Long memberId) {
+    public Mono<List<PrivateChatListItemResponse>> getListPrivateChatsWithSummary(Long memberId) {
         if (memberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
         }
 
-        return getListChatGroupsByType(memberId, ChatType.PRIVATE.getValue());
+        return getListChatGroupsByType(memberId, ChatType.PRIVATE.getValue())
+                .flatMapMany(Flux::fromIterable)
+                .concatMap(group -> buildPrivateChatListItem(group, memberId))
+                .collectList()
+                .map(list -> {
+                    list.sort(Comparator.comparing(
+                            (PrivateChatListItemResponse item) ->
+                                    item.lastMessageAt() != null ? item.lastMessageAt() : item.updatedAt()
+                    ).reversed());
+                    return list;
+                });
+    }
+
+    private Mono<PrivateChatListItemResponse> buildPrivateChatListItem(ChatGroup group, Long currentMemberId) {
+        return chatGroupMemberRepository.findByGroupId(group.getId())
+                .map(ChatGroupMember::getMemberId)
+                .collectList()
+                .flatMap(memberIds -> {
+                    Long peerId = memberIds.stream()
+                            .filter(id -> !id.equals(currentMemberId))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (peerId == null) {
+                        return Mono.just(new PrivateChatListItemResponse(
+                                group.getId(),
+                                group.getType(),
+                                group.getTitle(),
+                                group.getCreatedBy(),
+                                group.getCreatedAt(),
+                                group.getUpdatedAt(),
+                                null,
+                                "Unknown",
+                                null,
+                                null
+                        ));
+                    }
+
+                    Long finalPeerId = peerId;
+                    Mono<String> userNameMono = authRepository.findById(finalPeerId.intValue())
+                            .map(User::getUserName)
+                            .switchIfEmpty(Mono.just("User " + finalPeerId));
+
+                    return userNameMono.flatMap(peerName ->
+                            chatMessageRepository.findLastByGroupId(group.getId())
+                                    .map(msg -> new PrivateChatListItemResponse(
+                                            group.getId(),
+                                            group.getType(),
+                                            group.getTitle(),
+                                            group.getCreatedBy(),
+                                            group.getCreatedAt(),
+                                            group.getUpdatedAt(),
+                                            finalPeerId,
+                                            peerName,
+                                            msg.getContent(),
+                                            msg.getCreatedAt()
+                                    ))
+                                    .switchIfEmpty(Mono.just(new PrivateChatListItemResponse(
+                                            group.getId(),
+                                            group.getType(),
+                                            group.getTitle(),
+                                            group.getCreatedBy(),
+                                            group.getCreatedAt(),
+                                            group.getUpdatedAt(),
+                                            finalPeerId,
+                                            peerName,
+                                            null,
+                                            null
+                                    )))
+                    );
+                });
     }
 
     public Mono<List<ChatGroup>> getListGroupChats(Long memberId) {
