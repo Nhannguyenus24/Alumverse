@@ -20,6 +20,16 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
             """)
     Flux<ChatMessage> findByGroupIdWithPagination(Long groupId, int limit, int offset);
 
+    @Query("""
+            SELECT *
+            FROM chat_messages
+            WHERE group_id = :groupId
+              AND deleted_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+            """)
+    Mono<ChatMessage> findLastByGroupId(Long groupId);
+
     @Query("SELECT COUNT(*) FROM chat_messages WHERE group_id = :groupId")
     Mono<Long> countByGroupId(Long groupId);
 

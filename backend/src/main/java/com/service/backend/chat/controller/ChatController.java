@@ -3,6 +3,7 @@ package com.service.backend.chat.controller;
 import com.service.backend.chat.dto.AddMembersRequest;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
+import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.chat.entity.ChatGroup;
@@ -52,9 +53,9 @@ public class ChatController {
     }
 
     @GetMapping("/private/list")
-    public Mono<ResponseEntity<ApiResponse<List<ChatGroup>>>> listPrivateChats() {
+    public Mono<ResponseEntity<ApiResponse<List<PrivateChatListItemResponse>>>> listPrivateChats() {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(chatService::getListPrivateChats)
+                .flatMap(chatService::getListPrivateChatsWithSummary)
                 .map(groups -> ResponseEntity
                         .ok(new ApiResponse<>("Private chats retrieved successfully", groups)));
     }

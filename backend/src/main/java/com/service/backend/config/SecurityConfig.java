@@ -56,6 +56,8 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/api/guest/**",
                                 "/websocket-test.html",
+                                "/ws/chat",
+                                "/ws/chat/**",
                                 "/*.html",
                                 "/*.css",
                                 "/*.js",
