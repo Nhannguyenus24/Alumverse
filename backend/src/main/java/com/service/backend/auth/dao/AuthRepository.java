@@ -24,27 +24,22 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Find user by username
      */
     Mono<User> findByUserName(String userName);
-    
+
     /**
-     * Check if email exists
+     * Check if user exists by email or username (for registration validation)
      */
-    Mono<Boolean> existsByEmail(String email);
-    
-    /**
-     * Check if username exists
-     */
-    Mono<Boolean> existsByUserName(String userName);
-    
+    Mono<Boolean> existsByEmailOrUserName(String email, String userName);
+
     /**
      * Find active user by email
      */
-    @Query("SELECT * FROM users WHERE email = :email AND status = 'active'")
+    @Query("SELECT * FROM users WHERE email = :email AND status = 'ACTIVE'")
     Mono<User> findActiveByEmail(@Param("email") String email);
     
     /**
      * Find active user by username
      */
-    @Query("SELECT * FROM users WHERE user_name = :userName AND status = 'active'")
+    @Query("SELECT * FROM users WHERE user_name = :userName AND status = 'ACTIVE'")
     Mono<User> findActiveByUserName(@Param("userName") String userName);
     
     /**
@@ -77,14 +72,14 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Update user status to active after successful verification
      */
     @Modifying
-    @Query("UPDATE users SET status = 'active', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE users SET status = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> activateUserById(@Param("id") Integer id);
     
     /**
      * Update user status to pending (for new registrations)
      */
     @Modifying
-    @Query("UPDATE users SET status = 'pending', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE users SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updateStatusToPendingById(@Param("id") Integer id);
     
     /**
@@ -97,7 +92,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     /**
      * Find user by email (pending or active) for registration check
      */
-    @Query("SELECT * FROM users WHERE email = :email AND (status = 'pending' OR status = 'active')")
+    @Query("SELECT * FROM users WHERE email = :email AND (status = 'PENDING' OR status = 'ACTIVE')")
     Mono<User> findPendingOrActiveByEmail(@Param("email") String email);
     
     /**
@@ -106,7 +101,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      */
     @Modifying
     @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'alumni', 'unverified', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Void> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
     
     /**

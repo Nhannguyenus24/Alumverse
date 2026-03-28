@@ -14,6 +14,8 @@ import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.constants.ErrorCode;
 
 import java.text.ParseException;
 
@@ -34,7 +36,7 @@ public class JwtUtils {
             this.signer = new MACSigner(secretKeyBytes);
             this.verifier = new MACVerifier(secretKeyBytes);
         } catch (JOSEException e) {
-            throw new IllegalStateException("Failed to initialize JWT signer/verifier", e);
+            throw new ApplicationException(ErrorCode.ERROR_SIGNING_JWT_TOKEN, "Failed to initialize JWT signer/verifier");
         }
     }
 
@@ -68,18 +70,18 @@ public class JwtUtils {
             SignedJWT signedJWT = SignedJWT.parse(token);
 
             if (!signedJWT.verify(verifier)) {
-                throw new RuntimeException("Invalid token signature");
+                throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Invalid token signature");
             }
 
             JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
             Date expirationTime = claims.getExpirationTime();
             if (expirationTime != null && expirationTime.before(new Date())) {
-                throw new RuntimeException("Token has expired");
+                throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Token has expired");
             }
 
             return claims;
         } catch (ParseException | JOSEException e) {
-            throw new RuntimeException("Error validating token", e);
+            throw new ApplicationException(ErrorCode.ERROR_VALIDATE_JWT_TOKEN, "Error validating token");
         }
     }
 
@@ -112,7 +114,7 @@ public class JwtUtils {
             signedJWT.sign(signer);
             return signedJWT.serialize();
         } catch (JOSEException e) {
-            throw new RuntimeException("Error signing JWT token", e);
+            throw new ApplicationException(ErrorCode.ERROR_SIGNING_JWT_TOKEN, "Error signing JWT token");
         }
     }
 }

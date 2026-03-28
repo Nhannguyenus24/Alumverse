@@ -17,7 +17,6 @@ import com.service.backend.auth.entity.User;
 import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
-import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 
 import reactor.core.publisher.Mono;
@@ -53,19 +52,10 @@ public class AuthService {
     }
 
     public Mono<Void> register(String email, String userName, String password) {
-        logger.info("Registering new user with email: {} and username: {}", email, userName);
 
-        Mono<Boolean> emailCheck = authRepository.existsByEmail(email);
-        Mono<Boolean> userCheck = authRepository.existsByUserName(userName);
-
-        return Mono.zip(emailCheck, userCheck)
-                .flatMap(tuple -> {
-                    boolean emailExists = tuple.getT1();
-                    boolean usernameExists = tuple.getT2();
-
-                    if (emailExists) return Mono.error(new RuntimeException(ErrorCode.EMAIL_ALREADY_REGISTERED.getMessage()));
-                    if (usernameExists) return Mono.error(new RuntimeException(ErrorCode.USERNAME_ALREADY_EXISTS.getMessage()));
-
+        return authRepository.existsByEmailOrUserName(email, userName)
+                .flatMap(exists -> {
+                    if (exists) return Mono.error(new RuntimeException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED.getMessage()));
                     return Mono.fromCallable(() -> passwordEncoder.encode(password))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword ->
@@ -75,41 +65,50 @@ public class AuthService {
     }
 
     public Mono<User> loginByEmail(String email, String password) {
-        logger.info("Attempting login with email: {}", email);
 
         return authRepository.findByEmail(email)
                 .flatMap(user -> {
-                    if (passwordEncoder.matches(password, user.getPasswordHash())) {
-                        logger.info("Login successful for email: {}", email);
-                        return Mono.just(user);
+                    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+                        logger.warn("Login failed - invalid password for email: {}", email);
+                        return Mono.error(new RuntimeException(ErrorCode.INVALID_CREDENTIALS.getMessage()));
                     }
-                    logger.info(JsonUtils.toJson(user));
-                    logger.warn("Login failed - invalid password for email: {}", email);
-                    return Mono.error(new RuntimeException(ErrorCode.INVALID_CREDENTIALS.getMessage()));
+                    
+                    // Check if account is verified and active
+                    if (user.getStatus() != com.service.backend.shared.enums.UserStatus.ACTIVE) {
+                        logger.warn("Login failed - account not active for email: {}. Status: {}", email, user.getStatus());
+                        return Mono.error(new RuntimeException(ErrorCode.ACCOUNT_NOT_VERIFIED.getMessage()));
+                    }
+                    
+                    logger.info("Login successful for email: {}", email);
+                    return Mono.just(user);
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                 .doOnError(error -> logger.error("Login error for email: {}", email, error));
     }
 
     public Mono<User> loginByUserName(String userName, String password) {
-        logger.info("Attempting login with username: {}", userName);
 
         return authRepository.findByUserName(userName)
                 .flatMap(user -> {
-                    if (passwordEncoder.matches(password, user.getPasswordHash())) {
-                        logger.info("Login successful for username: {}", userName);
-                        return Mono.just(user);
+                    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+                        logger.warn("Login failed - invalid password for username: {}", userName);
+                        return Mono.error(new RuntimeException(ErrorCode.INVALID_USERNAME_CREDENTIALS.getMessage()));
+                    }
+                    
+                    // Check if account is verified and active
+                    if (user.getStatus() != com.service.backend.shared.enums.UserStatus.ACTIVE) {
+                        logger.warn("Login failed - account not active for username: {}. Status: {}", userName, user.getStatus());
+                        return Mono.error(new RuntimeException(ErrorCode.ACCOUNT_NOT_VERIFIED.getMessage()));
                     }
 
-                    logger.warn("Login failed - invalid password for username: {}", userName);
-                    return Mono.error(new RuntimeException(ErrorCode.INVALID_USERNAME_CREDENTIALS.getMessage()));
+                    logger.info("Login successful for username: {}", userName);
+                    return Mono.just(user);
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                 .doOnError(error -> logger.error("Login error for username: {}", userName, error));
     }
 
     public Mono<Void> activateUser(Integer userId) {
-        logger.info("Activating user with id: {}", userId);
         
         return authRepository.activateUserById(userId)
                 .doOnSuccess(v -> logger.info("User activated successfully with id: {}", userId))
@@ -117,7 +116,6 @@ public class AuthService {
     }
 
     public Mono<Void> changePassword(Integer userId, String oldPassword, String newPassword) {
-        logger.info("Changing password for user id: {}", userId);
 
         return authRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
@@ -135,13 +133,11 @@ public class AuthService {
     }
 
     public Mono<List<Integer>> getOrganizationIdByUserId(Integer userId) {
-        logger.info("Getting organization ID for user id: {}", userId);
         return authRepository.getOrganizationIdByUserId(userId)
                 .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
     }
 
     public Mono<Void> sendOtpVerification(String email) {
-        logger.info("Sending OTP verification to email: {}", email);
 
         return authRepository.findByEmail(email)
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
@@ -149,7 +145,7 @@ public class AuthService {
                     // Generate cryptographically secure 6-digit OTP
                     String otp = String.format("%0" + OTP_LENGTH + "d", 
                             secureRandom.nextInt(OTP_MAX_VALUE));
-                    logger.info("Generated OTP for email: {}", email);
+                    logger.info("Generated OTP {} for email: {}", otp, email);
 
                     // Cache OTP and userId with TTL
                     Map<String, Object> cacheData = new HashMap<>();
@@ -176,7 +172,6 @@ public class AuthService {
     }
 
     public Mono<Void> verifyOtpAndActivate(String email, String otp) {
-        logger.info("Verifying OTP for email: {}", email);
 
         return cacheUtils.get(OTP_CACHE_KEY, email)
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.OTP_EXPIRED_NOT_FOUND.getMessage())))
@@ -204,7 +199,6 @@ public class AuthService {
      * Refresh access token using refresh token
      */
     public Mono<String> refreshAccessToken(String refreshToken) {
-        logger.info("Refreshing access token");
 
         if (!StringUtils.hasText(refreshToken)) {
             return Mono.error(new RuntimeException(ErrorCode.REFRESH_TOKEN_NOT_FOUND.getMessage()));

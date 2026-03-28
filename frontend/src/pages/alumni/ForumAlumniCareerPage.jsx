@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
@@ -28,6 +28,7 @@ const formatTopicDate = (iso) => {
 
 const ForumAlumniCareerPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { showError } = useNotification();
   const hasShownTopicsErrorRef = useRef(false);
@@ -38,11 +39,23 @@ const ForumAlumniCareerPage = () => {
     if (!categories?.length) {
       return [{ id: 'all', label: 'Tất cả' }];
     }
+    const parentCategories = categories
+      .filter((c) => c.parentId == null)
+      .slice()
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
     return [
       { id: 'all', label: 'Tất cả' },
-      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+      ...parentCategories.map((c) => ({ id: `parent-${c.id}`, label: c.name })),
     ];
   }, [categories]);
+
+  const selectedSidebarId = useMemo(() => {
+    const sid = location.state?.selectedFilterId;
+    if (sid === 'all' || (typeof sid === 'string' && sid.startsWith('parent-'))) {
+      return sid;
+    }
+    return 'all';
+  }, [location.state?.selectedFilterId]);
 
   const { topics, isPending, isError } = useForumTopics(CAREER_CATEGORY_ID, 0, 20);
 
@@ -63,7 +76,7 @@ const ForumAlumniCareerPage = () => {
         navigate('/forum');
         return;
       }
-      if (id?.startsWith('category-')) {
+      if (typeof id === 'string' && id.startsWith('parent-')) {
         navigate('/forum', { state: { selectedFilterId: id } });
         return;
       }
@@ -97,7 +110,7 @@ const ForumAlumniCareerPage = () => {
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
               <ForumFilterPanel
                 filters={filters}
-                selectedId="all"
+                selectedId={selectedSidebarId}
                 onChange={handleFilterChange}
               />
               <ForumSponsoredCard
