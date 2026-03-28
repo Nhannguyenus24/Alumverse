@@ -99,6 +99,12 @@ const MentorshipProfilePage = Loadable(
 const MentorshipChatPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipChatPage")),
 );
+const MentorshipDashboardPage = Loadable(
+  lazy(() => import("../pages/MentorshipDashboardPage")),
+);
+const MentorshipYourCalendarPage = Loadable(
+  lazy(() => import("../pages/MentorshipYourCalendarPage")),
+);
 
 // User pages
 const PostArticlePage = Loadable(
@@ -210,6 +216,7 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
+            element: <Navigate to="mentorship" replace />,
           },
           {
             path: "mentorship",
@@ -224,6 +231,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "dashboard",
+                element: <MentorshipDashboardPage />,
               },
               {
                 path: "profile",
@@ -231,9 +239,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "calendar",
-              },
-              {
-                path: "appointment",
+                element: <MentorshipYourCalendarPage />,
               },
             ],
           },
