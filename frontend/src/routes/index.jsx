@@ -47,6 +47,9 @@ const FacultyCNTTPage = Loadable(
   lazy(() => import("../pages/alumni/FacultyCNTTPage")),
 );
 const ForumPage = Loadable(lazy(() => import("../pages/alumni/ForumPage")));
+const ForumCategoryPage = Loadable(
+  lazy(() => import("../pages/alumni/ForumCategoryPage")),
+);
 const ForumAlumniCareerPage = Loadable(
   lazy(() => import("../pages/alumni/ForumAlumniCareerPage")),
 );
@@ -139,6 +142,10 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <ForumPage />,
+          },
+          {
+            path: "category/:categoryId",
+            element: <ForumCategoryPage />,
           },
           {
             path: "alumni",

@@ -6,7 +6,6 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -62,6 +61,17 @@ public class ForumController {
     }
 
     /**
+     * Find forum category by id
+     */
+    @GetMapping("/category/{id}")
+    public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> getCategoryById(
+            @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id) {
+        return forumService.findCategoryById(id)
+                .map(category -> ResponseEntity.ok(new ApiResponse<>("Category retrieved successfully", category)))
+                .onErrorResume(this::handleError);
+    }
+
+    /**
      * Create forum category
      */
     @PostMapping("/category")
@@ -84,16 +94,6 @@ public class ForumController {
                 .onErrorResume(this::handleError);
     }
 
-    /**
-     * Delete forum category
-     */
-    @DeleteMapping("/category/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deleteCategory(
-            @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id) {
-        return forumService.deleteCategory(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum category deleted successfully", null))))
-                .onErrorResume(this::handleError);
-    }
 
     // ========== TOPIC ENDPOINTS ==========
 
@@ -140,22 +140,11 @@ public class ForumController {
      * Update forum topic by id
      */
     @PutMapping("/topic/{id}")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopic(
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> daupdateTopic(
             @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id,
             @Valid @RequestBody UpdateForumTopicRequest request) {
         return forumService.updateTopic(id, request)
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)))
-                .onErrorResume(this::handleError);
-    }
-
-    /**
-     * Delete forum topic by id
-     */
-    @DeleteMapping("/topic/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deleteTopic(
-            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id) {
-        return forumService.deleteTopic(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum topic deleted successfully", null))))
                 .onErrorResume(this::handleError);
     }
 
@@ -201,40 +190,6 @@ public class ForumController {
                 .map(post -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Answer posted successfully", post)))
                 .onErrorResume(this::handleError);
     }
-
-    /**
-     * Ban a forum post
-     */
-    @PostMapping("/post/{id}/ban")
-    public Mono<ResponseEntity<ApiResponse<Object>>> banPost(
-            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
-        return forumService.banPost(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post banned successfully", null))))
-                .onErrorResume(this::handleError);
-    }
-
-    /**
-     * Unban a forum post
-     */
-    @PostMapping("/post/{id}/unban")
-    public Mono<ResponseEntity<ApiResponse<Object>>> unbanPost(
-            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
-        return forumService.unbanPost(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post unbanned successfully", null))))
-                .onErrorResume(this::handleError);
-    }
-
-    /**
-     * Delete a forum post
-     */
-    @DeleteMapping("/post/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deletePost(
-            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
-        return forumService.deletePost(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post deleted successfully", null))))
-                .onErrorResume(this::handleError);
-    }
-
     // ========== REACTION ENDPOINTS (LIKE/DISLIKE) ==========
 
     /**
@@ -274,8 +229,8 @@ public class ForumController {
             @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
         return forumService.getUserReaction(postId, memberId)
                 .map(reaction -> ResponseEntity.ok(new ApiResponse<>("User reaction retrieved successfully", reaction)))
-                .switchIfEmpty(Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>("No reaction found", null))))
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(
+                        new ApiResponse<>("No reaction found for this post", null))))
                 .onErrorResume(this::handleError);
     }
 
