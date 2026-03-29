@@ -237,7 +237,7 @@ export const router = createBrowserRouter([
         element: <PostArticlePage />,
       },
       {
-        path: "article",
+        path: "article/:id",
         element: <ArticlePage />,
       },
       {

@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,11 +37,9 @@ public class CreateEventRequest {
     @Schema(example = "Hội trường A, Đại học Khoa học Tự nhiên")
     private String location;
 
-    @NotNull()
     @Schema(example = "2026-05-20T08:00:00")
     private LocalDateTime startTime;
 
-    @NotNull()
     @Schema(example = "2026-05-20T17:00:00")
     private LocalDateTime endTime;
 
