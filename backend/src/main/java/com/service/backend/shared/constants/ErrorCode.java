@@ -52,7 +52,14 @@ public enum ErrorCode {
     FORUM_CATEGORY_NOT_FOUND("Không tìm thấy danh mục forum"),
     FORUM_TOPIC_NOT_FOUND("Không tìm thấy chủ đề forum"),
     FORUM_POST_NOT_FOUND("Không tìm thấy bài viết forum"),
-    INVALID_TOPIC_ID("ID chủ đề không hợp lệ");
+    INVALID_TOPIC_ID("ID chủ đề không hợp lệ"),
+
+    // Fund module
+    FUND_NOT_FOUND("Không tìm thấy quỹ"),
+    ORGANIZATION_NOT_FOUND("Không tìm thấy organization"),
+    FUND_RECEIVING_INFO_NOT_FOUND("Không tìm thấy thông tin tài khoản đích"),
+    ERROR_EXTRACTING_MEMBERID_FROM_TOKEN("Co loi trong qua trinh extract memberId tu token"),
+    NOT_FOUND_MEMBERID("Khong tim thay memberId trong token");
 
     private final String message;
 
