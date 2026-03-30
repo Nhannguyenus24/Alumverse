@@ -8,7 +8,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<FundDonations, Long> {
+public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<FundDonations, Integer> {
 
     @Query("SELECT * FROM fund_donations WHERE fund_id = :fundId ORDER BY id DESC LIMIT :limit OFFSET :offset")
     Flux<FundDonations> findByFundIdWithPagination(Long fundId, int limit, int offset);

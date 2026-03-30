@@ -1,6 +1,7 @@
 package com.service.backend.fundraising.service;
 
 import com.service.backend.fundraising.dao.interfaceclass.IFundRepository;
+import com.service.backend.fundraising.dao.repository.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.repository.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.repository.FundReceivingInfosR2dbcRepository;
 import com.service.backend.fundraising.dao.repository.FundStatusR2dbcRepository;
@@ -8,6 +9,7 @@ import com.service.backend.fundraising.dao.repository.OrganizationR2dbcRepositor
 import com.service.backend.fundraising.dao.repository.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
+import com.service.backend.fundraising.dto.CreateFundDonationRequest;
 import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
@@ -18,12 +20,14 @@ import com.service.backend.fundraising.entity.FundReceivingInfos;
 import com.service.backend.fundraising.entity.FundDonations;
 import com.service.backend.fundraising.dao.repository.FundQueryRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.enums.FundDonationStatus;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.dto.DataWithWarnings;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -43,6 +47,7 @@ public class FundService {
     private final FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
     private final FundStatusR2dbcRepository fundStatusRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
+    private final UserR2dbcRepository userRepository;
 
     public Mono<Funds> createFund(CreateFundRequest request) {
         Integer organizationId = request.getOrganizationId();
@@ -129,7 +134,7 @@ public class FundService {
                 ));
     }
 
-    public Mono<com.service.backend.shared.dto.DataWithWarnings<PaginatedResponse<FundListItemResponse>>> getFundsForList(FundFilterRequest req) {
+    public Mono<DataWithWarnings<PaginatedResponse<FundListItemResponse>>> getFundsForList(FundFilterRequest req) {
         int page = Math.max(0, req.getPage());
         int limit = Math.max(1, req.getSize());
         int offset = page * limit;
@@ -245,7 +250,7 @@ public class FundService {
                             page,
                             limit
                     );
-                    return new com.service.backend.shared.dto.DataWithWarnings<>(paged, warnings);
+                    return new DataWithWarnings<>(paged, warnings);
                 });
     }
 
@@ -337,6 +342,50 @@ public class FundService {
                 .flatMap(existing -> {
                     existing.setTimeEnded(LocalDateTime.now());
                     return fundR2dbcRepository.save(existing);
+                });
+    }
+
+    public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
+        Integer fundId = request.getFundId();
+        Integer donorMemberId = request.getDonorMemberId();
+
+        // Guest donation: allow donorMemberId = null.
+        if (donorMemberId == null) {
+            FundDonations donation = FundDonations.builder()
+                    .fundId(fundId)
+                    .donorMemberId(null)
+                    .donorName(request.getDonorName())
+                    .amount(request.getAmount())
+                    .address(request.getAddress())
+                    .phone(request.getPhone())
+                    .email(request.getEmail())
+                    .message(request.getMessage())
+                    .status(FundDonationStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            return fundDonationsRepository.save(donation);
+        }
+
+        // If donorMemberId is provided, validate it exists in `users` table.
+        return userRepository.findById(donorMemberId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + donorMemberId
+                )))
+                .flatMap(user -> {
+                    FundDonations donation = FundDonations.builder()
+                            .fundId(fundId)
+                            .donorMemberId(donorMemberId)
+                            .donorName(request.getDonorName())
+                            .amount(request.getAmount())
+                            .address(request.getAddress())
+                            .phone(request.getPhone())
+                            .email(request.getEmail())
+                            .message(request.getMessage())
+                            .status(FundDonationStatus.PENDING)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                    return fundDonationsRepository.save(donation);
                 });
     }
 

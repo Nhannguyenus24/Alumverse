@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import com.service.backend.fundraising.dto.FundFilterRequest;
+import com.service.backend.shared.dto.DataWithWarnings;
 
 @RestController
 @RequestMapping("/api/funds")
@@ -37,7 +39,9 @@ public class FundController {
     }
 
     @GetMapping
-    public Mono<ResponseEntity<ApiResponse<com.service.backend.shared.dto.DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
+    // this request also return a list with warnings fields in result
+    // for frontend to show to user when query param is not valid.
+    public Mono<ResponseEntity<ApiResponse<DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
             @RequestParam(required = false) String q,
@@ -49,8 +53,8 @@ public class FundController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String direction
     ) {
-        com.service.backend.fundraising.dto.FundFilterRequest req =
-                com.service.backend.fundraising.dto.FundFilterRequest.builder()
+        FundFilterRequest req =
+                FundFilterRequest.builder()
                         .page(page)
                         .size(limit)
                         .q(q)
@@ -109,19 +113,6 @@ public class FundController {
                 ));
     }
 
-    @GetMapping("/{fundId}/donations")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundDonations>>>> getDonations(
-            @PathVariable @Min(1) Long fundId,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit,
-            @RequestParam(required = false) String searchBy,
-            @RequestParam(required = false) String keyword
-    ) {
-        return fundService.getDonationsByFund(fundId, page, limit, searchBy, keyword)
-                .map(response -> ResponseEntity.ok(
-                        new ApiResponse<>("Fund donations retrieved successfully", response)
-                ));
-    }
 
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<FundStatisticsResponse>>> getStatistics() {

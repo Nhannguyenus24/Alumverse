@@ -270,7 +270,7 @@ CREATE TABLE "fund_donations" (
   "phone" varchar,
   "email" varchar,
   "message" text,
-  "status" varchar, // enum: PENDING, SUCCESS, FAILED
+  "status" varchar, -- enum: PENDING, SUCCESS, FAILED
   "created_at" timestamp
 );
 
@@ -440,7 +440,7 @@ ALTER TABLE "funds" ADD FOREIGN KEY ("organization_id") REFERENCES "organization
 
 ALTER TABLE "fund_donations" ADD FOREIGN KEY ("fund_id") REFERENCES "funds" ("id");
 
-ALTER TABLE "fund_donations" ADD FOREIGN KEY ("donor_member_id") REFERENCES "organization_members" ("id");
+ -- ALTER TABLE "fund_donations" ADD FOREIGN KEY ("donor_member_id") REFERENCES "organization_members" ("id");
 
 --ALTER TABLE "fund_expenses" ADD FOREIGN KEY ("fund_id") REFERENCES "funds" ("id");
 
