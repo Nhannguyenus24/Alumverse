@@ -60,9 +60,8 @@ const ForumAlumniCreateTopicPage = Loadable(
   lazy(() => import("../pages/alumni/ForumAlumniCreateTopicPage")),
 );
 
-const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
-
-const ArticlePage = Loadable(lazy(() => import("../pages/alumni/ArticlePage")));
+const ArticlePage = Loadable(
+  lazy(() => import("../pages/alumni/ArticlePage")));
 
 // Admin pages
 const CreateDonationPage = Loadable(
@@ -215,40 +214,6 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: "chances",
-        children: [
-          {
-            index: true,
-            element: <Navigate to="mentorship" replace />,
-          },
-          {
-            path: "mentorship",
-            children: [
-              {
-                index: true,
-                element: <MentorshipPage />,
-              },
-              {
-                path: "search",
-                element: <MentorshipSearchPage />,
-              },
-              {
-                path: "dashboard",
-                element: <MentorshipDashboardPage />,
-              },
-              {
-                path: "profile",
-                element: <MentorshipProfilePage />,
-              },
-              {
-                path: "calendar",
-                element: <MentorshipYourCalendarPage />,
-              },
-            ],
-          },
-        ],
-      },
-      {
         path: "post",
         element: <PostArticlePage />,
       },
@@ -308,6 +273,31 @@ export const router = createBrowserRouter([
                     path: ":chatId",
                     element: <MentorshipChatPage />,
                     handle: { hideFooter: true },
+                  },
+                ],
+              },
+              {
+                path: "mentorship",
+                children: [
+                  {
+                    index: true,
+                    element: <MentorshipPage />,
+                  },
+                  {
+                    path: "search",
+                    element: <MentorshipSearchPage />,
+                  },
+                  {
+                    path: "dashboard",
+                    element: <MentorshipDashboardPage />,
+                  },
+                  {
+                    path: "profile",
+                    element: <MentorshipProfilePage />,
+                  },
+                  {
+                    path: "calendar",
+                    element: <MentorshipYourCalendarPage />,
                   },
                 ],
               },
