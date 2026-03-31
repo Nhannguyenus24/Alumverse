@@ -214,43 +214,39 @@ INSERT INTO "learning_resources" ("organization_id", "uploader_member_id", "titl
 (2, 9, 'Data Science with Python', 'Course', 'https://datacamp.com/python-data-science', 'Learn data science fundamentals using Python', NOW() - INTERVAL '5 days');
 
 -- ============= FUNDS DATA =============
-INSERT INTO "funds" ("organization_id", "manager_member_id", "name", "description", "target_amount", "current_amount", "status") VALUES
-(1, 2, 'Student Scholarship Fund 2026', 'Supporting talented students with financial needs', 50000.00, 28500.00, 'Active'),
-(1, 6, 'Lab Equipment Fund', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, 'Active'),
-(2, 3, 'Alumni Mentorship Fund', 'Funding mentorship programs and workshops', 30000.00, 12000.00, 'Active'),
-(3, 7, 'Business Incubation Fund', 'Supporting student-led startup initiatives', 80000.00, 35000.00, 'Active'),
-(4, 1, 'Engineering Excellence Fund', 'Supporting engineering projects and competitions', 60000.00, 22500.00, 'Active');
+-- ============= FUND STATUSES DATA =============
+INSERT INTO "fund_statuses" ("name") VALUES
+('IMPORTANT'),
+('RURAL_AREAS');
 
 -- ============= FUND RECEIVING INFOS DATA =============
-INSERT INTO "fund_receiving_infos" ("fund_id", "type", "account_number", "account_name", "bank_name", "qr_code_url", "is_active") VALUES
-(1, 'Bank', '1234567890', 'HCMUS Student Scholarship Fund', 'VietcomBank', 'https://api.example.com/qr/fund1.png', true),
-(1, 'Momo', '0912345678', 'HCMUS Fund', NULL, 'https://api.example.com/qr/fund1_momo.png', true),
-(2, 'Bank', '0987654321', 'HCMUS Lab Equipment Fund', 'Techcombank', 'https://api.example.com/qr/fund2.png', true),
-(3, 'Bank', '1122334455', 'Alumni Mentorship Fund', 'VietcomBank', 'https://api.example.com/qr/fund3.png', true),
-(4, 'Bank', '5544332211', 'Business Incubation Fund', 'BIDV', 'https://api.example.com/qr/fund4.png', true),
-(5, 'Bank', '9988776655', 'Engineering Excellence Fund', 'Techcombank', 'https://api.example.com/qr/fund5.png', true);
+INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name", "is_active") VALUES
+('1234567890', 'HCMUS Student Scholarship Fund', 'VietcomBank', true),
+('0912345678', 'HCMUS Fund', 'MoMo', true),
+('0987654321', 'HCMUS Lab Equipment Fund', 'Techcombank', true),
+('1122334455', 'Alumni Mentorship Fund', 'VietcomBank', true),
+('5544332211', 'Business Incubation Fund', 'BIDV', true),
+('9988776655', 'Engineering Excellence Fund', 'Techcombank', true);
+
+-- ============= FUNDS DATA =============
+INSERT INTO "funds" ("organization_id", "manager_name", "name", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "time_ended") VALUES
+(1, 'John Doe', 'Student Scholarship Fund 2026', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, NOW() - INTERVAL '60 days', 3, 2, NOW() + INTERVAL '120 days'),
+(1, 'Phạm Văn C', 'Lab Equipment Fund', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, NOW() - INTERVAL '90 days', 2, 2, NOW() + INTERVAL '180 days'),
+(2, 'Jane Smith', 'Alumni Mentorship Fund', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, NOW() - INTERVAL '45 days', 2, 2, NOW() + INTERVAL '150 days'),
+(3, 'Hoàng Thị D', 'Business Incubation Fund', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, NOW() - INTERVAL '30 days', 1, 1, NOW() + INTERVAL '200 days'),
+(4, 'Admin User', 'Engineering Excellence Fund', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, NOW() - INTERVAL '40 days', 1, 1, NOW() + INTERVAL '160 days');
 
 -- ============= FUND DONATIONS DATA =============
-INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "message", "proof_image_url", "status", "created_at") VALUES
-(1, 2, NULL, 5000.00, 'Supporting our students', 'https://api.example.com/proofs/donation1.jpg', 'Approved', NOW() - INTERVAL '30 days'),
-(1, 6, NULL, 3500.00, 'Happy to help talented students', 'https://api.example.com/proofs/donation2.jpg', 'Approved', NOW() - INTERVAL '25 days'),
-(1, NULL, 'Anonymous Donor', 10000.00, 'Belief in future generation', 'https://api.example.com/proofs/donation3.jpg', 'Approved', NOW() - INTERVAL '20 days'),
-(2, 3, NULL, 2000.00, 'Upgrading our research capabilities', 'https://api.example.com/proofs/donation4.jpg', 'Approved', NOW() - INTERVAL '15 days'),
-(2, 8, NULL, 15000.00, 'Investing in research excellence', 'https://api.example.com/proofs/donation5.jpg', 'Approved', NOW() - INTERVAL '10 days'),
-(3, 7, NULL, 8000.00, 'Supporting mentorship initiatives', 'https://api.example.com/proofs/donation6.jpg', 'Approved', NOW() - INTERVAL '8 days'),
-(3, NULL, 'Company Partnership', 4000.00, 'Corporate social responsibility', 'https://api.example.com/proofs/donation7.jpg', 'Pending', NOW() - INTERVAL '2 days'),
-(4, 5, NULL, 6000.00, 'Supporting entrepreneurs', 'https://api.example.com/proofs/donation8.jpg', 'Approved', NOW() - INTERVAL '5 days'),
-(5, 1, NULL, 5500.00, 'Excellence in engineering', 'https://api.example.com/proofs/donation9.jpg', 'Approved', NOW() - INTERVAL '3 days');
-
--- ============= FUND EXPENSES DATA =============
-INSERT INTO "fund_expenses" ("fund_id", "title", "amount", "expense_date", "proof_document_url", "created_at") VALUES
-(1, 'Q4 2025 Scholarships Awarded', 8000.00, '2025-12-20', 'https://api.example.com/expenses/scholarship_q4.pdf', NOW() - INTERVAL '25 days'),
-(1, 'Q1 2026 Scholarships Awarded', 5000.00, '2026-01-20', 'https://api.example.com/expenses/scholarship_q1.pdf', NOW() - INTERVAL '8 days'),
-(2, 'New Server Purchase', 20000.00, '2025-12-15', 'https://api.example.com/expenses/server_receipt.pdf', NOW() - INTERVAL '30 days'),
-(2, 'Software Licenses', 5000.00, '2026-01-10', 'https://api.example.com/expenses/licenses.pdf', NOW() - INTERVAL '15 days'),
-(3, 'Mentorship Workshop Series', 3000.00, '2026-01-15', 'https://api.example.com/expenses/workshop.pdf', NOW() - INTERVAL '10 days'),
-(4, 'Startup Bootcamp Sponsorship', 10000.00, '2025-11-20', 'https://api.example.com/expenses/bootcamp.pdf', NOW() - INTERVAL '60 days'),
-(5, 'Engineering Competition Prizes', 8000.00, '2025-12-10', 'https://api.example.com/expenses/competition.pdf', NOW() - INTERVAL '35 days');
+INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
+(1, 2, NULL, 5000.00, 'District 1, Ho Chi Minh City', '0911111111', 'john.doe@hcmus.edu.vn', 'Supporting our students', 'SUCCESS', NOW() - INTERVAL '30 days'),
+(1, 6, NULL, 3500.00, 'Binh Thanh, Ho Chi Minh City', '0922222222', 'pham.van.c@hcmus.edu.vn', 'Happy to help talented students', 'SUCCESS', NOW() - INTERVAL '25 days'),
+(1, NULL, 'Anonymous Donor', 10000.00, 'District 3, Ho Chi Minh City', '0933333333', 'anonymous@example.com', 'Belief in future generation', 'SUCCESS', NOW() - INTERVAL '20 days'),
+(2, 3, NULL, 2000.00, 'Thu Duc, Ho Chi Minh City', '0944444444', 'jane.smith@hcmus.edu.vn', 'Upgrading our research capabilities', 'SUCCESS', NOW() - INTERVAL '15 days'),
+(2, 8, NULL, 15000.00, 'Go Vap, Ho Chi Minh City', '0955555555', 'le.van.e@hcmus.edu.vn', 'Investing in research excellence', 'SUCCESS', NOW() - INTERVAL '10 days'),
+(3, 7, NULL, 8000.00, 'District 7, Ho Chi Minh City', '0966666666', 'hoang.thi.d@hcmus.edu.vn', 'Supporting mentorship initiatives', 'SUCCESS', NOW() - INTERVAL '8 days'),
+(3, NULL, 'Company Partnership', 4000.00, 'Tan Binh, Ho Chi Minh City', '0977777777', 'partnership@company.com', 'Corporate social responsibility', 'PENDING', NOW() - INTERVAL '2 days'),
+(4, 5, NULL, 6000.00, 'District 5, Ho Chi Minh City', '0988888888', 'tran.thi.b@hcmus.edu.vn', 'Supporting entrepreneurs', 'FAILED', NOW() - INTERVAL '5 days'),
+(5, 1, NULL, 5500.00, 'District 10, Ho Chi Minh City', '0999999999', 'admin@hcmus.edu.vn', 'Excellence in engineering', 'SUCCESS', NOW() - INTERVAL '3 days');
 
 -- ============= NOTIFICATIONS DATA =============
 INSERT INTO "notifications" ("member_id", "title", "message", "target_url", "is_read", "created_at") VALUES

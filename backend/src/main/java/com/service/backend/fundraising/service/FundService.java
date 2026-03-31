@@ -1,0 +1,511 @@
+package com.service.backend.fundraising.service;
+
+import com.service.backend.fundraising.dao.interfaceclass.IFundRepository;
+import com.service.backend.fundraising.dao.repository.UserR2dbcRepository;
+import com.service.backend.fundraising.dao.repository.FundR2dbcRepository;
+import com.service.backend.fundraising.dao.repository.FundReceivingInfosR2dbcRepository;
+import com.service.backend.fundraising.dao.repository.FundStatusR2dbcRepository;
+import com.service.backend.fundraising.dao.repository.OrganizationR2dbcRepository;
+import com.service.backend.fundraising.dao.repository.FundDonationsR2dbcRepository;
+import com.service.backend.fundraising.dto.CreateFundRequest;
+import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
+import com.service.backend.fundraising.dto.CreateFundDonationRequest;
+import com.service.backend.fundraising.dto.FundDetailResponse;
+import com.service.backend.fundraising.dto.FundDonationCheckoutResponse;
+import com.service.backend.fundraising.dto.FundListItemResponse;
+import com.service.backend.fundraising.dto.FundStatisticsResponse;
+import com.service.backend.fundraising.dto.FundFilterRequest;
+import com.service.backend.fundraising.dto.UpdateFundRequest;
+import com.service.backend.fundraising.entity.Funds;
+import com.service.backend.fundraising.entity.FundReceivingInfos;
+import com.service.backend.fundraising.entity.FundDonations;
+import com.service.backend.fundraising.dao.repository.FundQueryRepository;
+import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import com.service.backend.shared.dto.DataWithWarnings;
+import reactor.core.scheduler.Schedulers;
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
+
+import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class FundService {
+
+    private final IFundRepository fundRepository;
+    private final FundR2dbcRepository fundR2dbcRepository;
+    private final FundQueryRepository fundQueryRepository;
+    private final OrganizationR2dbcRepository organizationRepository;
+    private final FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
+    private final FundStatusR2dbcRepository fundStatusRepository;
+    private final FundDonationsR2dbcRepository fundDonationsRepository;
+    private final UserR2dbcRepository userRepository;
+    private final PayOS payOS;
+
+    @Value("${payos.return-url}")
+    private String payosReturnUrl;
+
+    @Value("${payos.cancel-url}")
+    private String payosCancelUrl;
+
+    public Mono<Funds> createFund(CreateFundRequest request) {
+        Integer organizationId = request.getOrganizationId();
+        Integer fundReceivingInfoId = request.getFundReceivingInfoId();
+        Integer statusId = request.getStatusId();
+
+        return organizationRepository.findById(organizationId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FUND_NOT_FOUND,
+                        "Organization not found with id: " + organizationId)))
+                .flatMap(existingOrganization -> fundReceivingInfosRepository.findById(fundReceivingInfoId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.FUND_NOT_FOUND,
+                                "Fund receiving info not found with id: " + fundReceivingInfoId)))
+                        .flatMap(existingFundReceivingInfo -> fundStatusRepository.findById(statusId)
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.FUND_NOT_FOUND,
+                                        "Fund status not found with id: " + statusId)))
+                                .flatMap(existingStatus -> {
+                            Funds fund = Funds.builder()
+                                    .organizationId(organizationId)
+                                    .fundReceivingInfoId(fundReceivingInfoId)
+                                    .name(request.getName())
+                                    .logoUrl(request.getLogoUrl())
+                                    .descriptionShort(request.getDescriptionShort())
+                                    .descriptionFull(request.getDescriptionFull())
+                                    .managerName(request.getManagerName())
+                                    .targetAmount(request.getTargetAmount())
+                                    .currentAmount(java.math.BigDecimal.ZERO)
+                                    .timeStarted(request.getTimeStarted())
+                                    .statusId(statusId)
+                                    .timeEnded(request.getTimeEnded())
+                                    .build();
+
+                            return fundRepository.createFund(fund);
+                        })));
+    }
+
+    public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
+        FundReceivingInfos fundReceivingInfos = FundReceivingInfos.builder()
+                .accountNumber(request.getAccountNumber())
+                .accountName(request.getAccountName())
+                .bankName(request.getBankName())
+                .isActive(false)
+                .build();
+
+        return fundReceivingInfosRepository
+                .existsByBankNameAndAccountNumber(request.getBankName(), request.getAccountNumber())
+                .flatMap(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_DUPLICATE,
+                                "Fund receiving info already exists for bankName + accountNumber"));
+                    }
+                    return fundReceivingInfosRepository.save(fundReceivingInfos);
+                });
+    }
+
+    public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
+        return fundReceivingInfosRepository.findAll()
+                .filter(FundReceivingInfos::isActive);
+    }
+
+    public Mono<PaginatedResponse<Funds>> getFunds(int page, int limit, String keyword) {
+        int offset = page * limit;
+        String trimmedKeyword = keyword != null ? keyword.trim() : null;
+        boolean hasKeyword = trimmedKeyword != null && !trimmedKeyword.isEmpty();
+
+        Flux<Funds> dataFlux = hasKeyword
+                ? fundR2dbcRepository.searchFunds(trimmedKeyword, limit, offset)
+                : fundR2dbcRepository.findAllWithPagination(limit, offset);
+
+        Mono<Long> countMono = hasKeyword
+                ? fundR2dbcRepository.countSearchFunds(trimmedKeyword)
+                : fundR2dbcRepository.countAll();
+
+        return dataFlux.collectList()
+                .zipWith(countMono)
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1(),
+                        tuple.getT2(),
+                        page,
+                        limit
+                ));
+    }
+
+    public Mono<DataWithWarnings<PaginatedResponse<FundListItemResponse>>> getFundsForList(FundFilterRequest req) {
+        int page = Math.max(0, req.getPage());
+        int limit = Math.max(1, req.getSize());
+        int offset = page * limit;
+
+        List<String> warnings = new ArrayList<>();
+
+        // tim theo keyword
+        String keyword = null;
+        if (req.getQ() != null && !req.getQ().trim().isEmpty()) {
+            keyword = req.getQ().trim();
+        } else if (req.getQ() != null) {
+            warnings.add("Param q ignored: empty");
+        }
+
+        // statusId
+        Integer statusId = null;
+        if (req.getStatusId() != null) {
+            try {
+                statusId = Integer.parseInt(req.getStatusId());
+            } catch (NumberFormatException ex) {
+                warnings.add("Param statusId ignored: invalid format");
+            }
+        }
+
+        // tim kiem theo thoi gian
+        LocalDateTime tsFrom = null;
+        LocalDateTime tsTo = null;
+        boolean hasFrom = req.getTimeStartedFrom() != null;
+        boolean hasTo = req.getTimeStartedTo() != null;
+        if (hasFrom && hasTo) {
+            try {
+                tsFrom = LocalDateTime.parse(req.getTimeStartedFrom());
+                tsTo = LocalDateTime.parse(req.getTimeStartedTo());
+            } catch (DateTimeParseException ex) {
+                warnings.add("Params timeStartedFrom/timeStartedTo ignored: invalid ISO-8601");
+                tsFrom = null;
+                tsTo = null;
+            }
+        } else if (hasFrom || hasTo) {
+            warnings.add("Params timeStartedFrom/timeStartedTo ignored: both required");
+        }
+
+        // tim kiem theo amount
+        BigDecimal amtMin = null;
+        BigDecimal amtMax = null;
+        boolean hasMin = req.getTargetAmountMin() != null;
+        boolean hasMax = req.getTargetAmountMax() != null;
+        if (hasMin && hasMax) {
+            try {
+                amtMin = new BigDecimal(req.getTargetAmountMin());
+                amtMax = new BigDecimal(req.getTargetAmountMax());
+            } catch (NumberFormatException ex) {
+                warnings.add("Params targetAmountMin/targetAmountMax ignored: invalid number");
+                amtMin = null;
+                amtMax = null;
+            }
+        } else if (hasMin || hasMax) {
+            warnings.add("Params targetAmountMin/targetAmountMax ignored: both required");
+        }
+
+        // sort
+        boolean sortByDonor = false;
+        boolean sortAsc = true;
+        if (req.getSortBy() != null) {
+            if ("donor_count".equalsIgnoreCase(req.getSortBy())) {
+                sortByDonor = true;
+                if (req.getDirection() != null) {
+                    String dir = req.getDirection().toLowerCase();
+                    if ("asc".equals(dir)) sortAsc = true;
+                    else if ("desc".equals(dir)) sortAsc = false;
+                    else {
+                        warnings.add("Param direction ignored: must be asc|desc");
+                        // neu direction ma invalid thi ko sort 
+                        sortByDonor = false;
+                    }
+                } else {
+                    // ko co direction thi ko sort 
+                    warnings.add("Param direction missing for sortBy=donor_count: sorting ignored");
+                    sortByDonor = false;
+                }
+            } else {
+                warnings.add("Param sortBy ignored: only donor_count is supported");
+            }
+        }
+
+        Flux<Funds> data = fundQueryRepository.findFiltered(
+                statusId,
+                keyword,
+                tsFrom,
+                tsTo,
+                amtMin,
+                amtMax,
+                sortByDonor,
+                sortAsc,
+                limit,
+                offset
+        );
+        Mono<Long> count = fundQueryRepository.countFiltered(
+                statusId,
+                keyword,
+                tsFrom,
+                tsTo,
+                amtMin,
+                amtMax
+        );
+
+        return data.collectList()
+                .zipWith(count)
+                .map(tuple -> {
+                    PaginatedResponse<FundListItemResponse> paged = PaginatedResponse.of(
+                            tuple.getT1().stream().map(FundListItemResponse::from).toList(),
+                            tuple.getT2(),
+                            page,
+                            limit
+                    );
+                    return new DataWithWarnings<>(paged, warnings);
+                });
+    }
+
+    public Mono<PaginatedResponse<FundListItemResponse>> getFundsForList(int page, int limit, String keyword) {
+        return getFunds(page, limit, keyword)
+                .map(paged -> PaginatedResponse.of(
+                        paged.getItems().stream().map(FundListItemResponse::from).toList(),
+                        paged.getTotalItem(),
+                        paged.getCurrentPage(),
+                        paged.getPageSize()
+                ));
+    }
+
+    public Mono<FundDetailResponse> getFundDetail(Long fundId) {
+        return fundR2dbcRepository.findById(fundId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FUND_NOT_FOUND,
+                        "Fund not found with id: " + fundId)))
+                .flatMap(fund -> {
+                    Integer fundReceivingInfoId = fund.getFundReceivingInfoId();
+                    if (fundReceivingInfoId == null) {
+                        return Mono.just(FundDetailResponse.from(fund, null));
+                    }
+
+                    return fundReceivingInfosRepository.findById(fundReceivingInfoId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
+                                    "Fund receiving info not found with id: " + fundReceivingInfoId)))
+                            .map(fundReceivingInfo -> FundDetailResponse.from(fund, fundReceivingInfo));
+                });
+    }
+
+    public Mono<PaginatedResponse<FundListItemResponse>> getFundsByStatusId(int page, int limit, Integer statusId) {
+        int offset = page * limit;
+        return fundR2dbcRepository.findByStatusIdWithPagination(statusId, limit, offset)
+                .collectList()
+                .zipWith(fundR2dbcRepository.countByStatusId(statusId))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(FundListItemResponse::from).toList(),
+                        tuple.getT2(),
+                        page,
+                        limit
+                ));
+    }
+
+    public Mono<Funds> updateFund(Long fundId, UpdateFundRequest request) {
+        return fundR2dbcRepository.findById(fundId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FUND_NOT_FOUND,
+                        "Fund not found with id: " + fundId)))
+                .flatMap(existing -> {
+                    if (request.getName() != null) {
+                        existing.setName(request.getName());
+                    }
+                    if (request.getDescriptionShort() != null) {
+                        existing.setDescriptionShort(request.getDescriptionShort());
+                    }
+                    if (request.getDescriptionFull() != null) {
+                        existing.setDescriptionFull(request.getDescriptionFull());
+                    }
+                    if (request.getLogoUrl() != null) {
+                        existing.setLogoUrl(request.getLogoUrl());
+                    }
+                    if (request.getManagerName() != null) {
+                        existing.setManagerName(request.getManagerName());
+                    }
+
+                    Integer newOrganizationId = request.getOrganizationId();
+                    if (newOrganizationId != null) {
+                        return organizationRepository.findById(newOrganizationId)
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.ORGANIZATION_NOT_FOUND,
+                                        "Organization not found with id: " + newOrganizationId)))
+                                .flatMap(org -> {
+                                    existing.setOrganizationId(newOrganizationId);
+                                    return fundR2dbcRepository.save(existing);
+                                });
+                    }
+
+                    return fundR2dbcRepository.save(existing);
+                });
+    }
+
+    public Mono<Funds> closeFund(Long fundId) {
+        return fundR2dbcRepository.findById(fundId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FUND_NOT_FOUND,
+                        "Fund not found with id: " + fundId)))
+                .flatMap(existing -> {
+                    existing.setTimeEnded(LocalDateTime.now());
+                    return fundR2dbcRepository.save(existing);
+                });
+    }
+
+    public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
+        Integer fundId = request.getFundId();
+        Integer donorMemberId = request.getDonorMemberId();
+
+        // khi guest ko dang nhap ma donate thi field donoeMemberId la null
+        if (donorMemberId == null) {
+            FundDonations donation = FundDonations.builder()
+                    .fundId(fundId)
+                    .donorMemberId(null)
+                    .donorName(request.getDonorName())
+                    .amount(request.getAmount())
+                    .address(request.getAddress())
+                    .phone(request.getPhone())
+                    .email(request.getEmail())
+                    .message(request.getMessage())
+                    .status(FundDonationStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            return fundDonationsRepository.save(donation);
+        }
+
+        // neu donor member id ma ton tai trong body thi kiem tra su ton tai trong table user
+        return userRepository.findById(donorMemberId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + donorMemberId
+                )))
+                .flatMap(user -> {
+                    FundDonations donation = FundDonations.builder()
+                            .fundId(fundId)
+                            .donorMemberId(donorMemberId)
+                            .donorName(request.getDonorName())
+                            .amount(request.getAmount())
+                            .address(request.getAddress())
+                            .phone(request.getPhone())
+                            .email(request.getEmail())
+                            .message(request.getMessage())
+                            .status(FundDonationStatus.PENDING)
+                            .createdAt(LocalDateTime.now())
+                            .build();
+                    return fundDonationsRepository.save(donation);
+                });
+    }
+
+    public Mono<FundDonationCheckoutResponse> createFundDonationAndPaymentLink(CreateFundDonationRequest request) {
+        return createFundDonation(request)
+                .flatMap(savedDonation -> Mono.fromCallable(() -> {
+                            long amountInVnd = request.getAmount().longValueExact();
+                            String description = request.getMessage() == null || request.getMessage().isBlank()
+                                    ? "Fund donation " + savedDonation.getId()
+                                    : request.getMessage();
+                            CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
+                                    .orderCode(savedDonation.getId().longValue())
+                                    .amount(amountInVnd)
+                                    .description(description)
+                                    .cancelUrl(payosCancelUrl)
+                                    .returnUrl(payosReturnUrl)
+                                    .build();
+                            return payOS.paymentRequests().create(paymentData);
+                        })
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .map(paymentLink -> new FundDonationCheckoutResponse(paymentLink.getCheckoutUrl())));
+    }
+
+    public Mono<PaginatedResponse<FundDonations>> getDonationsByFund(
+            long fundId,
+            int page,
+            int limit,
+            String searchBy,
+            String keyword
+    ) {
+        int offset = page * limit;
+        boolean hasSearch = searchBy != null && !searchBy.isBlank() && keyword != null && !keyword.isBlank();
+
+        if (!hasSearch) {
+            Flux<FundDonations> data = fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset);
+            Mono<Long> count = fundDonationsRepository.countByFundId(fundId);
+            return data.collectList().zipWith(count)
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+        }
+
+        String normalized = keyword.trim();
+        switch (searchBy) {
+            case "name": {
+                Flux<FundDonations> data = fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset);
+                Mono<Long> count = fundDonationsRepository.countSearchByDonorName(fundId, normalized);
+                return data.collectList().zipWith(count)
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+            }
+            case "phone": {
+                Flux<FundDonations> data = fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset);
+                Mono<Long> count = fundDonationsRepository.countSearchByPhone(fundId, normalized);
+                return data.collectList().zipWith(count)
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+            }
+            case "address": {
+                Flux<FundDonations> data = fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset);
+                Mono<Long> count = fundDonationsRepository.countSearchByAddress(fundId, normalized);
+                return data.collectList().zipWith(count)
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+            }
+            case "message": {
+                Flux<FundDonations> data = fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset);
+                Mono<Long> count = fundDonationsRepository.countSearchByMessage(fundId, normalized);
+                return data.collectList().zipWith(count)
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+            }
+            case "email": {
+                Flux<FundDonations> data = fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset);
+                Mono<Long> count = fundDonationsRepository.countSearchByEmail(fundId, normalized);
+                return data.collectList().zipWith(count)
+                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+            }
+            case "amount": {
+                try {
+                    BigDecimal amount = new BigDecimal(normalized);
+                    Flux<FundDonations> data = fundDonationsRepository.searchByAmount(fundId, amount, limit, offset);
+                    Mono<Long> count = fundDonationsRepository.countSearchByAmount(fundId, amount);
+                    return data.collectList().zipWith(count)
+                            .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                } catch (NumberFormatException ex) {
+                    return Mono.error(new ApplicationException(
+                            ErrorCode.RESOURCES_NOT_FOUND,
+                            "Invalid amount keyword: not a valid number"
+                    ));
+                }
+            }
+            default:
+                return Mono.error(new ApplicationException(
+                        ErrorCode.RESOURCES_NOT_FOUND,
+                        "Unsupported searchBy value"
+                ));
+        }
+    }
+
+    public Mono<FundStatisticsResponse> getFundStatistics() {
+        Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
+        Mono<Long> totalFundsMono = fundR2dbcRepository.countAll();
+        Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
+        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+        Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
+
+        return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
+                .map(tuple -> FundStatisticsResponse.builder()
+                        .totalCurrentAmount(tuple.getT1())
+                        .totalFunds(tuple.getT2())
+                        .totalDonations(tuple.getT3())
+                        .totalDonationsAmountThisMonth(tuple.getT4())
+                        .build());
+    }
+}

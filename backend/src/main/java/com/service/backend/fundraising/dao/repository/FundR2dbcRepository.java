@@ -1,0 +1,34 @@
+package com.service.backend.fundraising.dao.repository;
+
+import com.service.backend.fundraising.entity.Funds;
+import org.springframework.data.r2dbc.repository.Query;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import java.math.BigDecimal;
+
+@Repository
+public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long> {
+
+    @Query("SELECT * FROM funds ORDER BY id DESC LIMIT :limit OFFSET :offset")
+    Flux<Funds> findAllWithPagination(int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM funds")
+    Mono<Long> countAll();
+
+    @Query("SELECT * FROM funds WHERE (LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_short) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_full) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY id DESC LIMIT :limit OFFSET :offset")
+    Flux<Funds> searchFunds(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM funds WHERE (LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_short) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_full) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countSearchFunds(String keyword);
+
+    @Query("SELECT * FROM funds WHERE status_id = :statusId ORDER BY id DESC LIMIT :limit OFFSET :offset")
+    Flux<Funds> findByStatusIdWithPagination(Integer statusId, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM funds WHERE status_id = :statusId")
+    Mono<Long> countByStatusId(Integer statusId);
+
+    @Query("SELECT COALESCE(SUM(current_amount), 0) FROM funds")
+    Mono<BigDecimal> sumCurrentAmount();
+}
