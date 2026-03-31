@@ -30,8 +30,8 @@ import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import { useAuth } from '../hooks/useAuth';
 
-const LOGO_SRC = '/school_logo/logo_alumverse.png';
-const LOGO_SRC_WHITE = '/school_logo/logo_alumverse_white.png';
+const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
+const LOGO_SRC_WHITE = '/alumverse_logo/Logo_Main_White.svg';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },

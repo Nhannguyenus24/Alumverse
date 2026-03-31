@@ -76,13 +76,13 @@ const Footer = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
               <Logo
                 variant="image"
-                src="/school_logo/logo_alumverse_short.png"
+                src="/alumverse_logo/Logo_White.svg"
                 alt="AlumVerse"
                 size="xlarge"
               />
               <Logo
                 variant="image"
-                src="/school_logo/logo_dhkhtn_white.png"
+                src="/school_logo/HCMUS_Logo_White.svg"
                 alt="Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
                 size="large"
               />
