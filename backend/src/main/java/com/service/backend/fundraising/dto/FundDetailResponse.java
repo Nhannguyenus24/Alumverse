@@ -24,7 +24,7 @@ public class FundDetailResponse {
     private String name;
     private String logoUrl;
 
-    // Requirement: DO NOT return descriptionShort in detail endpoint.
+    // KO return descriptionShort trong detail endpoint
     private String descriptionFull;
 
     private BigDecimal targetAmount;

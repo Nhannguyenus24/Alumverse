@@ -1,6 +1,7 @@
 package com.service.backend.fundraising.controller;
 
 import com.service.backend.fundraising.dto.CreateFundDonationRequest;
+import com.service.backend.fundraising.dto.FundDonationCheckoutResponse;
 import com.service.backend.fundraising.entity.FundDonations;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -24,13 +25,13 @@ public class FundDonationsController {
     private final FundService fundService;
 
     @PostMapping
-    public Mono<ResponseEntity<ApiResponse<FundDonations>>> createDonation(
+    public Mono<ResponseEntity<ApiResponse<FundDonationCheckoutResponse>>> createDonation(
             @Valid @RequestBody CreateFundDonationRequest request
     ) {
-        return fundService.createFundDonation(request)
-                .map(created -> ResponseEntity
+        return fundService.createFundDonationAndPaymentLink(request)
+                .map(result -> ResponseEntity
                         .status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("Fund donation created successfully", created)));
+                        .body(new ApiResponse<>("Fund donation created and payment link generated successfully", result)));
     }
 
     @GetMapping("/{fundId}")

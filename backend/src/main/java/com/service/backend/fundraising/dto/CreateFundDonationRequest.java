@@ -31,7 +31,7 @@ public class CreateFundDonationRequest {
     private Integer donorMemberId;
 
     @NotBlank
-    @Size(max = 255)
+    @Size(max = 50)
     @JsonProperty("donor_name")
     @Schema(example = "Nguyễn Văn A")
     private String donorName;

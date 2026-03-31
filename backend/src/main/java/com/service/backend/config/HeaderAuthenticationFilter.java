@@ -44,6 +44,7 @@ public class HeaderAuthenticationFilter implements WebFilter {
                 path.startsWith("/api/funds") ||
                 path.startsWith("/api/fund-donations") ||
                 path.startsWith("/api/fund-statuses") ||
+                path.startsWith("/api/payment") ||
                 path.startsWith("/websocket-test.html") ||
                 path.endsWith(".html") ||
                 path.endsWith(".css") ||

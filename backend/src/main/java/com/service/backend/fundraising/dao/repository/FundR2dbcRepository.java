@@ -6,6 +6,7 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.math.BigDecimal;
 
 @Repository
 public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long> {
@@ -29,5 +30,5 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     Mono<Long> countByStatusId(Integer statusId);
 
     @Query("SELECT COALESCE(SUM(current_amount), 0) FROM funds")
-    Mono<java.math.BigDecimal> sumCurrentAmount();
+    Mono<BigDecimal> sumCurrentAmount();
 }

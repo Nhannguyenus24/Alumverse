@@ -6,6 +6,8 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Repository
 public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<FundDonations, Integer> {
@@ -16,11 +18,11 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId")
     Mono<Long> countByFundId(Long fundId);
     
-    @Query("SELECT COUNT(*) FROM fund_donations")
+    @Query("SELECT COUNT(*) FROM fund_donations WHERE status = 'SUCCESS'")
     Mono<Long> countAll();
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE created_at >= :start AND created_at < :end")
-    Mono<java.math.BigDecimal> sumAmountBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+    Mono<BigDecimal> sumAmountBetween(LocalDateTime start, LocalDateTime end);
 
     // Search by specific text columns (ILIKE)
     @Query("SELECT * FROM fund_donations WHERE fund_id = :fundId AND donor_name ILIKE CONCAT('%', :keyword, '%') ORDER BY id DESC LIMIT :limit OFFSET :offset")
@@ -50,7 +52,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
 
     // Search by amount equals
     @Query("SELECT * FROM fund_donations WHERE fund_id = :fundId AND amount = :amount ORDER BY id DESC LIMIT :limit OFFSET :offset")
-    Flux<FundDonations> searchByAmount(Long fundId, java.math.BigDecimal amount, int limit, int offset);
+    Flux<FundDonations> searchByAmount(Long fundId, BigDecimal amount, int limit, int offset);
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND amount = :amount")
-    Mono<Long> countSearchByAmount(Long fundId, java.math.BigDecimal amount);
+    Mono<Long> countSearchByAmount(Long fundId, BigDecimal amount);
 }

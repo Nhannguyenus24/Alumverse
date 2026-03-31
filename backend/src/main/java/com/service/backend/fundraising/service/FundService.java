@@ -11,6 +11,7 @@ import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
 import com.service.backend.fundraising.dto.CreateFundDonationRequest;
 import com.service.backend.fundraising.dto.FundDetailResponse;
+import com.service.backend.fundraising.dto.FundDonationCheckoutResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.FundFilterRequest;
@@ -24,10 +25,14 @@ import com.service.backend.shared.enums.FundDonationStatus;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.dto.DataWithWarnings;
+import reactor.core.scheduler.Schedulers;
+import vn.payos.PayOS;
+import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -48,6 +53,13 @@ public class FundService {
     private final FundStatusR2dbcRepository fundStatusRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final UserR2dbcRepository userRepository;
+    private final PayOS payOS;
+
+    @Value("${payos.return-url}")
+    private String payosReturnUrl;
+
+    @Value("${payos.cancel-url}")
+    private String payosCancelUrl;
 
     public Mono<Funds> createFund(CreateFundRequest request) {
         Integer organizationId = request.getOrganizationId();
@@ -141,7 +153,7 @@ public class FundService {
 
         List<String> warnings = new ArrayList<>();
 
-        // q
+        // tim theo keyword
         String keyword = null;
         if (req.getQ() != null && !req.getQ().trim().isEmpty()) {
             keyword = req.getQ().trim();
@@ -159,7 +171,7 @@ public class FundService {
             }
         }
 
-        // time range
+        // tim kiem theo thoi gian
         LocalDateTime tsFrom = null;
         LocalDateTime tsTo = null;
         boolean hasFrom = req.getTimeStartedFrom() != null;
@@ -177,7 +189,7 @@ public class FundService {
             warnings.add("Params timeStartedFrom/timeStartedTo ignored: both required");
         }
 
-        // amount range
+        // tim kiem theo amount
         BigDecimal amtMin = null;
         BigDecimal amtMax = null;
         boolean hasMin = req.getTargetAmountMin() != null;
@@ -207,11 +219,11 @@ public class FundService {
                     else if ("desc".equals(dir)) sortAsc = false;
                     else {
                         warnings.add("Param direction ignored: must be asc|desc");
-                        // if direction invalid, do not sort at all per strict rule
+                        // neu direction ma invalid thi ko sort 
                         sortByDonor = false;
                     }
                 } else {
-                    // missing direction -> do not sort
+                    // ko co direction thi ko sort 
                     warnings.add("Param direction missing for sortBy=donor_count: sorting ignored");
                     sortByDonor = false;
                 }
@@ -349,7 +361,7 @@ public class FundService {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();
 
-        // Guest donation: allow donorMemberId = null.
+        // khi guest ko dang nhap ma donate thi field donoeMemberId la null
         if (donorMemberId == null) {
             FundDonations donation = FundDonations.builder()
                     .fundId(fundId)
@@ -366,7 +378,7 @@ public class FundService {
             return fundDonationsRepository.save(donation);
         }
 
-        // If donorMemberId is provided, validate it exists in `users` table.
+        // neu donor member id ma ton tai trong body thi kiem tra su ton tai trong table user
         return userRepository.findById(donorMemberId)
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
@@ -387,6 +399,26 @@ public class FundService {
                             .build();
                     return fundDonationsRepository.save(donation);
                 });
+    }
+
+    public Mono<FundDonationCheckoutResponse> createFundDonationAndPaymentLink(CreateFundDonationRequest request) {
+        return createFundDonation(request)
+                .flatMap(savedDonation -> Mono.fromCallable(() -> {
+                            long amountInVnd = request.getAmount().longValueExact();
+                            String description = request.getMessage() == null || request.getMessage().isBlank()
+                                    ? "Fund donation " + savedDonation.getId()
+                                    : request.getMessage();
+                            CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
+                                    .orderCode(savedDonation.getId().longValue())
+                                    .amount(amountInVnd)
+                                    .description(description)
+                                    .cancelUrl(payosCancelUrl)
+                                    .returnUrl(payosReturnUrl)
+                                    .build();
+                            return payOS.paymentRequests().create(paymentData);
+                        })
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .map(paymentLink -> new FundDonationCheckoutResponse(paymentLink.getCheckoutUrl())));
     }
 
     public Mono<PaginatedResponse<FundDonations>> getDonationsByFund(
