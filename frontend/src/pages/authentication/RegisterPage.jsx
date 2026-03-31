@@ -45,6 +45,8 @@ const RegisterPage = () => {
     const result = await registerUser({
       email: data.email,
       userName: data.userName,
+      studentId: data.studentId,
+      enrollmentYear: data.enrollmentYear,
       password: data.password,
       confirmPassword: data.confirmPassword,
     });

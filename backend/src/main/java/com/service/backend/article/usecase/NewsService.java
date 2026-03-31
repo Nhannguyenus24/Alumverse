@@ -8,6 +8,7 @@ import com.service.backend.article.dto.NewsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -18,22 +19,24 @@ public class NewsService {
 
     private final NewsR2dbcRepository newsRepository;
 
-    private static final Integer MOCK_ORGANIZATION_ID = 1;
-    private static final Integer MOCK_AUTHOR_MEMBER_ID = 1;
+    private static final Integer DEFAULT_ORGANIZATION_ID = 1;
 
     public Mono<NewsResponse> create(CreateNewsRequest request) {
-        News news = News.builder()
-                .organizationId(MOCK_ORGANIZATION_ID)
-                .authorMemberId(MOCK_AUTHOR_MEMBER_ID)
-                .title(request.getTitle())
-                .slug(request.getSlug())
-                .content(request.getContent())
-                .thumbnailUrl(request.getThumbnailUrl())
-                .isHidden(true)
-                .build();
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> {
+                    News news = News.builder()
+                            .organizationId(DEFAULT_ORGANIZATION_ID)
+                            .authorMemberId(userId.intValue())
+                            .title(request.getTitle())
+                            .slug(request.getSlug())
+                            .content(request.getContent())
+                            .thumbnailUrl(request.getThumbnailUrl())
+                            .isHidden(true)
+                            .build();
 
-        return newsRepository.save(news)
-                .map(NewsResponse::from);
+                    return newsRepository.save(news)
+                            .map(NewsResponse::from);
+                });
     }
 
     public Mono<NewsResponse> update(Integer id, UpdateNewsRequest request) {
@@ -69,9 +72,9 @@ public class NewsService {
 
     public Mono<PaginatedResponse<NewsResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return newsRepository.findByOrganizationIdWithPagination(MOCK_ORGANIZATION_ID, limit, offset)
+        return newsRepository.findByOrganizationIdWithPagination(DEFAULT_ORGANIZATION_ID, limit, offset)
                 .collectList()
-                .zipWith(newsRepository.countByOrganizationId(MOCK_ORGANIZATION_ID))
+                .zipWith(newsRepository.countByOrganizationId(DEFAULT_ORGANIZATION_ID))
                 .map(tuple -> PaginatedResponse.of(
                         tuple.getT1().stream().map(NewsResponse::from).toList(),
                         tuple.getT2(), page, limit
@@ -80,9 +83,9 @@ public class NewsService {
 
     public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit) {
         int offset = page * limit;
-        return newsRepository.findPublishedByOrganizationId(MOCK_ORGANIZATION_ID, limit, offset)
+        return newsRepository.findPublishedByOrganizationId(DEFAULT_ORGANIZATION_ID, limit, offset)
                 .collectList()
-                .zipWith(newsRepository.countPublishedByOrganizationId(MOCK_ORGANIZATION_ID))
+                .zipWith(newsRepository.countPublishedByOrganizationId(DEFAULT_ORGANIZATION_ID))
                 .map(tuple -> PaginatedResponse.of(
                         tuple.getT1().stream().map(NewsResponse::from).toList(),
                         tuple.getT2(), page, limit
@@ -91,9 +94,9 @@ public class NewsService {
 
     public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return newsRepository.searchNews(MOCK_ORGANIZATION_ID, keyword, limit, offset)
+        return newsRepository.searchNews(DEFAULT_ORGANIZATION_ID, keyword, limit, offset)
                 .collectList()
-                .zipWith(newsRepository.countSearchNews(MOCK_ORGANIZATION_ID, keyword))
+                .zipWith(newsRepository.countSearchNews(DEFAULT_ORGANIZATION_ID, keyword))
                 .map(tuple -> PaginatedResponse.of(
                         tuple.getT1().stream().map(NewsResponse::from).toList(),
                         tuple.getT2(), page, limit
