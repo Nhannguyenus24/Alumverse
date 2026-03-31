@@ -1,6 +1,6 @@
 package com.service.backend.article.dao;
 
-import com.service.backend.article.domain.entity.LearningResource;
+import com.service.backend.article.entity.LearningResource;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;

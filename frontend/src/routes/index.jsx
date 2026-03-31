@@ -1,59 +1,140 @@
-import { Suspense, lazy } from 'react';
-import { createBrowserRouter } from 'react-router';
-import MainLayout from '../layouts/MainLayout';
-import AuthLayout from '../layouts/AuthLayout';
-import ProtectedRoute from './ProtectedRoute';
-import PublicRoute from './PublicRoute';
-import LoadingScreen from '../components/LoadingScreen';
+import { Suspense, lazy } from "react";
+import { createBrowserRouter, Navigate } from "react-router";
+import MainLayout from "../layouts/MainLayout";
+import AuthLayout from "../layouts/AuthLayout";
+import ProtectedRoute from "./ProtectedRoute";
+import PublicRoute from "./PublicRoute";
+import LoadingScreen from "../components/LoadingScreen";
 
-const Loadable = (Component) => (props) =>
-  (
-    <Suspense fallback={<LoadingScreen />}>
-      <Component {...props} />
-    </Suspense>
-  );
+const Loadable = (Component) => (props) => (
+  <Suspense fallback={<LoadingScreen />}>
+    <Component {...props} />
+  </Suspense>
+);
 
-// Lazy load pages
-const HomePage = Loadable(lazy(() => import('../pages/HomePage')));
-const LoginPage = Loadable(lazy(() => import('../pages/LoginPage')));
-const RegisterPage = Loadable(lazy(() => import('../pages/RegisterPage')));
-const SignupCodePage = Loadable(lazy(() => import('../pages/SignupCodePage')));
+// Public pages
+const HomePage = Loadable(lazy(() => import("../pages/public/HomePage")));
+const IntroducePage = Loadable(
+  lazy(() => import("../pages/public/IntroducePage")),
+);
+const ContactPage = Loadable(lazy(() => import("../pages/public/ContactPage")));
+const FacultiesPage = Loadable(
+  lazy(() => import("../pages/public/FacultiesPage")),
+);
+
+// Authentication pages
+const LoginPage = Loadable(
+  lazy(() => import("../pages/authentication/LoginPage")),
+);
+const RegisterPage = Loadable(
+  lazy(() => import("../pages/authentication/RegisterPage")),
+);
+const SignupCodePage = Loadable(
+  lazy(() => import("../pages/authentication/SignupCodePage")),
+);
 const ForgotPasswordPage = Loadable(
-  lazy(() => import('../pages/ForgotPasswordPage'))
+  lazy(() => import("../pages/authentication/ForgotPasswordPage")),
 );
 const ResetPasswordPage = Loadable(
-  lazy(() => import('../pages/ResetPasswordPage'))
+  lazy(() => import("../pages/authentication/ResetPasswordPage")),
 );
-const DashboardPage = Loadable(lazy(() => import('../pages/DashboardPage')));
-const NotFoundPage = Loadable(lazy(() => import('../pages/NotFoundPage')));
-const UnauthorizedPage = Loadable(
-  lazy(() => import('../pages/UnauthorizedPage'))
+
+// Alumni pages
+const DashboardPage = Loadable(
+  lazy(() => import("../pages/alumni/DashboardPage")),
 );
-const ServerErrorPage = Loadable(
-  lazy(() => import('../pages/ServerErrorPage'))
+const FacultyCNTTPage = Loadable(
+  lazy(() => import("../pages/alumni/FacultyCNTTPage")),
 );
-const MaintenancePage = Loadable(
-  lazy(() => import('../pages/MaintenancePage'))
+const ForumPage = Loadable(lazy(() => import("../pages/alumni/ForumPage")));
+const ForumCategoryPage = Loadable(
+  lazy(() => import("../pages/alumni/ForumCategoryPage")),
 );
-const IntroducePage = Loadable(lazy(() => import('../pages/IntroducePage')));
-const FacultiesPage = Loadable(lazy(() => import('../pages/FacultiesPage')));
-const FacultyCNTTPage = Loadable(lazy(() => import('../pages/FacultyCNTTPage')));
-const ForumPage = Loadable(lazy(() => import('../pages/ForumPage')));
 const ForumAlumniCareerPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniCareerPage'))
+  lazy(() => import("../pages/alumni/ForumAlumniCareerPage")),
 );
 const ForumAlumniThreadPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniThreadPage'))
+  lazy(() => import("../pages/alumni/ForumAlumniThreadPage")),
 );
-const ForumAlumniCreatePostPage = Loadable(
-  lazy(() => import('../pages/ForumAlumniCreatePostPage'))
+const ForumAlumniCreateTopicPage = Loadable(
+  lazy(() => import("../pages/alumni/ForumAlumniCreateTopicPage")),
 );
+
 const ContactPage = Loadable(lazy(() => import('../pages/ContactPage')));
 
+const ArticlePage = Loadable(lazy(() => import("../pages/alumni/ArticlePage")));
+
+// Admin pages
+const CreateDonationPage = Loadable(
+  lazy(() => import("../pages/admin/CreateDonationPage")),
+);
+
+// Donation pages
+const DonationPage = Loadable(
+  lazy(() => import("../pages/donation/DonationPage")),
+);
+const DetailDonationPage = Loadable(
+  lazy(() => import("../pages/alumni/DetailDonationPage")),
+);
+
+// Honors pages
+const HonorsPage = Loadable(lazy(() => import("../pages/honors/HonorsPage")));
+const HonorsAlumniPage = Loadable(
+  lazy(() => import("../pages/honors/HonorsAlumniPage")),
+);
+const HonorsAchievementsPage = Loadable(
+  lazy(() => import("../pages/honors/HonorsAchievementsPage")),
+);
+const HonorsRequestAchievementsPage = Loadable(
+  lazy(() => import("../pages/honors/HonorsRequestAchievementsPage")),
+);
+
+// Mentorship pages
+const MentorshipPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipPage")),
+);
+const MentorshipSearchPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipSearchPage")),
+);
+const MentorshipProfilePage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipProfilePage")),
+);
+const MentorshipChatPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipChatPage")),
+);
+const MentorshipDashboardPage = Loadable(
+  lazy(() => import("../pages/MentorshipDashboardPage")),
+);
+const MentorshipYourCalendarPage = Loadable(
+  lazy(() => import("../pages/MentorshipYourCalendarPage")),
+);
+
+// User pages
+const PostArticlePage = Loadable(
+  lazy(() => import("../pages/user/PostArticlePage")),
+);
+const NotificationPage = Loadable(
+  lazy(() => import("../pages/user/NotificationPage")),
+);
+const SettingPage = Loadable(lazy(() => import("../pages/user/SettingPage")));
+
+// Error pages
+const NotFoundPage = Loadable(
+  lazy(() => import("../pages/error/NotFoundPage")),
+);
+const UnauthorizedPage = Loadable(
+  lazy(() => import("../pages/error/UnauthorizedPage")),
+);
+const ServerErrorPage = Loadable(
+  lazy(() => import("../pages/error/ServerErrorPage")),
+);
+const MaintenancePage = Loadable(
+  lazy(() => import("../pages/error/MaintenancePage")),
+);
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <MainLayout />,
     children: [
       {
@@ -61,32 +142,45 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
       {
-        path: 'introduction',
+        path: "introduction",
         element: <IntroducePage />,
       },
       {
-        path: 'forum',
+        path: "forum",
         children: [
           {
             index: true,
             element: <ForumPage />,
           },
           {
-            path: 'alumni',
+            path: "category/:categoryId",
+            element: <ForumCategoryPage />,
+          },
+          {
+            path: "alumni",
             children: [
               {
-                path: 'career',
+                path: "career",
                 children: [
                   {
                     index: true,
                     element: <ForumAlumniCareerPage />,
                   },
                   {
-                    path: 'create-post',
-                    element: <ForumAlumniCreatePostPage />,
+                    path: "create-post",
+                    element: (
+                      <Navigate
+                        to="/forum/alumni/career/create-topic"
+                        replace
+                      />
+                    ),
                   },
                   {
-                    path: ':threadId',
+                    path: "create-topic",
+                    element: <ForumAlumniCreateTopicPage />,
+                  },
+                  {
+                    path: ":threadId",
                     element: <ForumAlumniThreadPage />,
                   },
                 ],
@@ -96,24 +190,150 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: 'contact',
+        path: "contact",
         element: <ContactPage />,
       },
       {
-        path: 'faculties',
+        path: "honors",
+        children: [
+          {
+            index: true,
+            element: <HonorsPage />,
+          },
+          {
+            path: "alumni",
+            element: <HonorsAlumniPage />,
+          },
+          {
+            path: "achievements",
+            element: <HonorsAchievementsPage />,
+          },
+          {
+            path: "request-achievements",
+            element: <HonorsRequestAchievementsPage />,
+          },
+        ],
+      },
+      {
+        path: "chances",
+        children: [
+          {
+            index: true,
+            element: <Navigate to="mentorship" replace />,
+          },
+          {
+            path: "mentorship",
+            children: [
+              {
+                index: true,
+                element: <MentorshipPage />,
+              },
+              {
+                path: "search",
+                element: <MentorshipSearchPage />,
+              },
+              {
+                path: "dashboard",
+                element: <MentorshipDashboardPage />,
+              },
+              {
+                path: "profile",
+                element: <MentorshipProfilePage />,
+              },
+              {
+                path: "calendar",
+                element: <MentorshipYourCalendarPage />,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: "post",
+        element: <PostArticlePage />,
+      },
+      {
+        path: "article",
+        element: <ArticlePage />,
+      },
+      {
+        path: "notifications",
+        element: <NotificationPage />,
+      },
+      {
+        path: "settings",
+        element: (
+          <ProtectedRoute>
+            <SettingPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "faculties",
         children: [
           {
             index: true,
             element: <FacultiesPage />,
           },
           {
-            path: 'information-technology',
+            path: "information-technology",
             element: <FacultyCNTTPage />,
           },
         ],
       },
       {
-        path: 'dashboard',
+        path: "development",
+        children: [
+          // {
+          //   path: 'scholarships',
+          //   element: <ScholarshipsPage />,
+          // },
+          {
+            path: "mentorship",
+            children: [
+              {
+                index: true,
+                element: <MentorshipPage />,
+                handle: { hideFooter: true },
+              },
+              {
+                path: "chat",
+                children: [
+                  {
+                    index: true,
+                    element: <MentorshipChatPage />,
+                    handle: { hideFooter: true },
+                  },
+                  {
+                    path: ":chatId",
+                    element: <MentorshipChatPage />,
+                    handle: { hideFooter: true },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        path: "donations",
+        children: [
+          {
+            index: true,
+            element: <DonationPage />,
+          },
+          {
+            path: "create",
+            element: <CreateDonationPage />,
+          },
+          {
+            path: ":id",
+            element: <DetailDonationPage />,
+          },
+        ],
+      },
+      {
+        path: "dashboard",
         element: (
           <ProtectedRoute>
             <DashboardPage />
@@ -121,25 +341,25 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'unauthorized',
+        path: "unauthorized",
         element: <UnauthorizedPage />,
       },
       {
-        path: '500',
+        path: "500",
         element: <ServerErrorPage />,
       },
       {
-        path: 'maintenance',
+        path: "maintenance",
         element: <MaintenancePage />,
       },
     ],
   },
   {
-    path: '/auth',
+    path: "/auth",
     element: <AuthLayout />,
     children: [
       {
-        path: 'login',
+        path: "login",
         element: (
           <PublicRoute>
             <LoginPage />
@@ -147,7 +367,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'register',
+        path: "register",
         element: (
           <PublicRoute>
             <RegisterPage />
@@ -155,7 +375,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'signup-code',
+        path: "signup-code",
         element: (
           <PublicRoute>
             <SignupCodePage />
@@ -163,7 +383,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'forgot-password',
+        path: "forgot-password",
         element: (
           <PublicRoute>
             <ForgotPasswordPage />
@@ -171,7 +391,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'reset-password',
+        path: "reset-password",
         element: (
           <PublicRoute>
             <ResetPasswordPage />
@@ -181,7 +401,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '*',
+    path: "*",
     element: <NotFoundPage />,
   },
 ]);

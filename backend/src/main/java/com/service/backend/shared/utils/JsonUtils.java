@@ -7,9 +7,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
@@ -77,28 +74,6 @@ public class JsonUtils {
             return MAPPER.readValue(json, typeReference);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize JSON", e);
-        }
-    }
-
-    /**
-     * Convert JSON file to object
-     */
-    public static <T> T fromJsonFile(File file, Class<T> clazz) {
-        try {
-            return MAPPER.readValue(file, clazz);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read JSON from file: " + file.getPath(), e);
-        }
-    }
-
-    /**
-     * Convert JSON InputStream to object
-     */
-    public static <T> T fromJsonStream(InputStream inputStream, Class<T> clazz) {
-        try {
-            return MAPPER.readValue(inputStream, clazz);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to read JSON from stream", e);
         }
     }
 
@@ -207,10 +182,4 @@ public class JsonUtils {
         return mainNode;
     }
 
-    /**
-     * Get ObjectMapper instance for custom operations
-     */
-    public static ObjectMapper getMapper() {
-        return MAPPER;
-    }
 }

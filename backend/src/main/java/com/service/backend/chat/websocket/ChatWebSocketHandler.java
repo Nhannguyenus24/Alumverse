@@ -2,7 +2,7 @@ package com.service.backend.chat.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.service.backend.chat.entity.ChatMessage;
-import com.service.backend.chat.repository.ChatGroupMemberRepository;
+import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
@@ -14,6 +14,7 @@ import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -193,18 +194,23 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         if (sessions == null || sessions.isEmpty()) {
             return Mono.empty();
         }
+        Object metadataPayload = "";
+        if (message.getMetadata() != null && !message.getMetadata().isBlank()) {
+            metadataPayload = JsonUtils.fromJson(message.getMetadata(), Object.class);
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", message.getId());
+        payload.put("groupId", message.getGroupId());
+        payload.put("senderMemberId", message.getSenderMemberId());
+        payload.put("content", message.getContent());
+        payload.put("messageType", message.getMessageType());
+        payload.put("metadata", metadataPayload);
+        payload.put("createdAt", message.getCreatedAt());
 
         String eventJson = JsonUtils.toJson(Map.of(
                 "type", "MESSAGE_CREATED",
-                "payload", Map.of(
-                        "id", message.getId(),
-                        "groupId", message.getGroupId(),
-                        "senderMemberId", message.getSenderMemberId(),
-                        "content", message.getContent(),
-                        "messageType", message.getMessageType(),
-                        "metadata", message.getMetadata() != null ? message.getMetadata() : "",
-                        "createdAt", message.getCreatedAt()
-                )
+                "payload", payload
         ));
 
         return Mono.fromRunnable(() -> {

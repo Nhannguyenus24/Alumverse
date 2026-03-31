@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import {
   AppBar,
   Toolbar,
@@ -22,6 +22,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
+import Notification from './Notification';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PersonIcon from '@mui/icons-material/Person';
@@ -47,24 +48,23 @@ const NAV_ITEMS = [
     label: 'Phát triển',
     children: [
       { label: 'Học bổng', href: '/development/scholarships' },
-      { label: 'Hợp tác', href: '/development/partnership' },
+      { label: 'Cố vấn', href: '/development/mentorship' },
     ],
   },
   { label: 'Diễn đàn', href: '/forum' },
-  { label: 'Quyên góp', href: '/donate' },
+  { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
 ];
 
 const Header = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
   // Show full nav only from this width up; below = hamburger (avoids cramped nav)
 const HEADER_DESKTOP_BREAKPOINT = 1280;
 const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
   const { isAuthenticated, user } = useAuth();
 
-  const isAdminOnForum = user?.role === 'ADMIN' && location.pathname.startsWith('/forum');
+  const isAdmin = user?.role === 'ADMIN';
 
   const [anchorHoatDong, setAnchorHoatDong] = useState(null);
   const [anchorPhatTrien, setAnchorPhatTrien] = useState(null);
@@ -87,7 +87,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
   };
   const handleCloseMenu = (setter) => () => setter(null);
 
-  const headerTextColor = isAdminOnForum ? 'primary.contrastText' : 'text.primary';
+  const headerTextColor = isAdmin ? 'primary.contrastText' : 'text.primary';
 
   const navButtonSx = {
     color: headerTextColor,
@@ -97,7 +97,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
     px: 1.5,
     minWidth: 0,
     flexShrink: 0,
-    '&:hover': { backgroundColor: isAdminOnForum ? 'rgba(255,255,255,0.08)' : 'action.hover' },
+    '&:hover': { backgroundColor: isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover' },
   };
 
   return (
@@ -105,10 +105,10 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
       position="fixed"
       elevation={0}
       sx={{
-        backgroundColor: isAdminOnForum ? 'primary.main' : 'background.paper',
-        color: isAdminOnForum ? 'primary.contrastText' : 'text.primary',
+        backgroundColor: isAdmin ? 'primary.main' : 'background.paper',
+        color: isAdmin ? 'primary.contrastText' : 'text.primary',
         borderBottom: 1,
-        borderColor: isAdminOnForum ? 'transparent' : 'divider',
+        borderColor: isAdmin ? 'transparent' : 'divider',
       }}
     >
       <Toolbar
@@ -123,7 +123,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
           <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
             <Logo
               variant="image"
-              src={isAdminOnForum ? LOGO_SRC_WHITE : LOGO_SRC}
+              src={isAdmin ? LOGO_SRC_WHITE : LOGO_SRC}
               alt="Alumverse"
               size="medium"
             />
@@ -211,7 +211,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
                 sx={{
                   fontSize: '0.875rem',
                   fontWeight: 600,
-                  color: isAdminOnForum ? 'primary.contrastText' : 'primary.main',
+                  color: isAdmin ? 'primary.contrastText' : 'primary.main',
                   mr: 1,
                   cursor: 'pointer',
                 }}
@@ -221,13 +221,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
 
               {isAuthenticated ? (
                 <>
-                  <IconButton
-                    size="small"
-                    aria-label="Thông báo"
-                    sx={{ color: headerTextColor }}
-                  >
-                    <NotificationsOutlinedIcon fontSize="small" />
-                  </IconButton>
+                  <Notification />
                   <IconButton
                     size="small"
                     aria-label="Tin nhắn"
@@ -239,7 +233,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
                     displayName={displayName}
                     displayRole={displayRole}
                     avatarUrl={user?.avatarUrl}
-                    contrastMode={isAdminOnForum}
+                    contrastMode={isAdmin}
                   />
                 </>
               ) : (
