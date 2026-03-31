@@ -16,7 +16,7 @@ import Logo from "../../components/Logo";
 import FitBot from "../../components/FitBot";
 
 const HERO_BG = "/home_page/home_page.png";
-const HERO_LOGO = "/home_page/home_page_alum.png";
+const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
 
 const EXPLORE_ITEMS = [
   {
