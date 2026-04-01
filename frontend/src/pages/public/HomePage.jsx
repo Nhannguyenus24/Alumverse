@@ -106,7 +106,7 @@ const HomePage = () => {
             content: '""',
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.35)",
+            backgroundColor: "rgba(0,0,0,0.6)",
             zIndex: 0,
           },
         }}
