@@ -4,8 +4,12 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 const MainLayout = () => {
+  const location = useLocation();
   const matches = useMatches();
+  
   const hideFooter = matches.some((m) => m.handle?.hideFooter);
+  
+  const isHomePage = location.pathname === "/";
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -19,7 +23,9 @@ const MainLayout = () => {
           minHeight: 0,
         }}
       >
-        <Toolbar />
+        {/* Only render the spacer if we are NOT on the HomePage */}
+        {!isHomePage && <Toolbar />}
+        
         <Outlet />
       </Box>
       {!hideFooter && <Footer />}
