@@ -1,54 +1,47 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router';
 import {
-  AppBar,
-  Toolbar,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemText,
-  Collapse,
-  Divider,
-  useTheme,
-  useMediaQuery,
+  AppBar, Toolbar, Box, Typography,
+  Button, IconButton, Drawer, List, 
+  ListItemButton, ListItemText, Collapse, 
+  Divider, useTheme, useMediaQuery
 } from '@mui/material';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
-import Notification from './Notification';
-import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PersonIcon from '@mui/icons-material/Person';
+import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import { useAuth } from '../hooks/useAuth';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
-const LOGO_SRC_WHITE = '/alumverse_logo/Logo_Main_White.svg';
+const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Giới thiệu', href: '/introduction' },
-  { label: 'Vinh danh', href: '/honors' },
   {
-    label: 'Hoạt động',
+    label: 'Vinh danh', href: '/honors',
+    children: [
+      { label: 'Cựu sinh viên', href: '/honors/alumni' },
+      { label: 'Kênh thành tựu', href: '/honors/achievements' },
+    ],
+  },
+  {
+    label: 'Hoạt động', href: '/activities',
     children: [
       { label: 'Sự kiện', href: '/activities/events' },
       { label: 'Tin tức', href: '/activities/news' },
     ],
   },
   {
-    label: 'Phát triển',
+    label: 'Phát triển', href: '/development',
     children: [
-      { label: 'Học bổng', href: '/development/scholarships' },
       { label: 'Cố vấn', href: '/development/mentorship' },
+      { label: 'Cơ hội học tập', href: '/development/academics' },
+      { label: 'Cơ hội việc làm', href: '/development/jobs' },
     ],
   },
   { label: 'Diễn đàn', href: '/forum' },
@@ -59,17 +52,34 @@ const NAV_ITEMS = [
 const Header = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  // Show full nav only from this width up; below = hamburger (avoids cramped nav)
-const HEADER_DESKTOP_BREAKPOINT = 1280;
-const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
 
-  const isAdmin = user?.role === 'ADMIN';
-
-  const [anchorHoatDong, setAnchorHoatDong] = useState(null);
-  const [anchorPhatTrien, setAnchorPhatTrien] = useState(null);
+  // State for Scroll and UI
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedNav, setExpandedNav] = useState({});
+
+  const HEADER_DESKTOP_BREAKPOINT = 1280;
+  const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
+  const isHomePage = location.pathname === '/';
+  const isAdmin = user?.role === 'ADMIN';
+
+  const isTransparent = isHomePage && !isScrolled;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 150) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const displayName = user?.userName ?? 'User';
   const rawRole = user?.role ?? 'Student';
@@ -81,23 +91,21 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
     setExpandedNav((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const handleOpenMenu = (setter) => (e) => {
-    e.stopPropagation();
-    setter(e.currentTarget);
-  };
-  const handleCloseMenu = (setter) => () => setter(null);
-
-  const headerTextColor = isAdmin ? 'primary.contrastText' : 'text.primary';
+  const headerTextColor = isTransparent 
+    ? '#FFFFFF' 
+    : (isAdmin ? 'primary.contrastText' : 'text.primary');
 
   const navButtonSx = {
-    color: headerTextColor,
-    fontWeight: 500,
+    color: headerTextColor, 
+    fontWeight: 500, 
     fontSize: '0.9375rem',
-    textTransform: 'none',
-    px: 1.5,
-    minWidth: 0,
-    flexShrink: 0,
-    '&:hover': { backgroundColor: isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover' },
+    textTransform: 'none', 
+    px: 1.5, 
+    transition: 'all 0.3s ease',
+    '&:hover': { 
+      backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' :
+      (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover') 
+    },
   };
 
   return (
@@ -105,156 +113,110 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
       position="fixed"
       elevation={0}
       sx={{
-        backgroundColor: isAdmin ? 'primary.main' : 'background.paper',
-        color: isAdmin ? 'primary.contrastText' : 'text.primary',
-        borderBottom: 1,
-        borderColor: isAdmin ? 'transparent' : 'divider',
+        backgroundColor: isTransparent ? 'transparent' : (isAdmin ? 'primary.main' : 'background.paper'),
+        color: headerTextColor,
+        borderBottom: isTransparent ? 'none' : (isAdmin ? 'transparent' : 1),
+        borderColor: 'divider',
+        transition: 'all 0.4s ease-in-out',
       }}
     >
-      <Toolbar
-        sx={{
-          minHeight: { xs: 56, md: 64 },
-          px: { xs: 1.5, sm: 2 },
-          justifyContent: 'space-between',
-          gap: 2,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+      <Toolbar sx={{ minHeight: { xs: 56, md: 64 },
+                     px: { xs: 1.5, sm: 2 },
+                     justifyContent: 'space-between', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-            <Logo
-              variant="image"
-              src={isAdmin ? LOGO_SRC_WHITE : LOGO_SRC}
-              alt="Alumverse"
-              size="medium"
+            <Logo 
+              variant="image" 
+              src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC} 
+              alt="AlumVerse" 
+              size="medium" 
             />
           </Link>
         </Box>
 
         {isDesktop && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flex: 1,
-              gap: 0.5,
-              flexWrap: 'nowrap',
-              whiteSpace: 'nowrap',
-              minWidth: 0,
-            }}
-          >
-              {NAV_ITEMS.map((item) =>
-                item.children ? (
-                  <Box key={item.label} sx={{ flexShrink: 0 }}>
-                    <Button
-                      endIcon={<KeyboardArrowDownIcon fontSize="small" />}
-                      sx={navButtonSx}
-                      onClick={(e) =>
-                        item.label === 'Hoạt động'
-                          ? handleOpenMenu(setAnchorHoatDong)(e)
-                          : handleOpenMenu(setAnchorPhatTrien)(e)
-                      }
-                    >
-                      {item.label}
-                    </Button>
-                    <Menu
-                      anchorEl={item.label === 'Hoạt động' ? anchorHoatDong : anchorPhatTrien}
-                      open={
-                        (item.label === 'Hoạt động' && !!anchorHoatDong) ||
-                        (item.label === 'Phát triển' && !!anchorPhatTrien)
-                      }
-                      onClose={
-                        item.label === 'Hoạt động'
-                          ? handleCloseMenu(setAnchorHoatDong)
-                          : handleCloseMenu(setAnchorPhatTrien)
-                      }
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                      transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-                      slotProps={{ paper: { sx: { mt: 1.5, minWidth: 160 } } }}
-                    >
-                      {item.children.map((child) => (
-                        <MenuItem
-                          key={child.label}
-                          component={Link}
-                          to={child.href}
-                          onClick={
-                            item.label === 'Hoạt động'
-                              ? handleCloseMenu(setAnchorHoatDong)
-                              : handleCloseMenu(setAnchorPhatTrien)
-                          }
-                          sx={{ py: 1.25 }}
-                        >
-                          {child.label}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  </Box>
-                ) : (
-                  <Button
-                    key={item.label}
-                    component={Link}
-                    to={item.href}
-                    sx={navButtonSx}
-                  >
-                    {item.label}
-                  </Button>
-                )
-              )}
-            </Box>
-          )}
+          <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+                     display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
+            {NAV_ITEMS.map((item) => (
+              <Box
+                key={item.label}
+                onMouseEnter={() => item.children && setHoveredNav(item.label)}
+                onMouseLeave={() => setHoveredNav(null)}
+                sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+              >
+                <Button component={Link} to={item.href} sx={navButtonSx}>
+                  {item.label}
+                </Button>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flex: 1, gap: 0.5 }}>
+                {item.children && hoveredNav === item.label && (
+                  <Box
+                    onMouseEnter={() => setHoveredNav(item.label)}
+                    onMouseLeave={() => setHoveredNav(null)}
+                    sx={{
+                      position: 'absolute', top: '150%', pt: 1, left: '50%', transform: 'translateX(-50%)',
+                      display: 'flex', flexDirection: 'column', bgcolor: 'background.paper',
+                      borderRadius: 1, boxShadow: 3, py: 0.5, px: 0.5,
+                      width: 'max-content', minWidth: 180, zIndex: 10,
+                    }} >
+                    {item.children.map((child) => (
+                      <Button
+                        key={child.label} component={Link} to={child.href}
+                        sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
+                              textTransform: 'none', color: 'text.primary', width: '100%',
+                              '&:hover': { bgcolor: 'action.hover' } }}
+                      >
+                        {child.label}
+                      </Button>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+            ))}
+          </Box>
+        )}
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
           {isDesktop ? (
             <>
-              <Typography
-                component="span"
-                sx={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: isAdmin ? 'primary.contrastText' : 'primary.main',
-                  mr: 1,
-                  cursor: 'pointer',
-                }}
+              <Typography component="span"
+                sx={{ fontSize: '0.875rem', fontWeight: 600,
+                      color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
+                      mr: 1, cursor: 'pointer', transition: 'color 0.3s' }}
               >
                 VI
               </Typography>
 
               {isAuthenticated ? (
                 <>
-                  <Notification />
-                  <IconButton
-                    size="small"
-                    aria-label="Tin nhắn"
-                    sx={{ color: headerTextColor }}
-                  >
+                  <Notification sx={{ color: headerTextColor }} />
+                  <IconButton size="small" sx={{ color: headerTextColor }}>
                     <EmailOutlinedIcon fontSize="small" />
                   </IconButton>
                   <AccountMenu
-                    displayName={displayName}
-                    displayRole={displayRole}
-                    avatarUrl={user?.avatarUrl}
-                    contrastMode={isAdmin}
-                  />
+                    displayName={displayName} displayRole={displayRole}
+                    avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin} />
                 </>
               ) : (
                 <>
-                  <Button
-                    component={Link}
-                    to="/auth/register"
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    sx={{ fontWeight: 600 }}
+                  <Button component={Link} to="/auth/register"
+                          variant="outlined" size="small"
+                          sx={{ 
+                            fontWeight: 600, 
+                            color: isTransparent ? '#FFFFFF' : 'primary.main',
+                            borderColor: isTransparent ? '#FFFFFF' : 'primary.main',
+                            '&:hover': { borderColor: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)' }
+                          }}
                   >
                     Đăng ký
                   </Button>
-                  <Button
-                    component={Link}
-                    to="/auth/login"
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    sx={{ fontWeight: 600 }}
+                  <Button component={Link} to="/auth/login"
+                          variant="contained" size="small"
+                          sx={{ 
+                            fontWeight: 600,
+                            bgcolor: isTransparent ? '#FFFFFF' : 'primary.main',
+                            color: isTransparent ? 'primary.main' : 'primary.contrastText',
+                            '&:hover': { bgcolor: isTransparent ? '#f0f0f0' : 'primary.dark' }
+                          }}
                   >
                     Đăng nhập
                   </Button>
@@ -262,11 +224,7 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
               )}
             </>
           ) : (
-            <IconButton
-              aria-label="Mở menu"
-              onClick={handleDrawerToggle}
-              sx={{ color: headerTextColor }}
-            >
+            <IconButton onClick={handleDrawerToggle} sx={{ color: headerTextColor }}>
               <MenuIcon />
             </IconButton>
           )}
@@ -274,132 +232,85 @@ const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT))
       </Toolbar>
 
       <Drawer
-        variant="temporary"
-        anchor="right"
-        open={mobileOpen}
-        onClose={closeDrawer}
-        ModalProps={{ keepMounted: true }}
-        slotProps={{
-          paper: {
-            sx: { width: { xs: '85%', sm: 320 }, boxSizing: 'border-box' },
-          },
-        }}
+        variant="temporary" anchor="right" open={mobileOpen} onClose={closeDrawer}
+        slotProps={{ paper: { sx: { width: { xs: '85%', sm: 320 } } } }}
       >
         <Box sx={{ py: 2, px: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary" fontWeight={600} sx={{ mb: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary" 
+                      fontWeight={600} sx={{ mb: 1 }}>
             Ngôn ngữ
           </Typography>
-          <Typography component="span" sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'primary.main' }}>
+          <Typography component="span"
+                      sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'primary.main' }}>
             VI
           </Typography>
         </Box>
+
         <Divider />
+
         <List component="nav" sx={{ py: 1 }}>
           {NAV_ITEMS.map((item) =>
-            item.children ? (
-              <Box key={item.label}>
-                <ListItemButton onClick={toggleDrawerNav(item.label)} sx={{ py: 1.25 }}>
-                  <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 500 }} />
-                  {expandedNav[item.label] ? (
-                    <ExpandLess sx={{ color: 'text.secondary' }} />
-                  ) : (
-                    <ExpandMore sx={{ color: 'text.secondary' }} />
-                  )}
-                </ListItemButton>
-                <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
-                  <List component="div" disablePadding>
-                    {item.children.map((child) => (
-                      <ListItemButton
-                        key={child.label}
-                        component={Link}
-                        to={child.href}
-                        onClick={closeDrawer}
-                        sx={{ pl: 3, py: 1 }}
-                      >
-                        <ListItemText primary={child.label} primaryTypographyProps={{ variant: 'body2' }} />
-                      </ListItemButton>
-                    ))}
-                  </List>
-                </Collapse>
-              </Box>
+          item.children ? (
+            <Box key={item.label}>
+              <ListItemButton sx={{ py: 1.25 }}>
+                <ListItemText 
+                  primary={item.label}
+                  primaryTypographyProps={{ fontWeight: 500 }} 
+                  onClick={() => { navigate(item.href); closeDrawer(); }}
+                />
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleDrawerNav(item.label)(); }}>
+                  {expandedNav[item.label] ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+              </ListItemButton>
+              <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {item.children.map((child) => (
+                    <ListItemButton key={child.label} component={Link} to={child.href} 
+                                    onClick={closeDrawer} sx={{ pl: 4 }}>
+                      <ListItemText primary={child.label} primaryTypographyProps={{ variant: 'body2' }} />
+                    </ListItemButton>
+                  ))}
+                </List>
+              </Collapse>
+            </Box>
             ) : (
-              <ListItemButton key={item.label} component={Link} to={item.href} onClick={closeDrawer}>
+              <ListItemButton key={item.label} onClick={closeDrawer}
+                              component={Link} to={item.href}>
                 <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 500 }} />
               </ListItemButton>
             )
           )}
         </List>
+
         <Divider />
+
         <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
           {isAuthenticated ? (
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                p: 1.5,
-                borderRadius: 1,
-                bgcolor: 'action.hover',
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                closeDrawer();
-                navigate('/dashboard');
-              }}
-            >
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  bgcolor: 'primary.main',
-                  color: 'primary.contrastText',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {user?.avatarUrl ? (
-                  <Box
-                    component="img"
-                    src={user.avatarUrl}
-                    alt=""
-                    sx={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <PersonIcon sx={{ fontSize: 24 }} />
-                )}
+            <Box sx={{ display: 'flex', alignItems: 'center',
+                        gap: 1.5, p: 1.5, borderRadius: 1, bgcolor: 'action.hover' }}
+                  onClick={() => { closeDrawer(); navigate('/dashboard'); }}>
+              <Box sx={{ width: 40, height: 40, borderRadius: '50%',
+                          bgcolor: 'primary.main', color: 'primary.contrastText',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {user?.avatarUrl ?
+                  <Box component="img" src={user.avatarUrl}
+                        sx={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  : <PersonIcon />}
               </Box>
               <Box>
-                <Typography variant="body2" fontWeight={600} color="text.primary">
-                  {displayName}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {displayRole}
-                </Typography>
+                <Typography variant="body2" fontWeight={600}>{displayName}</Typography>
+                <Typography variant="caption" color="text.secondary">{displayRole}</Typography>
               </Box>
             </Box>
           ) : (
             <>
-              <Button
-                component={Link}
-                to="/auth/register"
-                variant="outlined"
-                color="primary"
-                fullWidth
-                onClick={closeDrawer}
-                sx={{ fontWeight: 600 }}
+              <Button component={Link} to="/auth/register" variant="outlined"
+                      fullWidth onClick={closeDrawer}
               >
                 Đăng ký
               </Button>
-              <Button
-                component={Link}
-                to="/auth/login"
-                variant="contained"
-                color="primary"
-                fullWidth
-                onClick={closeDrawer}
-                sx={{ fontWeight: 600 }}
+              <Button component={Link} to="/auth/login" variant="contained"
+                      fullWidth onClick={closeDrawer}
               >
                 Đăng nhập
               </Button>
