@@ -53,7 +53,7 @@ public class CreateFundDonationRequest {
     @Schema(example = "nguyenvana@example.com")
     private String email;
 
-    @Size(max = 2000)
+    @Size(max = 100) // Already checked that the bank allow max 119, i left 19 character left for fund donation id
     @Schema(example = "Chúc các bạn nhận được học bổng!")
     private String message;
 }
