@@ -67,7 +67,7 @@ public class SecurityConfig {
                                 "/api/funds/**",
                                 "/api/fund-statuses",
                                 "/api/fund-donations",
-                                "/api/payment"
+                                "/api/payment/**"
                         ).permitAll()
 
                         // All other requests require authentication

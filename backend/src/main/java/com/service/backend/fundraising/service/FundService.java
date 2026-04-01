@@ -16,6 +16,8 @@ import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
+import com.service.backend.fundraising.dto.BanksPayloadDto;
+import com.service.backend.fundraising.dto.BankInfoDto;
 import com.service.backend.fundraising.entity.Funds;
 import com.service.backend.fundraising.entity.FundReceivingInfos;
 import com.service.backend.fundraising.entity.FundDonations;
@@ -24,15 +26,15 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.FundDonationStatus;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.dto.DataWithWarnings;
-import reactor.core.scheduler.Schedulers;
-import vn.payos.PayOS;
-import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -40,6 +42,7 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
@@ -53,13 +56,10 @@ public class FundService {
     private final FundStatusR2dbcRepository fundStatusRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final UserR2dbcRepository userRepository;
-    private final PayOS payOS;
+    private final CacheUtils cacheUtils;
 
-    @Value("${payos.return-url}")
-    private String payosReturnUrl;
-
-    @Value("${payos.cancel-url}")
-    private String payosCancelUrl;
+    @Value("${sepay.img.qr.url}")
+    private String sepayQrImgUrl;
 
     public Mono<Funds> createFund(CreateFundRequest request) {
         Integer organizationId = request.getOrganizationId();
@@ -403,22 +403,98 @@ public class FundService {
 
     public Mono<FundDonationCheckoutResponse> createFundDonationAndPaymentLink(CreateFundDonationRequest request) {
         return createFundDonation(request)
-                .flatMap(savedDonation -> Mono.fromCallable(() -> {
-                            long amountInVnd = request.getAmount().longValueExact();
-                            String description = request.getMessage() == null || request.getMessage().isBlank()
-                                    ? "Fund donation " + savedDonation.getId()
-                                    : request.getMessage();
-                            CreatePaymentLinkRequest paymentData = CreatePaymentLinkRequest.builder()
-                                    .orderCode(savedDonation.getId().longValue())
-                                    .amount(amountInVnd)
-                                    .description(description)
-                                    .cancelUrl(payosCancelUrl)
-                                    .returnUrl(payosReturnUrl)
-                                    .build();
-                            return payOS.paymentRequests().create(paymentData);
-                        })
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .map(paymentLink -> new FundDonationCheckoutResponse(paymentLink.getCheckoutUrl())));
+                .flatMap(savedDonation -> getFundReceivingInfoByFundId(savedDonation.getFundId())
+                        .flatMap(receivingInfo -> resolveBankCode(receivingInfo.getBankName())
+                        .map(bankCode -> {
+                            long amountInVnd = normalizeAmountToVnd(request.getAmount());
+                            String description = buildDescription(request.getMessage(), savedDonation.getId());
+
+                            String qrUrl = UriComponentsBuilder.fromUriString(sepayQrImgUrl)
+                                    .queryParam("acc", receivingInfo.getAccountNumber())
+                                    .queryParam("bank", bankCode)
+                                    .queryParam("amount", amountInVnd)
+                                    .queryParam("des", description)
+                                    .build()
+                                    .toUriString();
+                            return new FundDonationCheckoutResponse(qrUrl);
+                        })));
+    }
+
+    private Mono<FundReceivingInfos> getFundReceivingInfoByFundId(Integer fundId) {
+        return fundR2dbcRepository.findById(fundId.longValue())
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.FUND_NOT_FOUND,
+                        "Fund not found with id: " + fundId)))
+                .flatMap(fund -> {
+                    Integer receivingInfoId = fund.getFundReceivingInfoId();
+                    if (receivingInfoId == null) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
+                                "Fund receiving info not configured for fund id: " + fundId
+                        ));
+                    }
+                    return fundReceivingInfosRepository.findById(receivingInfoId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
+                                    "Fund receiving info not found with id: " + receivingInfoId
+                            )));
+                });
+    }
+
+    private long normalizeAmountToVnd(BigDecimal amount) {
+        try {
+            return amount.longValueExact();
+        } catch (ArithmeticException ex) {
+            throw new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Invalid donation amount: amount must be an integer VND value"
+            );
+        }
+    }
+
+    private String buildDescription(String message, Integer donationId) {
+        String marker = "FD" + donationId;
+        if (message == null || message.isBlank()) {
+            return marker;
+        }
+        return message.trim() + " " + marker;
+    }
+
+    private Mono<String> resolveBankCode(String bankCode) {
+        if (bankCode == null || bankCode.isBlank()) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Bank code is empty in fund receiving info"
+            ));
+        }
+        String normalizedCode = bankCode.trim();
+        return getSupportedBanks()
+                .flatMap(banks -> banks.stream()
+                        .filter(bank -> isBankMatched(bank, normalizedCode))
+                        .findFirst()
+                        .map(bank -> Mono.just(bank.getCode()))
+                        .orElseGet(() -> Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "Cannot map bankName to code from banks.json. bankName=" + bankCode
+                        ))));
+    }
+
+    private boolean isBankMatched(BankInfoDto bank, String bankCode) {
+        return bankCode.equals(bank.getCode());
+    }
+
+    private Mono<List<BankInfoDto>> getSupportedBanks() {
+        String cacheName = "fund-banks";
+        String cacheKey = "banks-json-supported";
+        return cacheUtils.getOrCompute(cacheName, cacheKey, Duration.ofHours(24), () -> {
+            BanksPayloadDto payload = JsonUtils.fromResource("banks.json", BanksPayloadDto.class);
+            List<BankInfoDto> banks = payload == null || payload.getData() == null
+                    ? List.of()
+                    : payload.getData().stream()
+                    .filter(bank -> Boolean.TRUE.equals(bank.getSupported()))
+                    .toList();
+            return Mono.just(banks);
+        });
     }
 
     public Mono<PaginatedResponse<FundDonations>> getDonationsByFund(
