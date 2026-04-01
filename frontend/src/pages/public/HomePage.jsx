@@ -80,7 +80,7 @@ const HomePage = () => {
 
   return (
     <Page
-      title="Trang chủ"
+      title="AlumVerse - Nền tảng kết nối Sinh viên & Cựu sinh viên"
       meta={
         <meta
           name="description"
