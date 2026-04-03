@@ -12,6 +12,7 @@ import {
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
+import WYSIWYG from '../../components/WYSIWYG';
 
 const CreateDonationPage = () => {
   const navigate = useNavigate();
@@ -365,17 +366,11 @@ const CreateDonationPage = () => {
                   borderRadius: 1,
                 }}
               >
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={12}
+                <WYSIWYG
                   value={formData.content}
-                  onChange={(e) => handleContentChange(e.target.value)}
+                  onChange={handleContentChange}
                   placeholder="Nhập nội dung bài đăng..."
-                  variant="outlined"
-                  sx={{
-                    '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
-                  }}
+                  height={320}
                 />
               </Box>
               {errors.content && (
