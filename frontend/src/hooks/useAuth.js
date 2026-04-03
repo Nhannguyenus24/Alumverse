@@ -1,5 +1,5 @@
 import apiClient from '../utils/axios';
-import { userFromAccessToken } from '../utils/jwt';
+import { userFromAccessToken, isTokenExpired } from '../utils/jwt';
 import {
   loginSchema,
   registerSchema,
@@ -160,7 +160,7 @@ export const useAuth = () => {
   };
 
   return {
-    isAuthenticated: !!token,
+    isAuthenticated: !!token && !isTokenExpired(token),
     isLoading: loading,
     user,
     error,

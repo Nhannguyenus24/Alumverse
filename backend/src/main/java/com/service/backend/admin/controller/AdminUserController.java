@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.admin.dto.BanUserRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
-import com.service.backend.admin.dto.PagedResponse;
 import com.service.backend.admin.dto.UserResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.dto.ApiResponse;
 
@@ -41,7 +41,7 @@ public class AdminUserController {
      * Get all users with pagination
      */
     @GetMapping
-    public Mono<ResponseEntity<ApiResponse<PagedResponse<UserResponse>>>> getAllUsers(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>>> getAllUsers(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
         return adminUserService.getAllUsers(page, size)
@@ -56,7 +56,7 @@ public class AdminUserController {
      * Get users by organization with pagination
      */
     @GetMapping("/organization/{organizationId}")
-    public Mono<ResponseEntity<ApiResponse<PagedResponse<UserResponse>>>> getUsersByOrganization(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>>> getUsersByOrganization(
             @PathVariable Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {

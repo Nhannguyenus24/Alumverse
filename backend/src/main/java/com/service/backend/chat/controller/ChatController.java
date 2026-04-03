@@ -1,14 +1,16 @@
 package com.service.backend.chat.controller;
 
 import com.service.backend.chat.dto.AddMembersRequest;
+import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
+import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.chat.entity.ChatGroup;
 import com.service.backend.chat.entity.ChatGroupMember;
 import com.service.backend.chat.entity.ChatMessage;
-import com.service.backend.chat.repository.ChatGroupMemberRepository;
-import com.service.backend.chat.repository.ChatGroupRepository;
+import com.service.backend.chat.dao.ChatGroupMemberRepository;
+import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -43,27 +45,38 @@ public class ChatController {
     private final ChatGroupRepository chatGroupRepository;
 
     @GetMapping("/groups")
-    public Mono<ResponseEntity<ApiResponse<List<ChatGroup>>>> listPrivateChats(
-            @RequestParam(value = "type", defaultValue = "PRIVATE") String type) {
+    public Mono<ResponseEntity<ApiResponse<List<ChatGroup>>>> listChatGroups() {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberId -> chatGroupMemberRepository.findByMemberId(memberId)
-                        .map(ChatGroupMember::getGroupId)
-                        .distinct()
-                        .flatMap(chatGroupRepository::findById)
-                        .filter(group -> type == null || type.equalsIgnoreCase(group.getType()))
-                        .collectList())
+                .flatMap(memberId -> chatService.getListGroupChats(memberId))
                 .map(groups -> ResponseEntity
                         .ok(new ApiResponse<>("Chat groups retrieved successfully", groups)));
     }
 
-    @PostMapping("/private")
-    public Mono<ResponseEntity<ApiResponse<ChatGroup>>> getOrCreatePrivateChat(
+    @GetMapping("/private/list")
+    public Mono<ResponseEntity<ApiResponse<List<PrivateChatListItemResponse>>>> listPrivateChats() {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(chatService::getListPrivateChatsWithSummary)
+                .map(groups -> ResponseEntity
+                        .ok(new ApiResponse<>("Private chats retrieved successfully", groups)));
+    }
+
+    @GetMapping("/private")
+    public Mono<ResponseEntity<ApiResponse<ChatGroup>>> getPrivateChat(
+            @RequestParam("targetMemberId") @Min(1) Long targetMemberId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberAId -> chatService.getPrivateChat(memberAId, targetMemberId))
+                .map(group -> ResponseEntity
+                        .ok(new ApiResponse<>("Private chat retrieved successfully", group)));
+    }
+
+    @PostMapping("/private/create")
+    public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createPrivateChat(
             @Valid @RequestBody PrivateChatRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberAId -> chatService.getOrCreatePrivateChat(memberAId, request.targetMemberId()))
+                .flatMap(memberAId -> chatService.createNewPrivateChat(memberAId, request.targetMemberId()))
                 .map(group -> ResponseEntity
                         .status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("Private chat retrieved or created successfully", group)));
+                        .body(new ApiResponse<>("Private chat created successfully", group)));
     }
 
     @GetMapping("/groups/{groupId}/messages")
@@ -118,6 +131,14 @@ public class ChatController {
         return membersFlux.collectList()
                 .map(members -> ResponseEntity
                         .ok(new ApiResponse<>("Group members retrieved successfully", members)));
+    }
+
+    @GetMapping("/groups/{groupId}/info")
+    public Mono<ResponseEntity<ApiResponse<ChatGroupMetadataResponse>>> getChatGroupMetadata(
+            @PathVariable("groupId") @Min(1) Long groupId) {
+        return chatService.getChatGroupMetadata(groupId)
+                .map(metadata -> ResponseEntity
+                        .ok(new ApiResponse<>("Chat group metadata retrieved successfully", metadata)));
     }
 
 

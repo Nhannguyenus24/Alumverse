@@ -1,22 +1,29 @@
 package com.service.backend.shared.dto;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.service.backend.shared.constants.ErrorCode;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Shared API Response DTO used across all modules
- */
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class ApiResponse<T> {
 
     private String message;
     private T data;
 
-    public ApiResponse(T data) {
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String errorCode;
+
+    public ApiResponse(String message, T data) {
+        this.message = message;
         this.data = data;
-        this.message = "";
+    }
+
+    public static <T> ApiResponse<T> error(ErrorCode code) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setMessage(code.getMessage());
+        response.setErrorCode(code.name());
+        return response;
     }
 }

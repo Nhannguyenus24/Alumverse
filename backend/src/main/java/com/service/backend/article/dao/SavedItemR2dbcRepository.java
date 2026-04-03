@@ -1,6 +1,6 @@
 package com.service.backend.article.dao;
 
-import com.service.backend.article.domain.entity.SavedItem;
+import com.service.backend.article.entity.SavedItem;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;

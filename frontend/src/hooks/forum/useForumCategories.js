@@ -26,6 +26,7 @@ export const useForumCategories = (organizationId) => {
   });
 
   const categories = data ?? [];
+  console.log(data);
   const errorMessage =
     isError && error
       ? error.response?.data?.message ?? error.message ?? "Không thể tải danh mục"

@@ -31,6 +31,6 @@ public class CreateForumPostRequest {
     @Schema(example = "Bạn nào biết cách đăng ký môn học không? Hướng dẫn giúp mình với!")
     private String content;
     
-    @Schema(example = "null")
+    @Schema(example = "1")
     private Integer answerToPostId;
 }

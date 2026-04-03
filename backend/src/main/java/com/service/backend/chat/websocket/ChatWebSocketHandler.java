@@ -2,18 +2,20 @@ package com.service.backend.chat.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.service.backend.chat.entity.ChatMessage;
-import com.service.backend.chat.repository.ChatGroupMemberRepository;
+import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
-import com.service.backend.shared.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.constants.ErrorCode;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,13 +46,14 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        // Try to get member ID from security context first
-        Mono<Long> memberIdMono = SecurityUtils.getCurrentUserId()
-                .onErrorResume(error -> {
-                    // If security context is not available, try to extract token from query parameter
-                    log.debug("Security context not available, trying query parameter: {}", error.getMessage());
-                    return extractMemberIdFromToken(session);
-                });
+
+        // Do not use SecurityUtils.getCurrentUserId() because in websocket there is no Security context holder. 
+        Mono<Long> memberIdMono = extractMemberIdFromToken(session)
+        .onErrorResume(error -> {
+            //System.out.println("Error on extracting memberId from token: " + error.getMessage());
+            log.error("Error on extracting memberId from token: " + error.getMessage());
+            return Mono.error(new ApplicationException(ErrorCode.ERROR_EXTRACTING_MEMBERID_FROM_TOKEN, "Error during extracting memberId from token."));
+        });
 
         return memberIdMono
                 .flatMap(memberId -> {
@@ -89,6 +92,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             } else {
                 token = tokenParam;
             }
+            return Mono.just(Long.parseLong(token));
         }
 
         // Fallback to Authorization header
@@ -193,18 +197,23 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         if (sessions == null || sessions.isEmpty()) {
             return Mono.empty();
         }
+        Object metadataPayload = "";
+        if (message.getMetadata() != null && !message.getMetadata().isBlank()) {
+            metadataPayload = JsonUtils.fromJson(message.getMetadata(), Object.class);
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", message.getId());
+        payload.put("groupId", message.getGroupId());
+        payload.put("senderMemberId", message.getSenderMemberId());
+        payload.put("content", message.getContent());
+        payload.put("messageType", message.getMessageType());
+        payload.put("metadata", metadataPayload);
+        payload.put("createdAt", message.getCreatedAt());
 
         String eventJson = JsonUtils.toJson(Map.of(
                 "type", "MESSAGE_CREATED",
-                "payload", Map.of(
-                        "id", message.getId(),
-                        "groupId", message.getGroupId(),
-                        "senderMemberId", message.getSenderMemberId(),
-                        "content", message.getContent(),
-                        "messageType", message.getMessageType(),
-                        "metadata", message.getMetadata() != null ? message.getMetadata() : "",
-                        "createdAt", message.getCreatedAt()
-                )
+                "payload", payload
         ));
 
         return Mono.fromRunnable(() -> {

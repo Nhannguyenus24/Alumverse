@@ -1,9 +1,9 @@
 package com.service.backend.shared.enums;
 
 public enum ResourceType {
-    course("course"),
-    ebook("ebook"),
-    video("video");
+    COURSE("COURSE"),
+    EBOOK("EBOOK"),
+    VIDEO("VIDEO");
 
     private final String value;
 

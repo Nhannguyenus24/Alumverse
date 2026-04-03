@@ -29,4 +29,8 @@ public class CreateForumCategoryRequest {
     @Size(max = 500, message = "Description must not exceed 500 characters")
     @Schema(example = "Nơi đăng các thông báo quan trọng cho toàn trường.")
     private String description;
+
+    @Min(value = 1, message = "Parent ID must be greater than 0")
+    @Schema(example = "1", description = "ID of parent category, null for root categories")
+    private Integer parentId;
 }
