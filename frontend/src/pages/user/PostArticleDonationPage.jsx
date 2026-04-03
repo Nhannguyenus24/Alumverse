@@ -8,15 +8,33 @@ import CoverUpload from '../../components/CoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import { useNotification } from '../../hooks/useNotification';
 
-const PostArticlePage = () => {
+const PostDonationPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews();
+  const { createNews, isPending } = useCreateNews(); // No donation hook yet
 
+  // Main content
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
   const [coverImage, setCoverImage] = useState(null);
+
+  // Donation-specific fields
+  const [donationData, setDonationData] = useState({
+    donationFundName: '',
+    organizer: '',
+    status: '',
+    qrImage: null,
+    donationGoal: '',
+    reasonForDonation: '',
+    startDate: '',
+    endDate: '',
+  });
+
+  const handleDonationInputChange = (e) => {
+    const { name, value } = e.target;
+    setDonationData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
@@ -33,29 +51,27 @@ const PostArticlePage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
+      const payload = {
+        title: title.trim(),
+        content: content.trim(),
         thumbnailUrl: coverImage || null,
         topic,
+        donationData,
       };
 
       const result = await createNews(payload);
-      showSuccess('Bài viết đã được đăng thành công!');
-      navigate(`/article/${result.id}`);
+      showSuccess('Thông tin quyên góp đã được đăng thành công!');
+      navigate(`/donation/${result.id}`);
     } catch (err) {
-      showError(err.response?.data?.message ?? 'Đăng bài thất bại');
+      showError(err.response?.data?.message ?? 'Đăng quyên góp thất bại');
     }
   };
 
   return (
-    <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
+    <Page title="Tạo quyên góp" meta={<meta name="description" content="Tạo quyên góp - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
-        />
+        <CoverUpload value={coverImage} onChange={handleCoverUpload} />
 
         {/* Form Container */}
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
@@ -82,16 +98,18 @@ const PostArticlePage = () => {
               ĐĂNG BÀI
             </Typography>
 
-            {/* PostArticleForm */}
+            {/* PostArticleForm with donation layout */}
             <PostArticleForm
-              channel="news"
-              channelLabel="Tin tức"
+              channel="donation"
+              channelLabel="Quyên góp"
               title={title}
               setTitle={setTitle}
               content={content}
               setContent={setContent}
               topic={topic}
               setTopic={setTopic}
+              donationData={donationData}
+              handleDonationInputChange={handleDonationInputChange}
             />
 
             {/* Action Buttons */}
@@ -100,7 +118,7 @@ const PostArticlePage = () => {
                 Huỷ
               </Button>
               <Button variant="contained" color="primary" onClick={handleSubmit} disabled={isPending} sx={{ px: 4 }}>
-                {isPending ? 'Đang đăng...' : 'Đăng bài'}
+                {isPending ? 'Đang đăng...' : 'Đăng quyên góp'}
               </Button>
             </Box>
           </Box>
@@ -110,4 +128,4 @@ const PostArticlePage = () => {
   );
 };
 
-export default PostArticlePage;
+export default PostDonationPage;
