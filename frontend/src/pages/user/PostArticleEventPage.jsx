@@ -1,29 +1,45 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Button, Container, Typography } from '@mui/material';
-
+import CoverUpload from '../../components/CoverUpload';
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
-import CoverUpload from '../../components/CoverUpload';
-import { useCreateNews } from '../../hooks/news/useCreateNews';
+import { useCreateEvent } from '../../hooks/news/useCreateEvent';
 import { useNotification } from '../../hooks/useNotification';
 
-const PostArticlePage = () => {
+const PostEventPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews();
+  const { createEvent, isPending } = useCreateEvent();
 
+  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverImage, setCoverImage] = useState('');
+
+  // Event-specific fields
+  const [eventData, setEventData] = useState({
+    eventName: '',
+    organizer: '',
+    location: '',
+    type: '',
+    maxParticipants: '',
+    deadline: '',
+    startDate: '',
+    endDate: '',
+  });
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverImage(URL.createObjectURL(file));
     }
+  };
+
+  const handleEventInputChange = (e) => {
+    const { name, value } = e.target;
+    setEventData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
@@ -33,29 +49,27 @@ const PostArticlePage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
+      const payload = {
+        title: title.trim(),
+        content: content.trim(),
         thumbnailUrl: coverImage || null,
         topic,
+        eventInfo: eventData,
       };
 
-      const result = await createNews(payload);
-      showSuccess('Bài viết đã được đăng thành công!');
-      navigate(`/article/${result.id}`);
+      const result = await createEvent(payload);
+      showSuccess('Sự kiện đã được đăng thành công!');
+      navigate(`/event/${result.id}`);
     } catch (err) {
-      showError(err.response?.data?.message ?? 'Đăng bài thất bại');
+      showError(err.response?.data?.message ?? 'Đăng sự kiện thất bại');
     }
   };
 
   return (
-    <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
+    <Page title="Đăng sự kiện" meta={<meta name="description" content="Đăng sự kiện - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
-        />
+        <CoverUpload value={coverImage} onChange={handleCoverUpload} />
 
         {/* Form Container */}
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
@@ -82,16 +96,18 @@ const PostArticlePage = () => {
               ĐĂNG BÀI
             </Typography>
 
-            {/* PostArticleForm */}
+            {/* Event Form */}
             <PostArticleForm
-              channel="news"
-              channelLabel="Tin tức"
+              channel="event"
+              channelLabel="Sự kiện"
               title={title}
               setTitle={setTitle}
               content={content}
               setContent={setContent}
               topic={topic}
               setTopic={setTopic}
+              eventData={eventData}
+              handleEventInputChange={handleEventInputChange}
             />
 
             {/* Action Buttons */}
@@ -100,7 +116,7 @@ const PostArticlePage = () => {
                 Huỷ
               </Button>
               <Button variant="contained" color="primary" onClick={handleSubmit} disabled={isPending} sx={{ px: 4 }}>
-                {isPending ? 'Đang đăng...' : 'Đăng bài'}
+                {isPending ? 'Đang đăng...' : 'Đăng sự kiện'}
               </Button>
             </Box>
           </Box>
@@ -110,4 +126,4 @@ const PostArticlePage = () => {
   );
 };
 
-export default PostArticlePage;
+export default PostEventPage;

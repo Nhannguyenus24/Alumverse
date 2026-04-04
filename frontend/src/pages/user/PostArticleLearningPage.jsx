@@ -5,14 +5,15 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
-import { useCreateNews } from '../../hooks/news/useCreateNews';
+import { useCreateLearningResource } from '../../hooks/news/useCreateLearningResource';
 import { useNotification } from '../../hooks/useNotification';
 
-const PostArticlePage = () => {
+const PostLearningPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews();
+  const { createLearning, isPending } = useCreateLearningResource();
 
+  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
@@ -40,16 +41,16 @@ const PostArticlePage = () => {
         topic,
       };
 
-      const result = await createNews(payload);
-      showSuccess('Bài viết đã được đăng thành công!');
-      navigate(`/article/${result.id}`);
+      const result = await createLearning(payload);
+      showSuccess('Bài viết học tập đã được đăng thành công!');
+      navigate(`/learning/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
   };
 
   return (
-    <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
+    <Page title="Đăng bài học tập" meta={<meta name="description" content="Đăng bài học tập - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
         <CoverUpload 
@@ -84,8 +85,8 @@ const PostArticlePage = () => {
 
             {/* PostArticleForm */}
             <PostArticleForm
-              channel="news"
-              channelLabel="Tin tức"
+              channel="learning"
+              channelLabel="Cơ hội học tập"
               title={title}
               setTitle={setTitle}
               content={content}
@@ -110,4 +111,4 @@ const PostArticlePage = () => {
   );
 };
 
-export default PostArticlePage;
+export default PostLearningPage;
