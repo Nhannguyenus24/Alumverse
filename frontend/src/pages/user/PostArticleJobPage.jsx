@@ -5,14 +5,15 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
-import { useCreateNews } from '../../hooks/news/useCreateNews';
+import { useCreateJob } from '../../hooks/news/useCreateJob';
 import { useNotification } from '../../hooks/useNotification';
 
-const PostArticlePage = () => {
+const PostJobPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews();
+  const { createJob, isPending } = useCreateJob();
 
+  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
@@ -40,16 +41,16 @@ const PostArticlePage = () => {
         topic,
       };
 
-      const result = await createNews(payload);
-      showSuccess('Bài viết đã được đăng thành công!');
-      navigate(`/article/${result.id}`);
+      const result = await createJob(payload);
+      showSuccess('Bài đăng việc làm đã được đăng thành công!');
+      navigate(`/job/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
   };
 
   return (
-    <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
+    <Page title="Đăng bài việc làm" meta={<meta name="description" content="Đăng bài việc làm - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
         <CoverUpload 
@@ -84,8 +85,8 @@ const PostArticlePage = () => {
 
             {/* PostArticleForm */}
             <PostArticleForm
-              channel="news"
-              channelLabel="Tin tức"
+              channel="job"
+              channelLabel="Cơ hội việc làm"
               title={title}
               setTitle={setTitle}
               content={content}
@@ -110,4 +111,4 @@ const PostArticlePage = () => {
   );
 };
 
-export default PostArticlePage;
+export default PostJobPage;
