@@ -8,11 +8,12 @@ import CoverUpload from '../../components/CoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import { useNotification } from '../../hooks/useNotification';
 
-const PostArticlePage = () => {
+const PostAlumniPage = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews();
+  const { createNews, isPending } = useCreateNews(); // assuming alumni uses the same hook
 
+  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
@@ -41,7 +42,7 @@ const PostArticlePage = () => {
       };
 
       const result = await createNews(payload);
-      showSuccess('Bài viết đã được đăng thành công!');
+      showSuccess('Bài viết cựu sinh viên đã được đăng thành công!');
       navigate(`/article/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
@@ -49,7 +50,7 @@ const PostArticlePage = () => {
   };
 
   return (
-    <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
+    <Page title="Đăng bài cựu sinh viên" meta={<meta name="description" content="Đăng bài cựu sinh viên - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
         <CoverUpload 
@@ -84,8 +85,8 @@ const PostArticlePage = () => {
 
             {/* PostArticleForm */}
             <PostArticleForm
-              channel="news"
-              channelLabel="Tin tức"
+              channel="alumni"
+              channelLabel="Cựu sinh viên"
               title={title}
               setTitle={setTitle}
               content={content}
@@ -110,4 +111,4 @@ const PostArticlePage = () => {
   );
 };
 
-export default PostArticlePage;
+export default PostAlumniPage;

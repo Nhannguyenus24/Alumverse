@@ -19,6 +19,7 @@ import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JwtUtils;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -134,6 +135,7 @@ public class AuthService {
 
     public Mono<List<Integer>> getOrganizationIdByUserId(Integer userId) {
         return authRepository.getOrganizationIdByUserId(userId)
+                .collectList()
                 .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
     }
 
@@ -212,15 +214,16 @@ public class AuthService {
                             .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                             .flatMap(user -> 
                                 authRepository.getOrganizationIdByUserId(userId)
+                                        .collectList()
                                         .defaultIfEmpty(List.of())
-                                        .map(organizationId -> {
+                                        .map(organizationIds -> {
                                             String accessToken = jwtUtils.generateAccessToken(
                                                     user.getId(),
                                                     user.getEmail(),
                                                     user.getRole().name(),
                                                     user.getUserName(),
                                                     user.getAvatarUrl(),
-                                                    organizationId
+                                                    organizationIds
                                             );
                                             logger.info("Access token refreshed successfully for user id: {}", userId);
                                             return accessToken;

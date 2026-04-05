@@ -63,10 +63,7 @@ INSERT INTO "organization_members" ("organization_id", "user_id", "verification_
 
 -- BA Department Members
 (3, 7, 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, 1, false, 'pending', NOW() - INTERVAL '3 days', NOW()),
-
--- Engineering Department Members
-(4, 1, 3, true, 'active', NOW() - INTERVAL '340 days', NOW());
+(3, 10, 1, false, 'pending', NOW() - INTERVAL '3 days', NOW());
 
 
 
