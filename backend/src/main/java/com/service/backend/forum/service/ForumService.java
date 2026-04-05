@@ -24,6 +24,7 @@ import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
+import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.entity.ForumCategory;
 import com.service.backend.forum.entity.ForumPost;
 import com.service.backend.forum.entity.ForumPostReaction;
@@ -257,6 +258,37 @@ public class ForumService {
                 })
                 .doOnSuccess(result -> log.info("Successfully created answer to post ID: {}", postId))
                 .doOnError(error -> log.error("Error creating answer to post ID: {}", postId, error));
+    }
+
+    public Mono<ForumPostDTO> updatePost(Integer id, UpdateForumPostRequest request) {
+        return forumPostRepository.findById(id)
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Forum post not found with ID: {}", id);
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                }))
+                .flatMap(post -> {
+                    post.setContent(request.getContent());
+                    post.setUpdatedAt(LocalDateTime.now());
+                    return forumPostRepository.save(post);
+                })
+                .map(this::convertToPostDTO)
+                .doOnSuccess(result -> log.info("Successfully updated forum post ID: {}", id))
+                .doOnError(error -> log.error("Error updating forum post ID: {}", id, error));
+    }
+
+    public Mono<Void> deletePost(Integer id) {
+        return forumPostRepository.findById(id)
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Forum post not found with ID: {}", id);
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                }))
+                .flatMap(post -> {
+                    // Delete all reactions for this post first
+                    return forumPostReactionRepository.deleteByPostId(id)
+                            .then(forumPostRepository.deleteById(id));
+                })
+                .doOnSuccess(v -> log.info("Successfully deleted forum post ID: {}", id))
+                .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
     }
 
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
