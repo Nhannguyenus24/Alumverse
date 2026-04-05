@@ -48,7 +48,7 @@ public class AuthController {
     @PostMapping("/register")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
-        return authService.register(request.getEmail(), request.getUserName(), request.getPassword())
+        return authService.register(request.getEmail(), request.getUserName(), request.getPassword(), request.getFullName())
                 .then(Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true))))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
     }

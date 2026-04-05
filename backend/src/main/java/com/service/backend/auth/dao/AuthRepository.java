@@ -1,7 +1,5 @@
 package com.service.backend.auth.dao;
 
-import java.util.List;
-
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -98,12 +96,12 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     
     /**
      * Register new user with unverified status and alumni role
-     * Returns the created user
+     * Returns the created user ID
      */
-    @Modifying
     @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-    Mono<Void> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
+           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "RETURNING id")
+    Mono<Integer> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
     
     /**
      * Get organization IDs for a user from organization_members table
@@ -111,4 +109,12 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      */
     @Query("SELECT om.organization_id FROM organization_members om WHERE om.user_id = :userId")
     Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
+
+    /**
+     * Create global profile for a newly registered user
+     */
+    @Modifying
+    @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
+           "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
+    Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
 }
