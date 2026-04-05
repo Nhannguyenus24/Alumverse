@@ -19,7 +19,6 @@ import { useCreateForumTopic } from '../../hooks/forum/useCreateForumTopic';
 import { useCreateForumPost } from '../../hooks/forum/useCreateForumPost';
 import { useNotification } from '../../hooks/useNotification';
 
-const SUBJECT_OPTIONS = ['Hướng nghiệp', 'Kinh nghiệm làm việc', 'Câu chuyện truyền cảm hứng'];
 
 const ForumAlumniCreateTopicPage = () => {
   const navigate = useNavigate();
@@ -30,7 +29,7 @@ const ForumAlumniCreateTopicPage = () => {
     isPending: categoriesPending,
     isError: categoriesIsError,
   } = useForumCategories(organizationId);
-  const [subject, setSubject] = useState(SUBJECT_OPTIONS[0]);
+  const [subject, setSubject] = useState('');
   const [subSubject, setSubSubject] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -222,20 +221,7 @@ const ForumAlumniCreateTopicPage = () => {
                   mb: 2.5,
                 }}
               >
-                <TextField
-                  select
-                  fullWidth
-                  label="Chủ đề"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  size="small"
-                >
-                  {SUBJECT_OPTIONS.map((opt) => (
-                    <MenuItem key={opt} value={opt}>
-                      {opt}
-                    </MenuItem>
-                  ))}
-                </TextField>
+
                 <TextField
                   select
                   fullWidth
