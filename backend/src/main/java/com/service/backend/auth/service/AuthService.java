@@ -19,7 +19,6 @@ import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JwtUtils;
 
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -52,7 +51,7 @@ public class AuthService {
         this.secureRandom = new SecureRandom();
     }
 
-    public Mono<Void> register(String email, String userName, String password) {
+    public Mono<Void> register(String email, String userName, String password, String fullName) {
 
         return authRepository.existsByEmailOrUserName(email, userName)
                 .flatMap(exists -> {
@@ -60,7 +59,10 @@ public class AuthService {
                     return Mono.fromCallable(() -> passwordEncoder.encode(password))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword ->
-                                    authRepository.registerNewUser(email, userName, hashedPassword));
+                                    authRepository.registerNewUser(email, userName, hashedPassword)
+                                            .flatMap(userId -> 
+                                                authRepository.createGlobalProfile(userId, fullName)
+                            ));
                 })
                 .doOnError(e -> logger.error("Registration failed: {}", email, e));
     }
