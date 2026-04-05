@@ -35,6 +35,11 @@ public interface ForumPostReactionRepository extends R2dbcRepository<ForumPostRe
     Mono<Void> deleteByPostIdAndMemberId(Integer postId, Integer memberId);
     
     /**
+     * Delete all reactions for a post
+     */
+    Mono<Void> deleteByPostId(Integer postId);
+    
+    /**
      * Find all post IDs that a member has reacted to in a specific topic
      * Optimizes N+1 query problem by fetching all likes in one query
      */

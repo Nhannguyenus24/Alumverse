@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.service.backend.auth.entity.User;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -105,9 +106,9 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Mono<Void> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
     
     /**
-     * Get organization ID for a user from organization_members table
-     * Returns null if user is not a member of any organization
+     * Get organization IDs for a user from organization_members table
+     * Returns empty Flux if user is not a member of any organization
      */
     @Query("SELECT om.organization_id FROM organization_members om WHERE om.user_id = :userId")
-    Mono<List<Integer>> getOrganizationIdByUserId(@Param("userId") Integer userId);
+    Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
 }
