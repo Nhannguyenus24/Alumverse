@@ -66,4 +66,40 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     @Query("UPDATE forum_posts SET answer_to_post_id = :answerToPostId, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> setAnswerToPost(@Param("id") Integer id, @Param("answerToPostId") Integer answerToPostId);
 
+    /**
+     * Find forum posts created yesterday
+     */
+    @Query("SELECT * FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false ORDER BY created_at DESC")
+    Flux<ForumPost> findPostsCreatedYesterday();
+
+    /**
+     * Find forum posts created yesterday with pagination
+     */
+    @Query("SELECT * FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findPostsCreatedYesterdayWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
+     * Count posts created yesterday
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false")
+    Mono<Long> countPostsCreatedYesterday();
+
+    /**
+     * Find all banned forum posts with pagination
+     */
+    @Query("SELECT * FROM forum_posts WHERE is_banned = true ORDER BY updated_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findAllBannedPostsWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
+     * Count all banned forum posts
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE is_banned = true")
+    Mono<Long> countBannedPosts();
+
 }
