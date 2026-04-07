@@ -1,7 +1,6 @@
 package com.service.backend.admin.controller;
 
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.service.backend.admin.dto.ForumStatisticsDTO;
+import com.service.backend.admin.dto.MonthlyActivityDTO;
+import com.service.backend.admin.dto.OrganizationEngagementDTO;
+import com.service.backend.admin.dto.TopContributorDTO;
 import com.service.backend.admin.service.AdminForumService;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
@@ -22,8 +25,10 @@ import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import reactor.core.publisher.Mono;
@@ -210,9 +215,52 @@ public class AdminForumController {
     // ========== ADMIN STATISTICS ==========
 
     @GetMapping("/admin/statistics")
-    public Mono<ResponseEntity<ApiResponse<Map<String, Long>>>> adminGetForumStatistics() {
+    public Mono<ResponseEntity<ApiResponse<ForumStatisticsDTO>>> adminGetForumStatistics() {
         return adminForumService.getForumStatistics()
-                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum statistics", stats)))
+                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Retrieved comprehensive forum statistics", stats)))
+                .onErrorResume(this::handleError);
+    }
+
+    // ========== TOP CONTRIBUTORS ==========
+
+    @Operation(summary = "Get top 10 contributors by month/year",
+               description = "Returns the top 10 users who posted the most in the given month and year")
+    @GetMapping("/admin/statistics/top-contributors")
+    public Mono<ResponseEntity<ApiResponse<List<TopContributorDTO>>>> adminGetTopContributors(
+            @Parameter(example = "4", description = "Month (1-12)")
+            @RequestParam @Min(value = 1, message = "Month must be between 1 and 12")
+                          @Max(value = 12, message = "Month must be between 1 and 12") int month,
+            @Parameter(example = "2026", description = "Year")
+            @RequestParam @Min(value = 2000, message = "Year must be at least 2000") int year) {
+        return adminForumService.getTopContributors(month, year)
+                .map(contributors -> ResponseEntity.ok(
+                        new ApiResponse<>("Retrieved top 10 contributors for " + month + "/" + year, contributors)))
+                .onErrorResume(this::handleError);
+    }
+
+    // ========== ORGANIZATION ENGAGEMENT RATE ==========
+
+    @Operation(summary = "Get forum engagement rate per organization",
+               description = "Returns the ratio of active forum users vs total members for each organization")
+    @GetMapping("/admin/statistics/engagement")
+    public Mono<ResponseEntity<ApiResponse<List<OrganizationEngagementDTO>>>> adminGetOrganizationEngagement() {
+        return adminForumService.getOrganizationEngagement()
+                .map(engagement -> ResponseEntity.ok(
+                        new ApiResponse<>("Retrieved organization engagement rates", engagement)))
+                .onErrorResume(this::handleError);
+    }
+
+    // ========== MONTHLY ACTIVITY TIMELINE ==========
+
+    @Operation(summary = "Get monthly activity timeline",
+               description = "Returns 12 months of activity data (active users, posts, topics) for the given year")
+    @GetMapping("/admin/statistics/timeline")
+    public Mono<ResponseEntity<ApiResponse<MonthlyActivityDTO>>> adminGetMonthlyTimeline(
+            @Parameter(example = "2026", description = "Year")
+            @RequestParam @Min(value = 2000, message = "Year must be at least 2000") int year) {
+        return adminForumService.getMonthlyActivityTimeline(year)
+                .map(timeline -> ResponseEntity.ok(
+                        new ApiResponse<>("Retrieved monthly activity timeline for " + year, timeline)))
                 .onErrorResume(this::handleError);
     }
 
