@@ -19,7 +19,7 @@ const AdminDashboardPage = () => {
   const isAdmin = user?.role === 'ADMIN';
   const { loading, metrics, timeline, organizations } = useAdminSystemContext();
   const { allUsers } = useAdminUsersContext();
-  const { allPosts } = useAdminForumContext();
+  const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
 
   const chartData = Array.isArray(timeline) ? timeline : [];
@@ -42,7 +42,7 @@ const AdminDashboardPage = () => {
         <>
           <AdminSectionPanel
             title="Admin dashboard"
-            subtitle="Summary metrics, last 7 days activity, and quick links (design §1.1)."
+            subtitle="Summary metrics, last 7 days activity, and quick links."
           >
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
               <AdminDashboardMetricTile label="Total users" value={totalUsers} valueColor="primary.main" />
@@ -53,6 +53,31 @@ const AdminDashboardPage = () => {
                 valueColor="warning.main"
               />
               <AdminDashboardMetricTile label="Audit logs today" value={auditToday} valueColor="info.main" />
+              {/* Forum overview tiles from API */}
+              {statistics && (
+                <>
+                  <AdminDashboardMetricTile
+                    label="Forum topics"
+                    value={statistics.totalTopics ?? 0}
+                    valueColor="info.main"
+                  />
+                  <AdminDashboardMetricTile
+                    label="Forum posts"
+                    value={statistics.totalPosts ?? 0}
+                    valueColor="primary.dark"
+                  />
+                  <AdminDashboardMetricTile
+                    label="New topics today"
+                    value={statistics.newTopicsToday ?? 0}
+                    valueColor="success.main"
+                  />
+                  <AdminDashboardMetricTile
+                    label="New posts today"
+                    value={statistics.newPostsToday ?? 0}
+                    valueColor="success.dark"
+                  />
+                </>
+              )}
             </Box>
 
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'stretch' }}>
@@ -125,7 +150,7 @@ const AdminDashboardPage = () => {
             </Box>
           </AdminSectionPanel>
 
-          <AdminDashboardSections aggregates={aggregates} />
+          <AdminDashboardSections aggregates={aggregates} forumStats={statistics} />
         </>
       )}
     </Stack>
