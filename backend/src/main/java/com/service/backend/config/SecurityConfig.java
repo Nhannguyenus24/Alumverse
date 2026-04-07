@@ -56,17 +56,22 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/api/guest/**",
                                 "/websocket-test.html",
+                                "/ws/chat",
+                                "/ws/chat/**",
                                 "/*.html",
                                 "/*.css",
                                 "/*.js",
                                 "/*.png",
                                 "/*.ico",
-                                "/static/**"
+                                "/static/**",
+                                "/api/funds/**",
+                                "/api/fund-statuses",
+                                "/api/fund-donations",
+                                "/api/payment/**"
                         ).permitAll()
 
                         // All other requests require authentication
-                        // .anyExchange().authenticated());
-                        .anyExchange().permitAll()); // Temporary: allow all requests for development
+                        .anyExchange().authenticated());
 
         return http.build();
     }

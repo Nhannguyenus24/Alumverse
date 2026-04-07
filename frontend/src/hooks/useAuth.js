@@ -1,5 +1,5 @@
 import apiClient from '../utils/axios';
-import { userFromAccessToken } from '../utils/jwt';
+import { userFromAccessToken, isTokenExpired } from '../utils/jwt';
 import {
   loginSchema,
   registerSchema,
@@ -63,7 +63,8 @@ export const useAuth = () => {
     try {
       const { data } = await apiClient.post('/auth/register', {
         email: parsed.data.email,
-        userName: parsed.data.userName,
+        userName: parsed.data.studentId,
+        fullName: parsed.data.fullName,
         password: parsed.data.password,
       });
       if (!data?.data) {
@@ -160,7 +161,7 @@ export const useAuth = () => {
   };
 
   return {
-    isAuthenticated: !!token,
+    isAuthenticated: !!token && !isTokenExpired(token),
     isLoading: loading,
     user,
     error,

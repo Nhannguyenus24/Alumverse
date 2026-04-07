@@ -1,6 +1,6 @@
 package com.service.backend.article.dao;
 
-import com.service.backend.article.domain.entity.Achievement;
+import com.service.backend.article.entity.Achievement;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;

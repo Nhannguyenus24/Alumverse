@@ -6,10 +6,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.service.backend.admin.dto.OrganizationPageResponse;
-import com.service.backend.admin.entities.Organization;
-import com.service.backend.admin.repository.AdminOrganizationRepository;
-import com.service.backend.shared.dto.PageInfo;
+import com.service.backend.admin.entity.Organization;
+import com.service.backend.admin.dao.AdminOrganizationRepository;
+import com.service.backend.shared.dto.PaginatedResponse;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -24,30 +23,15 @@ public class AdminOrganizationService {
     /**
      * Get all organizations with pagination
      */
-    public Mono<OrganizationPageResponse> getAllOrganizations(int page, int size) {
+    public Mono<PaginatedResponse<Organization>> getAllOrganizations(int page, int size) {
         logger.info("Fetching organizations with pagination - page: {}, size: {}", page, size);
         int offset = page * size;
         return Mono.zip(
                 organizationRepository.findAllWithPagination(offset, size).collectList(),
                 organizationRepository.count()
         ).map(tuple -> {
-            var organizations = tuple.getT1();
-            var total = tuple.getT2();
-            int totalPage = (int) Math.ceil((double) total / size);
-            boolean hasNext = page < totalPage - 1;
-            boolean hasPrevious = page > 0;
-            
-            PageInfo pageInfo = PageInfo.builder()
-                    .currentPage(page)
-                    .pageSize(size)
-                    .totalPage(totalPage)
-                    .totalItem(Math.toIntExact(total))
-                    .hasNext(hasNext)
-                    .hasPrevious(hasPrevious)
-                    .build();
-            
-            logger.info("Organizations fetched successfully - total: {}", total);
-            return new OrganizationPageResponse(organizations, pageInfo);
+            logger.info("Organizations fetched successfully - total: {}", tuple.getT2());
+            return PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size);
         })
         .doOnError(error -> logger.error("Failed to fetch organizations with pagination - page: {}, size: {}", page, size, error));
     }
