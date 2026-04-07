@@ -12,6 +12,7 @@ import Page from '../components/Page';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumPostsLocal from '../hooks/admin/useAdminForumPostsLocal';
+import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminSystemProvider } from '../contexts/AdminSystemContext';
 import { AdminUsersProvider } from '../contexts/AdminUsersContext';
 import { AdminForumProvider } from '../contexts/AdminForumContext';
@@ -109,7 +110,14 @@ const PaperNav = ({isAdmin}) => (
 const AdminLayout = () => {
   const system = useAdminSystemData();
   const users = useAdminUsersLocal();
-  const forum = useAdminForumPostsLocal();
+  const forumLocal = useAdminForumPostsLocal();
+  const forumData = useAdminForumData(system.activeOrgId);
+
+  // Merge local post management with API-driven forum data
+  const forum = {
+    ...forumLocal,
+    ...forumData,
+  };
 
   return (
     <AdminSystemProvider value={system}>
