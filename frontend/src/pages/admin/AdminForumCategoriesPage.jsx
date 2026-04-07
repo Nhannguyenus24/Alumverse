@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useSnackbar } from 'notistack';
 import {
   Box,
   Button,
@@ -11,17 +12,49 @@ import {
   List,
   ListItemButton,
   ListItemText,
+  Skeleton,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
-import { DEFAULT_FORUM_CATEGORY_TREE } from '../../constants/adminDefaultForumCategories';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import { useAdminForumContext } from '../../contexts/AdminForumContext';
+import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 
-const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit }) => {
+/* ─── Build tree from flat list ─── */
+const buildTree = (flatList) => {
+  if (!Array.isArray(flatList) || flatList.length === 0) return [];
+  const map = {};
+  const roots = [];
+  flatList.forEach((cat) => {
+    map[cat.id] = { ...cat, children: [] };
+  });
+  flatList.forEach((cat) => {
+    if (cat.parentId && map[cat.parentId]) {
+      map[cat.parentId].children.push(map[cat.id]);
+    } else {
+      roots.push(map[cat.id]);
+    }
+  });
+  return roots;
+};
+
+const formatDate = (value) => {
+  if (!value) return '';
+  try {
+    return new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  } catch {
+    return String(value);
+  }
+};
+
+const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete }) => {
   const hasChildren = node.children && node.children.length > 0;
   const open = expanded[node.id];
 
@@ -41,19 +74,44 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit }) => {
               {node.name}
             </Typography>
           }
-          secondary={`${node.description || ''} · Topics: ${node.topicsCount ?? 0}`}
+          secondary={
+            [
+              node.description,
+              node.organizationId ? `Org #${node.organizationId}` : null,
+              node.createdAt ? `Created: ${formatDate(node.createdAt)}` : null,
+              node.updatedAt ? `Updated: ${formatDate(node.updatedAt)}` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ') || '-'
+          }
         />
-        <Button
-          size="small"
-          startIcon={<EditOutlinedIcon />}
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(node);
-          }}
-          sx={{ textTransform: 'none' }}
-        >
-          Edit
-        </Button>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Tooltip title="Edit">
+            <Button
+              size="small"
+              startIcon={<EditOutlinedIcon />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(node);
+              }}
+              sx={{ textTransform: 'none' }}
+            >
+              Edit
+            </Button>
+          </Tooltip>
+          <Tooltip title="Delete">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(node);
+              }}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </ListItemButton>
       {hasChildren ? (
         <Collapse in={open} timeout="auto" unmountOnExit>
@@ -66,6 +124,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit }) => {
                 expanded={expanded}
                 toggle={toggle}
                 onEdit={onEdit}
+                onDelete={onDelete}
               />
             ))}
           </List>
@@ -76,36 +135,86 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit }) => {
 };
 
 const AdminForumCategoriesPage = () => {
-  const [tree] = useState(() => JSON.parse(JSON.stringify(DEFAULT_FORUM_CATEGORY_TREE)));
-  const [expanded, setExpanded] = useState(() =>
-    tree.reduce((acc, n) => ({ ...acc, [n.id]: true }), {}),
-  );
-  const [modal, setModal] = useState({ open: false, mode: 'create', node: null, parentId: null });
-  const [form, setForm] = useState({ name: '', description: '', ordering: 1 });
+  const { enqueueSnackbar } = useSnackbar();
+  const { activeOrgId } = useAdminSystemContext();
+  const {
+    categories,
+    categoriesLoading,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+  } = useAdminForumContext();
+
+  const tree = useMemo(() => buildTree(categories), [categories]);
+
+  const [expanded, setExpanded] = useState({});
+  const [modal, setModal] = useState({ open: false, mode: 'create', node: null });
+  const [form, setForm] = useState({ name: '', description: '' });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Auto-expand root on first load
+  useMemo(() => {
+    if (tree.length > 0 && Object.keys(expanded).length === 0) {
+      const init = {};
+      tree.forEach((n) => { init[n.id] = true; });
+      setExpanded(init);
+    }
+  }, [tree]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = (id) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const openCreateRoot = () => {
-    setForm({ name: '', description: '', ordering: 1 });
-    setModal({ open: true, mode: 'create', node: null, parentId: null });
+    setForm({ name: '', description: '' });
+    setModal({ open: true, mode: 'create', node: null });
   };
 
   const openEdit = (node) => {
     setForm({
       name: node.name,
       description: node.description || '',
-      ordering: node.ordering ?? 1,
     });
-    setModal({ open: true, mode: 'edit', node, parentId: null });
+    setModal({ open: true, mode: 'edit', node });
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) {
+      enqueueSnackbar('Name is required.', { variant: 'warning' });
+      return;
+    }
+    if (modal.mode === 'create') {
+      if (!activeOrgId) {
+        enqueueSnackbar('No organization selected.', { variant: 'warning' });
+        return;
+      }
+      const ok = await createCategory?.(activeOrgId, form.name, form.description);
+      enqueueSnackbar(ok ? 'Category created.' : 'Failed to create category.', {
+        variant: ok ? 'success' : 'error',
+      });
+    } else {
+      const ok = await updateCategory?.(modal.node.id, form.name, form.description);
+      enqueueSnackbar(ok ? 'Category updated.' : 'Failed to update category.', {
+        variant: ok ? 'success' : 'error',
+      });
+    }
+    setModal({ open: false, mode: 'create', node: null });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    const ok = await deleteCategory?.(deleteTarget.id);
+    enqueueSnackbar(ok ? 'Category deleted.' : 'Failed to delete category.', {
+      variant: ok ? 'success' : 'error',
+    });
+    setDeleteTarget(null);
   };
 
   return (
     <>
       <AdminSectionPanel
         title="Forum categories"
-        subtitle="Tree view with expand/collapse and create/edit modal (design §3.3 — persistence is demo-only)."
+        subtitle={`Manage categories via real API${activeOrgId ? ` (Org #${activeOrgId})` : ''}. Create, edit, and delete categories.`}
         action={
           <Button
             variant="contained"
@@ -114,19 +223,43 @@ const AdminForumCategoriesPage = () => {
             onClick={openCreateRoot}
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
-            Add root
+            Add category
           </Button>
         }
       >
-        <PaperLike>
-          <List disablePadding>
-            {tree.map((root) => (
-              <CategoryBranch key={root.id} node={root} expanded={expanded} toggle={toggle} onEdit={openEdit} />
-            ))}
-          </List>
-        </PaperLike>
+        {categoriesLoading ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Skeleton variant="rounded" height={36} />
+            <Skeleton variant="rounded" height={36} />
+            <Skeleton variant="rounded" height={36} />
+          </Box>
+        ) : (
+          <PaperLike>
+            {tree.length === 0 ? (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No categories found{activeOrgId ? ` for Org #${activeOrgId}` : ''}. Create one to get started.
+                </Typography>
+              </Box>
+            ) : (
+              <List disablePadding>
+                {tree.map((root) => (
+                  <CategoryBranch
+                    key={root.id}
+                    node={root}
+                    expanded={expanded}
+                    toggle={toggle}
+                    onEdit={openEdit}
+                    onDelete={setDeleteTarget}
+                  />
+                ))}
+              </List>
+            )}
+          </PaperLike>
+        )}
       </AdminSectionPanel>
 
+      {/* ─── Create / Edit dialog ─── */}
       <Dialog open={modal.open} onClose={() => setModal((m) => ({ ...m, open: false }))} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 800 }}>
           {modal.mode === 'create' ? 'Create category' : 'Edit category'}
@@ -149,31 +282,33 @@ const AdminForumCategoriesPage = () => {
             minRows={2}
             slotProps={{ inputLabel: { shrink: true } }}
           />
-          <TextField
-            label="Ordering"
-            type="number"
-            value={form.ordering}
-            onChange={(e) => setForm((f) => ({ ...f, ordering: Number(e.target.value) }))}
-            fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
-          />
-          <Typography variant="caption" color="text.secondary">
-            Parent selection and drag-reorder can be wired when the admin category API is available.
-          </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setModal((m) => ({ ...m, open: false }))} sx={{ textTransform: 'none' }}>
-            Close
+            Cancel
           </Button>
           <Button
             variant="contained"
-            onClick={() => setModal((m) => ({ ...m, open: false }))}
+            onClick={handleSave}
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
-            Save (demo)
+            Save
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ─── Delete confirm ─── */}
+      <AdminConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Delete category"
+        description={
+          deleteTarget
+            ? `Delete category "${deleteTarget.name}" (ID: ${deleteTarget.id})? This calls the backend API and cannot be undone.`
+            : ''
+        }
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
     </>
   );
 };
