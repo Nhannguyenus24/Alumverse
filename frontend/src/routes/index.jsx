@@ -87,7 +87,9 @@ const DetailDonationPage = Loadable(
 );
 
 // Honors pages
-const HonorsPage = Loadable(lazy(() => import("../pages/honors/HonorsPage")));
+const HonorsPage = Loadable(
+  lazy(() => import("../pages/honors/HonorsPage"))
+);
 const HonorsAlumniPage = Loadable(
   lazy(() => import("../pages/honors/HonorsAlumniPage")),
 );
