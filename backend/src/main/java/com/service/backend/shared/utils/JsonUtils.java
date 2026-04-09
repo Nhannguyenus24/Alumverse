@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +77,48 @@ public class JsonUtils {
             return MAPPER.readValue(json, typeReference);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize JSON", e);
+        }
+    }
+
+    /**
+     * Read a classpath resource file as UTF-8 string
+     */
+    public static String readResourceAsString(String resourcePath) {
+        try (InputStream inputStream = JsonUtils.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new RuntimeException("Resource not found: " + resourcePath);
+            }
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read resource: " + resourcePath, e);
+        }
+    }
+
+    /**
+     * Convert classpath resource JSON file to object
+     */
+    public static <T> T fromResource(String resourcePath, Class<T> clazz) {
+        try (InputStream inputStream = JsonUtils.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new RuntimeException("Resource not found: " + resourcePath);
+            }
+            return MAPPER.readValue(inputStream, clazz);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize resource JSON to " + clazz.getName(), e);
+        }
+    }
+
+    /**
+     * Convert classpath resource JSON file to object using TypeReference (for generic types)
+     */
+    public static <T> T fromResource(String resourcePath, TypeReference<T> typeReference) {
+        try (InputStream inputStream = JsonUtils.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (inputStream == null) {
+                throw new RuntimeException("Resource not found: " + resourcePath);
+            }
+            return MAPPER.readValue(inputStream, typeReference);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize resource JSON", e);
         }
     }
 

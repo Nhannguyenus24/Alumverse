@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useNavigate } from 'react-router';
@@ -12,6 +13,14 @@ const SignupCodePage = () => {
   const navigate = useNavigate();
   const { verifySignupCode, forgotPassword, isLoading: loading, error, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
+  const [countdown, setCountdown] = useState(60);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
 
   const {
     register,
@@ -32,7 +41,10 @@ const SignupCodePage = () => {
   const handleResend = async () => {
     setError(null);
     const email = getValues('email');
-    if (email) await forgotPassword({ email });
+    if (email) {
+      await forgotPassword({ email });
+      setCountdown(60);
+    }
   };
 
   return (
@@ -89,18 +101,18 @@ const SignupCodePage = () => {
             variant="body2"
             color="primary.main"
             onClick={handleResend}
-            disabled={loading}
+            disabled={loading || countdown > 0}
             sx={{
               background: 'none',
               border: 'none',
               padding: 0,
-              cursor: 'pointer',
+              cursor: countdown > 0 ? 'not-allowed' : 'pointer',
               font: 'inherit',
               fontWeight: 600,
-              '&:hover': { textDecoration: 'underline' },
+              '&:hover': { textDecoration: countdown > 0 ? 'none' : 'underline' },
             }}
           >
-            Gửi lại mã.
+            {countdown > 0 ? `Gửi lại mã (${countdown}s)` : 'Gửi lại mã.'}
           </Typography>
         </Typography>
 

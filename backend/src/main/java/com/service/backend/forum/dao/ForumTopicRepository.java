@@ -60,4 +60,45 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
      */
     @Query("SELECT COUNT(*) FROM forum_topics WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(@Param("organizationId") Integer organizationId);
+
+    // ========== STATISTICS QUERIES ==========
+
+    /**
+     * Count topics created today
+     */
+    @Query("SELECT COUNT(*) FROM forum_topics WHERE DATE(created_at) = CURRENT_DATE")
+    Mono<Long> countTopicsCreatedToday();
+
+    /**
+     * Find ghost topics: created more than 7 days ago with 0 posts.
+     * Returns up to 20 ghost topics ordered by oldest first.
+     */
+    @Query("SELECT ft.* FROM forum_topics ft " +
+           "LEFT JOIN forum_posts fp ON ft.id = fp.topic_id " +
+           "WHERE ft.created_at < CURRENT_TIMESTAMP - INTERVAL '7 days' " +
+           "GROUP BY ft.id " +
+           "HAVING COUNT(fp.id) = 0 " +
+           "ORDER BY ft.created_at ASC " +
+           "LIMIT 20")
+    Flux<ForumTopic> findGhostTopics();
+
+    /**
+     * Find the category_id with the most posts across its topics
+     */
+    @Query("SELECT ft.category_id FROM forum_topics ft " +
+           "JOIN forum_posts fp ON ft.id = fp.topic_id " +
+           "WHERE fp.is_banned = false " +
+           "GROUP BY ft.category_id " +
+           "ORDER BY COUNT(fp.id) DESC " +
+           "LIMIT 1")
+    Mono<Integer> findCategoryIdWithMostPosts();
+
+    /**
+     * Count topics created in a given month/year
+     */
+    @Query("SELECT COUNT(*) FROM forum_topics " +
+           "WHERE EXTRACT(MONTH FROM created_at) = :month " +
+           "AND EXTRACT(YEAR FROM created_at) = :year")
+    Mono<Long> countTopicsInMonth(@Param("month") int month, @Param("year") int year);
 }
+

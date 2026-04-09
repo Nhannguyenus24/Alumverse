@@ -51,7 +51,7 @@ public class AuthService {
         this.secureRandom = new SecureRandom();
     }
 
-    public Mono<Void> register(String email, String userName, String password) {
+    public Mono<Void> register(String email, String userName, String password, String fullName) {
 
         return authRepository.existsByEmailOrUserName(email, userName)
                 .flatMap(exists -> {
@@ -59,7 +59,10 @@ public class AuthService {
                     return Mono.fromCallable(() -> passwordEncoder.encode(password))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword ->
-                                    authRepository.registerNewUser(email, userName, hashedPassword));
+                                    authRepository.registerNewUser(email, userName, hashedPassword)
+                                            .flatMap(userId -> 
+                                                authRepository.createGlobalProfile(userId, fullName)
+                            ));
                 })
                 .doOnError(e -> logger.error("Registration failed: {}", email, e));
     }
@@ -134,6 +137,7 @@ public class AuthService {
 
     public Mono<List<Integer>> getOrganizationIdByUserId(Integer userId) {
         return authRepository.getOrganizationIdByUserId(userId)
+                .collectList()
                 .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
     }
 
@@ -212,15 +216,16 @@ public class AuthService {
                             .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                             .flatMap(user -> 
                                 authRepository.getOrganizationIdByUserId(userId)
+                                        .collectList()
                                         .defaultIfEmpty(List.of())
-                                        .map(organizationId -> {
+                                        .map(organizationIds -> {
                                             String accessToken = jwtUtils.generateAccessToken(
                                                     user.getId(),
                                                     user.getEmail(),
                                                     user.getRole().name(),
                                                     user.getUserName(),
                                                     user.getAvatarUrl(),
-                                                    organizationId
+                                                    organizationIds
                                             );
                                             logger.info("Access token refreshed successfully for user id: {}", userId);
                                             return accessToken;

@@ -63,7 +63,11 @@ public class SecurityConfig {
                                 "/*.js",
                                 "/*.png",
                                 "/*.ico",
-                                "/static/**"
+                                "/static/**",
+                                "/api/funds/**",
+                                "/api/fund-statuses",
+                                "/api/fund-donations",
+                                "/api/payment/**"
                         ).permitAll()
 
                         // All other requests require authentication

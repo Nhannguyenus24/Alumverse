@@ -64,6 +64,16 @@ const ArticlePage = Loadable(
   lazy(() => import("../pages/alumni/ArticlePage")));
 
 // Admin pages
+const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
+const AdminDashboardPage = Loadable(lazy(() => import("../pages/admin/AdminDashboardPage")));
+const AdminUsersListPage = Loadable(lazy(() => import("../pages/admin/AdminUsersListPage")));
+const AdminUserDetailPage = Loadable(lazy(() => import("../pages/admin/AdminUserDetailPage")));
+const AdminForumPostsPage = Loadable(lazy(() => import("../pages/admin/AdminForumPostsPage")));
+const AdminForumTopicsPage = Loadable(lazy(() => import("../pages/admin/AdminForumTopicsPage")));
+const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/AdminForumCategoriesPage")));
+const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
+const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
+const AdminAnalyticsPage = Loadable(lazy(() => import("../pages/admin/AdminAnalyticsPage")));
 const CreateDonationPage = Loadable(
   lazy(() => import("../pages/admin/CreateDonationPage")),
 );
@@ -77,7 +87,9 @@ const DetailDonationPage = Loadable(
 );
 
 // Honors pages
-const HonorsPage = Loadable(lazy(() => import("../pages/honors/HonorsPage")));
+const HonorsPage = Loadable(
+  lazy(() => import("../pages/honors/HonorsPage"))
+);
 const HonorsAlumniPage = Loadable(
   lazy(() => import("../pages/honors/HonorsAlumniPage")),
 );
@@ -218,7 +230,7 @@ export const router = createBrowserRouter([
         element: <PostArticlePage />,
       },
       {
-        path: "article",
+        path: "article/:id",
         element: <ArticlePage />,
       },
       {
@@ -302,6 +314,80 @@ export const router = createBrowserRouter([
                 ],
               },
             ],
+          },
+        ],
+      },
+      {
+        path: "admin",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: <AdminDashboardPage />,
+          },
+          {
+            path: "users",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminUsersListPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "users/:userId",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminUserDetailPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "forum/posts",
+            element: <AdminForumPostsPage />,
+          },
+          {
+            path: "forum/topics",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminForumTopicsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "forum/categories",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminForumCategoriesPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "organizations",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminOrganizationsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "audit-logs",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminAuditLogsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "analytics",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminAnalyticsPage />
+              </ProtectedRoute>
+            ),
           },
         ],
       },
