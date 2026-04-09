@@ -157,6 +157,7 @@ const Header = () => {
                       display: 'flex', flexDirection: 'column', bgcolor: 'background.paper',
                       borderRadius: 1, boxShadow: 3, py: 0.5, px: 0.5,
                       width: 'max-content', minWidth: 180, zIndex: 10,
+                      border: '1px solid', borderColor: 'divider'
                     }} >
                     {item.children.map((child) => (
                       <Button
