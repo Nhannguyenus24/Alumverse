@@ -100,6 +100,17 @@ const HonorsRequestAchievementsPage = Loadable(
   lazy(() => import("../pages/honors/HonorsRequestAchievementsPage")),
 );
 
+// Activities pages
+const ActivitiesPage = Loadable(
+  lazy(() => import("../pages/activities/ActivitiesPage")),
+);
+const ActivitiesEventsPage = Loadable(
+  lazy(() => import("../pages/activities/ActivitiesEventsPage")),
+);
+const ActivitiesNewsPage = Loadable(
+  lazy(() => import("../pages/activities/ActivitiesNewsPage")),
+);
+
 // Mentorship pages
 const MentorshipPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipPage")),
@@ -223,6 +234,23 @@ export const router = createBrowserRouter([
             path: "request-achievements",
             element: <HonorsRequestAchievementsPage />,
           },
+        ],
+      },
+      {
+        path: "activities",
+        children: [
+          {
+            index: true,
+            element: <ActivitiesPage />,
+          },
+          {
+            path: "events",
+            element: <ActivitiesEventsPage />,
+          },
+          {
+            path: "news",
+            element: <ActivitiesNewsPage />,
+          }
         ],
       },
       {
