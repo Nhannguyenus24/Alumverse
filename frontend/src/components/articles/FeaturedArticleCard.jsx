@@ -5,9 +5,9 @@ const FeaturedArticleCard = ({ article }) => {
     <Box
       sx={{
         display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
         alignItems: 'center',
         width: '100%',
-        height: 250,
         gap: 3,
       }}
     >
@@ -17,8 +17,8 @@ const FeaturedArticleCard = ({ article }) => {
         src={article.image}
         alt={article.title}
         sx={{
-          width: '45%',
-          height: '100%',
+          width: { xs: '100%', md: '45%' },
+          height: { xs: 200, md: 250 },
           objectFit: 'cover',
           borderRadius: 2,
           flexShrink: 0,
@@ -26,8 +26,20 @@ const FeaturedArticleCard = ({ article }) => {
       />
 
       {/* CONTENT */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <Typography variant="h2" fontWeight={700}>
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <Typography
+          variant="h2"
+          fontWeight={700}
+          sx={{
+            fontSize: { xs: '1.4rem', md: '2rem' },
+          }}
+        >
           {article.title}
         </Typography>
 
@@ -35,7 +47,11 @@ const FeaturedArticleCard = ({ article }) => {
           {article.description}
         </Typography>
 
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ mt: 1 }}
+        >
           {article.date}
         </Typography>
       </Box>
