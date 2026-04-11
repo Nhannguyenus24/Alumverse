@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import GroupsIcon from '@mui/icons-material/Groups';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import LocalActivityIcon from '@mui/icons-material/LocalActivity';
+import EventIcon from '@mui/icons-material/Event';
+import ArticleIcon from '@mui/icons-material/Article';
 
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
@@ -12,53 +12,61 @@ import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
+import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import Sidebar from '../../components/Sidebar';
 
+
 const SIDEBAR = [
-  { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: 'Cựu sinh viên', icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: 'Kênh thành tựu', icon: <TrendingUpIcon /> },
+  { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
+  { id: '/activities/events', label: 'Sự kiện', icon: <EventIcon /> },
+  { id: '/activities/news', label: 'Tin tức', icon: <ArticleIcon /> },
 ];
 
 const FILTERS = [
   {
-    type: 'topics',
-    key: 'topics',
-    label: 'Chủ đề',
-    options: ['Bảng vàng'],
-  },
-  {
     type: 'dropdown',
     key: 'type',
-    label: 'Phân loại',
+    label: 'Chủ đề',
     multiple: true,
-    options: ['Khởi nghiệp', 'Công nghệ', 'Kinh doanh', 'Nghiên cứu', 'Cộng đồng'],
+    options: [
+      'Học thuật',
+      'Sinh viên',
+      'Sự kiện trường',
+      'Cộng đồng',
+      'Thông báo',
+    ],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Ngày đăng',
+    label: 'Ngày',
+  },
+  {
+    type: 'topics',
+    key: 'topics',
+    label: 'Chủ đề',
+    options: ['Thịnh hành', 'Mới nhất', 'Quan tâm'],
   },
 ];
 
 const FEATURED_ARTICLE = {
-  title: 'Lê Yên Thanh',
+  title: 'Trường Đại học Khoa học tự nhiên mở diễn đàn đổi mới sáng tạo',
   date: '12/12/2023',
   description:
-    'Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup, sau đó khởi nghiệp với BusMap. CEO sinh năm 1994 là ...',
-  image: 'https://vcdn1-vnexpress.vnecdn.net/2025/07/28/ai-1753664373-1753664398-5310-1753664411.jpg?w=680&h=0&q=100&dpr=1&fit=crop&s=L9Jh3NGehMlCpb4bdZ8xzA',
+    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur...',
+  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgm37lvYIRKvTGi4qoeU4GsQn0HiF3bYq9zA&s',
 };
 
-const ALUMNI_ARTICLES = Array(9).fill({
-  title: 'Lê Yên Thanh',
+const NEWS_ARTICLES = Array(3).fill({
+  title: 'Trường Đại học Khoa học tự nhiên mở diễn đàn đổi mới sáng tạo',
   date: '12/12/2023',
   description:
-    'Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup...',
-  image: 'https://forbes.vn/wp-content/uploads/2021/09/under30_2022_Le-Yen-Thanh.jpg',
+    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur...',
+  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgm37lvYIRKvTGi4qoeU4GsQn0HiF3bYq9zA&s',
 });
 
 
-const HonorsAlumniPage = () => {
+const ActivitiesPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -67,7 +75,7 @@ const HonorsAlumniPage = () => {
   });
 
   return (
-    <Page title="Cựu sinh viên">
+    <Page title="Tin tức">
       <Container
         maxWidth={false}
         disableGutters
@@ -98,21 +106,10 @@ const HonorsAlumniPage = () => {
                     fontWeight={800}
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-                  >
-                    CỰU SINH VIÊN
+                    >
+                    TIN TỨC
                   </Typography>
-
-                  <Button
-                    variant="contained"
-                    onClick={() => navigate('/honors/request-achievements')}
-                  >
-                    Gửi đơn xét thành tựu
-                  </Button>
                 </Box>
-
-                <Typography color="text.secondary">
-                  Những cựu sinh viên tiêu biểu của Trường Đại học Khoa học tự nhiên, ĐHQG-HCM.
-                </Typography>
 
                 {/* FILTERS */}
                 <DynamicFilterBar
@@ -133,10 +130,10 @@ const HonorsAlumniPage = () => {
               {/* FEATURED ARTICLE */}
               <FeaturedArticleCard article={FEATURED_ARTICLE} />
 
-              {/* ALUMNI SECTION */}
+              {/* NEWS SECTION */}
               <Box>
                 <Typography variant="h4" fontWeight={700} mb={3}>
-                  Cựu sinh viên tiêu biểu
+                  Gợi ý
                 </Typography>
 
                 <Box
@@ -150,12 +147,34 @@ const HonorsAlumniPage = () => {
                     gap: 4,
                   }}
                 >
-                  {ALUMNI_ARTICLES.map((article, i) => (
+                  {NEWS_ARTICLES.map((article, i) => (
                     <ArticleCard key={i} article={article} />
                   ))}
                 </Box>
               </Box>
 
+              {/* NEWS SECTION */}
+              <Box>
+                <Typography variant="h4" fontWeight={700} mb={3}>
+                  Hàng ngày
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 4,
+                  }}
+                >
+                  {NEWS_ARTICLES.map((article, i) => (
+                    <ArticleCard key={i} article={article} />
+                  ))}
+                </Box>
+              </Box>
             </Stack>
           </Box>
         </Container>
@@ -164,4 +183,4 @@ const HonorsAlumniPage = () => {
   );
 };
 
-export default HonorsAlumniPage;
+export default ActivitiesPage;

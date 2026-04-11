@@ -87,7 +87,9 @@ const DetailDonationPage = Loadable(
 );
 
 // Honors pages
-const HonorsPage = Loadable(lazy(() => import("../pages/honors/HonorsPage")));
+const HonorsPage = Loadable(
+  lazy(() => import("../pages/honors/HonorsPage"))
+);
 const HonorsAlumniPage = Loadable(
   lazy(() => import("../pages/honors/HonorsAlumniPage")),
 );
@@ -96,6 +98,28 @@ const HonorsAchievementsPage = Loadable(
 );
 const HonorsRequestAchievementsPage = Loadable(
   lazy(() => import("../pages/honors/HonorsRequestAchievementsPage")),
+);
+
+// Activities pages
+const ActivitiesPage = Loadable(
+  lazy(() => import("../pages/activities/ActivitiesPage")),
+);
+const ActivitiesEventsPage = Loadable(
+  lazy(() => import("../pages/activities/ActivitiesEventsPage")),
+);
+const ActivitiesNewsPage = Loadable(
+  lazy(() => import("../pages/activities/ActivitiesNewsPage")),
+);
+
+// Development pages
+const DevelopmentPage = Loadable(
+  lazy(() => import("../pages/development/DevelopmentPage")),
+);
+const DevelopmentAcademicsPage = Loadable(
+  lazy(() => import("../pages/development/DevelopmentAcademicsPage")),
+);
+const DevelopmentJobsPage = Loadable(
+  lazy(() => import("../pages/development/DevelopmentJobsPage")),
 );
 
 // Mentorship pages
@@ -224,6 +248,23 @@ export const router = createBrowserRouter([
         ],
       },
       {
+        path: "activities",
+        children: [
+          {
+            index: true,
+            element: <ActivitiesPage />,
+          },
+          {
+            path: "events",
+            element: <ActivitiesEventsPage />,
+          },
+          {
+            path: "news",
+            element: <ActivitiesNewsPage />,
+          }
+        ],
+      },
+      {
         path: "post",
         element: <PostArticlePage />,
       },
@@ -259,10 +300,18 @@ export const router = createBrowserRouter([
       {
         path: "development",
         children: [
-          // {
-          //   path: 'scholarships',
-          //   element: <ScholarshipsPage />,
-          // },
+          {
+            index: true,
+            element: <DevelopmentPage />,
+          },
+          {
+            path: 'academics',
+            element: <DevelopmentAcademicsPage />,
+          },
+          {
+            path: 'jobs',
+            element: <DevelopmentJobsPage />,
+          },
           {
             path: "mentorship",
             children: [

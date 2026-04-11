@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import GroupsIcon from '@mui/icons-material/Groups';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import SchoolIcon from '@mui/icons-material/School';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import WorkIcon from '@mui/icons-material/Work';
 
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
@@ -15,50 +16,71 @@ import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
 
 const SIDEBAR = [
-  { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: 'Cựu sinh viên', icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: 'Kênh thành tựu', icon: <TrendingUpIcon /> },
+  { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
+  { id: '/development/mentorship', label: 'Cố vấn', icon: <SchoolIcon /> },
+  { id: '/development/academics', label: 'Cơ hội học tập', icon: <MenuBookIcon /> },
+  { id: '/development/jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
 ];
 
 const FILTERS = [
   {
-    type: 'topics',
-    key: 'topics',
+    type: 'dropdown',
+    key: 'type',
     label: 'Chủ đề',
-    options: ['Bảng vàng'],
+    multiple: true,
+    options: [
+      'Học bổng',
+      'Trao đổi',
+      'Nghiên cứu',
+      'Workshop',
+      'Khóa học',
+    ],
   },
   {
     type: 'dropdown',
-    key: 'type',
-    label: 'Phân loại',
+    key: 'format',
+    label: 'Hình thức',
+    options: ['Online', 'Offline', 'Hybrid'],
+  },
+  {
+    type: 'dropdown',
+    key: 'location',
+    label: 'Địa điểm',
     multiple: true,
-    options: ['Khởi nghiệp', 'Công nghệ', 'Kinh doanh', 'Nghiên cứu', 'Cộng đồng'],
+    options: ['TP.HCM', 'Trong nước', 'Nước ngoài'],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Ngày đăng',
+    label: 'Hạn chót',
+  },
+  {
+    type: 'dropdown',
+    key: 'level',
+    label: 'Trình độ',
+    multiple: true,
+    options: ['Đại học', 'Thạc sĩ', 'Tiến sĩ']
   },
 ];
 
 const FEATURED_ARTICLE = {
-  title: 'Lê Yên Thanh',
+  title: 'Cơ hội nghề nghiệp cho sinh viên: Thực tập, việc làm và hơn thế nữa',
   date: '12/12/2023',
   description:
-    'Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup, sau đó khởi nghiệp với BusMap. CEO sinh năm 1994 là ...',
-  image: 'https://vcdn1-vnexpress.vnecdn.net/2025/07/28/ai-1753664373-1753664398-5310-1753664411.jpg?w=680&h=0&q=100&dpr=1&fit=crop&s=L9Jh3NGehMlCpb4bdZ8xzA',
+    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
+  image: 'https://d341ezm4iqaae0.cloudfront.net/hiringlaborg/2019/07/02115547/4-Lessons-the-Tech-Industry-Can-Teach-All-Recruiters.jpg',
 };
 
-const ALUMNI_ARTICLES = Array(9).fill({
-  title: 'Lê Yên Thanh',
+const JOBS_ARTICLES = Array(3).fill({
+  title: 'Cơ hội nghề nghiệp cho sinh viên: Thực tập, việc làm và hơn thế nữa',
   date: '12/12/2023',
   description:
-    'Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup...',
-  image: 'https://forbes.vn/wp-content/uploads/2021/09/under30_2022_Le-Yen-Thanh.jpg',
+    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
+  image: 'https://d341ezm4iqaae0.cloudfront.net/hiringlaborg/2019/07/02115547/4-Lessons-the-Tech-Industry-Can-Teach-All-Recruiters.jpg',
 });
 
 
-const HonorsAlumniPage = () => {
+const DevelopmentJobsPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -67,7 +89,7 @@ const HonorsAlumniPage = () => {
   });
 
   return (
-    <Page title="Cựu sinh viên">
+    <Page title="Cơ hội việc làm">
       <Container
         maxWidth={false}
         disableGutters
@@ -99,19 +121,19 @@ const HonorsAlumniPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                   >
-                    CỰU SINH VIÊN
+                    CƠ HỘI VIỆC LÀM
                   </Typography>
 
                   <Button
                     variant="contained"
-                    onClick={() => navigate('/honors/request-achievements')}
+                    // onClick={() => navigate('/development/academics/create-article')}
                   >
-                    Gửi đơn xét thành tựu
+                    Đăng bài
                   </Button>
                 </Box>
 
                 <Typography color="text.secondary">
-                  Những cựu sinh viên tiêu biểu của Trường Đại học Khoa học tự nhiên, ĐHQG-HCM.
+                    Những việc làm từ nhiều công ty và tập đoàn hàng đầu vẫn đang chào đón các bạn!
                 </Typography>
 
                 {/* FILTERS */}
@@ -133,10 +155,10 @@ const HonorsAlumniPage = () => {
               {/* FEATURED ARTICLE */}
               <FeaturedArticleCard article={FEATURED_ARTICLE} />
 
-              {/* ALUMNI SECTION */}
+              {/* JOBS SECTION */}
               <Box>
                 <Typography variant="h4" fontWeight={700} mb={3}>
-                  Cựu sinh viên tiêu biểu
+                  Cử nhân
                 </Typography>
 
                 <Box
@@ -150,7 +172,51 @@ const HonorsAlumniPage = () => {
                     gap: 4,
                   }}
                 >
-                  {ALUMNI_ARTICLES.map((article, i) => (
+                  {JOBS_ARTICLES.map((article, i) => (
+                    <ArticleCard key={i} article={article} />
+                  ))}
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="h4" fontWeight={700} mb={3}>
+                  Thạc sĩ
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 4,
+                  }}
+                >
+                  {JOBS_ARTICLES.map((article, i) => (
+                    <ArticleCard key={i} article={article} />
+                  ))}
+                </Box>
+              </Box>
+
+              <Box>
+                <Typography variant="h4" fontWeight={700} mb={3}>
+                  Tiến sĩ
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 4,
+                  }}
+                >
+                  {JOBS_ARTICLES.map((article, i) => (
                     <ArticleCard key={i} article={article} />
                   ))}
                 </Box>
@@ -164,4 +230,4 @@ const HonorsAlumniPage = () => {
   );
 };
 
-export default HonorsAlumniPage;
+export default DevelopmentJobsPage;
