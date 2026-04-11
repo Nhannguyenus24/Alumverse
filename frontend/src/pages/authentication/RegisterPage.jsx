@@ -10,6 +10,7 @@ import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
 import { registerSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
@@ -18,7 +19,7 @@ const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { register: registerUser, forgotPassword, isLoading: loading, error, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
 
@@ -212,7 +213,11 @@ const RegisterPage = () => {
             variant="body2"
             color="primary.main"
             fontWeight={600}
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/auth/login');
+            }}
+            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}
           >
             Đăng nhập ngay!
           </Typography>

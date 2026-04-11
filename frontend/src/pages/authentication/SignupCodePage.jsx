@@ -7,10 +7,11 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { verifyOtpSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const SignupCodePage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { verifySignupCode, forgotPassword, isLoading: loading, error, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
   const [countdown, setCountdown] = useState(60);
@@ -135,7 +136,11 @@ const SignupCodePage = () => {
             variant="body2"
             color="primary.main"
             fontWeight={600}
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/auth/login');
+            }}
+            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}
           >
             Quay lại đăng nhập
           </Typography>

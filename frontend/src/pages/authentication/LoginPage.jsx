@@ -6,9 +6,11 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { loginSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
+  const routerNavigate = useNavigate();
   const location = useLocation();
   const { login, isLoading: loading, error, setError, forgotPassword } = useAuth();
 
@@ -27,7 +29,8 @@ const LoginPage = () => {
     setError(null);
     const result = await login({ email: data.email, password: data.password });
     if (result?.ok) {
-      navigate(redirectTo, { replace: true });
+      // redirectTo already has slug from ProtectedRoute, use raw navigation
+      routerNavigate(redirectTo, { replace: true });
     } else if (result?.error && result.error.includes('Account is not verified')) {
       // Account chưa verified → gửi OTP rồi chuyển đến trang nhập mã
       await forgotPassword({ email: data.email });
@@ -94,7 +97,11 @@ const LoginPage = () => {
             to="/auth/forgot-password"
             variant="body2"
             color="primary.main"
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/auth/forgot-password');
+            }}
+            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}
           >
             Quên mật khẩu?
           </Typography>
@@ -120,7 +127,11 @@ const LoginPage = () => {
             variant="body2"
             color="primary.main"
             fontWeight={600}
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/auth/register');
+            }}
+            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}
           >
             Đăng ký ngay!
           </Typography>

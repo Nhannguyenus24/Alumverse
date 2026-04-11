@@ -6,9 +6,10 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { changePasswordSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const ResetPasswordPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { resetPassword, isLoading: loading, error, setError } = useAuth();
 
   const {
@@ -110,7 +111,11 @@ const ResetPasswordPage = () => {
             variant="body2"
             color="primary.main"
             fontWeight={600}
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/dashboard');
+            }}
+            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline', cursor: 'pointer' } }}
           >
             Quay lại trang chủ
           </Typography>

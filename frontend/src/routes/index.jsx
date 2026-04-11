@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
+import OrganizationRouteWrapper from "./OrganizationRouteWrapper";
 import LoadingScreen from "../components/LoadingScreen";
 
 const Loadable = (Component) => (props) => (
@@ -166,9 +167,15 @@ const MaintenancePage = Loadable(
 );
 
 export const router = createBrowserRouter([
+  // Root path without slug - show 404
   {
     path: "/",
-    element: <MainLayout />,
+    element: <NotFoundPage />,
+  },
+  // Organization-scoped routes
+  {
+    path: "/:slug",
+    element: <OrganizationRouteWrapper><MainLayout /></OrganizationRouteWrapper>,
     children: [
       {
         index: true,
@@ -475,51 +482,51 @@ export const router = createBrowserRouter([
         path: "maintenance",
         element: <MaintenancePage />,
       },
-    ],
-  },
-  {
-    path: "/auth",
-    element: <AuthLayout />,
-    children: [
       {
-        path: "login",
-        element: (
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        ),
-      },
-      {
-        path: "register",
-        element: (
-          <PublicRoute>
-            <RegisterPage />
-          </PublicRoute>
-        ),
-      },
-      {
-        path: "signup-code",
-        element: (
-          <PublicRoute>
-            <SignupCodePage />
-          </PublicRoute>
-        ),
-      },
-      {
-        path: "forgot-password",
-        element: (
-          <PublicRoute>
-            <ForgotPasswordPage />
-          </PublicRoute>
-        ),
-      },
-      {
-        path: "reset-password",
-        element: (
-          <PublicRoute>
-            <ResetPasswordPage />
-          </PublicRoute>
-        ),
+        path: "auth",
+        element: <AuthLayout />,
+        children: [
+          {
+            path: "login",
+            element: (
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            ),
+          },
+          {
+            path: "register",
+            element: (
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            ),
+          },
+          {
+            path: "signup-code",
+            element: (
+              <PublicRoute>
+                <SignupCodePage />
+              </PublicRoute>
+            ),
+          },
+          {
+            path: "forgot-password",
+            element: (
+              <PublicRoute>
+                <ForgotPasswordPage />
+              </PublicRoute>
+            ),
+          },
+          {
+            path: "reset-password",
+            element: (
+              <PublicRoute>
+                <ResetPasswordPage />
+              </PublicRoute>
+            ),
+          },
+        ],
       },
     ],
   },

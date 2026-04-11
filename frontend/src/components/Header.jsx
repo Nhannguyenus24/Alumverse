@@ -15,6 +15,7 @@ import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import { useAuth } from '../hooks/useAuth';
+import { useOrganization } from '../hooks/useOrganization';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -54,6 +55,13 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const { slug } = useOrganization();
+
+  // Helper function to prepend slug to paths
+  const getOrgPath = (path) => {
+    if (path === '/') return `/${slug}`;
+    return `/${slug}${path}`;
+  };
 
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
@@ -124,7 +132,7 @@ const Header = () => {
                      px: { xs: 1.5, sm: 2 },
                      justifyContent: 'space-between', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to={getOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
             <Logo 
               variant="image" 
               src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC} 
@@ -144,7 +152,7 @@ const Header = () => {
                 onMouseLeave={() => setHoveredNav(null)}
                 sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
               >
-                <Button component={Link} to={item.href} sx={navButtonSx}>
+                <Button component={Link} to={getOrgPath(item.href)} sx={navButtonSx}>
                   {item.label}
                 </Button>
 
@@ -199,7 +207,7 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <Button component={Link} to="/auth/register"
+                  <Button component={Link} to={getOrgPath("/auth/register")}
                           variant="outlined" size="small"
                           sx={{ 
                             fontWeight: 600, 
@@ -210,7 +218,7 @@ const Header = () => {
                   >
                     Đăng ký
                   </Button>
-                  <Button component={Link} to="/auth/login"
+                  <Button component={Link} to={getOrgPath("/auth/login")}
                           variant="contained" size="small"
                           sx={{ 
                             fontWeight: 600,
@@ -257,7 +265,7 @@ const Header = () => {
                 <ListItemText 
                   primary={item.label}
                   primaryTypographyProps={{ fontWeight: 500 }} 
-                  onClick={() => { navigate(item.href); closeDrawer(); }}
+                  onClick={() => { navigate(getOrgPath(item.href)); closeDrawer(); }}
                 />
                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); toggleDrawerNav(item.label)(); }}>
                   {expandedNav[item.label] ? <ExpandLess /> : <ExpandMore />}
@@ -266,7 +274,7 @@ const Header = () => {
               <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   {item.children.map((child) => (
-                    <ListItemButton key={child.label} component={Link} to={child.href} 
+                    <ListItemButton key={child.label} component={Link} to={getOrgPath(child.href)} 
                                     onClick={closeDrawer} sx={{ pl: 4 }}>
                       <ListItemText primary={child.label} primaryTypographyProps={{ variant: 'body2' }} />
                     </ListItemButton>
@@ -276,7 +284,7 @@ const Header = () => {
             </Box>
             ) : (
               <ListItemButton key={item.label} onClick={closeDrawer}
-                              component={Link} to={item.href}>
+                              component={Link} to={getOrgPath(item.href)}>
                 <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 500 }} />
               </ListItemButton>
             )
@@ -289,7 +297,7 @@ const Header = () => {
           {isAuthenticated ? (
             <Box sx={{ display: 'flex', alignItems: 'center',
                         gap: 1.5, p: 1.5, borderRadius: 1, bgcolor: 'action.hover' }}
-                  onClick={() => { closeDrawer(); navigate('/dashboard'); }}>
+                  onClick={() => { closeDrawer(); navigate(getOrgPath('/dashboard')); }}>
               <Box sx={{ width: 40, height: 40, borderRadius: '50%',
                           bgcolor: 'primary.main', color: 'primary.contrastText',
                           display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -305,12 +313,12 @@ const Header = () => {
             </Box>
           ) : (
             <>
-              <Button component={Link} to="/auth/register" variant="outlined"
+              <Button component={Link} to={getOrgPath("/auth/register")} variant="outlined"
                       fullWidth onClick={closeDrawer}
               >
                 Đăng ký
               </Button>
-              <Button component={Link} to="/auth/login" variant="contained"
+              <Button component={Link} to={getOrgPath("/auth/login")} variant="contained"
                       fullWidth onClick={closeDrawer}
               >
                 Đăng nhập

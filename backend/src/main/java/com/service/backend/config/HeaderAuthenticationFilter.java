@@ -41,6 +41,7 @@ public class HeaderAuthenticationFilter implements WebFilter {
                 path.startsWith("/webjars/") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/api/guest") ||
+                path.startsWith("/api/organizations") ||
                 path.startsWith("/api/funds") ||
                 path.startsWith("/api/fund-donations") ||
                 path.startsWith("/api/fund-statuses") ||
