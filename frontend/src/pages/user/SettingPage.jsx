@@ -19,20 +19,23 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Stack
 } from '@mui/material';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import SecurityIcon from '@mui/icons-material/Security';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonIcon from '@mui/icons-material/Person';
+import EditIcon from '@mui/icons-material/Edit';
 import Page from '../../components/Page';
+import Sidebar from '../../components/Sidebar';
 
 const MENU_ITEMS = [
-  { id: 'personal', label: 'Cá nhân', icon: PersonIcon },
-  { id: 'account', label: 'Tài khoản', icon: SecurityIcon },
-  { id: 'notification', label: 'Thông báo', icon: NotificationsIcon },
-  { id: 'display', label: 'Hiển thị', icon: VisibilityIcon },
-  { id: 'advisor', label: 'Thông tin cố vấn', icon: VerifiedUserIcon },
+  { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
+  { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
+  { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
+  { id: 'display', label: 'Hiển thị', icon: <VisibilityIcon /> },
+  { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
 ];
 
 export default function SettingPage() {
@@ -100,234 +103,115 @@ export default function SettingPage() {
     console.log('Save settings:', { formData, notificationSettings, displaySettings });
   };
 
-  const renderPersonalSettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6" sx={{ fontWeight: 600, mt: 2 }}>
-        Thông tin cá nhân
-      </Typography>
+const renderPersonalSettings = () => (
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+    {/* Avatar Row */}
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: 'primary.main', color: 'primary.contrastText',
+                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <PersonIcon fontSize="large" />
+        </Box>
+        <Box>
+          <Typography variant="h3" lineHeight={1}>{formData.fullName || 'User'}</Typography>
+          <Typography variant="body2" color="primary.main">Alumni {formData.studentId}</Typography>
+        </Box>
+      </Box>
+      <Button variant="outlined" startIcon={<EditIcon />}>Chỉnh sửa ảnh</Button>
+    </Box>
 
-      <Grid container spacing={3}>
-        {/* Row 1: Full Name & Gender */}
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Họ và tên"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleFormChange}
-            placeholder="Nhập họ và tên"
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Giới tính</InputLabel>
-            <Select
-              name="gender"
-              value={formData.gender}
-              label="Giới tính"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="male">Nam</MenuItem>
-              <MenuItem value="female">Nữ</MenuItem>
-              <MenuItem value="other">Khác</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+    {/* Thông tin cơ bản */}
+    <Box>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin cơ bản</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+        <TextField fullWidth label="Họ và tên" name="fullName" value={formData.fullName} onChange={handleFormChange} />
+        <FormControl fullWidth>
+          <InputLabel>Giới tính</InputLabel>
+          <Select name="gender" value={formData.gender} label="Giới tính" onChange={handleFormChange}>
+            <MenuItem value="male">Nam</MenuItem>
+            <MenuItem value="female">Nữ</MenuItem>
+            <MenuItem value="other">Khác</MenuItem>
+          </Select>
+        </FormControl>
 
-        {/* Row 2: Birth Date & Phone */}
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Ngày sinh"
-            name="birthDate"
-            type="date"
-            value={formData.birthDate}
-            onChange={handleFormChange}
-            InputLabelProps={{
-              shrink: true,
-            }}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Số điện thoại"
-            name="phone"
-            value={formData.phone}
-            onChange={handleFormChange}
-            placeholder="Nhập số điện thoại"
-          />
-        </Grid>
+        <TextField fullWidth label="Ngày sinh" name="birthDate" type="date"
+          value={formData.birthDate} onChange={handleFormChange} InputLabelProps={{ shrink: true }} />
+        <TextField fullWidth label="Số điện thoại" name="phone" value={formData.phone} onChange={handleFormChange} />
 
-        {/* Row 3: Student ID & Email */}
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Mã số sinh viên"
-            name="studentId"
-            value={formData.studentId}
-            onChange={handleFormChange}
-            placeholder="Nhập mã số sinh viên"
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleFormChange}
-            placeholder="Nhập email"
-          />
-        </Grid>
-
-        {/* Row 4: Faculty & Program */}
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Khoa/Bộ môn</InputLabel>
-            <Select
-              name="faculty"
-              value={formData.faculty}
-              label="Khoa/Bộ môn"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="cs">Khoa Công nghệ Thông tin</MenuItem>
-              <MenuItem value="math">Khoa Toán</MenuItem>
-              <MenuItem value="physics">Khoa Vật lý</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Chương trình đào tạo</InputLabel>
-            <Select
-              name="program"
-              value={formData.program}
-              label="Chương trình đào tạo"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="standard">Chuẩn</MenuItem>
-              <MenuItem value="advanced">Nâng cao</MenuItem>
-              <MenuItem value="honors">Chất lượng cao</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-        {/* Row 5: Batch & Graduation Year */}
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Khoá</InputLabel>
-            <Select
-              name="batch"
-              value={formData.batch}
-              label="Khoá"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="2020">2020</MenuItem>
-              <MenuItem value="2021">2021</MenuItem>
-              <MenuItem value="2022">2022</MenuItem>
-              <MenuItem value="2023">2023</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Năm tốt nghiệp"
-            name="graduationYear"
-            type="number"
-            value={formData.graduationYear}
-            onChange={handleFormChange}
-            placeholder="Nhập năm tốt nghiệp"
-          />
-        </Grid>
-
-        {/* Row 6: Specialization & Graduation Status */}
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Chuyên ngành</InputLabel>
-            <Select
-              name="specialization"
-              value={formData.specialization}
-              label="Chuyên ngành"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="ai">Trí tuệ nhân tạo</MenuItem>
-              <MenuItem value="web">Phát triển web</MenuItem>
-              <MenuItem value="mobile">Phát triển di động</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Trạng thái tốt nghiệp</InputLabel>
-            <Select
-              name="graduationStatus"
-              value={formData.graduationStatus}
-              label="Trạng thái tốt nghiệp"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="graduated">Đã tốt nghiệp</MenuItem>
-              <MenuItem value="studying">Đang học</MenuItem>
-              <MenuItem value="pending">Chờ công bố</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-      </Grid>
-
-      <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
-        <Button variant="contained" color="primary" onClick={handleSave}>
-          Lưu thay đổi
-        </Button>
-        <Button variant="outlined" color="secondary">
-          Huỷ
-        </Button>
+        <TextField fullWidth label="Mã số sinh viên" name="studentId" value={formData.studentId} onChange={handleFormChange} />
+        <TextField fullWidth label="Email" name="email" type="email" value={formData.email} onChange={handleFormChange} />
       </Box>
     </Box>
-  );
+
+    {/* Thông tin học vấn */}
+    <Box>
+      <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin học vấn</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+        <FormControl fullWidth>
+          <InputLabel>Khoa/Bộ môn</InputLabel>
+          <Select name="faculty" value={formData.faculty} label="Khoa/Bộ môn" onChange={handleFormChange}>
+            <MenuItem value="cs">Khoa Công nghệ Thông tin</MenuItem>
+            <MenuItem value="math">Khoa Toán</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl fullWidth>
+          <InputLabel>Chương trình đào tạo</InputLabel>
+          <Select name="program" value={formData.program} label="Chương trình đào tạo" onChange={handleFormChange}>
+            <MenuItem value="standard">Chuẩn</MenuItem>
+            <MenuItem value="advanced">Nâng cao</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth>
+          <InputLabel>Khoá</InputLabel>
+          <Select name="batch" value={formData.batch} label="Khoá" onChange={handleFormChange}>
+            <MenuItem value="2022">2022</MenuItem>
+            <MenuItem value="2023">2023</MenuItem>
+          </Select>
+        </FormControl>
+        <TextField fullWidth label="Năm tốt nghiệp" name="graduationYear" type="number"
+          value={formData.graduationYear} onChange={handleFormChange} />
+
+        <FormControl fullWidth>
+          <InputLabel>Chuyên ngành</InputLabel>
+          <Select name="specialization" value={formData.specialization} label="Chuyên ngành" onChange={handleFormChange}>
+            <MenuItem value="ai">Trí tuệ nhân tạo</MenuItem>
+            <MenuItem value="web">Phát triển web</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl fullWidth>
+          <InputLabel>Trạng thái tốt nghiệp</InputLabel>
+          <Select name="graduationStatus" value={formData.graduationStatus} label="Trạng thái tốt nghiệp" onChange={handleFormChange}>
+            <MenuItem value="graduated">Đã tốt nghiệp</MenuItem>
+            <MenuItem value="studying">Đang học</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
+    </Box>
+
+    {/* Actions */}
+    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+      <Button variant="outlined" color="inherit" sx={{ px: 4 }}>Huỷ</Button>
+      <Button variant="contained" color="primary" onClick={handleSave} sx={{ px: 4 }}>Lưu thay đổi</Button>
+    </Box>
+  </Box>
+);
 
   const renderAccountSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Change Password Section */}
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Đặt lại mật khẩu
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Mật khẩu hiện tại"
-              type="password"
-              placeholder="Nhập mật khẩu hiện tại"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} />
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Mật khẩu mới"
-              type="password"
-              placeholder="Nhập mật khẩu mới"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Xác nhận mật khẩu"
-              type="password"
-              placeholder="Xác nhận mật khẩu"
-            />
-          </Grid>
-        </Grid>
-        <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-          <Button variant="contained" color="primary">
-            Cập nhật mật khẩu
-          </Button>
-          <Button variant="outlined" color="secondary">
-            Huỷ
-          </Button>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
+          <TextField fullWidth label="Mật khẩu hiện tại" type="password" placeholder="Nhập mật khẩu hiện tại" />
+          <TextField fullWidth label="Mật khẩu mới" type="password" placeholder="Nhập mật khẩu mới" />
+          <TextField fullWidth label="Xác nhận mật khẩu" type="password" placeholder="Xác nhận mật khẩu" />
+        </Box>
+        <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Button variant="contained" color="primary">Cập nhật mật khẩu</Button>
+          <Button variant="outlined" color="secondary">Huỷ</Button>
         </Box>
       </Box>
 
@@ -335,47 +219,25 @@ export default function SettingPage() {
 
       {/* Logged In Devices Section */}
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+        <Typography variant="h4" sx= {{ mb: 2 }}>
           Thiết bị đã đăng nhập
         </Typography>
-        <List>
-          <ListItem
-            secondaryAction={
-              <Button variant="outlined" color="error" size="small">
-                Đăng xuất
-              </Button>
-            }
-          >
-            <ListItemText
-              primary="Chrome - Windows"
-              secondary="Lần cuối: 2 giờ trước"
-            />
-          </ListItem>
-          <ListItem
-            secondaryAction={
-              <Button variant="outlined" color="error" size="small">
-                Đăng xuất
-              </Button>
-            }
-          >
-            <ListItemText
-              primary="Safari - macOS"
-              secondary="Lần cuối: 30 phút trước"
-            />
-          </ListItem>
-          <ListItem
-            secondaryAction={
-              <Button variant="outlined" color="error" size="small">
-                Đăng xuất
-              </Button>
-            }
-          >
-            <ListItemText
-              primary="Firefox - Linux"
-              secondary="Lần cuối: 3 ngày trước"
-            />
-          </ListItem>
-        </List>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          {[
+            { device: 'Chrome - Windows', last: 'Lần cuối: 2 giờ trước' },
+            { device: 'Safari - macOS', last: 'Lần cuối: 30 phút trước' },
+            { device: 'Firefox - Linux', last: 'Lần cuối: 3 ngày trước' },
+          ].map(({ device, last }) => (
+            <Box key={device} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5 }}>
+              <Box>
+                <Typography variant="h5">{device}</Typography>
+                <Typography variant="caption" color="text.secondary">{last}</Typography>
+              </Box>
+              <Button variant="outlined" color="error" size="small">Đăng xuất</Button>
+            </Box>
+          ))}
+        </Box>
       </Box>
     </Box>
   );
@@ -384,7 +246,7 @@ export default function SettingPage() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Forum Notifications */}
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Thông báo diễn đàn
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -435,7 +297,7 @@ export default function SettingPage() {
 
       {/* Activity Notifications */}
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Thông báo hoạt động
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -476,7 +338,7 @@ export default function SettingPage() {
 
       {/* Mentor Notifications */}
       <Box>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Thông báo cố vấn
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -513,7 +375,7 @@ export default function SettingPage() {
         </Box>
       </Box>
 
-      <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+      <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button variant="contained" color="primary" onClick={handleSave}>
           Lưu thay đổi
         </Button>
@@ -525,8 +387,8 @@ export default function SettingPage() {
   );
 
   const renderDisplaySettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column'}}>
+      <Typography variant="h4" sx={{ mb: 2 }}>
         Tùy chọn hiển thị trang cá nhân
       </Typography>
 
@@ -573,7 +435,7 @@ export default function SettingPage() {
         />
       </Box>
 
-      <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+      <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
         <Button variant="contained" color="primary" onClick={handleSave}>
           Lưu thay đổi
         </Button>
@@ -586,22 +448,22 @@ export default function SettingPage() {
 
   const renderAdvisorSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+      <Typography variant="h4">
         Thông tin cố vấn học tập
       </Typography>
 
-      <Typography variant="body2" color="textSecondary">
+      <Typography variant="body1" color="textSecondary">
         Chưa có cố vấn được gán. Vui lòng liên hệ với bộ phận quản lý sinh viên để được gán cố vấn.
       </Typography>
 
-      <Paper sx={{ p: 2, bgcolor: '#f5f5f5' }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+      <Paper sx={{ p: 3, bgcolor: 'primary.light' }}>
+        <Typography variant="h5" sx={{ color: 'primary.main' }}>
           Thông tin liên hệ
         </Typography>
-        <Typography variant="caption" color="textSecondary" display="block" sx={{ mt: 1 }}>
+        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2 }}>
           Email: admin@hcmus.edu.vn
         </Typography>
-        <Typography variant="caption" color="textSecondary" display="block">
+        <Typography variant="body1" color="secondary.dark" display="block">
           Điện thoại: 028 3821 4444
         </Typography>
       </Paper>
@@ -635,74 +497,33 @@ export default function SettingPage() {
         />
       }
     >
-      <Container maxWidth="lg" sx={{ py: 10, minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'stretch' }}>
-        <Grid container spacing={3} sx={{ width: '100%' }}>
-          <Grid item xs={12} md={3} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-            <Paper elevation={0} sx={{ bgcolor: '#f9f9f9', borderRadius: 2, position: 'sticky', top: 20, width: '100%' }}>
-              <List disablePadding>
-                {MENU_ITEMS.map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <ListItemButton
-                      key={item.id}
-                      selected={activeTab === item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      sx={{
-                        px: 2,
-                        py: 1.5,
-                        borderLeft: activeTab === item.id ? '4px solid' : '4px solid transparent',
-                        borderColor: activeTab === item.id ? '#1976d2' : 'transparent',
-                        backgroundColor: activeTab === item.id ? '#e3f2fd' : 'transparent',
-                        '&:hover': {
-                          backgroundColor: activeTab === item.id ? '#e3f2fd' : '#f0f0f0',
-                        },
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Icon
-                          sx={{
-                            fontSize: 20,
-                            color: activeTab === item.id ? '#1976d2' : '#666',
-                          }}
-                        />
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: activeTab === item.id ? 600 : 500,
-                            color: activeTab === item.id ? '#1976d2' : '#333',
-                          }}
-                        >
-                          {item.label}
-                        </Typography>
-                      </Box>
-                    </ListItemButton>
-                  );
-                })}
-              </List>
-            </Paper>
-          </Grid>
+      <Container maxWidth="xl"
+                 sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch',
+                       pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 2, sm: 3, lg: 6 }, }}>
+        <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
+          <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
+            <Sidebar
+              items={MENU_ITEMS}
+              value={activeTab}
+              onChange={setActiveTab}
+              useRouting={false}
+            />
+          </Stack>
 
           {/* Right Content Area */}
-          <Grid item xs={12} md={9} sx={{ display: 'flex', height: '100%', flex: 1 }}>
-            <Card sx={{ p: 3, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-              {/* Header */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, color: '#1976d2' }}>
-                  Cài đặt người dùng
-                </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-                  Quản lý thông tin tài khoản và các tùy chọn cá nhân
-                </Typography>
-              </Box>
-
-              <Divider sx={{ mb: 3 }} />
-
+          <Stack spacing={2} sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 }}}>
+            <Stack gap={2}>
+              <Typography variant="h1" fontWeight={800} color="primary.main">
+                CÀI ĐẶT NGƯỜI DÙNG
+              </Typography>
+            </Stack>
+            <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+                        border: 1, borderColor: 'divider', borderRadius: 1, backgroundColor: 'white' }}>
               {/* Tab Content */}
               {renderContent()}
             </Card>
-          </Grid>
-        </Grid>
+          </Stack>
+        </Box>
       </Container>
     </Page>
   );
