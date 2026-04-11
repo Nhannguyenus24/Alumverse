@@ -189,7 +189,7 @@ const Header = () => {
 
               {isAuthenticated ? (
                 <>
-                  <Notification sx={{ color: headerTextColor }} />
+                  <Notification headerTextColor={headerTextColor} />
                   <IconButton size="small" sx={{ color: headerTextColor }}>
                     <EmailOutlinedIcon fontSize="small" />
                   </IconButton>
