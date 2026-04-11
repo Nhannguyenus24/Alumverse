@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router';
 
-const Sidebar = ({ items }) => {
+const Sidebar = ({ items, value, onChange, useRouting = true }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -21,18 +21,28 @@ const Sidebar = ({ items }) => {
         borderColor: 'divider',
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: '#fff',
+        backgroundColor: 'white',
       }}
     >
       <Box sx={{ p: 1 }}>
         <List disablePadding>
           {items.map((item) => {
-            const selected = location.pathname === item.id;
+            const selected = useRouting
+            ? location.pathname === item.id
+            : value === item.id;
+
+          const handleClick = () => {
+            if (useRouting) {
+              navigate(item.id);
+            } else {
+              onChange?.(item.id);
+            }
+          };
 
             return (
               <ListItemButton
                 key={item.id}
-                onClick={() => navigate(item.id)}
+                onClick={handleClick}
                 sx={{
                   borderRadius: 1,
                   py: 1.2,
