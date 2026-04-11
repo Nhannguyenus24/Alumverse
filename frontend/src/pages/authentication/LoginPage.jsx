@@ -2,17 +2,20 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { Box, Typography, Button, FormControlLabel, Checkbox } from '@mui/material';
+import { useState } from 'react';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { loginSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { getUserOrganizations, getOrganizationMembershipDetails } from '../../api/userApi';
 
 const LoginPage = () => {
   const navigate = useOrgNavigate();
   const routerNavigate = useNavigate();
   const location = useLocation();
   const { login, isLoading: loading, error, setError, forgotPassword } = useAuth();
+  const [checkingOrg, setCheckingOrg] = useState(false);
 
   const redirectTo = location.state?.from?.pathname || '/dashboard';
 
@@ -29,8 +32,31 @@ const LoginPage = () => {
     setError(null);
     const result = await login({ email: data.email, password: data.password });
     if (result?.ok) {
-      // redirectTo already has slug from ProtectedRoute, use raw navigation
-      routerNavigate(redirectTo, { replace: true });
+      // After successful login, check if user has organizations
+      setCheckingOrg(true);
+      try {
+        const orgsResponse = await getUserOrganizations();
+        const organizations = orgsResponse?.data?.data || [];
+        
+        if (organizations.length === 0) {
+          // User has no organization - redirect to org registration
+          // Note: you may need to pass organizationId as query param
+          // For now, redirecting to a page where user can select organization
+          routerNavigate('/auth/organization-registration', { replace: true });
+        } else {
+          // User has at least one organization - redirect to dashboard
+          // Get first organization details
+          const firstOrg = organizations[0];
+          const slug = firstOrg.organizationSlug || 'alumni';
+          routerNavigate(`/${slug}/dashboard`, { replace: true });
+        }
+      } catch (err) {
+        console.error('Error fetching organizations:', err);
+        // Fall back to default redirect
+        routerNavigate(redirectTo, { replace: true });
+      } finally {
+        setCheckingOrg(false);
+      }
     } else if (result?.error && result.error.includes('Account is not verified')) {
       // Account chưa verified → gửi OTP rồi chuyển đến trang nhập mã
       await forgotPassword({ email: data.email });
@@ -113,10 +139,10 @@ const LoginPage = () => {
           color="primary"
           fullWidth
           size="large"
-          disabled={loading}
+          disabled={loading || checkingOrg}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+          {loading || checkingOrg ? 'Đang xử lý...' : 'Đăng nhập'}
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>

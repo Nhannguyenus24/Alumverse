@@ -39,6 +39,9 @@ const ForgotPasswordPage = Loadable(
 const ResetPasswordPage = Loadable(
   lazy(() => import("../pages/authentication/ResetPasswordPage")),
 );
+const OrganizationRegistrationPage = Loadable(
+  lazy(() => import("../pages/authentication/OrganizationRegistrationPage")),
+);
 
 // Alumni pages
 const DashboardPage = Loadable(
@@ -523,6 +526,14 @@ export const router = createBrowserRouter([
             element: (
               <PublicRoute>
                 <ResetPasswordPage />
+              </PublicRoute>
+            ),
+          },
+          {
+            path: "organization-registration",
+            element: (
+              <PublicRoute>
+                <OrganizationRegistrationPage />
               </PublicRoute>
             ),
           },
