@@ -532,9 +532,7 @@ export const router = createBrowserRouter([
           {
             path: "organization-registration",
             element: (
-              <PublicRoute>
                 <OrganizationRegistrationPage />
-              </PublicRoute>
             ),
           },
         ],

@@ -7,6 +7,7 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { joinOrganization } from '../../api/userApi';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useOrganization } from '../../hooks/useOrganization';
 import { z } from 'zod';
 
 /**
@@ -21,8 +22,6 @@ const organizationRegistrationSchema = z.object({
   degreeType: z.string().optional().or(z.literal('')),
 });
 
-type OrganizationRegistrationFormData = z.infer<typeof organizationRegistrationSchema>;
-
 /**
  * Organization Registration Page
  * Allows users to register/join an organization with academic information
@@ -30,27 +29,26 @@ type OrganizationRegistrationFormData = z.infer<typeof organizationRegistrationS
 const OrganizationRegistrationPage = () => {
   const navigate = useOrgNavigate();
   const routerNavigate = useNavigate();
+  const { organization, loading: organizationLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [proofFile, setProofFile] = useState(null);
 
-  // Get organization ID from URL params or redirect
-  const organizationId = searchParams.get('orgId');
-
-  useEffect(() => {
-    if (!organizationId) {
-      setError('Organization ID is required. Please provide a valid organization.');
-    }
-  }, [organizationId]);
+  // Prefer organization ID from context (resolved by slug), keep query param as fallback.
+  const queryOrgId = searchParams.get('orgId');
+  const parsedQueryOrgId = queryOrgId ? parseInt(queryOrgId, 10) : null;
+  const organizationId = organization?.id ?? (Number.isInteger(parsedQueryOrgId) ? parsedQueryOrgId : null);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
-  } = useForm<OrganizationRegistrationFormData>({
+  } = useForm({
     resolver: zodResolver(organizationRegistrationSchema),
     defaultValues: {
-      organizationId: organizationId ? parseInt(organizationId, 10) : undefined,
+      organizationId: organizationId ?? undefined,
       studentCode: '',
       className: '',
       startYear: undefined,
@@ -59,7 +57,37 @@ const OrganizationRegistrationPage = () => {
     },
   });
 
-  const onSubmit = async (data: OrganizationRegistrationFormData) => {
+  useEffect(() => {
+    if (organizationId) {
+      setValue('organizationId', organizationId);
+      setError(null);
+    } else if (!organizationLoading) {
+      setError('Organization ID is required. Please provide a valid organization.');
+    }
+  }, [organizationId, organizationLoading, setValue]);
+
+  const handleProofFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      setError('Chỉ hỗ trợ file PDF, JPG hoặc PNG cho minh chứng.');
+      return;
+    }
+
+    if (file.size > maxSizeBytes) {
+      setError('File minh chứng vượt quá 5MB. Vui lòng chọn file nhỏ hơn.');
+      return;
+    }
+
+    setError(null);
+    setProofFile(file);
+  };
+
+  const onSubmit = async (data) => {
     setError(null);
     setLoading(true);
 
@@ -83,7 +111,7 @@ const OrganizationRegistrationPage = () => {
         // Redirect to dashboard with slug
         routerNavigate(`/${orgSlug}/dashboard`, { replace: true });
       }
-    } catch (err: any) {
+    } catch (err) {
       const errorMessage = err?.response?.data?.message 
         || err?.message 
         || 'Failed to register to organization. Please try again.';
@@ -93,7 +121,7 @@ const OrganizationRegistrationPage = () => {
     }
   };
 
-  if (!organizationId) {
+  if (!organizationId && !organizationLoading) {
     return (
       <Page
         title="Organization Registration"
@@ -118,7 +146,7 @@ const OrganizationRegistrationPage = () => {
           </Typography>
           <Button
             variant="contained"
-            onClick={() => routerNavigate('/auth/login', { replace: true })}
+            onClick={() => navigate('/auth/login', { replace: true })}
           >
             Back to Login
           </Button>
@@ -233,6 +261,26 @@ const OrganizationRegistrationPage = () => {
           {...register('degreeType')}
         />
 
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="subtitle2" fontWeight={600} color="textSecondary" sx={{ mb: 1 }}>
+            Minh chứng (Tùy chọn)
+          </Typography>
+          <Button variant="outlined" component="label" fullWidth disabled={loading}>
+            {proofFile ? 'Đổi file minh chứng' : 'Upload file minh chứng'}
+            <input
+              hidden
+              type="file"
+              accept=".pdf,image/jpeg,image/png"
+              onChange={handleProofFileChange}
+            />
+          </Button>
+          <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1 }}>
+            {proofFile
+              ? `Đã chọn: ${proofFile.name}`
+              : 'Hỗ trợ PDF/JPG/PNG, tối đa 5MB.'}
+          </Typography>
+        </Box>
+
         {/* Submit Button */}
         <Button
           type="submit"
@@ -263,7 +311,7 @@ const OrganizationRegistrationPage = () => {
           variant="outlined"
           fullWidth
           size="large"
-          onClick={() => routerNavigate('/auth/login', { replace: true })}
+          onClick={() => navigate('/auth/login', { replace: true })}
           disabled={loading}
           sx={{
             textTransform: 'none',

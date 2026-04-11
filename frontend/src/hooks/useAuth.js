@@ -1,4 +1,5 @@
 import apiClient from '../utils/axios';
+import { useLocation, useNavigate } from 'react-router';
 import { userFromAccessToken, isTokenExpired } from '../utils/jwt';
 import {
   loginSchema,
@@ -14,6 +15,8 @@ function getFirstZodMessage(error) {
 }
 
 export const useAuth = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const store = useAuthStore();
   const { user, token, loading, error } = store;
 
@@ -156,7 +159,11 @@ export const useAuth = () => {
     try {
       await apiClient.post('/auth/logout');
     } finally {
+      const currentSlug = location.pathname.split('/').filter(Boolean)[0];
       store.reset();
+      if (currentSlug) {
+        navigate(`/${currentSlug}/auth/login`, { replace: true });
+      }
     }
   };
 

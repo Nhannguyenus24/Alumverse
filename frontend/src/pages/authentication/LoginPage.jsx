@@ -8,16 +8,14 @@ import Input from '../../components/Input';
 import { loginSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-import { getUserOrganizations, getOrganizationMembershipDetails } from '../../api/userApi';
 
 const LoginPage = () => {
   const navigate = useOrgNavigate();
   const routerNavigate = useNavigate();
   const location = useLocation();
   const { login, isLoading: loading, error, setError, forgotPassword } = useAuth();
-  const [checkingOrg, setCheckingOrg] = useState(false);
 
-  const redirectTo = location.state?.from?.pathname || '/dashboard';
+  const redirectTo = location.state?.from?.pathname;
 
   const {
     register,
@@ -30,37 +28,25 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
+    console.info('[LoginFlow] Attempt login', { email: data.email });
     const result = await login({ email: data.email, password: data.password });
     if (result?.ok) {
-      // After successful login, check if user has organizations
-      setCheckingOrg(true);
-      try {
-        const orgsResponse = await getUserOrganizations();
-        const organizations = orgsResponse?.data?.data || [];
-        
-        if (organizations.length === 0) {
-          // User has no organization - redirect to org registration
-          // Note: you may need to pass organizationId as query param
-          // For now, redirecting to a page where user can select organization
-          routerNavigate('/auth/organization-registration', { replace: true });
-        } else {
-          // User has at least one organization - redirect to dashboard
-          // Get first organization details
-          const firstOrg = organizations[0];
-          const slug = firstOrg.organizationSlug || 'alumni';
-          routerNavigate(`/${slug}/dashboard`, { replace: true });
-        }
-      } catch (err) {
-        console.error('Error fetching organizations:', err);
-        // Fall back to default redirect
+      console.info('[LoginFlow] Login success, delegating access decision to OrganizationMembershipGuard');
+      // Route guard now decides whether user can access target page or must register organization.
+      if (redirectTo) {
+        console.info('[LoginFlow] Redirect to previous protected route', { redirectTo });
         routerNavigate(redirectTo, { replace: true });
-      } finally {
-        setCheckingOrg(false);
+      } else {
+        console.info('[LoginFlow] Redirect to default dashboard route');
+        navigate('/dashboard', { replace: true });
       }
     } else if (result?.error && result.error.includes('Account is not verified')) {
+      console.info('[LoginFlow] Account not verified, redirect to signup-code');
       // Account chưa verified → gửi OTP rồi chuyển đến trang nhập mã
       await forgotPassword({ email: data.email });
       navigate('/auth/signup-code', { state: { email: data.email } });
+    } else {
+      console.info('[LoginFlow] Login failed', { message: result?.error });
     }
   };
 
@@ -139,10 +125,10 @@ const LoginPage = () => {
           color="primary"
           fullWidth
           size="large"
-          disabled={loading || checkingOrg}
+          disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading || checkingOrg ? 'Đang xử lý...' : 'Đăng nhập'}
+          {loading ? 'Đang xử lý...' : 'Đăng nhập'}
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>

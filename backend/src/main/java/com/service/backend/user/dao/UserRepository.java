@@ -44,9 +44,17 @@ public interface UserRepository extends R2dbcRepository<User, Integer> {
      */
     @Query("""
         SELECT 
-            om.id, om.organization_id, om.user_id, om.verification_level, 
-            om.is_trusted_verifier, om.status, om.created_at, om.updated_at,
-            o.name as organization_name, o.slug as organization_slug, o.logo_url as organization_logo_url
+            om.id AS "id",
+            om.organization_id AS "organizationId",
+            om.user_id AS "userId",
+            om.verification_level AS "verificationLevel",
+            om.is_trusted_verifier AS "isTrustedVerifier",
+            om.status AS "status",
+            om.created_at AS "createdAt",
+            om.updated_at AS "updatedAt",
+            o.name AS "organizationName",
+            o.slug AS "organizationSlug",
+            o.logo_url AS "organizationLogoUrl"
         FROM organization_members om
         JOIN organizations o ON om.organization_id = o.id
         WHERE om.user_id = :userId AND om.status = 'active'
@@ -67,14 +75,32 @@ public interface UserRepository extends R2dbcRepository<User, Integer> {
      */
     @Query("""
         SELECT 
-            om.id, om.organization_id, om.user_id, om.verification_level,
-            om.is_trusted_verifier, om.status, om.created_at, om.updated_at,
-            o.name as organization_name, o.slug as organization_slug, o.logo_url as organization_logo_url
+            om.id AS "id",
+            om.organization_id AS "organizationId",
+            om.user_id AS "userId",
+            om.verification_level AS "verificationLevel",
+            om.is_trusted_verifier AS "isTrustedVerifier",
+            om.status AS "status",
+            om.created_at AS "createdAt",
+            om.updated_at AS "updatedAt",
+            o.name AS "organizationName",
+            o.slug AS "organizationSlug",
+            o.logo_url AS "organizationLogoUrl"
         FROM organization_members om
         JOIN organizations o ON om.organization_id = o.id
         WHERE om.user_id = :userId AND om.organization_id = :organizationId
     """)
     Mono<OrganizationMembershipView> findMembershipByUserAndOrg(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
+
+    /**
+     * Debug helper: fetch raw verification_level directly from DB without projection mapping.
+     */
+    @Query("""
+        SELECT om.verification_level
+        FROM organization_members om
+        WHERE om.user_id = :userId AND om.organization_id = :organizationId
+    """)
+    Mono<Integer> findRawVerificationLevelByUserAndOrg(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
     
     interface UserProfileView {
         Integer getId();
@@ -95,6 +121,8 @@ public interface UserRepository extends R2dbcRepository<User, Integer> {
         Integer getOrganizationId();
         Integer getUserId();
         Integer getVerificationLevel();
+        // Fallback for drivers/mappers that expose snake_case columns directly.
+        Integer getVerification_level();
         Boolean getIsTrustedVerifier();
         String getStatus();
         java.time.LocalDateTime getCreatedAt();

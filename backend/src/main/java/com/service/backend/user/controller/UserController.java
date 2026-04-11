@@ -23,8 +23,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.util.List;
 
 /**
  * Controller for user profile and organization membership endpoints
@@ -86,22 +86,26 @@ public class UserController {
      */
     @GetMapping("/organizations")
     @Operation(summary = "Get user's organizations", description = "Get all organizations that the authenticated user is member of")
-    public Mono<ResponseEntity<ApiResponse<Flux<OrganizationMembershipResponse>>>> getUserOrganizations() {
+    public Mono<ResponseEntity<ApiResponse<List<OrganizationMembershipResponse>>>> getUserOrganizations() {
         
         return ReactiveSecurityContextHolder.getContext()
                 .flatMap(context -> {
                     try {
                         Integer userId = extractUserIdFromContext(context);
-                        return Mono.just(ResponseEntity.ok(
-                                new ApiResponse<>("User organizations fetched successfully", 
-                                        userService.getUserOrganizations(userId))));
+                        return userService.getUserOrganizations(userId)
+                                .collectList()
+                                .map(organizations -> ResponseEntity.ok(
+                                        new ApiResponse<List<OrganizationMembershipResponse>>("User organizations fetched successfully", 
+                                                organizations)))
+                                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body(new ApiResponse<List<OrganizationMembershipResponse>>(error.getMessage(), null))));
                     } catch (Exception e) {
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body(new ApiResponse<>("User not authenticated", null)));
+                                .body(new ApiResponse<List<OrganizationMembershipResponse>>("User not authenticated", null)));
                     }
                 })
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>("User not authenticated", null))));
+                        .body(new ApiResponse<List<OrganizationMembershipResponse>>("User not authenticated", null))));
     }
     
     /**
@@ -112,7 +116,7 @@ public class UserController {
      */
     @GetMapping("/organizations/{organizationId}/membership")
     @Operation(summary = "Check organization membership", description = "Check if user is member of the specified organization")
-    public Mono<ResponseEntity<ApiResponse<?>>> checkOrganizationMembership(
+        public Mono<ResponseEntity<ApiResponse<String>>> checkOrganizationMembership(
             @PathVariable @Parameter(description = "Organization ID") Integer organizationId) {
         
         return ReactiveSecurityContextHolder.getContext()
@@ -121,17 +125,17 @@ public class UserController {
                         Integer userId = extractUserIdFromContext(context);
                         return userService.isUserMemberOfOrganization(userId, organizationId)
                                 .map(isMember -> ResponseEntity.ok(
-                                        new ApiResponse<>("Membership check completed", 
+                                        new ApiResponse<String>("Membership check completed", 
                                                 isMember ? "User is a member" : "User is not a member")))
                                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                        .body(new ApiResponse<>(error.getMessage(), null))));
+                                        .body(new ApiResponse<String>(error.getMessage(), null))));
                     } catch (Exception e) {
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body(new ApiResponse<>("User not authenticated", null)));
+                                .body(new ApiResponse<String>("User not authenticated", null)));
                     }
                 })
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>("User not authenticated", null))));
+                        .body(new ApiResponse<String>("User not authenticated", null))));
     }
     
     /**
@@ -151,16 +155,16 @@ public class UserController {
                         Integer userId = extractUserIdFromContext(context);
                         return userService.getOrganizationMembership(userId, organizationId)
                                 .map(membership -> ResponseEntity.ok(
-                                        new ApiResponse<>("Membership details fetched successfully", membership)))
+                                        new ApiResponse<OrganizationMembershipResponse>("Membership details fetched successfully", membership)))
                                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                        .body(new ApiResponse<>(error.getMessage(), null))));
+                                        .body(new ApiResponse<OrganizationMembershipResponse>(error.getMessage(), null))));
                     } catch (Exception e) {
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body(new ApiResponse<>("User not authenticated", null)));
+                                .body(new ApiResponse<OrganizationMembershipResponse>("User not authenticated", null)));
                     }
                 })
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>("User not authenticated", null))));
+                        .body(new ApiResponse<OrganizationMembershipResponse>("User not authenticated", null))));
     }
     
     /**
@@ -183,16 +187,16 @@ public class UserController {
                         Integer userId = extractUserIdFromContext(context);
                         return userService.joinOrganization(userId, request)
                                 .map(membership -> ResponseEntity.status(HttpStatus.CREATED)
-                                        .body(new ApiResponse<>("User joined organization successfully", membership)))
+                                        .body(new ApiResponse<OrganizationMembershipResponse>("User joined organization successfully", membership)))
                                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                        .body(new ApiResponse<>(error.getMessage(), null))));
+                                        .body(new ApiResponse<OrganizationMembershipResponse>(error.getMessage(), null))));
                     } catch (Exception e) {
                         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body(new ApiResponse<>("User not authenticated", null)));
+                                .body(new ApiResponse<OrganizationMembershipResponse>("User not authenticated", null)));
                     }
                 })
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>("User not authenticated", null))));
+                        .body(new ApiResponse<OrganizationMembershipResponse>("User not authenticated", null))));
     }
     
     /**
