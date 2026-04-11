@@ -13,6 +13,10 @@
 *.sql text eol=lf
 *.prisma text eol=lf
 
+# Backend-specific files
+mvnw text eol=lf
+*.cmd text eol=crlf
+
 # Binary files
 *.png binary
 *.jpg binary
