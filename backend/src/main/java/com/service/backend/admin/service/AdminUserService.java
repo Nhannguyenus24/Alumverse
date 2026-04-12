@@ -133,11 +133,21 @@ public class AdminUserService {
      * Create organization member
      */
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId, 
+                               Integer graduatedYear, String graduationStatus,
+                               String program, String major,
                                                    Integer verificationLevel, String status) {
         logger.info("Adding user {} to organization {} with verification level {}", 
                 userId, organizationId, verificationLevel);
         
-        return adminUserRepository.createOrganizationMember(organizationId, userId, verificationLevel, status)
+        return adminUserRepository.createOrganizationMember(
+                organizationId,
+                userId,
+                graduatedYear,
+                graduationStatus,
+                program,
+                major,
+                verificationLevel,
+                status)
                 .map(count -> count > 0)
                 .doOnSuccess(success -> {
                     if (success) {

@@ -18,9 +18,19 @@ public class CreateOrganizationMemberRequest {
     
     @NotNull(message = "User ID is required")
     private Integer userId;
+
+    private Integer graduatedYear;
+
+    private String graduationStatus;
+
+    private String program;
+
+    private String major;
     
+    @Builder.Default
     @Min(value = 0, message = "Verification level must be at least 0")
     private Integer verificationLevel = 0;
     
+    @Builder.Default
     private String status = "active";
 }

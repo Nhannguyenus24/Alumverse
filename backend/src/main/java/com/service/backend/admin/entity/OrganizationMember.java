@@ -24,6 +24,18 @@ public class OrganizationMember {
     
     @Column("user_id")
     private Integer userId;
+
+    @Column("graduated_year")
+    private Integer graduatedYear;
+
+    @Column("graduation_status")
+    private String graduationStatus;
+
+    @Column("program")
+    private String program;
+
+    @Column("major")
+    private String major;
     
     @Column("verification_level")
     private Integer verificationLevel;

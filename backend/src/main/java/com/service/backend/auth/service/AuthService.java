@@ -18,6 +18,8 @@ import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JwtUtils;
+import com.service.backend.user.dao.UserLoginHistoryRepository;
+import com.service.backend.user.entity.UserLoginHistory;
 
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -38,16 +40,19 @@ public class AuthService {
     private final EmailService emailService;
     private final CacheUtils cacheUtils;
     private final JwtUtils jwtUtils;
+    private final UserLoginHistoryRepository userLoginHistoryRepository;
     private final SecureRandom secureRandom;
         
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder, 
                       EmailService emailService, CacheUtils cacheUtils,
-                      JwtUtils jwtUtils) {
+                      JwtUtils jwtUtils,
+                      UserLoginHistoryRepository userLoginHistoryRepository) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.cacheUtils = cacheUtils;
         this.jwtUtils = jwtUtils;
+        this.userLoginHistoryRepository = userLoginHistoryRepository;
         this.secureRandom = new SecureRandom();
     }
 
@@ -83,6 +88,7 @@ public class AuthService {
                     }
                     
                     logger.info("Login successful for email: {}", email);
+                    recordLoginSuccessAsync(user.getId(), "EMAIL");
                     return Mono.just(user);
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
@@ -105,6 +111,7 @@ public class AuthService {
                     }
 
                     logger.info("Login successful for username: {}", userName);
+                    recordLoginSuccessAsync(user.getId(), "USERNAME");
                     return Mono.just(user);
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
@@ -233,5 +240,22 @@ public class AuthService {
                             )
                             .doOnError(error -> logger.error("Failed to refresh token", error))
                 );
+    }
+
+    private void recordLoginSuccessAsync(Integer userId, String loginMethod) {
+        UserLoginHistory history = UserLoginHistory.builder()
+            .userId(userId)
+            .loginAt(java.time.LocalDateTime.now())
+            .loginMethod(loginMethod)
+            .build();
+
+        userLoginHistoryRepository.save(history)
+            .then()
+            .onErrorResume(error -> {
+                logger.warn("Failed to save login history for user id: {}", userId, error);
+                return Mono.empty();
+            })
+                .subscribeOn(Schedulers.boundedElastic())
+                .subscribe();
     }
 }
