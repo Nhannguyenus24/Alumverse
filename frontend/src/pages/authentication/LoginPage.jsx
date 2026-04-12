@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router';
+import { useSnackbar } from 'notistack';
 import { Box, Typography, Button, FormControlLabel, Checkbox } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
@@ -10,7 +11,8 @@ import { useAuth } from '../../hooks/useAuth';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading: loading, error, setError, forgotPassword } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const { login, isLoading: loading, setError, forgotPassword } = useAuth();
 
   const redirectTo = location.state?.from?.pathname || '/dashboard';
 
@@ -27,11 +29,18 @@ const LoginPage = () => {
     setError(null);
     const result = await login({ email: data.email, password: data.password });
     if (result?.ok) {
+      enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
       navigate(redirectTo, { replace: true });
     } else if (result?.error && result.error.includes('Account is not verified')) {
-      // Account chưa verified → gửi OTP rồi chuyển đến trang nhập mã
-      await forgotPassword({ email: data.email });
+      const fp = await forgotPassword({ email: data.email });
+      if (!fp?.ok) {
+        enqueueSnackbar(fp?.error ?? 'Gửi mã xác thực thất bại.', { variant: 'error' });
+        return;
+      }
+      enqueueSnackbar('Mã xác thực đã được gửi đến email của bạn.', { variant: 'success' });
       navigate('/auth/signup-code', { state: { email: data.email } });
+    } else if (result?.error) {
+      enqueueSnackbar(result.error, { variant: 'error' });
     }
   };
 
@@ -60,12 +69,6 @@ const LoginPage = () => {
         >
           Đăng nhập
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error" textAlign="center">
-            {error}
-          </Typography>
-        )}
 
         <Input
           label="Email"

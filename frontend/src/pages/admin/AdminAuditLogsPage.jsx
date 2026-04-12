@@ -115,7 +115,7 @@ const AuditExpandRow = ({ log, open, colSpan }) => (
             User agent: {log.userAgent || '-'}
           </Typography>
           {log.status === 'FAILED' && log.errorMessage ? (
-            <Typography variant="body2" color="error.main">
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
               {log.errorMessage}
             </Typography>
           ) : null}

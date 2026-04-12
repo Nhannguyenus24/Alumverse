@@ -27,8 +27,9 @@ export const useAuth = () => {
   const login = async (payload) => {
     const parsed = loginSchema.safeParse(payload);
     if (!parsed.success) {
-      store.setError(getFirstZodMessage(parsed.error));
-      return { ok: false };
+      const msg = getFirstZodMessage(parsed.error);
+      store.setError(msg);
+      return { ok: false, error: msg };
     }
     setLoading(true);
     try {
@@ -36,9 +37,10 @@ export const useAuth = () => {
       const accessToken = data?.data?.accessToken ?? null;
       const authUser = userFromAccessToken(accessToken);
       if (!accessToken || !authUser) {
-        store.setError(data?.message ?? 'Đăng nhập thất bại');
+        const msg = data?.message ?? 'Đăng nhập thất bại';
+        store.setError(msg);
         store.reset();
-        return { ok: false };
+        return { ok: false, error: msg };
       }
       store.setUser(authUser);
       store.setToken(accessToken);
@@ -56,8 +58,9 @@ export const useAuth = () => {
   const register = async (payload) => {
     const parsed = registerSchema.safeParse(payload);
     if (!parsed.success) {
-      store.setError(getFirstZodMessage(parsed.error));
-      return { ok: false };
+      const msg = getFirstZodMessage(parsed.error);
+      store.setError(msg);
+      return { ok: false, error: msg };
     }
     setLoading(true);
     try {
@@ -68,9 +71,10 @@ export const useAuth = () => {
         password: parsed.data.password,
       });
       if (!data?.data) {
-        store.setError(data?.message ?? 'Đăng ký thất bại');
+        const msg = data?.message ?? 'Đăng ký thất bại';
+        store.setError(msg);
         store.reset();
-        return { ok: false };
+        return { ok: false, error: msg };
       }
       store.setLoading(false);
       store.setError(null);
@@ -86,15 +90,21 @@ export const useAuth = () => {
   const forgotPassword = async (payload) => {
     const parsed = sendOtpSchema.safeParse(payload);
     if (!parsed.success) {
-      store.setError(getFirstZodMessage(parsed.error));
-      return { ok: false };
+      const msg = getFirstZodMessage(parsed.error);
+      store.setError(msg);
+      return { ok: false, error: msg };
     }
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/send-otp', parsed.data);
       store.setLoading(false);
+      if (!data?.data) {
+        const msg = data?.message ?? 'Gửi mã thất bại';
+        store.setError(msg);
+        return { ok: false, error: msg };
+      }
       store.setError(null);
-      return { ok: !!data?.data, message: data?.message };
+      return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Gửi mã thất bại';
       store.setLoading(false);
@@ -106,15 +116,21 @@ export const useAuth = () => {
   const verifySignupCode = async (payload) => {
     const parsed = verifyOtpSchema.safeParse(payload);
     if (!parsed.success) {
-      store.setError(getFirstZodMessage(parsed.error));
-      return { ok: false };
+      const msg = getFirstZodMessage(parsed.error);
+      store.setError(msg);
+      return { ok: false, error: msg };
     }
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/verify-otp', parsed.data);
       store.setLoading(false);
+      if (!data?.data) {
+        const msg = data?.message ?? 'Xác thực mã thất bại';
+        store.setError(msg);
+        return { ok: false, error: msg };
+      }
       store.setError(null);
-      return { ok: !!data?.data, message: data?.message };
+      return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Xác thực mã thất bại';
       store.setLoading(false);
@@ -126,12 +142,14 @@ export const useAuth = () => {
   const resetPassword = async (payload) => {
     const parsed = changePasswordSchema.safeParse(payload);
     if (!parsed.success) {
-      store.setError(getFirstZodMessage(parsed.error));
-      return { ok: false };
+      const msg = getFirstZodMessage(parsed.error);
+      store.setError(msg);
+      return { ok: false, error: msg };
     }
     if (!store.user?.id) {
-      store.setError('Vui lòng đăng nhập để đổi mật khẩu');
-      return { ok: false };
+      const msg = 'Vui lòng đăng nhập để đổi mật khẩu';
+      store.setError(msg);
+      return { ok: false, error: msg };
     }
     setLoading(true);
     try {
@@ -140,8 +158,13 @@ export const useAuth = () => {
         newPassword: parsed.data.newPassword,
       });
       store.setLoading(false);
+      if (!data?.data) {
+        const msg = data?.message ?? 'Đổi mật khẩu thất bại';
+        store.setError(msg);
+        return { ok: false, error: msg };
+      }
       store.setError(null);
-      return { ok: !!data?.data, message: data?.message };
+      return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Đổi mật khẩu thất bại';
       store.setLoading(false);

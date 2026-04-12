@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useSnackbar } from 'notistack';
 import {
   Box,
   Container,
@@ -16,6 +17,7 @@ import WYSIWYG from '../../components/WYSIWYG';
 
 const CreateDonationPage = () => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -111,7 +113,11 @@ const CreateDonationPage = () => {
     if (!formData.content.trim()) newErrors.content = 'Vui lòng nhập nội dung bài đăng';
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const keys = Object.keys(newErrors);
+    if (keys.length > 0) {
+      enqueueSnackbar(newErrors[keys[0]], { variant: 'error' });
+    }
+    return keys.length === 0;
   };
 
   // Handle submit
@@ -119,6 +125,7 @@ const CreateDonationPage = () => {
     e.preventDefault();
     if (validateForm()) {
       console.log('Form submitted:', formData);
+      enqueueSnackbar('Dữ liệu biểu mẫu hợp lệ.', { variant: 'success' });
       // TODO: Submit form data to backend
       // navigate('/donations');
     }
@@ -166,7 +173,6 @@ const CreateDonationPage = () => {
                   value={formData.donationType}
                   onChange={handleDropdownChange('donationType')}
                   error={!!errors.donationType}
-                  helperText={errors.donationType}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -177,7 +183,6 @@ const CreateDonationPage = () => {
                   value={formData.postCategory}
                   onChange={handleDropdownChange('postCategory')}
                   error={!!errors.postCategory}
-                  helperText={errors.postCategory}
                 />
               </Grid>
             </Grid>
@@ -208,7 +213,6 @@ const CreateDonationPage = () => {
                   value={formData.donationFundName}
                   onChange={handleInputChange}
                   error={!!errors.donationFundName}
-                  helperText={errors.donationFundName}
                 />
               </Box>
 
@@ -222,7 +226,6 @@ const CreateDonationPage = () => {
                     value={formData.organizer}
                     onChange={handleInputChange}
                     error={!!errors.organizer}
-                    helperText={errors.organizer}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -233,7 +236,6 @@ const CreateDonationPage = () => {
                     value={formData.status}
                     onChange={handleDropdownChange('status')}
                     error={!!errors.status}
-                    helperText={errors.status}
                   />
                 </Grid>
               </Grid>
@@ -248,7 +250,6 @@ const CreateDonationPage = () => {
                     value={formData.bankName}
                     onChange={handleInputChange}
                     error={!!errors.bankName}
-                    helperText={errors.bankName}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6} md={4}>
@@ -259,7 +260,6 @@ const CreateDonationPage = () => {
                     value={formData.accountNumber}
                     onChange={handleInputChange}
                     error={!!errors.accountNumber}
-                    helperText={errors.accountNumber}
                   />
                 </Grid>
                 <Grid item xs={12} sm={12} md={4}>
@@ -270,7 +270,6 @@ const CreateDonationPage = () => {
                     value={formData.branch}
                     onChange={handleInputChange}
                     error={!!errors.branch}
-                    helperText={errors.branch}
                   />
                 </Grid>
               </Grid>
@@ -285,7 +284,6 @@ const CreateDonationPage = () => {
                   value={formData.donationGoal}
                   onChange={handleInputChange}
                   error={!!errors.donationGoal}
-                  helperText={errors.donationGoal}
                 />
               </Box>
 
@@ -301,7 +299,6 @@ const CreateDonationPage = () => {
                   multiline
                   rows={4}
                   error={!!errors.reasonForDonation}
-                  helperText={errors.reasonForDonation}
                 />
               </Box>
 
@@ -317,7 +314,6 @@ const CreateDonationPage = () => {
                     onChange={handleInputChange}
                     InputLabelProps={{ shrink: true }}
                     error={!!errors.startDate}
-                    helperText={errors.startDate}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -329,8 +325,7 @@ const CreateDonationPage = () => {
                     value={formData.endDate}
                     onChange={handleInputChange}
                     InputLabelProps={{ shrink: true }}
-                    error={!!errors.endDate}
-                    helperText={errors.endDate || errors.dateRange}
+                    error={!!errors.endDate || !!errors.dateRange}
                   />
                 </Grid>
               </Grid>
@@ -347,7 +342,6 @@ const CreateDonationPage = () => {
                 value={formData.title}
                 onChange={handleInputChange}
                 error={!!errors.title}
-                helperText={errors.title}
               />
             </Box>
 
@@ -362,7 +356,8 @@ const CreateDonationPage = () => {
               </Typography>
               <Box
                 sx={{
-                  border: errors.content ? '2px solid #d32f2f' : '1px solid #e0e0e0',
+                  border: errors.content ? '2px solid' : '1px solid',
+                  borderColor: errors.content ? 'error.main' : '#e0e0e0',
                   borderRadius: 1,
                 }}
               >
@@ -373,11 +368,6 @@ const CreateDonationPage = () => {
                   height={320}
                 />
               </Box>
-              {errors.content && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                  {errors.content}
-                </Typography>
-              )}
             </Box>
 
             {/* Action Buttons */}

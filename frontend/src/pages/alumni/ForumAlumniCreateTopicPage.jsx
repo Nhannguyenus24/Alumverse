@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Box,
@@ -33,16 +33,23 @@ const ForumAlumniCreateTopicPage = () => {
   const [subSubject, setSubSubject] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [submitError, setSubmitError] = useState(null);
   const { showSuccess, showError, showWarning } = useNotification();
-  const {
-    createTopic,
-    isPending: createTopicPending,
-    isError: createTopicIsError,
-    errorMessage: createTopicErrorMessage,
-  } = useCreateForumTopic();
+  const categoriesErrorShownRef = useRef(false);
+  const { createTopic, isPending: createTopicPending } = useCreateForumTopic();
   const { createPost } = useCreateForumPost();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (categoriesIsError) {
+      if (!categoriesErrorShownRef.current) {
+        showError('Không tải được danh sách chủ đề phụ.');
+        categoriesErrorShownRef.current = true;
+      }
+      return;
+    }
+    categoriesErrorShownRef.current = false;
+  }, [categoriesIsError, showError]);
+
   const filters = useMemo(() => {
     if (!categories?.length) {
       return [{ id: 'all', label: 'Tất cả' }];
@@ -88,22 +95,18 @@ const ForumAlumniCreateTopicPage = () => {
   };
 
   const handleSubmit = async () => {
-    setSubmitError(null);
     const trimmedTitle = (title ?? '').trim();
     const trimmedContent = (content ?? '').trim();
     const categoryId = parseInt(selectedSubSubject, 10);
     if (!trimmedTitle) {
-      setSubmitError('Vui lòng nhập tiêu đề chủ đề.');
       showWarning('Vui lòng nhập tiêu đề chủ đề.');
       return;
     }
     if (!user?.id) {
-      setSubmitError('Không xác định được người tạo chủ đề.');
       showError('Không xác định được người tạo chủ đề.');
       return;
     }
     if (Number.isNaN(categoryId) || categoryId <= 0) {
-      setSubmitError('Vui lòng chọn chủ đề phụ hợp lệ.');
       showWarning('Vui lòng chọn chủ đề phụ hợp lệ.');
       return;
     }
@@ -121,7 +124,6 @@ const ForumAlumniCreateTopicPage = () => {
     try {
       createdTopic = await createTopic(payload);
       if (!createdTopic?.id) {
-        setSubmitError('Tạo chủ đề thất bại.');
         showError('Tạo chủ đề thất bại.');
         return;
       }
@@ -157,7 +159,6 @@ const ForumAlumniCreateTopicPage = () => {
         topicErr?.response?.data?.message ??
         topicErr?.message ??
         'Tạo chủ đề thất bại.';
-      setSubmitError(message);
       showError(message);
     } finally {
       setIsSubmitting(false);
@@ -351,11 +352,6 @@ const ForumAlumniCreateTopicPage = () => {
                         onChange={(e) => setContent(e.target.value)}
                         placeholder="Nội dung mở đầu"
                       />
-                      {submitError || createTopicIsError ? (
-                        <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                          {submitError ?? createTopicErrorMessage ?? 'Không thể tạo chủ đề.'}
-                        </Typography>
-                      ) : null}
                     </Box>
                   </Box>
                 </Box>

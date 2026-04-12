@@ -1,20 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Card,
   Container,
-  Grid,
   TextField,
   Typography,
   Button,
   MenuItem,
   FormControlLabel,
-  Checkbox,
+  Switch,
   Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemButton,
   Paper,
   FormControl,
   InputLabel,
@@ -24,21 +19,26 @@ import {
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import SecurityIcon from '@mui/icons-material/Security';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
 import Page from '../../components/Page';
 import Sidebar from '../../components/Sidebar';
+import apiClient from '../../utils/axios';
+import useAuthStore from '../../stores/authStore';
+import { useNotification } from '../../hooks/useNotification';
 
 const MENU_ITEMS = [
   { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
   { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
   { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
-  { id: 'display', label: 'Hiển thị', icon: <VisibilityIcon /> },
   { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
 ];
 
 export default function SettingPage() {
+  const { user } = useAuthStore();
+  const { showSuccess, showError, showWarning } = useNotification();
+  const organizationId = useMemo(() => Number(user?.organizationId) || 1, [user]);
+
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
     fullName: '',
@@ -56,24 +56,70 @@ export default function SettingPage() {
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
-    forumReply: true,
-    forumMentioned: true,
-    forumSubscribedTopics: true,
-    forumPosts: true,
-    activityNews: true,
-    activityFollowedEvents: true,
-    activityEventReminders: true,
-    mentorScheduleReminder: true,
-    mentorNewEvaluation: true,
-    mentorAdvisorRequests: true,
+    forumReplyEnabled: true,
+    eventReminderEnabled: true,
+    newsEnabled: true,
+    emailEnabled: true,
+    pushEnabled: true,
   });
 
-  const [displaySettings, setDisplaySettings] = useState({
-    profilePage: true,
-    donationHistory: true,
-    interestedEvents: true,
-    articlesAboutMe: true,
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   });
+
+  const getErrorMessage = (error, fallbackMessage) => {
+    return (
+      error?.response?.data?.message
+      || error?.response?.data?.error
+      || fallbackMessage
+    );
+  };
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const [profileRes, memberRes, notificationRes] = await Promise.all([
+          apiClient.get('/users/me/profile'),
+          apiClient.get('/users/me/organization-member', { params: { organizationId } }),
+          apiClient.get('/users/me/notification-settings'),
+        ]);
+
+        const profile = profileRes?.data?.data;
+        const member = memberRes?.data?.data;
+        const settings = notificationRes?.data?.data;
+
+        setFormData((prev) => ({
+          ...prev,
+          fullName: profile?.fullName ?? '',
+          gender: (profile?.gender ?? '').toLowerCase(),
+          birthDate: profile?.dob ?? '',
+          phone: profile?.phone ?? '',
+          studentId: profile?.userName ?? '',
+          email: profile?.email ?? '',
+          program: member?.program ?? '',
+          graduationYear: member?.graduatedYear ?? '',
+          specialization: member?.major ?? '',
+          graduationStatus: (member?.graduationStatus ?? '').toLowerCase(),
+        }));
+
+        setNotificationSettings((prev) => ({
+          ...prev,
+          forumReplyEnabled: settings?.forumReplyEnabled ?? true,
+          eventReminderEnabled: settings?.eventReminderEnabled ?? true,
+          newsEnabled: settings?.newsEnabled ?? true,
+          emailEnabled: settings?.emailEnabled ?? true,
+          pushEnabled: settings?.pushEnabled ?? true,
+        }));
+      } catch (error) {
+        console.error('Failed to load setting data', error);
+        showError(getErrorMessage(error, 'Không tải được dữ liệu cài đặt.'));
+      }
+    };
+
+    loadSettings();
+  }, [organizationId]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -91,16 +137,63 @@ export default function SettingPage() {
     }));
   };
 
-  const handleDisplayChange = (e) => {
-    const { name, checked } = e.target;
-    setDisplaySettings((prev) => ({
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordForm((prev) => ({
       ...prev,
-      [name]: checked,
+      [name]: value,
     }));
   };
 
-  const handleSave = () => {
-    console.log('Save settings:', { formData, notificationSettings, displaySettings });
+  const handleSaveProfile = async () => {
+    try {
+      await apiClient.put('/users/me/profile', {
+        organizationId,
+        phone: formData.phone || null,
+        gender: formData.gender || null,
+        program: formData.program || null,
+        graduatedYear: formData.graduationYear ? Number(formData.graduationYear) : null,
+        graduationStatus: formData.graduationStatus || null,
+        major: formData.specialization || null,
+      });
+      showSuccess('Cập nhật thông tin cá nhân thành công.');
+    } catch (error) {
+      console.error('Failed to update profile', error);
+      showError(getErrorMessage(error, 'Cập nhật thông tin cá nhân thất bại.'));
+    }
+  };
+
+  const handleSaveNotificationSettings = async () => {
+    try {
+      await apiClient.put('/users/me/notification-settings', notificationSettings);
+      showSuccess('Cập nhật cài đặt thông báo thành công.');
+    } catch (error) {
+      console.error('Failed to update notification settings', error);
+      showError(getErrorMessage(error, 'Cập nhật cài đặt thông báo thất bại.'));
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      showWarning('Vui lòng nhập đầy đủ các trường mật khẩu.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showWarning('Mật khẩu mới và xác nhận mật khẩu không khớp.');
+      return;
+    }
+
+    try {
+      await apiClient.put('/users/me/password', {
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
+      showSuccess('Đổi mật khẩu thành công.');
+    } catch (error) {
+      console.error('Failed to change password', error);
+      showError(getErrorMessage(error, 'Đổi mật khẩu thất bại.'));
+    }
   };
 
 const renderPersonalSettings = () => (
@@ -192,7 +285,7 @@ const renderPersonalSettings = () => (
     {/* Actions */}
     <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
       <Button variant="outlined" color="inherit" sx={{ px: 4 }}>Huỷ</Button>
-      <Button variant="contained" color="primary" onClick={handleSave} sx={{ px: 4 }}>Lưu thay đổi</Button>
+      <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>Lưu thay đổi</Button>
     </Box>
   </Box>
 );
@@ -205,12 +298,12 @@ const renderPersonalSettings = () => (
           Đặt lại mật khẩu
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
-          <TextField fullWidth label="Mật khẩu hiện tại" type="password" placeholder="Nhập mật khẩu hiện tại" />
-          <TextField fullWidth label="Mật khẩu mới" type="password" placeholder="Nhập mật khẩu mới" />
-          <TextField fullWidth label="Xác nhận mật khẩu" type="password" placeholder="Xác nhận mật khẩu" />
+          <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label="Mật khẩu hiện tại" type="password" placeholder="Nhập mật khẩu hiện tại" />
+          <TextField fullWidth name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} label="Mật khẩu mới" type="password" placeholder="Nhập mật khẩu mới" />
+          <TextField fullWidth name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} label="Xác nhận mật khẩu" type="password" placeholder="Xác nhận mật khẩu" />
         </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button variant="contained" color="primary">Cập nhật mật khẩu</Button>
+          <Button variant="contained" color="primary" onClick={handleChangePassword}>Cập nhật mật khẩu</Button>
           <Button variant="outlined" color="secondary">Huỷ</Button>
         </Box>
       </Box>
@@ -247,14 +340,14 @@ const renderPersonalSettings = () => (
       {/* Forum Notifications */}
       <Box>
         <Typography variant="h4" sx={{ mb: 2 }}>
-          Thông báo diễn đàn
+          Thông báo theo backend
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <FormControlLabel
             control={
-              <Checkbox
-                name="forumReply"
-                checked={notificationSettings.forumReply}
+              <Switch
+                name="forumReplyEnabled"
+                checked={notificationSettings.forumReplyEnabled}
                 onChange={handleNotificationChange}
               />
             }
@@ -262,50 +355,19 @@ const renderPersonalSettings = () => (
           />
           <FormControlLabel
             control={
-              <Checkbox
-                name="forumMentioned"
-                checked={notificationSettings.forumMentioned}
+              <Switch
+                name="eventReminderEnabled"
+                checked={notificationSettings.eventReminderEnabled}
                 onChange={handleNotificationChange}
               />
             }
-            label="Bạn đã được nhắc đến"
+            label="Nhắc nhở sự kiện sắp tới"
           />
           <FormControlLabel
             control={
-              <Checkbox
-                name="forumSubscribedTopics"
-                checked={notificationSettings.forumSubscribedTopics}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Chủ đề đã đăng ký có hoạt động mới"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="forumPosts"
-                checked={notificationSettings.forumPosts}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Bài viết mới từ những người bạn theo dõi"
-          />
-        </Box>
-      </Box>
-
-      <Divider />
-
-      {/* Activity Notifications */}
-      <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Thông báo hoạt động
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="activityNews"
-                checked={notificationSettings.activityNews}
+              <Switch
+                name="newsEnabled"
+                checked={notificationSettings.newsEnabled}
                 onChange={handleNotificationChange}
               />
             }
@@ -313,130 +375,29 @@ const renderPersonalSettings = () => (
           />
           <FormControlLabel
             control={
-              <Checkbox
-                name="activityFollowedEvents"
-                checked={notificationSettings.activityFollowedEvents}
+              <Switch
+                name="emailEnabled"
+                checked={notificationSettings.emailEnabled}
                 onChange={handleNotificationChange}
               />
             }
-            label="Cập nhật sự kiện đã theo dõi"
+            label="Cho phep thong bao qua email"
           />
           <FormControlLabel
             control={
-              <Checkbox
-                name="activityEventReminders"
-                checked={notificationSettings.activityEventReminders}
+              <Switch
+                name="pushEnabled"
+                checked={notificationSettings.pushEnabled}
                 onChange={handleNotificationChange}
               />
             }
-            label="Nhắc nhở sự kiện sắp tới"
-          />
-        </Box>
-      </Box>
-
-      <Divider />
-
-      {/* Mentor Notifications */}
-      <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Thông báo cố vấn
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="mentorScheduleReminder"
-                checked={notificationSettings.mentorScheduleReminder}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Nhắc nhở lịch cố vấn"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="mentorNewEvaluation"
-                checked={notificationSettings.mentorNewEvaluation}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Đánh giá mới từ cố vấn"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                name="mentorAdvisorRequests"
-                checked={notificationSettings.mentorAdvisorRequests}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Yêu cầu cố vấn mới"
+            label="Cho phep thong bao day"
           />
         </Box>
       </Box>
 
       <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button variant="contained" color="primary" onClick={handleSave}>
-          Lưu thay đổi
-        </Button>
-        <Button variant="outlined" color="secondary">
-          Huỷ
-        </Button>
-      </Box>
-    </Box>
-  );
-
-  const renderDisplaySettings = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column'}}>
-      <Typography variant="h4" sx={{ mb: 2 }}>
-        Tùy chọn hiển thị trang cá nhân
-      </Typography>
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              name="profilePage"
-              checked={displaySettings.profilePage}
-              onChange={handleDisplayChange}
-            />
-          }
-          label="Hiển thị trang cá nhân công khai"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              name="donationHistory"
-              checked={displaySettings.donationHistory}
-              onChange={handleDisplayChange}
-            />
-          }
-          label="Hiển thị lịch sử quyên góp"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              name="interestedEvents"
-              checked={displaySettings.interestedEvents}
-              onChange={handleDisplayChange}
-            />
-          }
-          label="Hiển thị sự kiện quan tâm"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              name="articlesAboutMe"
-              checked={displaySettings.articlesAboutMe}
-              onChange={handleDisplayChange}
-            />
-          }
-          label="Hiển thị các bài viết về bạn"
-        />
-      </Box>
-
-      <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button variant="contained" color="primary" onClick={handleSave}>
+        <Button variant="contained" color="primary" onClick={handleSaveNotificationSettings}>
           Lưu thay đổi
         </Button>
         <Button variant="outlined" color="secondary">
@@ -478,8 +439,6 @@ const renderPersonalSettings = () => (
         return renderAccountSettings();
       case 'notification':
         return renderNotificationSettings();
-      case 'display':
-        return renderDisplaySettings();
       case 'advisor':
         return renderAdvisorSettings();
       default:

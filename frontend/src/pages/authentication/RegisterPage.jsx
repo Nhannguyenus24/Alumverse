@@ -2,6 +2,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
+import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -19,7 +20,8 @@ const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { register: registerUser, forgotPassword, isLoading: loading, error, setError } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const { register: registerUser, forgotPassword, isLoading: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
 
   const passwordRequirements = {
@@ -58,8 +60,16 @@ const RegisterPage = () => {
       confirmPassword: data.confirmPassword,
     });
     if (result?.ok) {
-      forgotPassword({ email: data.email });
+      enqueueSnackbar('Đăng ký thành công. Vui lòng kiểm tra email để nhận mã xác thực.', {
+        variant: 'success',
+      });
+      const fp = await forgotPassword({ email: data.email });
+      if (!fp?.ok) {
+        enqueueSnackbar(fp?.error ?? 'Không gửi được mã xác thực.', { variant: 'error' });
+      }
       navigate('/auth/signup-code', { state: { email: data.email }, replace: true });
+    } else if (result?.error) {
+      enqueueSnackbar(result.error, { variant: 'error' });
     }
   };
 
@@ -101,12 +111,6 @@ const RegisterPage = () => {
         >
           Đăng ký
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error" textAlign="center">
-            {error}
-          </Typography>
-        )}
 
         <Input
           label="Họ và tên"

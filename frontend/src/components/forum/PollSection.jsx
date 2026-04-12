@@ -1,4 +1,6 @@
-import { Box, Stack, Typography, CircularProgress, Alert, Button } from '@mui/material';
+import { useEffect, useRef } from 'react';
+import { useSnackbar } from 'notistack';
+import { Box, Stack, Typography, CircularProgress, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import HowToVoteOutlinedIcon from '@mui/icons-material/HowToVoteOutlined';
 import PollCard from './PollCard';
@@ -11,6 +13,19 @@ const PollSection = ({
   onCreateClick,
   onVoteSuccess,
 }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const prevErrorRef = useRef(null);
+
+  useEffect(() => {
+    if (error && String(error) !== prevErrorRef.current) {
+      enqueueSnackbar(String(error), { variant: 'error' });
+      prevErrorRef.current = String(error);
+    }
+    if (!error) {
+      prevErrorRef.current = null;
+    }
+  }, [error, enqueueSnackbar]);
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
@@ -21,9 +36,11 @@ const PollSection = ({
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ mb: 2 }}>
-        {error}
-      </Alert>
+      <Box sx={{ mb: 2, py: 2, px: 2, textAlign: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Không tải được danh sách poll.
+        </Typography>
+      </Box>
     );
   }
 

@@ -31,6 +31,7 @@ const ForumCategoryPage = () => {
   const { user } = useAuth();
   const { showError } = useNotification();
   const hasShownTopicsErrorRef = useRef(false);
+  const invalidCategoryShownRef = useRef(false);
 
   const organizationId = user?.organizationId ?? 1;
   const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
@@ -43,6 +44,18 @@ const ForumCategoryPage = () => {
   const { topics, isPending: topicsPending, isError } = useForumTopics(categoryId, 0, 50);
 
   useEffect(() => {
+    if (categoryId != null) {
+      invalidCategoryShownRef.current = false;
+      return;
+    }
+    if (!invalidCategoryShownRef.current) {
+      showError('Danh mục không hợp lệ.');
+      invalidCategoryShownRef.current = true;
+    }
+  }, [categoryId, showError]);
+
+  useEffect(() => {
+    if (categoryId == null) return;
     if (isError) {
       if (!hasShownTopicsErrorRef.current) {
         showError('Không thể tải danh sách chủ đề.');
@@ -51,7 +64,7 @@ const ForumCategoryPage = () => {
       return;
     }
     hasShownTopicsErrorRef.current = false;
-  }, [isError, showError]);
+  }, [categoryId, isError, showError]);
 
   const parentCategories = useMemo(() => {
     const list = (categories ?? []).filter((c) => c.parentId == null);
@@ -118,7 +131,7 @@ const ForumCategoryPage = () => {
     return (
       <Page title="Không tìm thấy" meta={<meta name="description" content="Danh mục không hợp lệ" />}>
         <Container sx={{ py: 4 }}>
-          <Typography>Danh mục không hợp lệ.</Typography>
+          <Typography color="text.secondary">Danh mục không hợp lệ.</Typography>
           <Button sx={{ mt: 2 }} onClick={() => navigate('/forum')} variant="contained">
             Về diễn đàn
           </Button>

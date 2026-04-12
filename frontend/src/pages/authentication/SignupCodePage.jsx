@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useNavigate } from 'react-router';
+import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
@@ -11,7 +12,8 @@ import { useAuth } from '../../hooks/useAuth';
 const SignupCodePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { verifySignupCode, forgotPassword, isLoading: loading, error, setError } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const { verifySignupCode, forgotPassword, isLoading: loading, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
   const [countdown, setCountdown] = useState(60);
 
@@ -35,15 +37,27 @@ const SignupCodePage = () => {
   const onSubmit = async (data) => {
     setError(null);
     const result = await verifySignupCode({ email: data.email, otp: data.otp });
-    if (result?.ok) navigate('/auth/login', { replace: true });
+    if (result?.ok) {
+      enqueueSnackbar(result.message ?? 'Xác thực thành công. Bạn có thể đăng nhập.', { variant: 'success' });
+      navigate('/auth/login', { replace: true });
+    } else if (result?.error) {
+      enqueueSnackbar(result.error, { variant: 'error' });
+    }
   };
 
   const handleResend = async () => {
     setError(null);
     const email = getValues('email');
-    if (email) {
-      await forgotPassword({ email });
+    if (!email) {
+      enqueueSnackbar('Vui lòng nhập email.', { variant: 'warning' });
+      return;
+    }
+    const fp = await forgotPassword({ email });
+    if (fp?.ok) {
+      enqueueSnackbar(fp.message ?? 'Đã gửi lại mã đến email của bạn.', { variant: 'success' });
       setCountdown(60);
+    } else if (fp?.error) {
+      enqueueSnackbar(fp.error, { variant: 'error' });
     }
   };
 
@@ -72,12 +86,6 @@ const SignupCodePage = () => {
         >
           Đăng ký
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error" textAlign="center">
-            {error}
-          </Typography>
-        )}
 
         <Typography variant="body2" color="text.secondary" textAlign="center">
           Mã đăng ký đã được gửi đến email của bạn.
