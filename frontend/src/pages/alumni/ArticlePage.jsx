@@ -1,4 +1,6 @@
+import { useEffect, useRef } from "react";
 import { useParams } from "react-router";
+import { useSnackbar } from "notistack";
 import { Box, Container, Typography, CircularProgress } from "@mui/material";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
@@ -6,7 +8,21 @@ import { useNewsById } from "../../hooks/news/useNewsById";
 
 const ArticlePage = () => {
   const { id } = useParams();
+  const { enqueueSnackbar } = useSnackbar();
+  const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useNewsById(id);
+
+  useEffect(() => {
+    if (isPending) return;
+    if (isError || !article) {
+      if (!loadErrorShownRef.current) {
+        enqueueSnackbar(errorMessage ?? "Không tìm thấy bài viết", { variant: "error" });
+        loadErrorShownRef.current = true;
+      }
+      return;
+    }
+    loadErrorShownRef.current = false;
+  }, [isPending, isError, article, errorMessage, enqueueSnackbar]);
 
   if (isPending) {
     return (
@@ -19,7 +35,7 @@ const ArticlePage = () => {
   if (isError || !article) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <Typography color="error">{errorMessage ?? "Không tìm thấy bài viết"}</Typography>
+        <Typography color="text.secondary">Không thể hiển thị bài viết.</Typography>
       </Box>
     );
   }

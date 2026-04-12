@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -7,8 +7,8 @@ import {
   Button,
   Box,
   CircularProgress,
-  Typography,
 } from '@mui/material';
+import { useNotification } from '../../hooks/useNotification';
 import WYSIWYG from '../WYSIWYG';
 
 const EditPostDialog = ({
@@ -21,6 +21,8 @@ const EditPostDialog = ({
   errorMessage,
 }) => {
   const [editContent, setEditContent] = useState('');
+  const { showError } = useNotification();
+  const wasErrorRef = useRef(false);
 
   const stripHtml = useCallback((value) => {
     if (value == null) return '';
@@ -32,6 +34,13 @@ const EditPostDialog = ({
       setEditContent(post.content);
     }
   }, [open, post?.content]);
+
+  useEffect(() => {
+    if (isError && !wasErrorRef.current && errorMessage) {
+      showError(errorMessage);
+    }
+    wasErrorRef.current = isError;
+  }, [isError, errorMessage, showError]);
 
   const handleClose = useCallback(() => {
     if (!isPending) {
@@ -58,11 +67,6 @@ const EditPostDialog = ({
             disabled={isPending}
             height={220}
           />
-          {isError ? (
-            <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-              {errorMessage}
-            </Typography>
-          ) : null}
         </Box>
       </DialogContent>
       <DialogActions>
