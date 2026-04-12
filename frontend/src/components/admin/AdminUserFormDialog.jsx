@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSnackbar } from 'notistack';
 import {
   Box,
   Button,
@@ -23,6 +24,7 @@ const emptyForm = {
 };
 
 const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
 
@@ -74,7 +76,11 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
       next.password = 'Password must be at least 8 characters';
     }
     setErrors(next);
-    return Object.keys(next).length === 0;
+    const keys = Object.keys(next);
+    if (keys.length > 0) {
+      enqueueSnackbar(next[keys[0]], { variant: 'error' });
+    }
+    return keys.length === 0;
   };
 
   const handleSubmit = () => {
@@ -121,7 +127,6 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           value={form.email}
           onChange={handleChange('email')}
           error={!!errors.email}
-          helperText={errors.email}
           fullWidth
           required
           slotProps={{ inputLabel: inputLabelSlotProps }}
@@ -131,7 +136,6 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           value={form.userName}
           onChange={handleChange('userName')}
           error={!!errors.userName}
-          helperText={errors.userName}
           fullWidth
           required
           slotProps={{ inputLabel: inputLabelSlotProps }}
@@ -141,7 +145,6 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           value={form.fullName}
           onChange={handleChange('fullName')}
           error={!!errors.fullName}
-          helperText={errors.fullName}
           fullWidth
           required
           slotProps={{ inputLabel: inputLabelSlotProps }}
@@ -152,7 +155,13 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           value={form.password}
           onChange={handleChange('password')}
           error={!!errors.password}
-          helperText={errors.password || (mode === 'edit' ? 'Leave blank to keep current password' : '')}
+          helperText={
+            errors.password
+              ? undefined
+              : mode === 'edit'
+                ? 'Leave blank to keep current password'
+                : undefined
+          }
           fullWidth
           autoComplete="new-password"
           slotProps={{ inputLabel: inputLabelSlotProps }}
