@@ -33,6 +33,7 @@ import PollSection from '../../components/forum/PollSection';
 import CreatePollDialog from '../../components/forum/CreatePollDialog';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import WYSIWYG from '../../components/WYSIWYG';
 
 const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
@@ -157,13 +158,17 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
             </Box>
           ) : null}
         </Box>
-        <Typography
-          variant="body2"
-          color="text.primary"
-          sx={{ mb: 1.5, lineHeight: 1.7 }}
-        >
-          {reply.content}
-        </Typography>
+        <Box
+          className="ql-editor"
+          sx={{
+            mb: 1.5,
+            px: 0,
+            py: 0,
+            lineHeight: 1.7,
+            '& p': { my: 0.75 },
+          }}
+          dangerouslySetInnerHTML={{ __html: reply.content || '' }}
+        />
         {hasParent ? (
           <Box
             sx={{
@@ -192,7 +197,7 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
                 WebkitBoxOrient: 'vertical',
               }}
             >
-              {parentPost.content || '—'}
+              {toPlainText(parentPost.content) || '—'}
             </Typography>
           </Box>
         ) : null}
@@ -294,6 +299,11 @@ const FALLBACK_THREAD = {
   createdAt: '—',
 };
 
+const toPlainText = (value) => {
+  if (value == null) return '';
+  return String(value).replace(/<[^>]*>/g, '').trim();
+};
+
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -363,9 +373,7 @@ const ForumAlumniThreadPage = () => {
   const hasShownOpeningErrorRef = useRef(false);
 
   const stripHtml = useCallback((value) => {
-    if (value == null) return '';
-    const s = String(value);
-    return s.replace(/<[^>]*>/g, '').trim();
+    return toPlainText(value);
   }, []);
 
   const thread = useMemo(() => {
@@ -407,9 +415,9 @@ const ForumAlumniThreadPage = () => {
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
         createdAt: formatPostDate(post.createdAt),
-        content: stripHtml(post.content),
+        content: post.content ?? '',
       })),
-    [posts, stripHtml]
+    [posts]
   );
 
   const replyMap = useMemo(() => {
@@ -484,7 +492,7 @@ const ForumAlumniThreadPage = () => {
 
   const handleSaveEditPost = useCallback(
     async (newContent) => {
-      if (!editingPost?.id || !newContent.trim()) return;
+      if (!editingPost?.id || !stripHtml(newContent)) return;
       try {
         await updatePost({
           postId: editingPost.id,
@@ -504,7 +512,7 @@ const ForumAlumniThreadPage = () => {
         showError(message);
       }
     },
-    [editingPost?.id, updatePost, updatePostErrorMessage, showError, showSuccess]
+    [editingPost?.id, showError, showSuccess, stripHtml, updatePost, updatePostErrorMessage]
   );
 
   const handleDeleteTopic = useCallback(async () => {
@@ -581,13 +589,13 @@ const ForumAlumniThreadPage = () => {
   }, [categories]);
 
   const handleSubmit = async () => {
-    const trimmed = (editorValue ?? '').trim();
-    if (!trimmed || !topicId || !user?.id) return;
+    const plainContent = stripHtml(editorValue ?? '');
+    if (!plainContent || !topicId || !user?.id) return;
 
     const payload = {
       topicId,
       authorMemberId: user.id,
-      content: trimmed,
+      content: editorValue,
       answerToPostId: replyTo?.postId ?? null,
     };
 
@@ -1056,13 +1064,9 @@ const ForumAlumniThreadPage = () => {
                         </Typography>
                       </Box>
                     ) : null}
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={6}
+                    <WYSIWYG
                       value={editorValue}
-                      onChange={(e) => setEditorValue(e.target.value)}
-                      placeholder="Write something"
+                      onChange={setEditorValue}
                     />
                     {answerIsError || createIsError ? (
                       <Typography variant="body2" color="error" sx={{ mt: 1 }}>
@@ -1079,7 +1083,7 @@ const ForumAlumniThreadPage = () => {
                           answerPending ||
                           !topicId ||
                           !user?.id ||
-                          !(editorValue ?? '').trim()
+                          !stripHtml(editorValue ?? '')
                         }
                       >
                         {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
