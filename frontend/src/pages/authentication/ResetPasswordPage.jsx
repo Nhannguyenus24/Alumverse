@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate } from 'react-router';
+import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
@@ -9,7 +10,8 @@ import { useAuth } from '../../hooks/useAuth';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
-  const { resetPassword, isLoading: loading, error, setError } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const { resetPassword, isLoading: loading, setError } = useAuth();
 
   const {
     register,
@@ -27,7 +29,12 @@ const ResetPasswordPage = () => {
       newPassword: data.newPassword,
       confirmNewPassword: data.confirmNewPassword,
     });
-    if (result?.ok) navigate('/dashboard', { replace: true });
+    if (result?.ok) {
+      enqueueSnackbar(result.message ?? 'Đổi mật khẩu thành công.', { variant: 'success' });
+      navigate('/dashboard', { replace: true });
+    } else if (result?.error) {
+      enqueueSnackbar(result.error, { variant: 'error' });
+    }
   };
 
   return (
@@ -55,12 +62,6 @@ const ResetPasswordPage = () => {
         >
           Đổi mật khẩu
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error" textAlign="center">
-            {error}
-          </Typography>
-        )}
 
         <Input
           label="Mật khẩu hiện tại"

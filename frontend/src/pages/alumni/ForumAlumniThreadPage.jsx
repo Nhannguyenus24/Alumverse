@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -36,6 +36,8 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
 
 const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
+  const { showError } = useNotification();
+  const reactErrShownRef = useRef(false);
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
   const {
     hasReaction,
@@ -48,6 +50,17 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
     isError: reactIsError,
     errorMessage: reactErrorMessage,
   } = useReactToForumPost(reply.id, memberId);
+
+  useEffect(() => {
+    if (reactIsError) {
+      if (!reactErrShownRef.current) {
+        showError(reactErrorMessage ?? 'Không thể cập nhật cảm xúc.');
+        reactErrShownRef.current = true;
+      }
+    } else {
+      reactErrShownRef.current = false;
+    }
+  }, [reactIsError, reactErrorMessage, showError]);
 
   const isOwn = reply.authorMemberId === memberId;
 
@@ -269,11 +282,6 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
               Trả lời
             </Button>
           </Box>
-          {reactIsError ? (
-            <Typography variant="caption" color="error">
-              {reactErrorMessage ?? 'Không thể cập nhật cảm xúc.'}
-            </Typography>
-          ) : null}
         </Box>
       </Box>
     </Box>
@@ -337,14 +345,8 @@ const ForumAlumniThreadPage = () => {
 
   const memberId = user?.id ?? null;
   const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, 0, 20);
-  const { createPost, isPending: createPending, isError: createIsError, errorMessage: createErrorMessage } =
-    useCreateForumPost();
-  const {
-    answerToPost,
-    isPending: answerPending,
-    isError: answerIsError,
-    errorMessage: answerErrorMessage,
-  } = useAnswerToForumPost();
+  const { createPost, isPending: createPending } = useCreateForumPost();
+  const { answerToPost, isPending: answerPending } = useAnswerToForumPost();
   const {
     deletePost,
     isPending: deletePending,
@@ -736,11 +738,6 @@ const ForumAlumniThreadPage = () => {
                 color="primary"
                 fontSize="0.8rem"
               />
-              {openingPostErrorFromState ? (
-                <Alert severity="warning" sx={{ mt: 1.5, mb: 0 }}>
-                  Chủ đề đã được tạo nhưng không thể đăng nội dung mở đầu: {openingPostErrorFromState}
-                </Alert>
-              ) : null}
               <Box
                 sx={{
                   backgroundColor: '#fff',
@@ -944,7 +941,7 @@ const ForumAlumniThreadPage = () => {
                   </Box>
                 ) : postsError ? (
                   <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
-                    <Typography color="error">Không thể tải bài viết.</Typography>
+                    <Typography color="text.secondary">Không thể tải bài viết.</Typography>
                   </Box>
                 ) : (
                   replies.map((reply, index) => (
@@ -1068,11 +1065,6 @@ const ForumAlumniThreadPage = () => {
                       value={editorValue}
                       onChange={setEditorValue}
                     />
-                    {answerIsError || createIsError ? (
-                      <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                        {answerErrorMessage ?? createErrorMessage ?? 'Không thể đăng bài viết.'}
-                      </Typography>
-                    ) : null}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
                       <Button
                         variant="contained"

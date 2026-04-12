@@ -1,5 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
@@ -7,7 +8,8 @@ import { sendOtpSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
 
 const ForgotPasswordPage = () => {
-  const { forgotPassword, isLoading: loading, error, setError } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const { forgotPassword, isLoading: loading, setError } = useAuth();
 
   const {
     register,
@@ -20,7 +22,12 @@ const ForgotPasswordPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
-    await forgotPassword({ email: data.email });
+    const result = await forgotPassword({ email: data.email });
+    if (result?.ok) {
+      enqueueSnackbar(result.message ?? 'Đã gửi mã đến email của bạn.', { variant: 'success' });
+    } else if (result?.error) {
+      enqueueSnackbar(result.error, { variant: 'error' });
+    }
   };
 
   return (
@@ -48,12 +55,6 @@ const ForgotPasswordPage = () => {
         >
           Quên mật khẩu
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error" textAlign="center">
-            {error}
-          </Typography>
-        )}
 
         <Input
           label="Email"
