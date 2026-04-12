@@ -48,22 +48,22 @@ INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "featur
 ('HCMUS - Engineering', 'eng-hcmus', 'https://api.example.com/logos/eng.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', NOW() - INTERVAL '340 days');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
-INSERT INTO "organization_members" ("organization_id", "user_id", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
+INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
 -- CS Department Members
-(1, 1, 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
-(1, 2, 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
-(1, 4, 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
-(1, 6, 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
+(1, 1, 2012, 'Graduated', 'Regular', 'Computer Science', 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, 2023, 'Graduated', 'Advanced Program', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, NULL, 'Studying', 'Regular', 'Computer Science', 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
 
 -- IT Department Members
-(2, 3, 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
-(2, 5, 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
-(2, 8, 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
-(2, 9, 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
+(2, 3, 2023, 'Graduated', 'Advanced Program', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, 2024, 'Graduated', 'Regular', 'Information Technology', 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, 2023, 'Graduated', 'Regular', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, NULL, 'Studying', 'Regular', 'Information Technology', 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
 
 -- BA Department Members
-(3, 7, 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, 1, false, 'pending', NOW() - INTERVAL '3 days', NOW());
+(3, 7, 2023, 'Graduated', 'Regular', 'Business Administration', 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, NULL, 'Studying', 'Regular', 'Business Administration', 1, false, 'pending', NOW() - INTERVAL '3 days', NOW());
 
 
 
@@ -246,14 +246,14 @@ INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amoun
 (5, 1, NULL, 5500.00, 'District 10, Ho Chi Minh City', '0999999999', 'admin@hcmus.edu.vn', 'Excellence in engineering', 'SUCCESS', NOW() - INTERVAL '3 days');
 
 -- ============= NOTIFICATIONS DATA =============
-INSERT INTO "notifications" ("member_id", "title", "message", "target_url", "is_read", "created_at") VALUES
-(4, 'Event Registration Confirmed', 'Your registration for Web Development Workshop has been confirmed', '/events/2', false, NOW() - INTERVAL '2 days'),
-(4, 'New Mentorship Session Scheduled', 'You have a new mentorship session scheduled with John Doe', '/mentorship/sessions/1', false, NOW() - INTERVAL '1 day'),
-(5, 'Job Opportunity Match', 'Found a job that matches your profile: Junior Software Developer', '/jobs/1', true, NOW() - INTERVAL '5 days'),
-(9, 'Scholarship Opportunity', 'You are eligible for the Student Scholarship Fund', '/funds/1', false, NOW()),
-(10, 'Profile Review Required', 'Please complete your profile to join as an active member', '/profile', false, NOW() - INTERVAL '3 days'),
-(2, 'New Mentee Request', 'Trần Thị B requested a mentorship session', '/mentorship/requests', true, NOW() - INTERVAL '4 days'),
-(6, 'Event Registration Confirmed', 'Your registration for Database Design Seminar has been confirmed', '/events/3', true, NOW() - INTERVAL '6 days');
+INSERT INTO "notifications" ("member_id", "title", "message", "is_read", "created_at") VALUES
+(4, 'Event Registration Confirmed', 'Your registration for Web Development Workshop has been confirmed', false, NOW() - INTERVAL '2 days'),
+(4, 'New Mentorship Session Scheduled', 'You have a new mentorship session scheduled with John Doe', false, NOW() - INTERVAL '1 day'),
+(5, 'Job Opportunity Match', 'Found a job that matches your profile: Junior Software Developer', true, NOW() - INTERVAL '5 days'),
+(9, 'Scholarship Opportunity', 'You are eligible for the Student Scholarship Fund', false, NOW()),
+(10, 'Profile Review Required', 'Please complete your profile to join as an active member', false, NOW() - INTERVAL '3 days'),
+(2, 'New Mentee Request', 'Trần Thị B requested a mentorship session', true, NOW() - INTERVAL '4 days'),
+(6, 'Event Registration Confirmed', 'Your registration for Database Design Seminar has been confirmed', true, NOW() - INTERVAL '6 days');
 
 -- ============= FORUM CATEGORIES DATA =============
 INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES

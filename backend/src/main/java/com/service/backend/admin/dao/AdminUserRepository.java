@@ -125,16 +125,24 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      * Note: This uses a batch insert approach
      * @param organizationId The organization ID
      * @param userId The user ID to add to organization
+        * @param graduatedYear Graduated year
+        * @param graduationStatus Graduation status
+        * @param program Training program
+        * @param major Major
      * @param verificationLevel The verification level (default 0)
      * @param status The member status (default 'active')
      * @return Mono of created member ID
      */
     @Modifying
-    @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+       @Query("INSERT INTO organization_members (organization_id, user_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
+                 "VALUES (:organizationId, :userId, :graduatedYear, :graduationStatus, :program, :major, :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> createOrganizationMember(
         @Param("organizationId") Integer organizationId,
         @Param("userId") Integer userId,
+              @Param("graduatedYear") Integer graduatedYear,
+              @Param("graduationStatus") String graduationStatus,
+              @Param("program") String program,
+              @Param("major") String major,
         @Param("verificationLevel") Integer verificationLevel,
         @Param("status") String status
     );
