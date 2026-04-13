@@ -162,7 +162,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
 
         <MenuItem
           component={Link}
-          to="/dashboard"
+          to="/settings"
           onClick={handleClose}
           sx={{
             borderTop: "none",
@@ -178,6 +178,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
 
         <MenuItem
           onClick={handleLogout}
+          to="/auth/login"
           sx={{
             color: "error.main",
           }}

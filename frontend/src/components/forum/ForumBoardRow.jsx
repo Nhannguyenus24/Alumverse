@@ -20,7 +20,6 @@ const StatCell = ({ label, value, showLabel = true }) => {
 
 const ForumBoardRow = ({ board, onClick }) => {
   const last = board?.lastPost;
-
   return (
     <Box
       sx={{
@@ -90,42 +89,8 @@ const ForumBoardRow = ({ board, onClick }) => {
           }}
         >
           <Box sx={{ display: 'flex', gap: 3 }}>
-            <StatCell label="Chuỗi bài" value={board?.threadCount ?? '-'} />
-            <StatCell label="Thảo luận" value={board?.discussionCount ?? '-'} />
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.25,
-              minWidth: 0,
-            }}
-          >
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <PersonIcon sx={{ fontSize: 18 }} />
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" fontWeight={700} noWrap>
-                {last?.title ?? '—'}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {last?.authorName ? `${last.authorName} • ` : ''}
-                {last?.createdAt ?? ''}
-              </Typography>
-            </Box>
+            <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
+            <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
           </Box>
 
           <Box
@@ -146,8 +111,8 @@ const ForumBoardRow = ({ board, onClick }) => {
           <Divider sx={{ mb: 1.25 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <StatCell label="Chuỗi bài" value={board?.threadCount ?? '-'} />
-              <StatCell label="Thảo luận" value={board?.discussionCount ?? '-'} />
+              <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
+              <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
               <NotificationsNoneOutlinedIcon fontSize="small" />

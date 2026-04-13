@@ -2,7 +2,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
-import { Box, Typography, Button, FormControlLabel, Checkbox } from '@mui/material';
+import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { loginSchema } from '../../schemas/authSchemas';
@@ -113,6 +114,32 @@ const LoginPage = () => {
           sx={{ mt: 1 }}
         >
           {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+        </Button>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+          <Divider sx={{ flex: 1 }} />
+          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            hoặc tiếp tục với
+          </Typography>
+          <Divider sx={{ flex: 1 }} />
+        </Box>
+
+        <Button
+          type="button"
+          variant="outlined"
+          fullWidth
+          size="large"
+          startIcon={<GoogleIcon />}
+          sx={{ textTransform: 'none', borderColor: 'divider' }}
+        >
+          <Box component="span" sx={{ fontWeight: 800, letterSpacing: 0.2 }}>
+            <Box component="span" sx={{ color: '#4285F4' }}>G</Box>
+            <Box component="span" sx={{ color: '#EA4335' }}>o</Box>
+            <Box component="span" sx={{ color: '#FBBC05' }}>o</Box>
+            <Box component="span" sx={{ color: '#4285F4' }}>g</Box>
+            <Box component="span" sx={{ color: '#34A853' }}>l</Box>
+            <Box component="span" sx={{ color: '#EA4335' }}>e</Box>
+          </Box>
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>

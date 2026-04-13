@@ -13,7 +13,17 @@ const fetchForumPosts = async ({ queryKey }) => {
 
   const data = res?.data?.data ?? {};
   const items = data?.items ?? [];
-  const pageInfo = data?.pageInfo ?? null;
+
+  // Backend returns pagination metadata at the root of PaginatedResponse,
+  // not nested in a pageInfo field.
+  const pageInfo = data?.pageInfo ?? {
+    currentPage: data?.currentPage ?? 0,
+    pageSize: data?.pageSize ?? size,
+    totalPage: data?.totalPage ?? 0,
+    totalItem: data?.totalItem ?? 0,
+    hasNext: Boolean(data?.hasNext),
+    hasPrevious: Boolean(data?.hasPrevious),
+  };
 
   return {
     items: Array.isArray(items) ? items : [],
