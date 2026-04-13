@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useSnackbar } from 'notistack';
-import { Box, Typography, Button } from '@mui/material';
+import { Box, Typography, Button, TextField } from '@mui/material';
 import Page from '../../components/Page';
-import Input from '../../components/Input';
 import { verifyOtpSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -16,6 +15,8 @@ const SignupCodePage = () => {
   const { verifySignupCode, forgotPassword, isLoading: loading, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
   const [countdown, setCountdown] = useState(60);
+  const [otpDigits, setOtpDigits] = useState(Array(6).fill(''));
+  const otpInputRefs = useRef([]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -28,11 +29,84 @@ const SignupCodePage = () => {
     register,
     handleSubmit,
     getValues,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(verifyOtpSchema),
     defaultValues: { email: emailFromState, otp: '' },
   });
+
+  useEffect(() => {
+    setValue('otp', otpDigits.join(''), { shouldValidate: true, shouldDirty: true });
+  }, [otpDigits, setValue]);
+
+  const focusOtpInput = (index) => {
+    if (index >= 0 && index < otpInputRefs.current.length) {
+      otpInputRefs.current[index]?.focus();
+    }
+  };
+
+  const handleOtpChange = (index, rawValue) => {
+    const digitsOnly = rawValue.replace(/\D/g, '');
+
+    if (!digitsOnly) {
+      setOtpDigits((prev) => {
+        const next = [...prev];
+        next[index] = '';
+        return next;
+      });
+      return;
+    }
+
+    setOtpDigits((prev) => {
+      const next = [...prev];
+      if (digitsOnly.length === 1) {
+        next[index] = digitsOnly;
+      } else {
+        for (let i = 0; i < digitsOnly.length && index + i < 6; i += 1) {
+          next[index + i] = digitsOnly[i];
+        }
+      }
+      return next;
+    });
+
+    focusOtpInput(Math.min(index + digitsOnly.length, 5));
+  };
+
+  const handleOtpKeyDown = (index, event) => {
+    if (event.key !== 'Backspace') return;
+
+    if (otpDigits[index]) {
+      setOtpDigits((prev) => {
+        const next = [...prev];
+        next[index] = '';
+        return next;
+      });
+      return;
+    }
+
+    if (index > 0) {
+      setOtpDigits((prev) => {
+        const next = [...prev];
+        next[index - 1] = '';
+        return next;
+      });
+      focusOtpInput(index - 1);
+    }
+  };
+
+  const handleOtpPaste = (event) => {
+    event.preventDefault();
+    const pastedDigits = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pastedDigits) return;
+
+    const next = Array(6).fill('');
+    pastedDigits.split('').forEach((digit, idx) => {
+      next[idx] = digit;
+    });
+    setOtpDigits(next);
+    focusOtpInput(Math.min(pastedDigits.length - 1, 5));
+  };
 
   const onSubmit = async (data) => {
     setError(null);
@@ -42,6 +116,13 @@ const SignupCodePage = () => {
       navigate('/auth/login', { replace: true });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
+    }
+  };
+
+  const onInvalid = (formErrors) => {
+    const otpErrorMessage = formErrors?.otp?.message;
+    if (otpErrorMessage) {
+      enqueueSnackbar(otpErrorMessage, { variant: 'error' });
     }
   };
 
@@ -68,7 +149,7 @@ const SignupCodePage = () => {
     >
       <Box
         component="form"
-        onSubmit={handleSubmit(onSubmit)}
+        onSubmit={handleSubmit(onSubmit, onInvalid)}
         sx={{
           width: '100%',
           display: 'flex',
@@ -91,17 +172,31 @@ const SignupCodePage = () => {
           Mã đăng ký đã được gửi đến email của bạn.
         </Typography>
 
-        <Input
-          label="Mã đăng ký"
-          placeholder="385028"
-          type="text"
-          inputProps={{ maxLength: 6, inputMode: 'numeric', pattern: '[0-9]*' }}
-          error={!!errors.otp}
-          helperText={errors.otp?.message}
-          {...register('otp')}
-        />
+        <input type="hidden" {...register('otp')} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1.2 }}>
+          {otpDigits.map((digit, index) => (
+            <TextField
+              key={index}
+              value={digit}
+              onChange={(event) => handleOtpChange(index, event.target.value)}
+              onKeyDown={(event) => handleOtpKeyDown(index, event)}
+              onPaste={handleOtpPaste}
+              inputRef={(el) => {
+                otpInputRefs.current[index] = el;
+              }}
+              inputProps={{
+                maxLength: 1,
+                inputMode: 'numeric',
+                pattern: '[0-9]*',
+                style: { textAlign: 'center', fontSize: '1.2rem', fontWeight: 600 },
+                'aria-label': `otp-digit-${index + 1}`,
+              }}
+              sx={{ width: { xs: 42, sm: 48 } }}
+            />
+          ))}
+        </Box>
 
-        <Typography variant="body2" color="text.secondary" textAlign="center">
+        <Typography variant="body2" color="text.main" textAlign="center">
           Chưa nhận được mã?{' '}
           <Typography
             component="button"

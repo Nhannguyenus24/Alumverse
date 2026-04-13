@@ -17,6 +17,8 @@ public class ForumCategoryDTO {
     private Integer organizationId;
     private String name;
     private String description;
+    private Long topicCount;
+    private Long participantCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
