@@ -18,6 +18,7 @@ public class ForumTopicDTO {
     private Integer createdByMemberId;
     private Integer categoryId;
     private Integer viewCount;
+    private Long postCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

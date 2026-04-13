@@ -99,8 +99,8 @@ const ForumPage = () => {
         categoryId: sub.id,
         name: sub.name,
         description: sub.description ?? '',
-        threadCount: '-',
-        discussionCount: '-',
+        topicCount: sub.topicCount ?? 0,
+        participantCount: sub.participantCount ?? 0,
         lastPost: null,
       })),
     }));

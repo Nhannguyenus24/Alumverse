@@ -56,6 +56,20 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Mono<Long> countByCategoryId(@Param("categoryId") Integer categoryId);
 
     /**
+     * Count distinct discussion participants in a category.
+     * Participants include topic creators and post authors under topics in the category.
+     */
+    @Query("SELECT COUNT(DISTINCT member_id) FROM (" +
+           "SELECT ft.created_by_member_id AS member_id FROM forum_topics ft " +
+           "WHERE ft.category_id = :categoryId AND ft.created_by_member_id IS NOT NULL " +
+           "UNION " +
+           "SELECT fp.author_member_id AS member_id FROM forum_posts fp " +
+           "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
+           "WHERE ft2.category_id = :categoryId AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           ") participants")
+    Mono<Long> countDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
+
+    /**
      * Count topics by organization id
      */
     @Query("SELECT COUNT(*) FROM forum_topics WHERE organization_id = :organizationId")

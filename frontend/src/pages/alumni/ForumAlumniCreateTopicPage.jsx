@@ -9,10 +9,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import WYSIWYG from '../../components/WYSIWYG';
 import { useAuth } from '../../hooks/useAuth';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useCreateForumTopic } from '../../hooks/forum/useCreateForumTopic';
@@ -29,7 +29,7 @@ const ForumAlumniCreateTopicPage = () => {
     isPending: categoriesPending,
     isError: categoriesIsError,
   } = useForumCategories(organizationId);
-  const [subject, setSubject] = useState('');
+  const [parentSubject, setParentSubject] = useState('');
   const [subSubject, setSubSubject] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -59,22 +59,46 @@ const ForumAlumniCreateTopicPage = () => {
       ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
     ];
   }, [categories]);
-  const subSubjectOptions = (categories ?? []).map((category) => ({
+
+  const parentSubjectOptions = useMemo(
+    () =>
+      (categories ?? [])
+        .filter((category) => category.parentId == null)
+        .map((category) => ({ value: String(category.id), label: category.name })),
+    [categories]
+  );
+
+  const resolvedParentSubject = parentSubjectOptions.some((opt) => opt.value === parentSubject)
+    ? parentSubject
+    : (parentSubjectOptions[0]?.value ?? '');
+
+  const subSubjectOptions = (categories ?? [])
+    .filter((category) => String(category.parentId ?? '') === resolvedParentSubject)
+    .map((category) => ({
     value: String(category.id),
     label: category.name,
   }));
+
+  useEffect(() => {
+    if (resolvedParentSubject !== parentSubject) {
+      setParentSubject(resolvedParentSubject);
+    }
+  }, [parentSubject, resolvedParentSubject]);
+
   const hasSelectedSubSubject = subSubjectOptions.some((opt) => opt.value === subSubject);
   const selectedSubSubject = hasSelectedSubSubject
     ? subSubject
     : (subSubjectOptions[0]?.value ?? '');
+
+  useEffect(() => {
+    if (selectedSubSubject !== subSubject) {
+      setSubSubject(selectedSubSubject);
+    }
+  }, [selectedSubSubject, subSubject]);
+
   const selectedSidebarFilterId = filters.some((f) => f.id === `category-${selectedSubSubject}`)
     ? `category-${selectedSubSubject}`
     : 'all';
-  const displayName =
-    user?.userName?.trim?.() ||
-    user?.email?.trim?.() ||
-    (user?.id ? `Thành viên #${user.id}` : 'Người dùng');
-  const displayRole = user?.role ? String(user.role).toLowerCase() : 'guest';
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -96,7 +120,7 @@ const ForumAlumniCreateTopicPage = () => {
 
   const handleSubmit = async () => {
     const trimmedTitle = (title ?? '').trim();
-    const trimmedContent = (content ?? '').trim();
+    const plainOpeningContent = (content ?? '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
     const categoryId = parseInt(selectedSubSubject, 10);
     if (!trimmedTitle) {
       showWarning('Vui lòng nhập tiêu đề chủ đề.');
@@ -127,12 +151,12 @@ const ForumAlumniCreateTopicPage = () => {
         showError('Tạo chủ đề thất bại.');
         return;
       }
-      if (trimmedContent) {
+      if (plainOpeningContent) {
         try {
           await createPost({
             topicId: createdTopic.id,
             authorMemberId: user.id,
-            content: trimmedContent,
+            content,
             answerToPostId: null,
           });
         } catch (postErr) {
@@ -155,10 +179,17 @@ const ForumAlumniCreateTopicPage = () => {
         },
       });
     } catch (topicErr) {
+      const backendMessage = topicErr?.response?.data?.message;
+      const backendValidationErrors = topicErr?.response?.data?.data;
+      const firstValidationError =
+        backendValidationErrors && typeof backendValidationErrors === 'object'
+          ? Object.values(backendValidationErrors)[0]
+          : null;
+
       const message =
-        topicErr?.response?.data?.message ??
-        topicErr?.message ??
-        'Tạo chủ đề thất bại.';
+        backendMessage === 'Validation failed' && firstValidationError
+          ? firstValidationError
+          : backendMessage ?? topicErr?.message ?? 'Tạo chủ đề thất bại.';
       showError(message);
     } finally {
       setIsSubmitting(false);
@@ -222,6 +253,35 @@ const ForumAlumniCreateTopicPage = () => {
                   mb: 2.5,
                 }}
               >
+                <TextField
+                  select
+                  fullWidth
+                  label="Chủ đề chính"
+                  value={resolvedParentSubject}
+                  onChange={(e) => setParentSubject(e.target.value)}
+                  size="small"
+                  disabled={categoriesPending || categoriesIsError || !parentSubjectOptions.length}
+                >
+                  {categoriesPending ? (
+                    <MenuItem value="" disabled>
+                      Đang tải chủ đề chính...
+                    </MenuItem>
+                  ) : categoriesIsError ? (
+                    <MenuItem value="" disabled>
+                      Không tải được chủ đề chính
+                    </MenuItem>
+                  ) : !parentSubjectOptions.length ? (
+                    <MenuItem value="" disabled>
+                      Không có chủ đề chính
+                    </MenuItem>
+                  ) : (
+                    parentSubjectOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
 
                 <TextField
                   select
@@ -230,7 +290,7 @@ const ForumAlumniCreateTopicPage = () => {
                   value={selectedSubSubject}
                   onChange={(e) => setSubSubject(e.target.value)}
                   size="small"
-                  disabled={categoriesPending || categoriesIsError || !categories.length}
+                  disabled={categoriesPending || categoriesIsError || !subSubjectOptions.length}
                 >
                   {categoriesPending ? (
                     <MenuItem value="" disabled>
@@ -240,7 +300,11 @@ const ForumAlumniCreateTopicPage = () => {
                     <MenuItem value="" disabled>
                       Không tải được chủ đề phụ
                     </MenuItem>
-                  ) : !categories.length ? (
+                  ) : !resolvedParentSubject ? (
+                    <MenuItem value="" disabled>
+                      Vui lòng chọn chủ đề chính
+                    </MenuItem>
+                  ) : !subSubjectOptions.length ? (
                     <MenuItem value="" disabled>
                       Không có chủ đề phụ
                     </MenuItem>
@@ -269,46 +333,6 @@ const ForumAlumniCreateTopicPage = () => {
                     alignItems: { xs: 'center', md: 'stretch' },
                   }}
                 >
-                  {/* Avatar column */}
-                  <Box
-                    sx={{
-                      width: { xs: '100%', md: 140 },
-                      flexShrink: 0,
-                      display: 'flex',
-                      flexDirection: { xs: 'row', md: 'column' },
-                      alignItems: { xs: 'center', md: 'center' },
-                      justifyContent: { xs: 'center', md: 'flex-start' },
-                      gap: 1,
-                      py: { xs: 2, md: 3 },
-                      px: { xs: 2, md: 0 },
-                      borderRight: { xs: 0, md: 1 },
-                      borderBottom: { xs: 1, md: 0 },
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: { xs: 48, md: 64 },
-                        height: { xs: 48, md: 64 },
-                        borderRadius: '50%',
-                        bgcolor: 'primary.main',
-                        color: 'primary.contrastText',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <PersonIcon sx={{ fontSize: 34 }} />
-                    </Box>
-                    <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
-                      <Typography variant="body2" fontWeight={600}>
-                        {displayName}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {displayRole}
-                      </Typography>
-                    </Box>
-                  </Box>
 
                   {/* Title + editor */}
                   <Box
@@ -329,14 +353,15 @@ const ForumAlumniCreateTopicPage = () => {
                     >
                       <TextField
                         fullWidth
-                        variant="standard"
+                        variant="outlined"
+                        size="small"
+                        label="Tiêu đề chủ đề"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Tiêu đề chủ đề"
-                        InputProps={{
-                          disableUnderline: true,
-                          sx: {
-                            fontSize: { xs: '1.05rem', md: '1.15rem' },
+                        sx={{
+                          '& .MuiInputBase-input': {
+                            fontSize: { xs: '1.05rem', md: '1.1rem' },
                             fontWeight: 600,
                           },
                         }}
@@ -344,13 +369,11 @@ const ForumAlumniCreateTopicPage = () => {
                     </Box>
 
                     <Box sx={{ px: { xs: 2, md: 2.5 }, py: 2 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        minRows={8}
+                      <WYSIWYG
                         value={content}
-                        onChange={(e) => setContent(e.target.value)}
+                        onChange={setContent}
                         placeholder="Nội dung mở đầu"
+                        height={320}
                       />
                     </Box>
                   </Box>

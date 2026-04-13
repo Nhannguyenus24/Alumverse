@@ -459,7 +459,7 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (
           <ProtectedRoute>
-            <DashboardPage />
+            <HomePage />
           </ProtectedRoute>
         ),
       },
