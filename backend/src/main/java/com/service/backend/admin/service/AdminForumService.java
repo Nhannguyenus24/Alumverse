@@ -240,7 +240,7 @@ public class AdminForumService {
         long offset = (long) page * size;
         
         return forumTopicRepository.findByOrganizationIdWithPagination(organizationId, size, offset)
-                .map(this::convertToTopicDTO)
+                .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
                 .zipWith(forumTopicRepository.countByOrganizationId(organizationId))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
@@ -254,7 +254,7 @@ public class AdminForumService {
         log.info("Fetching forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Topic not found with ID: " + topicId)))
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnError(error -> log.error("Error fetching topic ID: {}", topicId, error));
     }
 
@@ -268,18 +268,18 @@ public class AdminForumService {
                 .switchIfEmpty(Mono.error(new RuntimeException("Category not found with ID: " + categoryId)))
                 .flatMap(category -> {
                     com.service.backend.forum.entity.ForumTopic topic = 
-                        com.service.backend.forum.entity.ForumTopic.builder()
-                            .organizationId(organizationId)
-                            .categoryId(categoryId)
-                            .title(title)
-                            .createdByMemberId(createdByMemberId)
-                            .viewCount(0)
-                            .createdAt(java.time.LocalDateTime.now())
-                            .updatedAt(java.time.LocalDateTime.now())
-                            .build();
+                            com.service.backend.forum.entity.ForumTopic.builder()
+                                    .organizationId(organizationId)
+                                    .categoryId(categoryId)
+                                    .title(title)
+                                    .createdByMemberId(createdByMemberId)
+                                    .viewCount(0)
+                                    .createdAt(java.time.LocalDateTime.now())
+                                    .updatedAt(java.time.LocalDateTime.now())
+                                    .build();
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully created forum topic: {}", title))
                 .doOnError(error -> log.error("Error creating forum topic: {}", title, error));
     }
@@ -298,7 +298,7 @@ public class AdminForumService {
                     topic.setUpdatedAt(java.time.LocalDateTime.now());
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully updated forum topic ID: {}", topicId))
                 .doOnError(error -> log.error("Error updating topic ID: {}", topicId, error));
     }
@@ -541,8 +541,16 @@ public class AdminForumService {
     /**
      * Convert ForumTopic entity to ForumTopicDTO
      */
-    private com.service.backend.forum.dto.ForumTopicDTO convertToTopicDTO(
+    private Mono<com.service.backend.forum.dto.ForumTopicDTO> convertToTopicDTOWithPostCount(
             com.service.backend.forum.entity.ForumTopic topic) {
+        return forumPostRepository.countByTopicId(topic.getId())
+                .defaultIfEmpty(0L)
+                .map(postCount -> convertToTopicDTO(topic, postCount));
+    }
+
+    private com.service.backend.forum.dto.ForumTopicDTO convertToTopicDTO(
+            com.service.backend.forum.entity.ForumTopic topic,
+            Long postCount) {
         return com.service.backend.forum.dto.ForumTopicDTO.builder()
                 .id(topic.getId())
                 .organizationId(topic.getOrganizationId())
@@ -550,6 +558,7 @@ public class AdminForumService {
                 .createdByMemberId(topic.getCreatedByMemberId())
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
+                .postCount(postCount)
                 .createdAt(topic.getCreatedAt())
                 .updatedAt(topic.getUpdatedAt())
                 .build();

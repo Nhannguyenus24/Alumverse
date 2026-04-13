@@ -105,7 +105,7 @@ public class ForumService {
     // Topic methods
     public Mono<ForumTopicDTO> findTopicByTitle(String title) {
         return forumTopicRepository.findByTitle(title)
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> {
                     if (result != null) {
                         log.info("Successfully found forum topic: {}", title);
@@ -120,7 +120,7 @@ public class ForumService {
         long offset = (long) page * size;
         
         return forumTopicRepository.findByCategoryIdWithPagination(categoryId, size, offset)
-                .map(this::convertToTopicDTO)
+                .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
                 .zipWith(forumTopicRepository.countByCategoryId(categoryId))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
@@ -149,7 +149,7 @@ public class ForumService {
                     
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully created forum topic with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
     }
@@ -170,7 +170,7 @@ public class ForumService {
                     topic.setUpdatedAt(LocalDateTime.now());
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully updated forum topic ID: {}", id))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
@@ -384,7 +384,13 @@ public class ForumService {
                 .build();
     }
 
-    private ForumTopicDTO convertToTopicDTO(ForumTopic topic) {
+    private Mono<ForumTopicDTO> convertToTopicDTOWithPostCount(ForumTopic topic) {
+        return forumPostRepository.countByTopicId(topic.getId())
+                .defaultIfEmpty(0L)
+                .map(postCount -> convertToTopicDTO(topic, postCount));
+    }
+
+    private ForumTopicDTO convertToTopicDTO(ForumTopic topic, Long postCount) {
         return ForumTopicDTO.builder()
                 .id(topic.getId())
                 .organizationId(topic.getOrganizationId())
@@ -392,6 +398,7 @@ public class ForumService {
                 .createdByMemberId(topic.getCreatedByMemberId())
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
+                .postCount(postCount)
                 .createdAt(topic.getCreatedAt())
                 .updatedAt(topic.getUpdatedAt())
                 .build();

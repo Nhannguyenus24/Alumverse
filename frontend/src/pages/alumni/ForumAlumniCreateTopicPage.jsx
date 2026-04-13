@@ -29,7 +29,6 @@ const ForumAlumniCreateTopicPage = () => {
     isPending: categoriesPending,
     isError: categoriesIsError,
   } = useForumCategories(organizationId);
-  const [subject, setSubject] = useState('');
   const [subSubject, setSubSubject] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

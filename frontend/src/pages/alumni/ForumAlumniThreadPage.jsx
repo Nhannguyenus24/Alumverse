@@ -4,12 +4,10 @@ import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTit
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ModeCommentOutlinedIcon from '@mui/icons-material/ModeCommentOutlined';
 import ReplyOutlinedIcon from '@mui/icons-material/ReplyOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import SentimentSatisfiedAltOutlinedIcon from '@mui/icons-material/SentimentSatisfiedAltOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,22 +26,15 @@ import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../../hooks/useNotification';
-import { usePollsByTopic } from '../../hooks/forum/usePollsByTopic';
-import PollSection from '../../components/forum/PollSection';
-import CreatePollDialog from '../../components/forum/CreatePollDialog';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
 
-const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
+const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
   const { showError } = useNotification();
   const reactErrShownRef = useRef(false);
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
-  const {
-    hasReaction,
-    isPending: userReactionPending,
-    isError: userReactionError,
-  } = useForumPostUserReaction(reply.id, memberId);
+  const { hasReaction } = useForumPostUserReaction(reply.id, memberId);
   const {
     toggleReaction,
     isPending: reactPending,
@@ -336,7 +327,7 @@ const ForumAlumniThreadPage = () => {
   const [postToDelete, setPostToDelete] = useState(null);
 
   const organizationId = user?.organizationId ?? 1;
-  const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
+  const { categories } = useForumCategories(organizationId);
   const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
   const openingPostErrorFromState =
     typeof location.state?.openingPostError === 'string'
@@ -368,8 +359,6 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
-
-  const { polls, isPending: pollsPending, isError: pollsError, errorMessage: pollsErrorMessage, refetch: refetchPolls } = usePollsByTopic(topicId, memberId);
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
@@ -944,11 +933,10 @@ const ForumAlumniThreadPage = () => {
                     <Typography color="text.secondary">Không thể tải bài viết.</Typography>
                   </Box>
                 ) : (
-                  replies.map((reply, index) => (
+                  replies.map((reply) => (
                     <ForumReply
                       key={reply.id}
                       reply={reply}
-                      index={index}
                       isAdmin={isAdmin}
                       memberId={memberId}
                       onReply={handleReply}
