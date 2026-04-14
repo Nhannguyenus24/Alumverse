@@ -2,16 +2,22 @@ package com.service.backend.auth.service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.auth.entity.User;
 import com.service.backend.auth.dao.AuthRepository;
@@ -28,6 +34,10 @@ import reactor.core.scheduler.Schedulers;
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final Duration OTP_TTL = Duration.ofMinutes(5);
+    private static final String GOOGLE_TOKEN_INFO_PATH = "/tokeninfo";
+    private static final String GOOGLE_ISSUER = "accounts.google.com";
+    private static final String GOOGLE_ISSUER_HTTPS = "https://accounts.google.com";
+    private static final String GOOGLE_LOGIN_METHOD = "GOOGLE";
     private static final String OTP_CACHE_KEY = "otp_verification";
     private static final String OTP_EMAIL_SUBJECT = "Email Verification - OTP Code";
     private static final String OTP_EMAIL_TEMPLATE = "otpVerification";
@@ -35,24 +45,32 @@ public class AuthService {
     private static final String OTP_CACHE_USER_ID_FIELD = "userId";
     private static final int OTP_LENGTH = 6;
     private static final int OTP_MAX_VALUE = 1000000;
+    private static final int USERNAME_MAX_ATTEMPTS = 20;
+    private static final int RANDOM_USERNAME_SUFFIX_BYTES = 4;
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final CacheUtils cacheUtils;
     private final JwtUtils jwtUtils;
     private final UserLoginHistoryRepository userLoginHistoryRepository;
+    private final WebClient googleApiClient;
+    private final String googleClientId;
     private final SecureRandom secureRandom;
         
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder, 
                       EmailService emailService, CacheUtils cacheUtils,
                       JwtUtils jwtUtils,
-                      UserLoginHistoryRepository userLoginHistoryRepository) {
+                      UserLoginHistoryRepository userLoginHistoryRepository,
+                      WebClient.Builder webClientBuilder,
+                      @Value("${google.oauth.client-id:}") String googleClientId) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.cacheUtils = cacheUtils;
         this.jwtUtils = jwtUtils;
         this.userLoginHistoryRepository = userLoginHistoryRepository;
+        this.googleApiClient = webClientBuilder.baseUrl("https://oauth2.googleapis.com").build();
+        this.googleClientId = googleClientId == null ? "" : googleClientId.trim();
         this.secureRandom = new SecureRandom();
     }
 
@@ -116,6 +134,22 @@ public class AuthService {
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                 .doOnError(error -> logger.error("Login error for username: {}", userName, error));
+    }
+
+    public Mono<User> loginWithGoogle(String idToken) {
+        if (!StringUtils.hasText(googleClientId)) {
+            return Mono.error(new RuntimeException("Google login is not configured"));
+        }
+        if (!StringUtils.hasText(idToken)) {
+            return Mono.error(new RuntimeException("Google ID token is required"));
+        }
+
+        return verifyGoogleToken(idToken)
+                .flatMap(tokenInfo -> authRepository.findByEmail(tokenInfo.email())
+                        .flatMap(existingUser -> loginExistingGoogleUser(existingUser, tokenInfo.picture()))
+                        .switchIfEmpty(registerGoogleUser(tokenInfo))
+                )
+                .doOnError(error -> logger.error("Google login failed", error));
     }
 
     public Mono<Void> activateUser(Integer userId) {
@@ -242,6 +276,121 @@ public class AuthService {
                 );
     }
 
+    private Mono<GoogleTokenInfo> verifyGoogleToken(String idToken) {
+        return googleApiClient.get()
+                .uri(uriBuilder -> uriBuilder.path(GOOGLE_TOKEN_INFO_PATH)
+                        .queryParam("id_token", idToken)
+                        .build())
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, response ->
+                        response.bodyToMono(String.class)
+                                .defaultIfEmpty("Google token validation failed")
+                                .flatMap(body -> Mono.error(new RuntimeException("Google token is invalid"))))
+                .bodyToMono(GoogleTokenInfo.class)
+                .switchIfEmpty(Mono.error(new RuntimeException("Google token is invalid")))
+                .flatMap(this::validateGoogleTokenInfo);
+    }
+
+    private Mono<GoogleTokenInfo> validateGoogleTokenInfo(GoogleTokenInfo tokenInfo) {
+        if (tokenInfo == null) {
+            return Mono.error(new RuntimeException("Google token is invalid"));
+        }
+        if (!StringUtils.hasText(tokenInfo.aud()) || !googleClientId.equals(tokenInfo.aud())) {
+            return Mono.error(new RuntimeException("Google token audience is invalid"));
+        }
+        if (!StringUtils.hasText(tokenInfo.iss())
+                || (!GOOGLE_ISSUER.equals(tokenInfo.iss()) && !GOOGLE_ISSUER_HTTPS.equals(tokenInfo.iss()))) {
+            return Mono.error(new RuntimeException("Google token issuer is invalid"));
+        }
+        if (!"true".equalsIgnoreCase(tokenInfo.emailVerified())) {
+            return Mono.error(new RuntimeException("Google email is not verified"));
+        }
+        if (!StringUtils.hasText(tokenInfo.email())) {
+            return Mono.error(new RuntimeException("Google account email is missing"));
+        }
+        return Mono.just(tokenInfo);
+    }
+
+    private Mono<User> loginExistingGoogleUser(User user, String pictureUrl) {
+        if (user.getStatus() == com.service.backend.shared.enums.UserStatus.BANNED
+                || user.getStatus() == com.service.backend.shared.enums.UserStatus.SUSPENDED
+                || user.getStatus() == com.service.backend.shared.enums.UserStatus.DELETED
+                || user.getStatus() == com.service.backend.shared.enums.UserStatus.DISABLED) {
+            return Mono.error(new RuntimeException("Account is not allowed to login with Google"));
+        }
+
+        Mono<Void> activateIfNeeded = user.getStatus() == com.service.backend.shared.enums.UserStatus.ACTIVE
+                ? Mono.empty()
+                : authRepository.activateUserById(user.getId());
+
+        Mono<Void> updateAvatarIfNeeded = (!StringUtils.hasText(user.getAvatarUrl()) && StringUtils.hasText(pictureUrl))
+                ? authRepository.updateAvatarById(user.getId(), pictureUrl)
+                : Mono.empty();
+
+        return activateIfNeeded
+                .then(updateAvatarIfNeeded)
+                .then(authRepository.findById(user.getId()))
+                .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
+                .doOnNext(existing -> {
+                    logger.info("Google login successful for email: {}", existing.getEmail());
+                    recordLoginSuccessAsync(existing.getId(), GOOGLE_LOGIN_METHOD);
+                });
+    }
+
+    private Mono<User> registerGoogleUser(GoogleTokenInfo tokenInfo) {
+        String fullName = StringUtils.hasText(tokenInfo.name())
+                ? tokenInfo.name().trim()
+                : tokenInfo.email();
+
+        return generateUniqueUsername(tokenInfo.email())
+                .flatMap(userName -> Mono.fromCallable(() -> passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .subscribeOn(Schedulers.boundedElastic())
+                        .flatMap(passwordHash -> authRepository.registerGoogleUser(
+                                        tokenInfo.email(),
+                                        userName,
+                                        passwordHash,
+                                        tokenInfo.picture())
+                                .flatMap(userId -> authRepository.createGlobalProfile(userId, fullName)
+                                        .thenReturn(userId))
+                                .flatMap(authRepository::findById)
+                                .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))))
+                .doOnNext(user -> {
+                    logger.info("Google account registered and logged in for email: {}", user.getEmail());
+                    recordLoginSuccessAsync(user.getId(), GOOGLE_LOGIN_METHOD);
+                });
+    }
+
+    private Mono<String> generateUniqueUsername(String email) {
+        String base = buildUsernameSeedFromEmail(email);
+        return findUniqueUsername(base, 0)
+                .switchIfEmpty(Mono.just(base + randomUsernameSuffix()));
+    }
+
+    private Mono<String> findUniqueUsername(String base, int attempt) {
+        if (attempt >= USERNAME_MAX_ATTEMPTS) {
+            return Mono.empty();
+        }
+
+        String candidate = attempt == 0 ? base : base + randomUsernameSuffix();
+        return authRepository.existsByUserName(candidate)
+                .flatMap(exists -> exists ? findUniqueUsername(base, attempt + 1) : Mono.just(candidate));
+    }
+
+    private String buildUsernameSeedFromEmail(String email) {
+        String localPart = email == null ? "" : email.split("@")[0];
+        String normalized = localPart == null ? "" : localPart.toLowerCase().replaceAll("[^a-z0-9._]", "");
+        if (!StringUtils.hasText(normalized)) {
+            normalized = "google.user";
+        }
+        return normalized.length() > 24 ? normalized.substring(0, 24) : normalized;
+    }
+
+    private String randomUsernameSuffix() {
+        byte[] bytes = new byte[RANDOM_USERNAME_SUFFIX_BYTES];
+        secureRandom.nextBytes(bytes);
+        return "_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes).toLowerCase();
+    }
+
     private void recordLoginSuccessAsync(Integer userId, String loginMethod) {
         UserLoginHistory history = UserLoginHistory.builder()
             .userId(userId)
@@ -257,5 +406,15 @@ public class AuthService {
             })
                 .subscribeOn(Schedulers.boundedElastic())
                 .subscribe();
+    }
+
+    private record GoogleTokenInfo(
+            String aud,
+            String iss,
+            String email,
+            @JsonProperty("email_verified")
+            String emailVerified,
+            String name,
+            String picture) {
     }
 }
