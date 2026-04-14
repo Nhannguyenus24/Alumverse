@@ -23,7 +23,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
 import Page from '../../components/Page';
 import Sidebar from '../../components/Sidebar';
-import apiClient from '../../utils/axios';
+import { userSettingsApi } from '../../api/userSettingsApi';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 
@@ -69,6 +69,8 @@ export default function SettingPage() {
     confirmPassword: '',
   });
 
+  const [loginHistory, setLoginHistory] = useState([]);
+
   const getErrorMessage = (error, fallbackMessage) => {
     return (
       error?.response?.data?.message
@@ -80,15 +82,12 @@ export default function SettingPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [profileRes, memberRes, notificationRes] = await Promise.all([
-          apiClient.get('/users/me/profile'),
-          apiClient.get('/users/me/organization-member', { params: { organizationId } }),
-          apiClient.get('/users/me/notification-settings'),
+        const [profile, member, settings, history] = await Promise.all([
+          userSettingsApi.getProfile(),
+          userSettingsApi.getOrganizationMember(organizationId),
+          userSettingsApi.getNotificationSettings(),
+          userSettingsApi.getLoginHistory({ page: 0, limit: 10 }),
         ]);
-
-        const profile = profileRes?.data?.data;
-        const member = memberRes?.data?.data;
-        const settings = notificationRes?.data?.data;
 
         setFormData((prev) => ({
           ...prev,
@@ -112,6 +111,8 @@ export default function SettingPage() {
           emailEnabled: settings?.emailEnabled ?? true,
           pushEnabled: settings?.pushEnabled ?? true,
         }));
+
+        setLoginHistory(Array.isArray(history) ? history : []);
       } catch (error) {
         console.error('Failed to load setting data', error);
         showError(getErrorMessage(error, 'Không tải được dữ liệu cài đặt.'));
@@ -119,7 +120,7 @@ export default function SettingPage() {
     };
 
     loadSettings();
-  }, [organizationId]);
+  }, [organizationId, showError]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -147,7 +148,7 @@ export default function SettingPage() {
 
   const handleSaveProfile = async () => {
     try {
-      await apiClient.put('/users/me/profile', {
+      await userSettingsApi.updateProfile({
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
@@ -165,7 +166,7 @@ export default function SettingPage() {
 
   const handleSaveNotificationSettings = async () => {
     try {
-      await apiClient.put('/users/me/notification-settings', notificationSettings);
+      await userSettingsApi.updateNotificationSettings(notificationSettings);
       showSuccess('Cập nhật cài đặt thông báo thành công.');
     } catch (error) {
       console.error('Failed to update notification settings', error);
@@ -184,7 +185,7 @@ export default function SettingPage() {
     }
 
     try {
-      await apiClient.put('/users/me/password', {
+      await userSettingsApi.changePassword({
         oldPassword: passwordForm.oldPassword,
         newPassword: passwordForm.newPassword,
       });
@@ -194,6 +195,38 @@ export default function SettingPage() {
       console.error('Failed to change password', error);
       showError(getErrorMessage(error, 'Đổi mật khẩu thất bại.'));
     }
+  };
+
+  const parseUserAgent = (userAgent = '') => {
+    const ua = userAgent.toLowerCase();
+
+    let browser = 'Unknown Browser';
+    if (ua.includes('edg/')) browser = 'Edge';
+    else if (ua.includes('chrome/') && !ua.includes('edg/')) browser = 'Chrome';
+    else if (ua.includes('safari/') && !ua.includes('chrome/')) browser = 'Safari';
+    else if (ua.includes('firefox/')) browser = 'Firefox';
+
+    let os = 'Unknown OS';
+    if (ua.includes('windows')) os = 'Windows';
+    else if (ua.includes('mac os') || ua.includes('macintosh')) os = 'macOS';
+    else if (ua.includes('linux')) os = 'Linux';
+    else if (ua.includes('android')) os = 'Android';
+    else if (ua.includes('iphone') || ua.includes('ipad') || ua.includes('ios')) os = 'iOS';
+
+    return `${browser} - ${os}`;
+  };
+
+  const formatLoginAt = (value) => {
+    if (!value) {
+      return 'Không rõ thời gian';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'Không rõ thời gian';
+    }
+
+    return date.toLocaleString('vi-VN');
   };
 
 const renderPersonalSettings = () => (
@@ -217,7 +250,7 @@ const renderPersonalSettings = () => (
     <Box>
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin cơ bản</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-        <TextField fullWidth label="Họ và tên" name="fullName" value={formData.fullName} onChange={handleFormChange} />
+        <TextField fullWidth label="Họ và tên" name="fullName" value={formData.fullName} InputProps={{ readOnly: true }} />
         <FormControl fullWidth>
           <InputLabel>Giới tính</InputLabel>
           <Select name="gender" value={formData.gender} label="Giới tính" onChange={handleFormChange}>
@@ -228,11 +261,11 @@ const renderPersonalSettings = () => (
         </FormControl>
 
         <TextField fullWidth label="Ngày sinh" name="birthDate" type="date"
-          value={formData.birthDate} onChange={handleFormChange} InputLabelProps={{ shrink: true }} />
+          value={formData.birthDate} InputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
         <TextField fullWidth label="Số điện thoại" name="phone" value={formData.phone} onChange={handleFormChange} />
 
-        <TextField fullWidth label="Mã số sinh viên" name="studentId" value={formData.studentId} onChange={handleFormChange} />
-        <TextField fullWidth label="Email" name="email" type="email" value={formData.email} onChange={handleFormChange} />
+        <TextField fullWidth label="Mã số sinh viên" name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
+        <TextField fullWidth label="Email" name="email" type="email" value={formData.email} InputProps={{ readOnly: true }} />
       </Box>
     </Box>
 
@@ -240,38 +273,14 @@ const renderPersonalSettings = () => (
     <Box>
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin học vấn</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-        <FormControl fullWidth>
-          <InputLabel>Khoa/Bộ môn</InputLabel>
-          <Select name="faculty" value={formData.faculty} label="Khoa/Bộ môn" onChange={handleFormChange}>
-            <MenuItem value="cs">Khoa Công nghệ Thông tin</MenuItem>
-            <MenuItem value="math">Khoa Toán</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel>Chương trình đào tạo</InputLabel>
-          <Select name="program" value={formData.program} label="Chương trình đào tạo" onChange={handleFormChange}>
-            <MenuItem value="standard">Chuẩn</MenuItem>
-            <MenuItem value="advanced">Nâng cao</MenuItem>
-          </Select>
-        </FormControl>
+        <TextField fullWidth label="Khoa/Bộ môn" name="faculty" value={formData.faculty} InputProps={{ readOnly: true }} />
+        <TextField fullWidth label="Chương trình đào tạo" name="program" value={formData.program} onChange={handleFormChange} />
 
-        <FormControl fullWidth>
-          <InputLabel>Khoá</InputLabel>
-          <Select name="batch" value={formData.batch} label="Khoá" onChange={handleFormChange}>
-            <MenuItem value="2022">2022</MenuItem>
-            <MenuItem value="2023">2023</MenuItem>
-          </Select>
-        </FormControl>
+        <TextField fullWidth label="Khoá" name="batch" value={formData.batch} InputProps={{ readOnly: true }} />
         <TextField fullWidth label="Năm tốt nghiệp" name="graduationYear" type="number"
           value={formData.graduationYear} onChange={handleFormChange} />
 
-        <FormControl fullWidth>
-          <InputLabel>Chuyên ngành</InputLabel>
-          <Select name="specialization" value={formData.specialization} label="Chuyên ngành" onChange={handleFormChange}>
-            <MenuItem value="ai">Trí tuệ nhân tạo</MenuItem>
-            <MenuItem value="web">Phát triển web</MenuItem>
-          </Select>
-        </FormControl>
+        <TextField fullWidth label="Chuyên ngành" name="specialization" value={formData.specialization} onChange={handleFormChange} />
         <FormControl fullWidth>
           <InputLabel>Trạng thái tốt nghiệp</InputLabel>
           <Select name="graduationStatus" value={formData.graduationStatus} label="Trạng thái tốt nghiệp" onChange={handleFormChange}>
@@ -316,18 +325,24 @@ const renderPersonalSettings = () => (
           Thiết bị đã đăng nhập
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {[
-            { device: 'Chrome - Windows', last: 'Lần cuối: 2 giờ trước' },
-            { device: 'Safari - macOS', last: 'Lần cuối: 30 phút trước' },
-            { device: 'Firefox - Linux', last: 'Lần cuối: 3 ngày trước' },
-          ].map(({ device, last }) => (
-            <Box key={device} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          {loginHistory.length === 0 && (
+            <Typography variant="body2" color="text.secondary">
+              Chưa có dữ liệu đăng nhập gần đây.
+            </Typography>
+          )}
+
+          {loginHistory.map((entry, index) => (
+            <Box key={entry?.id ?? `${entry?.loginAt ?? 'history'}-${index}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5 }}>
               <Box>
-                <Typography variant="h5">{device}</Typography>
-                <Typography variant="caption" color="text.secondary">{last}</Typography>
+                <Typography variant="h5">{parseUserAgent(entry?.userAgent)}</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Lần cuối: {formatLoginAt(entry?.loginAt)} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
+                </Typography>
               </Box>
-              <Button variant="outlined" color="error" size="small">Đăng xuất</Button>
+              <Button variant="outlined" color="inherit" size="small" disabled>
+                Theo dõi
+              </Button>
             </Box>
           ))}
         </Box>
