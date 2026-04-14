@@ -98,7 +98,7 @@ const LoginPage = () => {
         <Input
           label="Email"
           placeholder="email@example.com"
-          type="email"
+          // type="email"
           error={!!errors.email}
           helperText={errors.email?.message}
           {...register('email')}

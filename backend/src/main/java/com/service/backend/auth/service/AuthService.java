@@ -26,7 +26,7 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.entity.UserLoginHistory;
-
+import com.service.backend.shared.enums.UserStatus;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -45,8 +45,8 @@ public class AuthService {
     private static final String OTP_CACHE_USER_ID_FIELD = "userId";
     private static final int OTP_LENGTH = 6;
     private static final int OTP_MAX_VALUE = 1000000;
-    private static final int USERNAME_MAX_ATTEMPTS = 20;
     private static final int RANDOM_USERNAME_SUFFIX_BYTES = 4;
+
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -100,7 +100,7 @@ public class AuthService {
                     }
                     
                     // Check if account is verified and active
-                    if (user.getStatus() != com.service.backend.shared.enums.UserStatus.ACTIVE) {
+                    if (user.getStatus() != UserStatus.ACTIVE) {
                         logger.warn("Login failed - account not active for email: {}. Status: {}", email, user.getStatus());
                         return Mono.error(new RuntimeException(ErrorCode.ACCOUNT_NOT_VERIFIED.getMessage()));
                     }
@@ -123,7 +123,7 @@ public class AuthService {
                     }
                     
                     // Check if account is verified and active
-                    if (user.getStatus() != com.service.backend.shared.enums.UserStatus.ACTIVE) {
+                    if (user.getStatus() != UserStatus.ACTIVE) {
                         logger.warn("Login failed - account not active for username: {}. Status: {}", userName, user.getStatus());
                         return Mono.error(new RuntimeException(ErrorCode.ACCOUNT_NOT_VERIFIED.getMessage()));
                     }
@@ -312,14 +312,14 @@ public class AuthService {
     }
 
     private Mono<User> loginExistingGoogleUser(User user, String pictureUrl) {
-        if (user.getStatus() == com.service.backend.shared.enums.UserStatus.BANNED
-                || user.getStatus() == com.service.backend.shared.enums.UserStatus.SUSPENDED
-                || user.getStatus() == com.service.backend.shared.enums.UserStatus.DELETED
-                || user.getStatus() == com.service.backend.shared.enums.UserStatus.DISABLED) {
+        if (user.getStatus() == UserStatus.BANNED
+                || user.getStatus() == UserStatus.SUSPENDED
+                || user.getStatus() == UserStatus.DELETED
+                || user.getStatus() == UserStatus.DISABLED) {
             return Mono.error(new RuntimeException("Account is not allowed to login with Google"));
         }
 
-        Mono<Void> activateIfNeeded = user.getStatus() == com.service.backend.shared.enums.UserStatus.ACTIVE
+        Mono<Void> activateIfNeeded = user.getStatus() == UserStatus.ACTIVE
                 ? Mono.empty()
                 : authRepository.activateUserById(user.getId());
 
@@ -362,19 +362,9 @@ public class AuthService {
 
     private Mono<String> generateUniqueUsername(String email) {
         String base = buildUsernameSeedFromEmail(email);
-        return findUniqueUsername(base, 0)
-                .switchIfEmpty(Mono.just(base + randomUsernameSuffix()));
+        return Mono.just(base + randomUsernameSuffix());
     }
 
-    private Mono<String> findUniqueUsername(String base, int attempt) {
-        if (attempt >= USERNAME_MAX_ATTEMPTS) {
-            return Mono.empty();
-        }
-
-        String candidate = attempt == 0 ? base : base + randomUsernameSuffix();
-        return authRepository.existsByUserName(candidate)
-                .flatMap(exists -> exists ? findUniqueUsername(base, attempt + 1) : Mono.just(candidate));
-    }
 
     private String buildUsernameSeedFromEmail(String email) {
         String localPart = email == null ? "" : email.split("@")[0];
