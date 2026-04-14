@@ -30,6 +30,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Mono<Boolean> existsByEmailOrUserName(String email, String userName);
 
     /**
+     * Check if username already exists
+     */
+    Mono<Boolean> existsByUserName(String userName);
+
+    /**
      * Find active user by email
      */
     @Query("SELECT * FROM users WHERE email = :email AND status = 'ACTIVE'")
@@ -102,6 +107,19 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
            "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
+
+    /**
+     * Register new user from Google login with active status
+     * Returns the created user ID
+     */
+    @Query("INSERT INTO users (email, user_name, password_hash, role, status, avatar_url, created_at, updated_at) " +
+           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "RETURNING id")
+    Mono<Integer> registerGoogleUser(
+            @Param("email") String email,
+            @Param("userName") String userName,
+            @Param("passwordHash") String passwordHash,
+            @Param("avatarUrl") String avatarUrl);
     
     /**
      * Get organization IDs for a user from organization_members table

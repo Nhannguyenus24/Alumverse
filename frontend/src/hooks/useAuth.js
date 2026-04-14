@@ -24,6 +24,22 @@ export const useAuth = () => {
   const setError = (message) => store.setError(message);
   const clearError = () => store.setError(null);
 
+  const applyAccessTokenToStore = (responseData, fallbackMessage) => {
+    const accessToken = responseData?.data?.accessToken ?? null;
+    const authUser = userFromAccessToken(accessToken);
+    if (!accessToken || !authUser) {
+      const msg = responseData?.message ?? fallbackMessage;
+      store.setError(msg);
+      store.reset();
+      return { ok: false, error: msg };
+    }
+    store.setUser(authUser);
+    store.setToken(accessToken);
+    store.setLoading(false);
+    store.setError(null);
+    return { ok: true, data: { token: accessToken, user: authUser } };
+  };
+
   const login = async (payload) => {
     const parsed = loginSchema.safeParse(payload);
     if (!parsed.success) {
@@ -34,21 +50,28 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/login', parsed.data);
-      const accessToken = data?.data?.accessToken ?? null;
-      const authUser = userFromAccessToken(accessToken);
-      if (!accessToken || !authUser) {
-        const msg = data?.message ?? 'Đăng nhập thất bại';
-        store.setError(msg);
-        store.reset();
-        return { ok: false, error: msg };
-      }
-      store.setUser(authUser);
-      store.setToken(accessToken);
-      store.setLoading(false);
-      store.setError(null);
-      return { ok: true, data: { token: accessToken, user: authUser } };
+      return applyAccessTokenToStore(data, 'Đăng nhập thất bại');
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Đăng nhập thất bại';
+      store.reset();
+      store.setError(message);
+      return { ok: false, error: message };
+    }
+  };
+
+  const loginWithGoogle = async (idToken) => {
+    if (!idToken || typeof idToken !== 'string') {
+      const msg = 'Google ID token không hợp lệ';
+      store.setError(msg);
+      return { ok: false, error: msg };
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await apiClient.post('/auth/google-login', { idToken });
+      return applyAccessTokenToStore(data, 'Đăng nhập Google thất bại');
+    } catch (err) {
+      const message = err.response?.data?.message ?? err.message ?? 'Đăng nhập Google thất bại';
       store.reset();
       store.setError(message);
       return { ok: false, error: message };
@@ -191,6 +214,7 @@ export const useAuth = () => {
     setError,
     clearError,
     login,
+    loginWithGoogle,
     register,
     forgotPassword,
     verifySignupCode,

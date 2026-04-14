@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { GoogleLogin } from '@react-oauth/google';
 import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import Page from '../../components/Page';
@@ -13,7 +14,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
-  const { login, isLoading: loading, setError, forgotPassword } = useAuth();
+  const { login, loginWithGoogle, isLoading: loading, setError, forgotPassword } = useAuth();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const redirectTo = location.state?.from?.pathname || '/dashboard';
 
@@ -45,6 +47,28 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+    if (!idToken) {
+      enqueueSnackbar('Không thể lấy Google token.', { variant: 'error' });
+      return;
+    }
+
+    setError(null);
+    const result = await loginWithGoogle(idToken);
+    if (result?.ok) {
+      enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
+      navigate(redirectTo, { replace: true });
+      return;
+    }
+
+    enqueueSnackbar(result?.error ?? 'Đăng nhập Google thất bại.', { variant: 'error' });
+  };
+
+  const handleGoogleError = () => {
+    enqueueSnackbar('Đăng nhập Google thất bại.', { variant: 'error' });
+  };
+
   return (
     <Page
       title="Đăng nhập"
@@ -74,7 +98,7 @@ const LoginPage = () => {
         <Input
           label="Email"
           placeholder="email@example.com"
-          type="email"
+          // type="email"
           error={!!errors.email}
           helperText={errors.email?.message}
           {...register('email')}
@@ -124,23 +148,32 @@ const LoginPage = () => {
           <Divider sx={{ flex: 1 }} />
         </Box>
 
-        <Button
-          type="button"
-          variant="outlined"
-          fullWidth
-          size="large"
-          startIcon={<GoogleIcon />}
-          sx={{ textTransform: 'none', borderColor: 'divider' }}
-        >
-          <Box component="span" sx={{ fontWeight: 800, letterSpacing: 0.2 }}>
-            <Box component="span" sx={{ color: '#4285F4' }}>G</Box>
-            <Box component="span" sx={{ color: '#EA4335' }}>o</Box>
-            <Box component="span" sx={{ color: '#FBBC05' }}>o</Box>
-            <Box component="span" sx={{ color: '#4285F4' }}>g</Box>
-            <Box component="span" sx={{ color: '#34A853' }}>l</Box>
-            <Box component="span" sx={{ color: '#EA4335' }}>e</Box>
+        {googleClientId ? (
+          <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              size="large"
+              shape="pill"
+              text="signin_with"
+              locale="vi"
+              width="100%"
+            />
           </Box>
-        </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outlined"
+            fullWidth
+            size="large"
+            startIcon={<GoogleIcon />}
+            disabled
+            sx={{ textTransform: 'none', borderColor: 'divider' }}
+          >
+            Google chưa được cấu hình
+          </Button>
+        )}
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
           Bạn chưa có tài khoản?{' '}

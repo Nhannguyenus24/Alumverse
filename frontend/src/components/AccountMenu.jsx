@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   Box,
@@ -14,8 +14,13 @@ import { useAuth } from "../hooks/useAuth";
 
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const open = Boolean(anchorEl);
   const { logout } = useAuth();
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [avatarUrl]);
 
   const handleOpen = (event) => {
     event.stopPropagation();
@@ -37,6 +42,12 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
     justifyContent: "center",
   };
 
+  const resolvedAvatarUrl = !avatarLoadFailed && avatarUrl ? avatarUrl : undefined;
+  const avatarImgProps = {
+    referrerPolicy: "no-referrer",
+    onError: () => setAvatarLoadFailed(true),
+  };
+
   return (
     <>
       <Box
@@ -53,15 +64,14 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
         aria-controls={open ? "account-menu" : undefined}
       >
         <Box sx={{ width: 36, height: 36, ...avatarSx }}>
-          {avatarUrl ? (
-            <Avatar
-              src={avatarUrl}
-              alt={displayName}
-              sx={{ width: "100%", height: "100%" }}
-            />
-          ) : (
+          <Avatar
+            src={resolvedAvatarUrl}
+            alt={displayName}
+            slotProps={{ img: avatarImgProps }}
+            sx={{ width: "100%", height: "100%" }}
+          >
             <PersonIcon sx={{ fontSize: 22 }} />
-          )}
+          </Avatar>
         </Box>
         <Box
           sx={{
@@ -132,10 +142,11 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           }}
         >
           <Avatar
-            src={avatarUrl || undefined}
+            src={resolvedAvatarUrl}
+            slotProps={{ img: avatarImgProps }}
             sx={{ ...avatarSx, width: 40, height: 40 }}
           >
-            {!avatarUrl && <PersonIcon sx={{ fontSize: 22 }} />}
+            <PersonIcon sx={{ fontSize: 22 }} />
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography
