@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.service.backend.admin.entity.Organization;
+import com.service.backend.organization.entity.Organization;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminOrganizationService;
 import com.service.backend.shared.dto.ApiResponse;

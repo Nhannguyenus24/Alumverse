@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.service.backend.admin.entity.Organization;
+import com.service.backend.organization.entity.Organization;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
 
