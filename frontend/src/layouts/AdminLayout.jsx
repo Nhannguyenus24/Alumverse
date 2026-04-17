@@ -6,8 +6,10 @@ import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import TopicOutlinedIcon from '@mui/icons-material/TopicOutlined';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
-import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import Page from '../components/Page';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
@@ -100,8 +102,14 @@ const PaperNav = ({isAdmin}) => (
           label="Forum categories"
         />
         <NavItem to="/admin/organizations" icon={<BusinessOutlinedIcon fontSize="small" />} label="Organizations" />
+        <NavItem to="/admin/events" icon={<EventNoteOutlinedIcon fontSize="small" />} label="Events" />
+        <NavItem to="/admin/mentorship" icon={<SchoolOutlinedIcon fontSize="small" />} label="Mentorship" />
+        <NavItem
+          to="/admin/fundraising"
+          icon={<VolunteerActivismOutlinedIcon fontSize="small" />}
+          label="Fundraising"
+        />
         <NavItem to="/admin/audit-logs" icon={<GavelOutlinedIcon fontSize="small" />} label="Audit logs" />
-        <NavItem to="/admin/analytics" icon={<AnalyticsOutlinedIcon fontSize="small" />} label="Analytics" />
       </>
     ) : null}
   </Box>
