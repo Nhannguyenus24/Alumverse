@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -18,7 +18,7 @@ const CHANNEL_OPTIONS = ['Cựu sinh viên', 'Kênh thành tựu'];
 const TOPIC_OPTIONS = ['Education', 'Jobs', 'Chances'];
 
 const PostArticlePage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const fileInputRef = useRef(null);
 
   const [title, setTitle] = useState('');

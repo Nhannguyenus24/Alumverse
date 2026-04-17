@@ -167,7 +167,7 @@ const MaintenancePage = Loadable(
 
 export const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/:slug",
     element: <MainLayout />,
     children: [
       {
@@ -203,7 +203,7 @@ export const router = createBrowserRouter([
                     path: "create-post",
                     element: (
                       <Navigate
-                        to="/forum/alumni/career/create-topic"
+                        to="../create-topic"
                         replace
                       />
                     ),
@@ -365,80 +365,6 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: "admin",
-        element: (
-          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
-            <AdminLayout />
-          </ProtectedRoute>
-        ),
-        children: [
-          {
-            index: true,
-            element: <AdminDashboardPage />,
-          },
-          {
-            path: "users",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminUsersListPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: "users/:userId",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminUserDetailPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: "forum/posts",
-            element: <AdminForumPostsPage />,
-          },
-          {
-            path: "forum/topics",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminForumTopicsPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: "forum/categories",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminForumCategoriesPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: "organizations",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminOrganizationsPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: "audit-logs",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminAuditLogsPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
-            path: "analytics",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminAnalyticsPage />
-              </ProtectedRoute>
-            ),
-          },
-        ],
-      },
-      {
         path: "donations",
         children: [
           {
@@ -459,7 +385,7 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (
           <ProtectedRoute>
-            <HomePage />
+            <DashboardPage />
           </ProtectedRoute>
         ),
       },
@@ -478,7 +404,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: "/auth",
+    path: "/:slug/auth",
     element: <AuthLayout />,
     children: [
       {
@@ -522,6 +448,88 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: "users",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUsersListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "users/:userId",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUserDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "forum/posts",
+        element: <AdminForumPostsPage />,
+      },
+      {
+        path: "forum/topics",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminForumTopicsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "forum/categories",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminForumCategoriesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "organizations",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminOrganizationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "audit-logs",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminAuditLogsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "analytics",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminAnalyticsPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/",
+    element: <Navigate to="/404" replace />,
+  },
+  {
+    path: "/404",
+    element: <NotFoundPage />,
   },
   {
     path: "*",

@@ -6,7 +6,7 @@ import {
   Typography,
   Avatar
 } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -48,7 +48,7 @@ const TAGS = [
 /* ================= COMPONENT ================= */
 
 const MentorshipProfilePage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   return (
     <Page title="Profile Cố vấn">

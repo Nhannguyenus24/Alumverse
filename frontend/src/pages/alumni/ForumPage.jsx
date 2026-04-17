@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -27,7 +27,7 @@ const sectionsToManageTopics = (sections) =>
 
 const ForumPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showWarning, showInfo } = useNotification();
 
   const selectedFilterId = useMemo(() => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -12,7 +12,7 @@ import {
 import Page from '../../components/Page';
 
 const RequestAchievementsPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

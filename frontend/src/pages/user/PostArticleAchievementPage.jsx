@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
@@ -9,7 +9,7 @@ import { useCreateAchievement } from '../../hooks/news/useCreateAchievement';
 import { useNotification } from '../../hooks/useNotification';
 
 const PostAchievementPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createAchievement, isPending } = useCreateAchievement();
 

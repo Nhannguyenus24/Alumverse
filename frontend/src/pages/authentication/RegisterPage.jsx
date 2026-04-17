@@ -1,7 +1,7 @@
 import { useForm, Controller } from 'react-hook-form';
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -11,6 +11,7 @@ import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
 import { registerSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
@@ -19,7 +20,8 @@ const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
   const { register: registerUser, forgotPassword, isLoading: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
@@ -212,7 +214,7 @@ const RegisterPage = () => {
           Bạn đã có tài khoản?{' '}
           <Typography
             component={Link}
-            to="/auth/login"
+            to={toOrgPath('/auth/login')}
             variant="body2"
             color="primary.main"
             fontWeight={600}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -81,7 +81,7 @@ const demoActivity = () => ({
 
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { auditLogs } = useAdminSystemContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();

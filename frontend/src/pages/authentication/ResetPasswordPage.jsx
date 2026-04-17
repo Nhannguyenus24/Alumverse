@@ -1,15 +1,17 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { changePasswordSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
 const ResetPasswordPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
   const { resetPassword, isLoading: loading, setError } = useAuth();
 
@@ -107,7 +109,7 @@ const ResetPasswordPage = () => {
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
           <Typography
             component={Link}
-            to="/dashboard"
+            to={toOrgPath('/dashboard')}
             variant="body2"
             color="primary.main"
             fontWeight={600}

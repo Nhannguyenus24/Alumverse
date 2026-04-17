@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -21,7 +21,7 @@ import { useNotification } from '../../hooks/useNotification';
 
 
 const ForumAlumniCreateTopicPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
   const organizationId = user?.organizationId ?? 1;
   const {

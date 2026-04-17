@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GroupsIcon from '@mui/icons-material/Groups';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -67,7 +67,7 @@ const ACHIEVEMENT_ARTICLES = Array(6).fill({
 
 
 const HonorsPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
 
   const [filters, setFilters] = useState({

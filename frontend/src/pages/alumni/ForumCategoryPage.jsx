@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router';
+import { useParams, useLocation } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
@@ -26,7 +26,7 @@ const formatTopicDate = (iso) => {
 
 const ForumCategoryPage = () => {
   const { categoryId: categoryIdParam } = useParams();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { showError } = useNotification();

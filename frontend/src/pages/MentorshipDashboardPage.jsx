@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   Box,
   Button,
@@ -47,7 +47,7 @@ const STATS = [
 /* ================= COMPONENT ================= */
 
 const MentorshipDashboardPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
   const [selectedSidebar, setSelectedSidebar] = useState('mentorship');
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   Box,
   Button,
@@ -60,7 +60,7 @@ const AVAILABILITY = ['Sáng', 'Chiều', 'Tối', 'Cuối tuần'];
 /* ================= COMPONENT ================= */
 
 const MentorshipSearchPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
 
   const [selectedSidebar, setSelectedSidebar] = useState('mentorship');

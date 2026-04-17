@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -81,7 +81,7 @@ const ACADEMICS_ARTICLES = Array(3).fill({
 
 
 const DevelopmentAcademicsPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
 
   const [filters, setFilters] = useState({

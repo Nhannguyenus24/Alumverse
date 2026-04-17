@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import LocalActivityIcon from '@mui/icons-material/LocalActivity';
 import EventIcon from '@mui/icons-material/Event';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -67,7 +67,7 @@ const NEWS_ARTICLES = Array(3).fill({
 
 
 const ActivitiesPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
 
   const [filters, setFilters] = useState({

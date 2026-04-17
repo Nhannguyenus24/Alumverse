@@ -1,9 +1,9 @@
 import { Breadcrumbs, Link, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const Breadcrumb = ({ items = [], uppercase = false, color = 'text', fontSize }) => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   // Maximum 3 levels
   const displayItems = items.slice(-3);

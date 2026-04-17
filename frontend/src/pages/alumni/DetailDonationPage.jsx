@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Container,
@@ -48,7 +48,7 @@ const DONATION_DETAIL = {
 };
 
 const DetailDonationPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [donationAmount, setDonationAmount] = useState('');
 
   const handleDonate = () => {

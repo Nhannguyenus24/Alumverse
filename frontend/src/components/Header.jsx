@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import {
   AppBar, Toolbar, Box, Typography,
   Button, IconButton, Drawer, List, 
@@ -15,6 +15,7 @@ import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import { useAuth } from '../hooks/useAuth';
+import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -51,7 +52,8 @@ const NAV_ITEMS = [
 
 const Header = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
   // State for Scroll and UI
@@ -123,7 +125,7 @@ const Header = () => {
                      px: { xs: 1.5, sm: 2 },
                      justifyContent: 'space-between', gap: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-          <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
             <Logo 
               variant="image" 
               src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC} 
@@ -143,7 +145,7 @@ const Header = () => {
                 onMouseLeave={() => setHoveredNav(null)}
                 sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
               >
-                <Button component={Link} to={item.href} sx={navButtonSx}>
+                <Button component={Link} to={toOrgPath(item.href)} sx={navButtonSx}>
                   {item.label}
                 </Button>
 
@@ -160,7 +162,7 @@ const Header = () => {
                     }} >
                     {item.children.map((child) => (
                       <Button
-                        key={child.label} component={Link} to={child.href}
+                        key={child.label} component={Link} to={toOrgPath(child.href)}
                         sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
                               textTransform: 'none', color: 'text.primary', width: '100%',
                               '&:hover': { bgcolor: 'action.hover' } }}
@@ -198,7 +200,7 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <Button component={Link} to="/auth/register"
+                  <Button component={Link} to={toOrgPath('/auth/register')}
                           variant="outlined" size="small"
                           sx={{ 
                             fontWeight: 600, 
@@ -209,7 +211,7 @@ const Header = () => {
                   >
                     Đăng ký
                   </Button>
-                  <Button component={Link} to="/auth/login"
+                  <Button component={Link} to={toOrgPath('/auth/login')}
                           variant="contained" size="small"
                           sx={{ 
                             fontWeight: 600,
@@ -265,7 +267,7 @@ const Header = () => {
               <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
                 <List component="div" disablePadding>
                   {item.children.map((child) => (
-                    <ListItemButton key={child.label} component={Link} to={child.href} 
+                    <ListItemButton key={child.label} component={Link} to={toOrgPath(child.href)} 
                                     onClick={closeDrawer} sx={{ pl: 4 }}>
                       <ListItemText primary={child.label} primaryTypographyProps={{ variant: 'body2' }} />
                     </ListItemButton>
@@ -275,7 +277,7 @@ const Header = () => {
             </Box>
             ) : (
               <ListItemButton key={item.label} onClick={closeDrawer}
-                              component={Link} to={item.href}>
+                              component={Link} to={toOrgPath(item.href)}>
                 <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 500 }} />
               </ListItemButton>
             )
@@ -304,12 +306,12 @@ const Header = () => {
             </Box>
           ) : (
             <>
-              <Button component={Link} to="/auth/register" variant="outlined"
+                    <Button component={Link} to={toOrgPath('/auth/register')} variant="outlined"
                       fullWidth onClick={closeDrawer}
               >
                 Đăng ký
               </Button>
-              <Button component={Link} to="/auth/login" variant="contained"
+                    <Button component={Link} to={toOrgPath('/auth/login')} variant="contained"
                       fullWidth onClick={closeDrawer}
               >
                 Đăng nhập

@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { GoogleLogin } from '@react-oauth/google';
 import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@mui/material';
@@ -9,9 +9,11 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { loginSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { login, loginWithGoogle, isLoading: loading, setError, forgotPassword } = useAuth();
@@ -119,7 +121,7 @@ const LoginPage = () => {
           />
           <Typography
             component={Link}
-            to="/auth/forgot-password"
+            to={toOrgPath('/auth/forgot-password')}
             variant="body2"
             color="primary.main"
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
@@ -179,7 +181,7 @@ const LoginPage = () => {
           Bạn chưa có tài khoản?{' '}
           <Typography
             component={Link}
-            to="/auth/register"
+            to={toOrgPath('/auth/register')}
             variant="body2"
             color="primary.main"
             fontWeight={600}

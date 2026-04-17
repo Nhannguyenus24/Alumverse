@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
@@ -9,7 +9,7 @@ import { useCreateLearningResource } from '../../hooks/news/useCreateLearningRes
 import { useNotification } from '../../hooks/useNotification';
 
 const PostLearningPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createLearning, isPending } = useCreateLearningResource();
 

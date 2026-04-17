@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
@@ -27,7 +27,7 @@ const formatTopicDate = (iso) => {
 };
 
 const ForumAlumniCareerPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
   const { user } = useAuth();
   const { showError } = useNotification();

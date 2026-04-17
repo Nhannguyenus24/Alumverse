@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -51,7 +51,7 @@ const formatDate = (value) => {
 };
 
 const AdminUsersListPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const {
     users,

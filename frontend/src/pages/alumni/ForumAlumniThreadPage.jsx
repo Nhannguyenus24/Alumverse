@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -312,7 +312,7 @@ const toPlainText = (value) => {
 
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { threadId } = useParams();
   const topicId = useMemo(() => {
     const id = parseInt(threadId, 10);
