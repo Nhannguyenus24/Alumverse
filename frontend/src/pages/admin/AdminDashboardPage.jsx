@@ -3,7 +3,6 @@ import { Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
-import AnalyticsOutlinedIcon from '@mui/icons-material/AnalyticsOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDashboardSections from '../../components/admin/AdminDashboardSections';
@@ -135,16 +134,6 @@ const AdminDashboardPage = () => {
                   disabled={!isAdmin}
                 >
                   Audit logs
-                </Button>
-                <Button
-                  component={NavLink}
-                  to="/admin/analytics"
-                  variant="outlined"
-                  startIcon={<AnalyticsOutlinedIcon />}
-                  sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
-                  disabled={!isAdmin}
-                >
-                  Analytics
                 </Button>
               </Box>
             </Box>

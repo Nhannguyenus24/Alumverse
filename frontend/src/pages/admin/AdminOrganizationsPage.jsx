@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import { Typography } from '@mui/material';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminOrganizationMasterDetail from '../../components/admin/AdminOrganizationMasterDetail';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
@@ -26,9 +27,9 @@ const AdminOrganizationsPage = () => {
 
   if (loading) {
     return (
-      <AdminSectionPanel title="Organizations" subtitle="Loading…">
+      <AdminSectionPanel title="Organizations" subtitle="Loading...">
         <Typography variant="body2" color="text.secondary">
-          Loading organization data…
+          Loading organization data...
         </Typography>
       </AdminSectionPanel>
     );
@@ -37,7 +38,7 @@ const AdminOrganizationsPage = () => {
   return (
     <AdminSectionPanel
       title="Organizations"
-      subtitle="Master–detail view for organizations connected to admin metrics data."
+      subtitle="Master-detail view for organizations connected to admin metrics data."
     >
       <AdminOrganizationMasterDetail
         organizations={organizations}
@@ -45,8 +46,8 @@ const AdminOrganizationsPage = () => {
         onSelectOrganizationId={setSelectedOrganizationId}
         onDemoAction={(action, org) => {
           const labels = {
-            edit: `Demo: edit “${org.name}”`,
-            toggle: `Demo: toggle status for “${org.name}”`,
+            edit: `Demo: edit "${org.name}"`,
+            toggle: `Demo: toggle status for "${org.name}"`,
             details: `Demo: full details #${org.id}`,
           };
           enqueueSnackbar(labels[action] || 'Demo action', { variant: 'info' });

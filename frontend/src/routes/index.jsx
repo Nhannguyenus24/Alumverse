@@ -72,8 +72,10 @@ const AdminForumPostsPage = Loadable(lazy(() => import("../pages/admin/AdminForu
 const AdminForumTopicsPage = Loadable(lazy(() => import("../pages/admin/AdminForumTopicsPage")));
 const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/AdminForumCategoriesPage")));
 const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
+const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
+const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
+const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
-const AdminAnalyticsPage = Loadable(lazy(() => import("../pages/admin/AdminAnalyticsPage")));
 const CreateDonationPage = Loadable(
   lazy(() => import("../pages/admin/CreateDonationPage")),
 );
@@ -421,18 +423,34 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "audit-logs",
+            path: "events",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminAuditLogsPage />
+                <AdminEventsPage />
               </ProtectedRoute>
             ),
           },
           {
-            path: "analytics",
+            path: "mentorship",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <AdminAnalyticsPage />
+                <AdminMentorshipPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "fundraising",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminFundraisingsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "audit-logs",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminAuditLogsPage />
               </ProtectedRoute>
             ),
           },
