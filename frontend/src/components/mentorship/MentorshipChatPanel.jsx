@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useSnackbar } from "notistack";
 import {
   Avatar,
   Box,
@@ -44,10 +46,25 @@ export default function MentorshipChatPanel({
   navigate,
   activeChatId,
 }) {
+  const { enqueueSnackbar } = useSnackbar();
+  const listErrorShownRef = useRef(false);
   const theme = useTheme();
   const paper = theme.palette.background.paper;
   const bg = theme.palette.background.default;
   const grey200 = theme.palette.grey[200];
+
+  useEffect(() => {
+    if (mainView === "empty" && isError && privateChats.length === 0) {
+      if (!listErrorShownRef.current) {
+        enqueueSnackbar(errorMessage ?? "Không tải được danh sách. Thử lại sau.", { variant: "error" });
+        listErrorShownRef.current = true;
+      }
+      return;
+    }
+    if (!isError) {
+      listErrorShownRef.current = false;
+    }
+  }, [mainView, isError, errorMessage, privateChats.length, enqueueSnackbar]);
 
   return (
     <Box

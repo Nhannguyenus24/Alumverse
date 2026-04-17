@@ -66,4 +66,122 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     @Query("UPDATE forum_posts SET answer_to_post_id = :answerToPostId, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Integer> setAnswerToPost(@Param("id") Integer id, @Param("answerToPostId") Integer answerToPostId);
 
+    /**
+     * Find forum posts created yesterday
+     */
+    @Query("SELECT * FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false ORDER BY created_at DESC")
+    Flux<ForumPost> findPostsCreatedYesterday();
+
+    /**
+     * Find forum posts created yesterday with pagination
+     */
+    @Query("SELECT * FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findPostsCreatedYesterdayWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
+     * Count posts created yesterday
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false")
+    Mono<Long> countPostsCreatedYesterday();
+
+    /**
+     * Find all banned forum posts with pagination
+     */
+    @Query("SELECT * FROM forum_posts WHERE is_banned = true ORDER BY updated_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findAllBannedPostsWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
+     * Count all banned forum posts
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE is_banned = true")
+    Mono<Long> countBannedPosts();
+
+    // ========== STATISTICS QUERIES ==========
+
+    /**
+     * Count posts created today
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE")
+    Mono<Long> countPostsCreatedToday();
+
+    /**
+     * Find the topic_id with the most posts (returns single topic_id)
+     */
+    @Query("SELECT topic_id FROM forum_posts WHERE is_banned = false GROUP BY topic_id ORDER BY COUNT(*) DESC LIMIT 1")
+    Mono<Integer> findTopicIdWithMostPosts();
+
+    /**
+     * Count posts for a specific topic
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false")
+    Mono<Long> countActivePostsByTopicId(@Param("topicId") Integer topicId);
+
+    /**
+     * Count posts belonging to topics under a specific category
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.category_id = :categoryId AND fp.is_banned = false")
+    Mono<Long> countPostsByCategoryId(@Param("categoryId") Integer categoryId);
+
+    /**
+     * Find top 10 contributor member IDs for a given month and year, ordered by post count DESC.
+     * Returns author_member_id values.
+     */
+    @Query("SELECT author_member_id FROM forum_posts " +
+           "WHERE EXTRACT(MONTH FROM created_at) = :month " +
+           "AND EXTRACT(YEAR FROM created_at) = :year " +
+           "AND is_banned = false " +
+           "GROUP BY author_member_id " +
+           "ORDER BY COUNT(*) DESC " +
+           "LIMIT 10")
+    Flux<Integer> findTopContributorMemberIds(@Param("month") int month, @Param("year") int year);
+
+    /**
+     * Count posts by a specific author in a given month/year
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts " +
+           "WHERE author_member_id = :authorMemberId " +
+           "AND EXTRACT(MONTH FROM created_at) = :month " +
+           "AND EXTRACT(YEAR FROM created_at) = :year " +
+           "AND is_banned = false")
+    Mono<Long> countPostsByAuthorInMonth(
+            @Param("authorMemberId") Integer authorMemberId,
+            @Param("month") int month,
+            @Param("year") int year);
+
+    /**
+     * Count distinct active users (who posted) in a given month/year
+     */
+    @Query("SELECT COUNT(DISTINCT author_member_id) FROM forum_posts " +
+           "WHERE EXTRACT(MONTH FROM created_at) = :month " +
+           "AND EXTRACT(YEAR FROM created_at) = :year " +
+           "AND is_banned = false")
+    Mono<Long> countDistinctActiveUsersInMonth(@Param("month") int month, @Param("year") int year);
+
+    /**
+     * Count total posts in a given month/year
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts " +
+           "WHERE EXTRACT(MONTH FROM created_at) = :month " +
+           "AND EXTRACT(YEAR FROM created_at) = :year")
+    Mono<Long> countPostsInMonth(@Param("month") int month, @Param("year") int year);
+
+    /**
+     * Count distinct active forum users in a specific organization
+     * (users who have posted at least once, where those users belong to the given organization)
+     */
+    @Query("SELECT COUNT(DISTINCT fp.author_member_id) FROM forum_posts fp " +
+           "JOIN organization_members om ON fp.author_member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "AND fp.is_banned = false")
+    Mono<Long> countActiveForumUsersByOrganization(@Param("organizationId") Integer organizationId);
+
 }
+

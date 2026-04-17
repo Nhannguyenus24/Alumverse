@@ -54,7 +54,6 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user } = useAuth();
-
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
@@ -142,7 +141,7 @@ const Header = () => {
                 key={item.label}
                 onMouseEnter={() => item.children && setHoveredNav(item.label)}
                 onMouseLeave={() => setHoveredNav(null)}
-                sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}
+                sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
               >
                 <Button component={Link} to={item.href} sx={navButtonSx}>
                   {item.label}
@@ -153,10 +152,11 @@ const Header = () => {
                     onMouseEnter={() => setHoveredNav(item.label)}
                     onMouseLeave={() => setHoveredNav(null)}
                     sx={{
-                      position: 'absolute', top: '150%', pt: 1, left: '50%', transform: 'translateX(-50%)',
+                      position: 'absolute', top: '100%', pt: 1, left: '50%', transform: 'translateX(-50%)',
                       display: 'flex', flexDirection: 'column', bgcolor: 'background.paper',
                       borderRadius: 1, boxShadow: 3, py: 0.5, px: 0.5,
                       width: 'max-content', minWidth: 180, zIndex: 10,
+                      border: '1px solid', borderColor: 'divider'
                     }} >
                     {item.children.map((child) => (
                       <Button
@@ -188,7 +188,7 @@ const Header = () => {
 
               {isAuthenticated ? (
                 <>
-                  <Notification sx={{ color: headerTextColor }} />
+                  <Notification headerTextColor={headerTextColor} />
                   <IconButton size="small" sx={{ color: headerTextColor }}>
                     <EmailOutlinedIcon fontSize="small" />
                   </IconButton>

@@ -214,7 +214,7 @@ const ForumAlumniCareerPage = () => {
                       borderColor: 'divider',
                     }}
                   >
-                    <Typography color="error">Không thể tải danh sách chủ đề.</Typography>
+                    <Typography color="text.secondary">Không thể tải danh sách chủ đề.</Typography>
                   </Box>
                 )}
                 {topics.map((topic) => (

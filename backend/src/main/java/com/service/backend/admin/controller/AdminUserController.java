@@ -166,6 +166,10 @@ public class AdminUserController {
         return adminUserService.createOrganizationMember(
                         request.getOrganizationId(),
                         request.getUserId(),
+                        request.getGraduatedYear(),
+                        request.getGraduationStatus(),
+                        request.getProgram(),
+                        request.getMajor(),
                         request.getVerificationLevel(),
                         request.getStatus())
                 .map(success -> {

@@ -4,7 +4,7 @@ import useAuthStore from '../stores/authStore';
 const BASE_URL = '/api';
 
 // Exact paths — không dùng includes() để tránh substring bypass
-const AUTH_WHITELIST = ['/auth/login', '/auth/refresh'];
+const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh'];
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useSnackbar } from "notistack";
 import {
   Avatar,
   Box,
@@ -39,8 +41,21 @@ export default function MentorshipChatSidebar({
   activeChatId,
   navigate,
 }) {
+  const { enqueueSnackbar } = useSnackbar();
+  const loadErrorShownRef = useRef(false);
   const theme = useTheme();
   const paper = theme.palette.background.paper;
+
+  useEffect(() => {
+    if (isError && privateChats.length === 0) {
+      if (!loadErrorShownRef.current) {
+        enqueueSnackbar(errorMessage ?? "Unable to load chat groups", { variant: "error" });
+        loadErrorShownRef.current = true;
+      }
+      return;
+    }
+    loadErrorShownRef.current = false;
+  }, [isError, errorMessage, privateChats.length, enqueueSnackbar]);
 
   return (
     <Box

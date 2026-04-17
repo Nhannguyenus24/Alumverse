@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  TextField,
   Box,
   CircularProgress,
-  Typography,
 } from '@mui/material';
+import { useNotification } from '../../hooks/useNotification';
+import WYSIWYG from '../WYSIWYG';
 
 const EditPostDialog = ({
   open,
@@ -21,12 +21,26 @@ const EditPostDialog = ({
   errorMessage,
 }) => {
   const [editContent, setEditContent] = useState('');
+  const { showError } = useNotification();
+  const wasErrorRef = useRef(false);
+
+  const stripHtml = useCallback((value) => {
+    if (value == null) return '';
+    return String(value).replace(/<[^>]*>/g, '').trim();
+  }, []);
 
   useEffect(() => {
     if (open && post?.content) {
       setEditContent(post.content);
     }
   }, [open, post?.content]);
+
+  useEffect(() => {
+    if (isError && !wasErrorRef.current && errorMessage) {
+      showError(errorMessage);
+    }
+    wasErrorRef.current = isError;
+  }, [isError, errorMessage, showError]);
 
   const handleClose = useCallback(() => {
     if (!isPending) {
@@ -35,27 +49,23 @@ const EditPostDialog = ({
   }, [isPending, onClose]);
 
   const handleSave = useCallback(async () => {
-    const trimmedContent = editContent.trim();
+    const trimmedContent = stripHtml(editContent);
     if (!trimmedContent) {
       return;
     }
-    await onSave(trimmedContent);
-  }, [editContent, onSave]);
+    await onSave(editContent);
+  }, [editContent, onSave, stripHtml]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Chỉnh sửa bài viết</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2 }}>
-          <TextField
-            fullWidth
-            multiline
-            rows={6}
+          <WYSIWYG
             value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
+            onChange={setEditContent}
             disabled={isPending}
-            error={isError}
-            helperText={isError ? errorMessage : ''}
+            height={220}
           />
         </Box>
       </DialogContent>
@@ -66,7 +76,11 @@ const EditPostDialog = ({
         <Button
           onClick={handleSave}
           variant="contained"
-          disabled={isPending || !editContent.trim() || editContent === post?.content}
+          disabled={
+            isPending ||
+            !stripHtml(editContent) ||
+            editContent === (post?.content ?? '')
+          }
           startIcon={isPending ? <CircularProgress size={20} /> : undefined}
         >
           {isPending ? 'Đang lưu...' : 'Lưu'}

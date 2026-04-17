@@ -5,19 +5,19 @@ function createGradient(color1, color2) {
 }
 
 const PRIMARY = {
-  lighter: '#B3C9E0',
-  light: '#2E5A8A',
-  main: '#012B59',
-  dark: '#01234D',
-  darker: '#011A38',
+  lighter: '#F1F8FF',
+  light: '#CFE6FF',
+  main: '#013F83',
+  dark: '#012B59',
+  darker: '#00152b',
 };
 
 const SECONDARY = {
-  lighter: '#ECEFF1',
-  light: '#B0BEC5',
-  main: '#607D8B',
-  dark: '#455A64',
-  darker: '#37474F',
+  lighter: '#cecece',
+  light: '#8C8C8C',
+  main: '#40454B',
+  dark: '#131313',
+  darker: '#000000',
 };
 
 const INFO = {
@@ -29,27 +29,27 @@ const INFO = {
 };
 
 const SUCCESS = {
-  lighter: '#E9FCD4',
-  light: '#AAF27F',
-  main: '#54D62C',
-  dark: '#229A16',
-  darker: '#08660D',
+  lighter: '#5dff5d',
+  light: '#0bc90b',
+  main: '#00A500',
+  dark: '#005a00',
+  darker: '#004400',
 };
 
 const WARNING = {
-  lighter: '#FFF7CD',
-  light: '#FFE16A',
-  main: '#FFC107',
-  dark: '#B78103',
-  darker: '#7A4F01',
+  lighter: '#ffe76e',
+  light: '#f3d438',
+  main: '#DFBA00',
+  dark: '#998000',
+  darker: '#6b5900',
 };
 
 const ERROR = {
-  lighter: '#FFE7D9',
-  light: '#FFA48D',
-  main: '#FF4842',
-  dark: '#B72136',
-  darker: '#7A0C2E',
+  lighter: '#ff8d8d',
+  light: '#fa3f3f',
+  main: '#E70000',
+  dark: '#910000',
+  darker: '#570000',
 };
 
 const GREY = {
@@ -82,8 +82,8 @@ const GRADIENTS = {
 };
 
 const FOOTER = {
-  main: '#0D3B66',
-  dark: '#0A2540',
+  main: '#013F83',
+  dark: '#012B59',
   contrastText: '#fff',
 };
 

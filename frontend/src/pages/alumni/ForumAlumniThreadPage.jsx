@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ModeCommentOutlinedIcon from '@mui/icons-material/ModeCommentOutlined';
 import ReplyOutlinedIcon from '@mui/icons-material/ReplyOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import SentimentSatisfiedAltOutlinedIcon from '@mui/icons-material/SentimentSatisfiedAltOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -28,25 +27,33 @@ import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../../hooks/useNotification';
-import { usePollsByTopic } from '../../hooks/forum/usePollsByTopic';
-import PollSection from '../../components/forum/PollSection';
-import CreatePollDialog from '../../components/forum/CreatePollDialog';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import WYSIWYG from '../../components/WYSIWYG';
 
-const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
+const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
+  const { showError } = useNotification();
+  const reactErrShownRef = useRef(false);
+  const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
-  const {
-    hasReaction,
-    isPending: userReactionPending,
-    isError: userReactionError,
-  } = useForumPostUserReaction(reply.id, memberId);
+  const { hasReaction } = useForumPostUserReaction(reply.id, memberId);
   const {
     toggleReaction,
     isPending: reactPending,
     isError: reactIsError,
     errorMessage: reactErrorMessage,
   } = useReactToForumPost(reply.id, memberId);
+
+  useEffect(() => {
+    if (reactIsError) {
+      if (!reactErrShownRef.current) {
+        showError(reactErrorMessage ?? 'Không thể cập nhật cảm xúc.');
+        reactErrShownRef.current = true;
+      }
+    } else {
+      reactErrShownRef.current = false;
+    }
+  }, [reactIsError, reactErrorMessage, showError]);
 
   const isOwn = reply.authorMemberId === memberId;
 
@@ -58,6 +65,18 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
     : likes;
 
   const hasParent = !!parentPost;
+  const isActionMenuOpen = Boolean(actionAnchorEl);
+
+  const handleOpenActionMenu = (event) => {
+    setActionAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseActionMenu = () => {
+    setActionAnchorEl(null);
+  };
+
+  const canDelete = isAdmin || isOwn;
+  const canEdit = !isAdmin && isOwn;
 
   return (
     <Box
@@ -120,50 +139,64 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
           <Typography variant="caption" color="text.secondary">
             {reply.createdAt}
           </Typography>
-          {isAdmin ? (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                onClick={() => onDelete?.(reply)}
-                disabled={isDeleting}
+          <>
+            <IconButton size="small" onClick={handleOpenActionMenu}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={actionAnchorEl}
+              open={isActionMenuOpen}
+              onClose={handleCloseActionMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleCloseActionMenu();
+                  onReply?.(reply);
+                }}
               >
-                Xóa
-              </Button>
-            </Box>
-          ) : isOwn ? (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button
-                size="small"
-                variant="outlined"
-                color="primary"
-                startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
-                onClick={() => onEdit?.(reply)}
-              >
-                Sửa
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                onClick={() => onDelete?.(reply)}
-                disabled={isDeleting}
-              >
-                Xóa
-              </Button>
-            </Box>
-          ) : null}
+                <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                Trả lời
+              </MenuItem>
+              {canEdit && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseActionMenu();
+                    onEdit?.(reply);
+                  }}
+                >
+                  <EditOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                  Sửa
+                </MenuItem>
+              )}
+              {canDelete && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseActionMenu();
+                    onDelete?.(reply);
+                  }}
+                  disabled={isDeleting}
+                  sx={{ color: 'error.main' }}
+                >
+                  <DeleteOutlineOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                  Xóa
+                </MenuItem>
+              )}
+            </Menu>
+          </>
         </Box>
-        <Typography
-          variant="body2"
-          color="text.primary"
-          sx={{ mb: 1.5, lineHeight: 1.7 }}
-        >
-          {reply.content}
-        </Typography>
+        <Box
+          className="ql-editor"
+          sx={{
+            mb: 1.5,
+            px: 0,
+            py: 0,
+            lineHeight: 1.7,
+            '& p': { my: 0.75 },
+          }}
+          dangerouslySetInnerHTML={{ __html: reply.content || '' }}
+        />
         {hasParent ? (
           <Box
             sx={{
@@ -192,7 +225,7 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
                 WebkitBoxOrient: 'vertical',
               }}
             >
-              {parentPost.content || '—'}
+              {toPlainText(parentPost.content) || '—'}
             </Typography>
           </Box>
         ) : null}
@@ -246,29 +279,7 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
               </Typography>
             </Box>
           </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 1,
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-            }}
-          >
-            <Button
-              size="small"
-              variant="contained"
-              color="primary"
-              startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-              onClick={() => onReply?.(reply)}
-            >
-              Trả lời
-            </Button>
-          </Box>
-          {reactIsError ? (
-            <Typography variant="caption" color="error">
-              {reactErrorMessage ?? 'Không thể cập nhật cảm xúc.'}
-            </Typography>
-          ) : null}
+          <Box />
         </Box>
       </Box>
     </Box>
@@ -294,6 +305,11 @@ const FALLBACK_THREAD = {
   createdAt: '—',
 };
 
+const toPlainText = (value) => {
+  if (value == null) return '';
+  return String(value).replace(/<[^>]*>/g, '').trim();
+};
+
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -316,9 +332,10 @@ const ForumAlumniThreadPage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const organizationId = user?.organizationId ?? 1;
-  const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
+  const { categories } = useForumCategories(organizationId);
   const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
   const openingPostErrorFromState =
     typeof location.state?.openingPostError === 'string'
@@ -326,15 +343,9 @@ const ForumAlumniThreadPage = () => {
       : '';
 
   const memberId = user?.id ?? null;
-  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, 0, 20);
-  const { createPost, isPending: createPending, isError: createIsError, errorMessage: createErrorMessage } =
-    useCreateForumPost();
-  const {
-    answerToPost,
-    isPending: answerPending,
-    isError: answerIsError,
-    errorMessage: answerErrorMessage,
-  } = useAnswerToForumPost();
+  const { posts, pageInfo, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, currentPage, 10);
+  const { createPost, isPending: createPending } = useCreateForumPost();
+  const { answerToPost, isPending: answerPending } = useAnswerToForumPost();
   const {
     deletePost,
     isPending: deletePending,
@@ -356,16 +367,23 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
-
-  const { polls, isPending: pollsPending, isError: pollsError, errorMessage: pollsErrorMessage, refetch: refetchPolls } = usePollsByTopic(topicId, memberId);
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [topicId]);
+
+  useEffect(() => {
+    if (!pageInfo?.totalPage || pageInfo.totalPage <= 0) return;
+    if (currentPage >= pageInfo.totalPage) {
+      setCurrentPage(pageInfo.totalPage - 1);
+    }
+  }, [currentPage, pageInfo?.totalPage]);
+
   const stripHtml = useCallback((value) => {
-    if (value == null) return '';
-    const s = String(value);
-    return s.replace(/<[^>]*>/g, '').trim();
+    return toPlainText(value);
   }, []);
 
   const thread = useMemo(() => {
@@ -407,9 +425,9 @@ const ForumAlumniThreadPage = () => {
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
         createdAt: formatPostDate(post.createdAt),
-        content: stripHtml(post.content),
+        content: post.content ?? '',
       })),
-    [posts, stripHtml]
+    [posts]
   );
 
   const replyMap = useMemo(() => {
@@ -484,7 +502,7 @@ const ForumAlumniThreadPage = () => {
 
   const handleSaveEditPost = useCallback(
     async (newContent) => {
-      if (!editingPost?.id || !newContent.trim()) return;
+      if (!editingPost?.id || !stripHtml(newContent)) return;
       try {
         await updatePost({
           postId: editingPost.id,
@@ -504,7 +522,7 @@ const ForumAlumniThreadPage = () => {
         showError(message);
       }
     },
-    [editingPost?.id, updatePost, updatePostErrorMessage, showError, showSuccess]
+    [editingPost?.id, showError, showSuccess, stripHtml, updatePost, updatePostErrorMessage]
   );
 
   const handleDeleteTopic = useCallback(async () => {
@@ -581,13 +599,13 @@ const ForumAlumniThreadPage = () => {
   }, [categories]);
 
   const handleSubmit = async () => {
-    const trimmed = (editorValue ?? '').trim();
-    if (!trimmed || !topicId || !user?.id) return;
+    const plainContent = stripHtml(editorValue ?? '');
+    if (!plainContent || !topicId || !user?.id) return;
 
     const payload = {
       topicId,
       authorMemberId: user.id,
-      content: trimmed,
+      content: editorValue,
       answerToPostId: replyTo?.postId ?? null,
     };
 
@@ -645,6 +663,11 @@ const ForumAlumniThreadPage = () => {
     },
     [navigate]
   );
+
+  const handlePaginationChange = useCallback((_, nextPage) => {
+    setCurrentPage(nextPage - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const selectedFilterId = useMemo(() => {
     const allFilterIds = filters.map((f) => f.id);
@@ -728,11 +751,6 @@ const ForumAlumniThreadPage = () => {
                 color="primary"
                 fontSize="0.8rem"
               />
-              {openingPostErrorFromState ? (
-                <Alert severity="warning" sx={{ mt: 1.5, mb: 0 }}>
-                  Chủ đề đã được tạo nhưng không thể đăng nội dung mở đầu: {openingPostErrorFromState}
-                </Alert>
-              ) : null}
               <Box
                 sx={{
                   backgroundColor: '#fff',
@@ -936,14 +954,13 @@ const ForumAlumniThreadPage = () => {
                   </Box>
                 ) : postsError ? (
                   <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
-                    <Typography color="error">Không thể tải bài viết.</Typography>
+                    <Typography color="text.secondary">Không thể tải bài viết.</Typography>
                   </Box>
                 ) : (
-                  replies.map((reply, index) => (
+                  replies.map((reply) => (
                     <ForumReply
                       key={reply.id}
                       reply={reply}
-                      index={index}
                       isAdmin={isAdmin}
                       memberId={memberId}
                       onReply={handleReply}
@@ -955,6 +972,29 @@ const ForumAlumniThreadPage = () => {
                   ))
                 )}
               </Box>
+
+              {!!pageInfo?.totalPage && pageInfo.totalPage > 1 && (
+                <Box
+                  sx={{
+                    px: { xs: 1.5, sm: 2, md: 3 },
+                    py: { xs: 1.5, md: 2 },
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Pagination
+                    color="primary"
+                    shape="rounded"
+                    page={currentPage + 1}
+                    count={pageInfo.totalPage}
+                    onChange={handlePaginationChange}
+                    siblingCount={0}
+                    boundaryCount={1}
+                  />
+                </Box>
+              )}
 
               {/* Reply editor */}
               <Box
@@ -1056,19 +1096,10 @@ const ForumAlumniThreadPage = () => {
                         </Typography>
                       </Box>
                     ) : null}
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={6}
+                    <WYSIWYG
                       value={editorValue}
-                      onChange={(e) => setEditorValue(e.target.value)}
-                      placeholder="Write something"
+                      onChange={setEditorValue}
                     />
-                    {answerIsError || createIsError ? (
-                      <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                        {answerErrorMessage ?? createErrorMessage ?? 'Không thể đăng bài viết.'}
-                      </Typography>
-                    ) : null}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
                       <Button
                         variant="contained"
@@ -1079,7 +1110,7 @@ const ForumAlumniThreadPage = () => {
                           answerPending ||
                           !topicId ||
                           !user?.id ||
-                          !(editorValue ?? '').trim()
+                          !stripHtml(editorValue ?? '')
                         }
                       >
                         {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
