@@ -16,7 +16,7 @@ const WYSIWYG = ({
     () => ({
       toolbar: [
         [{ header: [1, 2, 3, 4, 5, 6, false] }],
-        [{ font: [] }],
+        // [{ font: [] }],
         [{ size: [] }],
         ["bold", "italic", "underline", "strike", "blockquote"],
         [
@@ -36,7 +36,7 @@ const WYSIWYG = ({
 
   const formats = [
     "header",
-    "font",
+    //"font",
     "size",
     "bold",
     "italic",
@@ -66,6 +66,10 @@ const WYSIWYG = ({
         },
         "& .ql-editor": {
           minHeight: `${height - 42}px`,
+          fontFamily: "Nunito, 'sans-serif'",
+        },
+        "& .ql-editor *": {
+          fontFamily: "Nunito, sans-serif !important",
         },
       }}
     >

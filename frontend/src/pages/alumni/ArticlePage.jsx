@@ -1,16 +1,112 @@
-import { useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router";
 import { useSnackbar } from "notistack";
-import { Box, Container, Typography, CircularProgress } from "@mui/material";
+import { Box, Container, Typography, CircularProgress, Button, Stack } from "@mui/material";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import { useNewsById } from "../../hooks/news/useNewsById";
+import DOMPurify from "dompurify";
+
+const ArticleHighlightCard = ({ data, channel }) => {
+  const [isInterested, setIsInterested] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
+
+  return (
+    <Box
+      sx={{
+        mt: 3,
+        mb: 6,
+        p: 5,
+        bgcolor: "primary.light",
+        borderRadius: 2,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        gap: 3,
+      }}
+    >
+      {/* LEFT */}
+      <Box sx={{ flex: 1 }}>
+        <Typography variant="h4" sx={{ color: "primary.main" }}>
+          {data.channel}
+        </Typography>
+
+        <Typography variant="h2" sx={{ color: "primary.main" }}>
+          {data.title}
+        </Typography>
+
+        <Typography variant="body1">{data.organizer}</Typography>
+
+        <Typography variant="body2" color="text.secondary">
+          {data.date}
+        </Typography>
+      </Box>
+
+      {/* RIGHT */}
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 2,
+        }}
+      >
+        {/* STATS */}
+        <Box sx={{ display: "flex", justifyContent: "space-around" }}>
+          {data.stats?.map((item, i) => (
+            <Box key={i} textAlign="center">
+              <Typography variant="h2" fontWeight={700}>
+                {item.value}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {item.label}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* BUTTONS */}
+        {channel === "donation" ? (
+          <Button fullWidth variant="contained">
+            Quyên góp
+          </Button>
+        ) : (
+          <Stack direction="row" spacing={1}>
+            <Button
+              fullWidth
+              variant={isInterested ? "outlined" : "contained"}
+              onClick={() => setIsInterested(!isInterested)}
+            >
+              {isInterested ? "Đã quan tâm" : "Quan tâm"}
+            </Button>
+
+            <Button
+              fullWidth
+              variant={isJoined ? "outlined" : "contained"}
+              sx={{
+                bgcolor: isJoined ? "transparent" : "grey.700",
+                color: isJoined ? "grey.700" : "common.white",
+              }}
+              onClick={() => setIsJoined(!isJoined)}
+            >
+              {isJoined ? "Đã tham gia" : "Tham gia"}
+            </Button>
+          </Stack>
+        )}
+      </Box>
+    </Box>
+  );
+};
 
 const ArticlePage = () => {
   const { id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
   const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useNewsById(id);
+  
+  const cleanContent = article?.content
+  ? DOMPurify.sanitize(article.content)
+  : "";
 
   useEffect(() => {
     if (isPending) return;
@@ -40,6 +136,36 @@ const ArticlePage = () => {
     );
   }
 
+  const channel = article.channel; // 🔥 IMPORTANT: backend must send this
+
+  const highlightData =
+    channel === "event"
+      ? {
+          channel: "Sự kiện",
+          title: article.title,
+          organizer: article.organizer ?? "Unknown",
+          date: article.eventDate ?? "",
+          stats: [
+            { value: article.interestedCount ?? 0, label: "người quan tâm" },
+            { value: article.joinedCount ?? 0, label: "người tham gia" },
+          ],
+        }
+      : channel === "donation"
+      ? {
+          channel: "Quyên góp",
+          title: article.title,
+          organizer: article.organizer ?? "Unknown",
+          date: article.donationDate ?? "",
+          stats: [
+            { value: article.donorCount ?? 0, label: "người quyên góp" },
+            {
+              value: article.avgDonation ?? "0 VNĐ",
+              label: "trung bình quyên góp",
+            },
+          ],
+        }
+      : null;
+  
   return (
     <Page
       title={article.title}
@@ -139,6 +265,11 @@ const ArticlePage = () => {
                 </Typography>
               )}
 
+              {/* HIGHLIGHT */}
+              {highlightData && (
+                <ArticleHighlightCard data={highlightData} channel={channel} />
+              )}
+
               {/* Thumbnail */}
               {article.thumbnailUrl && (
                 <Box
@@ -162,17 +293,7 @@ const ArticlePage = () => {
               )}
 
               {/* Article Content */}
-              <Typography
-                variant="body1"
-                sx={{
-                  lineHeight: 1.8,
-                  textAlign: "justify",
-                  color: "text.primary",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {article.content}
-              </Typography>
+              <Box dangerouslySetInnerHTML={{ __html: cleanContent }} />
             </Box>
           </Box>
         </Box>
