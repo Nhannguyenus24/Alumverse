@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
@@ -7,9 +7,10 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateLearningResource } from '../../hooks/news/useCreateLearningResource';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostLearningPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createLearning, isPending } = useCreateLearningResource();
 

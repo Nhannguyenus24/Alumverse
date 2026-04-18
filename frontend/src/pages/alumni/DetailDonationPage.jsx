@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Container,
@@ -12,6 +12,7 @@ import {
   Link as MuiLink,
 } from '@mui/material';
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 // Mock data for donation details
 const DONATION_DETAIL = {
@@ -48,7 +49,7 @@ const DONATION_DETAIL = {
 };
 
 const DetailDonationPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const [donationAmount, setDonationAmount] = useState('');
 
   const handleDonate = () => {

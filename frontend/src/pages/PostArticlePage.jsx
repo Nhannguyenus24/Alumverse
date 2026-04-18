@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -13,12 +13,13 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 import Page from '../components/Page';
 import WYSIWYG from '../components/WYSIWYG';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const CHANNEL_OPTIONS = ['Cựu sinh viên', 'Kênh thành tựu'];
 const TOPIC_OPTIONS = ['Education', 'Jobs', 'Chances'];
 
 const PostArticlePage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const fileInputRef = useRef(null);
 
   const [title, setTitle] = useState('');

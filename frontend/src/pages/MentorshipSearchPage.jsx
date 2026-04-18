@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   Box,
   Button,
@@ -25,6 +25,7 @@ import StarIcon from '@mui/icons-material/Star';
 import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 /* ================= DATA ================= */
 
@@ -60,7 +61,7 @@ const AVAILABILITY = ['Sáng', 'Chiều', 'Tối', 'Cuối tuần'];
 /* ================= COMPONENT ================= */
 
 const MentorshipSearchPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
 
   const [selectedSidebar, setSelectedSidebar] = useState('mentorship');

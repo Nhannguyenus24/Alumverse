@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useEffect } from 'react';
 import { Box, Button, Container, IconButton, Paper, Stack, TextField, Typography } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -8,6 +8,8 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import SaveIcon from '@mui/icons-material/Save';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useNotification } from '../../hooks/useNotification';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
@@ -27,7 +29,7 @@ const sectionsToManageTopics = (sections) =>
 
 const ForumPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showWarning, showInfo } = useNotification();
 
   const selectedFilterId = useMemo(() => {
@@ -43,9 +45,10 @@ const ForumPage = () => {
   const [newMainTopic, setNewMainTopic] = useState('');
   const [newSubTopics, setNewSubTopics] = useState({});
   const { user } = useAuth();
+  const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
 
-  const organizationId = user?.organizationId ?? 1;
+  const organizationId = organization?.id ?? null;
   const { categories, isPending } = useForumCategories(organizationId);
 
   useEffect(() => {

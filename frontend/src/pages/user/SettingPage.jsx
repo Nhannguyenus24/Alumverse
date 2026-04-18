@@ -26,6 +26,7 @@ import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../api/userSettingsApi';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrganization } from '../../hooks/useOrganization';
 
 const MENU_ITEMS = [
   { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
@@ -37,7 +38,8 @@ const MENU_ITEMS = [
 export default function SettingPage() {
   const { user } = useAuthStore();
   const { showSuccess, showError, showWarning } = useNotification();
-  const organizationId = useMemo(() => Number(user?.organizationId) || 1, [user]);
+  const { organization } = useOrganization();
+  const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
 
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
@@ -84,7 +86,7 @@ export default function SettingPage() {
       try {
         const [profile, member, settings, history] = await Promise.all([
           userSettingsApi.getProfile(),
-          userSettingsApi.getOrganizationMember(organizationId),
+          organizationId ? userSettingsApi.getOrganizationMember(organizationId) : Promise.resolve(null),
           userSettingsApi.getNotificationSettings(),
           userSettingsApi.getLoginHistory({ page: 0, limit: 10 }),
         ]);
@@ -147,6 +149,11 @@ export default function SettingPage() {
   };
 
   const handleSaveProfile = async () => {
+    if (!organizationId) {
+      showWarning('Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.');
+      return;
+    }
+
     try {
       await userSettingsApi.updateProfile({
         organizationId,
@@ -198,7 +205,7 @@ export default function SettingPage() {
   };
 
   const parseUserAgent = (userAgent = '') => {
-    const ua = userAgent.toLowerCase();
+    const ua = String(userAgent ?? '').toLowerCase();
 
     let browser = 'Unknown Browser';
     if (ua.includes('edg/')) browser = 'Edge';

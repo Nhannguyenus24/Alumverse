@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -34,6 +34,7 @@ import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const formatDate = (value) => {
   if (!value) {
@@ -81,7 +82,7 @@ const demoActivity = () => ({
 
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { auditLogs } = useAdminSystemContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();

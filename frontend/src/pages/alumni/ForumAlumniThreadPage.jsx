@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
@@ -27,6 +27,8 @@ import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
@@ -312,7 +314,7 @@ const toPlainText = (value) => {
 
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { threadId } = useParams();
   const topicId = useMemo(() => {
     const id = parseInt(threadId, 10);
@@ -320,6 +322,7 @@ const ForumAlumniThreadPage = () => {
   }, [threadId]);
 
   const { user } = useAuth();
+  const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
@@ -334,7 +337,7 @@ const ForumAlumniThreadPage = () => {
   const [postToDelete, setPostToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const organizationId = user?.organizationId ?? 1;
+  const organizationId = organization?.id ?? null;
   const { categories } = useForumCategories(organizationId);
   const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
   const openingPostErrorFromState =
