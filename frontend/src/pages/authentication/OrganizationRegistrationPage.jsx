@@ -1,12 +1,11 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useLocation, useSearchParams } from 'react-router';
-import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+import { Box, Typography, Button, Alert, CircularProgress, TextField, MenuItem } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { userSettingsApi } from '../../api/userSettingsApi';
-import useAuthStore from '../../stores/authStore';
+import { joinOrganization } from '../../api/userApi';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useOrganization } from '../../hooks/useOrganization';
 import { z } from 'zod';
@@ -29,19 +28,61 @@ const organizationRegistrationSchema = z.object({
  */
 const OrganizationRegistrationPage = () => {
   const navigate = useOrgNavigate();
-  const location = useLocation();
+  const routerNavigate = useNavigate();
   const { organization, loading: organizationLoading } = useOrganization();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [proofFile, setProofFile] = useState(null);
-  const setNeedsOrganizationSetup = useAuthStore((state) => state.setNeedsOrganizationSetup);
 
   // Prefer organization ID from context (resolved by slug), keep query param as fallback.
   const queryOrgId = searchParams.get('orgId');
   const parsedQueryOrgId = queryOrgId ? parseInt(queryOrgId, 10) : null;
   const organizationId = organization?.id ?? (Number.isInteger(parsedQueryOrgId) ? parsedQueryOrgId : null);
-  const redirectTo = location.state?.redirectTo || '/dashboard';
+
+  const parseOrganizationOptions = (value) => {
+    if (!value) {
+      return [];
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item ?? '').trim())
+        .filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => String(item ?? '').trim())
+            .filter(Boolean);
+        }
+      } catch {
+        return trimmed
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+    }
+
+    return [];
+  };
+
+  const programOptions = useMemo(
+    () => parseOrganizationOptions(organization?.programs),
+    [organization?.programs],
+  );
+  const majorOptions = useMemo(
+    () => parseOrganizationOptions(organization?.majors),
+    [organization?.majors],
+  );
 
   const {
     register,
@@ -95,21 +136,29 @@ const OrganizationRegistrationPage = () => {
     setLoading(true);
 
     try {
-      // Update profile via /users/me/profile API.
-      await userSettingsApi.updateProfile({
+      // Convert empty strings to undefined for optional fields
+      const payload = {
         organizationId: data.organizationId,
-        // Map existing form fields to profile fields currently supported by backend.
-        program: data.className || null,
-        graduatedYear: data.graduatedYear || null,
-        major: data.degreeType || null,
-      });
+        ...(data.studentCode && { studentCode: data.studentCode }),
+        ...(data.className && { className: data.className }),
+        ...(data.startYear && { startYear: data.startYear }),
+        ...(data.graduatedYear && { graduatedYear: data.graduatedYear }),
+        ...(data.degreeType && { degreeType: data.degreeType }),
+      };
 
-      setNeedsOrganizationSetup(false);
-      navigate(redirectTo, { replace: true });
+      const response = await joinOrganization(payload);
+
+      if (response?.data) {
+        // Successfully joined organization
+        const orgSlug = response.data?.data?.organizationSlug || 'alumni';
+        
+        // Redirect to dashboard with slug
+        routerNavigate(`/${orgSlug}/dashboard`, { replace: true });
+      }
     } catch (err) {
       const errorMessage = err?.response?.data?.message 
         || err?.message 
-        || 'Failed to update profile. Please try again.';
+        || 'Failed to register to organization. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -222,13 +271,31 @@ const OrganizationRegistrationPage = () => {
           </Typography>
         </Box>
 
-        <Input
-          label="Program"
-          placeholder="e.g., K15"
-          error={!!errors.className}
-          helperText={errors.className?.message}
-          {...register('className')}
-        />
+        {programOptions.length > 0 ? (
+          <TextField
+            select
+            label="Program"
+            error={!!errors.className}
+            helperText={errors.className?.message}
+            defaultValue=""
+            {...register('className')}
+          >
+            <MenuItem value="">Select program</MenuItem>
+            {programOptions.map((program) => (
+              <MenuItem key={program} value={program}>
+                {program}
+              </MenuItem>
+            ))}
+          </TextField>
+        ) : (
+          <Input
+            label="Program"
+            placeholder="e.g., K15"
+            error={!!errors.className}
+            helperText={errors.className?.message}
+            {...register('className')}
+          />
+        )}
 
         <Input
           label="Start Year"
@@ -248,13 +315,31 @@ const OrganizationRegistrationPage = () => {
           {...register('graduatedYear', { valueAsNumber: true })}
         />
 
-        <Input
-          label="Major"
-          placeholder="e.g., Computer Science"
-          error={!!errors.degreeType}
-          helperText={errors.degreeType?.message}
-          {...register('degreeType')}
-        />
+        {majorOptions.length > 0 ? (
+          <TextField
+            select
+            label="Major"
+            error={!!errors.degreeType}
+            helperText={errors.degreeType?.message}
+            defaultValue=""
+            {...register('degreeType')}
+          >
+            <MenuItem value="">Select major</MenuItem>
+            {majorOptions.map((major) => (
+              <MenuItem key={major} value={major}>
+                {major}
+              </MenuItem>
+            ))}
+          </TextField>
+        ) : (
+          <Input
+            label="Major"
+            placeholder="e.g., Computer Science"
+            error={!!errors.degreeType}
+            helperText={errors.degreeType?.message}
+            {...register('degreeType')}
+          />
+        )}
 
         <Box sx={{ mt: 1 }}>
           <Typography variant="subtitle2" fontWeight={600} color="textSecondary" sx={{ mb: 1 }}>
@@ -313,19 +398,6 @@ const OrganizationRegistrationPage = () => {
           }}
         >
           Cancel
-        </Button>
-
-        <Button
-          variant="text"
-          fullWidth
-          size="large"
-          onClick={() => navigate(redirectTo, { replace: true })}
-          disabled={loading}
-          sx={{
-            textTransform: 'none',
-          }}
-        >
-          Cập nhật sau
         </Button>
       </Box>
     </Page>
