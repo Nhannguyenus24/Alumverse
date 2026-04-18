@@ -32,6 +32,7 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const formatDate = (value) => {
   if (!value) {

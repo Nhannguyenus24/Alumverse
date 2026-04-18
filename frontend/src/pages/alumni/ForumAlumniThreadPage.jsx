@@ -27,6 +27,8 @@ import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
@@ -320,6 +322,7 @@ const ForumAlumniThreadPage = () => {
   }, [threadId]);
 
   const { user } = useAuth();
+  const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
@@ -334,7 +337,7 @@ const ForumAlumniThreadPage = () => {
   const [postToDelete, setPostToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const organizationId = user?.organizationId ?? 1;
+  const organizationId = organization?.id ?? null;
   const { categories } = useForumCategories(organizationId);
   const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
   const openingPostErrorFromState =

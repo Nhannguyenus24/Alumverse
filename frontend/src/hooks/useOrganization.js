@@ -15,6 +15,7 @@ export const useOrganization = () => {
   const organization = useOrganizationStore((state) => state.organization);
   const loading = useOrganizationStore((state) => state.loading);
   const error = useOrganizationStore((state) => state.error);
+  const statusCode = useOrganizationStore((state) => state.statusCode);
   const fetchOrganization = useOrganizationStore((state) => state.fetchOrganization);
   const reset = useOrganizationStore((state) => state.reset);
 
@@ -31,11 +32,14 @@ export const useOrganization = () => {
     fetchOrganization(slug);
   }, [slug, currentSlug, loading, organization, error, fetchOrganization]);
 
+  const isOrganizationNotFound = statusCode === 404;
+
   return {
     slug,
     organization,
     loading,
     error,
+    isOrganizationNotFound,
     fetchOrganization,
     refetch: () => (slug ? fetchOrganization(slug) : Promise.resolve()),
     reset,

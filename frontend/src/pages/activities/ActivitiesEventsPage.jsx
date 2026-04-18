@@ -13,6 +13,7 @@ import SearchBar from '../../components/SearchBar';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import FeaturedArticleEventCard from '../../components/articles/FeaturedArticleEventCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 
 const SIDEBAR = [

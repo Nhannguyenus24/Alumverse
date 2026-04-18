@@ -6,7 +6,8 @@ import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import Breadcrumb from '../../components/Breadcrumb';
-import { useAuth } from '../../hooks/useAuth';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useForumTopics } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
@@ -29,10 +30,10 @@ const formatTopicDate = (iso) => {
 const ForumAlumniCareerPage = () => {
   const navigate = useOrgNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { organization } = useOrganization();
   const { showError } = useNotification();
   const hasShownTopicsErrorRef = useRef(false);
-  const organizationId = user?.organizationId ?? 1;
+  const organizationId = organization?.id ?? null;
   const { categories } = useForumCategories(organizationId);
 
   const filters = useMemo(() => {

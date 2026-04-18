@@ -19,6 +19,7 @@ import WorkIcon from '@mui/icons-material/Work';
 import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 /* ================= DATA ================= */
 

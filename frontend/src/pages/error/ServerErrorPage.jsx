@@ -2,6 +2,7 @@ import { Box, Button, Container, Typography } from '@mui/material';
 
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 export default function ServerErrorPage() {
 	const navigate = useOrgNavigate();

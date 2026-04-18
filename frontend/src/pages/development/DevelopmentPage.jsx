@@ -14,6 +14,7 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const SIDEBAR = [
   { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },

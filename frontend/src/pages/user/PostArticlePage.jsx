@@ -7,6 +7,7 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostArticlePage = () => {
   const navigate = useOrgNavigate();

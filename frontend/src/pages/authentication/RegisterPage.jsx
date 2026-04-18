@@ -12,6 +12,7 @@ import Dropdown from '../../components/Dropdown';
 import { registerSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
@@ -25,6 +26,7 @@ const RegisterPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { register: registerUser, forgotPassword, isLoading: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
+  const organizationId = useOrganizationStore((state) => state.organization?.id);
 
   const passwordRequirements = {
     length: passwordValue.length >= 8,
@@ -60,6 +62,7 @@ const RegisterPage = () => {
       enrollmentYear: data.enrollmentYear,
       password: data.password,
       confirmPassword: data.confirmPassword,
+      organizationId,
     });
     if (result?.ok) {
       enqueueSnackbar('Đăng ký thành công. Vui lòng kiểm tra email để nhận mã xác thực.', {

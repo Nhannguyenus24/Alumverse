@@ -8,6 +8,7 @@ import {
   changePasswordSchema,
 } from '../schemas/authSchemas';
 import useAuthStore from '../stores/authStore';
+import useOrganizationStore from '../stores/organizationStore';
 
 function getFirstZodMessage(error) {
   return error?.issues?.[0]?.message ?? 'Dữ liệu không hợp lệ';
@@ -15,6 +16,7 @@ function getFirstZodMessage(error) {
 
 export const useAuth = () => {
   const store = useAuthStore();
+  const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error } = store;
 
   const setLoading = (value) => {
@@ -47,9 +49,18 @@ export const useAuth = () => {
       store.setError(msg);
       return { ok: false, error: msg };
     }
+    const organizationId = payload.organizationId ?? organizationIdFromStore;
+    if (!organizationId) {
+      const msg = 'Organization ID is required';
+      store.setError(msg);
+      return { ok: false, error: msg };
+    }
     setLoading(true);
     try {
-      const { data } = await apiClient.post('/auth/login', parsed.data);
+      const { data } = await apiClient.post('/auth/login', {
+        ...parsed.data,
+        organizationId,
+      });
       return applyAccessTokenToStore(data, 'Đăng nhập thất bại');
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Đăng nhập thất bại';
@@ -66,9 +77,18 @@ export const useAuth = () => {
       return { ok: false, error: msg };
     }
 
+    if (!organizationIdFromStore) {
+      const msg = 'Organization ID is required';
+      store.setError(msg);
+      return { ok: false, error: msg };
+    }
+
     setLoading(true);
     try {
-      const { data } = await apiClient.post('/auth/google-login', { idToken });
+      const { data } = await apiClient.post('/auth/google-login', {
+        idToken,
+        organizationId: organizationIdFromStore,
+      });
       return applyAccessTokenToStore(data, 'Đăng nhập Google thất bại');
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Đăng nhập Google thất bại';
@@ -85,6 +105,12 @@ export const useAuth = () => {
       store.setError(msg);
       return { ok: false, error: msg };
     }
+    const organizationId = payload.organizationId ?? organizationIdFromStore;
+    if (!organizationId) {
+      const msg = 'Organization ID is required';
+      store.setError(msg);
+      return { ok: false, error: msg };
+    }
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/register', {
@@ -92,6 +118,7 @@ export const useAuth = () => {
         userName: parsed.data.studentId,
         fullName: parsed.data.fullName,
         password: parsed.data.password,
+        organizationId,
       });
       if (!data?.data) {
         const msg = data?.message ?? 'Đăng ký thất bại';

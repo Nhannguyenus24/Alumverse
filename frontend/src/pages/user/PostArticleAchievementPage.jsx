@@ -7,6 +7,7 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateAchievement } from '../../hooks/news/useCreateAchievement';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostAchievementPage = () => {
   const navigate = useOrgNavigate();

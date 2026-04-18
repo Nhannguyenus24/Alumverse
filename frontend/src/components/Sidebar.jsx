@@ -8,6 +8,7 @@ import {
   ListItemText,
 } from '@mui/material';
 import { useLocation } from 'react-router';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const Sidebar = ({ items, value, onChange, useRouting = true }) => {
   const navigate = useOrgNavigate();

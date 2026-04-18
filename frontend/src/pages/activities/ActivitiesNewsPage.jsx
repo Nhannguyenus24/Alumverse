@@ -14,6 +14,7 @@ import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 
 const SIDEBAR = [

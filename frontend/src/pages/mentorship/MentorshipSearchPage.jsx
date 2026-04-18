@@ -25,6 +25,7 @@ import StarIcon from '@mui/icons-material/Star';
 import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 /* ================= DATA ================= */
 

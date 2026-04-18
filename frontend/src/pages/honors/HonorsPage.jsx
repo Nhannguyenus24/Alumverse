@@ -13,6 +13,7 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const SIDEBAR = [
   { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },

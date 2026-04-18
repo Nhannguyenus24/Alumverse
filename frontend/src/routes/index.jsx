@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
+import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 
 const Loadable = (Component) => (props) => (
@@ -168,7 +169,11 @@ const MaintenancePage = Loadable(
 export const router = createBrowserRouter([
   {
     path: "/:slug",
-    element: <MainLayout />,
+    element: (
+      <RequireSlugRoute>
+        <MainLayout />
+      </RequireSlugRoute>
+    ),
     children: [
       {
         index: true,
@@ -389,23 +394,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      {
-        path: "unauthorized",
-        element: <UnauthorizedPage />,
-      },
-      {
-        path: "500",
-        element: <ServerErrorPage />,
-      },
-      {
-        path: "maintenance",
-        element: <MaintenancePage />,
-      },
     ],
   },
   {
     path: "/:slug/auth",
-    element: <AuthLayout />,
+    element: (
+      <RequireSlugRoute>
+        <AuthLayout />
+      </RequireSlugRoute>
+    ),
     children: [
       {
         path: "login",
@@ -530,6 +527,18 @@ export const router = createBrowserRouter([
   {
     path: "/404",
     element: <NotFoundPage />,
+  },
+  {
+    path: "/unauthorized",
+    element: <UnauthorizedPage />,
+  },
+  {
+    path: "/500",
+    element: <ServerErrorPage />,
+  },
+  {
+    path: "/maintenance",
+    element: <MaintenancePage />,
   },
   {
     path: "*",

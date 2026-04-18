@@ -12,6 +12,7 @@ import {
   Link as MuiLink,
 } from '@mui/material';
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 // Mock data for donation details
 const DONATION_DETAIL = {

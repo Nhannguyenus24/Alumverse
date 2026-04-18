@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const RequestAchievementsPage = () => {
   const navigate = useOrgNavigate();

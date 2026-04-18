@@ -13,6 +13,7 @@ import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 import Page from '../components/Page';
 import WYSIWYG from '../components/WYSIWYG';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const CHANNEL_OPTIONS = ['Cựu sinh viên', 'Kênh thành tựu'];
 const TOPIC_OPTIONS = ['Education', 'Jobs', 'Chances'];

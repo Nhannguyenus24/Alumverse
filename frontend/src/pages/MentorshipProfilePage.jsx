@@ -14,6 +14,7 @@ import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import CheckBoxOutlinedIcon from '@mui/icons-material/CheckBoxOutlined';
 
 import Page from '../components/Page';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 /* ================= MOCK DATA ================= */
 

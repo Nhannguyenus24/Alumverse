@@ -7,6 +7,7 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateJob } from '../../hooks/news/useCreateJob';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostJobPage = () => {
   const navigate = useOrgNavigate();

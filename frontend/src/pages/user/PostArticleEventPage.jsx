@@ -6,6 +6,7 @@ import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostEventPage = () => {
   const navigate = useOrgNavigate();

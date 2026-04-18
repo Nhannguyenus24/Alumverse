@@ -10,6 +10,7 @@ import Input from '../../components/Input';
 import { loginSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const LoginPage = () => {
   const navigate = useOrgNavigate();
@@ -18,6 +19,7 @@ const LoginPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { login, loginWithGoogle, isLoading: loading, setError, forgotPassword } = useAuth();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const organizationId = useOrganizationStore((state) => state.organization?.id);
 
   const redirectTo = location.state?.from?.pathname || '/dashboard';
 
@@ -32,7 +34,7 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ email: data.email, password: data.password });
+    const result = await login({ email: data.email, password: data.password, organizationId });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
       navigate(redirectTo, { replace: true });

@@ -8,6 +8,7 @@ import { useChatWebSocket } from "../../hooks/mentorship/useChatWebSocket";
 import { useChatMessages } from "../../hooks/mentorship/useChatMessages";
 import MentorshipChatSidebar from "../../components/mentorship/MentorshipChatSidebar";
 import MentorshipChatPanel from "../../components/mentorship/MentorshipChatPanel";
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const CHAT_BASE = "/development/mentorship/chat";
 

@@ -2,6 +2,7 @@ import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 export default function NotFoundPage() {
   const navigate = useOrgNavigate();
