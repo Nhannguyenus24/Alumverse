@@ -16,21 +16,24 @@ const StyledMaterialDesignContent = styled(MaterialDesignContent)(() => ({
   '&.notistack-MuiContent': {
     borderRadius: 12,
     padding: '2px 8px',
+    color: '#111111 !important',
+    '& .SnackbarItem-message': {
+      color: '#111111 !important',
+    },
+    '& .notistack-MuiContent-message': {
+      color: '#111111 !important',
+    },
   },
   '&.notistack-MuiContent-success': {
-    color: '#4CAF50',
     backgroundColor: '#FFFFFF',
   },
   '&.notistack-MuiContent-error': {
-    color: '#E53935',
     backgroundColor: '#FFFFFF',
   },
   '&.notistack-MuiContent-warning': {
-    color: '#FFEB3B',
     backgroundColor: '#FFFFFF',
   },
   '&.notistack-MuiContent-info': {
-    color: '#2196F3',
     backgroundColor: '#FFFFFF',
   },
 }));
@@ -47,6 +50,13 @@ function SnackbarStyles() {
           '& .SnackbarItem-message': {
             padding: '0 !important',
             fontWeight: theme.typography.fontWeightMedium,
+            color: '#111111 !important',
+          },
+          '& .notistack-MuiContent': {
+            color: '#111111 !important',
+          },
+          '& .notistack-MuiContent-message': {
+            color: '#111111 !important',
           },
           '& .SnackbarItem-action': {
             marginRight: 0,
