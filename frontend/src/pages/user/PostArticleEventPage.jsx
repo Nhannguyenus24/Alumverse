@@ -5,21 +5,28 @@ import CoverUpload from '../../components/CoverUpload';
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
+import { fileToBase64 } from '../../hooks/images/fileToBase64';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+
+const toIsoDateTime = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+};
 
 const PostEventPage = () => {
   const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createEvent, isPending } = useCreateEvent();
 
-  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState('');
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
-  // Event-specific fields
   const [eventData, setEventData] = useState({
     eventName: '',
     organizer: '',
@@ -34,7 +41,8 @@ const PostEventPage = () => {
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setCoverImage(URL.createObjectURL(file));
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -48,19 +56,30 @@ const PostEventPage = () => {
       showError('Vui lòng nhập tiêu đề và nội dung');
       return;
     }
+    if (!eventData.startDate || !eventData.endDate) {
+      showError('Vui lòng nhập thời gian bắt đầu và kết thúc');
+      return;
+    }
 
     try {
+      const bannerBase64 = coverFile ? await fileToBase64(coverFile) : null;
+
       const payload = {
         title: title.trim(),
-        content: content.trim(),
-        thumbnailUrl: coverImage || null,
-        topic,
-        eventInfo: eventData,
+        description: content.trim(),
+        bannerBase64,
+        location: eventData.location || null,
+        startTime: toIsoDateTime(eventData.startDate),
+        endTime: toIsoDateTime(eventData.endDate),
+        registrationEndAt: toIsoDateTime(eventData.deadline),
+        maxCapacity: eventData.maxParticipants
+          ? Number(eventData.maxParticipants)
+          : null,
       };
 
       const result = await createEvent(payload);
       showSuccess('Sự kiện đã được đăng thành công!');
-      navigate(`/event/${result.id}`);
+      navigate(`/article/event/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng sự kiện thất bại');
     }
@@ -70,7 +89,7 @@ const PostEventPage = () => {
     <Page title="Đăng sự kiện" meta={<meta name="description" content="Đăng sự kiện - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload value={coverImage} onChange={handleCoverUpload} />
+        <CoverUpload value={coverPreview} onChange={handleCoverUpload} />
 
         {/* Form Container */}
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>

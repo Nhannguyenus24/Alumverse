@@ -55,4 +55,7 @@ public class UpdateEventRequest {
     @Min(value = 1)
     @Schema(example = "350")
     private Integer maxCapacity;
+
+    /** Optional base64-encoded banner. When present, backend uploads and replaces bannerUrl. */
+    private String bannerBase64;
 }

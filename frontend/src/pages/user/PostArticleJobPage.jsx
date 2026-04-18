@@ -14,17 +14,17 @@ const PostJobPage = () => {
   const { showSuccess, showError } = useNotification();
   const { createJob, isPending } = useCreateJob();
 
-  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -35,16 +35,14 @@ const PostJobPage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
-        thumbnailUrl: coverImage || null,
-        topic,
+      const payload = {
+        title: title.trim(),
+        description: content.trim(),
       };
 
       const result = await createJob(payload);
       showSuccess('Bài đăng việc làm đã được đăng thành công!');
-      navigate(`/job/${result.id}`);
+      navigate(`/article/job/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
@@ -54,9 +52,9 @@ const PostJobPage = () => {
     <Page title="Đăng bài việc làm" meta={<meta name="description" content="Đăng bài việc làm - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
+        <CoverUpload
+          value={coverPreview}
+          onChange={handleCoverUpload}
         />
 
         {/* Form Container */}

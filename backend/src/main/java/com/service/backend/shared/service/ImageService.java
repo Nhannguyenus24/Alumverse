@@ -5,6 +5,8 @@ import com.sksamuel.scrimage.webp.WebpWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -88,6 +90,19 @@ public class ImageService {
         }
 
         return base64String;
+    }
+
+    /**
+     * Reactive wrapper around {@link #uploadBase64Image(String)}. If the input is blank, emits null
+     * (via {@link Mono#justOrEmpty}) so callers can fall back to an existing URL. File I/O runs on
+     * the bounded elastic scheduler to avoid blocking the event loop.
+     */
+    public Mono<String> uploadBase64IfPresent(String base64String) {
+        if (base64String == null || base64String.isBlank()) {
+            return Mono.empty();
+        }
+        return Mono.fromCallable(() -> uploadBase64Image(base64String))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**

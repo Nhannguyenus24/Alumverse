@@ -4,7 +4,7 @@ import { useSnackbar } from "notistack";
 import { Box, Container, Typography, CircularProgress, Button, Stack } from "@mui/material";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
-import { useNewsById } from "../../hooks/news/useNewsById";
+import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
 
 const ArticleHighlightCard = ({ data, channel }) => {
@@ -99,11 +99,11 @@ const ArticleHighlightCard = ({ data, channel }) => {
 };
 
 const ArticlePage = () => {
-  const { id } = useParams();
+  const { channel, id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
   const loadErrorShownRef = useRef(false);
-  const { article, isPending, isError, errorMessage } = useNewsById(id);
-  
+  const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
+
   const cleanContent = article?.content
   ? DOMPurify.sanitize(article.content)
   : "";
@@ -136,31 +136,42 @@ const ArticlePage = () => {
     );
   }
 
-  const channel = article.channel; // 🔥 IMPORTANT: backend must send this
+  const resolvedChannel = article.channel;
+
+  const formatDateRange = (start, end) => {
+    if (!start) return "";
+    const s = new Date(start).toLocaleDateString("vi-VN");
+    if (!end) return s;
+    const e = new Date(end).toLocaleDateString("vi-VN");
+    return `${s} - ${e}`;
+  };
 
   const highlightData =
-    channel === "event"
+    resolvedChannel === "event"
       ? {
           channel: "Sự kiện",
           title: article.title,
-          organizer: article.organizer ?? "Unknown",
-          date: article.eventDate ?? "",
+          organizer: article.organizer ?? article.location ?? "",
+          date: formatDateRange(article.eventDate, article.eventEndDate),
           stats: [
             { value: article.interestedCount ?? 0, label: "người quan tâm" },
             { value: article.joinedCount ?? 0, label: "người tham gia" },
           ],
         }
-      : channel === "donation"
+      : resolvedChannel === "donation"
       ? {
           channel: "Quyên góp",
           title: article.title,
-          organizer: article.organizer ?? "Unknown",
-          date: article.donationDate ?? "",
+          organizer: article.organizer ?? "",
+          date: formatDateRange(article.donationDate, article.donationEndDate),
           stats: [
             { value: article.donorCount ?? 0, label: "người quyên góp" },
             {
-              value: article.avgDonation ?? "0 VNĐ",
-              label: "trung bình quyên góp",
+              value:
+                article.targetAmount != null
+                  ? `${Number(article.targetAmount).toLocaleString("vi-VN")} VNĐ`
+                  : "0 VNĐ",
+              label: "mục tiêu",
             },
           ],
         }
@@ -267,7 +278,7 @@ const ArticlePage = () => {
 
               {/* HIGHLIGHT */}
               {highlightData && (
-                <ArticleHighlightCard data={highlightData} channel={channel} />
+                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} />
               )}
 
               {/* Thumbnail */}
