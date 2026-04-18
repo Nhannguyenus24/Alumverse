@@ -17,7 +17,7 @@ function getFirstZodMessage(error) {
 export const useAuth = () => {
   const store = useAuthStore();
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
-  const { user, token, loading, error } = store;
+  const { user, token, loading, error, needsOrganizationSetup } = store;
 
   const setLoading = (value) => {
     store.setLoading(value);
@@ -28,6 +28,7 @@ export const useAuth = () => {
 
   const applyAccessTokenToStore = (responseData, fallbackMessage) => {
     const accessToken = responseData?.data?.accessToken ?? null;
+    const needsOrganizationSetup = Boolean(responseData?.data?.needsOrganizationSetup);
     const authUser = userFromAccessToken(accessToken);
     if (!accessToken || !authUser) {
       const msg = responseData?.message ?? fallbackMessage;
@@ -37,9 +38,10 @@ export const useAuth = () => {
     }
     store.setUser(authUser);
     store.setToken(accessToken);
+    store.setNeedsOrganizationSetup(needsOrganizationSetup);
     store.setLoading(false);
     store.setError(null);
-    return { ok: true, data: { token: accessToken, user: authUser } };
+    return { ok: true, data: { token: accessToken, user: authUser, needsOrganizationSetup } };
   };
 
   const login = async (payload) => {
@@ -236,6 +238,7 @@ export const useAuth = () => {
   return {
     isAuthenticated: !!token && !isTokenExpired(token),
     isLoading: loading,
+    needsOrganizationSetup,
     user,
     error,
     setError,
