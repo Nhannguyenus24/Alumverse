@@ -91,7 +91,7 @@ public class AuthService {
                 .doOnError(e -> logger.error("Registration failed: {}", email, e));
     }
 
-    public Mono<User> loginByEmail(String email, String password, Integer organizationId) {
+    public Mono<User> loginByEmail(String email, String password, Integer organizationId, String userAgent, String loginIp) {
 
         return authRepository.findByEmail(email)
                 .flatMap(user -> {
@@ -114,7 +114,7 @@ public class AuthService {
                                     return Mono.error(new RuntimeException("User is not a member of this organization"));
                                 }
                                 logger.info("Login successful for email: {}", email);
-                                recordLoginSuccessAsync(user.getId(), "EMAIL");
+                                recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
                                 return Mono.just(user);
                             });
                 })
@@ -122,7 +122,7 @@ public class AuthService {
                 .doOnError(error -> logger.error("Login error for email: {}", email, error));
     }
 
-    public Mono<User> loginByUserName(String userName, String password, Integer organizationId) {
+    public Mono<User> loginByUserName(String userName, String password, Integer organizationId, String userAgent, String loginIp) {
 
         return authRepository.findByUserName(userName)
                 .flatMap(user -> {
@@ -145,7 +145,7 @@ public class AuthService {
                                     return Mono.error(new RuntimeException("User is not a member of this organization"));
                                 }
                                 logger.info("Login successful for username: {}", userName);
-                                recordLoginSuccessAsync(user.getId(), "USERNAME");
+                                recordLoginSuccessAsync(user.getId(), "USERNAME", userAgent, loginIp);
                                 return Mono.just(user);
                             });
                 })
@@ -153,7 +153,7 @@ public class AuthService {
                 .doOnError(error -> logger.error("Login error for username: {}", userName, error));
     }
 
-    public Mono<User> loginWithGoogle(String idToken, Integer organizationId) {
+    public Mono<User> loginWithGoogle(String idToken, Integer organizationId, String userAgent, String loginIp) {
         if (!StringUtils.hasText(googleClientId)) {
             return Mono.error(new RuntimeException("Google login is not configured"));
         }
@@ -166,8 +166,8 @@ public class AuthService {
 
         return verifyGoogleToken(idToken)
                 .flatMap(tokenInfo -> authRepository.findByEmail(tokenInfo.email())
-                        .flatMap(existingUser -> loginExistingGoogleUser(existingUser, tokenInfo.picture(), organizationId))
-                        .switchIfEmpty(registerGoogleUser(tokenInfo, organizationId))
+                        .flatMap(existingUser -> loginExistingGoogleUser(existingUser, tokenInfo.picture(), organizationId, userAgent, loginIp))
+                        .switchIfEmpty(registerGoogleUser(tokenInfo, organizationId, userAgent, loginIp))
                 )
                 .doOnError(error -> logger.error("Google login failed", error));
     }
@@ -200,6 +200,10 @@ public class AuthService {
         return authRepository.getOrganizationIdByUserId(userId)
                 .collectList()
                 .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
+    }
+
+    public Mono<Boolean> existsOrganizationMembership(Integer userId, Integer organizationId) {
+        return authRepository.existsOrganizationMemberByUserIdAndOrgId(userId, organizationId);
     }
 
     public Mono<Void> sendOtpVerification(String email) {
@@ -270,30 +274,32 @@ public class AuthService {
         }
 
         // Use reactive approach: wrap token validation in Mono.fromCallable
-        return Mono.fromCallable(() -> jwtUtils.getUserIdFromToken(refreshToken))
+        return Mono.fromCallable(() -> {
+            Integer userId = jwtUtils.getUserIdFromToken(refreshToken);
+            Integer organizationId = jwtUtils.getOrganizationIdFromToken(refreshToken);
+            return new Object[]{userId, organizationId};
+        })
                 .onErrorMap(e -> new RuntimeException(ErrorCode.INVALID_REFRESH_TOKEN.getMessage(), e))
-                .flatMap(userId -> 
-                    authRepository.findById(userId)
+                .flatMap(userOrgPair -> {
+                    Integer userId = (Integer) ((Object[]) userOrgPair)[0];
+                    Integer organizationId = (Integer) ((Object[]) userOrgPair)[1];
+
+                    return authRepository.findById(userId)
                             .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
-                            .flatMap(user -> 
-                                authRepository.getOrganizationIdByUserId(userId)
-                                        .collectList()
-                                        .defaultIfEmpty(List.of())
-                                        .map(organizationIds -> {
-                                            String accessToken = jwtUtils.generateAccessToken(
-                                                    user.getId(),
-                                                    user.getEmail(),
-                                                    user.getRole().name(),
-                                                    user.getUserName(),
-                                                    user.getAvatarUrl(),
-                                                    organizationIds
-                                            );
-                                            logger.info("Access token refreshed successfully for user id: {}", userId);
-                                            return accessToken;
-                                        })
-                            )
-                            .doOnError(error -> logger.error("Failed to refresh token", error))
-                );
+                            .map(user -> {
+                                String accessToken = jwtUtils.generateAccessToken(
+                                        user.getId(),
+                                        user.getEmail(),
+                                        user.getRole().name(),
+                                        user.getUserName(),
+                                        user.getAvatarUrl(),
+                                        organizationId
+                                );
+                                logger.info("Access token refreshed successfully for user id: {}", userId);
+                                return accessToken;
+                            })
+                            .doOnError(error -> logger.error("Failed to refresh token", error));
+                });
     }
 
     private Mono<GoogleTokenInfo> verifyGoogleToken(String idToken) {
@@ -331,7 +337,7 @@ public class AuthService {
         return Mono.just(tokenInfo);
     }
 
-    private Mono<User> loginExistingGoogleUser(User user, String pictureUrl, Integer organizationId) {
+    private Mono<User> loginExistingGoogleUser(User user, String pictureUrl, Integer organizationId, String userAgent, String loginIp) {
         if (user.getStatus() == UserStatus.BANNED
                 || user.getStatus() == UserStatus.SUSPENDED
                 || user.getStatus() == UserStatus.DELETED
@@ -356,11 +362,11 @@ public class AuthService {
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                 .doOnNext(existing -> {
                     logger.info("Google login successful for email: {}", existing.getEmail());
-                    recordLoginSuccessAsync(existing.getId(), GOOGLE_LOGIN_METHOD);
+                    recordLoginSuccessAsync(existing.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp);
                 });
     }
 
-    private Mono<User> registerGoogleUser(GoogleTokenInfo tokenInfo, Integer organizationId) {
+    private Mono<User> registerGoogleUser(GoogleTokenInfo tokenInfo, Integer organizationId, String userAgent, String loginIp) {
         String fullName = StringUtils.hasText(tokenInfo.name())
                 ? tokenInfo.name().trim()
                 : tokenInfo.email();
@@ -380,7 +386,7 @@ public class AuthService {
                                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))))
                 .doOnNext(user -> {
                     logger.info("Google account registered and logged in for email: {}", user.getEmail());
-                    recordLoginSuccessAsync(user.getId(), GOOGLE_LOGIN_METHOD);
+                    recordLoginSuccessAsync(user.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp);
                 });
     }
 
@@ -420,11 +426,13 @@ public class AuthService {
         return "_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes).toLowerCase();
     }
 
-    private void recordLoginSuccessAsync(Integer userId, String loginMethod) {
+    private void recordLoginSuccessAsync(Integer userId, String loginMethod, String userAgent, String loginIp) {
         UserLoginHistory history = UserLoginHistory.builder()
             .userId(userId)
             .loginAt(java.time.LocalDateTime.now())
             .loginMethod(loginMethod)
+            .userAgent(userAgent)
+            .loginIp(loginIp)
             .build();
 
         userLoginHistoryRepository.save(history)

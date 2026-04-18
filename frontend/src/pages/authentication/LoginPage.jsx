@@ -37,6 +37,15 @@ const LoginPage = () => {
     const result = await login({ email: data.email, password: data.password, organizationId });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
+
+      if (result?.data?.needsOrganizationSetup) {
+        navigate('/organization-registration', {
+          replace: true,
+          state: { redirectTo },
+        });
+        return;
+      }
+
       navigate(redirectTo, { replace: true });
     } else if (result?.error && result.error.includes('Account is not verified')) {
       const fp = await forgotPassword({ email: data.email });
@@ -62,6 +71,15 @@ const LoginPage = () => {
     const result = await loginWithGoogle(idToken);
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
+
+      if (result?.data?.needsOrganizationSetup) {
+        navigate('/organization-registration', {
+          replace: true,
+          state: { redirectTo },
+        });
+        return;
+      }
+
       navigate(redirectTo, { replace: true });
       return;
     }
