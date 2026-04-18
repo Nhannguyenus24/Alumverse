@@ -60,6 +60,34 @@ const mockRecentActivity = (org) => {
   ];
 };
 
+const normalizeList = (value) => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item ?? '').trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
+      }
+    } catch {
+      return trimmed.split(',').map((item) => item.trim()).filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
 const AdminOrganizationMasterDetail = ({
   organizations = [],
   selectedOrganizationId,
@@ -101,6 +129,15 @@ const AdminOrganizationMasterDetail = ({
     }
     return organizations.find((o) => o.id === filteredOrganizations[0].id) ?? filteredOrganizations[0];
   }, [organizations, filteredOrganizations, selectedOrganizationId]);
+
+  const selectedPrograms = useMemo(
+    () => normalizeList(selectedOrganization?.programs),
+    [selectedOrganization?.programs],
+  );
+  const selectedMajors = useMemo(
+    () => normalizeList(selectedOrganization?.majors),
+    [selectedOrganization?.majors],
+  );
 
   const membersPreview = selectedOrganization ? mockMemberPreview(selectedOrganization) : [];
   const recentActivity = selectedOrganization ? mockRecentActivity(selectedOrganization) : [];
@@ -337,6 +374,20 @@ const AdminOrganizationMasterDetail = ({
                           </Typography>
                         </Box>
                       ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Programs
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {selectedPrograms.length > 0 ? selectedPrograms.join(', ') : 'Chưa cấu hình'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mt: 0.5 }}>
+                        Majors
+                      </Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {selectedMajors.length > 0 ? selectedMajors.join(', ') : 'Chưa cấu hình'}
+                      </Typography>
                     </Box>
                   </Paper>
                 </Box>

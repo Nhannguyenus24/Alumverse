@@ -41,6 +41,50 @@ export default function SettingPage() {
   const { organization } = useOrganization();
   const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
 
+  const parseOrganizationOptions = (value) => {
+    if (!value) {
+      return [];
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item ?? '').trim())
+        .filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => String(item ?? '').trim())
+            .filter(Boolean);
+        }
+      } catch {
+        return trimmed
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+    }
+
+    return [];
+  };
+
+  const organizationProgramOptions = useMemo(
+    () => parseOrganizationOptions(organization?.programs),
+    [organization?.programs],
+  );
+  const organizationMajorOptions = useMemo(
+    () => parseOrganizationOptions(organization?.majors),
+    [organization?.majors],
+  );
+
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
     fullName: '',
@@ -281,13 +325,51 @@ const renderPersonalSettings = () => (
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin học vấn</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
         <TextField fullWidth label="Khoa/Bộ môn" name="faculty" value={formData.faculty} InputProps={{ readOnly: true }} />
-        <TextField fullWidth label="Chương trình đào tạo" name="program" value={formData.program} onChange={handleFormChange} />
+        {organizationProgramOptions.length > 0 ? (
+          <FormControl fullWidth>
+            <InputLabel>Chương trình đào tạo</InputLabel>
+            <Select
+              name="program"
+              value={formData.program}
+              label="Chương trình đào tạo"
+              onChange={handleFormChange}
+            >
+              <MenuItem value="">Chọn chương trình</MenuItem>
+              {organizationProgramOptions.map((program) => (
+                <MenuItem key={program} value={program}>
+                  {program}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          <TextField fullWidth label="Chương trình đào tạo" name="program" value={formData.program} onChange={handleFormChange} />
+        )}
 
         <TextField fullWidth label="Khoá" name="batch" value={formData.batch} InputProps={{ readOnly: true }} />
         <TextField fullWidth label="Năm tốt nghiệp" name="graduationYear" type="number"
           value={formData.graduationYear} onChange={handleFormChange} />
 
-        <TextField fullWidth label="Chuyên ngành" name="specialization" value={formData.specialization} onChange={handleFormChange} />
+        {organizationMajorOptions.length > 0 ? (
+          <FormControl fullWidth>
+            <InputLabel>Chuyên ngành</InputLabel>
+            <Select
+              name="specialization"
+              value={formData.specialization}
+              label="Chuyên ngành"
+              onChange={handleFormChange}
+            >
+              <MenuItem value="">Chọn chuyên ngành</MenuItem>
+              {organizationMajorOptions.map((major) => (
+                <MenuItem key={major} value={major}>
+                  {major}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        ) : (
+          <TextField fullWidth label="Chuyên ngành" name="specialization" value={formData.specialization} onChange={handleFormChange} />
+        )}
         <FormControl fullWidth>
           <InputLabel>Trạng thái tốt nghiệp</InputLabel>
           <Select name="graduationStatus" value={formData.graduationStatus} label="Trạng thái tốt nghiệp" onChange={handleFormChange}>
