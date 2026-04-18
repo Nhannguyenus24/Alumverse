@@ -7,10 +7,11 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const Sidebar = ({ items, value, onChange, useRouting = true }) => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
 
   return (

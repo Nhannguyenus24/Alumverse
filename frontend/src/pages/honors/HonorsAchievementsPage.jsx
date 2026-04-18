@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GroupsIcon from '@mui/icons-material/Groups';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -13,6 +13,7 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const SIDEBAR = [
   { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
@@ -59,7 +60,7 @@ const ACHIEVEMENT_ARTICLES = Array(9).fill({
 
 
 const HonorsAchievementsPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
 
   const [filters, setFilters] = useState({

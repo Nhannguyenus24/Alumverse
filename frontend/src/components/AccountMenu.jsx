@@ -11,12 +11,14 @@ import {
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import { useAuth } from "../hooks/useAuth";
+import { useOrgPath } from '../hooks/useOrgNavigate';
 
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const open = Boolean(anchorEl);
   const { logout } = useAuth();
+  const toOrgPath = useOrgPath();
 
   useEffect(() => {
     setAvatarLoadFailed(false);
@@ -173,7 +175,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
 
         <MenuItem
           component={Link}
-          to="/settings"
+          to={toOrgPath('/settings')}
           onClick={handleClose}
           sx={{
             borderTop: "none",

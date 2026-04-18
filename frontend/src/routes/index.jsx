@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
+import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 
 const Loadable = (Component) => (props) => (
@@ -169,8 +170,12 @@ const MaintenancePage = Loadable(
 
 export const router = createBrowserRouter([
   {
-    path: "/",
-    element: <MainLayout />,
+    path: "/:slug",
+    element: (
+      <RequireSlugRoute>
+        <MainLayout />
+      </RequireSlugRoute>
+    ),
     children: [
       {
         index: true,
@@ -205,7 +210,7 @@ export const router = createBrowserRouter([
                     path: "create-post",
                     element: (
                       <Navigate
-                        to="/forum/alumni/career/create-topic"
+                        to="../create-topic"
                         replace
                       />
                     ),
@@ -477,27 +482,19 @@ export const router = createBrowserRouter([
         path: "dashboard",
         element: (
           <ProtectedRoute>
-            <HomePage />
+            <DashboardPage />
           </ProtectedRoute>
         ),
-      },
-      {
-        path: "unauthorized",
-        element: <UnauthorizedPage />,
-      },
-      {
-        path: "500",
-        element: <ServerErrorPage />,
-      },
-      {
-        path: "maintenance",
-        element: <MaintenancePage />,
       },
     ],
   },
   {
-    path: "/auth",
-    element: <AuthLayout />,
+    path: "/:slug/auth",
+    element: (
+      <RequireSlugRoute>
+        <AuthLayout />
+      </RequireSlugRoute>
+    ),
     children: [
       {
         path: "login",
@@ -540,6 +537,100 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+        <AdminLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <AdminDashboardPage />,
+      },
+      {
+        path: "users",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUsersListPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "users/:userId",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminUserDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "forum/posts",
+        element: <AdminForumPostsPage />,
+      },
+      {
+        path: "forum/topics",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminForumTopicsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "forum/categories",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminForumCategoriesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "organizations",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminOrganizationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "audit-logs",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminAuditLogsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "analytics",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminAnalyticsPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/",
+    element: <Navigate to="/404" replace />,
+  },
+  {
+    path: "/404",
+    element: <NotFoundPage />,
+  },
+  {
+    path: "/unauthorized",
+    element: <UnauthorizedPage />,
+  },
+  {
+    path: "/500",
+    element: <ServerErrorPage />,
+  },
+  {
+    path: "/maintenance",
+    element: <MaintenancePage />,
   },
   {
     path: "*",

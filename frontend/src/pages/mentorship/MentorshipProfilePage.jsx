@@ -6,7 +6,7 @@ import {
   Typography,
   Avatar
 } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -14,6 +14,7 @@ import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
 import CheckBoxOutlinedIcon from '@mui/icons-material/CheckBoxOutlined';
 
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 /* ================= MOCK DATA ================= */
 
@@ -48,7 +49,7 @@ const TAGS = [
 /* ================= COMPONENT ================= */
 
 const MentorshipProfilePage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   return (
     <Page title="Profile Cố vấn">

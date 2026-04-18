@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import LocalActivityIcon from '@mui/icons-material/LocalActivity';
 import EventIcon from '@mui/icons-material/Event';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -14,6 +14,7 @@ import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 
 const SIDEBAR = [
@@ -79,7 +80,7 @@ const EVENT_ARTICLES = Array(3).fill({
 
 
 const ActivitiesPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
 
   const [filters, setFilters] = useState({

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
@@ -7,9 +7,10 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostAlumniPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews(); // assuming alumni uses the same hook
 

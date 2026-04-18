@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 import CoverUpload from '../../components/CoverUpload';
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import { useCreateEvent } from '../../hooks/news/useCreateEvent';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostEventPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createEvent, isPending } = useCreateEvent();
 

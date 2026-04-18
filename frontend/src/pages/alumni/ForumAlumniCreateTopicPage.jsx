@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -14,6 +14,8 @@ import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import WYSIWYG from '../../components/WYSIWYG';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useCreateForumTopic } from '../../hooks/forum/useCreateForumTopic';
 import { useCreateForumPost } from '../../hooks/forum/useCreateForumPost';
@@ -21,9 +23,10 @@ import { useNotification } from '../../hooks/useNotification';
 
 
 const ForumAlumniCreateTopicPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
-  const organizationId = user?.organizationId ?? 1;
+  const { organization } = useOrganization();
+  const organizationId = organization?.id ?? null;
   const {
     categories,
     isPending: categoriesPending,
@@ -132,6 +135,10 @@ const ForumAlumniCreateTopicPage = () => {
     }
     if (Number.isNaN(categoryId) || categoryId <= 0) {
       showWarning('Vui lòng chọn chủ đề phụ hợp lệ.');
+      return;
+    }
+    if (!organizationId) {
+      showWarning('Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.');
       return;
     }
 

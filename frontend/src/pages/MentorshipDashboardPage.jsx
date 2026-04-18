@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import WorkIcon from '@mui/icons-material/Work';
 import Page from '../components/Page';
 import ForumFilterPanel from '../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../components/forum/ForumSponsoredCard';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 /* ================= DATA ================= */
 
@@ -47,7 +48,7 @@ const STATS = [
 /* ================= COMPONENT ================= */
 
 const MentorshipDashboardPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
   const [selectedSidebar, setSelectedSidebar] = useState('mentorship');
 

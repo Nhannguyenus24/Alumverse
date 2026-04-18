@@ -1,10 +1,11 @@
 import { Box, Button, Container, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 export default function ServerErrorPage() {
-	const navigate = useNavigate();
+	const navigate = useOrgNavigate();
 
 	const handleRefresh = () => {
 		window.location.reload();

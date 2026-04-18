@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { Box, Typography, Button, TextField } from '@mui/material';
 import Page from '../../components/Page';
 import { verifyOtpSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
 const SignupCodePage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
   const { verifySignupCode, forgotPassword, isLoading: loading, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
@@ -234,7 +236,7 @@ const SignupCodePage = () => {
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
           <Typography
             component={Link}
-            to="/auth/login"
+            to={toOrgPath('/auth/login')}
             variant="body2"
             color="primary.main"
             fontWeight={600}

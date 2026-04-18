@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from 'react-router';
 import { Box, useTheme } from "@mui/material";
 import { usePrivateChats } from "../../hooks/mentorship/usePrivateChats";
 import useAuthStore from "../../stores/authStore";
@@ -8,6 +8,7 @@ import { useChatWebSocket } from "../../hooks/mentorship/useChatWebSocket";
 import { useChatMessages } from "../../hooks/mentorship/useChatMessages";
 import MentorshipChatSidebar from "../../components/mentorship/MentorshipChatSidebar";
 import MentorshipChatPanel from "../../components/mentorship/MentorshipChatPanel";
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const CHAT_BASE = "/development/mentorship/chat";
 
@@ -66,7 +67,7 @@ function mergeHistoryAndRealtime(history, realtime) {
 const MentorshipChatPage = () => {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { chatId } = useParams();
   const { token, user } = useAuthStore();
   const [draft, setDraft] = useState("");
