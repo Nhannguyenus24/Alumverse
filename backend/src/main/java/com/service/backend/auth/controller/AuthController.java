@@ -50,7 +50,7 @@ public class AuthController {
     @PostMapping("/register")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
-        return authService.register(request.getEmail(), request.getUserName(), request.getPassword(), request.getFullName())
+        return authService.register(request.getEmail(), request.getUserName(), request.getPassword(), request.getFullName(), request.getOrganizationId())
                 .then(Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true))))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
     }
@@ -62,9 +62,9 @@ public class AuthController {
     @PostMapping("/login")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> login(
             @Valid @RequestBody LoginRequest request) {
-        return authService.loginByEmail(request.getEmail(), request.getPassword())
-                .switchIfEmpty(Mono.defer(() -> 
-                    authService.loginByUserName(request.getEmail(), request.getPassword())
+        return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId())
+                .switchIfEmpty(Mono.defer(() ->
+                    authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId())
                 ))
                 .flatMap(this::buildLoginResponse)
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -77,7 +77,7 @@ public class AuthController {
     @PostMapping("/google-login")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> googleLogin(
             @Valid @RequestBody GoogleLoginRequest request) {
-        return authService.loginWithGoogle(request.getIdToken())
+        return authService.loginWithGoogle(request.getIdToken(), request.getOrganizationId())
                 .flatMap(this::buildLoginResponse)
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(error.getMessage(), null))));
