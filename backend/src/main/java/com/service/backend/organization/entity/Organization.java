@@ -8,7 +8,6 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.LocalDateTime;
 
@@ -34,6 +33,12 @@ public class Organization {
 
     @Column("features_config")
     private String featuresConfig;
+
+    @Column("programs")
+    private String programs;
+
+    @Column("majors")
+    private String majors;
 
     @Column("created_at")
     @CreatedDate

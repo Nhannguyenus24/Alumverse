@@ -36,6 +36,8 @@ CREATE TABLE "organizations" (
   "logo_url" varchar,
   "brand_config" json,
   "features_config" json,
+  "programs" json,
+  "majors" json,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
