@@ -1,0 +1,65 @@
+export const ADMIN_EVENT_STATUS_OPTIONS = [
+  { value: 'ALL', label: 'All statuses' },
+  { value: 'DRAFT', label: 'Draft' },
+  { value: 'PUBLISHED', label: 'Published' },
+  { value: 'CLOSED', label: 'Closed' },
+  { value: 'CANCELLED', label: 'Cancelled' },
+];
+
+export const ADMIN_EVENT_SORT_OPTIONS = [
+  { value: 'startDate', label: 'Start date' },
+  { value: 'updatedAt', label: 'Last updated' },
+  { value: 'title', label: 'Title' },
+  { value: 'registeredCount', label: 'Registrations' },
+];
+
+export const DEFAULT_ADMIN_EVENTS = [
+  {
+    id: 6001,
+    title: 'Alumni Career Fair 2026',
+    organizerName: 'Career Center',
+    status: 'PUBLISHED',
+    location: 'HCMUS Main Hall',
+    startDate: '2026-05-10T08:00:00.000Z',
+    endDate: '2026-05-10T17:00:00.000Z',
+    registeredCount: 280,
+    capacity: 400,
+    updatedAt: '2026-04-10T09:45:00.000Z',
+  },
+  {
+    id: 6002,
+    title: 'Mentor-Mentee Kickoff',
+    organizerName: 'Student Affairs',
+    status: 'DRAFT',
+    location: 'A11.203',
+    startDate: '2026-05-17T13:30:00.000Z',
+    endDate: '2026-05-17T16:30:00.000Z',
+    registeredCount: 42,
+    capacity: 120,
+    updatedAt: '2026-04-12T14:05:00.000Z',
+  },
+  {
+    id: 6003,
+    title: 'Data Science Alumni Talk',
+    organizerName: 'FIT Office',
+    status: 'PUBLISHED',
+    location: 'Online',
+    startDate: '2026-04-26T19:00:00.000Z',
+    endDate: '2026-04-26T21:00:00.000Z',
+    registeredCount: 510,
+    capacity: 600,
+    updatedAt: '2026-04-13T10:20:00.000Z',
+  },
+  {
+    id: 6004,
+    title: 'Startup Networking Night',
+    organizerName: 'Alumni Club',
+    status: 'CANCELLED',
+    location: 'District 1',
+    startDate: '2026-04-20T18:30:00.000Z',
+    endDate: '2026-04-20T21:00:00.000Z',
+    registeredCount: 132,
+    capacity: 150,
+    updatedAt: '2026-04-11T07:30:00.000Z',
+  },
+];
