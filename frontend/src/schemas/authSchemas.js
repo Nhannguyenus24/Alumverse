@@ -20,16 +20,20 @@ export const loginSchema = z.object({
   password: passwordSchema,
 });
 
-/** Register: backend RegisterRequest — email, userName, password; UI: studentId, enrollmentYear (bắt buộc) */
+/** Register: backend RegisterRequest — email, userName (studentId), fullName, password; UI: studentId, enrollmentYear (bắt buộc) */
 export const registerSchema = z
   .object({
-    userName: z
+    fullName: z
       .string()
       .min(1, 'Họ và tên là bắt buộc')
-      .min(3, 'Họ và tên từ 3–50 ký tự')
-      .max(50, 'Họ và tên từ 3–50 ký tự')
-      .regex(USERNAME_REGEX, 'Họ và tên chỉ được chứa chữ cái, số, dấu chấm, gạch dưới và gạch ngang'),
-    studentId: z.string().min(1, 'Vui lòng chọn mã số sinh viên'),
+      .min(2, 'Họ và tên từ 2–100 ký tự')
+      .max(100, 'Họ và tên từ 2–100 ký tự'),
+    studentId: z
+      .string()
+      .min(1, 'Mã số sinh viên là bắt buộc')
+      .min(3, 'Mã số sinh viên từ 3–50 ký tự')
+      .max(50, 'Mã số sinh viên từ 3–50 ký tự')
+      .regex(USERNAME_REGEX, 'Mã số sinh viên chỉ được chứa chữ cái, số, dấu chấm, gạch dưới và gạch ngang'),
     enrollmentYear: z.string().min(1, 'Vui lòng chọn năm nhập học'),
     email: z.email("Email là bắt buộc"),
     password: z

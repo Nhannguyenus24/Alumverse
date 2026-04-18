@@ -16,7 +16,7 @@ import Logo from "../../components/Logo";
 import FitBot from "../../components/FitBot";
 
 const HERO_BG = "/home_page/home_page.png";
-const HERO_LOGO = "/home_page/home_page_alum.png";
+const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
 
 const EXPLORE_ITEMS = [
   {
@@ -80,7 +80,7 @@ const HomePage = () => {
 
   return (
     <Page
-      title="Trang chủ"
+      title="AlumVerse - Nền tảng kết nối Sinh viên & Cựu sinh viên"
       meta={
         <meta
           name="description"
@@ -106,7 +106,7 @@ const HomePage = () => {
             content: '""',
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.35)",
+            backgroundColor: "rgba(0,0,0,0.6)",
             zIndex: 0,
           },
         }}

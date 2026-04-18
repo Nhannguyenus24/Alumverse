@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,6 +27,7 @@ import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
+import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.service.ForumService;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
@@ -190,6 +192,30 @@ public class ForumController {
                 .map(post -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Answer posted successfully", post)))
                 .onErrorResume(this::handleError);
     }
+
+    /**
+     * Update forum post
+     */
+    @PutMapping("/post/{id}")
+    public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> updatePost(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id,
+            @Valid @RequestBody UpdateForumPostRequest request) {
+        return forumService.updatePost(id, request)
+                .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post updated successfully", post)))
+                .onErrorResume(this::handleError);
+    }
+
+    /**
+     * Delete forum post
+     */
+    @DeleteMapping("/post/{id}")
+    public Mono<ResponseEntity<ApiResponse<Void>>> deletePost(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
+        return forumService.deletePost(id)
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Forum post deleted successfully", null))))
+                .onErrorResume(this::handleError);
+    }
+
     // ========== REACTION ENDPOINTS (LIKE/DISLIKE) ==========
 
     /**

@@ -1,7 +1,5 @@
 package com.service.backend.auth.dao;
 
-import java.util.List;
-
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -10,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.service.backend.auth.entity.User;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -29,6 +28,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Check if user exists by email or username (for registration validation)
      */
     Mono<Boolean> existsByEmailOrUserName(String email, String userName);
+
+    /**
+     * Check if username already exists
+     */
+    Mono<Boolean> existsByUserName(String userName);
 
     /**
      * Find active user by email
@@ -97,17 +101,52 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     
     /**
      * Register new user with unverified status and alumni role
-     * Returns the created user
+     * Returns the created user ID
      */
-    @Modifying
     @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-    Mono<Void> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
+           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "RETURNING id")
+    Mono<Integer> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
+
+    /**
+     * Register new user from Google login with active status
+     * Returns the created user ID
+     */
+    @Query("INSERT INTO users (email, user_name, password_hash, role, status, avatar_url, created_at, updated_at) " +
+           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "RETURNING id")
+    Mono<Integer> registerGoogleUser(
+            @Param("email") String email,
+            @Param("userName") String userName,
+            @Param("passwordHash") String passwordHash,
+            @Param("avatarUrl") String avatarUrl);
     
     /**
-     * Get organization ID for a user from organization_members table
-     * Returns null if user is not a member of any organization
+     * Get organization IDs for a user from organization_members table
+     * Returns empty Flux if user is not a member of any organization
      */
     @Query("SELECT om.organization_id FROM organization_members om WHERE om.user_id = :userId")
-    Mono<List<Integer>> getOrganizationIdByUserId(@Param("userId") Integer userId);
+    Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
+
+    /**
+     * Create global profile for a newly registered user
+     */
+    @Modifying
+    @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
+           "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
+    Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
+
+    /**
+     * Create a default organization_members record when a user registers under an organization
+     */
+    @Modifying
+    @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, 0, false, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
+
+    /**
+     * Check if an organization_members record exists for the given user and organization
+     */
+    @Query("SELECT COUNT(*) > 0 FROM organization_members WHERE user_id = :userId AND organization_id = :organizationId")
+    Mono<Boolean> existsOrganizationMemberByUserIdAndOrgId(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
 }

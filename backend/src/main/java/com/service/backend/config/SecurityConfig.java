@@ -55,13 +55,20 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**",
                                 "/api/guest/**",
+                                "/api/organizations/**",
                                 "/websocket-test.html",
+                                "/ws/chat",
+                                "/ws/chat/**",
                                 "/*.html",
                                 "/*.css",
                                 "/*.js",
                                 "/*.png",
                                 "/*.ico",
-                                "/static/**"
+                                "/static/**",
+                                "/api/funds/**",
+                                "/api/fund-statuses",
+                                "/api/fund-donations",
+                                "/api/payment/**"
                         ).permitAll()
 
                         // All other requests require authentication

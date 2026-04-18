@@ -103,6 +103,22 @@
 			<artifactId>bucket4j-caffeine</artifactId>
 			<version>7.6.0</version>
 		</dependency>
+		<dependency>
+			<groupId>vn.payos</groupId>
+			<artifactId>payos-java</artifactId>
+			<version>2.0.1</version>
+		</dependency>
+		<!-- Scrimage for Image Processing and WebP Conversion -->
+		<dependency>
+			<groupId>com.sksamuel.scrimage</groupId>
+			<artifactId>scrimage-core</artifactId>
+			<version>4.1.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sksamuel.scrimage</groupId>
+			<artifactId>scrimage-webp</artifactId>
+			<version>4.1.2</version>
+		</dependency>
 	</dependencies>
 
 	<build>

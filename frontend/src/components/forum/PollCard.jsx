@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Card,
@@ -12,8 +12,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Alert,
 } from '@mui/material';
+import { useSnackbar } from 'notistack';
 import HowToVoteOutlinedIcon from '@mui/icons-material/HowToVoteOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useVoteOnPoll } from '../../hooks/forum/useVoteOnPoll';
@@ -21,7 +21,19 @@ import { useVoteOnPoll } from '../../hooks/forum/useVoteOnPoll';
 const PollCard = ({ poll, memberId, onVoteSuccess, onError }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [openConfirm, setOpenConfirm] = useState(false);
-  const { vote, isPending, errorMessage, isSuccess, reset } = useVoteOnPoll();
+  const { enqueueSnackbar } = useSnackbar();
+  const lastSnackbarErrorRef = useRef('');
+  const { vote, isPending, errorMessage, reset } = useVoteOnPoll();
+
+  useEffect(() => {
+    if (errorMessage && errorMessage !== lastSnackbarErrorRef.current) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      lastSnackbarErrorRef.current = errorMessage;
+    }
+    if (!errorMessage) {
+      lastSnackbarErrorRef.current = '';
+    }
+  }, [errorMessage, enqueueSnackbar]);
 
   if (!poll) return null;
 
@@ -81,13 +93,6 @@ const PollCard = ({ poll, memberId, onVoteSuccess, onError }) => {
             <Typography variant="body2" color="textSecondary" mb={2}>
               {poll.description}
             </Typography>
-          )}
-
-          {/* Error Message */}
-          {errorMessage && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {errorMessage}
-            </Alert>
           )}
 
           {/* Poll Options */}

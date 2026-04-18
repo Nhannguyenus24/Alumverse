@@ -1,6 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import ReCAPTCHA from "react-google-recaptcha";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
+import { useSnackbar } from "notistack";
 
 const ReCaptcha = ({
   siteKey,
@@ -11,7 +12,19 @@ const ReCaptcha = ({
   size = "normal", // "normal" | "compact" | "invisible"
   onLoad,
 }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const recaptchaRef = useRef(null);
+  const missingKeyShownRef = useRef(false);
+
+  useEffect(() => {
+    if (!siteKey && !missingKeyShownRef.current) {
+      enqueueSnackbar("ReCAPTCHA v2 site key is not configured", { variant: "error" });
+      missingKeyShownRef.current = true;
+    }
+    if (siteKey) {
+      missingKeyShownRef.current = false;
+    }
+  }, [siteKey, enqueueSnackbar]);
 
   const handleChange = (token) => {
     if (onChange) {
@@ -37,22 +50,10 @@ const ReCaptcha = ({
     }
   };
 
-  const reset = () => {
-    if (recaptchaRef.current) {
-      recaptchaRef.current.reset();
-    }
-  };
-
-  const execute = () => {
-    if (recaptchaRef.current && size === "invisible") {
-      recaptchaRef.current.execute();
-    }
-  };
-
   if (!siteKey) {
     return (
-      <Box sx={{ p: 2, textAlign: "center", color: "error.main" }}>
-        <Typography variant="body2">
+      <Box sx={{ p: 2, textAlign: "center" }}>
+        <Typography variant="body2" color="text.secondary">
           ReCAPTCHA v2 site key is not configured
         </Typography>
       </Box>

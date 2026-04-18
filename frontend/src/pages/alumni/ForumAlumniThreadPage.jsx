@@ -1,16 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
-import { Alert, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Stack, TextField, Typography } from '@mui/material';
+import { useLocation, useParams } from 'react-router';
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
-import ModeCommentOutlinedIcon from '@mui/icons-material/ModeCommentOutlined';
 import ReplyOutlinedIcon from '@mui/icons-material/ReplyOutlined';
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import SentimentSatisfiedAltOutlinedIcon from '@mui/icons-material/SentimentSatisfiedAltOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -18,6 +17,7 @@ import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useForumPosts } from '../../hooks/forum/useForumPosts';
 import { useCreateForumPost } from '../../hooks/forum/useCreateForumPost';
 import { useAnswerToForumPost } from '../../hooks/forum/useAnswerToForumPost';
+import { useUpdateForumPost } from '../../hooks/forum/useUpdateForumPost';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import { useForumPostReactionCount } from '../../hooks/forum/useForumPostReactionCount';
@@ -27,17 +27,18 @@ import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useNotification } from '../../hooks/useNotification';
-import { usePollsByTopic } from '../../hooks/forum/usePollsByTopic';
-import PollSection from '../../components/forum/PollSection';
-import CreatePollDialog from '../../components/forum/CreatePollDialog';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import EditPostDialog from '../../components/forum/EditPostDialog';
+import ConfirmDialog from '../../components/ConfirmDialog';
+import WYSIWYG from '../../components/WYSIWYG';
 
-const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting }) => {
+const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
+  const { showError } = useNotification();
+  const reactErrShownRef = useRef(false);
+  const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
-  const {
-    hasReaction,
-    isPending: userReactionPending,
-    isError: userReactionError,
-  } = useForumPostUserReaction(reply.id, memberId);
+  const { hasReaction } = useForumPostUserReaction(reply.id, memberId);
   const {
     toggleReaction,
     isPending: reactPending,
@@ -45,7 +46,18 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
     errorMessage: reactErrorMessage,
   } = useReactToForumPost(reply.id, memberId);
 
-  const isOwn = index === 0;
+  useEffect(() => {
+    if (reactIsError) {
+      if (!reactErrShownRef.current) {
+        showError(reactErrorMessage ?? 'Không thể cập nhật cảm xúc.');
+        reactErrShownRef.current = true;
+      }
+    } else {
+      reactErrShownRef.current = false;
+    }
+  }, [reactIsError, reactErrorMessage, showError]);
+
+  const isOwn = reply.authorMemberId === memberId;
 
   const isLiked = !!hasReaction;
   const likesDisplay = likesPending
@@ -55,6 +67,18 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
     : likes;
 
   const hasParent = !!parentPost;
+  const isActionMenuOpen = Boolean(actionAnchorEl);
+
+  const handleOpenActionMenu = (event) => {
+    setActionAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseActionMenu = () => {
+    setActionAnchorEl(null);
+  };
+
+  const canDelete = isAdmin || isOwn;
+  const canEdit = !isAdmin && isOwn;
 
   return (
     <Box
@@ -117,49 +141,64 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
           <Typography variant="caption" color="text.secondary">
             {reply.createdAt}
           </Typography>
-          {isAdmin ? (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                onClick={() => onDelete?.(reply)}
-                disabled={isDeleting}
+          <>
+            <IconButton size="small" onClick={handleOpenActionMenu}>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
+            <Menu
+              anchorEl={actionAnchorEl}
+              open={isActionMenuOpen}
+              onClose={handleCloseActionMenu}
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleCloseActionMenu();
+                  onReply?.(reply);
+                }}
               >
-                Xóa
-              </Button>
-            </Box>
-          ) : isOwn ? (
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Button
-                size="small"
-                variant="outlined"
-                color="primary"
-                startIcon={<EditOutlinedIcon sx={{ fontSize: 18 }} />}
-              >
-                Sửa
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<DeleteOutlineOutlinedIcon sx={{ fontSize: 18 }} />}
-                onClick={() => onDelete?.(reply)}
-                disabled={isDeleting}
-              >
-                Xóa
-              </Button>
-            </Box>
-          ) : null}
+                <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                Trả lời
+              </MenuItem>
+              {canEdit && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseActionMenu();
+                    onEdit?.(reply);
+                  }}
+                >
+                  <EditOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                  Sửa
+                </MenuItem>
+              )}
+              {canDelete && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseActionMenu();
+                    onDelete?.(reply);
+                  }}
+                  disabled={isDeleting}
+                  sx={{ color: 'error.main' }}
+                >
+                  <DeleteOutlineOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                  Xóa
+                </MenuItem>
+              )}
+            </Menu>
+          </>
         </Box>
-        <Typography
-          variant="body2"
-          color="text.primary"
-          sx={{ mb: 1.5, lineHeight: 1.7 }}
-        >
-          {reply.content}
-        </Typography>
+        <Box
+          className="ql-editor"
+          sx={{
+            mb: 1.5,
+            px: 0,
+            py: 0,
+            lineHeight: 1.7,
+            '& p': { my: 0.75 },
+          }}
+          dangerouslySetInnerHTML={{ __html: reply.content || '' }}
+        />
         {hasParent ? (
           <Box
             sx={{
@@ -188,7 +227,7 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
                 WebkitBoxOrient: 'vertical',
               }}
             >
-              {parentPost.content || '—'}
+              {toPlainText(parentPost.content) || '—'}
             </Typography>
           </Box>
         ) : null}
@@ -236,41 +275,13 @@ const ForumReply = ({ reply, index, isAdmin, memberId, onReply, parentPost, onDe
               </Typography>
             </Button>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ModeCommentOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                8
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
               <Typography variant="caption" color="text.secondary">
                 Chia sẻ
               </Typography>
             </Box>
           </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 1,
-              flexWrap: 'wrap',
-              justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-            }}
-          >
-            <Button
-              size="small"
-              variant="contained"
-              color="primary"
-              startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-              onClick={() => onReply?.(reply)}
-            >
-              Trả lời
-            </Button>
-          </Box>
-          {reactIsError ? (
-            <Typography variant="caption" color="error">
-              {reactErrorMessage ?? 'Không thể cập nhật cảm xúc.'}
-            </Typography>
-          ) : null}
+          <Box />
         </Box>
       </Box>
     </Box>
@@ -296,19 +307,14 @@ const FALLBACK_THREAD = {
   createdAt: '—',
 };
 
-const FILTERS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'alumni', label: 'Cựu sinh viên' },
-  { id: 'jobs', label: 'Việc làm' },
-  { id: 'events', label: 'Hoạt động' },
-  { id: 'tech', label: 'Công nghệ' },
-  { id: 'courses', label: 'Học phần' },
-  { id: 'admissions', label: 'Tuyển sinh' },
-];
+const toPlainText = (value) => {
+  if (value == null) return '';
+  return String(value).replace(/<[^>]*>/g, '').trim();
+};
 
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { threadId } = useParams();
   const topicId = useMemo(() => {
     const id = parseInt(threadId, 10);
@@ -316,6 +322,7 @@ const ForumAlumniThreadPage = () => {
   }, [threadId]);
 
   const { user } = useAuth();
+  const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
@@ -324,9 +331,14 @@ const ForumAlumniThreadPage = () => {
   const [editTopicTitle, setEditTopicTitle] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
   const [threadTitleOverride, setThreadTitleOverride] = useState('');
+  const [isEditPostOpen, setIsEditPostOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const organizationId = user?.organizationId ?? 1;
-  const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
+  const organizationId = organization?.id ?? null;
+  const { categories } = useForumCategories(organizationId);
   const selectedFilterIdFromState = location.state?.selectedFilterId ?? 'all';
   const openingPostErrorFromState =
     typeof location.state?.openingPostError === 'string'
@@ -334,20 +346,20 @@ const ForumAlumniThreadPage = () => {
       : '';
 
   const memberId = user?.id ?? null;
-  const { posts, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, 0, 20);
-  const { createPost, isPending: createPending, isError: createIsError, errorMessage: createErrorMessage } =
-    useCreateForumPost();
-  const {
-    answerToPost,
-    isPending: answerPending,
-    isError: answerIsError,
-    errorMessage: answerErrorMessage,
-  } = useAnswerToForumPost();
+  const { posts, pageInfo, isPending: postsPending, isError: postsError } = useForumPosts(topicId, memberId, currentPage, 10);
+  const { createPost, isPending: createPending } = useCreateForumPost();
+  const { answerToPost, isPending: answerPending } = useAnswerToForumPost();
   const {
     deletePost,
     isPending: deletePending,
     errorMessage: deleteErrorMessage,
   } = useDeleteForumPost();
+  const {
+    updatePost,
+    isPending: updatePostPending,
+    isError: updatePostIsError,
+    errorMessage: updatePostErrorMessage,
+  } = useUpdateForumPost();
   const {
     deleteTopic,
     isPending: deleteTopicPending,
@@ -358,16 +370,23 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
-
-  const { polls, isPending: pollsPending, isError: pollsError, errorMessage: pollsErrorMessage, refetch: refetchPolls } = usePollsByTopic(topicId, memberId);
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [topicId]);
+
+  useEffect(() => {
+    if (!pageInfo?.totalPage || pageInfo.totalPage <= 0) return;
+    if (currentPage >= pageInfo.totalPage) {
+      setCurrentPage(pageInfo.totalPage - 1);
+    }
+  }, [currentPage, pageInfo?.totalPage]);
+
   const stripHtml = useCallback((value) => {
-    if (value == null) return '';
-    const s = String(value);
-    return s.replace(/<[^>]*>/g, '').trim();
+    return toPlainText(value);
   }, []);
 
   const thread = useMemo(() => {
@@ -409,9 +428,9 @@ const ForumAlumniThreadPage = () => {
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
         createdAt: formatPostDate(post.createdAt),
-        content: stripHtml(post.content),
+        content: post.content ?? '',
       })),
-    [posts, stripHtml]
+    [posts]
   );
 
   const replyMap = useMemo(() => {
@@ -436,14 +455,23 @@ const ForumAlumniThreadPage = () => {
   }, []);
 
   const handleCancelReply = useCallback(() => setReplyTo(null), []);
-  const handleDeletePost = useCallback(
-    async (reply) => {
-      if (!reply?.id) return;
+  
+  const handleDeletePost = useCallback((reply) => {
+    if (!reply?.id) return;
+    setPostToDelete(reply);
+    setIsConfirmDeleteOpen(true);
+  }, []);
+
+  const handleConfirmDeletePost = useCallback(
+    async () => {
+      if (!postToDelete?.id) return;
       try {
-        await deletePost(reply.id);
-        if (replyTo?.postId === reply.id) {
+        await deletePost(postToDelete.id);
+        if (replyTo?.postId === postToDelete.id) {
           setReplyTo(null);
         }
+        setIsConfirmDeleteOpen(false);
+        setPostToDelete(null);
         showSuccess('Xóa bài viết thành công.');
       } catch (err) {
         const message =
@@ -454,7 +482,50 @@ const ForumAlumniThreadPage = () => {
         showError(message);
       }
     },
-    [deletePost, deleteErrorMessage, replyTo?.postId, showError, showSuccess]
+    [deletePost, deleteErrorMessage, postToDelete?.id, replyTo?.postId, showError, showSuccess]
+  );
+
+  const handleCloseConfirmDelete = useCallback(() => {
+    if (deletePending) return;
+    setIsConfirmDeleteOpen(false);
+    setPostToDelete(null);
+  }, [deletePending]);
+
+  const handleEditPost = useCallback((reply) => {
+    if (!reply?.id) return;
+    setEditingPost(reply);
+    setIsEditPostOpen(true);
+  }, []);
+
+  const handleCloseEditPost = useCallback(() => {
+    if (updatePostPending) return;
+    setIsEditPostOpen(false);
+    setEditingPost(null);
+  }, [updatePostPending]);
+
+  const handleSaveEditPost = useCallback(
+    async (newContent) => {
+      if (!editingPost?.id || !stripHtml(newContent)) return;
+      try {
+        await updatePost({
+          postId: editingPost.id,
+          payload: {
+            content: newContent,
+          },
+        });
+        setIsEditPostOpen(false);
+        setEditingPost(null);
+        showSuccess('Cập nhật bài viết thành công.');
+      } catch (err) {
+        const message =
+          err?.response?.data?.message ??
+          updatePostErrorMessage ??
+          err?.message ??
+          'Không thể cập nhật bài viết.';
+        showError(message);
+      }
+    },
+    [editingPost?.id, showError, showSuccess, stripHtml, updatePost, updatePostErrorMessage]
   );
 
   const handleDeleteTopic = useCallback(async () => {
@@ -523,24 +594,21 @@ const ForumAlumniThreadPage = () => {
   }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
 
   const filters = useMemo(() => {
-    if (categoriesPending && !categories?.length) {
-      return FILTERS;
-    }
-    if (!categories?.length) return FILTERS;
+    const parentCategories = (categories ?? []).filter((c) => c.parentId == null);
     return [
       { id: 'all', label: 'Tất cả' },
-      ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
+      ...parentCategories.map((c) => ({ id: `parent-${c.id}`, label: c.name })),
     ];
-  }, [categories, categoriesPending]);
+  }, [categories]);
 
   const handleSubmit = async () => {
-    const trimmed = (editorValue ?? '').trim();
-    if (!trimmed || !topicId || !user?.id) return;
+    const plainContent = stripHtml(editorValue ?? '');
+    if (!plainContent || !topicId || !user?.id) return;
 
     const payload = {
       topicId,
       authorMemberId: user.id,
-      content: trimmed,
+      content: editorValue,
       answerToPostId: replyTo?.postId ?? null,
     };
 
@@ -591,17 +659,18 @@ const ForumAlumniThreadPage = () => {
         navigate('/forum');
         return;
       }
-      if (id === 'alumni') {
-        navigate('/forum/alumni/career');
-        return;
-      }
-      if (id?.startsWith('category-')) {
+      if (typeof id === 'string' && id.startsWith('parent-')) {
         navigate('/forum', { state: { selectedFilterId: id } });
         return;
       }
     },
     [navigate]
   );
+
+  const handlePaginationChange = useCallback((_, nextPage) => {
+    setCurrentPage(nextPage - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const selectedFilterId = useMemo(() => {
     const allFilterIds = filters.map((f) => f.id);
@@ -633,10 +702,8 @@ const ForumAlumniThreadPage = () => {
     if (activeCategory) {
       items.push({
         label: activeCategory.name,
-        path: `/forum/alumni/career/${activeCategory.id}`,
-        state: {
-          selectedFilterId: activeCategory.parentId != null ? `parent-${activeCategory.parentId}` : `parent-${activeCategory.id}`,
-        },
+        path: '/forum',
+        state: { selectedFilterId: activeCategory.parentId ? `parent-${activeCategory.parentId}` : `parent-${activeCategory.id}` },
       });
     }
     items.push({ label: thread.title });
@@ -687,11 +754,6 @@ const ForumAlumniThreadPage = () => {
                 color="primary"
                 fontSize="0.8rem"
               />
-              {openingPostErrorFromState ? (
-                <Alert severity="warning" sx={{ mt: 1.5, mb: 0 }}>
-                  Chủ đề đã được tạo nhưng không thể đăng nội dung mở đầu: {openingPostErrorFromState}
-                </Alert>
-              ) : null}
               <Box
                 sx={{
                   backgroundColor: '#fff',
@@ -776,6 +838,11 @@ const ForumAlumniThreadPage = () => {
                         color="primary"
                         size="small"
                         startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={() => {
+                          editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                          const input = editorRef.current?.querySelector?.('textarea');
+                          input?.focus?.();
+                        }}
                         sx={{ whiteSpace: 'nowrap' }}
                       >
                         Trả lời
@@ -829,6 +896,11 @@ const ForumAlumniThreadPage = () => {
                         color="primary"
                         size="small"
                         startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={() => {
+                          editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                          const input = editorRef.current?.querySelector?.('textarea');
+                          input?.focus?.();
+                        }}
                       >
                         Trả lời
                       </Button>
@@ -885,24 +957,47 @@ const ForumAlumniThreadPage = () => {
                   </Box>
                 ) : postsError ? (
                   <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
-                    <Typography color="error">Không thể tải bài viết.</Typography>
+                    <Typography color="text.secondary">Không thể tải bài viết.</Typography>
                   </Box>
                 ) : (
-                  replies.map((reply, index) => (
+                  replies.map((reply) => (
                     <ForumReply
                       key={reply.id}
                       reply={reply}
-                      index={index}
                       isAdmin={isAdmin}
                       memberId={memberId}
                       onReply={handleReply}
                       onDelete={handleDeletePost}
+                      onEdit={handleEditPost}
                       isDeleting={deletePending}
                       parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
                     />
                   ))
                 )}
               </Box>
+
+              {!!pageInfo?.totalPage && pageInfo.totalPage > 1 && (
+                <Box
+                  sx={{
+                    px: { xs: 1.5, sm: 2, md: 3 },
+                    py: { xs: 1.5, md: 2 },
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Pagination
+                    color="primary"
+                    shape="rounded"
+                    page={currentPage + 1}
+                    count={pageInfo.totalPage}
+                    onChange={handlePaginationChange}
+                    siblingCount={0}
+                    boundaryCount={1}
+                  />
+                </Box>
+              )}
 
               {/* Reply editor */}
               <Box
@@ -1004,19 +1099,10 @@ const ForumAlumniThreadPage = () => {
                         </Typography>
                       </Box>
                     ) : null}
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={6}
+                    <WYSIWYG
                       value={editorValue}
-                      onChange={(e) => setEditorValue(e.target.value)}
-                      placeholder="Write something"
+                      onChange={setEditorValue}
                     />
-                    {answerIsError || createIsError ? (
-                      <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                        {answerErrorMessage ?? createErrorMessage ?? 'Không thể đăng bài viết.'}
-                      </Typography>
-                    ) : null}
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
                       <Button
                         variant="contained"
@@ -1027,7 +1113,7 @@ const ForumAlumniThreadPage = () => {
                           answerPending ||
                           !topicId ||
                           !user?.id ||
-                          !(editorValue ?? '').trim()
+                          !stripHtml(editorValue ?? '')
                         }
                       >
                         {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
@@ -1079,6 +1165,26 @@ const ForumAlumniThreadPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      <EditPostDialog
+        open={isEditPostOpen}
+        post={editingPost}
+        onClose={handleCloseEditPost}
+        onSave={handleSaveEditPost}
+        isPending={updatePostPending}
+        isError={updatePostIsError}
+        errorMessage={updatePostErrorMessage}
+      />
+      <ConfirmDialog
+        open={isConfirmDeleteOpen}
+        title="Xác nhận xóa bài viết"
+        message="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        confirmColor="error"
+        loading={deletePending}
+        onConfirm={handleConfirmDeletePost}
+        onCancel={handleCloseConfirmDelete}
+      />
     </Page>
   );
 };

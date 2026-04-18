@@ -1,0 +1,199 @@
+import { useState, useCallback } from 'react';
+import { Box, Button, Container, Stack, Typography } from '@mui/material';
+
+import LocalActivityIcon from '@mui/icons-material/LocalActivity';
+import EventIcon from '@mui/icons-material/Event';
+import ArticleIcon from '@mui/icons-material/Article';
+
+import Page from '../../components/Page';
+import { useAuth } from '../../hooks/useAuth';
+import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import DynamicFilterBar from '../../components/DynamicFilterBar';
+import SearchBar from '../../components/SearchBar';
+import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
+import ArticleCard from '../../components/articles/ArticleCard';
+import ArticleEventCard from '../../components/articles/ArticleEventCard';
+import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+
+
+const SIDEBAR = [
+  { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
+  { id: '/activities/events', label: 'Sự kiện', icon: <EventIcon /> },
+  { id: '/activities/news', label: 'Tin tức', icon: <ArticleIcon /> },
+];
+
+const FILTERS = [
+  {
+    type: 'dropdown',
+    key: 'type',
+    label: 'Chủ đề',
+    multiple: true,
+    options: [
+      'Học thuật',
+      'Sinh viên',
+      'Sự kiện trường',
+      'Cộng đồng',
+      'Thông báo',
+    ],
+  },
+  {
+    type: 'date',
+    key: 'date',
+    label: 'Ngày',
+  },
+  {
+    type: 'topics',
+    key: 'topics',
+    label: 'Chủ đề',
+    options: ['Thịnh hành', 'Mới nhất', 'Quan tâm'],
+  },
+];
+
+const FEATURED_ARTICLE = {
+  title: 'Hội nghị Liên ban Cộng đồng Cựu sinh viên Khoa học - Nhiệm kỳ 2022 - 2025',
+  date: '12/12/2023',
+  description:
+    'Là một trong hai nhà khoa học nữ xuất sắc nhận Giải thưởng Kovalevskaia năm 2021, GS.TS. Nguyễn Thị Thanh Mai được biết đến như một nhà giáo, nhà khoa học say mê nghiên cứu, luôn dấn thân tìm kiếm những điều mới mẻ và...',
+  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2uCT-mf_rCgp7E8d1PARjnaitjmxn4wzW5Q&s',
+};
+
+const NEWS_ARTICLES = Array(3).fill({
+  title: 'Trường Đại học Khoa học tự nhiên mở diễn đàn đổi mới sáng tạo',
+  date: '12/12/2023',
+  description:
+    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur...',
+  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgm37lvYIRKvTGi4qoeU4GsQn0HiF3bYq9zA&s',
+});
+
+const EVENT_ARTICLES = Array(3).fill({
+  title: 'Visit HITSZ',
+  date: '01/03/2026 - 05/03/2026',
+  organizer: 'HITSZ',
+  participants: 200,
+  interested: 1500,
+  description:
+    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
+  image:
+    'https://www.a234.fr/wp-content/uploads/2019/10/ateliers234-shenzhen-designschool_ateliers-234_2023-10-2500x1406.jpg',
+});
+
+
+const ActivitiesPage = () => {
+  const navigate = useOrgNavigate();
+  const { user } = useAuth();
+
+  const [filters, setFilters] = useState({
+    all: true,
+  });
+
+  return (
+    <Page title="Hoạt động">
+      <Container
+        maxWidth={false}
+        disableGutters
+        sx={{ pb: 6 }}
+      >
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
+            {/* SIDEBAR */}
+            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
+              <Sidebar items={SIDEBAR} />
+              <ForumSponsoredCard
+                title="Sponsored"
+                imageSrc="/forum/metro_station.png"
+                imageAlt="HCMC Metro Opening"
+                caption="HCMC Metro Opening"
+              />
+            </Stack>
+
+            {/* MAIN CONTENT */}
+            <Stack spacing={5}
+                   sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 }}}
+            >
+              <Stack gap={2}>
+                {/* HEADER */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography
+                    variant="h1"
+                    fontWeight={800}
+                    color="primary.main"
+                    sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+                    >
+                    HOẠT ĐỘNG
+                  </Typography>
+                </Box>
+
+                {/* FILTERS */}
+                <DynamicFilterBar
+                  config={FILTERS}
+                  value={filters}
+                  onChange={setFilters}
+                />
+
+                {/* SEARCH */}
+                <SearchBar
+                  value={filters.search}
+                  onChange={(val) =>
+                    setFilters((prev) => ({ ...prev, search: val }))
+                  }
+                />
+              </Stack>
+
+              {/* FEATURED ARTICLE */}
+              <FeaturedArticleCard article={FEATURED_ARTICLE} />
+
+              {/* NEWS SECTION */}
+              <Box>
+                <Typography variant="h4" fontWeight={700} mb={3}>
+                  Tin tức hàng ngày
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 4,
+                  }}
+                >
+                  {NEWS_ARTICLES.map((article, i) => (
+                    <ArticleCard key={i} article={article} />
+                  ))}
+                </Box>
+              </Box>
+
+              {/* EVENTS SECTION */}
+              <Box>
+                <Typography variant="h4" fontWeight={700} mb={3}>
+                  Sự kiện gần đây
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 4,
+                  }}
+                >
+                  {EVENT_ARTICLES.map((article, i) => (
+                    <ArticleEventCard key={i} article={article} />
+                  ))}
+                </Box>
+              </Box>
+            </Stack>
+          </Box>
+        </Container>
+      </Container>
+    </Page>
+  );
+};
+
+export default ActivitiesPage;
