@@ -1,9 +1,7 @@
 package com.service.backend.shared.utils;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -40,7 +38,7 @@ public class JwtUtils {
         }
     }
 
-    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, List<Integer> organizationId) {
+    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, Integer organizationId) {
         Instant now = Instant.now();
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
@@ -97,15 +95,12 @@ public class JwtUtils {
         return (String) validateToken(token).getClaim("role");
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Integer> getOrganizationIdsFromToken(String token) {
-        Object orgIds = validateToken(token).getClaim("organizationId");
-        if (orgIds instanceof List<?>) {
-            return ((List<Number>) orgIds).stream()
-                    .map(Number::intValue)
-                    .toList();
+    public Integer getOrganizationIdFromToken(String token) {
+        Object orgId = validateToken(token).getClaim("organizationId");
+        if (orgId instanceof Number) {
+            return ((Number) orgId).intValue();
         }
-        return Collections.emptyList();
+        return null;
     }
 
     private String signAndSerialize(JWTClaimsSet claimsSet) {

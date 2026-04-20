@@ -1,8 +1,8 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate, useSearchParams } from 'react-router';
-import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Box, Typography, Button, Alert, CircularProgress, TextField, MenuItem } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import { joinOrganization } from '../../api/userApi';
@@ -39,6 +39,50 @@ const OrganizationRegistrationPage = () => {
   const queryOrgId = searchParams.get('orgId');
   const parsedQueryOrgId = queryOrgId ? parseInt(queryOrgId, 10) : null;
   const organizationId = organization?.id ?? (Number.isInteger(parsedQueryOrgId) ? parsedQueryOrgId : null);
+
+  const parseOrganizationOptions = (value) => {
+    if (!value) {
+      return [];
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item ?? '').trim())
+        .filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => String(item ?? '').trim())
+            .filter(Boolean);
+        }
+      } catch {
+        return trimmed
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+    }
+
+    return [];
+  };
+
+  const programOptions = useMemo(
+    () => parseOrganizationOptions(organization?.programs),
+    [organization?.programs],
+  );
+  const majorOptions = useMemo(
+    () => parseOrganizationOptions(organization?.majors),
+    [organization?.majors],
+  );
 
   const {
     register,
@@ -227,13 +271,31 @@ const OrganizationRegistrationPage = () => {
           </Typography>
         </Box>
 
-        <Input
-          label="Class Name"
-          placeholder="e.g., K15"
-          error={!!errors.className}
-          helperText={errors.className?.message}
-          {...register('className')}
-        />
+        {programOptions.length > 0 ? (
+          <TextField
+            select
+            label="Program"
+            error={!!errors.className}
+            helperText={errors.className?.message}
+            defaultValue=""
+            {...register('className')}
+          >
+            <MenuItem value="">Select program</MenuItem>
+            {programOptions.map((program) => (
+              <MenuItem key={program} value={program}>
+                {program}
+              </MenuItem>
+            ))}
+          </TextField>
+        ) : (
+          <Input
+            label="Program"
+            placeholder="e.g., K15"
+            error={!!errors.className}
+            helperText={errors.className?.message}
+            {...register('className')}
+          />
+        )}
 
         <Input
           label="Start Year"
@@ -253,13 +315,31 @@ const OrganizationRegistrationPage = () => {
           {...register('graduatedYear', { valueAsNumber: true })}
         />
 
-        <Input
-          label="Degree Type"
-          placeholder="e.g., Bachelor's, Master's"
-          error={!!errors.degreeType}
-          helperText={errors.degreeType?.message}
-          {...register('degreeType')}
-        />
+        {majorOptions.length > 0 ? (
+          <TextField
+            select
+            label="Major"
+            error={!!errors.degreeType}
+            helperText={errors.degreeType?.message}
+            defaultValue=""
+            {...register('degreeType')}
+          >
+            <MenuItem value="">Select major</MenuItem>
+            {majorOptions.map((major) => (
+              <MenuItem key={major} value={major}>
+                {major}
+              </MenuItem>
+            ))}
+          </TextField>
+        ) : (
+          <Input
+            label="Major"
+            placeholder="e.g., Computer Science"
+            error={!!errors.degreeType}
+            helperText={errors.degreeType?.message}
+            {...register('degreeType')}
+          />
+        )}
 
         <Box sx={{ mt: 1 }}>
           <Typography variant="subtitle2" fontWeight={600} color="textSecondary" sx={{ mb: 1 }}>

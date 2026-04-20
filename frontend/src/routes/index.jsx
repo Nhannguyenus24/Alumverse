@@ -39,6 +39,9 @@ const ForgotPasswordPage = Loadable(
 const ResetPasswordPage = Loadable(
   lazy(() => import("../pages/authentication/ResetPasswordPage")),
 );
+const OrganizationRegistrationPage = Loadable(
+  lazy(() => import("../pages/authentication/OrganizationRegistrationPage")),
+);
 
 // Alumni pages
 const DashboardPage = Loadable(
@@ -288,6 +291,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SettingPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "organization-registration",
+        element: (
+          <ProtectedRoute>
+            <OrganizationRegistrationPage />
           </ProtectedRoute>
         ),
       },
@@ -598,6 +609,7 @@ export const router = createBrowserRouter([
         path: "analytics",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminDashboardPage />
             
           </ProtectedRoute>
         ),

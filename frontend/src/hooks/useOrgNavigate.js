@@ -1,4 +1,4 @@
-import { useNavigate as useRouterNavigate } from 'react-router';
+import { useNavigate as useRouterNavigate, useParams } from 'react-router';
 import useOrganizationStore from '../stores/organizationStore';
 
 /**
@@ -25,9 +25,10 @@ export const useOrgNavigate = () => {
 };
 
 export const useOrgPath = () => {
+  const { slug: routeSlug } = useParams();
   const currentSlug = useOrganizationStore((state) => state.currentSlug);
   const organizationSlug = useOrganizationStore((state) => state.organization?.slug);
-  const slug = organizationSlug || currentSlug;
+  const slug = organizationSlug || currentSlug || routeSlug || null;
   const globalPrefixes = ['/admin', '/404', '/api'];
 
   return (path) => {
