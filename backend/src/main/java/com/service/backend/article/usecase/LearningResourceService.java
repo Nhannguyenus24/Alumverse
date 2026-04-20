@@ -8,6 +8,7 @@ import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -20,22 +21,23 @@ public class LearningResourceService {
 
     private final LearningResourceR2dbcRepository learningResourceRepository;
 
-    private static final Integer MOCK_ORGANIZATION_ID = 1;
-    private static final Integer MOCK_UPLOADER_MEMBER_ID = 1;
-
     public Mono<LearningResourceResponse> create(CreateLearningResourceRequest request) {
-        LearningResource resource = LearningResource.builder()
-                .organizationId(MOCK_ORGANIZATION_ID)
-                .uploaderMemberId(MOCK_UPLOADER_MEMBER_ID)
-                .title(request.getTitle())
-                .type(request.getType())
-                .linkUrl(request.getLinkUrl())
-                .description(request.getDescription())
-                .createdAt(LocalDateTime.now())
-                .build();
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+                .flatMap(ctx -> {
+                    Long userId = ctx.getT1();
+                    Integer orgId = ctx.getT2();
+                    LearningResource resource = LearningResource.builder()
+                            .organizationId(orgId)
+                            .uploaderMemberId(userId.intValue())
+                            .title(request.getTitle())
+                            .type(request.getType())
+                            .linkUrl(request.getLinkUrl())
+                            .description(request.getDescription())
+                            .createdAt(LocalDateTime.now())
+                            .build();
 
-        return learningResourceRepository.save(resource)
-                .map(LearningResourceResponse::from);
+                    return learningResourceRepository.save(resource).map(LearningResourceResponse::from);
+                });
     }
 
     public Mono<LearningResourceResponse> update(Integer id, UpdateLearningResourceRequest request) {
@@ -65,34 +67,37 @@ public class LearningResourceService {
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return learningResourceRepository.findByOrganizationIdWithPagination(MOCK_ORGANIZATION_ID, limit, offset)
-                .collectList()
-                .zipWith(learningResourceRepository.countByOrganizationId(MOCK_ORGANIZATION_ID))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
+                learningResourceRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
+                        .collectList()
+                        .zipWith(learningResourceRepository.countByOrganizationId(orgId))
+                        .map(tuple -> PaginatedResponse.of(
+                                tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
+                                tuple.getT2(), page, limit
+                        )));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
         int offset = page * limit;
-        return learningResourceRepository.findByType(MOCK_ORGANIZATION_ID, type, limit, offset)
-                .collectList()
-                .zipWith(learningResourceRepository.countByType(MOCK_ORGANIZATION_ID, type))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
+                learningResourceRepository.findByType(orgId, type, limit, offset)
+                        .collectList()
+                        .zipWith(learningResourceRepository.countByType(orgId, type))
+                        .map(tuple -> PaginatedResponse.of(
+                                tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
+                                tuple.getT2(), page, limit
+                        )));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return learningResourceRepository.searchResources(MOCK_ORGANIZATION_ID, keyword, limit, offset)
-                .collectList()
-                .zipWith(learningResourceRepository.countSearchResources(MOCK_ORGANIZATION_ID, keyword))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
+                learningResourceRepository.searchResources(orgId, keyword, limit, offset)
+                        .collectList()
+                        .zipWith(learningResourceRepository.countSearchResources(orgId, keyword))
+                        .map(tuple -> PaginatedResponse.of(
+                                tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
+                                tuple.getT2(), page, limit
+                        )));
     }
 }

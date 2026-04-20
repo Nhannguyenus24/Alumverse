@@ -14,6 +14,8 @@ import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import FeaturedArticleEventCard from '../../components/articles/FeaturedArticleEventCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
+import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 
 
 const SIDEBAR = [
@@ -68,38 +70,25 @@ const FILTERS = [
 ];
 
 
-const FEATURED_EVENT_ARTICLE = {
-  title: 'Visit HITSZ',
-  date: '01/03/2026 - 05/03/2026',
-  organizer: 'HITSZ',
-  participants: 200,
-  interested: 1500,
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
-  image:
-    'https://www.a234.fr/wp-content/uploads/2019/10/ateliers234-shenzhen-designschool_ateliers-234_2023-10-2500x1406.jpg',
-};
-
-const EVENT_ARTICLES = Array(3).fill({
-  title: 'Visit HITSZ',
-  date: '01/03/2026 - 05/03/2026',
-  organizer: 'HITSZ',
-  participants: 200,
-  interested: 1500,
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
-  image:
-    'https://www.a234.fr/wp-content/uploads/2019/10/ateliers234-shenzhen-designschool_ateliers-234_2023-10-2500x1406.jpg',
-});
-
-
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
   const { user } = useAuth();
+  const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, 9);
+  const { events: pastEvents } = usePublishedEvents('past', 0, 6);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+
+  const [featured, ...upcomingRest] = upcomingEvents;
+  const featuredCard = featured ? toEventCardShape(featured) : null;
+  const upcomingCards = upcomingRest.slice(0, 6).map(toEventCardShape);
+  const pastCards = pastEvents.slice(0, 6).map(toEventCardShape);
+
+  const openArticle = (article) => {
+    if (!article?.id) return;
+    navigate(`/article/${article.channel}/${article.id}`);
+  };
 
   return (
     <Page title="Sự kiện">
@@ -155,53 +144,65 @@ const ActivitiesPage = () => {
               </Stack>
 
               {/* FEATURED ARTICLE */}
-              <FeaturedArticleEventCard article={FEATURED_EVENT_ARTICLE} />
-
-              {/* EVENTS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Gợi ý
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {EVENT_ARTICLES.map((article, i) => (
-                    <ArticleEventCard key={i} article={article} />
-                  ))}
+              {featuredCard && (
+                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                  <FeaturedArticleEventCard article={featuredCard} />
                 </Box>
-              </Box>
+              )}
 
-              {/* EVENTS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Gần đây
-                </Typography>
+              {/* UPCOMING */}
+              {upcomingCards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Sắp diễn ra
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {EVENT_ARTICLES.map((article, i) => (
-                    <ArticleEventCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {upcomingCards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
+                        <ArticleEventCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
+
+              {/* PAST */}
+              {pastCards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Đã diễn ra
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {pastCards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pastEvents[i])}>
+                        <ArticleEventCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
             </Stack>
           </Box>
         </Container>

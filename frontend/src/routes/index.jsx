@@ -39,6 +39,9 @@ const ForgotPasswordPage = Loadable(
 const ResetPasswordPage = Loadable(
   lazy(() => import("../pages/authentication/ResetPasswordPage")),
 );
+const OrganizationRegistrationPage = Loadable(
+  lazy(() => import("../pages/authentication/OrganizationRegistrationPage")),
+);
 
 // Alumni pages
 const DashboardPage = Loadable(
@@ -148,6 +151,24 @@ const MentorshipYourCalendarPage = Loadable(
 // User pages
 const PostArticlePage = Loadable(
   lazy(() => import("../pages/user/PostArticlePage")),
+);
+const PostArticleAlumniPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleAlumniPage")),
+);
+const PostArticleEventPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleEventPage")),
+);
+const PostArticleAchievementPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleAchievementPage")),
+);
+const PostArticleJobPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleJobPage")),
+);
+const PostArticleLearningPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleLearningPage")),
+);
+const PostArticleDonationPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleDonationPage")),
 );
 const NotificationPage = Loadable(
   lazy(() => import("../pages/user/NotificationPage")),
@@ -276,6 +297,30 @@ export const router = createBrowserRouter([
         element: <PostArticlePage />,
       },
       {
+        path: "post/alumni",
+        element: <PostArticleAlumniPage />,
+      },
+      {
+        path: "post/event",
+        element: <PostArticleEventPage />,
+      },
+      {
+        path: "post/achievement",
+        element: <PostArticleAchievementPage />,
+      },
+      {
+        path: "post/job",
+        element: <PostArticleJobPage />,
+      },
+      {
+        path: "post/learning",
+        element: <PostArticleLearningPage />,
+      },
+      {
+        path: "post/donation",
+        element: <PostArticleDonationPage />,
+      },
+      {
         path: "article/:id",
         element: <ArticlePage />,
       },
@@ -288,6 +333,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SettingPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "organization-registration",
+        element: (
+          <ProtectedRoute>
+            <OrganizationRegistrationPage />
           </ProtectedRoute>
         ),
       },
@@ -598,7 +651,7 @@ export const router = createBrowserRouter([
         path: "analytics",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
-            
+            <AdminDashboardPage />
           </ProtectedRoute>
         ),
       },

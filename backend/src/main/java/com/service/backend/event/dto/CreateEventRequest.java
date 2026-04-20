@@ -52,4 +52,7 @@ public class CreateEventRequest {
     @Min(value = 1)
     @Schema(example = "300")
     private Integer maxCapacity;
+
+    /** Optional base64-encoded banner. When present, backend uploads and stores the resulting URL. */
+    private String bannerBase64;
 }

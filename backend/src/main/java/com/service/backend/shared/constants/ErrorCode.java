@@ -36,6 +36,7 @@ public enum ErrorCode {
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức"),
+    ALUMNI_POST_NOT_FOUND("Không tìm thấy bài viết cựu sinh viên"),
     JOB_NOT_FOUND("Không tìm thấy việc làm"),
     LEARNING_RESOURCE_NOT_FOUND("Không tìm thấy tài liệu học tập"),
     ACHIEVEMENT_NOT_FOUND("Không tìm thấy thành tích"),
