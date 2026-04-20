@@ -11,6 +11,8 @@ import com.service.backend.event.dto.EventStatisticsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -20,45 +22,53 @@ import reactor.core.publisher.Mono;
 public class EventService {
 
     private final IEventRepository eventRepository;
-
-    private static final Long MOCK_MEMBER_ID = 1L;
-    private static final Long MOCK_ORGANIZATION_ID = 1L;
+    private final ImageService imageService;
 
     public Mono<Event> createEvent(CreateEventRequest request) {
-        Event event = Event.builder()
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .bannerUrl(request.getBannerUrl())
-                .location(request.getLocation())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
-                .registrationStartAt(request.getRegistrationStartAt())
-                .registrationEndAt(request.getRegistrationEndAt())
-                .maxCapacity(request.getMaxCapacity())
-                .creatorMemberId(MOCK_MEMBER_ID)
-                .organizationId(MOCK_ORGANIZATION_ID)
-                .build();
-
-        return eventRepository.createEvent(event);
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
+                .flatMap(ctx -> {
+                    Long userId = ctx.getT1();
+                    Long orgId = ctx.getT2().longValue();
+                    return imageService.uploadBase64IfPresent(request.getBannerBase64())
+                            .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                            .flatMap(bannerUrl -> {
+                                Event event = Event.builder()
+                                        .title(request.getTitle())
+                                        .description(request.getDescription())
+                                        .bannerUrl(bannerUrl.isEmpty() ? null : bannerUrl)
+                                        .location(request.getLocation())
+                                        .startTime(request.getStartTime())
+                                        .endTime(request.getEndTime())
+                                        .registrationStartAt(request.getRegistrationStartAt())
+                                        .registrationEndAt(request.getRegistrationEndAt())
+                                        .maxCapacity(request.getMaxCapacity())
+                                        .creatorMemberId(userId)
+                                        .organizationId(orgId)
+                                        .build();
+                                return eventRepository.createEvent(event);
+                            });
+                });
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
         return eventRepository.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
-                .flatMap(existingEvent -> {
-                    Event updatedEvent = Event.builder()
-                            .title(request.getTitle())
-                            .description(request.getDescription())
-                            .bannerUrl(request.getBannerUrl())
-                            .location(request.getLocation())
-                            .startTime(request.getStartTime())
-                            .endTime(request.getEndTime())
-                            .registrationStartAt(request.getRegistrationStartAt())
-                            .registrationEndAt(request.getRegistrationEndAt())
-                            .maxCapacity(request.getMaxCapacity())
-                            .build();
-                    return eventRepository.updateEvent(eventId, updatedEvent);
-                });
+                .flatMap(existingEvent -> imageService.uploadBase64IfPresent(request.getBannerBase64())
+                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                        .flatMap(bannerUrl -> {
+                            Event updatedEvent = Event.builder()
+                                    .title(request.getTitle())
+                                    .description(request.getDescription())
+                                    .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
+                                    .location(request.getLocation())
+                                    .startTime(request.getStartTime())
+                                    .endTime(request.getEndTime())
+                                    .registrationStartAt(request.getRegistrationStartAt())
+                                    .registrationEndAt(request.getRegistrationEndAt())
+                                    .maxCapacity(request.getMaxCapacity())
+                                    .build();
+                            return eventRepository.updateEvent(eventId, updatedEvent);
+                        }));
     }
 
     public Mono<Boolean> deleteEvent(Long eventId) {
@@ -73,7 +83,8 @@ public class EventService {
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByOrganization(int page, int limit) {
-        return eventRepository.findEventsByOrganization(MOCK_ORGANIZATION_ID, page, limit);
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> eventRepository.findEventsByOrganization(orgId.longValue(), page, limit));
     }
 
     public Mono<Event> publishEvent(Long eventId) {
@@ -89,37 +100,43 @@ public class EventService {
     }
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(int page, int limit) {
-        return eventRepository.findUpcomingEvents(MOCK_ORGANIZATION_ID, page, limit);
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> eventRepository.findUpcomingEvents(orgId.longValue(), page, limit));
     }
 
     public Mono<PaginatedResponse<Event>> getPastEvents(int page, int limit) {
-        return eventRepository.findPastEvents(MOCK_ORGANIZATION_ID, page, limit);
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> eventRepository.findPastEvents(orgId.longValue(), page, limit));
     }
 
     public Mono<PaginatedResponse<Event>> searchEvents(String keyword, int page, int limit) {
-        return eventRepository.searchEvents(MOCK_ORGANIZATION_ID, keyword, page, limit);
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> eventRepository.searchEvents(orgId.longValue(), keyword, page, limit));
     }
 
     public Mono<EventInterest> addInterest(Long eventId) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepository.checkUserInterest(eventId, MOCK_MEMBER_ID))
-                .flatMap(alreadyInterested -> {
-                    if (alreadyInterested) {
-                        return Mono.error(new ApplicationException(ErrorCode.ALREADY_INTERESTED, "User already interested in this event"));
-                    }
-                    return eventRepository.addEventInterest(eventId, MOCK_MEMBER_ID);
-                });
+        return SecurityUtils.getCurrentUserId().flatMap(memberId ->
+                eventRepository.findEventById(eventId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
+                        .flatMap(event -> eventRepository.checkUserInterest(eventId, memberId))
+                        .flatMap(alreadyInterested -> {
+                            if (alreadyInterested) {
+                                return Mono.error(new ApplicationException(ErrorCode.ALREADY_INTERESTED, "User already interested in this event"));
+                            }
+                            return eventRepository.addEventInterest(eventId, memberId);
+                        }));
     }
 
     public Mono<Boolean> removeInterest(Long eventId) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepository.removeEventInterest(eventId, MOCK_MEMBER_ID));
+        return SecurityUtils.getCurrentUserId().flatMap(memberId ->
+                eventRepository.findEventById(eventId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
+                        .flatMap(event -> eventRepository.removeEventInterest(eventId, memberId)));
     }
 
     public Mono<Boolean> checkInterest(Long eventId) {
-        return eventRepository.checkUserInterest(eventId, MOCK_MEMBER_ID);
+        return SecurityUtils.getCurrentUserId().flatMap(memberId ->
+                eventRepository.checkUserInterest(eventId, memberId));
     }
 
     public Mono<PaginatedResponse<EventInterest>> getEventInterests(Long eventId, int page, int limit) {
@@ -127,28 +144,29 @@ public class EventService {
     }
 
     public Mono<EventTicket> registerForEvent(Long eventId, RegisterTicketRequest request) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
-                .flatMap(event -> {
-                    EventTicket ticket = EventTicket.builder()
-                            .eventId(eventId)
-                            .memberId(MOCK_MEMBER_ID)
-                            .guestName(request != null ? request.getGuestName() : null)
-                            .guestEmail(request != null ? request.getGuestEmail() : null)
-                            .guestPhone(request != null ? request.getGuestPhone() : null)
-                            .build();
+        return SecurityUtils.getCurrentUserId().flatMap(memberId ->
+                eventRepository.findEventById(eventId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found with id: " + eventId)))
+                        .flatMap(event -> {
+                            EventTicket ticket = EventTicket.builder()
+                                    .eventId(eventId)
+                                    .memberId(memberId)
+                                    .guestName(request != null ? request.getGuestName() : null)
+                                    .guestEmail(request != null ? request.getGuestEmail() : null)
+                                    .guestPhone(request != null ? request.getGuestPhone() : null)
+                                    .build();
 
-                    if (event.getMaxCapacity() != null && event.getMaxCapacity() > 0) {
-                        return eventRepository.countRegisteredTickets(eventId)
-                                .flatMap(count -> {
-                                    if (count >= event.getMaxCapacity()) {
-                                        return Mono.error(new ApplicationException(ErrorCode.EVENT_FULLY_BOOKED, "Event is fully booked"));
-                                    }
-                                    return eventRepository.registerTicket(ticket);
-                                });
-                    }
-                    return eventRepository.registerTicket(ticket);
-                });
+                            if (event.getMaxCapacity() != null && event.getMaxCapacity() > 0) {
+                                return eventRepository.countRegisteredTickets(eventId)
+                                        .flatMap(count -> {
+                                            if (count >= event.getMaxCapacity()) {
+                                                return Mono.error(new ApplicationException(ErrorCode.EVENT_FULLY_BOOKED, "Event is fully booked"));
+                                            }
+                                            return eventRepository.registerTicket(ticket);
+                                        });
+                            }
+                            return eventRepository.registerTicket(ticket);
+                        }));
     }
 
     public Mono<EventTicket> cancelTicket(String ticketCode) {
@@ -181,7 +199,8 @@ public class EventService {
     }
 
     public Mono<PaginatedResponse<EventTicket>> getMyTickets(int page, int limit) {
-        return eventRepository.findTicketsByMember(MOCK_MEMBER_ID, page, limit);
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> eventRepository.findTicketsByMember(memberId, page, limit));
     }
 
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {

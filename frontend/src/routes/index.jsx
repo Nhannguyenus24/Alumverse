@@ -152,6 +152,24 @@ const MentorshipYourCalendarPage = Loadable(
 const PostArticlePage = Loadable(
   lazy(() => import("../pages/user/PostArticlePage")),
 );
+const PostArticleAlumniPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleAlumniPage")),
+);
+const PostArticleEventPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleEventPage")),
+);
+const PostArticleAchievementPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleAchievementPage")),
+);
+const PostArticleJobPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleJobPage")),
+);
+const PostArticleLearningPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleLearningPage")),
+);
+const PostArticleDonationPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleDonationPage")),
+);
 const NotificationPage = Loadable(
   lazy(() => import("../pages/user/NotificationPage")),
 );
@@ -277,6 +295,30 @@ export const router = createBrowserRouter([
       {
         path: "post",
         element: <PostArticlePage />,
+      },
+      {
+        path: "post/alumni",
+        element: <PostArticleAlumniPage />,
+      },
+      {
+        path: "post/event",
+        element: <PostArticleEventPage />,
+      },
+      {
+        path: "post/achievement",
+        element: <PostArticleAchievementPage />,
+      },
+      {
+        path: "post/job",
+        element: <PostArticleJobPage />,
+      },
+      {
+        path: "post/learning",
+        element: <PostArticleLearningPage />,
+      },
+      {
+        path: "post/donation",
+        element: <PostArticleDonationPage />,
       },
       {
         path: "article/:id",

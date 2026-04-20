@@ -26,6 +26,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.FundDonationStatus;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class FundService {
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final UserR2dbcRepository userRepository;
     private final CacheUtils cacheUtils;
+    private final ImageService imageService;
 
     @Value("${sepay.img.qr.url}")
     private String sepayQrImgUrl;
@@ -78,24 +80,32 @@ public class FundService {
                                 .switchIfEmpty(Mono.error(new ApplicationException(
                                         ErrorCode.FUND_NOT_FOUND,
                                         "Fund status not found with id: " + statusId)))
-                                .flatMap(existingStatus -> {
-                            Funds fund = Funds.builder()
-                                    .organizationId(organizationId)
-                                    .fundReceivingInfoId(fundReceivingInfoId)
-                                    .name(request.getName())
-                                    .logoUrl(request.getLogoUrl())
-                                    .descriptionShort(request.getDescriptionShort())
-                                    .descriptionFull(request.getDescriptionFull())
-                                    .managerName(request.getManagerName())
-                                    .targetAmount(request.getTargetAmount())
-                                    .currentAmount(java.math.BigDecimal.ZERO)
-                                    .timeStarted(request.getTimeStarted())
-                                    .statusId(statusId)
-                                    .timeEnded(request.getTimeEnded())
-                                    .build();
+                                .flatMap(existingStatus -> Mono.zip(
+                                        imageService.uploadBase64IfPresent(request.getLogoBase64())
+                                                .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl()),
+                                        imageService.uploadBase64IfPresent(request.getQrImageBase64())
+                                                .defaultIfEmpty(request.getQrImageUrl() == null ? "" : request.getQrImageUrl())
+                                ).flatMap(urls -> {
+                                    String logoUrl = urls.getT1();
+                                    String qrUrl = urls.getT2();
+                                    Funds fund = Funds.builder()
+                                            .organizationId(organizationId)
+                                            .fundReceivingInfoId(fundReceivingInfoId)
+                                            .name(request.getName())
+                                            .logoUrl(logoUrl.isEmpty() ? null : logoUrl)
+                                            .descriptionShort(request.getDescriptionShort())
+                                            .descriptionFull(request.getDescriptionFull())
+                                            .managerName(request.getManagerName())
+                                            .targetAmount(request.getTargetAmount())
+                                            .currentAmount(java.math.BigDecimal.ZERO)
+                                            .timeStarted(request.getTimeStarted())
+                                            .statusId(statusId)
+                                            .timeEnded(request.getTimeEnded())
+                                            .qrImageUrl(qrUrl.isEmpty() ? null : qrUrl)
+                                            .build();
 
-                            return fundRepository.createFund(fund);
-                        })));
+                                    return fundRepository.createFund(fund);
+                                }))));
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {

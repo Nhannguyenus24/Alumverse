@@ -11,6 +11,8 @@ import {
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
+import { useFundStatuses } from '../hooks/news/useFundStatuses';
+import { useFundReceivingInfos } from '../hooks/news/useFundReceivingInfos';
 
 const TOPICS_BY_CHANNEL = {
   news: ['Thông báo trường', 'Khoa/Bộ môn', 'Hoạt động sinh viên', 'Alumni news', 'Hợp tác doanh nghiệp', 'Học thuật - nghiên cứu', 'Tuyển sinh - học bổng'],
@@ -21,13 +23,6 @@ const TOPICS_BY_CHANNEL = {
   learning: ['Học bổng', 'Thạc sĩ', 'Du học', 'Khóa học online', 'Chứng chỉ', 'Trao đổi sinh viên', 'Nghiên cứu'],
   job: ['Internship', 'Full-time', 'Part-time', 'Freelance', 'Referral nội bộ', 'Remote'],
 };
-
-const statusOptions = [
-  { value: 'planning', label: 'Đang lên kế hoạch' },
-  { value: 'ongoing', label: 'Đang diễn ra' },
-  { value: 'completed', label: 'Hoàn thành' },
-  { value: 'closed', label: 'Đóng' },
-];
 
 const eventTypeOptions = [
   { value: 'online', label: 'Online' },
@@ -48,6 +43,15 @@ const PostArticleForm = ({
   eventData = {},
   handleEventInputChange,
 }) => {
+  const { statuses: fundStatuses } = useFundStatuses();
+  const { infos: fundReceivingInfos } = useFundReceivingInfos();
+
+  const fundStatusOptions = fundStatuses.map((s) => ({ value: s.id, label: s.name }));
+  const fundReceivingOptions = fundReceivingInfos.map((i) => ({
+    value: i.id,
+    label: `${i.bankName ?? ''} - ${i.accountName ?? ''} (${i.accountNumber ?? ''})`,
+  }));
+
   return (
     <Stack spacing={3}>
       
@@ -85,15 +89,23 @@ const PostArticleForm = ({
             <Input label="Tên quỹ quyên góp" name="donationFundName" value={donationData.donationFundName} onChange={handleDonationInputChange} />
           </Box>
           <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}><Input label="Người tổ chức" name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} /></Box>
-            <Box sx={{ flex: 1 }}><Dropdown label="Trạng thái" options={statusOptions} value={donationData.status} onChange={(e) => handleDonationInputChange({ target: { name: 'status', value: e.target.value } })} /></Box>
+            <Box sx={{ flex: 1 }}><Input label="Người phụ trách" name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} /></Box>
+            <Box sx={{ flex: 1 }}><Dropdown label="Trạng thái quỹ" options={fundStatusOptions} value={donationData.statusId ?? ''} onChange={(e) => handleDonationInputChange({ target: { name: 'statusId', value: e.target.value } })} /></Box>
+          </Box>
+          <Box sx={{ mb: 3 }}>
+            <Dropdown
+              label="Tài khoản nhận quyên góp"
+              options={fundReceivingOptions}
+              value={donationData.fundReceivingInfoId ?? ''}
+              onChange={(e) => handleDonationInputChange({ target: { name: 'fundReceivingInfoId', value: e.target.value } })}
+            />
           </Box>
           <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}>
             <Box sx={{ width: { xs: '100%', md: '60%' }, height: 220, borderRadius: 2, border: '1px dashed', borderColor: 'divider', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {donationData.qrImage ? <img src={donationData.qrImage} alt="QR" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <Typography variant="body2" color="text.secondary">Chưa có mã QR</Typography>}
+              {donationData.qrPreview ? <img src={donationData.qrPreview} alt="QR" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <Typography variant="body2" color="text.secondary">Chưa có mã QR</Typography>}
             </Box>
             <Box sx={{ width: { xs: '100%', md: '40%' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-              <Button variant="contained" component="label">{donationData.qrImage ? 'Sửa ảnh QR' : 'Upload ảnh QR'}<input hidden type="file" accept="image/*" onChange={(e) => { const file = e.target.files[0]; if (file) { handleDonationInputChange({ target: { name: 'qrImage', value: URL.createObjectURL(file) } }); } }} /></Button>
+              <Button variant="contained" component="label">{donationData.qrPreview ? 'Sửa ảnh QR' : 'Upload ảnh QR'}<input hidden type="file" accept="image/*" onChange={(e) => { const file = e.target.files[0]; if (file) { handleDonationInputChange({ target: { name: 'qrFile', value: file } }); handleDonationInputChange({ target: { name: 'qrPreview', value: URL.createObjectURL(file) } }); } }} /></Button>
               <Input label="Mục tiêu quyên góp (VNĐ)" name="donationGoal" type="number" value={donationData.donationGoal} onChange={handleDonationInputChange} />
             </Box>
           </Box>

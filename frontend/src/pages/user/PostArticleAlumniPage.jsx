@@ -5,26 +5,27 @@ import { Box, Button, Container, Typography } from '@mui/material';
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
-import { useCreateNews } from '../../hooks/news/useCreateNews';
+import { useCreateAlumniPost } from '../../hooks/news/useCreateAlumniPost';
+import { fileToBase64 } from '../../hooks/images/fileToBase64';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostAlumniPage = () => {
   const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews(); // assuming alumni uses the same hook
+  const { createAlumniPost, isPending } = useCreateAlumniPost();
 
-  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -35,16 +36,17 @@ const PostAlumniPage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
-        thumbnailUrl: coverImage || null,
-        topic,
+      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+
+      const payload = {
+        title: title.trim(),
+        content: content.trim(),
+        thumbnailBase64,
       };
 
-      const result = await createNews(payload);
+      const result = await createAlumniPost(payload);
       showSuccess('Bài viết cựu sinh viên đã được đăng thành công!');
-      navigate(`/article/${result.id}`);
+      navigate(`/article/alumni/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
@@ -54,9 +56,9 @@ const PostAlumniPage = () => {
     <Page title="Đăng bài cựu sinh viên" meta={<meta name="description" content="Đăng bài cựu sinh viên - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
+        <CoverUpload
+          value={coverPreview}
+          onChange={handleCoverUpload}
         />
 
         {/* Form Container */}

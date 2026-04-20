@@ -6,6 +6,7 @@ import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateAchievement } from '../../hooks/news/useCreateAchievement';
+import { fileToBase64 } from '../../hooks/images/fileToBase64';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
@@ -14,17 +15,17 @@ const PostAchievementPage = () => {
   const { showSuccess, showError } = useNotification();
   const { createAchievement, isPending } = useCreateAchievement();
 
-  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -35,16 +36,17 @@ const PostAchievementPage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
-        thumbnailUrl: coverImage || null,
-        topic,
+      const imageBase64 = coverFile ? await fileToBase64(coverFile) : null;
+
+      const payload = {
+        title: title.trim(),
+        description: content.trim(),
+        imageBase64,
       };
 
       const result = await createAchievement(payload);
       showSuccess('Bài viết thành tựu đã được đăng thành công!');
-      navigate(`/achievement/${result.id}`);
+      navigate(`/article/achievement/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
@@ -54,9 +56,9 @@ const PostAchievementPage = () => {
     <Page title="Đăng bài thành tựu" meta={<meta name="description" content="Đăng bài thành tựu - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
+        <CoverUpload
+          value={coverPreview}
+          onChange={handleCoverUpload}
         />
 
         {/* Form Container */}

@@ -15,6 +15,8 @@ import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
+import { toCardShape } from '../../hooks/articles/toCardShape';
 
 const SIDEBAR = [
   { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
@@ -64,30 +66,23 @@ const FILTERS = [
   },
 ];
 
-const FEATURED_ARTICLE = {
-  title: 'Cơ hội nghề nghiệp cho sinh viên: Thực tập, việc làm và hơn thế nữa',
-  date: '12/12/2023',
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
-  image: 'https://d341ezm4iqaae0.cloudfront.net/hiringlaborg/2019/07/02115547/4-Lessons-the-Tech-Industry-Can-Teach-All-Recruiters.jpg',
-};
-
-const JOBS_ARTICLES = Array(3).fill({
-  title: 'Cơ hội nghề nghiệp cho sinh viên: Thực tập, việc làm và hơn thế nữa',
-  date: '12/12/2023',
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
-  image: 'https://d341ezm4iqaae0.cloudfront.net/hiringlaborg/2019/07/02115547/4-Lessons-the-Tech-Industry-Can-Teach-All-Recruiters.jpg',
-});
-
-
 const DevelopmentJobsPage = () => {
   const navigate = useOrgNavigate();
   const { user } = useAuth();
+  const { jobs } = usePublishedJobs(0, 12);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+
+  const [featured, ...rest] = jobs;
+  const featuredCard = featured ? toCardShape(featured) : null;
+  const cards = rest.slice(0, 9).map(toCardShape);
+
+  const openArticle = (article) => {
+    if (!article?.id) return;
+    navigate(`/article/${article.channel}/${article.id}`);
+  };
 
   return (
     <Page title="Cơ hội việc làm">
@@ -127,7 +122,7 @@ const DevelopmentJobsPage = () => {
 
                   <Button
                     variant="contained"
-                    // onClick={() => navigate('/development/academics/create-article')}
+                    onClick={() => navigate('/post/job')}
                   >
                     Đăng bài
                   </Button>
@@ -154,74 +149,38 @@ const DevelopmentJobsPage = () => {
               </Stack>
 
               {/* FEATURED ARTICLE */}
-              <FeaturedArticleCard article={FEATURED_ARTICLE} />
+              {featuredCard && (
+                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                  <FeaturedArticleCard article={featuredCard} />
+                </Box>
+              )}
 
               {/* JOBS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Cử nhân
-                </Typography>
+              {cards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Tất cả việc làm
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {JOBS_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {cards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                        <ArticleCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
-
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Thạc sĩ
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {JOBS_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
-                </Box>
-              </Box>
-
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Tiến sĩ
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {JOBS_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
-                </Box>
-              </Box>
+              )}
 
             </Stack>
           </Box>
