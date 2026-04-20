@@ -8,6 +8,8 @@ import com.service.backend.article.dto.AchievementResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -17,34 +19,39 @@ import reactor.core.publisher.Mono;
 public class AchievementService {
 
     private final AchievementR2dbcRepository achievementRepository;
-
-    private static final Integer MOCK_MEMBER_ID = 1;
+    private final ImageService imageService;
 
     public Mono<AchievementResponse> create(CreateAchievementRequest request) {
-        Achievement achievement = Achievement.builder()
-                .memberId(MOCK_MEMBER_ID)
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
-                .awardedDate(request.getAwardedDate())
-                .status(request.getStatus())
-                .build();
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> imageService.uploadBase64IfPresent(request.getImageBase64())
+                        .defaultIfEmpty(request.getImageUrl() == null ? "" : request.getImageUrl())
+                        .flatMap(imageUrl -> {
+                            Achievement achievement = Achievement.builder()
+                                    .memberId(userId.intValue())
+                                    .title(request.getTitle())
+                                    .description(request.getDescription())
+                                    .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
+                                    .awardedDate(request.getAwardedDate())
+                                    .status(request.getStatus())
+                                    .build();
 
-        return achievementRepository.save(achievement)
-                .map(AchievementResponse::from);
+                            return achievementRepository.save(achievement).map(AchievementResponse::from);
+                        }));
     }
 
     public Mono<AchievementResponse> update(Integer id, UpdateAchievementRequest request) {
         return achievementRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                .flatMap(existing -> {
-                    existing.setTitle(request.getTitle());
-                    existing.setDescription(request.getDescription());
-                    existing.setImageUrl(request.getImageUrl());
-                    existing.setAwardedDate(request.getAwardedDate());
-                    existing.setStatus(request.getStatus());
-                    return achievementRepository.save(existing);
-                })
+                .flatMap(existing -> imageService.uploadBase64IfPresent(request.getImageBase64())
+                        .defaultIfEmpty(request.getImageUrl() == null ? "" : request.getImageUrl())
+                        .flatMap(imageUrl -> {
+                            existing.setTitle(request.getTitle());
+                            existing.setDescription(request.getDescription());
+                            existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
+                            existing.setAwardedDate(request.getAwardedDate());
+                            existing.setStatus(request.getStatus());
+                            return achievementRepository.save(existing);
+                        }))
                 .map(AchievementResponse::from);
     }
 
@@ -83,7 +90,8 @@ public class AchievementService {
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getMyAchievements(int page, int limit) {
-        return getByMemberId(MOCK_MEMBER_ID, page, limit);
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> getByMemberId(userId.intValue(), page, limit));
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getByStatus(String status, int page, int limit) {

@@ -15,6 +15,9 @@ import ArticleCard from '../../components/articles/ArticleCard';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { usePublishedNews } from '../../hooks/news/usePublishedNews';
+import { normalizeNews } from '../../hooks/articles/normalizeArticle';
+import { toCardShape } from '../../hooks/articles/toCardShape';
 
 
 const SIDEBAR = [
@@ -50,30 +53,26 @@ const FILTERS = [
   },
 ];
 
-const FEATURED_ARTICLE = {
-  title: 'Trường Đại học Khoa học tự nhiên mở diễn đàn đổi mới sáng tạo',
-  date: '12/12/2023',
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur...',
-  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgm37lvYIRKvTGi4qoeU4GsQn0HiF3bYq9zA&s',
-};
-
-const NEWS_ARTICLES = Array(3).fill({
-  title: 'Trường Đại học Khoa học tự nhiên mở diễn đàn đổi mới sáng tạo',
-  date: '12/12/2023',
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur...',
-  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgm37lvYIRKvTGi4qoeU4GsQn0HiF3bYq9zA&s',
-});
-
-
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
   const { user } = useAuth();
+  const { news: rawNews } = usePublishedNews(0, 12);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+
+  const normalized = rawNews.map(normalizeNews);
+
+  const [featured, ...rest] = normalized;
+  const featuredCard = featured ? toCardShape(featured) : null;
+  const suggestionCards = rest.slice(0, 3).map(toCardShape);
+  const dailyCards = rest.slice(3, 6).map(toCardShape);
+
+  const openArticle = (article) => {
+    if (!article?.id) return;
+    navigate(`/article/${article.channel}/${article.id}`);
+  };
 
   return (
     <Page title="Tin tức">
@@ -129,53 +128,65 @@ const ActivitiesPage = () => {
               </Stack>
 
               {/* FEATURED ARTICLE */}
-              <FeaturedArticleCard article={FEATURED_ARTICLE} />
+              {featuredCard && (
+                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                  <FeaturedArticleCard article={featuredCard} />
+                </Box>
+              )}
 
               {/* NEWS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Gợi ý
-                </Typography>
+              {suggestionCards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Gợi ý
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {NEWS_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {suggestionCards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                        <ArticleCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
 
               {/* NEWS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Hàng ngày
-                </Typography>
+              {dailyCards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Hàng ngày
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {NEWS_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {dailyCards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i + 3])}>
+                        <ArticleCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
             </Stack>
           </Box>
         </Container>

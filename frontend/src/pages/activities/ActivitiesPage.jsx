@@ -15,6 +15,11 @@ import ArticleCard from '../../components/articles/ArticleCard';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { usePublishedNews } from '../../hooks/news/usePublishedNews';
+import { normalizeNews } from '../../hooks/articles/normalizeArticle';
+import { toCardShape } from '../../hooks/articles/toCardShape';
+import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
+import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 
 
 const SIDEBAR = [
@@ -50,42 +55,27 @@ const FILTERS = [
   },
 ];
 
-const FEATURED_ARTICLE = {
-  title: 'Hội nghị Liên ban Cộng đồng Cựu sinh viên Khoa học - Nhiệm kỳ 2022 - 2025',
-  date: '12/12/2023',
-  description:
-    'Là một trong hai nhà khoa học nữ xuất sắc nhận Giải thưởng Kovalevskaia năm 2021, GS.TS. Nguyễn Thị Thanh Mai được biết đến như một nhà giáo, nhà khoa học say mê nghiên cứu, luôn dấn thân tìm kiếm những điều mới mẻ và...',
-  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT2uCT-mf_rCgp7E8d1PARjnaitjmxn4wzW5Q&s',
-};
-
-const NEWS_ARTICLES = Array(3).fill({
-  title: 'Trường Đại học Khoa học tự nhiên mở diễn đàn đổi mới sáng tạo',
-  date: '12/12/2023',
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur...',
-  image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSgm37lvYIRKvTGi4qoeU4GsQn0HiF3bYq9zA&s',
-});
-
-const EVENT_ARTICLES = Array(3).fill({
-  title: 'Visit HITSZ',
-  date: '01/03/2026 - 05/03/2026',
-  organizer: 'HITSZ',
-  participants: 200,
-  interested: 1500,
-  description:
-    'Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur.',
-  image:
-    'https://www.a234.fr/wp-content/uploads/2019/10/ateliers234-shenzhen-designschool_ateliers-234_2023-10-2500x1406.jpg',
-});
-
-
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
   const { user } = useAuth();
+  const { news: rawNews } = usePublishedNews(0, 7);
+  const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, 3);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+
+  const newsItems = rawNews.map(normalizeNews);
+
+  const [featuredNews, ...newsRest] = newsItems;
+  const featuredCard = featuredNews ? toCardShape(featuredNews) : null;
+  const newsCards = newsRest.slice(0, 3).map(toCardShape);
+  const eventCards = upcomingEvents.slice(0, 3).map(toEventCardShape);
+
+  const openArticle = (article) => {
+    if (!article?.id) return;
+    navigate(`/article/${article.channel}/${article.id}`);
+  };
 
   return (
     <Page title="Hoạt động">
@@ -141,53 +131,65 @@ const ActivitiesPage = () => {
               </Stack>
 
               {/* FEATURED ARTICLE */}
-              <FeaturedArticleCard article={FEATURED_ARTICLE} />
+              {featuredCard && (
+                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featuredNews)}>
+                  <FeaturedArticleCard article={featuredCard} />
+                </Box>
+              )}
 
               {/* NEWS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Tin tức hàng ngày
-                </Typography>
+              {newsCards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Tin tức hàng ngày
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {NEWS_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {newsCards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(newsRest[i])}>
+                        <ArticleCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
 
               {/* EVENTS SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Sự kiện gần đây
-                </Typography>
+              {eventCards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Sự kiện sắp diễn ra
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {EVENT_ARTICLES.map((article, i) => (
-                    <ArticleEventCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {eventCards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingEvents[i])}>
+                        <ArticleEventCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
             </Stack>
           </Box>
         </Container>

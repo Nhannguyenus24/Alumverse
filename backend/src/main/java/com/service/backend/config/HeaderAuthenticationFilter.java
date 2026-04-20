@@ -74,16 +74,18 @@ public class HeaderAuthenticationFilter implements WebFilter {
             // Validate token (includes expiration check)
             Integer userId = jwtUtils.getUserIdFromToken(token);
             String userRole = jwtUtils.getRoleFromToken(token);
+            Integer organizationId = jwtUtils.getOrganizationIdFromToken(token);
 
             if (userId == null || userRole == null) {
                 throw new RuntimeException("Invalid token: missing user ID or role");
             }
 
-            // Token is valid and not expired
+            // Token is valid and not expired. Stash orgId in `details` for SecurityUtils.
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                     String.valueOf(userId),
                     null,
                     List.of(new SimpleGrantedAuthority("ROLE_" + userRole)));
+            auth.setDetails(organizationId);
 
             return chain.filter(exchange)
                     .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
