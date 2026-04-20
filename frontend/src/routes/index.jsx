@@ -142,10 +142,10 @@ const MentorshipChatPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipChatPage")),
 );
 const MentorshipDashboardPage = Loadable(
-  lazy(() => import("../pages/MentorshipDashboardPage")),
+  lazy(() => import("../pages/mentorship/MentorshipDashboardPage")),
 );
 const MentorshipYourCalendarPage = Loadable(
-  lazy(() => import("../pages/MentorshipYourCalendarPage")),
+  lazy(() => import("../pages/mentorship/MentorshipYourCalendarPage")),
 );
 
 // User pages
@@ -380,6 +380,23 @@ export const router = createBrowserRouter([
                 element: <MentorshipPage />,
                 handle: { hideFooter: true },
               },
+
+              {
+                path: "search",
+                element: <MentorshipSearchPage />,
+              },
+              {
+                path: "dashboard",
+                element: <MentorshipDashboardPage />,
+              },
+              {
+                path: "profile",
+                element: <MentorshipProfilePage />,
+              },
+              {
+                path: "calendar",
+                element: <MentorshipYourCalendarPage />,
+              },
               {
                 path: "chat",
                 children: [
@@ -392,31 +409,6 @@ export const router = createBrowserRouter([
                     path: ":chatId",
                     element: <MentorshipChatPage />,
                     handle: { hideFooter: true },
-                  },
-                ],
-              },
-              {
-                path: "mentorship",
-                children: [
-                  {
-                    index: true,
-                    element: <MentorshipPage />,
-                  },
-                  {
-                    path: "search",
-                    element: <MentorshipSearchPage />,
-                  },
-                  {
-                    path: "dashboard",
-                    element: <MentorshipDashboardPage />,
-                  },
-                  {
-                    path: "profile",
-                    element: <MentorshipProfilePage />,
-                  },
-                  {
-                    path: "calendar",
-                    element: <MentorshipYourCalendarPage />,
                   },
                 ],
               },
