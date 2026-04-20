@@ -1,12 +1,4 @@
-import {
-  Box,
-  Button,
-  Container,
-  Stack,
-  Typography,
-  Avatar
-} from '@mui/material';
-
+import { Box, Button, Container, Stack, Typography, Avatar } from '@mui/material';
 
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
@@ -53,7 +45,7 @@ const MentorshipProfilePage = () => {
 
   return (
     <Page title="Profile Cố vấn">
-      <Box sx={{ backgroundColor: '#F3F6FB', pb: 6 }}>
+      <Box sx={{ pb: 6 }}>
 
         {/* ================= COVER ================= */}
         <Box sx={{ position: 'relative' }}>

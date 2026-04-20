@@ -1,43 +1,34 @@
-import { useState } from 'react';
-import { useLocation } from 'react-router';
-import {
-  Box,
-  Button,
-  Container,
-  Stack,
-  TextField,
-  Typography,
-  Card,
-  Avatar
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import { useMemo, useState } from "react";
+import { Box, Button, Container, Stack, Typography } from '@mui/material';
+
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import GroupsIcon from '@mui/icons-material/Groups';
 import SchoolIcon from '@mui/icons-material/School';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
-import StarIcon from '@mui/icons-material/Star';
 
 import Page from '../../components/Page';
-import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
+import Sidebar from '../../components/Sidebar';
+import SearchBar from '../../components/SearchBar';
+import TopTabFilter from '../../components/TopTabFilter';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import MentorshipCard from "../../components/mentorship/MentorshipCard";
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
-/* ================= DATA ================= */
 
-const SIDEBAR_TABS = [
-  { id: 'growth', label: 'Phát triển', icon: <TrendingUpIcon /> },
-  { id: 'mentorship', label: 'Cố vấn', icon: <GroupsIcon /> },
-  { id: 'learning', label: 'Cơ hội học tập', icon: <SchoolIcon /> },
-  { id: 'jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
+const SIDEBAR = [
+  { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
+  { id: '/development/mentorship', label: 'Cố vấn', icon: <SchoolIcon /> },
+  { id: '/development/academics', label: 'Cơ hội học tập', icon: <MenuBookIcon /> },
+  { id: '/development/jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
 ];
 
 const TOP_TABS = [
-  { label: 'Giới thiệu', path: '/chances/mentorship' },
-  { label: 'Tìm kiếm', path: '/chances/mentorship/search' },
-  { label: 'Dashboard', path: '/chances/mentorship/dashboard' },
-  { label: 'Profile', path: '/chances/mentorship/profile' },
-  { label: 'Lịch cá nhân', path: '/chances/mentorship/calendar' },
-  { label: 'Đăng ký', path: '/chances/mentorship/appointment' },
+  { label: 'Giới thiệu', path: '/development/mentorship' },
+  { label: 'Tìm kiếm', path: '/development/mentorship/search' },
+  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
+  { label: 'Profile', path: '/development/mentorship/profile' },
+  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
+  { label: 'Đăng ký', path: '/development/mentorship/appointment' },
 ];
 
 const STATS = [
@@ -59,37 +50,30 @@ const MOCK_MENTORS = Array(6).fill({
 
 const MentorshipPage = () => {
   const navigate = useOrgNavigate();
-  const location = useLocation();
-  const [selectedSidebar, setSelectedSidebar] = useState('mentorship');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const ITEMS_PER_PAGE = 6;
+  const [page, setPage] = useState(1);
+  const paginatedMentors = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return MOCK_MENTORS.slice(start, start + ITEMS_PER_PAGE);
+  }, [page]);
+  const totalPages = Math.ceil(MOCK_MENTORS.length / ITEMS_PER_PAGE);
 
   return (
     <Page title="Cố vấn">
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{
-          pt: { xs: '56px', md: '64px' },
-          pb: 6,
-          backgroundColor: '#F3F6FB',
-        }}
-      >
-        <Container maxWidth="xl" sx={{ pt: 4, px: { xs: 2, lg: 6 } }}>
+      <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
+        <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
-              gap: 3,
+              gap: { xs: 2, md: 3 },
             }}
           >
-
-            {/* SIDEBAR */}
+            {/* SIDEBAR - Matches Development UI */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <ForumFilterPanel
-                filters={SIDEBAR_TABS}
-                selectedId={selectedSidebar}
-                onChange={setSelectedSidebar}
-              />
-
+              <Sidebar items={SIDEBAR} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -99,71 +83,43 @@ const MentorshipPage = () => {
             </Stack>
 
             {/* MAIN CONTENT */}
-            <Stack spacing={4} sx={{ flex: 1 }}>
+            <Stack spacing={4} sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 } }}>
+              
+              <Stack spacing={2}>
+                {/* HEADER */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography
+                    variant="h1"
+                    fontWeight={800}
+                    color="primary.main"
+                    sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+                  >
+                    CỐ VẤN
+                  </Typography>
 
-              {/* HEADER */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: 2,
-                }}
-              >
-                <Typography
-                  variant="h1"
-                  fontWeight={800}
-                  color="primary.main"
-                  sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-                >
-                  CỐ VẤN
+                  <Button variant="contained">
+                    Trở thành cố vấn
+                  </Button>
+                </Box>
+
+                {/* TOP TAB FILTER COMPONENT */}
+                <TopTabFilter tabs={TOP_TABS} onNavigate={navigate} />
+
+                <Typography color="text.secondary">
+                  Chương trình cố vấn hoàn toàn mới dành cho các bạn Sinh viên muốn
+                  tìm các anh chị Cựu sinh viên để hỗ trợ mình trong học tập và trong công việc.
                 </Typography>
-
-                <Button variant="contained">
-                  Trở thành cố vấn
-                </Button>
-              </Box>
-
-              {/* TOP TAB SWITCH */}
-              <Stack direction="row" spacing={1.5} flexWrap="wrap">
-                {TOP_TABS.map((tab) => {
-                  const isActive =
-                    tab.path === '/chances/mentorship'
-                      ? location.pathname === tab.path
-                      : location.pathname.startsWith(tab.path);
-
-                  return (
-                    <Button
-                      key={tab.label}
-                      variant={isActive ? 'contained' : 'outlined'}
-                      onClick={() => navigate(tab.path)}
-                      sx={{ textTransform: 'none', fontWeight: 600 }}
-                    >
-                      {tab.label}
-                    </Button>
-                  );
-                })}
               </Stack>
 
-              {/* DESCRIPTION */}
-              <Typography>
-                Chương trình cố vấn hoàn toàn mới dành cho các bạn Sinh viên muốn
-                tìm các anh chị Cựu sinh viên để hỗ trợ mình trong học tập và trong công việc.
-              </Typography>
-
-              {/* STATS */}
+              {/* STATS BANNER */}
               <Box
                 sx={{
                   backgroundColor: 'primary.main',
-                  borderRadius: 1,
+                  borderRadius: 2,
                   px: { xs: 3, md: 6 },
                   py: { xs: 3, md: 4 },
                   display: 'grid',
-                  gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: '1fr 1fr 1fr',
-                  },
+                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
                   gap: 3,
                   textAlign: 'center',
                 }}
@@ -173,130 +129,79 @@ const MentorshipPage = () => {
                     <Typography variant="h2" fontWeight={700} color="common.white">
                       {item.value}
                     </Typography>
-                    <Typography variant="body2" color="common.white">
+                    <Typography variant="body2" color="common.white" sx={{ opacity: 0.9 }}>
                       {item.label}
                     </Typography>
                   </Box>
                 ))}
               </Box>
 
-              {/* SEARCH */}
+              {/* SEARCH - Using SearchBar from UI kit */}
               <Box>
-                <Typography variant="h3" fontWeight={700} mb={2}>
+                <Typography variant="h4" fontWeight={700} mb={2}>
                   Đề xuất cho bạn
                 </Typography>
-
-                <TextField
-                  fullWidth
-                  placeholder="Tìm kiếm cố vấn..."
-                  InputProps={{
-                    startAdornment: (
-                      <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-                    ),
-                  }}
-                  sx={{ backgroundColor: '#fff', borderRadius: 1 }}
+                <SearchBar 
+                    value={searchQuery} 
+                    onChange={setSearchQuery} 
+                    placeholder="Tìm kiếm cố vấn theo tên, công ty hoặc kỹ năng..."
                 />
               </Box>
 
-              {/* ================= MENTOR CARDS ================= */}
+              {/* MENTOR CARDS GRID */}
               <Box
                 sx={{
-                  display: 'grid',
+                  display: "grid",
                   gridTemplateColumns: {
-                    xs: '1fr',
-                    sm: '1fr 1fr',
-                    md: '1fr 1fr 1fr',
+                    xs: "1fr",
+                    sm: "1fr 1fr",
+                    md: "1fr 1fr 1fr",
                   },
                   gap: 3,
                 }}
               >
-                {MOCK_MENTORS.map((mentor, i) => (
-                  <Card
+                {paginatedMentors.map((mentor, i) => (
+                  <MentorshipCard
                     key={i}
-                    sx={{
-                      p: 3,
-                      borderRadius: 2,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      boxShadow: 'none',
-                      textAlign: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      height: '100%',
-                    }}
-                  >
-                    <Stack spacing={2} alignItems="center">
-
-                      {/* AVATAR */}
-                      <Avatar
-                        src={mentor.avatar}
-                        sx={{ width: 80, height: 80 }}
-                      />
-
-                      {/* NAME */}
-                      <Typography fontWeight={700}>
-                        {mentor.name}
-                      </Typography>
-
-                      {/* ROLE */}
-                      <Typography variant="body2" color="text.secondary">
-                        {mentor.role}
-                      </Typography>
-
-                      {/* RATING */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <StarIcon sx={{ color: '#FFC107', fontSize: 18 }} />
-                        <Typography fontWeight={700} color="primary.main">
-                          {mentor.rating}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          ({mentor.reviews} reviews)
-                        </Typography>
-                      </Box>
-
-                      {/* TAGS */}
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          justifyContent: 'center',
-                          gap: 1,
-                        }}
-                      >
-                        {mentor.tags.map((tag, idx) => (
-                          <Box
-                            key={idx}
-                            sx={{
-                              px: 1,
-                              py: 0.25,
-                              borderRadius: 999,
-                              backgroundColor: 'primary.lighter',
-                            }}
-                          >
-                            <Typography
-                              variant="caption"
-                              color="primary.main"
-                              fontWeight={600}
-                            >
-                              #{tag}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Box>
-
-                    </Stack>
-
-                    {/* BUTTON */}
-                    <Button
-                      variant="contained"
-                      sx={{ mt: 3 }}
-                      fullWidth
-                    >
-                      Xem Profile
-                    </Button>
-                  </Card>
+                    avatar={mentor.avatar}
+                    name={mentor.name}
+                    role={mentor.role}
+                    rating={mentor.rating}
+                    reviews={mentor.reviews}
+                    tags={mentor.tags}
+                    onViewProfile={() => console.log("View profile", mentor.name)}
+                  />
                 ))}
+              </Box>
+
+              {/* PAGINATION CONTROLS */}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 1,
+                  mt: 4,
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  Trước
+                </Button>
+
+                <Typography sx={{ display: "flex", alignItems: "center", px: 2 }}>
+                  {page} / {totalPages}
+                </Typography>
+
+                <Button
+                  variant="outlined"
+                  disabled={page === totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  Sau
+                </Button>
               </Box>
 
             </Stack>
