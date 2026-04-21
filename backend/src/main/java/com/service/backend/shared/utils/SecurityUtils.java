@@ -26,6 +26,17 @@ public final class SecurityUtils {
                 .map(auth -> Long.parseLong((String) auth.getPrincipal()));
     }
 
+    public static Mono<Integer> getCurrentOrganizationId() {
+        return getAuthentication()
+                .flatMap(auth -> {
+                    Object details = auth.getDetails();
+                    if (details instanceof Integer orgId) {
+                        return Mono.just(orgId);
+                    }
+                    return Mono.error(new RuntimeException("No organization id in authentication context"));
+                });
+    }
+
     public static Mono<String> getCurrentUserRole() {
         return getAuthentication()
                 .map(auth -> auth.getAuthorities().stream()

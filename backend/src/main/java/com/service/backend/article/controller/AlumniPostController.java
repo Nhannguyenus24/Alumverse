@@ -1,0 +1,106 @@
+package com.service.backend.article.controller;
+
+import com.service.backend.article.dto.CreateAlumniPostRequest;
+import com.service.backend.article.dto.UpdateAlumniPostRequest;
+import com.service.backend.article.dto.AlumniPostResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.article.usecase.AlumniPostService;
+import com.service.backend.shared.dto.ApiResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/articles/alumni-posts")
+@RequiredArgsConstructor
+@Validated
+public class AlumniPostController {
+
+    private final AlumniPostService alumniPostService;
+
+    @PostMapping
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> create(@Valid @RequestBody CreateAlumniPostRequest request) {
+        return alumniPostService.create(request)
+                .map(response -> ResponseEntity
+                        .status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Alumni post created successfully", response)));
+    }
+
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> update(
+            @PathVariable @Min(1) Integer id,
+            @Valid @RequestBody UpdateAlumniPostRequest request) {
+        return alumniPostService.update(id, request)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni post updated successfully", response)));
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<ApiResponse<Void>>> delete(@PathVariable @Min(1) Integer id) {
+        return alumniPostService.delete(id)
+                .map(deleted -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni post deleted successfully", null)));
+    }
+
+    @GetMapping("/{id}")
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getById(@PathVariable @Min(1) Integer id) {
+        return alumniPostService.getById(id)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni post retrieved successfully", response)));
+    }
+
+    @GetMapping("/slug/{slug}")
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getBySlug(@PathVariable @NotBlank String slug) {
+        return alumniPostService.getBySlug(slug)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni post retrieved successfully", response)));
+    }
+
+    @GetMapping
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getAll(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return alumniPostService.getAll(page, limit)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni posts retrieved successfully", response)));
+    }
+
+    @GetMapping("/published")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getPublished(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return alumniPostService.getPublished(page, limit)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Published alumni posts retrieved successfully", response)));
+    }
+
+    @GetMapping("/search")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> search(
+            @RequestParam @NotBlank String keyword,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return alumniPostService.search(keyword, page, limit)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Search results retrieved successfully", response)));
+    }
+
+    @PostMapping("/{id}/publish")
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> publish(@PathVariable @Min(1) Integer id) {
+        return alumniPostService.publish(id)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni post published successfully", response)));
+    }
+
+    @PostMapping("/{id}/hide")
+    public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> hide(@PathVariable @Min(1) Integer id) {
+        return alumniPostService.hide(id)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni post hidden successfully", response)));
+    }
+}

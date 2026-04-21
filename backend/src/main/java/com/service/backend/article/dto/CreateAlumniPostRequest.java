@@ -8,28 +8,25 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.URL;
 
-import java.time.LocalDate;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateAchievementRequest {
+public class CreateAlumniPostRequest {
 
     @NotBlank
     @Size(min = 3, max = 255)
     private String title;
 
-    private String description;
+    @Size(max = 255)
+    private String slug;
+
+    @NotBlank
+    private String content;
 
     @URL
-    private String imageUrl;
+    private String thumbnailUrl;
 
     /** Optional base64-encoded image. When present, backend uploads and stores the resulting URL. */
-    private String imageBase64;
-
-    private LocalDate awardedDate;
-
-    @Size(max = 50)
-    private String status;
+    private String thumbnailBase64;
 }
