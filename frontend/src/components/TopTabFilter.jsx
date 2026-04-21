@@ -5,7 +5,7 @@ const TopTabFilter = ({ tabs, onNavigate }) => {
   const location = useLocation();
 
   return (
-    <Stack direction="row" spacing={1.5} flexWrap="wrap">
+    <Stack direction="row" flexWrap="wrap" sx={{ gap: 1.5 }}>
       {tabs.map((tab) => {
         const isActive =
           tab.path === '/development/mentorship'

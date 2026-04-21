@@ -132,11 +132,11 @@ const DevelopmentJobsPage = Loadable(
 const MentorshipPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipPage")),
 );
-const MentorshipSearchPage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipSearchPage")),
-);
 const MentorshipProfilePage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipProfilePage")),
+);
+const MentorshipProfileEditPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipProfileEditPage")),
 );
 const MentorshipChatPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipChatPage")),
@@ -380,18 +380,22 @@ export const router = createBrowserRouter([
                 element: <MentorshipPage />,
                 handle: { hideFooter: true },
               },
-
-              {
-                path: "search",
-                element: <MentorshipSearchPage />,
-              },
               {
                 path: "dashboard",
                 element: <MentorshipDashboardPage />,
               },
               {
                 path: "profile",
-                element: <MentorshipProfilePage />,
+                children: [
+                  {
+                    index: true,
+                    element: <MentorshipProfilePage />,
+                  },
+                  {
+                    path: "edit",
+                    element: <MentorshipProfileEditPage />,
+                  }
+                ],
               },
               {
                 path: "calendar",
@@ -652,7 +656,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminDashboardPage />
->>>>>>>>> Temporary merge branch 2
           </ProtectedRoute>
         ),
       },
