@@ -12,6 +12,7 @@ import SearchBar from '../../components/SearchBar';
 import TopTabFilter from '../../components/TopTabFilter';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import MentorshipCard from "../../components/mentorship/MentorshipCard";
+import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 
@@ -37,6 +38,29 @@ const STATS = [
   { value: '100%', label: 'alumni đã xác nhận' },
 ];
 
+// Configuration for the Dynamic Filter Bar
+const MENTORSHIP_FILTERS = [
+  {
+    type: 'dropdown',
+    key: 'topics',
+    label: 'Chủ đề',
+    multiple: true,
+    options: ['Frontend', 'Backend', 'Career', 'Interview', 'Startup'],
+  },
+  {
+    type: 'dropdown',
+    key: 'expertise',
+    label: 'Chuyên môn',
+    multiple: true,
+    options: ['Web', 'Mobile', 'AI', 'Data', 'DevOps'],
+  },
+  {
+    type: 'topics', // Using the button-style toggle for "Trending"
+    key: 'status',
+    options: ['Thịnh hành'],
+  },
+];
+
 const MOCK_MENTORS = Array(6).fill({
   name: 'Nguyễn Lê Hoàng Dũng',
   role: 'Senior Software Engineer @ Google',
@@ -51,6 +75,18 @@ const MOCK_MENTORS = Array(6).fill({
 const MentorshipPage = () => {
   const navigate = useOrgNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const [filters, setFilters] = useState({
+    all: true,
+    topics: [],
+    expertise: [],
+    status: [],
+    search: '',
+  });
+
+  const handleSearchChange = (e) => {
+    setFilters((prev) => ({ ...prev, search: e.target.value }));
+  };
 
   const ITEMS_PER_PAGE = 6;
   const [page, setPage] = useState(1);
@@ -59,6 +95,39 @@ const MentorshipPage = () => {
     return MOCK_MENTORS.slice(start, start + ITEMS_PER_PAGE);
   }, [page]);
   const totalPages = Math.ceil(MOCK_MENTORS.length / ITEMS_PER_PAGE);
+
+
+  // Ví dụ: đã là Alumni và đã là Mentor
+  const user = { isAlumni: true, isMentor: true };
+  const { isAlumni, isMentor } = user;
+
+  // Hàm render nút bấm dựa trên điều kiện
+  const renderActionButtons = () => {
+    // Trường hợp 3: Không phải Alumni -> Ẩn nút
+    if (!isAlumni) return null;
+
+    // Trường hợp 2: Là Alumni + Đã là Mentor -> "Trang cá nhân" (Outlined)
+    if (isMentor) {
+      return (
+        <Button 
+          variant="outlined" 
+          onClick={() => navigate('/development/mentorship/profile')}
+        >
+          Trang cá nhân
+        </Button>
+      );
+    }
+
+    // Trường hợp 1: Là Alumni + Chưa là Mentor -> "Trở thành cố vấn" (Contained)
+    return (
+      <Button 
+        variant="contained" 
+        onClick={() => navigate('/development/mentorship/signup')}
+      >
+        Trở thành cố vấn
+      </Button>
+    );
+  };
 
   return (
     <Page title="Cố vấn">
@@ -97,13 +166,9 @@ const MentorshipPage = () => {
                     CỐ VẤN
                   </Typography>
 
-                  <Button variant="contained">
-                    Trở thành cố vấn
-                  </Button>
+                  {/* GỌI HÀM RENDER NÚT TẠI ĐÂY */}
+                  {renderActionButtons()}
                 </Box>
-
-                {/* TOP TAB FILTER COMPONENT */}
-                <TopTabFilter tabs={TOP_TABS} onNavigate={navigate} />
 
                 <Typography color="text.secondary">
                   Chương trình cố vấn hoàn toàn mới dành cho các bạn Sinh viên muốn
@@ -139,7 +204,7 @@ const MentorshipPage = () => {
               {/* SEARCH - Using SearchBar from UI kit */}
               <Box>
                 <Typography variant="h4" fontWeight={700} mb={2}>
-                  Đề xuất cho bạn
+                  Tìm kiếm cố vấn
                 </Typography>
                 <SearchBar 
                     value={searchQuery} 
@@ -147,6 +212,13 @@ const MentorshipPage = () => {
                     placeholder="Tìm kiếm cố vấn theo tên, công ty hoặc kỹ năng..."
                 />
               </Box>
+
+              {/* REPLACED: NEW DYNAMIC FILTER BAR */}
+              <DynamicFilterBar 
+                config={MENTORSHIP_FILTERS} 
+                value={filters} 
+                onChange={setFilters} 
+              />
 
               {/* MENTOR CARDS GRID */}
               <Box

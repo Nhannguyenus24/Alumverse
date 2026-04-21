@@ -1,5 +1,6 @@
 import { Avatar, Box, Button, Card, Stack, Typography } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
+import MentorshipTag from "./MentorshipTag";
 
 const MentorshipCard = ({
   avatar,
@@ -59,30 +60,7 @@ const MentorshipCard = ({
           }}
         >
           {tags.map((tag, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                px: 1.2,
-                py: 0.75,
-                borderRadius: "999px", // fully rounded
-                backgroundColor: "primary.light",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Typography
-                variant="caption"
-                color="primary.main"
-                fontWeight={600}
-                sx={{
-                  lineHeight: 1,
-                  textAlign: "center",
-                }}
-              >
-                #{tag}
-              </Typography>
-            </Box>
+            <MentorshipTag key={idx} label={tag} />
           ))}
         </Box>
       </Stack>
