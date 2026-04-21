@@ -652,7 +652,7 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminDashboardPage />
-            
+>>>>>>>>> Temporary merge branch 2
           </ProtectedRoute>
         ),
       },
