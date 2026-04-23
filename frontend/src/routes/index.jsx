@@ -80,6 +80,7 @@ const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPa
 const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
 const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
+
 const CreateDonationPage = Loadable(
   lazy(() => import("../pages/admin/CreateDonationPage")),
 );
