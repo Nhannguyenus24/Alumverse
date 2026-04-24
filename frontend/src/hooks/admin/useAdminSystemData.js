@@ -170,17 +170,33 @@ const fallbackAudit = [
 ];
 
 const normalizeList = (payload) => {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-  if (payload && Array.isArray(payload.content)) {
-    return payload.content;
-  }
-  if (payload && payload.data && Array.isArray(payload.data.content)) {
-    return payload.data.content;
-  }
+  if (Array.isArray(payload)) return payload;
+  if (payload?.items) return payload.items;
+  if (payload?.content) return payload.content;
+  if (payload?.data?.content) return payload.data.content;
   return [];
 };
+
+const mapLoginHistoryToAuditLog = (entry) => ({
+  id: entry.id,
+  timestamp: entry.loginAt,
+  userId: entry.userId,
+  userName: entry.userName,
+  userEmail: entry.email,
+  action: entry.loginMethod ?? 'LOGIN',
+  entityType: 'USER',
+  entityId: entry.userId,
+  entityName: entry.userName ?? '',
+  status: 'SUCCESS',
+  description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown IP'}`,
+  ipAddress: entry.loginIp,
+  userAgent: entry.userAgent,
+  requestPath: null,
+  executionTime: null,
+  oldValue: null,
+  newValue: null,
+  errorMessage: null,
+});
 
 const fetchSafe = async (request, fallbackValue) => {
   try {
@@ -206,24 +222,27 @@ const useAdminSystemData = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    const [metrics, timeline, users, organizations, auditLogs] = await Promise.all([
+    const [metrics, timeline, users, organizations, rawAuditLogs] = await Promise.all([
       fetchSafe(() => apiClient.get('/admin/dashboard/metrics'), fallbackMetrics),
       fetchSafe(() => apiClient.get('/admin/dashboard/activities'), fallbackTimeline),
       fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 20 } }), fallbackUsers),
       fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 20 } }), fallbackOrgs),
-      fetchSafe(() => apiClient.get('/admin/audit-logs', { params: { page: 0, size: 20 } }), fallbackAudit),
+      fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20 } }), null),
     ]);
 
     const normalizedUsers = normalizeList(users);
     const normalizedOrgs = normalizeList(organizations);
-    const normalizedLogs = normalizeList(auditLogs);
+    const rawAuditList = normalizeList(rawAuditLogs);
+    const auditLogs = rawAuditList.length > 0
+      ? rawAuditList.map(mapLoginHistoryToAuditLog)
+      : fallbackAudit;
 
     setState({
       metrics: metrics || fallbackMetrics,
       timeline: Array.isArray(timeline) ? timeline : fallbackTimeline,
       users: normalizedUsers.length > 0 ? normalizedUsers : fallbackUsers,
       organizations: normalizedOrgs.length > 0 ? normalizedOrgs : fallbackOrgs,
-      auditLogs: normalizedLogs.length > 0 ? normalizedLogs : fallbackAudit,
+      auditLogs,
     });
 
     setLoading(false);

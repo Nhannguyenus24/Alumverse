@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.auth.entity.User;
 
 import reactor.core.publisher.Flux;
@@ -119,6 +120,54 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Modifying
     @Query("DELETE FROM users WHERE id = :userId")
     Mono<Void> hardDeleteUserById(@Param("userId") Integer userId);
+
+    /**
+     * Unban a user by setting status back to ACTIVE
+     */
+    @Modifying
+    @Query("UPDATE users SET status = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    Mono<Integer> unbanUserById(@Param("userId") Integer userId);
+
+    /**
+     * Fetch all verification requests joined with user info, paginated
+     */
+    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.status, vr.admin_note, " +
+           "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
+           "FROM verification_requests vr " +
+           "JOIN users u ON vr.member_id = u.id " +
+           "ORDER BY vr.created_at DESC " +
+           "LIMIT :limit OFFSET :offset")
+    Flux<VerificationRequestResponse> findAllVerificationRequests(@Param("limit") int limit, @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM verification_requests")
+    Mono<Long> countAllVerificationRequests();
+
+    /**
+     * Fetch only pending verification requests, paginated
+     */
+    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.status, vr.admin_note, " +
+           "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
+           "FROM verification_requests vr " +
+           "JOIN users u ON vr.member_id = u.id " +
+           "WHERE vr.status = 'pending' " +
+           "ORDER BY vr.created_at DESC " +
+           "LIMIT :limit OFFSET :offset")
+    Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("limit") int limit, @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'")
+    Mono<Long> countPendingVerificationRequests();
+
+    /**
+     * Update verification request status and admin note
+     */
+    @Modifying
+    @Query("UPDATE verification_requests " +
+           "SET status = :status, admin_note = :adminNote, updated_at = CURRENT_TIMESTAMP " +
+           "WHERE id = :requestId")
+    Mono<Integer> reviewVerificationRequest(
+            @Param("requestId") Integer requestId,
+            @Param("status") String status,
+            @Param("adminNote") String adminNote);
 
     /**
      * Create organization members for a list of users
