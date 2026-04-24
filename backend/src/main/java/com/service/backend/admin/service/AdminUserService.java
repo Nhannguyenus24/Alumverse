@@ -4,13 +4,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dto.UpdateUserRequest;
 import com.service.backend.admin.dto.UserResponse;
+import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.auth.entity.User;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AdminUserService {
@@ -172,6 +176,79 @@ public class AdminUserService {
                 .doOnError(error -> logger.error("Error fetching user: {}", userId, error));
     }
     
+    /**
+     * Unban a user by setting status back to ACTIVE
+     */
+    public Mono<Boolean> unbanUser(Integer userId) {
+        logger.info("Unbanning user: {}", userId);
+        return adminUserRepository.unbanUserById(userId)
+                .map(count -> count > 0)
+                .doOnSuccess(ok -> {
+                    if (ok) logger.info("User {} unbanned", userId);
+                    else logger.warn("User {} not found for unban", userId);
+                })
+                .doOnError(e -> logger.error("Error unbanning user {}", userId, e));
+    }
+
+    /**
+     * Update user fields (partial update — only non-null fields are applied)
+     */
+    public Mono<UserResponse> updateUser(Integer userId, UpdateUserRequest request) {
+        logger.info("Updating user: {}", userId);
+        return adminUserRepository.findById(userId)
+                .flatMap(user -> {
+                    if (request.getEmail() != null) user.setEmail(request.getEmail());
+                    if (request.getUserName() != null) user.setUserName(request.getUserName());
+                    if (request.getRole() != null) user.setRole(request.getRole());
+                    if (request.getStatus() != null) user.setStatus(request.getStatus());
+                    user.setUpdatedAt(LocalDateTime.now());
+                    return adminUserRepository.save(user);
+                })
+                .map(this::mapToUserResponse)
+                .doOnSuccess(u -> logger.info("User {} updated successfully", userId))
+                .doOnError(e -> logger.error("Error updating user {}", userId, e));
+    }
+
+    /**
+     * Get all verification requests with pagination
+     */
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(int page, int size) {
+        logger.info("Fetching all verification requests page={} size={}", page, size);
+        int offset = page * size;
+        return Mono.zip(
+                adminUserRepository.findAllVerificationRequests(size, offset).collectList(),
+                adminUserRepository.countAllVerificationRequests()
+        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+         .doOnError(e -> logger.error("Error fetching verification requests", e));
+    }
+
+    /**
+     * Get pending verification requests with pagination
+     */
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(int page, int size) {
+        logger.info("Fetching pending verification requests page={} size={}", page, size);
+        int offset = page * size;
+        return Mono.zip(
+                adminUserRepository.findPendingVerificationRequests(size, offset).collectList(),
+                adminUserRepository.countPendingVerificationRequests()
+        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+         .doOnError(e -> logger.error("Error fetching pending verification requests", e));
+    }
+
+    /**
+     * Approve or reject a verification request
+     */
+    public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
+        logger.info("Reviewing verification request {} with status={}", requestId, status);
+        return adminUserRepository.reviewVerificationRequest(requestId, status, adminNote)
+                .map(count -> count > 0)
+                .doOnSuccess(ok -> {
+                    if (ok) logger.info("Verification request {} reviewed as {}", requestId, status);
+                    else logger.warn("Verification request {} not found", requestId);
+                })
+                .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e));
+    }
+
     /**
      * Map User entity to UserResponse DTO
      */

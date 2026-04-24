@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,7 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.admin.dto.BanUserRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
+import com.service.backend.admin.dto.ReviewVerificationRequest;
+import com.service.backend.admin.dto.UnbanUserRequest;
+import com.service.backend.admin.dto.UpdateUserRequest;
 import com.service.backend.admin.dto.UserResponse;
+import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -157,6 +162,86 @@ public class AdminUserController {
                                 .body(new ApiResponse<>(error.getMessage(), null))));
     }
     
+    /**
+     * Unban a user
+     */
+    @PostMapping("/unban")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> unbanUser(
+            @Valid @RequestBody UnbanUserRequest request) {
+        return adminUserService.unbanUser(request.getUserId())
+                .map(success -> {
+                    if (success) {
+                        return ResponseEntity.ok(
+                                new ApiResponse<>("User unbanned successfully", true));
+                    } else {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse<>("User not found", false));
+                    }
+                })
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    /**
+     * Update user details (role, status, email, userName)
+     */
+    @PutMapping("/{userId}")
+    public Mono<ResponseEntity<ApiResponse<UserResponse>>> updateUser(
+            @PathVariable Integer userId,
+            @Valid @RequestBody UpdateUserRequest request) {
+        return adminUserService.updateUser(userId, request)
+                .map(user -> ResponseEntity.ok(
+                        new ApiResponse<>("User updated successfully", user)))
+                .switchIfEmpty(Mono.just(
+                        ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse<>("User not found", null))))
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), null))));
+    }
+
+    /**
+     * Get all verification requests with optional pending-only filter
+     */
+    @GetMapping("/verification-requests")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getVerificationRequests(
+            @RequestParam(defaultValue = "false") boolean pendingOnly,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
+        Mono<PaginatedResponse<VerificationRequestResponse>> source = pendingOnly
+                ? adminUserService.getPendingVerificationRequests(page, size)
+                : adminUserService.getAllVerificationRequests(page, size);
+        return source
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Verification requests fetched successfully", data)))
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), null))));
+    }
+
+    /**
+     * Approve or reject a verification request
+     */
+    @PutMapping("/verification-requests/{requestId}")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> reviewVerificationRequest(
+            @PathVariable Integer requestId,
+            @Valid @RequestBody ReviewVerificationRequest request) {
+        return adminUserService.reviewVerificationRequest(requestId, request.getStatus(), request.getAdminNote())
+                .map(success -> {
+                    if (success) {
+                        return ResponseEntity.ok(
+                                new ApiResponse<>("Verification request reviewed successfully", true));
+                    } else {
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse<>("Verification request not found", false));
+                    }
+                })
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
     /**
      * Add user to organization
      */

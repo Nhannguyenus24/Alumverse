@@ -1,0 +1,19 @@
+package com.service.backend.admin.dto;
+
+import com.service.backend.shared.enums.UserRole;
+import com.service.backend.shared.enums.UserStatus;
+import jakarta.validation.constraints.Email;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateUserRequest {
+    @Email(message = "Invalid email format")
+    private String email;
+    private String userName;
+    private UserRole role;
+    private UserStatus status;
+}
