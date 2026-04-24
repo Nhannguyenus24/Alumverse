@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Skeleton,
   Stack,
   Tab,
   Table,
@@ -35,6 +36,7 @@ import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { getLoginHistoryByUser } from '../../api/adminAuditApi';
 
 const formatDate = (value) => {
   if (!value) {
@@ -94,6 +96,7 @@ const AdminUserDetailPage = () => {
   const [banOpen, setBanOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  // Fallback: filter global audit logs from context
   const auditTrail = useMemo(
     () =>
       auditLogs.filter(
@@ -102,6 +105,36 @@ const AdminUserDetailPage = () => {
       ),
     [auditLogs, userId],
   );
+
+  // Per-user login history fetched lazily when tab 5 is opened
+  const [userLoginHistory, setUserLoginHistory] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  const fetchUserLoginHistory = useCallback(() => {
+    if (userLoginHistory !== null || !userId) return;
+    setAuditLoading(true);
+    getLoginHistoryByUser(userId, 0, 50)
+      .then((res) => {
+        const items = res?.data?.data?.items ?? [];
+        setUserLoginHistory(
+          items.map((entry) => ({
+            id: entry.id,
+            timestamp: entry.loginAt,
+            action: entry.loginMethod ?? 'LOGIN',
+            status: 'SUCCESS',
+            description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown'}`,
+            ipAddress: entry.loginIp,
+            userAgent: entry.userAgent,
+          })),
+        );
+      })
+      .catch(() => setUserLoginHistory(auditTrail))
+      .finally(() => setAuditLoading(false));
+  }, [userId, userLoginHistory, auditTrail]);
+
+  useEffect(() => {
+    if (tab === 5) fetchUserLoginHistory();
+  }, [tab, fetchUserLoginHistory]);
 
   const profile = user ? demoProfile(user) : {};
   const academic = user ? demoAcademic() : [];
@@ -301,40 +334,48 @@ const AdminUserDetailPage = () => {
             {tab === 5 ? (
               <Stack spacing={2}>
                 <Typography variant="body2" color="text.secondary">
-                  View consolidated audit entries where the entity is this user account.
+                  Login history for this user account fetched from the audit service.
                 </Typography>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Time</TableCell>
-                      <TableCell>Action</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Description</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {auditTrail.length === 0 ? (
+                {auditLoading ? (
+                  <Stack spacing={1}>
+                    <Skeleton variant="rounded" height={36} />
+                    <Skeleton variant="rounded" height={36} />
+                    <Skeleton variant="rounded" height={36} />
+                  </Stack>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={4}>
-                          <Typography variant="body2" color="text.secondary">
-                            No audit entries for this user in the current log set.
-                          </Typography>
-                        </TableCell>
+                        <TableCell>Time</TableCell>
+                        <TableCell>Action</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Description</TableCell>
                       </TableRow>
-                    ) : (
-                      auditTrail.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatDate(log.timestamp)}</TableCell>
-                          <TableCell>{log.action}</TableCell>
-                          <TableCell>
-                            <AdminStatusChip status={log.status} category="audit" />
+                    </TableHead>
+                    <TableBody>
+                      {(userLoginHistory ?? auditTrail).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4}>
+                            <Typography variant="body2" color="text.secondary">
+                              No login history found for this user.
+                            </Typography>
                           </TableCell>
-                          <TableCell>{log.description || '-'}</TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        (userLoginHistory ?? auditTrail).map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>{formatDate(log.timestamp)}</TableCell>
+                            <TableCell>{log.action}</TableCell>
+                            <TableCell>
+                              <AdminStatusChip status={log.status} category="audit" />
+                            </TableCell>
+                            <TableCell>{log.description || '-'}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
                 <Button
                   variant="text"
                   onClick={() => navigate('/admin/audit-logs')}
