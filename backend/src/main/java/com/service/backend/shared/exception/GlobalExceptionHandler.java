@@ -32,6 +32,16 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(ApplicationException.class)
+    public Mono<ResponseEntity<?>> handleApplicationException(ApplicationException ex) {
+        int status = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found") ? 404 : 400;
+        return Mono.just(
+                ResponseEntity
+                        .status(status)
+                        .body(ApiResponse.error(ex.getErrorCode()))
+        );
+    }
+
     @ExceptionHandler(Exception.class)
     public Mono<ResponseEntity<?>> handleGenericException(Exception ex) {
         return Mono.just(

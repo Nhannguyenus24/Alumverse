@@ -1,5 +1,6 @@
 package com.service.backend.mentorship.dto;
 
+import com.service.backend.mentorship.entity.MentorAvailability;
 import com.service.backend.mentorship.entity.MentorshipSession;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,22 @@ public class MentorshipSessionResponse {
     private String status;
     private String bookingNote;
     private String meetingLink;
+    private String sessionType;
+    private String introduction;
+    private String description;
+    private String cvUrl;
     private LocalDateTime createdAt;
+
+    // ===== Enriched from mentor_availabilities (optional, populated when looked up) =====
+    private Integer mentorMemberId;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+
+    // ===== Enriched display fields (joined from users + global_profiles) =====
+    private String mentorName;
+    private String mentorAvatarUrl;
+    private String menteeName;
+    private String menteeAvatarUrl;
 
     public static MentorshipSessionResponse from(MentorshipSession session) {
         return MentorshipSessionResponse.builder()
@@ -30,7 +46,21 @@ public class MentorshipSessionResponse {
                 .status(session.getStatus())
                 .bookingNote(session.getBookingNote())
                 .meetingLink(session.getMeetingLink())
+                .sessionType(session.getSessionType())
+                .introduction(session.getIntroduction())
+                .description(session.getDescription())
+                .cvUrl(session.getCvUrl())
                 .createdAt(session.getCreatedAt())
                 .build();
+    }
+
+    public static MentorshipSessionResponse from(MentorshipSession session, MentorAvailability availability) {
+        MentorshipSessionResponse r = from(session);
+        if (availability != null) {
+            r.setMentorMemberId(availability.getMentorMemberId());
+            r.setStartTime(availability.getStartTime());
+            r.setEndTime(availability.getEndTime());
+        }
+        return r;
     }
 }
