@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Container, Stack, Typography } from '@mui/material';
 
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
@@ -9,11 +9,11 @@ import WorkIcon from '@mui/icons-material/Work';
 import Page from '../../components/Page';
 import Sidebar from '../../components/Sidebar';
 import SearchBar from '../../components/SearchBar';
-import TopTabFilter from '../../components/TopTabFilter';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import MentorshipCard from "../../components/mentorship/MentorshipCard";
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
 
 
 const SIDEBAR = [
@@ -61,21 +61,15 @@ const MENTORSHIP_FILTERS = [
   },
 ];
 
-const MOCK_MENTORS = Array(6).fill({
-  name: 'Nguyễn Lê Hoàng Dũng',
-  role: 'Senior Software Engineer @ Google',
-  rating: 4.9,
-  reviews: 124,
-  tags: ['Frontend', 'Career', 'Interview'],
-  avatar: 'https://i.pravatar.cc/150?img=3',
-});
-
 /* ================= COMPONENT ================= */
+
+const PAGE_SIZE = 9;
 
 const MentorshipPage = () => {
   const navigate = useOrgNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  
+  const [page, setPage] = useState(0);
+
   const [filters, setFilters] = useState({
     all: true,
     topics: [],
@@ -84,18 +78,22 @@ const MentorshipPage = () => {
     search: '',
   });
 
-  const handleSearchChange = (e) => {
-    setFilters((prev) => ({ ...prev, search: e.target.value }));
-  };
+  const expertiseFilter = useMemo(() => {
+    const all = [...(filters.topics ?? []), ...(filters.expertise ?? [])];
+    return all[0] ?? '';
+  }, [filters.topics, filters.expertise]);
 
-  const ITEMS_PER_PAGE = 6;
-  const [page, setPage] = useState(1);
-  const paginatedMentors = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return MOCK_MENTORS.slice(start, start + ITEMS_PER_PAGE);
-  }, [page]);
-  const totalPages = Math.ceil(MOCK_MENTORS.length / ITEMS_PER_PAGE);
+  const hasAvailability = (filters.status ?? []).includes('Thịnh hành');
 
+  const browseQuery = useBrowseMentors({
+    keyword: searchQuery,
+    expertise: expertiseFilter,
+    hasAvailability,
+    page,
+    limit: PAGE_SIZE,
+  });
+  const paginated = browseQuery.data;
+  const mentors = useMemo(() => paginated?.items ?? [], [paginated]);
 
   // Ví dụ: đã là Alumni và đã là Mentor
   const user = { isAlumni: true, isMentor: true };
@@ -103,29 +101,44 @@ const MentorshipPage = () => {
 
   // Hàm render nút bấm dựa trên điều kiện
   const renderActionButtons = () => {
-    // Trường hợp 3: Không phải Alumni -> Ẩn nút
-    if (!isAlumni) return null;
+    const myBookingsBtn = (
+      <Button
+        variant="outlined"
+        onClick={() => navigate('/development/mentorship/my-bookings')}
+      >
+        Lịch hẹn của tôi
+      </Button>
+    );
 
-    // Trường hợp 2: Là Alumni + Đã là Mentor -> "Trang cá nhân" (Outlined)
+    // Trường hợp 3: Không phải Alumni -> chỉ hiện "Lịch hẹn của tôi"
+    if (!isAlumni) return myBookingsBtn;
+
+    // Trường hợp 2: Là Alumni + Đã là Mentor -> "Trang cá nhân" + "Lịch hẹn của tôi"
     if (isMentor) {
       return (
-        <Button 
-          variant="outlined" 
-          onClick={() => navigate('/development/mentorship/profile')}
-        >
-          Trang cá nhân
-        </Button>
+        <Stack direction="row" spacing={1.5}>
+          {myBookingsBtn}
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/development/mentorship/profile')}
+          >
+            Trang cá nhân
+          </Button>
+        </Stack>
       );
     }
 
-    // Trường hợp 1: Là Alumni + Chưa là Mentor -> "Trở thành cố vấn" (Contained)
+    // Trường hợp 1: Là Alumni + Chưa là Mentor -> "Lịch hẹn của tôi" + "Trở thành cố vấn"
     return (
-      <Button 
-        variant="contained" 
-        onClick={() => navigate('/development/mentorship/signup')}
-      >
-        Trở thành cố vấn
-      </Button>
+      <Stack direction="row" spacing={1.5}>
+        {myBookingsBtn}
+        <Button
+          variant="contained"
+          onClick={() => navigate('/development/mentorship/signup')}
+        >
+          Trở thành cố vấn
+        </Button>
+      </Stack>
     );
   };
 
@@ -206,75 +219,93 @@ const MentorshipPage = () => {
                 <Typography variant="h4" fontWeight={700} mb={2}>
                   Tìm kiếm cố vấn
                 </Typography>
-                <SearchBar 
-                    value={searchQuery} 
-                    onChange={setSearchQuery} 
-                    placeholder="Tìm kiếm cố vấn theo tên, công ty hoặc kỹ năng..."
+                <SearchBar
+                  value={searchQuery}
+                  onChange={(v) => {
+                    setSearchQuery(v);
+                    setPage(0);
+                  }}
+                  placeholder="Tìm kiếm cố vấn theo công ty, chức danh hoặc bio..."
                 />
               </Box>
 
-              {/* REPLACED: NEW DYNAMIC FILTER BAR */}
-              <DynamicFilterBar 
-                config={MENTORSHIP_FILTERS} 
-                value={filters} 
-                onChange={setFilters} 
+              <DynamicFilterBar
+                config={MENTORSHIP_FILTERS}
+                value={filters}
+                onChange={(next) => {
+                  setFilters(next);
+                  setPage(0);
+                }}
               />
 
               {/* MENTOR CARDS GRID */}
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "1fr 1fr",
-                    md: "1fr 1fr 1fr",
-                  },
-                  gap: 3,
-                }}
-              >
-                {paginatedMentors.map((mentor, i) => (
-                  <MentorshipCard
-                    key={i}
-                    avatar={mentor.avatar}
-                    name={mentor.name}
-                    role={mentor.role}
-                    rating={mentor.rating}
-                    reviews={mentor.reviews}
-                    tags={mentor.tags}
-                    onViewProfile={() => console.log("View profile", mentor.name)}
-                  />
-                ))}
-              </Box>
+              {browseQuery.isLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                  <CircularProgress />
+                </Box>
+              ) : browseQuery.isError ? (
+                <Alert severity="error">Không tải được danh sách cố vấn. Vui lòng thử lại.</Alert>
+              ) : mentors.length === 0 ? (
+                <Alert severity="info">
+                  {searchQuery.trim()
+                    ? `Không tìm thấy cố vấn nào khớp "${searchQuery}".`
+                    : 'Chưa có cố vấn nào trong hệ thống.'}
+                </Alert>
+              ) : (
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: '1fr 1fr',
+                      md: '1fr 1fr 1fr',
+                    },
+                    gap: 3,
+                  }}
+                >
+                  {mentors.map((mentor) => (
+                    <MentorshipCard
+                      key={mentor.memberId}
+                      avatar={mentor.avatarUrl}
+                      name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
+                      role={
+                        [mentor.currentJobTitle, mentor.currentCompany]
+                          .filter(Boolean)
+                          .join(' @ ') || 'Cố vấn'
+                      }
+                      rating={mentor.ratingAvg != null ? Number(mentor.ratingAvg).toFixed(1) : '—'}
+                      reviews={mentor.totalSessions ?? 0}
+                      tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
+                      onViewProfile={() =>
+                        navigate(`/development/mentorship/mentors/${mentor.memberId}/book`)
+                      }
+                    />
+                  ))}
+                </Box>
+              )}
 
               {/* PAGINATION CONTROLS */}
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 1,
-                  mt: 4,
-                }}
-              >
-                <Button
-                  variant="outlined"
-                  disabled={page === 1}
-                  onClick={() => setPage((p) => p - 1)}
-                >
-                  Trước
-                </Button>
-
-                <Typography sx={{ display: "flex", alignItems: "center", px: 2 }}>
-                  {page} / {totalPages}
-                </Typography>
-
-                <Button
-                  variant="outlined"
-                  disabled={page === totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  Sau
-                </Button>
-              </Box>
+              {paginated && paginated.totalPage > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
+                  <Button
+                    variant="outlined"
+                    disabled={!paginated.hasPrevious}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  >
+                    Trước
+                  </Button>
+                  <Typography sx={{ display: 'flex', alignItems: 'center', px: 2 }}>
+                    {paginated.currentPage + 1} / {paginated.totalPage}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    disabled={!paginated.hasNext}
+                    onClick={() => setPage((p) => p + 1)}
+                  >
+                    Sau
+                  </Button>
+                </Box>
+              )}
 
             </Stack>
           </Box>

@@ -132,6 +132,10 @@ CREATE TABLE "mentor_profiles" (
   "rating_avg" decimal DEFAULT 0,
   "total_sessions" integer DEFAULT 0,
   "is_approved" boolean DEFAULT false,
+  "cover_url" varchar,
+  "default_meeting_link" varchar,
+  "booking_window_settings" text,
+  "extended_profile" text,
   "created_at" timestamp
 );
 
@@ -140,7 +144,9 @@ CREATE TABLE "mentor_expertise" (
   "mentor_member_id" integer,
   "topic" varchar,
   "years_experience" integer,
-  "description" text
+  "description" text,
+  "category" varchar,
+  "tag" varchar
 );
 
 CREATE TABLE "mentor_availabilities" (
@@ -158,6 +164,10 @@ CREATE TABLE "mentorship_sessions" (
   "status" varchar,
   "booking_note" text,
   "meeting_link" varchar,
+  "session_type" varchar,
+  "introduction" text,
+  "description" text,
+  "cv_url" varchar,
   "created_at" timestamp
 );
 

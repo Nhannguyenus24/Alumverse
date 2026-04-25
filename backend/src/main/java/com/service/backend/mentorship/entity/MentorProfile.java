@@ -45,6 +45,18 @@ public class MentorProfile implements Persistable<Integer> {
     @Builder.Default
     private Boolean isApproved = false;
 
+    @Column("cover_url")
+    private String coverUrl;
+
+    @Column("default_meeting_link")
+    private String defaultMeetingLink;
+
+    @Column("booking_window_settings")
+    private String bookingWindowSettings;
+
+    @Column("extended_profile")
+    private String extendedProfile;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

@@ -9,6 +9,7 @@ const MentorshipProfileLayout = ({
   mode = 'mentor', // 'mentor' | 'edit' | 'mentee'
   cover,
   onCoverChange,
+  mentorId,
   children,
 }) => {
 
@@ -30,7 +31,12 @@ const MentorshipProfileLayout = ({
         return (
           <>
             <Button variant="outlined">Nhắn tin</Button>
-            <Button variant="contained">Đặt lịch hẹn</Button>
+            <Button
+              variant="contained"
+              onClick={() => onNavigate(`/development/mentorship/mentors/${mentorId ?? 1}/book`)}
+            >
+              Đặt lịch hẹn
+            </Button>
           </>
         );
 

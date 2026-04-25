@@ -27,4 +27,8 @@ public class MentorExpertise {
     private Integer yearsExperience;
 
     private String description;
+
+    private String category;
+
+    private String tag;
 }

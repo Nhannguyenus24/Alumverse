@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,7 +23,16 @@ public class MentorProfileResponse {
     private BigDecimal ratingAvg;
     private Integer totalSessions;
     private Boolean isApproved;
+    private String coverUrl;
+    private String defaultMeetingLink;
+    private String bookingWindowSettings;
+    private String extendedProfile;
     private LocalDateTime createdAt;
+
+    private String fullName;
+    private String avatarUrl;
+
+    private List<String> expertiseTopics;
 
     public static MentorProfileResponse from(MentorProfile profile) {
         return MentorProfileResponse.builder()
@@ -33,7 +43,17 @@ public class MentorProfileResponse {
                 .ratingAvg(profile.getRatingAvg())
                 .totalSessions(profile.getTotalSessions())
                 .isApproved(profile.getIsApproved())
+                .coverUrl(profile.getCoverUrl())
+                .defaultMeetingLink(profile.getDefaultMeetingLink())
+                .bookingWindowSettings(profile.getBookingWindowSettings())
+                .extendedProfile(profile.getExtendedProfile())
                 .createdAt(profile.getCreatedAt())
                 .build();
+    }
+
+    public MentorProfileResponse withDisplay(String fullName, String avatarUrl) {
+        this.fullName = fullName;
+        this.avatarUrl = avatarUrl;
+        return this;
     }
 }
