@@ -148,6 +148,15 @@ const MentorshipDashboardPage = Loadable(
 const MentorshipYourCalendarPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipYourCalendarPage")),
 );
+const MentorshipBookingPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipBookingPage")),
+);
+const MentorshipMyBookingsPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipMyBookingsPage")),
+);
+const MentorshipSignupPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipSignupPage")),
+);
 
 // User pages
 const PostArticlePage = Loadable(
@@ -401,6 +410,18 @@ export const router = createBrowserRouter([
               {
                 path: "calendar",
                 element: <MentorshipYourCalendarPage />,
+              },
+              {
+                path: "mentors/:mentorId/book",
+                element: <MentorshipBookingPage />,
+              },
+              {
+                path: "my-bookings",
+                element: <MentorshipMyBookingsPage />,
+              },
+              {
+                path: "signup",
+                element: <MentorshipSignupPage />,
               },
               {
                 path: "chat",
