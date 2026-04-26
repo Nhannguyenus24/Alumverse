@@ -304,7 +304,7 @@ public class FundService {
 
                     Mono<String> statusNameMono = fundStatusRepository.findById(fund.getStatusId())
                             .switchIfEmpty(Mono.error(new ApplicationException(
-                                    ErrorCode.RESOURCES_NOT_FOUND,
+                                    ErrorCode.FUND_STATUS_NOT_FOUND,
                                     "Fund status not found with id: " + fund.getStatusId())))
                             .map(status -> status.getName());
 
@@ -353,35 +353,100 @@ public class FundService {
                         ErrorCode.FUND_NOT_FOUND,
                         "Fund not found with id: " + fundId)))
                 .flatMap(existing -> {
-                    if (request.getName() != null) {
-                        existing.setName(request.getName());
-                    }
-                    if (request.getDescriptionShort() != null) {
-                        existing.setDescriptionShort(request.getDescriptionShort());
-                    }
-                    if (request.getDescriptionFull() != null) {
-                        existing.setDescriptionFull(request.getDescriptionFull());
-                    }
-                    if (request.getLogoUrl() != null) {
-                        existing.setLogoUrl(request.getLogoUrl());
-                    }
-                    if (request.getManagerName() != null) {
-                        existing.setManagerName(request.getManagerName());
+                    LocalDateTime now = LocalDateTime.now();
+                    LocalDateTime minAllowedTime = now.plusMinutes(10);
+                    LocalDateTime oldStart = existing.getTimeStarted();
+                    LocalDateTime oldEnd = existing.getTimeEnded();
+                    LocalDateTime newStart = request.getTimeStarted();
+                    LocalDateTime newEnd = request.getTimeEnded();
+                    BigDecimal newTargetAmount = request.getTargetAmount();
+                    Integer newFundReceivingInfoId = request.getFundReceivingInfoId();
+                    Integer newStatusId = request.getStatusId();
+
+                    if (!newEnd.isAfter(newStart)) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.FUND_INVALID_TIME_RANGE,
+                                "Thời gian kết thúc phải sau thời gian bắt đầu"
+                        ));
                     }
 
-                    Integer newOrganizationId = request.getOrganizationId();
-                    if (newOrganizationId != null) {
-                        return organizationRepository.findById(newOrganizationId)
-                                .switchIfEmpty(Mono.error(new ApplicationException(
-                                        ErrorCode.ORGANIZATION_NOT_FOUND,
-                                        "Organization not found with id: " + newOrganizationId)))
-                                .flatMap(org -> {
-                                    existing.setOrganizationId(newOrganizationId);
-                                    return fundR2dbcRepository.save(existing);
-                                });
+                    boolean isBeforeStart = now.isBefore(oldStart) && oldStart.isBefore(oldEnd);
+                    boolean isActive = oldStart.isBefore(now) && now.isBefore(oldEnd);
+                    boolean isEnded = oldStart.isBefore(oldEnd) && oldEnd.isBefore(now);
+
+                    if (isEnded) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.FUND_ALREADY_ENDED,
+                                "Quỹ đã kết thúc, không thể chỉnh sửa bất kì cái gì"
+                        ));
                     }
 
-                    return fundR2dbcRepository.save(existing);
+                    if (isBeforeStart && newStart.isBefore(minAllowedTime)) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.FUND_TIME_TOO_EARLY,
+                                "Thời gian bắt đầu phải từ thời điểm hiện tại + 10 phút"
+                        ));
+                    }
+
+                    if (isActive) {
+                        if (!newStart.isEqual(oldStart)) {
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_START_TIME_UPDATE_NOT_ALLOWED,
+                                    "Quỹ đang diễn ra, không thể sửa thời gian bắt đầu"
+                            ));
+                        }
+
+                        if (newEnd.isBefore(minAllowedTime)) {
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_TIME_TOO_EARLY,
+                                    "Khi quỹ đang diễn ra, thời gian kết thúc mới phải từ hiện tại + 10 phút"
+                            ));
+                        }
+
+                        if (newTargetAmount.compareTo(existing.getTargetAmount()) != 0) {
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_TARGET_AMOUNT_UPDATE_NOT_ALLOWED,
+                                    "Quỹ đang diễn ra, không thể sửa mục tiêu quỹ"
+                            ));
+                        }
+
+                        if (!newFundReceivingInfoId.equals(existing.getFundReceivingInfoId())) {
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_RECEIVING_INFO_UPDATE_NOT_ALLOWED,
+                                    "Quỹ đang diễn ra, không thể sửa tài khoản nhận quỹ"
+                            ));
+                        }
+                    }
+
+                    return Mono.zip(
+                                    fundReceivingInfosRepository.findById(newFundReceivingInfoId)
+                                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                                    ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
+                                                    "Fund receiving info not found with id: " + newFundReceivingInfoId
+                                            ))),
+                                    fundStatusRepository.findById(newStatusId)
+                                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                                    ErrorCode.FUND_STATUS_NOT_FOUND,
+                                                    "Fund status not found with id: " + newStatusId
+                                            )))
+                            )
+                            .flatMap(tuple -> {
+                                String newLogoUrl = request.getLogoUrl();
+                                existing.setName(request.getName().trim());
+                                existing.setDescriptionShort(request.getDescriptionShort().trim());
+                                existing.setDescriptionFull(request.getDescriptionFull().trim());
+                                if (newLogoUrl != null) {
+                                    String trimmedLogoUrl = newLogoUrl.trim();
+                                    existing.setLogoUrl(trimmedLogoUrl.isEmpty() ? null : trimmedLogoUrl);
+                                }
+                                existing.setManagerName(request.getManagerName().trim());
+                                existing.setTargetAmount(newTargetAmount);
+                                existing.setFundReceivingInfoId(newFundReceivingInfoId);
+                                existing.setStatusId(newStatusId);
+                                existing.setTimeStarted(newStart);
+                                existing.setTimeEnded(newEnd);
+                                return fundR2dbcRepository.save(existing);
+                            });
                 });
     }
 
