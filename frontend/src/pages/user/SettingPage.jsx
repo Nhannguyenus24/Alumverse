@@ -27,6 +27,7 @@ import { userSettingsApi } from '../../api/userSettingsApi';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const MENU_ITEMS = [
   { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
@@ -267,19 +268,6 @@ export default function SettingPage() {
     return `${browser} - ${os}`;
   };
 
-  const formatLoginAt = (value) => {
-    if (!value) {
-      return 'Không rõ thời gian';
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'Không rõ thời gian';
-    }
-
-    return date.toLocaleString('vi-VN');
-  };
-
 const renderPersonalSettings = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
     {/* Avatar Row */}
@@ -426,7 +414,7 @@ const renderPersonalSettings = () => (
               <Box>
                 <Typography variant="h5">{parseUserAgent(entry?.userAgent)}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Lần cuối: {formatLoginAt(entry?.loginAt)} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
+                  Lần cuối: {formatDateTime(entry?.loginAt, 'Không rõ thời gian')} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
                 </Typography>
               </Box>
               <Button variant="outlined" color="inherit" size="small" disabled>

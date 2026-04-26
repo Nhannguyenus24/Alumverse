@@ -33,23 +33,7 @@ import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-';
-  }
-  try {
-    return new Date(value).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
-};
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUsersListPage = () => {
   const navigate = useOrgNavigate();
@@ -280,7 +264,7 @@ const AdminUsersListPage = () => {
                       {u.organizationName || '-'}
                     </Typography>
                   </TableCell>
-                  <TableCell>{formatDate(u.createdAt)}</TableCell>
+                  <TableCell>{formatDateTime(u.createdAt)}</TableCell>
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                       <Tooltip title="View">
