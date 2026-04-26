@@ -14,6 +14,7 @@ import MentorshipCard from "../../components/mentorship/MentorshipCard";
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
+import { formatRating } from '../../utils/numberFormatter';
 
 
 const SIDEBAR = [
@@ -273,7 +274,7 @@ const MentorshipPage = () => {
                           .filter(Boolean)
                           .join(' @ ') || 'Cố vấn'
                       }
-                      rating={mentor.ratingAvg != null ? Number(mentor.ratingAvg).toFixed(1) : '—'}
+                      rating={formatRating(mentor.ratingAvg)}
                       reviews={mentor.totalSessions ?? 0}
                       tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
                       onViewProfile={() =>

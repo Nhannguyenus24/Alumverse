@@ -37,26 +37,8 @@ import {
   formatStatusLabel,
 } from '../../constants/adminUiShared';
 import useAdminFundraisingsLocal from '../../hooks/admin/useAdminFundraisingsLocal';
-
-const formatDateTime = (value) => {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
-};
-
-const formatCurrency = (value) => {
-  const num = Number(value || 0);
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(num);
-};
+import { formatDateTime } from '../../utils/dateFormatter';
+import { formatCurrencyVnd } from '../../utils/numberFormatter';
 
 const statusColorMap = {
   DRAFT: 'default',
@@ -199,8 +181,8 @@ const AdminFundraisingsPage = () => {
                       sx={ADMIN_STATUS_CHIP_SX}
                     />
                   </TableCell>
-                  <TableCell align="right">{formatCurrency(fund.targetAmount)}</TableCell>
-                  <TableCell align="right">{formatCurrency(fund.raisedAmount)}</TableCell>
+                  <TableCell align="right">{formatCurrencyVnd(fund.targetAmount)}</TableCell>
+                  <TableCell align="right">{formatCurrencyVnd(fund.raisedAmount)}</TableCell>
                   <TableCell align="right">{fund.donorCount ?? 0}</TableCell>
                   <TableCell>{formatDateTime(fund.updatedAt)}</TableCell>
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
@@ -269,8 +251,8 @@ const AdminFundraisingsPage = () => {
             <Typography variant="body2"><strong>Title:</strong> {detailItem.title}</Typography>
             <Typography variant="body2"><strong>Owner:</strong> {detailItem.ownerName}</Typography>
             <Typography variant="body2"><strong>Status:</strong> {formatStatusLabel(detailItem.status)}</Typography>
-            <Typography variant="body2"><strong>Target:</strong> {formatCurrency(detailItem.targetAmount)}</Typography>
-            <Typography variant="body2"><strong>Raised:</strong> {formatCurrency(detailItem.raisedAmount)}</Typography>
+            <Typography variant="body2"><strong>Target:</strong> {formatCurrencyVnd(detailItem.targetAmount)}</Typography>
+            <Typography variant="body2"><strong>Raised:</strong> {formatCurrencyVnd(detailItem.raisedAmount)}</Typography>
             <Typography variant="body2"><strong>Donors:</strong> {detailItem.donorCount ?? 0}</Typography>
             <Typography variant="body2"><strong>Updated:</strong> {formatDateTime(detailItem.updatedAt)}</Typography>
           </DialogContent>

@@ -37,17 +37,7 @@ import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { getLoginHistoryByUser } from '../../api/adminAuditApi';
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-';
-  }
-  try {
-    return new Date(value).toLocaleString('vi-VN');
-  } catch {
-    return String(value);
-  }
-};
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const demoProfile = (user) => ({
   phone: user?.phone || '0901 234 567',
@@ -182,7 +172,7 @@ const AdminUserDetailPage = () => {
                 <AdminStatusChip status={user.status} category="account" />
               </Box>
               <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                Created: {formatDate(user.createdAt)} · Updated: {formatDate(user.updatedAt)}
+                Created: {formatDateTime(user.createdAt)} · Updated: {formatDateTime(user.updatedAt)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
@@ -311,7 +301,7 @@ const AdminUserDetailPage = () => {
                 ) : null}
                 {user.bannedUntil ? (
                   <Typography variant="body2">
-                    <strong>Banned until:</strong> {formatDate(user.bannedUntil)}
+                    <strong>Banned until:</strong> {formatDateTime(user.bannedUntil)}
                   </Typography>
                 ) : user.status === 'BANNED' ? (
                   <Typography variant="body2">
@@ -326,7 +316,7 @@ const AdminUserDetailPage = () => {
                   : [{ at: user.updatedAt, reason: user.banReason || '—' }]
                 ).map((entry, idx) => (
                   <Typography key={`${entry.at}-${idx}`} variant="caption" display="block" color="text.secondary">
-                    {formatDate(entry.at)} — {entry.reason}
+                    {formatDateTime(entry.at)} — {entry.reason}
                   </Typography>
                 ))}
               </Stack>
@@ -364,7 +354,7 @@ const AdminUserDetailPage = () => {
                       ) : (
                         (userLoginHistory ?? auditTrail).map((log) => (
                           <TableRow key={log.id}>
-                            <TableCell>{formatDate(log.timestamp)}</TableCell>
+                            <TableCell>{formatDateTime(log.timestamp)}</TableCell>
                             <TableCell>{log.action}</TableCell>
                             <TableCell>
                               <AdminStatusChip status={log.status} category="audit" />

@@ -17,6 +17,8 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyExpertise } from '../../hooks/mentorship/useMyExpertise';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
+import { formatDate } from '../../utils/dateFormatter';
+import { formatRating } from '../../utils/numberFormatter';
 
 const TOP_TABS = [
   { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
@@ -34,12 +36,6 @@ const CATEGORY_LABEL = {
   ACADEMIC: 'Học tập / Học bổng',
   SOFT_SKILLS: 'Kỹ năng mềm',
   GENERAL: 'Chung',
-};
-
-const formatDate = (iso) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('vi-VN');
 };
 
 const MentorshipProfilePage = () => {
@@ -66,7 +62,7 @@ const MentorshipProfilePage = () => {
         label: 'buổi đã hoàn thành',
       },
       {
-        value: profile?.ratingAvg != null ? Number(profile.ratingAvg).toFixed(1) : '—',
+        value: formatRating(profile?.ratingAvg),
         label: 'đánh giá trung bình',
       },
       { value: feedbacks.length, label: 'phản hồi' },
@@ -274,7 +270,7 @@ const MentorshipProfilePage = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <StarIcon sx={{ color: 'warning.main', fontSize: 24 }} />
               <Typography variant="h5" fontWeight={700} color="primary.main">
-                {profile.ratingAvg != null ? Number(profile.ratingAvg).toFixed(1) : '—'}
+                {formatRating(profile?.ratingAvg)}
               </Typography>
               <Typography color="text.secondary">({feedbacks.length} reviews)</Typography>
             </Box>
@@ -289,7 +285,7 @@ const MentorshipProfilePage = () => {
                   <MentorshipReviewCard
                     key={review.id}
                     name={review.menteeName ?? `Mentee #${review.menteeMemberId}`}
-                    date={formatDate(review.createdAt)}
+                    date={formatDate(review.createdAt, '')}
                     avatar={review.menteeAvatarUrl ?? ''}
                     rating={review.rating}
                     content={review.comment ?? ''}

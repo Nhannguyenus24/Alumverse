@@ -27,19 +27,10 @@ import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDet
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPosts';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
 
 const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
-
-const forumModerationLabel = (status) => {
-  const key = String(status || '').toUpperCase();
-  const map = {
-    PENDING: 'Pending',
-    FLAGGED: 'Flagged',
-    APPROVED: 'Approved',
-    REJECTED: 'Rejected',
-  };
-  return map[key] || key || '-';
-};
 
 const forumModerationChipColor = (status) => {
   const key = String(status || '').toUpperCase();
@@ -48,27 +39,6 @@ const forumModerationChipColor = (status) => {
   if (key === 'FLAGGED') return 'error';
   if (key === 'PENDING') return 'warning';
   return 'default';
-};
-
-const truncateText = (text, maxLen = 72) => {
-  if (text == null || text === '') return '-';
-  const s = String(text);
-  return s.length <= maxLen ? s : `${s.slice(0, maxLen)}…`;
-};
-
-const formatDate = (value) => {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
 };
 
 /* ─── Reusable posts table ─── */
@@ -121,8 +91,8 @@ const PostsTable = ({
                 )}
               </TableCell>
               <TableCell>{post.answerToPostId ? `#${post.answerToPostId}` : '-'}</TableCell>
-              <TableCell>{formatDate(post.postedAt || post.createdAt)}</TableCell>
-              <TableCell>{formatDate(post.updatedAt)}</TableCell>
+              <TableCell>{formatDateTime(post.postedAt || post.createdAt)}</TableCell>
+              <TableCell>{formatDateTime(post.updatedAt)}</TableCell>
               <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                   {showBanActions && (
@@ -357,7 +327,7 @@ const AdminForumPostsPage = () => {
                           />
                         </TableCell>
                         <TableCell>{post.flagsCount ?? 0}</TableCell>
-                        <TableCell>{formatDate(post.postedAt)}</TableCell>
+                        <TableCell>{formatDateTime(post.postedAt)}</TableCell>
                         <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                             <Tooltip title="Ban post">

@@ -32,6 +32,8 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { toPlainText } from '../../utils/stringUtils';
 
 const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
   const { showError } = useNotification();
@@ -288,28 +290,11 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
   );
 };
 
-const formatPostDate = (iso) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
 const FALLBACK_THREAD = {
   title: 'Chủ đề',
   authorName: '—',
   role: 'Alumni',
   createdAt: '—',
-};
-
-const toPlainText = (value) => {
-  if (value == null) return '';
-  return String(value).replace(/<[^>]*>/g, '').trim();
 };
 
 const ForumAlumniThreadPage = () => {
@@ -408,8 +393,8 @@ const ForumAlumniThreadPage = () => {
         ? `Thành viên #${topicSummary.createdByMemberId}`
         : null;
 
-    const createdFromPost = firstPost?.createdAt ? formatPostDate(firstPost.createdAt) : null;
-    const createdFromTopic = topicSummary?.createdAt ? formatPostDate(topicSummary.createdAt) : null;
+    const createdFromPost = firstPost?.createdAt ? formatDateTime(firstPost.createdAt, '—') : null;
+    const createdFromTopic = topicSummary?.createdAt ? formatDateTime(topicSummary.createdAt, '—') : null;
 
     return {
       title,
@@ -427,7 +412,7 @@ const ForumAlumniThreadPage = () => {
         authorMemberId: post.authorMemberId ?? null,
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
-        createdAt: formatPostDate(post.createdAt),
+        createdAt: formatDateTime(post.createdAt, '—'),
         content: post.content ?? '',
       })),
     [posts]

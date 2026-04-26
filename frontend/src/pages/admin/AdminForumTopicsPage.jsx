@@ -27,15 +27,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
-
-const formatDate = (value) => {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return String(value);
-  }
-};
+import { formatDate } from '../../utils/dateFormatter';
 
 const AdminForumTopicsPage = () => {
   const { enqueueSnackbar } = useSnackbar();

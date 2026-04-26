@@ -37,21 +37,7 @@ import {
   formatStatusLabel,
 } from '../../constants/adminUiShared';
 import useAdminMentorshipsLocal from '../../hooks/admin/useAdminMentorshipsLocal';
-
-const formatDateTime = (value) => {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
-};
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const statusColorMap = {
   PENDING: 'warning',

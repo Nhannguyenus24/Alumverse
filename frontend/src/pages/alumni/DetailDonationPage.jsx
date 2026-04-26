@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import Page from '../../components/Page';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { formatNumberVi } from '../../utils/numberFormatter';
 
 // Mock data for donation details
 const DONATION_DETAIL = {
@@ -231,7 +232,7 @@ const DetailDonationPage = () => {
                         mb: 0.5,
                       }}
                     >
-                      {DONATION_DETAIL.averageDonation.toLocaleString('vi-VN')}
+                      {formatNumberVi(DONATION_DETAIL.averageDonation)}
                     </Typography>
                     <Typography
                       sx={{
