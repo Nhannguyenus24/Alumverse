@@ -1,7 +1,7 @@
 -- Sample Data for Student Alumni System
 
 -- ============= USERS DATA =============
--- password to login is 123 for the last 3
+-- password to login is Student@2024 for the last 3
 INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "avatar_url", "created_at", "updated_at") VALUES
 ('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/admin.jpg', NOW(), NOW()),
 ('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/john.jpg', NOW() - INTERVAL '90 days', NOW()),
@@ -13,9 +13,9 @@ INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "a
 ('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/lee.jpg', NOW() - INTERVAL '5 days', NOW()),
 ('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/duongf.jpg', NOW() - INTERVAL '2 days', NOW()),
 ('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/vog.jpg', NOW(), NOW()),
-('test@hcmus.edu.vn', '$2a$12$17uOd82WRe.vjwZdgh1dbO26T5KhSjbGcSWW.A1KDMc5ssn2yKr7C', 'testuser', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/test.jpg', NOW(), NOW()),
-('bui.van.h@hcmus.edu.vn', '$2a$12$17uOd82WRe.vjwZdgh1dbO26T5KhSjbGcSWW.A1KDMc5ssn2yKr7C', 'buivanh', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/buih.jpg', NOW(), NOW()),
-('ly.thi.i@hcmus.edu.vn', '$2a$12$17uOd82WRe.vjwZdgh1dbO26T5KhSjbGcSWW.A1KDMc5ssn2yKr7C', 'lythii', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/lyi.jpg', NOW(), NOW());
+('test@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'testuser', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/test.jpg', NOW(), NOW()),
+('bui.van.h@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'buivanh', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/buih.jpg', NOW(), NOW()),
+('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'lythii', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/lyi.jpg', NOW(), NOW());
 
 -- ============= GLOBAL PROFILES DATA =============
 INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "gender", "settings") VALUES
@@ -54,6 +54,7 @@ INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_yea
 (1, 2, 2023, 'Graduated', 'Advanced Program', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
 (1, 4, NULL, 'Studying', 'Regular', 'Computer Science', 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
 (1, 6, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
+(1, 11, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
 
 -- IT Department Members
 (2, 3, 2023, 'Graduated', 'Advanced Program', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
