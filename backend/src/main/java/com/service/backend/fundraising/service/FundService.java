@@ -12,6 +12,7 @@ import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
 import com.service.backend.fundraising.dto.CreateFundDonationRequest;
 import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundDonationCheckoutResponse;
+import com.service.backend.fundraising.dto.FundDonationListItemResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.FundFilterRequest;
@@ -304,16 +305,41 @@ public class FundService {
                         ErrorCode.FUND_NOT_FOUND,
                         "Fund not found with id: " + fundId)))
                 .flatMap(fund -> {
+                    Mono<String> organizationNameMono = organizationRepository.findById(fund.getOrganizationId())
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.ORGANIZATION_NOT_FOUND,
+                                    "Organization not found with id: " + fund.getOrganizationId())))
+                            .map(org -> org.getName());
+
+                    Mono<String> statusNameMono = fundStatusRepository.findById(fund.getStatusId())
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.RESOURCES_NOT_FOUND,
+                                    "Fund status not found with id: " + fund.getStatusId())))
+                            .map(status -> status.getName());
+
                     Integer fundReceivingInfoId = fund.getFundReceivingInfoId();
                     if (fundReceivingInfoId == null) {
-                        return Mono.just(FundDetailResponse.from(fund, null));
+                        return Mono.zip(organizationNameMono, statusNameMono)
+                                .map(tuple -> FundDetailResponse.from(
+                                        fund,
+                                        null,
+                                        tuple.getT1(),
+                                        tuple.getT2()
+                                ));
                     }
 
-                    return fundReceivingInfosRepository.findById(fundReceivingInfoId)
+                    Mono<FundReceivingInfos> receivingInfoMono = fundReceivingInfosRepository.findById(fundReceivingInfoId)
                             .switchIfEmpty(Mono.error(new ApplicationException(
                                     ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
-                                    "Fund receiving info not found with id: " + fundReceivingInfoId)))
-                            .map(fundReceivingInfo -> FundDetailResponse.from(fund, fundReceivingInfo));
+                                    "Fund receiving info not found with id: " + fundReceivingInfoId)));
+
+                    return Mono.zip(receivingInfoMono, organizationNameMono, statusNameMono)
+                            .map(tuple -> FundDetailResponse.from(
+                                    fund,
+                                    tuple.getT1(),
+                                    tuple.getT2(),
+                                    tuple.getT3()
+                            ));
                 });
     }
 
@@ -519,7 +545,7 @@ public class FundService {
         });
     }
 
-    public Mono<PaginatedResponse<FundDonations>> getDonationsByFund(
+    public Mono<PaginatedResponse<FundDonationListItemResponse>> getDonationsByFund(
             long fundId,
             int page,
             int limit,
@@ -530,7 +556,8 @@ public class FundService {
         boolean hasSearch = searchBy != null && !searchBy.isBlank() && keyword != null && !keyword.isBlank();
 
         if (!hasSearch) {
-            Flux<FundDonations> data = fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset);
+            Flux<FundDonationListItemResponse> data = fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset)
+                    .map(FundDonationListItemResponse::fromProjection);
             Mono<Long> count = fundDonationsRepository.countByFundId(fundId);
             return data.collectList().zipWith(count)
                     .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
@@ -539,48 +566,39 @@ public class FundService {
         String normalized = keyword.trim();
         switch (searchBy) {
             case "name": {
-                Flux<FundDonations> data = fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset);
+                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection);
                 Mono<Long> count = fundDonationsRepository.countSearchByDonorName(fundId, normalized);
                 return data.collectList().zipWith(count)
                         .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
             }
             case "phone": {
-                Flux<FundDonations> data = fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset);
+                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection);
                 Mono<Long> count = fundDonationsRepository.countSearchByPhone(fundId, normalized);
                 return data.collectList().zipWith(count)
                         .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
             }
             case "address": {
-                Flux<FundDonations> data = fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset);
+                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection);
                 Mono<Long> count = fundDonationsRepository.countSearchByAddress(fundId, normalized);
                 return data.collectList().zipWith(count)
                         .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
             }
             case "message": {
-                Flux<FundDonations> data = fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset);
+                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection);
                 Mono<Long> count = fundDonationsRepository.countSearchByMessage(fundId, normalized);
                 return data.collectList().zipWith(count)
                         .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
             }
             case "email": {
-                Flux<FundDonations> data = fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset);
+                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection);
                 Mono<Long> count = fundDonationsRepository.countSearchByEmail(fundId, normalized);
                 return data.collectList().zipWith(count)
                         .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-            }
-            case "amount": {
-                try {
-                    BigDecimal amount = new BigDecimal(normalized);
-                    Flux<FundDonations> data = fundDonationsRepository.searchByAmount(fundId, amount, limit, offset);
-                    Mono<Long> count = fundDonationsRepository.countSearchByAmount(fundId, amount);
-                    return data.collectList().zipWith(count)
-                            .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-                } catch (NumberFormatException ex) {
-                    return Mono.error(new ApplicationException(
-                            ErrorCode.RESOURCES_NOT_FOUND,
-                            "Invalid amount keyword: not a valid number"
-                    ));
-                }
             }
             default:
                 return Mono.error(new ApplicationException(

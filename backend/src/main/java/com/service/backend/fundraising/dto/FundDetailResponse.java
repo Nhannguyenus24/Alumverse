@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class FundDetailResponse {
     private Integer id;
-    private Integer organizationId;
-    private Integer statusId;
+    private String organizationName;
+    private String statusName;
     private Integer donorCount;
 
     private String managerName;
@@ -37,15 +37,20 @@ public class FundDetailResponse {
 
     private FundReceivingInfos fundReceivingInfo;
 
-    public static FundDetailResponse from(Funds fund, FundReceivingInfos fundReceivingInfo) {
+    public static FundDetailResponse from(
+            Funds fund,
+            FundReceivingInfos fundReceivingInfo,
+            String organizationName,
+            String statusName
+    ) {
         if (fund == null) {
             return null;
         }
 
         return FundDetailResponse.builder()
                 .id(fund.getId())
-                .organizationId(fund.getOrganizationId())
-                .statusId(fund.getStatusId())
+                .organizationName(organizationName)
+                .statusName(statusName)
                 .donorCount(fund.getDonorCount())
                 .managerName(fund.getManagerName())
                 .name(fund.getName())

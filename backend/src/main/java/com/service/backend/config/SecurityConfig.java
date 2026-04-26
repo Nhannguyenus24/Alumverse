@@ -67,7 +67,7 @@ public class SecurityConfig {
                                 "/static/**",
                                 "/api/funds/**",
                                 "/api/fund-statuses",
-                                "/api/fund-donations",
+                                "/api/fund-donations/**",
                                 "/api/payment/**"
                         ).permitAll()
 
