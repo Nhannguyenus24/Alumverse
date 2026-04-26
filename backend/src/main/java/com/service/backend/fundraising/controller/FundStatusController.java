@@ -1,6 +1,6 @@
 package com.service.backend.fundraising.controller;
 
-import com.service.backend.fundraising.dao.repository.FundStatusR2dbcRepository;
+import com.service.backend.fundraising.dao.FundStatusR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundStatusRequest;
 import com.service.backend.fundraising.entity.FundStatus;
 import com.service.backend.shared.dto.ApiResponse;
