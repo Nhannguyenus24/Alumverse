@@ -1,6 +1,6 @@
 package com.service.backend.fundraising.controller;
 
-import com.service.backend.fundraising.dao.repository.FundDonationsR2dbcRepository;
+import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.entity.FundDonations;
 import com.service.backend.shared.enums.FundDonationStatus;
 import java.util.Map;
