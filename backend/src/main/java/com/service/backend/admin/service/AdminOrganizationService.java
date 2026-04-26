@@ -3,12 +3,15 @@ package com.service.backend.admin.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.entity.Organization;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.shared.constants.ErrorCode;
@@ -153,6 +156,116 @@ public class AdminOrganizationService {
                 });
     }
 
+    public Mono<FeatureConfig> getConfig(Integer organizationId) {
+        return requireOrganization(organizationId)
+                .map(org -> parseConfig(org.getFeaturesConfig()));
+    }
+
+    public Mono<FeatureConfig> updateConfig(Integer organizationId, FeatureConfig config) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
+    public Mono<FeatureConfig.SiteIdentity> getSiteIdentity(Integer organizationId) {
+        return requireOrganization(organizationId)
+                .map(org -> parseConfig(org.getFeaturesConfig()).getSiteIdentity());
+    }
+
+    public Mono<FeatureConfig> updateSiteIdentity(Integer organizationId, FeatureConfig.SiteIdentity siteIdentity) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    FeatureConfig config = parseConfig(org.getFeaturesConfig());
+                    config.setSiteIdentity(siteIdentity);
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
+    public Mono<FeatureConfig.BrandConfig> getBrandConfig(Integer organizationId) {
+        return requireOrganization(organizationId)
+                .map(org -> parseConfig(org.getFeaturesConfig()).getBrandConfig());
+    }
+
+    public Mono<FeatureConfig> updateBrandConfig(Integer organizationId, FeatureConfig.BrandConfig brandConfig) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    FeatureConfig config = parseConfig(org.getFeaturesConfig());
+                    config.setBrandConfig(brandConfig);
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
+    public Mono<Map<String, FeatureConfig.Feature>> getFeatures(Integer organizationId) {
+        return requireOrganization(organizationId)
+                .map(org -> {
+                    Map<String, FeatureConfig.Feature> features =
+                            parseConfig(org.getFeaturesConfig()).getFeaturesConfig();
+                    return features != null ? features : new HashMap<>();
+                });
+    }
+
+    public Mono<FeatureConfig> updateFeatures(Integer organizationId,
+            Map<String, FeatureConfig.Feature> featuresConfig) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    FeatureConfig config = parseConfig(org.getFeaturesConfig());
+                    config.setFeaturesConfig(featuresConfig);
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
+    public Mono<FeatureConfig.Feature> getFeature(Integer organizationId, String featureName) {
+        return requireOrganization(organizationId)
+                .map(org -> requireFeature(parseConfig(org.getFeaturesConfig()), featureName));
+    }
+
+    public Mono<FeatureConfig> updateFeature(Integer organizationId, String featureName,
+            FeatureConfig.Feature patch) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    FeatureConfig config = parseConfig(org.getFeaturesConfig());
+                    FeatureConfig.Feature feature = requireFeature(config, featureName);
+                    if (patch.getEnabled() != null) feature.setEnabled(patch.getEnabled());
+                    if (patch.getSettings() != null) feature.setSettings(patch.getSettings());
+                    config.getFeaturesConfig().put(featureName, feature);
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
+    public Mono<FeatureConfig> toggleFeature(Integer organizationId, String featureName) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    FeatureConfig config = parseConfig(org.getFeaturesConfig());
+                    FeatureConfig.Feature feature = requireFeature(config, featureName);
+                    feature.setEnabled(!Boolean.TRUE.equals(feature.getEnabled()));
+                    config.getFeaturesConfig().put(featureName, feature);
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
+    public Mono<FeatureConfig.PrivacySettings> getPrivacySettings(Integer organizationId) {
+        return requireOrganization(organizationId)
+                .map(org -> parseConfig(org.getFeaturesConfig()).getPrivacySettings());
+    }
+
+    public Mono<FeatureConfig> updatePrivacySettings(Integer organizationId,
+            FeatureConfig.PrivacySettings privacySettings) {
+        return requireOrganization(organizationId)
+                .flatMap(org -> {
+                    FeatureConfig config = parseConfig(org.getFeaturesConfig());
+                    config.setPrivacySettings(privacySettings);
+                    org.setFeaturesConfig(JsonUtils.toJson(config));
+                    return organizationRepository.save(org).thenReturn(config);
+                });
+    }
+
     private Mono<Organization> requireOrganization(Integer organizationId) {
         return organizationRepository.findById(organizationId)
                 .switchIfEmpty(Mono.error(new ApplicationException(
@@ -280,5 +393,19 @@ public class AdminOrganizationService {
             }
         }
         return -1;
+    }
+
+    private FeatureConfig parseConfig(String raw) {
+        if (raw == null || raw.isBlank()) return new FeatureConfig();
+        return JsonUtils.fromJson(raw, FeatureConfig.class);
+    }
+
+    private FeatureConfig.Feature requireFeature(FeatureConfig config, String featureName) {
+        Map<String, FeatureConfig.Feature> features = config.getFeaturesConfig();
+        if (features == null || !features.containsKey(featureName)) {
+            throw new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
+                    "Feature not found: " + featureName);
+        }
+        return features.get(featureName);
     }
 }

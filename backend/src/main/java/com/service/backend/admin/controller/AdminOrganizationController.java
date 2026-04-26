@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,6 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.OrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationOptionRequest;
+import com.service.backend.admin.dto.config.FeatureConfig;
+
+import java.util.Map;
 import com.service.backend.organization.entity.Organization;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -215,6 +219,121 @@ public class AdminOrganizationController {
         return organizationService.removeMajor(organizationId, value)
                 .map(majors -> ResponseEntity.ok(
                         new ApiResponse<>("Major removed successfully", majors)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @GetMapping("/{organizationId}/features-config")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> getConfig(
+            @PathVariable Integer organizationId) {
+        return organizationService.getConfig(organizationId)
+                .map(config -> ResponseEntity.ok(
+                        new ApiResponse<>("Config fetched successfully", config)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PutMapping("/{organizationId}/features-config")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateConfig(
+            @PathVariable Integer organizationId,
+            @RequestBody FeatureConfig config) {
+        return organizationService.updateConfig(organizationId, config)
+                .map(updated -> ResponseEntity.ok(
+                        new ApiResponse<>("Config updated successfully", updated)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @GetMapping("/{organizationId}/features-config/site-identity")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig.SiteIdentity>>> getSiteIdentity(
+            @PathVariable Integer organizationId) {
+        return organizationService.getSiteIdentity(organizationId)
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PutMapping("/{organizationId}/features-config/site-identity")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateSiteIdentity(
+            @PathVariable Integer organizationId,
+            @RequestBody FeatureConfig.SiteIdentity siteIdentity) {
+        return organizationService.updateSiteIdentity(organizationId, siteIdentity)
+                .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @GetMapping("/{organizationId}/features-config/brand")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig.BrandConfig>>> getBrandConfig(
+            @PathVariable Integer organizationId) {
+        return organizationService.getBrandConfig(organizationId)
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PutMapping("/{organizationId}/features-config/brand")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateBrandConfig(
+            @PathVariable Integer organizationId,
+            @RequestBody FeatureConfig.BrandConfig brandConfig) {
+        return organizationService.updateBrandConfig(organizationId, brandConfig)
+                .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @GetMapping("/{organizationId}/features-config/features")
+    public Mono<ResponseEntity<ApiResponse<Map<String, FeatureConfig.Feature>>>> getFeatures(
+            @PathVariable Integer organizationId) {
+        return organizationService.getFeatures(organizationId)
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PutMapping("/{organizationId}/features-config/features")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeatures(
+            @PathVariable Integer organizationId,
+            @RequestBody Map<String, FeatureConfig.Feature> featuresConfig) {
+        return organizationService.updateFeatures(organizationId, featuresConfig)
+                .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @GetMapping("/{organizationId}/features-config/features/{featureName}")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig.Feature>>> getFeature(
+            @PathVariable Integer organizationId,
+            @PathVariable String featureName) {
+        return organizationService.getFeature(organizationId, featureName)
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PutMapping("/{organizationId}/features-config/features/{featureName}")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeature(
+            @PathVariable Integer organizationId,
+            @PathVariable String featureName,
+            @RequestBody FeatureConfig.Feature patch) {
+        return organizationService.updateFeature(organizationId, featureName, patch)
+                .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PatchMapping("/{organizationId}/features-config/features/{featureName}/toggle")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> toggleFeature(
+            @PathVariable Integer organizationId,
+            @PathVariable String featureName) {
+        return organizationService.toggleFeature(organizationId, featureName)
+                .map(updated -> ResponseEntity.ok(new ApiResponse<>("Feature toggled successfully", updated)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @GetMapping("/{organizationId}/features-config/privacy")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig.PrivacySettings>>> getPrivacySettings(
+            @PathVariable Integer organizationId) {
+        return organizationService.getPrivacySettings(organizationId)
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PutMapping("/{organizationId}/features-config/privacy")
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updatePrivacySettings(
+            @PathVariable Integer organizationId,
+            @RequestBody FeatureConfig.PrivacySettings privacySettings) {
+        return organizationService.updatePrivacySettings(organizationId, privacySettings)
+                .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)))
                 .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
     }
 
