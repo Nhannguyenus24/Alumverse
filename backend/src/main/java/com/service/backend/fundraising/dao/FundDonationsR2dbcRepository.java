@@ -1,4 +1,4 @@
-package com.service.backend.fundraising.dao.repository;
+package com.service.backend.fundraising.dao;
 
 import com.service.backend.fundraising.entity.FundDonations;
 import com.service.backend.fundraising.projection.FundDonationListProjection;
@@ -7,6 +7,7 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -37,14 +38,13 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
 
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId")
     Mono<Long> countByFundId(Long fundId);
-    
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE status = 'SUCCESS'")
     Mono<Long> countAll();
 
     @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE status = 'SUCCESS' AND created_at >= :start AND created_at < :end")
     Mono<BigDecimal> sumAmountBetween(LocalDateTime start, LocalDateTime end);
 
-    // Search by specific text columns (ILIKE)
     @Query("""
             SELECT
               fd.id AS id,
@@ -67,6 +67,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
             LIMIT :limit OFFSET :offset
             """)
     Flux<FundDonationListProjection> searchByDonorName(Long fundId, String keyword, int limit, int offset);
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND donor_name ILIKE CONCAT('%', :keyword, '%')")
     Mono<Long> countSearchByDonorName(Long fundId, String keyword);
 
@@ -92,6 +93,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
             LIMIT :limit OFFSET :offset
             """)
     Flux<FundDonationListProjection> searchByPhone(Long fundId, String keyword, int limit, int offset);
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND phone ILIKE CONCAT('%', :keyword, '%')")
     Mono<Long> countSearchByPhone(Long fundId, String keyword);
 
@@ -117,6 +119,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
             LIMIT :limit OFFSET :offset
             """)
     Flux<FundDonationListProjection> searchByAddress(Long fundId, String keyword, int limit, int offset);
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND address ILIKE CONCAT('%', :keyword, '%')")
     Mono<Long> countSearchByAddress(Long fundId, String keyword);
 
@@ -142,6 +145,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
             LIMIT :limit OFFSET :offset
             """)
     Flux<FundDonationListProjection> searchByMessage(Long fundId, String keyword, int limit, int offset);
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND message ILIKE CONCAT('%', :keyword, '%')")
     Mono<Long> countSearchByMessage(Long fundId, String keyword);
 
@@ -167,7 +171,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
             LIMIT :limit OFFSET :offset
             """)
     Flux<FundDonationListProjection> searchByEmail(Long fundId, String keyword, int limit, int offset);
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId AND email ILIKE CONCAT('%', :keyword, '%')")
     Mono<Long> countSearchByEmail(Long fundId, String keyword);
-
 }

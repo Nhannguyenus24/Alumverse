@@ -1,12 +1,11 @@
 package com.service.backend.fundraising.service;
 
-import com.service.backend.fundraising.dao.interfaceclass.IFundRepository;
-import com.service.backend.fundraising.dao.repository.UserR2dbcRepository;
-import com.service.backend.fundraising.dao.repository.FundR2dbcRepository;
-import com.service.backend.fundraising.dao.repository.FundReceivingInfosR2dbcRepository;
-import com.service.backend.fundraising.dao.repository.FundStatusR2dbcRepository;
-import com.service.backend.fundraising.dao.repository.OrganizationR2dbcRepository;
-import com.service.backend.fundraising.dao.repository.FundDonationsR2dbcRepository;
+import com.service.backend.fundraising.dao.UserR2dbcRepository;
+import com.service.backend.fundraising.dao.FundR2dbcRepository;
+import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
+import com.service.backend.fundraising.dao.FundStatusR2dbcRepository;
+import com.service.backend.fundraising.dao.OrganizationR2dbcRepository;
+import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundRequest;
 import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
 import com.service.backend.fundraising.dto.CreateFundDonationRequest;
@@ -22,7 +21,6 @@ import com.service.backend.fundraising.dto.BankInfoDto;
 import com.service.backend.fundraising.entity.Funds;
 import com.service.backend.fundraising.entity.FundReceivingInfos;
 import com.service.backend.fundraising.entity.FundDonations;
-import com.service.backend.fundraising.dao.repository.FundQueryRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.FundDonationStatus;
 import com.service.backend.shared.constants.ErrorCode;
@@ -50,9 +48,7 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class FundService {
 
-    private final IFundRepository fundRepository;
     private final FundR2dbcRepository fundR2dbcRepository;
-    private final FundQueryRepository fundQueryRepository;
     private final OrganizationR2dbcRepository organizationRepository;
     private final FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
     private final FundStatusR2dbcRepository fundStatusRepository;
@@ -105,7 +101,7 @@ public class FundService {
                                             .qrImageUrl(qrUrl.isEmpty() ? null : qrUrl)
                                             .build();
 
-                                    return fundRepository.createFund(fund);
+                                    return fundR2dbcRepository.save(fund);
                                 }))));
     }
 
@@ -253,20 +249,15 @@ public class FundService {
             }
         }
 
-        Flux<Funds> data = fundQueryRepository.findFiltered(
-                organizationId,
-                statusId,
-                keyword,
-                tsFrom,
-                tsTo,
-                amtMin,
-                amtMax,
-                sortByDonor,
-                sortAsc,
-                limit,
-                offset
-        );
-        Mono<Long> count = fundQueryRepository.countFiltered(
+        Flux<Funds> data;
+        if (sortByDonor) {
+            data = sortAsc
+                    ? fundR2dbcRepository.findFilteredOrderByDonorCountAsc(organizationId, statusId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset)
+                    : fundR2dbcRepository.findFilteredOrderByDonorCountDesc(organizationId, statusId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
+        } else {
+            data = fundR2dbcRepository.findFiltered(organizationId, statusId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
+        }
+        Mono<Long> count = fundR2dbcRepository.countFiltered(
                 organizationId,
                 statusId,
                 keyword,
