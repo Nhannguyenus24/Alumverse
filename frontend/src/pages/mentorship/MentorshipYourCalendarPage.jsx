@@ -32,6 +32,7 @@ import { useMyAvailabilities } from '../../hooks/mentorship/useMyAvailabilities'
 import { useAddAvailability } from '../../hooks/mentorship/useAddAvailability';
 import { useDeleteAvailability } from '../../hooks/mentorship/useDeleteAvailability';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
+import { formatFixed } from '../../utils/numberFormatter';
 
 const TOP_TABS = [
   { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
@@ -146,7 +147,7 @@ const MentorshipYourCalendarPage = () => {
     );
     return {
       slotCount: upcoming.length,
-      totalHours: (totalMinutes / 60).toFixed(1),
+      totalHours: formatFixed(totalMinutes / 60, 1, '0.0'),
       avgMinutes: upcoming.length ? Math.round(totalMinutes / upcoming.length) : 0,
     };
   }, [availabilities]);

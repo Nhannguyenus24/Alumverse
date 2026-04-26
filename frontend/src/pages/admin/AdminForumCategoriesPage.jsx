@@ -26,6 +26,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { formatDate } from '../../utils/dateFormatter';
 
 /* ─── Build tree from flat list ─── */
 const buildTree = (flatList) => {
@@ -43,15 +44,6 @@ const buildTree = (flatList) => {
     }
   });
   return roots;
-};
-
-const formatDate = (value) => {
-  if (!value) return '';
-  try {
-    return new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return String(value);
-  }
 };
 
 const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete }) => {

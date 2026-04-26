@@ -34,6 +34,8 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
+import { stringifyJson, truncateText } from '../../utils/stringUtils';
 
 const DEFAULT_ENTITY_TYPES = [
   'USER',
@@ -47,52 +49,11 @@ const DEFAULT_ENTITY_TYPES = [
 
 const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE', 'REJECT'];
 
-const formatDateTimeCompact = (value) => {
-  if (!value) {
-    return '-';
-  }
-  try {
-    const parsedDate = new Date(value);
-    return parsedDate.toLocaleString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  } catch {
-    return String(value);
-  }
-};
-
 const formatIsoDateInput = (date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
-};
-
-const stringifyJson = (value) => {
-  if (value == null) {
-    return '-';
-  }
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-};
-
-const truncateText = (text, maxLen = 64) => {
-  if (text == null || text === '') {
-    return '-';
-  }
-  const s = String(text);
-  if (s.length <= maxLen) {
-    return s;
-  }
-  return `${s.slice(0, maxLen)}…`;
 };
 
 const AuditExpandRow = ({ log, open, colSpan }) => (
@@ -299,7 +260,7 @@ const AdminAuditLogsPage = () => {
 
   const buildExportRows = () =>
     filteredLogs.map((log) => ({
-      timestamp: formatDateTimeCompact(log.timestamp),
+      timestamp: formatDateTimeWithSeconds(log.timestamp),
       userName: log.userName || '',
       userEmail: log.userEmail || '',
       userId: log.userId ?? '',
@@ -569,7 +530,7 @@ const AdminAuditLogsPage = () => {
                                   {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                                 </IconButton>
                               </TableCell>
-                              <TableCell>{formatDateTimeCompact(log.timestamp)}</TableCell>
+                              <TableCell>{formatDateTimeWithSeconds(log.timestamp)}</TableCell>
                               <TableCell>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                                   {log.userName || '-'}

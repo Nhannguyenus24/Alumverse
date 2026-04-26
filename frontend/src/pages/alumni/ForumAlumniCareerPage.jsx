@@ -11,21 +11,9 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useForumTopics } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
+import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 
 const CAREER_CATEGORY_ID = 1;
-
-const formatTopicDate = (iso) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now - d;
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Vừa xong';
-  if (diffMins < 60) return `${diffMins} phút trước`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} giờ trước`;
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
 
 const ForumAlumniCareerPage = () => {
   const navigate = useOrgNavigate();
@@ -306,7 +294,7 @@ const ForumAlumniCareerPage = () => {
                           {topic.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {`Thành viên #${topic.createdByMemberId ?? '—'}`} • {formatTopicDate(topic.createdAt)}
+                          {`Thành viên #${topic.createdByMemberId ?? '—'}`} • {formatRelativeTimeVi(topic.createdAt)}
                         </Typography>
                       </Box>
                     </Box>
@@ -366,7 +354,7 @@ const ForumAlumniCareerPage = () => {
                             {`Thành viên #${topic.createdByMemberId ?? '—'}`}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {formatTopicDate(topic.updatedAt ?? topic.createdAt)}
+                            {formatRelativeTimeVi(topic.updatedAt ?? topic.createdAt)}
                           </Typography>
                         </Box>
                       </Box>

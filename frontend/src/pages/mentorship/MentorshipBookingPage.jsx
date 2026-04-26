@@ -24,6 +24,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicProfile';
 import { useMentorAvailability } from '../../hooks/mentorship/useMentorAvailability';
 import { useBookSession } from '../../hooks/mentorship/useBookSession';
+import { formatRating } from '../../utils/numberFormatter';
 
 const STEPS = ['Chọn khung giờ', 'Điền thông tin'];
 
@@ -217,7 +218,7 @@ const MentorshipBookingPage = () => {
                     <Stack direction="row" alignItems="center" spacing={0.5}>
                       <StarIcon sx={{ color: 'warning.main', fontSize: 18 }} />
                       <Typography fontWeight={700} color="primary.main">
-                        {Number(mentor.ratingAvg).toFixed(1)}
+                        {formatRating(mentor.ratingAvg)}
                       </Typography>
                       {mentor.totalSessions != null && (
                         <Typography variant="body2" color="text.secondary">
