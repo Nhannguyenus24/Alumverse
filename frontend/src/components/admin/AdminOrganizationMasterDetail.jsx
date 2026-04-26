@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Avatar,
   Box,
   Button,
   Card,
@@ -22,8 +21,7 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import AdminStatusChip from './AdminStatusChip';
 
 const formatOrgDate = (value) => {
@@ -39,25 +37,6 @@ const formatOrgDate = (value) => {
   } catch {
     return '—';
   }
-};
-
-const mockMemberPreview = (org) => {
-  const seed = org.id * 7;
-  const names = ['Nguyễn Văn A', 'Trần Thị B', 'Lê Minh C', 'Phạm Thu D', 'Hoàng An E'];
-  return names.slice(0, 4).map((name, i) => ({
-    id: `${org.id}-${i}`,
-    name,
-    role: i === 0 ? 'Lead' : 'Member',
-    joined: `${((seed + i) % 27) + 1}/${((seed + i) % 11) + 1}/2025`,
-  }));
-};
-
-const mockRecentActivity = (org) => {
-  return [
-    { id: '1', text: 'Cập nhật mô tả nhóm', when: '2 ngày trước' },
-    { id: '2', text: `${org.pendingMembers ?? 0} yêu cầu tham gia đang chờ duyệt`, when: '5 ngày trước' },
-    { id: '3', text: 'Sự kiện networking được đăng', when: '1 tuần trước' },
-  ];
 };
 
 const normalizeList = (value) => {
@@ -90,9 +69,11 @@ const normalizeList = (value) => {
 
 const AdminOrganizationMasterDetail = ({
   organizations = [],
+  selectedOrganization,
   selectedOrganizationId,
   onSelectOrganizationId,
-  onDemoAction,
+  onEditOrganization,
+  onRefresh,
 }) => {
   const [orgSearch, setOrgSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -119,7 +100,10 @@ const AdminOrganizationMasterDetail = ({
     }
   }, [filteredOrganizations, selectedOrganizationId, onSelectOrganizationId]);
 
-  const selectedOrganization = useMemo(() => {
+  const selectedOrg = useMemo(() => {
+    if (selectedOrganization) {
+      return selectedOrganization;
+    }
     if (filteredOrganizations.length === 0) {
       return null;
     }
@@ -128,19 +112,16 @@ const AdminOrganizationMasterDetail = ({
       return organizations.find((o) => o.id === selectedOrganizationId) ?? match;
     }
     return organizations.find((o) => o.id === filteredOrganizations[0].id) ?? filteredOrganizations[0];
-  }, [organizations, filteredOrganizations, selectedOrganizationId]);
+  }, [selectedOrganization, organizations, filteredOrganizations, selectedOrganizationId]);
 
   const selectedPrograms = useMemo(
-    () => normalizeList(selectedOrganization?.programs),
-    [selectedOrganization?.programs],
+    () => normalizeList(selectedOrg?.programs),
+    [selectedOrg?.programs],
   );
   const selectedMajors = useMemo(
-    () => normalizeList(selectedOrganization?.majors),
-    [selectedOrganization?.majors],
+    () => normalizeList(selectedOrg?.majors),
+    [selectedOrg?.majors],
   );
-
-  const membersPreview = selectedOrganization ? mockMemberPreview(selectedOrganization) : [];
-  const recentActivity = selectedOrganization ? mockRecentActivity(selectedOrganization) : [];
 
   return (
     <Box
@@ -277,7 +258,7 @@ const AdminOrganizationMasterDetail = ({
           },
         }}
       >
-        {!selectedOrganization ? (
+        {!selectedOrg ? (
           <CardContent
             sx={{
               flex: 1,
@@ -297,7 +278,7 @@ const AdminOrganizationMasterDetail = ({
           </CardContent>
         ) : (
           <Fade in timeout={280}>
-            <Box key={selectedOrganization.id} sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <Box key={selectedOrg.id} sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <Box
                 sx={{
                   px: 2.5,
@@ -310,16 +291,16 @@ const AdminOrganizationMasterDetail = ({
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flexWrap: 'wrap' }}>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.25 }}>
-                      {selectedOrganization.name}
+                      {selectedOrg.name}
                     </Typography>
-                    <AdminStatusChip status={selectedOrganization.status} category="organization" />
+                    <AdminStatusChip status={selectedOrg.status} category="organization" />
                   </Box>
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                     <Button
                       size="small"
                       variant="outlined"
                       startIcon={<EditOutlinedIcon />}
-                      onClick={() => onDemoAction?.('edit', selectedOrganization)}
+                      onClick={() => onEditOrganization?.(selectedOrg)}
                       sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
                       Chỉnh sửa
@@ -327,27 +308,20 @@ const AdminOrganizationMasterDetail = ({
                     <Button
                       size="small"
                       variant="outlined"
-                      color={selectedOrganization.status === 'ACTIVE' ? 'warning' : 'success'}
-                      startIcon={
-                        selectedOrganization.status === 'ACTIVE' ? (
-                          <BlockOutlinedIcon />
-                        ) : (
-                          <CheckCircleOutlineIcon />
-                        )
-                      }
-                      onClick={() => onDemoAction?.('toggle', selectedOrganization)}
+                      startIcon={<RefreshOutlinedIcon />}
+                      onClick={onRefresh}
                       sx={{ textTransform: 'none', fontWeight: 600 }}
                     >
-                      {selectedOrganization.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                      Tải lại
                     </Button>
                     <Button
                       size="small"
                       variant="contained"
                       startIcon={<VisibilityOutlinedIcon />}
-                      onClick={() => onDemoAction?.('details', selectedOrganization)}
+                      onClick={() => window.open(`/admin/organizations/${selectedOrg.id}`, '_blank')}
                       sx={{ textTransform: 'none', fontWeight: 700 }}
                     >
-                      Xem đầy đủ
+                      ID: {selectedOrg.id}
                     </Button>
                   </Box>
                 </Box>
@@ -361,9 +335,9 @@ const AdminOrganizationMasterDetail = ({
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                       {[
-                        { label: 'Members', value: selectedOrganization.members ?? 0 },
-                        { label: 'Pending members', value: selectedOrganization.pendingMembers ?? 0 },
-                        { label: 'Created', value: formatOrgDate(selectedOrganization.createdAt) },
+                        { label: 'Slug', value: selectedOrg.slug || '—' },
+                        { label: 'Created', value: formatOrgDate(selectedOrg.createdAt) },
+                        { label: 'Logo URL', value: selectedOrg.logoUrl || '—' },
                       ].map((row) => (
                         <Box key={row.label} sx={{ flex: '1 1 180px', minWidth: 160 }}>
                           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
@@ -394,77 +368,15 @@ const AdminOrganizationMasterDetail = ({
 
                 <Box>
                   <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 700, mb: 1 }}>
-                    Thành viên (xem nhanh)
+                    Cấu hình dữ liệu
                   </Typography>
-                  <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
-                    {membersPreview.map((m, idx) => (
-                      <Box
-                        key={m.id}
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          px: 2,
-                          py: 1.25,
-                          borderTop: idx === 0 ? 0 : 1,
-                          borderColor: 'divider',
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
-                          <Avatar sx={{ width: 30, height: 30, fontSize: 13, bgcolor: 'primary.main' }}>
-                            {m.name.charAt(0)}
-                          </Avatar>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                              {m.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {m.role}
-                            </Typography>
-                          </Box>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {m.joined}
-                        </Typography>
-                      </Box>
-                    ))}
-                    <Box sx={{ px: 2, py: 1.25, borderTop: 1, borderColor: 'divider' }}>
-                      <Button
-                        size="small"
-                        onClick={() => onDemoAction?.('details', selectedOrganization)}
-                        sx={{ textTransform: 'none', p: 0, minWidth: 0, fontWeight: 700 }}
-                      >
-                        Xem tất cả thành viên
-                      </Button>
-                    </Box>
-                  </Paper>
-                </Box>
-
-                <Box>
-                  <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 700, mb: 1 }}>
-                    Hoạt động gần đây
-                  </Typography>
-                  <Paper variant="outlined" sx={{ p: 0, borderRadius: 2 }}>
-                    {recentActivity.map((item, idx) => (
-                      <Box
-                        key={item.id}
-                        sx={{
-                          px: 2,
-                          py: 1.25,
-                          borderTop: idx === 0 ? 0 : 1,
-                          borderColor: 'divider',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          gap: 2,
-                        }}
-                      >
-                        <Typography variant="body2">{item.text}</Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
-                          {item.when}
-                        </Typography>
-                      </Box>
-                    ))}
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      Features config
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5, wordBreak: 'break-word' }}>
+                      {selectedOrg.featuresConfig || 'Chưa có dữ liệu'}
+                    </Typography>
                   </Paper>
                 </Box>
               </CardContent>

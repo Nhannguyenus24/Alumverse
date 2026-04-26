@@ -23,49 +23,6 @@ const fallbackTimeline = [
 
 const fallbackUsers = DEFAULT_ADMIN_USERS;
 
-const fallbackOrgs = [
-  {
-    id: 1,
-    name: 'HCMUS Alumni Tech Club',
-    status: 'ACTIVE',
-    members: 315,
-    pendingMembers: 8,
-    createdAt: '2024-06-12T08:00:00.000Z',
-  },
-  {
-    id: 2,
-    name: 'HCMUS Data Science Network',
-    status: 'ACTIVE',
-    members: 267,
-    pendingMembers: 11,
-    createdAt: '2024-09-01T10:30:00.000Z',
-  },
-  {
-    id: 3,
-    name: 'HCMUS Career Support Group',
-    status: 'INACTIVE',
-    members: 144,
-    pendingMembers: 2,
-    createdAt: '2023-11-20T14:00:00.000Z',
-  },
-  {
-    id: 4,
-    name: 'HCMUS Entrepreneurship Hub',
-    status: 'ACTIVE',
-    members: 198,
-    pendingMembers: 5,
-    createdAt: '2025-01-08T09:15:00.000Z',
-  },
-  {
-    id: 5,
-    name: 'HCMUS Research Alumni',
-    status: 'INACTIVE',
-    members: 62,
-    pendingMembers: 0,
-    createdAt: '2024-03-03T11:45:00.000Z',
-  },
-];
-
 const fallbackAudit = [
   {
     id: 501,
@@ -215,7 +172,7 @@ const useAdminSystemData = () => {
     metrics: fallbackMetrics,
     timeline: fallbackTimeline,
     users: fallbackUsers,
-    organizations: fallbackOrgs,
+    organizations: [],
     auditLogs: fallbackAudit,
   });
 
@@ -226,7 +183,7 @@ const useAdminSystemData = () => {
       fetchSafe(() => apiClient.get('/admin/dashboard/metrics'), fallbackMetrics),
       fetchSafe(() => apiClient.get('/admin/dashboard/activities'), fallbackTimeline),
       fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 20 } }), fallbackUsers),
-      fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 20 } }), fallbackOrgs),
+      fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 20 } }), []),
       fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20 } }), null),
     ]);
 
@@ -241,7 +198,7 @@ const useAdminSystemData = () => {
       metrics: metrics || fallbackMetrics,
       timeline: Array.isArray(timeline) ? timeline : fallbackTimeline,
       users: normalizedUsers.length > 0 ? normalizedUsers : fallbackUsers,
-      organizations: normalizedOrgs.length > 0 ? normalizedOrgs : fallbackOrgs,
+      organizations: normalizedOrgs,
       auditLogs,
     });
 
