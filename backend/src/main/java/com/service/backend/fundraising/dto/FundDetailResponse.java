@@ -24,7 +24,7 @@ public class FundDetailResponse {
     private String name;
     private String logoUrl;
 
-    // KO return descriptionShort trong detail endpoint
+    private String descriptionShort;
     private String descriptionFull;
 
     private BigDecimal targetAmount;
@@ -55,6 +55,7 @@ public class FundDetailResponse {
                 .managerName(fund.getManagerName())
                 .name(fund.getName())
                 .logoUrl(fund.getLogoUrl())
+                .descriptionShort(fund.getDescriptionShort())
                 .descriptionFull(fund.getDescriptionFull())
                 .targetAmount(fund.getTargetAmount())
                 .currentAmount(fund.getCurrentAmount())

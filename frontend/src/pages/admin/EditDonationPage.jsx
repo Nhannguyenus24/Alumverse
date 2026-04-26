@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,41 +25,25 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
+import { fundApi } from "../../api/fundApi";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
-const STATUS_OPTIONS = [
-  { value: "important", label: "Quan trọng" },
-  { value: "remote_area", label: "Vùng sâu vùng xa" },
-];
+const toSafeNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
 
-const FUND_RECEIVING_OPTIONS = [
-  {
-    value: "fri_001",
-    bankName: "Ngân hàng TMCP Công thương Việt Nam",
-    accountNumber: "1029384756"
-  },
-  {
-    value: "fri_002",
-    bankName: "Ngân hàng TMCP Quân đội",
-    accountNumber: "7788991122"
-  },
-  {
-    value: "fri_003",
-    bankName: "Ngân hàng TMCP Á Châu",
-    accountNumber: "2233445566"
-  },
-];
-
-const formatCurrency = (value) => `${Number(value ?? 0).toLocaleString("vi-VN")} VND`;
+const formatCurrency = (value) => `${toSafeNumber(value, 0).toLocaleString("vi-VN")} VND`;
 
 const getFundPhase = (startDate, endDate, now) => {
+  if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) return "invalid";
   if (now.isBefore(startDate) && startDate.isBefore(endDate)) return "before_start";
   if (startDate.isBefore(now) && now.isBefore(endDate)) return "active";
   if (startDate.isBefore(endDate) && endDate.isBefore(now)) return "ended";
   return "invalid";
 };
 
-const buildEditSchema = ({ now, minAllowedTime, phase, originalStartDate, originalEndDate, originalTargetAmount }) =>
+const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEndDate, originalTargetAmount }) =>
   z
     .object({
       name: z.string().trim().min(1, "Vui lòng nhập tên quỹ"),
@@ -72,10 +56,8 @@ const buildEditSchema = ({ now, minAllowedTime, phase, originalStartDate, origin
         .max(100, "Mô tả ngắn tối đa 100 kí tự"),
       descriptionFull: z.string().trim().min(1, "Vui lòng nhập mô tả đầy đủ"),
       targetAmount: z.coerce.number({ message: "Mục tiêu quỹ phải là số" }).positive("Mục tiêu quỹ phải lớn hơn 0"),
-      fundReceivingInfoId: z.string().min(1, "Vui lòng chọn tài khoản nhận quỹ"),
-      statusId: z.enum(["important", "remote_area"], {
-        errorMap: () => ({ message: "Vui lòng chọn trạng thái" }),
-      }),
+      fundReceivingInfoId: z.coerce.number().int().positive("Vui lòng chọn tài khoản nhận quỹ"),
+      statusId: z.coerce.number().int().positive("Vui lòng chọn trạng thái"),
       startDate: z
         .custom((value) => value === null || dayjs.isDayjs(value), {
           message: "Vui lòng chọn thời gian bắt đầu",
@@ -100,14 +82,12 @@ const buildEditSchema = ({ now, minAllowedTime, phase, originalStartDate, origin
         });
       }
 
-      if (phase === "before_start") {
-        if (start.isBefore(minAllowedTime)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["startDate"],
-            message: "Thời gian bắt đầu phải từ thời điểm hiện tại + 10 phút",
-          });
-        }
+      if (phase === "before_start" && start.isBefore(minAllowedTime)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["startDate"],
+          message: "Thời gian bắt đầu phải từ thời điểm hiện tại + 10 phút",
+        });
       }
 
       if (phase === "active") {
@@ -134,18 +114,15 @@ const buildEditSchema = ({ now, minAllowedTime, phase, originalStartDate, origin
         }
       }
 
-      if (phase === "ended") {
-        if (
-          !start.isSame(originalStartDate)
-          || !end.isSame(originalEndDate)
-          || data.targetAmount !== originalTargetAmount
-        ) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["endDate"],
-            message: "Quỹ đã kết thúc, không thể chỉnh sửa",
-          });
-        }
+      if (
+        phase === "ended"
+        && (!start.isSame(originalStartDate) || !end.isSame(originalEndDate) || data.targetAmount !== originalTargetAmount)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["endDate"],
+          message: "Quỹ đã kết thúc, không thể chỉnh sửa",
+        });
       }
     });
 
@@ -153,29 +130,28 @@ export default function EditDonationPage() {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams();
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [receivingOptions, setReceivingOptions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const now = useMemo(() => dayjs(), []);
   const minAllowedTime = useMemo(() => now.add(10, "minute"), [now]);
-
-  const donationDetail = useMemo(
-    () => ({
-      id,
-      name: "Quỹ Cộng đồng Cựu sinh viên Khoa học",
-      managerName: "Nguyễn Thanh Hương",
-      logoUrl: "https://placehold.co/220x220/eef3ff/0f3a7a?text=HCMUS",
-      descriptionShort: "Quỹ hỗ trợ sinh viên khó khăn, học bổng và hoạt động cộng đồng thiết thực.",
-      descriptionFull:
-        "Quỹ được thành lập nhằm hỗ trợ sinh viên có hoàn cảnh khó khăn, tài trợ học bổng, và thúc đẩy các hoạt động học thuật có giá trị cho cộng đồng cựu sinh viên. Song song đó, quỹ còn đồng hành cùng các chương trình hướng nghiệp, mentoring và các dự án liên ngành nhằm tăng khả năng tiếp cận cơ hội học tập chất lượng cho người học.",
-      targetAmount: 500000000,
-      currentAmount: 258000000,
-      donorCount: 57000,
-      fundReceivingInfoId: "fri_001",
-      statusId: "important",
-      startDate: now.add(2, "day"),
-      endDate: now.add(30, "day"),
-    }),
-    [id, now]
-  );
+  const [donationDetail, setDonationDetail] = useState(() => ({
+    id,
+    name: "",
+    managerName: "",
+    logoUrl: "",
+    descriptionShort: "",
+    descriptionFull: "",
+    targetAmount: 0,
+    currentAmount: 0,
+    donorCount: 0,
+    fundReceivingInfoId: "",
+    statusId: "",
+    statusName: "",
+    startDate: now,
+    endDate: now.add(1, "day"),
+  }));
 
   const phase = useMemo(
     () => getFundPhase(donationDetail.startDate, donationDetail.endDate, now),
@@ -185,14 +161,13 @@ export default function EditDonationPage() {
   const editSchema = useMemo(
     () =>
       buildEditSchema({
-        now,
         minAllowedTime,
         phase,
         originalStartDate: donationDetail.startDate,
         originalEndDate: donationDetail.endDate,
         originalTargetAmount: donationDetail.targetAmount,
       }),
-    [donationDetail.endDate, donationDetail.startDate, donationDetail.targetAmount, minAllowedTime, now, phase]
+    [donationDetail.endDate, donationDetail.startDate, donationDetail.targetAmount, minAllowedTime, phase]
   );
 
   const {
@@ -200,31 +175,112 @@ export default function EditDonationPage() {
     control,
     handleSubmit,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(editSchema),
     defaultValues: {
-      name: donationDetail.name,
-      managerName: donationDetail.managerName,
-      logoUrl: donationDetail.logoUrl,
-      descriptionShort: donationDetail.descriptionShort,
-      descriptionFull: donationDetail.descriptionFull,
-      targetAmount: donationDetail.targetAmount,
-      fundReceivingInfoId: donationDetail.fundReceivingInfoId,
-      statusId: donationDetail.statusId,
-      startDate: donationDetail.startDate,
-      endDate: donationDetail.endDate,
+      name: "",
+      managerName: "",
+      logoUrl: "",
+      descriptionShort: "",
+      descriptionFull: "",
+      targetAmount: 0,
+      fundReceivingInfoId: "",
+      statusId: "",
+      startDate: now,
+      endDate: now.add(1, "day"),
     },
   });
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadEditData = async () => {
+      try {
+        setIsLoading(true);
+        const [detail, statuses, receivingInfos] = await Promise.all([
+          fundApi.getFundDetail(id),
+          fundApi.getFundStatuses(),
+          fundApi.getActiveFundReceivingInfos(),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        const resolvedStatuses = statuses ?? [];
+        const resolvedReceivingInfos = receivingInfos ?? [];
+        const matchedStatus = resolvedStatuses.find((status) => status.name === detail?.statusName);
+        const startDate = detail?.timeStarted ? dayjs(detail.timeStarted) : null;
+        const endDate = detail?.timeEnded ? dayjs(detail.timeEnded) : null;
+        const normalizedDetail = {
+          id: detail?.id ?? id,
+          name: detail?.name ?? "",
+          managerName: detail?.managerName ?? "",
+          logoUrl: detail?.logoUrl ?? "",
+          descriptionShort: detail?.descriptionShort ?? "",
+          descriptionFull: detail?.descriptionFull ?? "",
+          targetAmount: toSafeNumber(detail?.targetAmount, 0),
+          currentAmount: toSafeNumber(detail?.currentAmount, 0),
+          donorCount: toSafeNumber(detail?.donorCount, 0),
+          fundReceivingInfoId: detail?.fundReceivingInfo?.id ?? "",
+          statusId: matchedStatus?.id ?? "",
+          statusName: detail?.statusName ?? "",
+          startDate: startDate && startDate.isValid() ? startDate : now,
+          endDate: endDate && endDate.isValid() ? endDate : now.add(1, "day"),
+        };
+
+        setStatusOptions(resolvedStatuses);
+        setReceivingOptions(resolvedReceivingInfos);
+        setDonationDetail(normalizedDetail);
+        reset({
+          name: normalizedDetail.name,
+          managerName: normalizedDetail.managerName,
+          logoUrl: normalizedDetail.logoUrl,
+          descriptionShort: normalizedDetail.descriptionShort,
+          descriptionFull: normalizedDetail.descriptionFull,
+          targetAmount: normalizedDetail.targetAmount,
+          fundReceivingInfoId: normalizedDetail.fundReceivingInfoId,
+          statusId: normalizedDetail.statusId,
+          startDate: normalizedDetail.startDate,
+          endDate: normalizedDetail.endDate,
+        });
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+        enqueueSnackbar(error?.response?.data?.message || "Không tải được chi tiết quỹ quyên góp", {
+          variant: "error",
+        });
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (id) {
+      loadEditData();
+    } else {
+      setIsLoading(false);
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [enqueueSnackbar, id, now, reset]);
+
   const preview = watch();
   const selectedReceivingInfo = useMemo(
-    () => FUND_RECEIVING_OPTIONS.find((option) => option.value === preview.fundReceivingInfoId),
-    [preview.fundReceivingInfoId]
+    () => receivingOptions.find((option) => Number(option.id) === Number(preview.fundReceivingInfoId)),
+    [preview.fundReceivingInfoId, receivingOptions]
   );
   const progress = Math.min(
     100,
-    Math.round(((donationDetail.currentAmount ?? 0) / Math.max(Number(preview.targetAmount ?? 1), 1)) * 100)
+    Math.round(
+      (toSafeNumber(donationDetail.currentAmount, 0) / Math.max(toSafeNumber(preview.targetAmount, 1), 1)) * 100
+    )
   );
 
   const disableAllFields = phase === "ended";
@@ -279,6 +335,8 @@ export default function EditDonationPage() {
             <Typography sx={{ mt: 0.3, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>{noteMessage}</Typography>
           </Box>
 
+          {isLoading && <LinearProgress sx={{ mb: 2.2 }} />}
+
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 5 }}>
               <Card sx={{ borderRadius: 3, p: 3, height: "100%", boxShadow: "0 10px 26px rgba(15, 58, 122, 0.08)" }}>
@@ -299,13 +357,13 @@ export default function EditDonationPage() {
                   <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.92rem" }}>
                     Người quản lí: {preview.managerName}
                   </Typography>
-                <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.9rem", lineHeight: 1.55 }}>
-                  Tài khoản nhận quỹ:
-                  <br />
-                  {selectedReceivingInfo
-                    ? `${selectedReceivingInfo.bankName} - ${selectedReceivingInfo.accountNumber}`
-                    : "Chưa chọn"}
-                </Typography>
+                  <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.9rem", lineHeight: 1.55 }}>
+                    Tài khoản nhận quỹ:
+                    <br />
+                    {selectedReceivingInfo
+                      ? `${selectedReceivingInfo.bankName} - ${selectedReceivingInfo.accountNumber}`
+                      : "Chưa chọn"}
+                  </Typography>
                 </Box>
 
                 <Box
@@ -322,7 +380,7 @@ export default function EditDonationPage() {
                     width: "fit-content",
                   }}
                 >
-                  {STATUS_OPTIONS.find((option) => option.value === preview.statusId)?.label}
+                  {donationDetail.statusName || statusOptions.find((option) => Number(option.id) === Number(preview.statusId))?.name || "Chưa có trạng thái"}
                 </Box>
 
                 <Typography sx={{ mt: 1.4, color: "#5f78a4", fontSize: "0.9rem" }}>
@@ -348,7 +406,7 @@ export default function EditDonationPage() {
                 />
 
                 <Typography sx={{ mt: 1.4, color: "#102f59", fontWeight: 800, fontSize: "1.3rem" }}>
-                  {Number(donationDetail.donorCount).toLocaleString("vi-VN")}
+                  {toSafeNumber(donationDetail.donorCount, 0).toLocaleString("vi-VN")}
                 </Typography>
                 <Typography sx={{ color: "#5f78a4", fontSize: "0.9rem" }}>lượt quyên góp</Typography>
 
@@ -375,12 +433,13 @@ export default function EditDonationPage() {
                   <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                     <Grid container spacing={2}>
                       <Grid size={12}>
-                        <TextField fullWidth label="Tên quỹ" {...register("name")} disabled={disableAllFields} error={!!errors.name} helperText={errors.name?.message} />
+                        <TextField fullWidth label="Tên quỹ" InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields} error={!!errors.name} helperText={errors.name?.message} />
                       </Grid>
                       <Grid size={12}>
                         <TextField
                           fullWidth
                           label="Tên người quản lí"
+                          InputLabelProps={{ shrink: true }}
                           {...register("managerName")}
                           disabled={disableAllFields}
                           error={!!errors.managerName}
@@ -388,7 +447,7 @@ export default function EditDonationPage() {
                         />
                       </Grid>
                       <Grid size={12}>
-                        <TextField fullWidth label="Logo URL" {...register("logoUrl")} disabled={disableAllFields} error={!!errors.logoUrl} helperText={errors.logoUrl?.message} />
+                        <TextField fullWidth label="Logo URL" InputLabelProps={{ shrink: true }} {...register("logoUrl")} disabled={disableAllFields} error={!!errors.logoUrl} helperText={errors.logoUrl?.message} />
                       </Grid>
                       <Grid size={12}>
                         <TextField
@@ -396,6 +455,7 @@ export default function EditDonationPage() {
                           multiline
                           minRows={2}
                           label="Mô tả ngắn"
+                          InputLabelProps={{ shrink: true }}
                           {...register("descriptionShort")}
                           disabled={disableAllFields}
                           error={!!errors.descriptionShort}
@@ -408,6 +468,7 @@ export default function EditDonationPage() {
                           multiline
                           minRows={5}
                           label="Mô tả đầy đủ"
+                          InputLabelProps={{ shrink: true }}
                           {...register("descriptionFull")}
                           disabled={disableAllFields}
                           error={!!errors.descriptionFull}
@@ -439,9 +500,9 @@ export default function EditDonationPage() {
                                 disabled={disableFundReceivingInfo}
                                 MenuProps={{ disableScrollLock: true }}
                               >
-                                {FUND_RECEIVING_OPTIONS.map((option) => (
-                                  <MenuItem key={option.value} value={option.value}>
-                                    {`${option.bankName} - ${option.accountNumber}`}
+                                {receivingOptions.map((option) => (
+                                  <MenuItem key={option.id} value={option.id}>
+                                    {`${option.bankName} - ${option.accountName} - ${option.accountNumber}`}
                                   </MenuItem>
                                 ))}
                               </Select>
@@ -464,9 +525,9 @@ export default function EditDonationPage() {
                                 disabled={disableAllFields}
                                 MenuProps={{ disableScrollLock: true }}
                               >
-                                {STATUS_OPTIONS.map((option) => (
-                                  <MenuItem key={option.value} value={option.value}>
-                                    {option.label}
+                                {statusOptions.map((option) => (
+                                  <MenuItem key={option.id} value={option.id}>
+                                    {option.name}
                                   </MenuItem>
                                 ))}
                               </Select>
