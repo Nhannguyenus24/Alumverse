@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import dayjs from 'dayjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
 import { useSnackbar } from 'notistack';
 import {
-  Autocomplete,
   Box,
   Button,
   Container,
@@ -27,44 +26,24 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Page from '../../components/Page';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-
-const mockSupportedBanks = [
-  { name: 'Ngân hàng TMCP Công thương Việt Nam', bin: '970415', supported: true },
-  { name: 'Ngân hàng TMCP Quân đội', bin: '970422', supported: true },
-  { name: 'Ngân hàng TMCP Á Châu', bin: '970416', supported: true },
-];
-
-const FUND_RECEIVING_OPTIONS = [
-  {
-    value: 'fri_001',
-    bankName: 'Ngân hàng TMCP Công thương Việt Nam',
-    accountNumber: '1029384756',
-    binName: '970415',
-  },
-  {
-    value: 'fri_002',
-    bankName: 'Ngân hàng TMCP Quân đội',
-    accountNumber: '7788991122',
-    binName: '970422',
-  },
-  {
-    value: 'fri_003',
-    bankName: 'Ngân hàng TMCP Á Châu',
-    accountNumber: '2233445566',
-    binName: '970416',
-  },
-];
+import { fundApi } from '../../api/fundApi';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const createDonationSchema = z
   .object({
     fundName: z.string().trim().min(1, 'Vui lòng nhập tên quỹ quyên góp'),
     organizer: z.string().trim().min(1, 'Vui lòng nhập người tổ chức'),
-    status: z.string().min(1, 'Vui lòng chọn trạng thái'),
-    fundReceivingInfoId: z.string().min(1, 'Vui lòng chọn tài khoản nhận quỹ'),
+    statusId: z.coerce.number().int().positive('Vui lòng chọn trạng thái'),
+    fundReceivingInfoId: z.coerce.number().int().positive('Vui lòng chọn tài khoản nhận quỹ'),
     targetAmount: z.coerce
       .number({ message: 'Mục tiêu quyên góp phải là số' })
       .positive('Mục tiêu quyên góp phải lớn hơn 0'),
-    reason: z.string().trim().min(1, 'Vui lòng nhập lý do mở quyên góp'),
+    descriptionShort: z
+      .string()
+      .trim()
+      .min(1, 'Vui lòng nhập mô tả ngắn')
+      .max(120, 'Mô tả ngắn tối đa 120 ký tự'),
+    descriptionFull: z.string().trim().min(1, 'Vui lòng nhập mô tả'),
     startDate: z
       .custom((value) => value === null || dayjs.isDayjs(value), {
         message: 'Vui lòng chọn ngày bắt đầu',
@@ -86,18 +65,14 @@ const createDonationSchema = z
     }
   });
 
-const statusOptions = [
-  { value: 'important', label: 'Quan trọng' },
-  { value: 'remote_area', label: 'Vùng sâu vùng xa' },
-];
-
 const defaultValues = {
   fundName: '',
   organizer: '',
-  status: '',
+  statusId: '',
   fundReceivingInfoId: '',
   targetAmount: '',
-  reason: '',
+  descriptionShort: '',
+  descriptionFull: '',
   startDate: null,
   endDate: null,
 };
@@ -105,6 +80,9 @@ const defaultValues = {
 const CreateDonationPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [receivingOptions, setReceivingOptions] = useState([]);
 
   const {
     register,
@@ -117,32 +95,58 @@ const CreateDonationPage = () => {
     mode: 'onSubmit',
   });
 
-  const selectedReceivingInfoById = useMemo(() => {
-    const map = new Map();
-    FUND_RECEIVING_OPTIONS.forEach((option) => {
-      map.set(option.value, option);
-    });
-    return map;
-  }, []);
+  useEffect(() => {
+    let mounted = true;
 
-  const onSubmit = async (values) => {
-    const selectedReceivingInfo = selectedReceivingInfoById.get(values.fundReceivingInfoId);
-    const payload = {
-      fundName: values.fundName,
-      organizer: values.organizer,
-      status: values.status,
-      fundReceivingInfoId: values.fundReceivingInfoId,
-      binName: selectedReceivingInfo?.binName || '',
-      accountNumber: selectedReceivingInfo?.accountNumber || '',
-      targetAmount: Number(values.targetAmount),
-      reason: values.reason,
-      startDate: values.startDate ? values.startDate.format('YYYY-MM-DD') : null,
-      endDate: values.endDate ? values.endDate.format('YYYY-MM-DD') : null,
+    const loadOptions = async () => {
+      try {
+        const [statuses, receivingInfos] = await Promise.all([
+          fundApi.getFundStatuses(),
+          fundApi.getActiveFundReceivingInfos(),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        setStatusOptions(statuses ?? []);
+        setReceivingOptions(receivingInfos ?? []);
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || 'Không tải được dữ liệu biểu mẫu', {
+          variant: 'error',
+        });
+      }
     };
 
-    console.log('Create donation payload:', payload);
-    enqueueSnackbar('Dữ liệu biểu mẫu hợp lệ.', { variant: 'success' });
-    // TODO: Call API create fundraising post
+    loadOptions();
+
+    return () => {
+      mounted = false;
+    };
+  }, [enqueueSnackbar]);
+
+  const onSubmit = async (values) => {
+    if (!organizationId) {
+      enqueueSnackbar('Không tìm thấy tổ chức để tạo quỹ', { variant: 'error' });
+      return;
+    }
+
+    const payload = {
+      name: values.fundName,
+      managerName: values.organizer,
+      status_id: Number(values.statusId),
+      fundReceivingInfoId: Number(values.fundReceivingInfoId),
+      targetAmount: Number(values.targetAmount),
+      description_short: values.descriptionShort,
+      description_full: values.descriptionFull,
+      organizationId: Number(organizationId),
+      timeStarted: values.startDate ? values.startDate.format('YYYY-MM-DDT00:00:00') : null,
+      timeEnded: values.endDate ? values.endDate.format('YYYY-MM-DDT23:59:59') : null,
+    };
+
+    await fundApi.createFund(payload);
+    enqueueSnackbar('Tạo quỹ quyên góp thành công.', { variant: 'success' });
+    navigate('/donations');
   };
 
   return (
@@ -207,27 +211,28 @@ const CreateDonationPage = () => {
                       />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
-                      <FormControl fullWidth error={!!errors.status}>
+                      <FormControl fullWidth error={!!errors.statusId}>
                         <InputLabel id="status-label">Trạng thái</InputLabel>
                         <Controller
-                          name="status"
+                          name="statusId"
                           control={control}
                           render={({ field }) => (
                             <Select
                               {...field}
+                              onChange={(event) => field.onChange(Number(event.target.value))}
                               labelId="status-label"
                               label="Trạng thái"
                               MenuProps={{ disableScrollLock: true }}
                             >
                               {statusOptions.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {option.label}
+                                <MenuItem key={option.id} value={option.id}>
+                                  {option.name}
                                 </MenuItem>
                               ))}
                             </Select>
                           )}
                         />
-                        <FormHelperText>{errors.status?.message}</FormHelperText>
+                        <FormHelperText>{errors.statusId?.message}</FormHelperText>
                       </FormControl>
                     </Grid>
                   </Grid>
@@ -242,13 +247,14 @@ const CreateDonationPage = () => {
                           render={({ field }) => (
                             <Select
                               {...field}
+                              onChange={(event) => field.onChange(Number(event.target.value))}
                               labelId="fund-receiving-info-label"
                               label="Tài khoản nhận quỹ"
                               MenuProps={{ disableScrollLock: true }}
                             >
-                              {FUND_RECEIVING_OPTIONS.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                  {`${option.bankName} - ${option.accountNumber}`}
+                              {receivingOptions.map((option) => (
+                                <MenuItem key={option.id} value={option.id}>
+                                  {`${option.bankName} - ${option.accountName} - ${option.accountNumber}`}
                                 </MenuItem>
                               ))}
                             </Select>
@@ -261,8 +267,8 @@ const CreateDonationPage = () => {
 
                   <TextField
                     fullWidth
-                    label="Mục tiêu quyên góp (VNĐ)"
-                    placeholder="Nhập mục tiêu quyên góp"
+                    label="Số tiền mục tiêu để quyên góp (VNĐ)"
+                    placeholder="Nhập số tiền mục tiêu"
                     type="number"
                     {...register('targetAmount')}
                     error={!!errors.targetAmount}
@@ -272,13 +278,24 @@ const CreateDonationPage = () => {
 
                   <TextField
                     fullWidth
+                    label="Mô tả ngắn (tối đa 120 ký tự)"
+                    placeholder="Nhập mô tả ngắn"
+                    {...register('descriptionShort')}
+                    inputProps={{ maxLength: 120 }}
+                    error={!!errors.descriptionShort}
+                    helperText={errors.descriptionShort?.message}
+                    sx={{ mb: 2.5 }}
+                  />
+
+                  <TextField
+                    fullWidth
                     multiline
                     minRows={3}
                     label="Mô tả"
                     placeholder="Nhập mô tả"
-                    {...register('reason')}
-                    error={!!errors.reason}
-                    helperText={errors.reason?.message}
+                    {...register('descriptionFull')}
+                    error={!!errors.descriptionFull}
+                    helperText={errors.descriptionFull?.message}
                     sx={{ mb: 2.5 }}
                   />
 

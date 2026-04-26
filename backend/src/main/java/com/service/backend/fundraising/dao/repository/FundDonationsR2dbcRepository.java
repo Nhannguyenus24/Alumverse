@@ -41,7 +41,7 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
     @Query("SELECT COUNT(*) FROM fund_donations WHERE status = 'SUCCESS'")
     Mono<Long> countAll();
 
-    @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE created_at >= :start AND created_at < :end")
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE status = 'SUCCESS' AND created_at >= :start AND created_at < :end")
     Mono<BigDecimal> sumAmountBetween(LocalDateTime start, LocalDateTime end);
 
     // Search by specific text columns (ILIKE)

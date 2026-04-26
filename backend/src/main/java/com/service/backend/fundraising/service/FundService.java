@@ -409,7 +409,7 @@ public class FundService {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();
 
-        // khi guest ko dang nhap ma donate thi field donoeMemberId la null
+        // khi guest ko dang nhap ma donate thi field donorMemberId la null
         if (donorMemberId == null) {
             FundDonations donation = FundDonations.builder()
                     .fundId(fundId)
@@ -609,8 +609,9 @@ public class FundService {
     }
 
     public Mono<FundStatisticsResponse> getFundStatistics() {
+        LocalDateTime now = LocalDateTime.now();
         Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
-        Mono<Long> totalFundsMono = fundR2dbcRepository.countAll();
+        Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
         Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
         LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         LocalDateTime endOfMonth = startOfMonth.plusMonths(1);

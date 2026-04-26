@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Button,
@@ -27,17 +27,16 @@ import AddIcon from "@mui/icons-material/Add";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import styled from "@emotion/styled";
+import dayjs from "dayjs";
+import { useSnackbar } from "notistack";
 import Page from "../../components/Page";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import useOrganizationStore from "../../stores/organizationStore";
+import { fundApi } from "../../api/fundApi";
 import { truncateText } from "../../utils/text";
 
 const FILTER_OPTIONS = {
-  category: [
-    { value: "all", label: "Tất cả" },
-    { value: "important", label: "Quan trọng" },
-    { value: "remote", label: "Vùng sâu vùng xa" },
-  ],
   trending: [
     { value: "none", label: "No" },
     { value: "asc", label: "ASC" },
@@ -45,104 +44,34 @@ const FILTER_OPTIONS = {
   ],
 };
 
-const CAMPAIGNS = [
-  {
-    id: 1,
-    category: "important",
-    title: "Nâng bước em đến trường",
-    organization: "Quỹ Cựu sinh viên CNTT",
-    donationCount: 186,
-    startDate: "2026-04-08",
-    endDate: "2026-05-20",
-    amount: 1200000,
-    currentAmount: 1200000,
-    targetAmount: 5000000,
-    description: "Hỗ trợ học phí, sách vở và chi phí sinh hoạt cho học sinh vùng ven đô.",
-    image: "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 2,
-    category: "important",
-    title: "Thiết bị học tập cho vùng lũ",
-    organization: "AlumVerse Foundation",
-    donationCount: 142,
-    startDate: "2026-04-15",
-    endDate: "2026-06-15",
-    amount: 2200000,
-    currentAmount: 2200000,
-    targetAmount: 7000000,
-    description: "Trao tặng laptop, máy tính bảng và kết nối internet cho trường học khó khăn.",
-    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 3,
-    category: "important",
-    title: "Học bổng nữ sinh STEM",
-    organization: "Mạng lưới Alumni STEM",
-    donationCount: 231,
-    startDate: "2026-04-03",
-    endDate: "2026-06-30",
-    amount: 4500000,
-    currentAmount: 4500000,
-    targetAmount: 10000000,
-    description: "Khuyến khích và trao cơ hội học tập cho nữ sinh theo đuổi khoa học công nghệ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.",
-    image: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 4,
-    category: "remote",
-    title: "Nước sạch cho bản cao",
-    organization: "Nhóm Cựu sinh viên Môi trường",
-    donationCount: 95,
-    startDate: "2026-04-12",
-    endDate: "2026-05-28",
-    amount: 800000,
-    currentAmount: 800000,
-    targetAmount: 3000000,
-    description: "Lắp đặt bể lọc và hệ thống cấp nước sạch cho các điểm trường vùng cao.",
-    image: "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 5,
-    category: "remote",
-    title: "Bữa ăn ấm cho trẻ em vùng sâu",
-    organization: "Alumni for Community",
-    donationCount: 168,
-    startDate: "2026-04-05",
-    endDate: "2026-05-30",
-    amount: 600000,
-    currentAmount: 600000,
-    targetAmount: 2500000,
-    description: "Đảm bảo dinh dưỡng và bữa ăn đủ chất cho học sinh ở các xã đặc biệt khó khăn.",
-    image: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=800&q=80",
-  },
-  {
-    id: 6,
-    category: "remote",
-    title: "Ánh sáng đến vùng biên",
-    organization: "Câu lạc bộ Kỹ sư Alumni",
-    donationCount: 117,
-    startDate: "2026-04-20",
-    endDate: "2026-06-25",
-    amount: 1750000,
-    currentAmount: 1750000,
-    targetAmount: 4500000,
-    description: "Triển khai hệ thống điện năng lượng mặt trời cho điểm trường chưa có điện lưới.",
-    image: "https://images.unsplash.com/photo-1497436072909-60f360e1d4b1?auto=format&fit=crop&w=800&q=80",
-  },
-];
-
-const ADMIN_BANNER_MOCK_DATA = {
-  totalFundRaised: "595,375,229 VND",
-  openFundCount: "10",
-  donationCount: "4,205",
-  currentMonthTotalAmount: "4,294,243 VND",
+const DEFAULT_ADMIN_STATS = {
+  totalCurrentAmount: 0,
+  totalFunds: 0,
+  totalDonations: 0,
+  totalDonationsAmountThisMonth: 0,
 };
 
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 120;
+const LOGO_FALLBACK_URL = "https://placehold.co/800x450/eef3ff/0f3a7a?text=Fund";
+const DEFAULT_FILTERS = {
+  statusId: "all",
+  timeStartedFrom: "",
+  timeStartedTo: "",
+  trending: "none",
+  minAmount: "",
+  maxAmount: "",
+};
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
+}
+
+function toIsoStartOfDay(value) {
+  return dayjs(value).startOf("day").format("YYYY-MM-DDTHH:mm:ss");
+}
+
+function toIsoEndOfDay(value) {
+  return dayjs(value).endOf("day").format("YYYY-MM-DDTHH:mm:ss");
 }
 
 const StatsSummaryRoot = styled(Box)({
@@ -300,6 +229,8 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
     100,
     Math.round(((campaign.currentAmount ?? 0) / Math.max(campaign.targetAmount ?? 1, 1)) * 100)
   );
+  const startedAt = campaign.timeStarted ? dayjs(campaign.timeStarted).format("DD/MM/YYYY") : "--";
+  const endedAt = campaign.timeEnded ? dayjs(campaign.timeEnded).format("DD/MM/YYYY") : "--";
 
   return (
     <Card
@@ -321,10 +252,10 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
         },
       }}
     >
-      <CardMedia component="img" image={campaign.image} alt={campaign.title} sx={{ height: 170, width: "100%" }} />
+      <CardMedia component="img" image={campaign.logoUrl || LOGO_FALLBACK_URL} alt={campaign.name} sx={{ height: 170, width: "100%" }} />
       <CardContent sx={{ p: 2.2, display: "flex", flexDirection: "column", gap: 0.9, minWidth: 0, height: 300 }}>
         <Typography variant="caption" sx={{ color: "#5c75a4", fontWeight: 600 }}>
-          {`${campaign.startDate} - ${campaign.endDate}`}
+          {`${startedAt} - ${endedAt}`}
         </Typography>
         <Typography
           variant="h6"
@@ -341,7 +272,7 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
             overflowWrap: "anywhere",
           }}
         >
-          {campaign.title}
+          {campaign.name}
         </Typography>
         <Typography
           sx={{
@@ -354,10 +285,10 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
             minWidth: 0,
           }}
         >
-          {campaign.organization}
+          {campaign.managerName || "Chưa cập nhật"}
         </Typography>
         <Typography sx={{ color: "#6480b2", fontSize: "0.86rem" }}>
-          {campaign.donationCount} người đã quyên góp
+          {campaign.donorCount ?? 0} người đã quyên góp
         </Typography>
         <Typography
           sx={{
@@ -373,7 +304,7 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
             overflowWrap: "anywhere",
           }}
         >
-          {truncateText(campaign.description, CAMPAIGN_DESCRIPTION_MAX_CHARS)}
+          {truncateText(campaign.descriptionShort || "", CAMPAIGN_DESCRIPTION_MAX_CHARS)}
         </Typography>
         {isAdmin ? (
           <ProgressActionBar
@@ -415,66 +346,181 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
 
 export default function DonationPage() {
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const { user, isAuthenticated } = useAuth();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState({
-    category: "all",
-    date: "",
-    trending: "none",
-    minAmount: "",
-    maxAmount: "",
-  });
+  const [campaigns, setCampaigns] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([{ value: "all", label: "Tất cả" }]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
+  const [draftSearch, setDraftSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
   const [amountAnchorEl, setAmountAnchorEl] = useState(null);
   const [closeDialogCampaign, setCloseDialogCampaign] = useState(null);
+  const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
+  const warningSetRef = useRef(new Set());
   const amountMenuOpen = Boolean(amountAnchorEl);
   const closeDialogOpen = Boolean(closeDialogCampaign);
-  const pageSize = 6;
+  const pageSize = 3;
 
   const handleFilterChange = (key) => (event) => {
-    setFilters((prev) => ({ ...prev, [key]: event.target.value }));
+    setDraftFilters((prev) => ({ ...prev, [key]: event.target.value }));
+  };
+
+  const applySearchAndFilters = () => {
+    setAppliedFilters(draftFilters);
+    setAppliedSearch(draftSearch);
     setPage(1);
   };
 
-  const filteredCampaigns = useMemo(() => {
-    const minAmount = Number(filters.minAmount);
-    const maxAmount = Number(filters.maxAmount);
-    const normalizedSearch = search.trim().toLowerCase();
+  const clearAllFilters = () => {
+    setDraftFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
+    setDraftSearch("");
+    setAppliedSearch("");
+    setPage(1);
+    setAmountAnchorEl(null);
+  };
 
-    let result = CAMPAIGNS.filter((campaign) => {
-      const matchesCategory = filters.category === "all" || campaign.category === filters.category;
-      const matchesDate = !filters.date || campaign.startDate <= filters.date;
-      const matchesSearch =
-        !normalizedSearch ||
-        campaign.title.toLowerCase().includes(normalizedSearch) ||
-        campaign.organization.toLowerCase().includes(normalizedSearch);
-      const matchesMin = Number.isNaN(minAmount) || minAmount <= 0 || campaign.amount >= minAmount;
-      const matchesMax = Number.isNaN(maxAmount) || maxAmount <= 0 || campaign.amount <= maxAmount;
-
-      return matchesCategory && matchesDate && matchesSearch && matchesMin && matchesMax;
-    });
-
-    if (filters.trending === "asc") {
-      result = [...result].sort((a, b) => a.donationCount - b.donationCount);
-    } else if (filters.trending === "desc") {
-      result = [...result].sort((a, b) => b.donationCount - a.donationCount);
+  const handleFilterSectionKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      applySearchAndFilters();
     }
+  };
 
-    return result;
-  }, [filters, search]);
+  useEffect(() => {
+    let ignore = false;
+    const fetchStatuses = async () => {
+      setIsLoadingStatus(true);
+      try {
+        const statuses = await fundApi.getFundStatuses();
+        if (ignore) return;
+        setStatusOptions([
+          { value: "all", label: "Tất cả" },
+          ...statuses.map((item) => ({
+            value: String(item.id),
+            label: item.name,
+          })),
+        ]);
+      } catch (error) {
+        if (ignore) return;
+        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải danh sách trạng thái quỹ.", { variant: "error" });
+      } finally {
+        if (!ignore) setIsLoadingStatus(false);
+      }
+    };
 
-  const pageCount = Math.ceil(filteredCampaigns.length / pageSize);
-  const paginatedCampaigns = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    return filteredCampaigns.slice(startIndex, startIndex + pageSize);
-  }, [filteredCampaigns, page]);
+    fetchStatuses();
+
+    return () => {
+      ignore = true;
+    };
+  }, [enqueueSnackbar]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let ignore = false;
+
+    const fetchStatistics = async () => {
+      try {
+        const stats = await fundApi.getFundStatistics();
+        if (ignore) return;
+        setAdminStats({
+          totalCurrentAmount: Number(stats?.totalCurrentAmount ?? 0),
+          totalFunds: Number(stats?.totalFunds ?? 0),
+          totalDonations: Number(stats?.totalDonations ?? 0),
+          totalDonationsAmountThisMonth: Number(stats?.totalDonationsAmountThisMonth ?? 0),
+        });
+      } catch (error) {
+        if (ignore) return;
+        setAdminStats(DEFAULT_ADMIN_STATS);
+        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải thống kê quỹ.", { variant: "error" });
+      }
+    };
+
+    fetchStatistics();
+
+    return () => {
+      ignore = true;
+    };
+  }, [enqueueSnackbar, isAdmin]);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      let ignore = false;
+      const fetchFunds = async () => {
+        setIsLoading(true);
+        setErrorMessage("");
+        try {
+          const params = {
+            page: page - 1,
+            limit: pageSize,
+            organizationId: organizationId != null ? String(organizationId) : undefined,
+            q: appliedSearch.trim() || undefined,
+            statusId: appliedFilters.statusId !== "all" ? appliedFilters.statusId : undefined,
+            targetAmountMin: appliedFilters.minAmount || undefined,
+            targetAmountMax: appliedFilters.maxAmount || undefined,
+            sortBy: appliedFilters.trending !== "none" ? "donor_count" : undefined,
+            direction: appliedFilters.trending !== "none" ? appliedFilters.trending : undefined,
+            timeStartedFrom: appliedFilters.timeStartedFrom ? toIsoStartOfDay(appliedFilters.timeStartedFrom) : undefined,
+            timeStartedTo: appliedFilters.timeStartedTo ? toIsoEndOfDay(appliedFilters.timeStartedTo) : undefined,
+          };
+          const payload = await fundApi.getFunds(params);
+          if (ignore) return;
+          const warnings = payload?.warnings ?? [];
+          warnings.forEach((warning) => {
+            const key = String(warning);
+            if (!warningSetRef.current.has(key)) {
+              warningSetRef.current.add(key);
+              enqueueSnackbar(key, { variant: "warning" });
+            }
+          });
+          const pagedData = payload?.data;
+          setCampaigns(pagedData?.items ?? []);
+          setPageCount(Math.max(1, Number(pagedData?.totalPage ?? 1)));
+        } catch (error) {
+          if (ignore) return;
+          setCampaigns([]);
+          setPageCount(1);
+          setErrorMessage(error?.response?.data?.message ?? "Không thể tải danh sách quỹ quyên góp.");
+        } finally {
+          if (!ignore) setIsLoading(false);
+        }
+      };
+
+      fetchFunds();
+
+      return () => {
+        ignore = true;
+      };
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [appliedFilters, appliedSearch, enqueueSnackbar, organizationId, page]);
 
   const amountButtonLabel = useMemo(() => {
-    const { minAmount, maxAmount } = filters;
+    const { minAmount, maxAmount } = draftFilters;
     if (!minAmount && !maxAmount) return "Mức quyên góp";
-    return `${minAmount || 0} - ${maxAmount || "∞"}`;
-  }, [filters]);
+    return `Mức quyên góp: ${minAmount || 0} - ${maxAmount || "∞"}`;
+  }, [draftFilters]);
+
+  const adminBannerItems = useMemo(
+    () => [
+      { value: `${formatCurrency(adminStats.totalCurrentAmount)} VND`, label: "tổng quỹ gây được" },
+      { value: formatCurrency(adminStats.totalFunds), label: "quỹ đang mở" },
+      { value: formatCurrency(adminStats.totalDonations), label: "lượt quyên góp" },
+      { value: `${formatCurrency(adminStats.totalDonationsAmountThisMonth)} VND`, label: "tổng quỹ tháng này" },
+    ],
+    [adminStats]
+  );
 
   const handleOpenCloseDialog = (campaign) => {
     setCloseDialogCampaign(campaign);
@@ -485,7 +531,6 @@ export default function DonationPage() {
   };
 
   const handleConfirmCloseFund = () => {
-    // TODO: Call close-fund API when backend endpoint is ready.
     setCloseDialogCampaign(null);
   };
 
@@ -513,6 +558,12 @@ export default function DonationPage() {
           </Typography>
 
           {isAdmin && (
+            <Box sx={{ mb: 2.8 }}>
+              <StatsSummaryBar items={adminBannerItems} />
+            </Box>
+          )}
+
+          {isAdmin && (
             <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1.6 }}>
               <Button
                 variant="contained"
@@ -525,25 +576,40 @@ export default function DonationPage() {
             </Stack>
           )}
 
-          <Stack direction="row" spacing={1.2} flexWrap="wrap" sx={{ mb: 2.2, rowGap: 1.2 }}>
+          <Stack direction="row" spacing={1.2} flexWrap="wrap" sx={{ mb: 2.2, rowGap: 1.2 }} onKeyDown={handleFilterSectionKeyDown}>
             <FilterDropdown
               label="Status"
-              value={filters.category}
-              onChange={handleFilterChange("category")}
-              options={FILTER_OPTIONS.category}
+              value={draftFilters.statusId}
+              onChange={handleFilterChange("statusId")}
+              options={statusOptions}
             />
             <FilterDropdown
               label="Thịnh hành"
-              value={filters.trending}
+              value={draftFilters.trending}
               onChange={handleFilterChange("trending")}
               options={FILTER_OPTIONS.trending}
             />
             <TextField
-              label="Ngày diễn ra"
+              label="Time started từ"
               type="date"
               size="small"
-              value={filters.date}
-              onChange={handleFilterChange("date")}
+              value={draftFilters.timeStartedFrom}
+              onChange={handleFilterChange("timeStartedFrom")}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                minWidth: { xs: "100%", sm: 190 },
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 999,
+                  backgroundColor: "#f7faff",
+                },
+              }}
+            />
+            <TextField
+              label="Time started đến"
+              type="date"
+              size="small"
+              value={draftFilters.timeStartedTo}
+              onChange={handleFilterChange("timeStartedTo")}
               InputLabelProps={{ shrink: true }}
               sx={{
                 minWidth: { xs: "100%", sm: 190 },
@@ -584,7 +650,7 @@ export default function DonationPage() {
                   label="Min"
                   size="small"
                   type="number"
-                  value={filters.minAmount}
+                  value={draftFilters.minAmount}
                   onChange={handleFilterChange("minAmount")}
                   placeholder="0"
                 />
@@ -592,7 +658,7 @@ export default function DonationPage() {
                   label="Max"
                   size="small"
                   type="number"
-                  value={filters.maxAmount}
+                  value={draftFilters.maxAmount}
                   onChange={handleFilterChange("maxAmount")}
                   placeholder="0"
                 />
@@ -601,8 +667,7 @@ export default function DonationPage() {
                     variant="outlined"
                     fullWidth
                     onClick={() => {
-                      setFilters((prev) => ({ ...prev, minAmount: "", maxAmount: "" }));
-                      setPage(1);
+                      setDraftFilters((prev) => ({ ...prev, minAmount: "", maxAmount: "" }));
                     }}
                   >
                     Xóa
@@ -613,13 +678,30 @@ export default function DonationPage() {
                 </Stack>
               </Box>
             </Menu>
+            <Button
+              variant="outlined"
+              onClick={clearAllFilters}
+              sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}
+            >
+              Xóa hết bộ lọc
+            </Button>
+            <Button
+              variant="contained"
+              onClick={applySearchAndFilters}
+              sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}
+            >
+              Áp dụng bộ lọc
+            </Button>
           </Stack>
 
           <TextField
             fullWidth
             placeholder="Tìm kiếm chiến dịch quyên góp..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={draftSearch}
+            onChange={(event) => {
+              setDraftSearch(event.target.value);
+            }}
+            onKeyDown={handleFilterSectionKeyDown}
             sx={{
               mb: 4,
               "& .MuiOutlinedInput-root": {
@@ -637,18 +719,25 @@ export default function DonationPage() {
             }}
           />
 
-          {isAdmin && (
-            <Box sx={{ mb: 2.8 }}>
-              <StatsSummaryBar
-                items={[
-                  { value: ADMIN_BANNER_MOCK_DATA.totalFundRaised, label: "tổng quỹ gây được" },
-                  { value: ADMIN_BANNER_MOCK_DATA.openFundCount, label: "quỹ đang mở" },
-                  { value: ADMIN_BANNER_MOCK_DATA.donationCount, label: "người quyên góp" },
-                  { value: ADMIN_BANNER_MOCK_DATA.currentMonthTotalAmount, label: "tổng quỹ tháng" },
-                ]}
-              />
+          {isLoading || isLoadingStatus ? (
+            <Box sx={{ mb: 3 }}>
+              <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
             </Box>
-          )}
+          ) : null}
+
+          {errorMessage ? (
+            <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
+              <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
+            </Box>
+          ) : null}
+
+          {!isLoading && !errorMessage && campaigns.length === 0 ? (
+            <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
+              <Typography sx={{ color: "#43608e", fontWeight: 600 }}>
+                Không có quỹ nào phù hợp với bộ lọc hiện tại.
+              </Typography>
+            </Box>
+          ) : null}
 
           <Box
             sx={{
@@ -661,7 +750,7 @@ export default function DonationPage() {
               gap: 2.5,
             }}
           >
-            {paginatedCampaigns.map((campaign) => (
+            {campaigns.map((campaign) => (
               <Box key={campaign.id} sx={{ display: "flex", minWidth: 0 }}>
                 <CampaignCard
                   campaign={campaign}
@@ -710,7 +799,7 @@ export default function DonationPage() {
               <Typography sx={{ color: "#33527d", lineHeight: 1.7 }}>
                 Bạn có chắc muốn đóng sớm quỹ{" "}
                 <Box component="span" sx={{ color: "#0d3f8f", fontWeight: 700 }}>
-                  {closeDialogCampaign?.title}
+                  {closeDialogCampaign?.name}
                 </Box>{" "}
                 không? Quỹ sẽ ngừng nhận thêm quyên góp sau khi xác nhận.
               </Typography>
