@@ -171,6 +171,16 @@ public class FundService {
             warnings.add("Param q ignored: empty");
         }
 
+        // organizationId
+        Integer organizationId = null;
+        if (req.getOrganizationId() != null) {
+            try {
+                organizationId = Integer.parseInt(req.getOrganizationId());
+            } catch (NumberFormatException ex) {
+                warnings.add("Param organizationId ignored: invalid format");
+            }
+        }
+
         // statusId
         Integer statusId = null;
         if (req.getStatusId() != null) {
@@ -243,6 +253,7 @@ public class FundService {
         }
 
         Flux<Funds> data = fundQueryRepository.findFiltered(
+                organizationId,
                 statusId,
                 keyword,
                 tsFrom,
@@ -255,6 +266,7 @@ public class FundService {
                 offset
         );
         Mono<Long> count = fundQueryRepository.countFiltered(
+                organizationId,
                 statusId,
                 keyword,
                 tsFrom,

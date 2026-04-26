@@ -15,5 +15,6 @@ public class DeleteUserRequest {
     @NotNull(message = "User ID is required")
     private Integer userId;
     
+    @Builder.Default()
     private Boolean hardDelete = false;
 }
