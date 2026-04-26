@@ -84,6 +84,9 @@ const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAudit
 const CreateDonationPage = Loadable(
   lazy(() => import("../pages/admin/CreateDonationPage")),
 );
+const EditDonationPage = Loadable(
+  lazy(() => import("../pages/admin/EditDonationPage")),
+);
 
 // Donation pages
 const DonationPage = Loadable(
@@ -541,7 +544,19 @@ export const router = createBrowserRouter([
           },
           {
             path: "create",
-            element: <CreateDonationPage />,
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <CreateDonationPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: ":id/edit",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <EditDonationPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: ":id",

@@ -22,6 +22,7 @@ public class FundQueryRepository {
     private final DatabaseClient databaseClient;
 
     public Flux<Funds> findFiltered(
+            Integer organizationId,
             Integer statusId,
             String keyword,
             LocalDateTime timeStartedFrom,
@@ -37,6 +38,10 @@ public class FundQueryRepository {
         Map<String, Object> params = new HashMap<>();
         List<String> where = new ArrayList<>();
 
+        if (organizationId != null) {
+            where.add("organization_id = :organizationId");
+            params.put("organizationId", organizationId);
+        }
         if (statusId != null) {
             where.add("status_id = :statusId");
             params.put("statusId", statusId);
@@ -91,6 +96,7 @@ public class FundQueryRepository {
     }
 
     public Mono<Long> countFiltered(
+            Integer organizationId,
             Integer statusId,
             String keyword,
             LocalDateTime timeStartedFrom,
@@ -102,6 +108,10 @@ public class FundQueryRepository {
         Map<String, Object> params = new HashMap<>();
         List<String> where = new ArrayList<>();
 
+        if (organizationId != null) {
+            where.add("organization_id = :organizationId");
+            params.put("organizationId", organizationId);
+        }
         if (statusId != null) {
             where.add("status_id = :statusId");
             params.put("statusId", statusId);
