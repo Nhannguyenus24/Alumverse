@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { z } from 'zod';
 import dayjs from 'dayjs';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,7 +23,7 @@ import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import PublishOutlinedIcon from '@mui/icons-material/PublishOutlined';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import Page from '../../components/Page';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { fundApi } from '../../api/fundApi';
@@ -33,6 +33,11 @@ const createDonationSchema = z
   .object({
     fundName: z.string().trim().min(1, 'Vui lòng nhập tên quỹ quyên góp'),
     organizer: z.string().trim().min(1, 'Vui lòng nhập người tổ chức'),
+    logoUrl: z
+      .string()
+      .trim()
+      .max(255, 'Logo URL tối đa 255 ký tự')
+      .refine((value) => value === '' || z.string().url().safeParse(value).success, 'Logo URL không hợp lệ'),
     statusId: z.coerce.number().int().positive('Vui lòng chọn trạng thái'),
     fundReceivingInfoId: z.coerce.number().int().positive('Vui lòng chọn tài khoản nhận quỹ'),
     targetAmount: z.coerce
@@ -46,20 +51,33 @@ const createDonationSchema = z
     descriptionFull: z.string().trim().min(1, 'Vui lòng nhập mô tả'),
     startDate: z
       .custom((value) => value === null || dayjs.isDayjs(value), {
-        message: 'Vui lòng chọn ngày bắt đầu',
+        message: 'Vui lòng chọn thời gian bắt đầu',
       })
-      .refine((value) => value !== null, 'Vui lòng chọn ngày bắt đầu'),
+      .refine((value) => value !== null, 'Vui lòng chọn thời gian bắt đầu'),
     endDate: z
       .custom((value) => value === null || dayjs.isDayjs(value), {
-        message: 'Vui lòng chọn ngày kết thúc',
+        message: 'Vui lòng chọn thời gian kết thúc',
       })
-      .refine((value) => value !== null, 'Vui lòng chọn ngày kết thúc'),
+      .refine((value) => value !== null, 'Vui lòng chọn thời gian kết thúc'),
   })
   .superRefine(({ startDate, endDate }, ctx) => {
-    if (dayjs.isDayjs(startDate) && dayjs.isDayjs(endDate) && endDate.isBefore(startDate, 'day')) {
+    if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) {
+      return;
+    }
+
+    const nowPlusOneHour = dayjs().add(1, 'hour');
+    if (startDate.isBefore(nowPlusOneHour)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu',
+        message: 'Thời gian bắt đầu phải từ hiện tại + 1 giờ',
+        path: ['startDate'],
+      });
+    }
+
+    if (endDate.isBefore(startDate.add(1, 'hour'))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 giờ',
         path: ['endDate'],
       });
     }
@@ -68,6 +86,7 @@ const createDonationSchema = z
 const defaultValues = {
   fundName: '',
   organizer: '',
+  logoUrl: '',
   statusId: '',
   fundReceivingInfoId: '',
   targetAmount: '',
@@ -134,14 +153,15 @@ const CreateDonationPage = () => {
     const payload = {
       name: values.fundName,
       managerName: values.organizer,
+      logoUrl: values.logoUrl?.trim() || null,
       status_id: Number(values.statusId),
       fundReceivingInfoId: Number(values.fundReceivingInfoId),
       targetAmount: Number(values.targetAmount),
       description_short: values.descriptionShort,
       description_full: values.descriptionFull,
       organizationId: Number(organizationId),
-      timeStarted: values.startDate ? values.startDate.format('YYYY-MM-DDT00:00:00') : null,
-      timeEnded: values.endDate ? values.endDate.format('YYYY-MM-DDT23:59:59') : null,
+      timeStarted: values.startDate ? values.startDate.format('YYYY-MM-DDTHH:mm:ss') : null,
+      timeEnded: values.endDate ? values.endDate.format('YYYY-MM-DDTHH:mm:ss') : null,
     };
 
     await fundApi.createFund(payload);
@@ -211,6 +231,19 @@ const CreateDonationPage = () => {
                       />
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Logo URL"
+                        placeholder="https://example.com/logo.png"
+                        {...register('logoUrl')}
+                        error={!!errors.logoUrl}
+                        helperText={errors.logoUrl?.message}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                       <FormControl fullWidth error={!!errors.statusId}>
                         <InputLabel id="status-label">Trạng thái</InputLabel>
                         <Controller
@@ -235,10 +268,7 @@ const CreateDonationPage = () => {
                         <FormHelperText>{errors.statusId?.message}</FormHelperText>
                       </FormControl>
                     </Grid>
-                  </Grid>
-
-                  <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
-                    <Grid size={12}>
+                    <Grid size={{ xs: 12, md: 6 }}>
                       <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
                         <InputLabel id="fund-receiving-info-label">Tài khoản nhận quỹ</InputLabel>
                         <Controller
@@ -305,10 +335,11 @@ const CreateDonationPage = () => {
                         name="startDate"
                         control={control}
                         render={({ field }) => (
-                          <DatePicker
-                            label="Ngày bắt đầu"
+                          <DateTimePicker
+                            label="Thời gian bắt đầu"
                             value={field.value}
                             onChange={field.onChange}
+                            views={['year', 'month', 'day', 'hours', 'minutes', 'seconds']}
                             slotProps={{
                               textField: {
                                 fullWidth: true,
@@ -325,10 +356,11 @@ const CreateDonationPage = () => {
                         name="endDate"
                         control={control}
                         render={({ field }) => (
-                          <DatePicker
-                            label="Ngày kết thúc"
+                          <DateTimePicker
+                            label="Thời gian kết thúc"
                             value={field.value}
                             onChange={field.onChange}
+                            views={['year', 'month', 'day', 'hours', 'minutes', 'seconds']}
                             slotProps={{
                               textField: {
                                 fullWidth: true,

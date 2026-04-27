@@ -15,6 +15,11 @@ export default function FundraisingListFilters({
         select
         value={searchBy}
         onChange={(event) => onSearchByChange(event.target.value)}
+        SelectProps={{
+          MenuProps: {
+            disableScrollLock: true,
+          },
+        }}
         sx={{
           minWidth: { xs: "100%", md: 200 },
           "& .MuiOutlinedInput-root": {

@@ -63,7 +63,14 @@ public enum ErrorCode {
     // Fund module
     FUND_NOT_FOUND("Không tìm thấy quỹ"),
     ORGANIZATION_NOT_FOUND("Không tìm thấy organization"),
+    FUND_STATUS_NOT_FOUND("Không tìm thấy trạng thái quỹ"),
     FUND_RECEIVING_INFO_NOT_FOUND("Không tìm thấy thông tin tài khoản đích"),
+    FUND_INVALID_TIME_RANGE("Khoảng thời gian quỹ không hợp lệ"),
+    FUND_ALREADY_ENDED("Quỹ đã kết thúc, không thể chỉnh sửa"),
+    FUND_START_TIME_UPDATE_NOT_ALLOWED("Quỹ đang diễn ra, không thể sửa thời gian bắt đầu"),
+    FUND_TARGET_AMOUNT_UPDATE_NOT_ALLOWED("Quỹ đang diễn ra, không thể sửa mục tiêu quỹ"),
+    FUND_RECEIVING_INFO_UPDATE_NOT_ALLOWED("Quỹ đang diễn ra, không thể sửa tài khoản nhận quỹ"),
+    FUND_TIME_TOO_EARLY("Thời gian chỉnh sửa phải từ hiện tại + 10 phút"),
     ERROR_EXTRACTING_MEMBERID_FROM_TOKEN("Co loi trong qua trinh extract memberId tu token"),
     NOT_FOUND_MEMBERID("Khong tim thay memberId trong token");
 
