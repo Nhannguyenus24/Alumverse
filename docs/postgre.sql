@@ -270,8 +270,7 @@ CREATE TABLE "funds" (
   "time_started" timestamp,
   "donor_count" integer DEFAULT 0, -- so luong donate, phuc vu frontend
   "status_id" integer,  -- khoa ngoai den fund_statuses
-  "time_ended" timestamp,
-  "qr_image_url" varchar
+  "time_ended" timestamp
 );
 
 CREATE TABLE "fund_statuses" ( -- force to have as admin can add new status, mac dinh la co QUAN TRONG, VUNG SAU VUNG XA
