@@ -1,9 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  ImageBackground,
   Platform,
   Pressable,
   StyleSheet,
@@ -142,6 +144,15 @@ export default function HomeScreen() {
     return `${sanitizeBaseUrl(WEB_BASE_URL)}/${storedTenant}`;
   }, [storedTenant]);
 
+  const landingBackgroundUrl = useMemo(
+    () => `${sanitizeBaseUrl(WEB_BASE_URL)}/home_page/home_page.png`,
+    []
+  );
+  const landingLogoUrl = useMemo(
+    () => `${sanitizeBaseUrl(WEB_BASE_URL)}/alumverse_logo/Logo_White_Full.png`,
+    []
+  );
+
   if (loadingSavedTenant) {
     return (
       <View style={styles.centered}>
@@ -152,35 +163,43 @@ export default function HomeScreen() {
 
   if (!storedTenant) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.formCard}>
-          <Text style={styles.title}>Nhập organization để vào AlumVerse</Text>
-          <Text style={styles.subtitle}>
-            Mỗi khoa/đơn vị có slug riêng, ví dụ: fit, biology, chemistry
-          </Text>
+      <ImageBackground source={{ uri: landingBackgroundUrl }} resizeMode="cover" style={styles.container}>
+        <SafeAreaView style={styles.overlay}>
+          <View pointerEvents="none" style={styles.logoFixedContainer}>
+            <Image source={{ uri: landingLogoUrl }} contentFit="contain" style={styles.logoImage} />
+          </View>
 
-          <TextInput
-            value={tenantInput}
-            onChangeText={setTenantInput}
-            autoCapitalize="none"
-            autoCorrect={false}
-            placeholder="Nhập organization slug"
-            style={styles.input}
-            editable={validationState !== 'validating'}
-          />
+          <View style={styles.formCenterContainer}>
+            <View style={styles.formCard}>
+              <Text style={styles.title}>Nhập organization để vào AlumVerse</Text>
+              <Text style={styles.subtitle}>
+                Mỗi khoa/đơn vị có slug riêng, ví dụ: fit, biology, chemistry
+              </Text>
 
-          <Pressable
-            style={[styles.button, validationState === 'validating' && styles.buttonDisabled]}
-            onPress={() => void handleContinue()}
-            disabled={validationState === 'validating'}>
-            {validationState === 'validating' ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Tiếp tục</Text>
-            )}
-          </Pressable>
-        </View>
-      </SafeAreaView>
+              <TextInput
+                value={tenantInput}
+                onChangeText={setTenantInput}
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholder="Nhập organization slug"
+                style={styles.input}
+                editable={validationState !== 'validating'}
+              />
+
+              <Pressable
+                style={[styles.button, validationState === 'validating' && styles.buttonDisabled]}
+                onPress={() => void handleContinue()}
+                disabled={validationState === 'validating'}>
+                {validationState === 'validating' ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Tiếp tục</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
     );
   }
 
@@ -217,9 +236,29 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  overlay: {
+    flex: 1,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0,0,0,0.32)',
+  },
+  logoFixedContainer: {
+    position: 'absolute',
+    top: 96,
+    left: 20,
+    right: 20,
+    height: 96,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+    zIndex: 2,
+  },
+  logoImage: {
+    width: '112%',
+    height: 88,
+  },
+  formCenterContainer: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#f3f4f6',
   },
   formCard: {
     backgroundColor: '#fff',
