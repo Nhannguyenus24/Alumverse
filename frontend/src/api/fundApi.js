@@ -42,4 +42,14 @@ export const fundApi = {
     const response = await apiClient.post("/funds", payload);
     return unwrap(response);
   },
+
+  async updateFund(fundId, payload) {
+    const response = await apiClient.put(`/funds/${fundId}`, payload);
+    return unwrap(response);
+  },
+
+  async closeFund(fundId) {
+    const response = await apiClient.put(`/funds/${fundId}/close`);
+    return unwrap(response);
+  },
 };
