@@ -215,24 +215,25 @@ INSERT INTO "learning_resources" ("organization_id", "uploader_member_id", "titl
 -- ============= FUND STATUSES DATA =============
 INSERT INTO "fund_statuses" ("name") VALUES
 ('IMPORTANT'),
+('POOR'),
 ('RURAL_AREAS');
 
 -- ============= FUND RECEIVING INFOS DATA =============
 INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name", "is_active") VALUES
-('1234567890', 'HCMUS Student Scholarship Fund', 'VietcomBank', true),
-('0912345678', 'HCMUS Fund', 'MoMo', true),
-('0987654321', 'HCMUS Lab Equipment Fund', 'Techcombank', true),
-('1122334455', 'Alumni Mentorship Fund', 'VietcomBank', true),
-('5544332211', 'Business Incubation Fund', 'BIDV', true),
-('9988776655', 'Engineering Excellence Fund', 'Techcombank', true);
+('1234567890', 'HCMUS Student Scholarship Fund', 'MB', true),
+('0912345678', 'HCMUS Fund', 'MB', true),
+('0917669258', 'HCMUS Lab Equipment Fund', 'MB', true),
+('1122334455', 'Alumni Mentorship Fund', 'MB', true),
+('5544332211', 'Business Incubation Fund', 'MB', true),
+('9988776655', 'Engineering Excellence Fund', 'MB', true);
 
 -- ============= FUNDS DATA =============
 INSERT INTO "funds" ("organization_id", "manager_name", "name", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "time_ended") VALUES
-(1, 'John Doe', 'Student Scholarship Fund 2026', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, NOW() - INTERVAL '60 days', 3, 2, NOW() + INTERVAL '120 days'),
-(1, 'Phạm Văn C', 'Lab Equipment Fund', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, NOW() - INTERVAL '90 days', 2, 2, NOW() + INTERVAL '180 days'),
-(2, 'Jane Smith', 'Alumni Mentorship Fund', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, NOW() - INTERVAL '45 days', 2, 2, NOW() + INTERVAL '150 days'),
-(3, 'Hoàng Thị D', 'Business Incubation Fund', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, NOW() - INTERVAL '30 days', 1, 1, NOW() + INTERVAL '200 days'),
-(4, 'Admin User', 'Engineering Excellence Fund', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, NOW() - INTERVAL '40 days', 1, 1, NOW() + INTERVAL '160 days');
+(1, 'John Doe', 'Student Scholarship Fund 2026', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 2, '2026-08-15 17:00:00'),
+(1, 'Phạm Văn C', 'Lab Equipment Fund', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 2, '2026-10-20 18:00:00'),
+(1, 'Jane Smith', 'Alumni Mentorship Fund', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 2, '2026-09-25 16:30:00'),
+(1, 'Hoàng Thị D', 'Business Incubation Fund', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 1, '2026-11-10 20:00:00'),
+(1, 'Admin User', 'Engineering Excellence Fund', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 1, '2026-10-05 19:15:00');
 
 -- ============= FUND DONATIONS DATA =============
 INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
@@ -243,7 +244,7 @@ INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amoun
 (2, 8, NULL, 15000.00, 'Go Vap, Ho Chi Minh City', '0955555555', 'le.van.e@hcmus.edu.vn', 'Investing in research excellence', 'SUCCESS', NOW() - INTERVAL '10 days'),
 (3, 7, NULL, 8000.00, 'District 7, Ho Chi Minh City', '0966666666', 'hoang.thi.d@hcmus.edu.vn', 'Supporting mentorship initiatives', 'SUCCESS', NOW() - INTERVAL '8 days'),
 (3, NULL, 'Company Partnership', 4000.00, 'Tan Binh, Ho Chi Minh City', '0977777777', 'partnership@company.com', 'Corporate social responsibility', 'PENDING', NOW() - INTERVAL '2 days'),
-(4, 5, NULL, 6000.00, 'District 5, Ho Chi Minh City', '0988888888', 'tran.thi.b@hcmus.edu.vn', 'Supporting entrepreneurs', 'FAILED', NOW() - INTERVAL '5 days'),
+(4, 5, NULL, 6000.00, 'District 5, Ho Chi Minh City', '0988888888', 'tran.thi.b@hcmus.edu.vn', 'Supporting entrepreneurs', 'PENDING', NOW() - INTERVAL '5 days'),
 (5, 1, NULL, 5500.00, 'District 10, Ho Chi Minh City', '0999999999', 'admin@hcmus.edu.vn', 'Excellence in engineering', 'SUCCESS', NOW() - INTERVAL '3 days');
 
 -- ============= NOTIFICATIONS DATA =============

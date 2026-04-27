@@ -22,7 +22,7 @@ import {
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
 import { fundApi } from "../../api/fundApi";
@@ -48,7 +48,10 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
     .object({
       name: z.string().trim().min(1, "Vui lòng nhập tên quỹ"),
       managerName: z.string().trim().min(1, "Vui lòng nhập tên người quản lí"),
-      logoUrl: z.string().trim().url("Logo URL không hợp lệ"),
+      logoUrl: z
+        .string()
+        .trim()
+        .refine((value) => value === "" || z.string().url().safeParse(value).success, "Logo URL không hợp lệ"),
       descriptionShort: z
         .string()
         .trim()
@@ -174,7 +177,6 @@ export default function EditDonationPage() {
     register,
     control,
     handleSubmit,
-    watch,
     reset,
     formState: { errors, isSubmitting },
   } = useForm({
@@ -271,15 +273,14 @@ export default function EditDonationPage() {
     };
   }, [enqueueSnackbar, id, now, reset]);
 
-  const preview = watch();
   const selectedReceivingInfo = useMemo(
-    () => receivingOptions.find((option) => Number(option.id) === Number(preview.fundReceivingInfoId)),
-    [preview.fundReceivingInfoId, receivingOptions]
+    () => receivingOptions.find((option) => Number(option.id) === Number(donationDetail.fundReceivingInfoId)),
+    [donationDetail.fundReceivingInfoId, receivingOptions]
   );
   const progress = Math.min(
     100,
     Math.round(
-      (toSafeNumber(donationDetail.currentAmount, 0) / Math.max(toSafeNumber(preview.targetAmount, 1), 1)) * 100
+      (toSafeNumber(donationDetail.currentAmount, 0) / Math.max(toSafeNumber(donationDetail.targetAmount, 1), 1)) * 100
     )
   );
 
@@ -291,7 +292,7 @@ export default function EditDonationPage() {
 
   const noteMessage = {
     before_start:
-      "Quỹ chưa bắt đầu: có thể sửa start date, end date, target amount và tài khoản ngân hàng nhận quỹ.",
+      "Quỹ chưa bắt đầu: có thể sửa field bất kỳ",
     active:
       "Quỹ đang diễn ra: chỉ có thể sửa end date (>= hiện tại + 10 phút). Không thể sửa target amount, start date và tài khoản ngân hàng nhận quỹ.",
     ended: "Quỹ đã kết thúc: không thể chỉnh sửa.",
@@ -303,13 +304,28 @@ export default function EditDonationPage() {
       enqueueSnackbar("Quỹ đã kết thúc, không thể chỉnh sửa.", { variant: "warning" });
       return;
     }
-    console.log("Edit donation payload:", {
-      ...values,
-      startDate: values.startDate?.format("YYYY-MM-DD HH:mm"),
-      endDate: values.endDate?.format("YYYY-MM-DD HH:mm"),
-    });
-    enqueueSnackbar("Cập nhật quỹ thành công (mock).", { variant: "success" });
-    navigate(`/donations/${id}`);
+    const payload = {
+      name: values.name?.trim(),
+      managerName: values.managerName?.trim(),
+      logoUrl: values.logoUrl?.trim() || null,
+      description_short: values.descriptionShort?.trim(),
+      description_full: values.descriptionFull?.trim(),
+      targetAmount: Number(values.targetAmount),
+      fundReceivingInfoId: Number(values.fundReceivingInfoId),
+      statusId: Number(values.statusId),
+      timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
+      timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
+    };
+
+    try {
+      await fundApi.updateFund(id, payload);
+      enqueueSnackbar("Cập nhật quỹ thành công.", { variant: "success" });
+      navigate(`/donations/${id}`);
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || "Cập nhật quỹ thất bại", {
+        variant: "error",
+      });
+    }
   };
 
   return (
@@ -343,8 +359,8 @@ export default function EditDonationPage() {
                 <Box sx={{ textAlign: "center", mb: 2.2 }}>
                   <Box
                     component="img"
-                    src={preview.logoUrl}
-                    alt={preview.name}
+                    src={donationDetail.logoUrl}
+                    alt={donationDetail.name}
                     sx={{
                       width: 122,
                       height: 122,
@@ -353,15 +369,15 @@ export default function EditDonationPage() {
                       boxShadow: "0 6px 18px rgba(17, 67, 142, 0.2)",
                     }}
                   />
-                  <Typography sx={{ mt: 1.8, fontWeight: 800, color: "#102f5a", fontSize: "1.45rem" }}>{preview.name}</Typography>
+                  <Typography sx={{ mt: 1.8, fontWeight: 800, color: "#102f5a", fontSize: "1.45rem" }}>{donationDetail.name}</Typography>
                   <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.92rem" }}>
-                    Người quản lí: {preview.managerName}
+                    Người quản lí: {donationDetail.managerName}
                   </Typography>
                   <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.9rem", lineHeight: 1.55 }}>
                     Tài khoản nhận quỹ:
                     <br />
                     {selectedReceivingInfo
-                      ? `${selectedReceivingInfo.bankName} - ${selectedReceivingInfo.accountNumber}`
+                      ? `${selectedReceivingInfo.bankName} - ${selectedReceivingInfo.accountName} - ${selectedReceivingInfo.accountNumber}`
                       : "Chưa chọn"}
                   </Typography>
                 </Box>
@@ -380,15 +396,15 @@ export default function EditDonationPage() {
                     width: "fit-content",
                   }}
                 >
-                  {donationDetail.statusName || statusOptions.find((option) => Number(option.id) === Number(preview.statusId))?.name || "Chưa có trạng thái"}
+                  {donationDetail.statusName || statusOptions.find((option) => Number(option.id) === Number(donationDetail.statusId))?.name || "Chưa có trạng thái"}
                 </Box>
 
                 <Typography sx={{ mt: 1.4, color: "#5f78a4", fontSize: "0.9rem" }}>
-                  {dayjs(preview.startDate).format("DD/MM/YYYY HH:mm")} - {dayjs(preview.endDate).format("DD/MM/YYYY HH:mm")}
+                  {dayjs(donationDetail.startDate).format("DD/MM/YYYY HH:mm")} - {dayjs(donationDetail.endDate).format("DD/MM/YYYY HH:mm")}
                 </Typography>
 
                 <Typography sx={{ mt: 1.1, color: "#2f4b75", fontWeight: 700, fontSize: "0.84rem" }}>
-                  {formatCurrency(donationDetail.currentAmount)} / {formatCurrency(preview.targetAmount)}
+                  {formatCurrency(donationDetail.currentAmount)} / {formatCurrency(donationDetail.targetAmount)}
                 </Typography>
                 <LinearProgress
                   variant="determinate"
@@ -410,6 +426,21 @@ export default function EditDonationPage() {
                 </Typography>
                 <Typography sx={{ color: "#5f78a4", fontSize: "0.9rem" }}>lượt quyên góp</Typography>
 
+                <Typography sx={{ mt: 1.8, color: "#2d4873", fontWeight: 700 }}>Mô tả ngắn</Typography>
+                <Box
+                  sx={{
+                    mt: 0.8,
+                    borderRadius: 2,
+                    backgroundColor: "#f7f9fc",
+                    border: "1px solid #e0e7f3",
+                    p: 1.2,
+                  }}
+                >
+                  <Typography sx={{ color: "#4b6083", fontSize: "0.95rem", lineHeight: 1.7 }}>
+                    {donationDetail.descriptionShort || "Chưa có mô tả ngắn"}
+                  </Typography>
+                </Box>
+
                 <Typography sx={{ mt: 1.8, color: "#2d4873", fontWeight: 700 }}>Mô tả đầy đủ</Typography>
                 <Box
                   sx={{
@@ -422,7 +453,7 @@ export default function EditDonationPage() {
                     p: 1.2,
                   }}
                 >
-                  <Typography sx={{ color: "#4b6083", fontSize: "0.95rem", lineHeight: 1.7 }}>{preview.descriptionFull}</Typography>
+                  <Typography sx={{ color: "#4b6083", fontSize: "0.95rem", lineHeight: 1.7 }}>{donationDetail.descriptionFull}</Typography>
                 </Box>
               </Card>
             </Grid>
@@ -541,10 +572,11 @@ export default function EditDonationPage() {
                           name="startDate"
                           control={control}
                           render={({ field }) => (
-                            <DatePicker
+                            <DateTimePicker
                               label="Thời gian bắt đầu"
                               value={field.value}
                               onChange={field.onChange}
+                              views={["year", "month", "day", "hours", "minutes", "seconds"]}
                               disabled={disableStartDate}
                               slotProps={{
                                 textField: {
@@ -562,10 +594,11 @@ export default function EditDonationPage() {
                           name="endDate"
                           control={control}
                           render={({ field }) => (
-                            <DatePicker
+                            <DateTimePicker
                               label="Thời gian kết thúc"
                               value={field.value}
                               onChange={field.onChange}
+                              views={["year", "month", "day", "hours", "minutes", "seconds"]}
                               disabled={disableEndDate}
                               slotProps={{
                                 textField: {

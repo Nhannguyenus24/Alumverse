@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
+import { Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { fundApi } from "../../../../api/fundApi";
 import DonationListItemCard from "./DonationListItemCard";
@@ -73,21 +73,6 @@ export default function FundraisingListSection({ fundId }) {
         <Typography variant="h5" sx={{ fontWeight: 800, color: "#0f2f5f", fontSize: { xs: "1.35rem", md: "1.6rem" } }}>
           Danh sách
         </Typography>
-        <Button
-          variant="contained"
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            px: 2.2,
-            borderRadius: 2,
-            backgroundColor: "#0f2f5f",
-            "&:hover": {
-              backgroundColor: "#0b2448",
-            },
-          }}
-        >
-          Xuất CSV
-        </Button>
       </Stack>
 
       <FundraisingListFilters
