@@ -100,14 +100,8 @@ const PostArticleForm = ({
               onChange={(e) => handleDonationInputChange({ target: { name: 'fundReceivingInfoId', value: e.target.value } })}
             />
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}>
-            <Box sx={{ width: { xs: '100%', md: '60%' }, height: 220, borderRadius: 2, border: '1px dashed', borderColor: 'divider', backgroundColor: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              {donationData.qrPreview ? <img src={donationData.qrPreview} alt="QR" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} /> : <Typography variant="body2" color="text.secondary">Chưa có mã QR</Typography>}
-            </Box>
-            <Box sx={{ width: { xs: '100%', md: '40%' }, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
-              <Button variant="contained" component="label">{donationData.qrPreview ? 'Sửa ảnh QR' : 'Upload ảnh QR'}<input hidden type="file" accept="image/*" onChange={(e) => { const file = e.target.files[0]; if (file) { handleDonationInputChange({ target: { name: 'qrFile', value: file } }); handleDonationInputChange({ target: { name: 'qrPreview', value: URL.createObjectURL(file) } }); } }} /></Button>
-              <Input label="Mục tiêu quyên góp (VNĐ)" name="donationGoal" type="number" value={donationData.donationGoal} onChange={handleDonationInputChange} />
-            </Box>
+          <Box sx={{ mb: 3 }}>
+            <Input label="Mục tiêu quyên góp (VNĐ)" name="donationGoal" type="number" value={donationData.donationGoal} onChange={handleDonationInputChange} />
           </Box>
           <Box sx={{ mb: 3 }}><TextField fullWidth label="Lý do quyên góp" name="reasonForDonation" multiline rows={3} value={donationData.reasonForDonation} onChange={handleDonationInputChange} /></Box>
           <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>

@@ -77,32 +77,26 @@ public class FundService {
                                 .switchIfEmpty(Mono.error(new ApplicationException(
                                         ErrorCode.FUND_NOT_FOUND,
                                         "Fund status not found with id: " + statusId)))
-                                .flatMap(existingStatus -> Mono.zip(
-                                        imageService.uploadBase64IfPresent(request.getLogoBase64())
-                                                .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl()),
-                                        imageService.uploadBase64IfPresent(request.getQrImageBase64())
-                                                .defaultIfEmpty(request.getQrImageUrl() == null ? "" : request.getQrImageUrl())
-                                ).flatMap(urls -> {
-                                    String logoUrl = urls.getT1();
-                                    String qrUrl = urls.getT2();
-                                    Funds fund = Funds.builder()
-                                            .organizationId(organizationId)
-                                            .fundReceivingInfoId(fundReceivingInfoId)
-                                            .name(request.getName())
-                                            .logoUrl(logoUrl.isEmpty() ? null : logoUrl)
-                                            .descriptionShort(request.getDescriptionShort())
-                                            .descriptionFull(request.getDescriptionFull())
-                                            .managerName(request.getManagerName())
-                                            .targetAmount(request.getTargetAmount())
-                                            .currentAmount(java.math.BigDecimal.ZERO)
-                                            .timeStarted(request.getTimeStarted())
-                                            .statusId(statusId)
-                                            .timeEnded(request.getTimeEnded())
-                                            .qrImageUrl(qrUrl.isEmpty() ? null : qrUrl)
-                                            .build();
+                                .flatMap(existingStatus -> imageService.uploadBase64IfPresent(request.getLogoBase64())
+                                        .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
+                                        .flatMap(logoUrl -> {
+                                            Funds fund = Funds.builder()
+                                                    .organizationId(organizationId)
+                                                    .fundReceivingInfoId(fundReceivingInfoId)
+                                                    .name(request.getName())
+                                                    .logoUrl(logoUrl.isEmpty() ? null : logoUrl)
+                                                    .descriptionShort(request.getDescriptionShort())
+                                                    .descriptionFull(request.getDescriptionFull())
+                                                    .managerName(request.getManagerName())
+                                                    .targetAmount(request.getTargetAmount())
+                                                    .currentAmount(java.math.BigDecimal.ZERO)
+                                                    .timeStarted(request.getTimeStarted())
+                                                    .statusId(statusId)
+                                                    .timeEnded(request.getTimeEnded())
+                                                    .build();
 
-                                    return fundR2dbcRepository.save(fund);
-                                }))));
+                                            return fundR2dbcRepository.save(fund);
+                                        }))));
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
