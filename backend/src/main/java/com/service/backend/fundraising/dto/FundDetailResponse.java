@@ -33,8 +33,6 @@ public class FundDetailResponse {
     private LocalDateTime timeStarted;
     private LocalDateTime timeEnded;
 
-    private String qrImageUrl;
-
     private FundReceivingInfos fundReceivingInfo;
 
     public static FundDetailResponse from(
@@ -61,7 +59,6 @@ public class FundDetailResponse {
                 .currentAmount(fund.getCurrentAmount())
                 .timeStarted(fund.getTimeStarted())
                 .timeEnded(fund.getTimeEnded())
-                .qrImageUrl(fund.getQrImageUrl())
                 .fundReceivingInfo(fundReceivingInfo)
                 .build();
     }
