@@ -36,7 +36,7 @@ import {
   ADMIN_STATUS_CHIP_SX,
   formatStatusLabel,
 } from '../../constants/adminUiShared';
-import useAdminEventsLocal from '../../hooks/admin/useAdminEventsLocal';
+import useAdminEventsData from '../../hooks/admin/useAdminEventsData';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const statusColorMap = {
@@ -65,7 +65,7 @@ const AdminEventsPage = () => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
-  } = useAdminEventsLocal();
+  } = useAdminEventsData();
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -74,10 +74,10 @@ const AdminEventsPage = () => {
     <>
       <AdminSectionPanel
         title="Event management"
-        subtitle="Mock UI for reviewing event records, status moderation, and deletion flow."
+        subtitle="Review event records, moderate status, and remove events via API."
         action={
           <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX}>
-            Create event (mock)
+            Create event
           </Button>
         }
       >
@@ -270,12 +270,12 @@ const AdminEventsPage = () => {
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
         title="Delete event"
-        description={deleteTarget ? `Delete "${deleteTarget.title}" (mock action)?` : ''}
+        description={deleteTarget ? `Delete "${deleteTarget.title}"?` : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
             deleteItem(deleteTarget.id);
-            enqueueSnackbar('Event deleted from mock list.', { variant: 'success' });
+            enqueueSnackbar('Event deleted.', { variant: 'success' });
           }
           setDeleteTarget(null);
         }}

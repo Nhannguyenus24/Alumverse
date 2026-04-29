@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useMatch, useNavigate, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -35,7 +35,6 @@ import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { getLoginHistoryByUser } from '../../api/adminAuditApi';
 import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
@@ -76,7 +75,9 @@ const demoActivity = () => ({
 
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
-  const navigate = useOrgNavigate();
+  const navigate = useNavigate();
+  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { enqueueSnackbar } = useSnackbar();
   const { user: currentUser } = useAuth();
   const { auditLogs } = useAdminSystemContext();
@@ -162,7 +163,7 @@ const AdminUserDetailPage = () => {
   if (!user) {
     return (
       <AdminSectionPanel title="User not found" subtitle="This id is not in the current list (demo data).">
-        <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate('/admin/users')} sx={{ textTransform: 'none' }}>
+        <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
           Back to users
         </Button>
       </AdminSectionPanel>
@@ -174,7 +175,7 @@ const AdminUserDetailPage = () => {
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Tooltip title="Back">
-            <IconButton onClick={() => navigate('/admin/users')} color="primary">
+            <IconButton onClick={() => navigate(`${adminBase}/users`)} color="primary">
               <ArrowBackOutlinedIcon />
             </IconButton>
           </Tooltip>
@@ -420,7 +421,7 @@ const AdminUserDetailPage = () => {
                 )}
                 <Button
                   variant="text"
-                  onClick={() => navigate('/admin/audit-logs')}
+                  onClick={() => navigate(`${adminBase}/audit-logs`)}
                   sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
                 >
                   Open full audit log page
@@ -509,7 +510,7 @@ const AdminUserDetailPage = () => {
           deleteUser(user.id);
           enqueueSnackbar('User deleted.', { variant: 'success' });
           setDeleteOpen(false);
-          navigate('/admin/users');
+          navigate(`${adminBase}/users`);
         }}
       />
     </>
