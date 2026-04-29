@@ -213,4 +213,20 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Modifying
     @Query("UPDATE users SET password_hash = :passwordHash, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> resetPasswordByAdmin(@Param("userId") Integer userId, @Param("passwordHash") String passwordHash);
+
+    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email OR user_name = :userName)")
+    Mono<Boolean> existsByEmailOrUserName(@Param("email") String email, @Param("userName") String userName);
+
+    @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
+           "VALUES (:email, :userName, :passwordHash, 'ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "RETURNING id")
+    Mono<Integer> createAdminUser(
+            @Param("email") String email,
+            @Param("userName") String userName,
+            @Param("passwordHash") String passwordHash);
+
+    @Modifying
+    @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
+           "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
+    Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
 }
