@@ -23,6 +23,7 @@ import com.service.backend.forum.entity.ForumCategory;
 import com.service.backend.forum.entity.ForumPost;
 import com.service.backend.forum.entity.ForumPostReport;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -91,15 +92,17 @@ public class AdminForumService {
      */
     public Mono<ForumPostDTO> banForumPost(Integer postId) {
         log.info("Banning forum post ID: {}", postId);
-        return forumPostRepository.findById(postId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
-                .flatMap(post -> {
-                    post.setIsBanned(true);
-                    post.setUpdatedAt(LocalDateTime.now());
-                    return forumPostRepository.save(post)
-                            .flatMap(saved -> createAuditLog(null, post.getAuthorMemberId(), "BAN_POST",
-                                    "FORUM_POST", String.valueOf(postId), null, null).thenReturn(saved));
-                })
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> forumPostRepository.findById(postId)
+                        .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
+                        .flatMap(post -> {
+                            post.setIsBanned(true);
+                            post.setUpdatedAt(LocalDateTime.now());
+                            return forumPostRepository.save(post)
+                                    .flatMap(saved -> createAuditLog(adminId.intValue(), post.getAuthorMemberId(),
+                                            "BAN_POST", "FORUM_POST", String.valueOf(postId), null, null)
+                                            .thenReturn(saved));
+                        }))
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("Successfully banned forum post ID: {}", postId))
                 .doOnError(error -> log.error("Error banning forum post ID: {}", postId, error));
@@ -110,15 +113,17 @@ public class AdminForumService {
      */
     public Mono<ForumPostDTO> unbanForumPost(Integer postId) {
         log.info("Unbanning forum post ID: {}", postId);
-        return forumPostRepository.findById(postId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
-                .flatMap(post -> {
-                    post.setIsBanned(false);
-                    post.setUpdatedAt(LocalDateTime.now());
-                    return forumPostRepository.save(post)
-                            .flatMap(saved -> createAuditLog(null, post.getAuthorMemberId(), "UNBAN_POST",
-                                    "FORUM_POST", String.valueOf(postId), null, null).thenReturn(saved));
-                })
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> forumPostRepository.findById(postId)
+                        .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
+                        .flatMap(post -> {
+                            post.setIsBanned(false);
+                            post.setUpdatedAt(LocalDateTime.now());
+                            return forumPostRepository.save(post)
+                                    .flatMap(saved -> createAuditLog(adminId.intValue(), post.getAuthorMemberId(),
+                                            "UNBAN_POST", "FORUM_POST", String.valueOf(postId), null, null)
+                                            .thenReturn(saved));
+                        }))
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("Successfully unbanned forum post ID: {}", postId))
                 .doOnError(error -> log.error("Error unbanning forum post ID: {}", postId, error));
@@ -160,13 +165,13 @@ public class AdminForumService {
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
     }
 
-    public Mono<ForumPostReportDTO> reviewReport(Long reportId, ReviewForumReportRequest request) {
+    public Mono<ForumPostReportDTO> reviewReport(Long reportId, ReviewForumReportRequest request, Integer adminUserId) {
         return forumPostReportRepository.findById(reportId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Report not found with ID: " + reportId)))
-                .flatMap(report -> applyModerationAction(report, request)
+                .flatMap(report -> applyModerationAction(report, request, adminUserId)
                         .then(Mono.defer(() -> {
                             report.setStatus(request.getDecision().toUpperCase());
-                            report.setReviewedByUserId(request.getAdminUserId());
+                            report.setReviewedByUserId(adminUserId);
                             report.setReviewNote(request.getReviewNote());
                             report.setUpdatedAt(LocalDateTime.now());
                             return forumPostReportRepository.save(report);
@@ -608,10 +613,10 @@ public class AdminForumService {
                 .build();
     }
 
-    private Mono<Void> applyModerationAction(ForumPostReport report, ReviewForumReportRequest request) {
+    private Mono<Void> applyModerationAction(ForumPostReport report, ReviewForumReportRequest request, Integer adminUserId) {
         String action = request.getAction().toUpperCase();
         if ("WARN".equals(action)) {
-            return createAuditLog(request.getAdminUserId(), null, "WARN_USER", "FORUM_REPORT",
+            return createAuditLog(adminUserId, null, "WARN_USER", "FORUM_REPORT",
                     String.valueOf(report.getId()), null, null);
         }
         return forumPostRepository.findById(report.getPostId())
@@ -624,7 +629,7 @@ public class AdminForumService {
                     }
                     post.setUpdatedAt(LocalDateTime.now());
                     return forumPostRepository.save(post)
-                            .flatMap(saved -> createAuditLog(request.getAdminUserId(), post.getAuthorMemberId(),
+                            .flatMap(saved -> createAuditLog(adminUserId, post.getAuthorMemberId(),
                                     action, "FORUM_POST", String.valueOf(saved.getId()), null, null));
                 });
     }

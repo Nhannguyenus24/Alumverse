@@ -29,6 +29,7 @@ import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -120,7 +121,8 @@ public class AdminForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reviewReport(
             @PathVariable Long reportId,
             @Valid @RequestBody ReviewForumReportRequest request) {
-        return adminForumService.reviewReport(reportId, request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.reviewReport(reportId, request, adminId.intValue()))
                 .map(data -> ResponseEntity.ok(new ApiResponse<>("Reviewed report successfully", data)))
                 .onErrorResume(this::handleError);
     }
@@ -129,7 +131,8 @@ public class AdminForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> updatePostVisibility(
             @PathVariable Integer postId,
             @Valid @RequestBody UpdatePostVisibilityRequest request) {
-        return adminForumService.updatePostVisibility(postId, request.getHidden(), request.getAdminUserId())
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.updatePostVisibility(postId, request.getHidden(), adminId.intValue()))
                 .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated post visibility successfully", data)))
                 .onErrorResume(this::handleError);
     }
@@ -138,7 +141,8 @@ public class AdminForumController {
     public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopicLock(
             @PathVariable Integer topicId,
             @Valid @RequestBody UpdateTopicLockRequest request) {
-        return adminForumService.updateTopicLock(topicId, request.getLocked(), request.getAdminUserId())
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.updateTopicLock(topicId, request.getLocked(), adminId.intValue()))
                 .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic lock status successfully", data)))
                 .onErrorResume(this::handleError);
     }

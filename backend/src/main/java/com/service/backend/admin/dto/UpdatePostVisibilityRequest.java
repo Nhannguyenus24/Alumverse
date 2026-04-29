@@ -13,7 +13,4 @@ import lombok.NoArgsConstructor;
 public class UpdatePostVisibilityRequest {
     @NotNull(message = "Hidden status is required")
     private Boolean hidden;
-
-    @NotNull(message = "Admin user ID is required")
-    private Integer adminUserId;
 }

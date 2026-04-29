@@ -13,7 +13,4 @@ import lombok.NoArgsConstructor;
 public class UpdateTopicLockRequest {
     @NotNull(message = "Locked status is required")
     private Boolean locked;
-
-    @NotNull(message = "Admin user ID is required")
-    private Integer adminUserId;
 }

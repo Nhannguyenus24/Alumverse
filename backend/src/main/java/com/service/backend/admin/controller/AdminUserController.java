@@ -27,6 +27,7 @@ import com.service.backend.admin.entity.AdminAuditLog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -289,7 +290,8 @@ public class AdminUserController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> resetPasswordByAdmin(
             @PathVariable Integer userId,
             @Valid @RequestBody AdminResetPasswordRequest request) {
-        return adminUserService.resetPasswordByAdmin(userId, request)
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminUserService.resetPasswordByAdmin(userId, request, adminId.intValue()))
                 .map(success -> {
                     if (success) {
                         return ResponseEntity.ok(

@@ -287,7 +287,7 @@ public class AdminUserService {
                 .doOnError(e -> logger.error("Error fetching admin action logs", e));
     }
 
-    public Mono<Boolean> resetPasswordByAdmin(Integer userId, AdminResetPasswordRequest request) {
+    public Mono<Boolean> resetPasswordByAdmin(Integer userId, AdminResetPasswordRequest request, Integer adminUserId) {
         String encodedPassword = passwordEncoder.encode(request.getNewPassword());
         return adminUserRepository.resetPasswordByAdmin(userId, encodedPassword)
                 .flatMap(count -> {
@@ -295,7 +295,7 @@ public class AdminUserService {
                         return Mono.just(false);
                     }
                     return adminAuditLogRepository.save(com.service.backend.admin.entity.AdminAuditLog.builder()
-                                    .adminUserId(request.getAdminUserId())
+                                    .adminUserId(adminUserId)
                                     .targetUserId(userId)
                                     .action("RESET_PASSWORD")
                                     .resourceType("USER")
