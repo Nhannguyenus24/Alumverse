@@ -357,6 +357,7 @@ CREATE TABLE "forum_topics" (
   "created_by_member_id" integer,
   "category_id" integer, 
   "view_count" integer DEFAULT 0,
+  "is_locked" boolean DEFAULT false,
   "created_at" timestamp,
   "updated_at" timestamp
 );
@@ -368,8 +369,22 @@ CREATE TABLE "forum_posts" (
   "content" text,
   "answer_to_post_id" integer,
   "is_banned" boolean DEFAULT false,
+  "is_hidden" boolean DEFAULT false,
   "created_at" timestamp,
   "updated_at" timestamp
+);
+
+CREATE TABLE "forum_post_reports" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "post_id" integer NOT NULL,
+  "reporter_member_id" integer NOT NULL,
+  "reason" varchar,
+  "description" text,
+  "status" varchar DEFAULT 'PENDING',
+  "reviewed_by_user_id" integer,
+  "review_note" text,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "forum_post_reactions" (
@@ -390,6 +405,19 @@ CREATE TABLE "forum_polls" (
   "is_active" boolean DEFAULT true,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "admin_audit_logs" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "admin_user_id" integer NOT NULL,
+  "target_user_id" integer,
+  "action" varchar NOT NULL,
+  "resource_type" varchar NOT NULL,
+  "resource_id" varchar,
+  "before_data" jsonb,
+  "after_data" jsonb,
+  "metadata" jsonb,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "forum_poll_options" (
@@ -531,6 +559,12 @@ ALTER TABLE "forum_posts" ADD FOREIGN KEY ("author_member_id") REFERENCES "organ
 
 ALTER TABLE "forum_posts" ADD FOREIGN KEY ("answer_to_post_id") REFERENCES "forum_posts" ("id");
 
+ALTER TABLE "forum_post_reports" ADD FOREIGN KEY ("post_id") REFERENCES "forum_posts" ("id");
+
+ALTER TABLE "forum_post_reports" ADD FOREIGN KEY ("reporter_member_id") REFERENCES "organization_members" ("user_id");
+
+ALTER TABLE "forum_post_reports" ADD FOREIGN KEY ("reviewed_by_user_id") REFERENCES "users" ("id");
+
 ALTER TABLE "forum_post_reactions" ADD FOREIGN KEY ("post_id") REFERENCES "forum_posts" ("id");
 
 ALTER TABLE "forum_post_reactions" ADD FOREIGN KEY ("member_id") REFERENCES "organization_members" ("user_id");
@@ -549,9 +583,17 @@ ALTER TABLE "forum_poll_votes" ADD FOREIGN KEY ("poll_option_id") REFERENCES "fo
 
 ALTER TABLE "forum_poll_votes" ADD FOREIGN KEY ("member_id") REFERENCES "organization_members" ("user_id");
 
+ALTER TABLE "admin_audit_logs" ADD FOREIGN KEY ("admin_user_id") REFERENCES "users" ("id");
+
+ALTER TABLE "admin_audit_logs" ADD FOREIGN KEY ("target_user_id") REFERENCES "users" ("id");
+
 ALTER TABLE "forum_categories" ADD FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id");
 
 ALTER TABLE "forum_topics" ADD FOREIGN KEY ("category_id") REFERENCES "forum_categories" ("id");
 
 CREATE INDEX ON "user_login_histories" ("user_id", "login_at" DESC);
+
+CREATE INDEX ON "forum_post_reports" ("status", "created_at" DESC);
+
+CREATE INDEX ON "admin_audit_logs" ("target_user_id", "created_at" DESC);
 

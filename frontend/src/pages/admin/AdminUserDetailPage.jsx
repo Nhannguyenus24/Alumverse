@@ -36,7 +36,9 @@ import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import { getLoginHistoryByUser } from '../../api/adminAuditApi';
+import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const demoProfile = (user) => ({
@@ -76,6 +78,7 @@ const AdminUserDetailPage = () => {
   const { userId } = useParams();
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
   const { auditLogs } = useAdminSystemContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
 
@@ -98,16 +101,22 @@ const AdminUserDetailPage = () => {
 
   // Per-user login history fetched lazily when tab 5 is opened
   const [userLoginHistory, setUserLoginHistory] = useState(null);
+  const [userAdminActions, setUserAdminActions] = useState([]);
+  const [userVerificationLogs, setUserVerificationLogs] = useState([]);
   const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchUserLoginHistory = useCallback(() => {
     if (userLoginHistory !== null || !userId) return;
     setAuditLoading(true);
-    getLoginHistoryByUser(userId, 0, 50)
+    getUserActivity(userId)
       .then((res) => {
-        const items = res?.data?.data?.items ?? [];
+        const data = res?.data?.data || {};
+        const logins = Array.isArray(data.loginHistories) ? data.loginHistories : [];
+        const verifications = Array.isArray(data.verificationRequests) ? data.verificationRequests : [];
+        const actions = Array.isArray(data.adminActions) ? data.adminActions : [];
+
         setUserLoginHistory(
-          items.map((entry) => ({
+          logins.map((entry) => ({
             id: entry.id,
             timestamp: entry.loginAt,
             action: entry.loginMethod ?? 'LOGIN',
@@ -117,8 +126,27 @@ const AdminUserDetailPage = () => {
             userAgent: entry.userAgent,
           })),
         );
+        setUserVerificationLogs(verifications);
+        setUserAdminActions(actions);
       })
-      .catch(() => setUserLoginHistory(auditTrail))
+      .catch(() => {
+        getLoginHistoryByUser(userId, 0, 50)
+          .then((res) => {
+            const items = res?.data?.data?.items ?? [];
+            setUserLoginHistory(
+              items.map((entry) => ({
+                id: entry.id,
+                timestamp: entry.loginAt,
+                action: entry.loginMethod ?? 'LOGIN',
+                status: 'SUCCESS',
+                description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown'}`,
+                ipAddress: entry.loginIp,
+                userAgent: entry.userAgent,
+              })),
+            );
+          })
+          .catch(() => setUserLoginHistory(auditTrail));
+      })
       .finally(() => setAuditLoading(false));
   }, [userId, userLoginHistory, auditTrail]);
 
@@ -205,7 +233,31 @@ const AdminUserDetailPage = () => {
                   Ban
                 </Button>
               )}
-              <Button variant="outlined" size="small" disabled sx={{ textTransform: 'none' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: 'none' }}
+                onClick={async () => {
+                  const nextPassword = window.prompt('Enter a new temporary password (min 8 chars):', '');
+                  if (!nextPassword) return;
+                  if (nextPassword.length < 8) {
+                    enqueueSnackbar('Password must be at least 8 characters.', { variant: 'warning' });
+                    return;
+                  }
+                  try {
+                    await resetPasswordByAdmin(user.id, {
+                      newPassword: nextPassword,
+                      adminUserId: Number(currentUser?.id),
+                      reason: 'Support reset from admin detail page',
+                    });
+                    enqueueSnackbar('Password reset successfully.', { variant: 'success' });
+                  } catch (error) {
+                    enqueueSnackbar(error?.response?.data?.message || 'Failed to reset password.', {
+                      variant: 'error',
+                    });
+                  }
+                }}
+              >
                 Reset password
               </Button>
               <Button variant="outlined" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
@@ -373,6 +425,52 @@ const AdminUserDetailPage = () => {
                 >
                   Open full audit log page
                 </Button>
+                {userVerificationLogs.length > 0 ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Verification requests
+                    </Typography>
+                    <List dense>
+                      {userVerificationLogs.map((item, idx) => (
+                        <ListItem key={`${item.id || idx}`} disablePadding sx={{ py: 0.5 }}>
+                          <ListItemText
+                            primary={`#${item.id || '-'} · ${item.status || 'unknown'}`}
+                            secondary={`Type: ${item.documentType || '-'} · Created: ${formatDateTime(item.createdAt)}`}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                ) : null}
+                {userAdminActions.length > 0 ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Admin actions
+                    </Typography>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Time</TableCell>
+                          <TableCell>Action</TableCell>
+                          <TableCell>Resource</TableCell>
+                          <TableCell>Before</TableCell>
+                          <TableCell>After</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {userAdminActions.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{formatDateTime(item.createdAt)}</TableCell>
+                            <TableCell>{item.action || '-'}</TableCell>
+                            <TableCell>{`${item.resourceType || '-'} #${item.resourceId || '-'}`}</TableCell>
+                            <TableCell>{item.beforeData || '-'}</TableCell>
+                            <TableCell>{item.afterData || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : null}
               </Stack>
             ) : null}
           </Box>

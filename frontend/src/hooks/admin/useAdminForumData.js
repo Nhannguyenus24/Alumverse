@@ -17,6 +17,29 @@ const fallbackStatistics = {
 
 const fallbackPaginated = { content: [], totalElements: 0, totalPages: 0, number: 0, size: 10 };
 
+const normalizePaginated = (payload, fallbackSize = 10) => {
+  if (!payload || typeof payload !== 'object') return fallbackPaginated;
+  if (Array.isArray(payload.content)) {
+    return {
+      content: payload.content,
+      totalElements: payload.totalElements ?? payload.totalItem ?? payload.content.length,
+      totalPages: payload.totalPages ?? payload.totalPage ?? 0,
+      number: payload.number ?? payload.currentPage ?? 0,
+      size: payload.size ?? payload.pageSize ?? fallbackSize,
+    };
+  }
+  if (Array.isArray(payload.items)) {
+    return {
+      content: payload.items,
+      totalElements: payload.totalItem ?? payload.totalElements ?? payload.items.length,
+      totalPages: payload.totalPage ?? payload.totalPages ?? 0,
+      number: payload.currentPage ?? payload.number ?? 0,
+      size: payload.pageSize ?? payload.size ?? fallbackSize,
+    };
+  }
+  return fallbackPaginated;
+};
+
 /* ─── Helpers ─── */
 
 const extractData = (response) => response?.data?.data ?? response?.data ?? null;
@@ -52,6 +75,8 @@ const useAdminForumData = (activeOrgId) => {
   const [bannedPage, setBannedPage] = useState(0);
   const [yesterdayPosts, setYesterdayPosts] = useState(fallbackPaginated);
   const [yesterdayPage, setYesterdayPage] = useState(0);
+  const [reports, setReports] = useState(fallbackPaginated);
+  const [reportsPage, setReportsPage] = useState(0);
 
   // Categories (real API)
   const [categories, setCategories] = useState([]);
@@ -109,7 +134,7 @@ const useAdminForumData = (activeOrgId) => {
 
   const loadBannedPosts = useCallback(async () => {
     const data = await safeFetch(() => api.getBannedPosts(bannedPage, 10), fallbackPaginated);
-    setBannedPosts(data);
+    setBannedPosts(normalizePaginated(data, 10));
   }, [bannedPage]);
 
   useEffect(() => {
@@ -123,12 +148,21 @@ const useAdminForumData = (activeOrgId) => {
       () => api.getNewPostsYesterdayPaginated(yesterdayPage, 10),
       fallbackPaginated,
     );
-    setYesterdayPosts(data);
+    setYesterdayPosts(normalizePaginated(data, 10));
   }, [yesterdayPage]);
 
   useEffect(() => {
     loadYesterdayPosts();
   }, [loadYesterdayPosts]);
+
+  const loadReports = useCallback(async () => {
+    const data = await safeFetch(() => api.getPendingReports(reportsPage, 10), fallbackPaginated);
+    setReports(normalizePaginated(data, 10));
+  }, [reportsPage]);
+
+  useEffect(() => {
+    loadReports();
+  }, [loadReports]);
 
   /* ─── Load categories ─── */
 
@@ -152,7 +186,7 @@ const useAdminForumData = (activeOrgId) => {
     if (!orgId) return;
     setTopicsLoading(true);
     const data = await safeFetch(() => api.getAllTopics(orgId, topicsPage, topicsSize), fallbackPaginated);
-    setTopics(data);
+    setTopics(normalizePaginated(data, topicsSize));
     setTopicsLoading(false);
   }, [topicsPage, topicsSize]);
 
@@ -189,12 +223,12 @@ const useAdminForumData = (activeOrgId) => {
   const handleDeletePost = useCallback(async (postId) => {
     try {
       await api.deletePost(postId);
-      await loadStatistics();
+      await Promise.all([loadStatistics(), loadBannedPosts(), loadYesterdayPosts(), loadReports()]);
       return true;
     } catch {
       return false;
     }
-  }, [loadStatistics]);
+  }, [loadStatistics, loadBannedPosts, loadYesterdayPosts, loadReports]);
 
   const handleCreateCategory = useCallback(async (orgId, name, description) => {
     try {
@@ -256,6 +290,38 @@ const useAdminForumData = (activeOrgId) => {
     }
   }, [activeOrgId, loadTopics]);
 
+  const handleReviewReport = useCallback(async (reportId, payload) => {
+    try {
+      await api.reviewReport(reportId, payload);
+      await Promise.all([loadReports(), loadBannedPosts(), loadYesterdayPosts(), loadStatistics()]);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [loadReports, loadBannedPosts, loadYesterdayPosts, loadStatistics]);
+
+  const handleUpdatePostVisibility = useCallback(async (postId, hidden, adminUserId) => {
+    try {
+      await api.updatePostVisibility(postId, { hidden, adminUserId });
+      await Promise.all([loadBannedPosts(), loadYesterdayPosts(), loadReports()]);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [loadBannedPosts, loadYesterdayPosts, loadReports]);
+
+  const handleUpdateTopicLock = useCallback(async (topicId, locked, adminUserId) => {
+    try {
+      await api.updateTopicLock(topicId, { locked, adminUserId });
+      if (activeOrgId) {
+        await loadTopics(activeOrgId);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, [activeOrgId, loadTopics]);
+
   return {
     loading,
 
@@ -282,6 +348,9 @@ const useAdminForumData = (activeOrgId) => {
     yesterdayPosts,
     yesterdayPage,
     setYesterdayPage,
+    reports,
+    reportsPage,
+    setReportsPage,
 
     // Categories
     categories,
@@ -307,6 +376,9 @@ const useAdminForumData = (activeOrgId) => {
     createTopic: handleCreateTopic,
     updateTopic: handleUpdateTopic,
     deleteTopic: handleDeleteTopic,
+    reviewReport: handleReviewReport,
+    updatePostVisibility: handleUpdatePostVisibility,
+    updateTopicLock: handleUpdateTopicLock,
 
     // Reload
     reloadStatistics: loadStatistics,

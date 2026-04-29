@@ -14,16 +14,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.BanUserRequest;
+import com.service.backend.admin.dto.AdminResetPasswordRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
 import com.service.backend.admin.dto.ReviewVerificationRequest;
 import com.service.backend.admin.dto.UnbanUserRequest;
 import com.service.backend.admin.dto.UpdateUserRequest;
 import com.service.backend.admin.dto.UserResponse;
+import com.service.backend.admin.dto.UserActivityResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
+import com.service.backend.admin.entity.AdminAuditLog;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -269,5 +273,71 @@ public class AdminUserController {
                 .onErrorResume(error -> Mono.just(
                         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    @GetMapping("/{userId}/activity")
+    public Mono<ResponseEntity<ApiResponse<UserActivityResponse>>> getUserActivity(
+            @PathVariable Integer userId) {
+        return adminUserService.getUserActivity(userId)
+                .map(activity -> ResponseEntity.ok(
+                        new ApiResponse<>("User activity fetched successfully", activity)))
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), null))));
+    }
+
+    @PostMapping("/{userId}/reset-password")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> resetPasswordByAdmin(
+            @PathVariable Integer userId,
+            @Valid @RequestBody AdminResetPasswordRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminUserService.resetPasswordByAdmin(userId, request, adminId.intValue()))
+                .map(success -> {
+                    if (success) {
+                        return ResponseEntity.ok(
+                                new ApiResponse<>("Password reset successfully", true));
+                    }
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ApiResponse<>("User not found", false));
+                })
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    /**
+     * Get admin action logs with optional filters
+     */
+    @GetMapping("/admin-actions")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminAuditLog>>>> getAdminActionLogs(
+            @RequestParam(required = false) Integer adminUserId,
+            @RequestParam(required = false) Integer targetUserId,
+            @RequestParam(required = false) String action,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+        return adminUserService.getAdminActionLogs(adminUserId, targetUserId, action, page, size)
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Admin action logs fetched successfully", data)))
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), null))));
+    }
+
+    /**
+     * Get action logs performed by a specific admin
+     */
+    @GetMapping("/{adminUserId}/admin-actions")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminAuditLog>>>> getAdminActionLogsByAdmin(
+            @PathVariable Integer adminUserId,
+            @RequestParam(required = false) Integer targetUserId,
+            @RequestParam(required = false) String action,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+        return adminUserService.getAdminActionLogs(adminUserId, targetUserId, action, page, size)
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Admin action logs fetched successfully", data)))
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                .body(new ApiResponse<>(error.getMessage(), null))));
     }
 }
