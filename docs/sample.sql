@@ -309,34 +309,47 @@ INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "descrip
 (NULL, 4, 'Engineering Projects', 'Share and discuss engineering projects', NOW() - INTERVAL '340 days', NOW());
 
 -- ============= FORUM TOPICS DATA =============
-INSERT INTO "forum_topics" ("organization_id", "title", "created_by_member_id", "category_id", "view_count", "created_at", "updated_at") VALUES
-(1, 'Welcome to CS Alumni Network', 2, 1, 156, NOW() - INTERVAL '355 days', NOW() - INTERVAL '10 days'),
-(1, 'React Hooks vs Class Components - Best Practices', 4, 2, 89, NOW() - INTERVAL '45 days', NOW() - INTERVAL '5 days'),
-(1, 'Job Search Strategy for New Graduates', 6, 3, 234, NOW() - INTERVAL '30 days', NOW() - INTERVAL '2 days'),
-(1, 'Database Optimization Techniques', 6, 2, 156, NOW() - INTERVAL '25 days', NOW() - INTERVAL '8 days'),
-(2, 'Getting Started with Node.js', 5, 5, 78, NOW() - INTERVAL '20 days', NOW() - INTERVAL '3 days'),
-(2, 'From Startup to IPO - My Journey', 3, 6, 412, NOW() - INTERVAL '15 days', NOW() - INTERVAL '1 day'),
-(2, 'Microservices Architecture Discussion', 8, 5, 145, NOW() - INTERVAL '12 days', NOW() - INTERVAL '4 days'),
-(3, 'Leadership Lessons from Successful Entrepreneurs', 7, 7, 93, NOW() - INTERVAL '10 days', NOW() - INTERVAL '6 days'),
-(4, 'Sustainable Engineering for the Future', 6, 8, 67, NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days');
+INSERT INTO "forum_topics" ("organization_id", "title", "created_by_member_id", "category_id", "view_count", "is_locked", "created_at", "updated_at") VALUES
+(1, 'Welcome to CS Alumni Network', 2, 1, 156, false, NOW() - INTERVAL '355 days', NOW() - INTERVAL '10 days'),
+(1, 'React Hooks vs Class Components - Best Practices', 4, 2, 89, false, NOW() - INTERVAL '45 days', NOW() - INTERVAL '5 days'),
+(1, 'Job Search Strategy for New Graduates', 6, 3, 234, false, NOW() - INTERVAL '30 days', NOW() - INTERVAL '2 days'),
+(1, 'Database Optimization Techniques', 6, 2, 156, true, NOW() - INTERVAL '25 days', NOW() - INTERVAL '8 days'),
+(2, 'Getting Started with Node.js', 5, 5, 78, false, NOW() - INTERVAL '20 days', NOW() - INTERVAL '3 days'),
+(2, 'From Startup to IPO - My Journey', 3, 6, 412, false, NOW() - INTERVAL '15 days', NOW() - INTERVAL '1 day'),
+(2, 'Microservices Architecture Discussion', 8, 5, 145, false, NOW() - INTERVAL '12 days', NOW() - INTERVAL '4 days'),
+(3, 'Leadership Lessons from Successful Entrepreneurs', 7, 7, 93, false, NOW() - INTERVAL '10 days', NOW() - INTERVAL '6 days'),
+(4, 'Sustainable Engineering for the Future', 6, 8, 67, false, NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days');
 
 -- ============= FORUM POSTS DATA =============
-INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to_post_id", "created_at", "updated_at") VALUES
-(1, 2, 'Hi everyone! Excited to be part of this community. I graduated in 2023 and am now working at Tech Solutions Inc. Looking forward to mentoring newcomers!', NULL, NOW() - INTERVAL '355 days', NOW() - INTERVAL '355 days'),
-(1, 6, 'Welcome John! Great to have experienced alumni like you in the community. Hope to collaborate on mentorship initiatives.', 1, NOW() - INTERVAL '354 days', NOW() - INTERVAL '354 days'),
-(2, 4, 'What are your thoughts on React Hooks? I find them more intuitive than class components for state management.', NULL, NOW() - INTERVAL '44 days', NOW() - INTERVAL '44 days'),
-(2, 6, 'Great question! I prefer hooks too. They make code more reusable and easier to test. Here are some best practices...', 3, NOW() - INTERVAL '43 days', NOW() - INTERVAL '43 days'),
-(3, 6, 'The key to successful job search is networking. Connect with alumni, attend events, and prepare well for interviews.', NULL, NOW() - INTERVAL '29 days', NOW() - INTERVAL '29 days'),
-(3, 9, 'This is very helpful! I just started my search. Thanks for the tips!', 5, NOW() - INTERVAL '27 days', NOW() - INTERVAL '27 days'),
-(4, 6, 'Database indexing is crucial. Always analyze your query plans before and after optimization.', NULL, NOW() - INTERVAL '24 days', NOW() - INTERVAL '24 days'),
-(4, 2, 'Totally agree. Also consider table partitioning for very large datasets.', 7, NOW() - INTERVAL '23 days', NOW() - INTERVAL '23 days'),
-(5, 5, 'Node.js is perfect for I/O-intensive applications. The async/await pattern makes it so much cleaner than callbacks.', NULL, NOW() - INTERVAL '19 days', NOW() - INTERVAL '19 days'),
-(5, 9, 'I am new to Node.js. Any recommended projects for beginners to start with?', 9, NOW() - INTERVAL '18 days', NOW() - INTERVAL '18 days'),
-(6, 3, 'It was an incredible journey! Started with passion, raised funding, built great team, and now ready for the next chapter.', NULL, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days'),
-(6, 8, 'Inspiring story, Jane! What was your biggest challenge during the startup phase?', 11, NOW() - INTERVAL '13 days', NOW() - INTERVAL '13 days'),
-(6, 3, 'Great question! The biggest challenge was finding product-market fit and managing burn rate during early days.', 12, NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days'),
-(7, 8, 'Microservices bring agility but also complexity. Event-driven architecture helps manage inter-service communication.', NULL, NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days'),
-(8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
+INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to_post_id", "is_hidden", "created_at", "updated_at") VALUES
+(1, 2, 'Hi everyone! Excited to be part of this community. I graduated in 2023 and am now working at Tech Solutions Inc. Looking forward to mentoring newcomers!', NULL, false, NOW() - INTERVAL '355 days', NOW() - INTERVAL '355 days'),
+(1, 6, 'Welcome John! Great to have experienced alumni like you in the community. Hope to collaborate on mentorship initiatives.', 1, false, NOW() - INTERVAL '354 days', NOW() - INTERVAL '354 days'),
+(2, 4, 'What are your thoughts on React Hooks? I find them more intuitive than class components for state management.', NULL, false, NOW() - INTERVAL '44 days', NOW() - INTERVAL '44 days'),
+(2, 6, 'Great question! I prefer hooks too. They make code more reusable and easier to test. Here are some best practices...', 3, false, NOW() - INTERVAL '43 days', NOW() - INTERVAL '43 days'),
+(3, 6, 'The key to successful job search is networking. Connect with alumni, attend events, and prepare well for interviews.', NULL, false, NOW() - INTERVAL '29 days', NOW() - INTERVAL '29 days'),
+(3, 9, 'This is very helpful! I just started my search. Thanks for the tips!', 5, false, NOW() - INTERVAL '27 days', NOW() - INTERVAL '27 days'),
+(4, 6, 'Database indexing is crucial. Always analyze your query plans before and after optimization.', NULL, false, NOW() - INTERVAL '24 days', NOW() - INTERVAL '24 days'),
+(4, 2, 'Totally agree. Also consider table partitioning for very large datasets.', 7, true, NOW() - INTERVAL '23 days', NOW() - INTERVAL '23 days'),
+(5, 5, 'Node.js is perfect for I/O-intensive applications. The async/await pattern makes it so much cleaner than callbacks.', NULL, false, NOW() - INTERVAL '19 days', NOW() - INTERVAL '19 days'),
+(5, 9, 'I am new to Node.js. Any recommended projects for beginners to start with?', 9, false, NOW() - INTERVAL '18 days', NOW() - INTERVAL '18 days'),
+(6, 3, 'It was an incredible journey! Started with passion, raised funding, built great team, and now ready for the next chapter.', NULL, false, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days'),
+(6, 8, 'Inspiring story, Jane! What was your biggest challenge during the startup phase?', 11, false, NOW() - INTERVAL '13 days', NOW() - INTERVAL '13 days'),
+(6, 3, 'Great question! The biggest challenge was finding product-market fit and managing burn rate during early days.', 12, false, NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days'),
+(7, 8, 'Microservices bring agility but also complexity. Event-driven architecture helps manage inter-service communication.', NULL, false, NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days'),
+(8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, false, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
+
+-- ============= FORUM POST REPORTS DATA =============
+INSERT INTO "forum_post_reports" ("post_id", "reporter_member_id", "reason", "description", "status", "reviewed_by_user_id", "review_note", "created_at", "updated_at") VALUES
+(8, 4, 'SPAM', 'Post repeats promotional content and is not relevant to the discussion.', 'APPROVED', 1, 'Hidden post and warned author', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
+(14, 9, 'OFF_TOPIC', 'Content is not related to the current thread purpose.', 'PENDING', NULL, NULL, NOW() - INTERVAL '8 hours', NOW() - INTERVAL '8 hours'),
+(15, 10, 'ABUSIVE_LANGUAGE', 'Potentially aggressive wording found in the comment.', 'REJECTED', 1, 'No violation after review', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
+
+-- ============= ADMIN AUDIT LOGS DATA =============
+INSERT INTO "admin_audit_logs" ("admin_user_id", "target_user_id", "action", "resource_type", "resource_id", "before_data", "after_data", "metadata", "created_at") VALUES
+(1, 2, 'BAN_POST', 'FORUM_POST', '8', '{"isBanned":false}', '{"isBanned":true}', '{"source":"report","reportId":1}', NOW() - INTERVAL '1 day'),
+(1, 2, 'UPDATE_POST_VISIBILITY', 'FORUM_POST', '8', '{"isHidden":false}', '{"isHidden":true}', '{"source":"moderation"}', NOW() - INTERVAL '23 hours'),
+(1, 6, 'UPDATE_TOPIC_LOCK', 'FORUM_TOPIC', '4', '{"isLocked":false}', '{"isLocked":true}', '{"reason":"stop flame war"}', NOW() - INTERVAL '12 hours'),
+(1, 9, 'RESET_PASSWORD', 'USER', '9', NULL, NULL, '{"reason":"support request"}', NOW() - INTERVAL '6 hours');
 
 -- ============= FORUM POST REACTIONS DATA (LIKES/DISLIKES) =============
 INSERT INTO "forum_post_reactions" ("post_id", "member_id", "created_at") VALUES

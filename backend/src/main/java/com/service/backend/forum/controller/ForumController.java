@@ -20,9 +20,11 @@ import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
+import com.service.backend.forum.dto.CreateForumPostReportRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
@@ -234,6 +236,16 @@ public class ForumController {
                 });
     }
 
+    @PostMapping("/post/{id}/report")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reportPost(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id,
+            @Valid @RequestBody CreateForumPostReportRequest request) {
+        return forumService.reportPost(id, request)
+                .map(report -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Post report submitted successfully", report)))
+                .onErrorResume(this::handleError);
+    }
+
     /**
      * Get reaction counts for a post
      */
@@ -290,6 +302,9 @@ public class ForumController {
 
         if (ErrorCode.INVALID_TOPIC_ID.getMessage().equals(message)) {
             return HttpStatus.BAD_REQUEST;
+        }
+        if ("Topic is locked".equals(message)) {
+            return HttpStatus.FORBIDDEN;
         }
 
         return HttpStatus.INTERNAL_SERVER_ERROR;

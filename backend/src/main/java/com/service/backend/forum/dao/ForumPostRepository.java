@@ -17,7 +17,7 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Find forum posts by topic id with pagination
      */
-    @Query("SELECT * FROM forum_posts WHERE topic_id = :topicId AND is_banned = false ORDER BY created_at ASC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_posts WHERE topic_id = :topicId AND is_banned = false AND is_hidden = false ORDER BY created_at ASC LIMIT :limit OFFSET :offset")
     Flux<ForumPost> findByTopicIdWithPagination(
             @Param("topicId") Integer topicId,
             @Param("limit") int limit,
@@ -43,7 +43,7 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Count posts by topic id (excluding banned)
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false")
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false AND is_hidden = false")
     Mono<Long> countByTopicId(@Param("topicId") Integer topicId);
 
     /**

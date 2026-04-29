@@ -15,33 +15,32 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("forum_posts")
-public class ForumPost {
-    
+@Table("forum_post_reports")
+public class ForumPostReport {
     @Id
-    private Integer id;
-    
-    @Column("topic_id")
-    private Integer topicId;
-    
-    @Column("author_member_id")
-    private Integer authorMemberId;
-    
-    @Column("content")
-    private String content;
-    
-    @Column("answer_to_post_id")
-    private Integer answerToPostId;
-    
-    @Column("is_banned")
-    private Boolean isBanned;
+    private Long id;
 
-    @Column("is_hidden")
-    private Boolean isHidden;
-    
+    @Column("post_id")
+    private Integer postId;
+
+    @Column("reporter_member_id")
+    private Integer reporterMemberId;
+
+    private String reason;
+
+    private String description;
+
+    private String status;
+
+    @Column("reviewed_by_user_id")
+    private Integer reviewedByUserId;
+
+    @Column("review_note")
+    private String reviewNote;
+
     @Column("created_at")
     private LocalDateTime createdAt;
-    
+
     @Column("updated_at")
     private LocalDateTime updatedAt;
 }

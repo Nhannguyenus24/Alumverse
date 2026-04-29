@@ -27,6 +27,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../utils/dateFormatter';
 
 const AdminForumTopicsPage = () => {
@@ -43,7 +44,9 @@ const AdminForumTopicsPage = () => {
     createTopic,
     updateTopic,
     deleteTopic,
+    updateTopicLock,
   } = useAdminForumContext();
+  const { user } = useAuth();
 
   const topicsList = useMemo(() => {
     if (!topicsPaginated) return [];
@@ -144,6 +147,7 @@ const AdminForumTopicsPage = () => {
                 <TableCell>Org ID</TableCell>
                 <TableCell>Creator</TableCell>
                 <TableCell>Views</TableCell>
+                    <TableCell>Locked</TableCell>
                 <TableCell>Created</TableCell>
                 <TableCell>Updated</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -152,7 +156,7 @@ const AdminForumTopicsPage = () => {
             <TableBody>
               {filteredTopics.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={10}>
                     <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
                       No topics found.
                     </Typography>
@@ -167,6 +171,39 @@ const AdminForumTopicsPage = () => {
                     <TableCell>{topic.organizationId ?? '-'}</TableCell>
                     <TableCell>{topic.createdByName || topic.createdByMemberId || '-'}</TableCell>
                     <TableCell>{topic.viewCount ?? 0}</TableCell>
+                    <TableCell>
+                      {topic.isLocked ? (
+                        <Button
+                          size="small"
+                          color="warning"
+                          variant="outlined"
+                          sx={{ textTransform: 'none' }}
+                          onClick={async () => {
+                            const ok = await updateTopicLock?.(topic.id, false, Number(user?.id));
+                            enqueueSnackbar(ok ? 'Topic unlocked.' : 'Failed to unlock topic.', {
+                              variant: ok ? 'success' : 'error',
+                            });
+                          }}
+                        >
+                          Unlock
+                        </Button>
+                      ) : (
+                        <Button
+                          size="small"
+                          color="inherit"
+                          variant="outlined"
+                          sx={{ textTransform: 'none' }}
+                          onClick={async () => {
+                            const ok = await updateTopicLock?.(topic.id, true, Number(user?.id));
+                            enqueueSnackbar(ok ? 'Topic locked.' : 'Failed to lock topic.', {
+                              variant: ok ? 'success' : 'error',
+                            });
+                          }}
+                        >
+                          Lock
+                        </Button>
+                      )}
+                    </TableCell>
                     <TableCell>{formatDate(topic.createdAt)}</TableCell>
                     <TableCell>{formatDate(topic.updatedAt)}</TableCell>
                     <TableCell align="right">
@@ -234,6 +271,7 @@ const AdminForumTopicsPage = () => {
             <Typography variant="body2"><strong>Organization ID:</strong> {detailTopic.organizationId ?? '-'}</Typography>
             <Typography variant="body2"><strong>Created by:</strong> {detailTopic.createdByName || detailTopic.createdByMemberId || '-'}</Typography>
             <Typography variant="body2"><strong>Views:</strong> {detailTopic.viewCount ?? 0}</Typography>
+            <Typography variant="body2"><strong>Locked:</strong> {detailTopic.isLocked ? 'Yes' : 'No'}</Typography>
             <Typography variant="body2"><strong>Created:</strong> {formatDate(detailTopic.createdAt)}</Typography>
             <Typography variant="body2"><strong>Updated:</strong> {formatDate(detailTopic.updatedAt)}</Typography>
           </DialogContent>

@@ -448,7 +448,7 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: (
-          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+          <ProtectedRoute>
             <AdminLayout />
           </ProtectedRoute>
         ),
@@ -460,7 +460,7 @@ export const router = createBrowserRouter([
           {
             path: "users",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute>
                 <AdminUsersListPage />
               </ProtectedRoute>
             ),
@@ -480,7 +480,7 @@ export const router = createBrowserRouter([
           {
             path: "forum/topics",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute>
                 <AdminForumTopicsPage />
               </ProtectedRoute>
             ),
@@ -677,6 +677,30 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminOrganizationsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "events",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminEventsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "mentorship",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminMentorshipPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "fundraising",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminFundraisingsPage />
           </ProtectedRoute>
         ),
       },

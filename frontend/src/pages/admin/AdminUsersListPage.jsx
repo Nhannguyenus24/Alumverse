@@ -24,6 +24,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import PasswordOutlinedIcon from '@mui/icons-material/PasswordOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
@@ -33,10 +34,13 @@ import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
+import { resetPasswordByAdmin } from '../../api/adminUserApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUsersListPage = () => {
   const navigate = useOrgNavigate();
+  const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const {
     users,
@@ -308,6 +312,34 @@ const AdminUsersListPage = () => {
                       <Tooltip title="Delete">
                         <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
                           <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Reset password">
+                        <IconButton
+                          size="small"
+                          color="info"
+                          onClick={async () => {
+                            const nextPassword = window.prompt(`Temporary password for user #${u.id}:`, '');
+                            if (!nextPassword) return;
+                            if (nextPassword.length < 8) {
+                              enqueueSnackbar('Password must be at least 8 characters.', { variant: 'warning' });
+                              return;
+                            }
+                            try {
+                              await resetPasswordByAdmin(u.id, {
+                                newPassword: nextPassword,
+                                adminUserId: Number(user?.id),
+                                reason: 'Reset from users list',
+                              });
+                              enqueueSnackbar('Password reset successfully.', { variant: 'success' });
+                            } catch (error) {
+                              enqueueSnackbar(error?.response?.data?.message || 'Failed to reset password.', {
+                                variant: 'error',
+                              });
+                            }
+                          }}
+                        >
+                          <PasswordOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>
