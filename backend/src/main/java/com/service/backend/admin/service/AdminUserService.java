@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
+import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.AdminResetPasswordRequest;
 import com.service.backend.admin.dto.UserActivityResponse;
 import com.service.backend.admin.dto.UpdateUserRequest;
@@ -305,6 +306,26 @@ public class AdminUserService {
                                     .build())
                             .thenReturn(true);
                 });
+    }
+
+    public Mono<Boolean> createAdminAccount(CreateAdminRequest request) {
+        logger.info("Creating new admin account for email={}", request.getEmail());
+        return adminUserRepository.existsByEmailOrUserName(request.getEmail(), request.getUserName())
+                .flatMap(exists -> {
+                    if (exists) {
+                        return Mono.error(new RuntimeException("Email or username already exists"));
+                    }
+                    String encodedPassword = passwordEncoder.encode(request.getPassword());
+                    return adminUserRepository.createAdminUser(
+                                    request.getEmail(),
+                                    request.getUserName(),
+                                    encodedPassword)
+                            .flatMap(adminUserId -> adminUserRepository
+                                    .createGlobalProfile(adminUserId, request.getFullName())
+                                    .thenReturn(true));
+                })
+                .doOnSuccess(created -> logger.info("Admin account created for email={}", request.getEmail()))
+                .doOnError(e -> logger.error("Error creating admin account for email={}", request.getEmail(), e));
     }
 
     /**

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.BanUserRequest;
 import com.service.backend.admin.dto.AdminResetPasswordRequest;
+import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
 import com.service.backend.admin.dto.ReviewVerificationRequest;
@@ -303,6 +304,32 @@ public class AdminUserController {
                 .onErrorResume(error -> Mono.just(
                         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    @PostMapping("/admins")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> createAdminAccount(
+            @Valid @RequestBody CreateAdminRequest request) {
+        return adminUserService.createAdminAccount(request)
+                .map(success -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Admin account created successfully", success)))
+                .onErrorResume(error -> Mono.just(
+                        ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    @GetMapping("/alumni/verification-requests")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getAlumniVerificationRequests(
+            @RequestParam(defaultValue = "true") boolean pendingOnly,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
+        return getVerificationRequests(pendingOnly, page, size);
+    }
+
+    @PutMapping("/alumni/verification-requests/{requestId}")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> reviewAlumniVerificationRequest(
+            @PathVariable Integer requestId,
+            @Valid @RequestBody ReviewVerificationRequest request) {
+        return reviewVerificationRequest(requestId, request);
     }
 
     /**
