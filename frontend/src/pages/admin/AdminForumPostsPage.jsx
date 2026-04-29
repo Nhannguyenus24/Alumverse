@@ -3,6 +3,7 @@ import { useSnackbar } from 'notistack';
 import {
   Box,
   Chip,
+  Button,
   IconButton,
   Menu,
   MenuItem,
@@ -27,6 +28,7 @@ import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDet
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPosts';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
+import { useAuth } from '../../hooks/useAuth';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
 
@@ -161,15 +163,24 @@ const AdminForumPostsPage = () => {
     banPost: banPostApi,
     unbanPost: unbanPostApi,
     deletePostApi,
+    reports,
+    reportsPage,
+    setReportsPage,
+    reviewReport,
+    updatePostVisibility,
   } = useAdminForumContext();
+  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState(0);
   const [forumDetailPost, setForumDetailPost] = useState(null);
   const [forumDeletePost, setForumDeletePost] = useState(null);
   const [forumStatusMenu, setForumStatusMenu] = useState(null);
+  const [reportActionLoading, setReportActionLoading] = useState(false);
 
   const bannedContent = bannedPosts?.content ?? [];
   const yesterdayContent = yesterdayPosts?.content ?? [];
+  const reportContent = reports?.content ?? [];
+  const adminUserId = Number(user?.id);
 
   const handleBan = async (post) => {
     if (banPostApi) {
@@ -210,6 +221,10 @@ const AdminForumPostsPage = () => {
           />
           <Tab
             label={`New yesterday (${yesterdayPosts?.totalElements ?? 0})`}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          />
+          <Tab
+            label={`Reports (${reports?.totalElements ?? 0})`}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           />
         </Tabs>
@@ -429,6 +444,146 @@ const AdminForumPostsPage = () => {
               page={yesterdayPage ?? 0}
               rowsPerPage={yesterdayPosts?.size ?? 10}
               onPageChange={(_, p) => setYesterdayPage?.(p)}
+              rowsPerPageOptions={[10]}
+            />
+          </>
+        )}
+
+        {activeTab === 3 && (
+          <>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Report ID</TableCell>
+                  <TableCell>Post ID</TableCell>
+                  <TableCell>Reporter</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell sx={{ maxWidth: 280 }}>Description</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {reportContent.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                        No pending reports.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  reportContent.map((report) => (
+                    <TableRow key={report.id} hover>
+                      <TableCell>{report.id}</TableCell>
+                      <TableCell>#{report.postId}</TableCell>
+                      <TableCell>{report.reporterMemberId ?? '-'}</TableCell>
+                      <TableCell>{report.reason || '-'}</TableCell>
+                      <TableCell sx={{ maxWidth: 280 }}>{truncateText(report.description || '-')}</TableCell>
+                      <TableCell>
+                        <Chip label={report.status || 'PENDING'} size="small" color="warning" />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            disabled={reportActionLoading || !adminUserId}
+                            onClick={async () => {
+                              setReportActionLoading(true);
+                              const ok = await reviewReport?.(report.id, {
+                                decision: 'APPROVED',
+                                action: 'HIDE_POST',
+                                reviewNote: 'Hidden from moderation queue',
+                                adminUserId,
+                              });
+                              if (ok) {
+                                await updatePostVisibility?.(report.postId, true, adminUserId);
+                              }
+                              enqueueSnackbar(ok ? 'Report approved and post hidden.' : 'Failed to process report.', {
+                                variant: ok ? 'success' : 'error',
+                              });
+                              setReportActionLoading(false);
+                            }}
+                          >
+                            Hide
+                          </Button>
+                          <Button
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                            disabled={reportActionLoading || !adminUserId}
+                            onClick={async () => {
+                              setReportActionLoading(true);
+                              const ok = await reviewReport?.(report.id, {
+                                decision: 'APPROVED',
+                                action: 'BAN_POST',
+                                reviewNote: 'Banned by moderator',
+                                adminUserId,
+                              });
+                              enqueueSnackbar(ok ? 'Report approved and post banned.' : 'Failed to ban post.', {
+                                variant: ok ? 'success' : 'error',
+                              });
+                              setReportActionLoading(false);
+                            }}
+                          >
+                            Ban
+                          </Button>
+                          <Button
+                            size="small"
+                            color="info"
+                            variant="outlined"
+                            disabled={reportActionLoading || !adminUserId}
+                            onClick={async () => {
+                              setReportActionLoading(true);
+                              const ok = await reviewReport?.(report.id, {
+                                decision: 'APPROVED',
+                                action: 'WARN',
+                                reviewNote: 'Warning action only',
+                                adminUserId,
+                              });
+                              enqueueSnackbar(ok ? 'Report marked as warning.' : 'Failed to warn.', {
+                                variant: ok ? 'success' : 'error',
+                              });
+                              setReportActionLoading(false);
+                            }}
+                          >
+                            Warn
+                          </Button>
+                          <Button
+                            size="small"
+                            color="inherit"
+                            variant="outlined"
+                            disabled={reportActionLoading || !adminUserId}
+                            onClick={async () => {
+                              setReportActionLoading(true);
+                              const ok = await reviewReport?.(report.id, {
+                                decision: 'REJECTED',
+                                action: 'WARN',
+                                reviewNote: 'Rejected report',
+                                adminUserId,
+                              });
+                              enqueueSnackbar(ok ? 'Report rejected.' : 'Failed to reject report.', {
+                                variant: ok ? 'success' : 'error',
+                              });
+                              setReportActionLoading(false);
+                            }}
+                          >
+                            Reject
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={reports?.totalElements ?? 0}
+              page={reportsPage ?? 0}
+              rowsPerPage={reports?.size ?? 10}
+              onPageChange={(_, p) => setReportsPage?.(p)}
               rowsPerPageOptions={[10]}
             />
           </>

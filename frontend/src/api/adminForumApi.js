@@ -1,6 +1,7 @@
 import apiClient from '../utils/axios';
 
 const BASE = '/admin/forum/admin';
+const BASE_V2 = '/admin/forum';
 
 // ========== STATISTICS ==========
 
@@ -32,6 +33,15 @@ export const unbanPost = (postId) =>
 
 export const deletePost = (postId) =>
   apiClient.delete(`${BASE}/posts/${postId}`);
+
+export const getPendingReports = (page = 0, size = 10) =>
+  apiClient.get(`${BASE_V2}/reports`, { params: { page, size } });
+
+export const reviewReport = (reportId, payload) =>
+  apiClient.put(`${BASE_V2}/reports/${reportId}`, payload);
+
+export const updatePostVisibility = (postId, payload) =>
+  apiClient.put(`${BASE_V2}/posts/${postId}/visibility`, payload);
 
 // ========== CATEGORIES ==========
 
@@ -66,3 +76,6 @@ export const updateTopic = (topicId, title, categoryId) =>
 
 export const deleteTopic = (topicId) =>
   apiClient.delete(`${BASE}/topics/${topicId}`);
+
+export const updateTopicLock = (topicId, payload) =>
+  apiClient.put(`${BASE_V2}/topics/${topicId}/lock`, payload);

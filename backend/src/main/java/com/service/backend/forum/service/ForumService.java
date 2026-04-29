@@ -16,9 +16,11 @@ import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
+import com.service.backend.forum.dto.CreateForumPostReportRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -28,10 +30,12 @@ import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.entity.ForumCategory;
 import com.service.backend.forum.entity.ForumPost;
 import com.service.backend.forum.entity.ForumPostReaction;
+import com.service.backend.forum.entity.ForumPostReport;
 import com.service.backend.forum.entity.ForumTopic;
 import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
+import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
 
 import reactor.core.publisher.Flux;
@@ -45,15 +49,18 @@ public class ForumService {
     private final ForumTopicRepository forumTopicRepository;
     private final ForumPostRepository forumPostRepository;
     private final ForumPostReactionRepository forumPostReactionRepository;
+    private final ForumPostReportRepository forumPostReportRepository;
 
     public ForumService(ForumCategoryRepository forumCategoryRepository,
                         ForumTopicRepository forumTopicRepository,
                         ForumPostRepository forumPostRepository,
-                        ForumPostReactionRepository forumPostReactionRepository) {
+                        ForumPostReactionRepository forumPostReactionRepository,
+                        ForumPostReportRepository forumPostReportRepository) {
         this.forumCategoryRepository = forumCategoryRepository;
         this.forumTopicRepository = forumTopicRepository;
         this.forumPostRepository = forumPostRepository;
         this.forumPostReactionRepository = forumPostReactionRepository;
+        this.forumPostReportRepository = forumPostReportRepository;
     }
 
     // Category methods
@@ -143,6 +150,7 @@ public class ForumService {
                             .createdByMemberId(request.getCreatedByMemberId())
                             .categoryId(request.getCategoryId())
                             .viewCount(0)
+                            .isLocked(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
@@ -232,12 +240,16 @@ public class ForumService {
                     return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(topic -> {
+                    if (Boolean.TRUE.equals(topic.getIsLocked())) {
+                        return Mono.error(new RuntimeException("Topic is locked"));
+                    }
                     ForumPost post = ForumPost.builder()
                             .topicId(request.getTopicId())
                             .authorMemberId(request.getAuthorMemberId())
                             .content(request.getContent())
                             .answerToPostId(request.getAnswerToPostId())
                             .isBanned(false)
+                            .isHidden(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
@@ -289,6 +301,24 @@ public class ForumService {
                 })
                 .doOnSuccess(v -> log.info("Successfully deleted forum post ID: {}", id))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
+    }
+
+    public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
+        return forumPostRepository.findById(postId)
+                .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage())))
+                .flatMap(post -> {
+                    ForumPostReport report = ForumPostReport.builder()
+                            .postId(postId)
+                            .reporterMemberId(request.getReporterMemberId())
+                            .reason(request.getReason())
+                            .description(request.getDescription())
+                            .status("PENDING")
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    return forumPostReportRepository.save(report);
+                })
+                .map(this::convertToReportDTO);
     }
 
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
@@ -437,9 +467,25 @@ public class ForumService {
                 .content(post.getContent())
                 .answerToPostId(post.getAnswerToPostId())
                 .isBanned(post.getIsBanned())
+                .isHidden(post.getIsHidden())
                 .isLike(isLike)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
+                .build();
+    }
+
+    private ForumPostReportDTO convertToReportDTO(ForumPostReport report) {
+        return ForumPostReportDTO.builder()
+                .id(report.getId())
+                .postId(report.getPostId())
+                .reporterMemberId(report.getReporterMemberId())
+                .reason(report.getReason())
+                .description(report.getDescription())
+                .status(report.getStatus())
+                .reviewedByUserId(report.getReviewedByUserId())
+                .reviewNote(report.getReviewNote())
+                .createdAt(report.getCreatedAt())
+                .updatedAt(report.getUpdatedAt())
                 .build();
     }
 

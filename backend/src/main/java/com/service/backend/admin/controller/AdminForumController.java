@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,10 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.admin.dto.ForumStatisticsDTO;
 import com.service.backend.admin.dto.MonthlyActivityDTO;
 import com.service.backend.admin.dto.OrganizationEngagementDTO;
+import com.service.backend.admin.dto.ReviewForumReportRequest;
 import com.service.backend.admin.dto.TopContributorDTO;
+import com.service.backend.admin.dto.UpdatePostVisibilityRequest;
+import com.service.backend.admin.dto.UpdateTopicLockRequest;
 import com.service.backend.admin.service.AdminForumService;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -31,6 +36,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -98,6 +104,42 @@ public class AdminForumController {
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminForumService.getBannedPostsWithPagination(page, size)
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved banned forum posts", paginatedResponse)))
+                .onErrorResume(this::handleError);
+    }
+
+    @GetMapping("/reports")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostReportDTO>>>> getPendingReports(
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminForumService.getPendingReports(page, size)
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Retrieved pending reports", data)))
+                .onErrorResume(this::handleError);
+    }
+
+    @PutMapping("/reports/{reportId}")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reviewReport(
+            @PathVariable Long reportId,
+            @Valid @RequestBody ReviewForumReportRequest request) {
+        return adminForumService.reviewReport(reportId, request)
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Reviewed report successfully", data)))
+                .onErrorResume(this::handleError);
+    }
+
+    @PutMapping("/posts/{postId}/visibility")
+    public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> updatePostVisibility(
+            @PathVariable Integer postId,
+            @Valid @RequestBody UpdatePostVisibilityRequest request) {
+        return adminForumService.updatePostVisibility(postId, request.getHidden(), request.getAdminUserId())
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated post visibility successfully", data)))
+                .onErrorResume(this::handleError);
+    }
+
+    @PutMapping("/topics/{topicId}/lock")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopicLock(
+            @PathVariable Integer topicId,
+            @Valid @RequestBody UpdateTopicLockRequest request) {
+        return adminForumService.updateTopicLock(topicId, request.getLocked(), request.getAdminUserId())
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic lock status successfully", data)))
                 .onErrorResume(this::handleError);
     }
 

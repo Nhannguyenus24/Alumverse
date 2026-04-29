@@ -2,14 +2,19 @@ package com.service.backend.admin.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dao.AdminAuditLogRepository;
+import com.service.backend.admin.dto.AdminResetPasswordRequest;
+import com.service.backend.admin.dto.UserActivityResponse;
 import com.service.backend.admin.dto.UpdateUserRequest;
 import com.service.backend.admin.dto.UserResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.auth.entity.User;
+import com.service.backend.admin.entity.AdminAuditLog;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,9 +26,16 @@ public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
     
     private final AdminUserRepository adminUserRepository;
+    private final AdminAuditLogRepository adminAuditLogRepository;
+    private final PasswordEncoder passwordEncoder;
     
-    public AdminUserService(AdminUserRepository adminUserRepository) {
+    public AdminUserService(
+            AdminUserRepository adminUserRepository,
+            AdminAuditLogRepository adminAuditLogRepository,
+            PasswordEncoder passwordEncoder) {
         this.adminUserRepository = adminUserRepository;
+        this.adminAuditLogRepository = adminAuditLogRepository;
+        this.passwordEncoder = passwordEncoder;
     }
     
     /**
@@ -247,6 +259,52 @@ public class AdminUserService {
                     else logger.warn("Verification request {} not found", requestId);
                 })
                 .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e));
+    }
+
+    public Mono<UserActivityResponse> getUserActivity(Integer userId) {
+        return Mono.zip(
+                adminUserRepository.findRecentLoginHistories(userId, 50).collectList(),
+                adminUserRepository.findRecentVerificationRequests(userId, 50).collectList(),
+                adminAuditLogRepository.findRecentByTargetUserId(userId, 50).collectList())
+                .map(tuple -> UserActivityResponse.builder()
+                        .loginHistories(tuple.getT1())
+                        .verificationRequests(tuple.getT2())
+                        .adminActions(tuple.getT3())
+                        .build());
+    }
+
+    public Mono<PaginatedResponse<AdminAuditLog>> getAdminActionLogs(
+            Integer adminUserId,
+            Integer targetUserId,
+            String action,
+            int page,
+            int size) {
+        int offset = page * size;
+        return Mono.zip(
+                adminAuditLogRepository.findAdminActionLogs(adminUserId, targetUserId, action, size, offset).collectList(),
+                adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action))
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnError(e -> logger.error("Error fetching admin action logs", e));
+    }
+
+    public Mono<Boolean> resetPasswordByAdmin(Integer userId, AdminResetPasswordRequest request) {
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        return adminUserRepository.resetPasswordByAdmin(userId, encodedPassword)
+                .flatMap(count -> {
+                    if (count <= 0) {
+                        return Mono.just(false);
+                    }
+                    return adminAuditLogRepository.save(com.service.backend.admin.entity.AdminAuditLog.builder()
+                                    .adminUserId(request.getAdminUserId())
+                                    .targetUserId(userId)
+                                    .action("RESET_PASSWORD")
+                                    .resourceType("USER")
+                                    .resourceId(String.valueOf(userId))
+                                    .metadata(request.getReason())
+                                    .createdAt(LocalDateTime.now())
+                                    .build())
+                            .thenReturn(true);
+                });
     }
 
     /**
