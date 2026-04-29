@@ -3,7 +3,8 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import styled from "@emotion/styled";
 import dayjs from "dayjs";
-import { truncateText } from "../../../utils/text";
+import { truncateText } from "../../utils/text";
+import DonationCampaignCardV2 from "./DonationCampaignCardV2";
 
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 120;
 const LOGO_FALLBACK_URL = "https://placehold.co/800x450/eef3ff/0f3a7a?text=Fund";
@@ -222,7 +223,7 @@ function CampaignCard({ campaign, onNavigate, onEdit, onClose, isAdmin }) {
   );
 }
 
-export default function DonationCampaignGrid({ campaigns, isAdmin, onNavigate, onEdit, onClose }) {
+export default function DonationCampaignGrid({ campaigns, isAdmin, onNavigate, onEdit, onClose, useV2Card = false }) {
   return (
     <Box
       sx={{
@@ -237,13 +238,23 @@ export default function DonationCampaignGrid({ campaigns, isAdmin, onNavigate, o
     >
       {campaigns.map((campaign) => (
         <Box key={campaign.id} sx={{ display: "flex", minWidth: 0 }}>
-          <CampaignCard
-            campaign={campaign}
-            onNavigate={() => onNavigate(campaign)}
-            onEdit={() => onEdit(campaign)}
-            onClose={() => onClose(campaign)}
-            isAdmin={isAdmin}
-          />
+          {useV2Card ? (
+            <DonationCampaignCardV2
+              campaign={campaign}
+              onNavigate={() => onNavigate(campaign)}
+              onEdit={() => onEdit(campaign)}
+              onClose={() => onClose(campaign)}
+              isAdmin={isAdmin}
+            />
+          ) : (
+            <CampaignCard
+              campaign={campaign}
+              onNavigate={() => onNavigate(campaign)}
+              onEdit={() => onEdit(campaign)}
+              onClose={() => onClose(campaign)}
+              isAdmin={isAdmin}
+            />
+          )}
         </Box>
       ))}
     </Box>
