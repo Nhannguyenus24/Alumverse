@@ -338,12 +338,12 @@ public class ForumService {
                     return forumPostReactionRepository.findByPostIdAndMemberId(
                             request.getPostId(), request.getMemberId())
                             .flatMap(existingReaction -> {
-                                // If reaction exists, remove it (unlike)
-                                log.info("Removing existing like from post ID: {}, member: {}", 
+                                // If reaction exists, remove it (unlike) — return empty to signal removal
+                                log.info("Removing existing like from post ID: {}, member: {}",
                                         request.getPostId(), request.getMemberId());
                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                         request.getPostId(), request.getMemberId())
-                                        .then(Mono.<ForumPostReaction>error(new RuntimeException("REACTION_REMOVED")));
+                                        .then(Mono.<ForumPostReaction>empty());
                             })
                             .switchIfEmpty(Mono.defer(() -> {
                                 // No existing reaction, create new one (like)
@@ -359,11 +359,7 @@ public class ForumService {
                 })
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("Successfully toggled like for post ID: {}", request.getPostId()))
-                .doOnError(error -> {
-                    if (!"REACTION_REMOVED".equals(error.getMessage())) {
-                        log.error("Error toggling like for post ID: {}", request.getPostId(), error);
-                    }
-                });
+                .doOnError(error -> log.error("Error toggling like for post ID: {}", request.getPostId(), error));
     }
 
     /**

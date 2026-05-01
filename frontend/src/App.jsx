@@ -6,7 +6,14 @@ import { router } from './routes';
 import NotistackProvider from './components/NotistackProvider';
 import ThemeProvider from './theme';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      retry: 1,
+    },
+  },
+});
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 const App = () => {
