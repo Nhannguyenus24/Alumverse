@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useMatch, useNavigate } from 'react-router';
 
 import { useSnackbar } from 'notistack';
 import {
@@ -24,6 +25,7 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import PasswordOutlinedIcon from '@mui/icons-material/PasswordOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
@@ -32,11 +34,18 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
+import { resetPasswordByAdmin } from '../../api/adminUserApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUsersListPage = () => {
-  const navigate = useOrgNavigate();
+  const navigate = useNavigate();
+  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const adminBase = useMemo(
+    () => (slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin'),
+    [slugMatch?.params?.slug],
+  );
+  const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const {
     users,
@@ -225,7 +234,7 @@ const AdminUsersListPage = () => {
               </TableRow>
             ) : (
               users.map((u) => (
-                <TableRow key={u.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/users/${u.id}`)}>
+                <TableRow key={u.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`${adminBase}/users/${u.id}`)}>
                   <TableCell>{u.id}</TableCell>
                   <TableCell>{u.email || '-'}</TableCell>
                   <TableCell>{u.userName || '-'}</TableCell>
@@ -268,7 +277,7 @@ const AdminUsersListPage = () => {
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                       <Tooltip title="View">
-                        <IconButton size="small" color="primary" onClick={() => navigate(`/admin/users/${u.id}`)}>
+                        <IconButton size="small" color="primary" onClick={() => navigate(`${adminBase}/users/${u.id}`)}>
                           <VisibilityOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -308,6 +317,34 @@ const AdminUsersListPage = () => {
                       <Tooltip title="Delete">
                         <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
                           <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Reset password">
+                        <IconButton
+                          size="small"
+                          color="info"
+                          onClick={async () => {
+                            const nextPassword = window.prompt(`Temporary password for user #${u.id}:`, '');
+                            if (!nextPassword) return;
+                            if (nextPassword.length < 8) {
+                              enqueueSnackbar('Password must be at least 8 characters.', { variant: 'warning' });
+                              return;
+                            }
+                            try {
+                              await resetPasswordByAdmin(u.id, {
+                                newPassword: nextPassword,
+                                adminUserId: Number(user?.id),
+                                reason: 'Reset from users list',
+                              });
+                              enqueueSnackbar('Password reset successfully.', { variant: 'success' });
+                            } catch (error) {
+                              enqueueSnackbar(error?.response?.data?.message || 'Failed to reset password.', {
+                                variant: 'error',
+                              });
+                            }
+                          }}
+                        >
+                          <PasswordOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     </Box>

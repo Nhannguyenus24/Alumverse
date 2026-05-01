@@ -45,3 +45,9 @@ export const reviewVerificationRequest = (requestId, status, adminNote) =>
 
 export const addOrganizationMember = (payload) =>
   apiClient.post(`${BASE}/organization-member`, payload);
+
+export const getUserActivity = (userId) =>
+  apiClient.get(`${BASE}/${userId}/activity`);
+
+export const resetPasswordByAdmin = (userId, payload) =>
+  apiClient.post(`${BASE}/${userId}/reset-password`, payload);

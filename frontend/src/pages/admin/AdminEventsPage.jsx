@@ -38,8 +38,13 @@ import {
   ADMIN_EVENT_SORT_OPTIONS,
   ADMIN_EVENT_STATUS_OPTIONS,
 } from '../../constants/adminDefaultEvents';
-import { ADMIN_FILTER_BAR_SX, ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
-import useAdminEvents from '../../hooks/admin/useAdminEvents';
+import {
+  ADMIN_FILTER_BAR_SX,
+  ADMIN_PRIMARY_ACTION_BUTTON_SX,
+  ADMIN_STATUS_CHIP_SX,
+  formatStatusLabel,
+} from '../../constants/adminUiShared';
+import useAdminEventsData from '../../hooks/admin/useAdminEventsData';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const publishStatusChip = (isPublished) =>
@@ -80,11 +85,9 @@ const AdminEventsPage = () => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
-    publishEvent,
-    unpublishEvent,
-    deleteEvent,
-    updateEvent,
-  } = useAdminEvents();
+    updateStatus,
+    deleteItem,
+  } = useAdminEventsData();
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -139,7 +142,12 @@ const AdminEventsPage = () => {
     <>
       <AdminSectionPanel
         title="Event management"
-        subtitle="Cross-organization event listing, publish moderation and removal — backed by /api/admin/events."
+        subtitle="Review event records, moderate status, and remove events via API."
+        action={
+          <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX}>
+            Create event
+          </Button>
+        }
       >
         {statistics ? (
           <Grid container spacing={1.5} sx={{ mb: 2 }}>
@@ -443,9 +451,15 @@ const AdminEventsPage = () => {
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
         title="Delete event"
-        description={deleteTarget ? `Permanently delete "${deleteTarget.title}" (#${deleteTarget.id})?` : ''}
+        description={deleteTarget ? `Delete "${deleteTarget.title}"?` : ''}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          if (deleteTarget) {
+            deleteItem(deleteTarget.id);
+            enqueueSnackbar('Event deleted.', { variant: 'success' });
+          }
+          setDeleteTarget(null);
+        }}
       />
     </>
   );

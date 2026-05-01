@@ -48,6 +48,14 @@ const DEFAULT_ENTITY_TYPES = [
 ];
 
 const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE', 'REJECT'];
+const EXTENDED_ACTIONS = [
+  'HIDE_POST',
+  'BAN_POST',
+  'WARN',
+  'UPDATE_POST_VISIBILITY',
+  'UPDATE_TOPIC_LOCK',
+  'RESET_PASSWORD',
+];
 
 const formatIsoDateInput = (date) => {
   const y = date.getFullYear();
@@ -133,7 +141,7 @@ const AdminAuditLogsPage = () => {
 
   const actionOptions = useMemo(() => {
     const fromData = new Set(auditLogs.map((log) => String(log.action || '')).filter(Boolean));
-    DEFAULT_ACTIONS.forEach((e) => fromData.add(e));
+    [...DEFAULT_ACTIONS, ...EXTENDED_ACTIONS].forEach((e) => fromData.add(e));
     return Array.from(fromData).sort();
   }, [auditLogs]);
 
