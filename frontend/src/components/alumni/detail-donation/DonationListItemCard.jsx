@@ -1,5 +1,9 @@
 import { Avatar, Badge, Box, Stack, Typography } from "@mui/material";
-import { DONATION_AVATAR_FALLBACK, formatDonationAmount, formatDonationTimestamp } from "./constants";
+import {
+  DONATION_AVATAR_FALLBACK,
+  formatDonationAmount,
+  formatDonationTimestamp,
+} from "../../../schemas/detailDonationSchemas";
 
 export default function DonationListItemCard({ item }) {
   return (

@@ -176,6 +176,15 @@ const CreateDonationPage = () => {
     >
       <Box sx={{ py: 5, backgroundColor: '#f4f6f8', minHeight: '100%' }}>
         <Container maxWidth="lg">
+          <Box sx={{ mb: 1.5 }}>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/donations')}
+              sx={{ borderRadius: 999, px: 2.2, textTransform: 'none', fontWeight: 700 }}
+            >
+              Quay lại donation page
+            </Button>
+          </Box>
           <Paper
             elevation={0}
             sx={{
@@ -185,7 +194,7 @@ const CreateDonationPage = () => {
               boxShadow: '0 8px 30px rgba(0, 0, 0, 0.08)',
             }}
           >
-            <Typography variant="h5" component="h1" fontWeight={700} sx={{ mb: 3 }}>
+            <Typography variant="h1" component="h1" fontWeight={700} sx={{ mb: 3 }}>
               Tạo bài đăng quyên góp
             </Typography>
 

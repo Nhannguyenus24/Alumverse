@@ -1,5 +1,4 @@
-import { Box, Button, Stack, Typography } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import { Box, Typography } from "@mui/material";
 import styled from "@emotion/styled";
 
 const StatsSummaryRoot = styled(Box)({
@@ -52,7 +51,7 @@ function StatsSummaryBar({ items }) {
   );
 }
 
-export default function DonationHeader({ isAdmin, adminBannerItems, onCreateFund }) {
+export default function DonationHeader({ isAdmin, adminBannerItems }) {
   return (
     <>
       <Typography
@@ -77,18 +76,6 @@ export default function DonationHeader({ isAdmin, adminBannerItems, onCreateFund
         </Box>
       )}
 
-      {isAdmin && (
-        <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1.6 }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={onCreateFund}
-            sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}
-          >
-            Mở thêm quỹ
-          </Button>
-        </Stack>
-      )}
     </>
   );
 }

@@ -23,7 +23,8 @@ import { useParams } from "react-router";
 import Page from "../../components/Page";
 import { fundApi } from "../../api/fundApi";
 import { useAuth } from "../../hooks/useAuth";
-import FundraisingListSection from "./components/detail-donation/FundraisingListSection";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import FundraisingListSection from "../../components/alumni/detail-donation/FundraisingListSection";
 
 const donationSchema = z
   .object({
@@ -573,6 +574,7 @@ function DonationContributionForm({ fundDetail }) {
 }
 
 export default function DetailDonationPage() {
+  const navigate = useOrgNavigate();
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
@@ -615,6 +617,16 @@ export default function DetailDonationPage() {
     >
       <PageBackground>
         <Container maxWidth={false} sx={{ maxWidth: 1140 }}>
+          <Box sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              onClick={() => navigate("/donations")}
+              sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}
+            >
+              Quay lại donation page
+            </Button>
+          </Box>
+
           {isLoading ? (
             <SurfaceCard sx={{ px: { xs: 2.5, md: 4 }, py: 6, mb: 3 }}>
               <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
