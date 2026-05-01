@@ -318,7 +318,13 @@ const AdminOrganizationMasterDetail = ({
                       size="small"
                       variant="contained"
                       startIcon={<VisibilityOutlinedIcon />}
-                      onClick={() => window.open(`/admin/organizations/${selectedOrg.id}`, '_blank')}
+                      onClick={() => {
+                        const currentPath = window.location.pathname.replace(/\/+$/, '');
+                        const adminRoot = currentPath.endsWith('/organizations')
+                          ? currentPath.slice(0, -'/organizations'.length)
+                          : currentPath;
+                        window.open(`${adminRoot}/organizations/${selectedOrg.id}`, '_blank');
+                      }}
                       sx={{ textTransform: 'none', fontWeight: 700 }}
                     >
                       ID: {selectedOrg.id}

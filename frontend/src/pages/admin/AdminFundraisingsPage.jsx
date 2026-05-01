@@ -36,7 +36,7 @@ import {
   ADMIN_STATUS_CHIP_SX,
   formatStatusLabel,
 } from '../../constants/adminUiShared';
-import useAdminFundraisingsLocal from '../../hooks/admin/useAdminFundraisingsLocal';
+import useAdminFundraisingsData from '../../hooks/admin/useAdminFundraisingsData';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { formatCurrencyVnd } from '../../utils/numberFormatter';
 
@@ -66,7 +66,7 @@ const AdminFundraisingsPage = () => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
-  } = useAdminFundraisingsLocal();
+  } = useAdminFundraisingsData();
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -75,10 +75,10 @@ const AdminFundraisingsPage = () => {
     <>
       <AdminSectionPanel
         title="Fundraising management"
-        subtitle="Mock UI for campaign oversight, status updates, and moderation actions."
+        subtitle="Campaign oversight with API-backed data and moderation actions."
         action={
           <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX}>
-            Create campaign (mock)
+            Create campaign
           </Button>
         }
       >
@@ -267,12 +267,12 @@ const AdminFundraisingsPage = () => {
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
         title="Delete fundraising campaign"
-        description={deleteTarget ? `Delete "${deleteTarget.title}" (mock action)?` : ''}
+        description={deleteTarget ? `Delete "${deleteTarget.title}"?` : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
             deleteItem(deleteTarget.id);
-            enqueueSnackbar('Fundraising campaign deleted from mock list.', { variant: 'success' });
+            enqueueSnackbar('Fundraising campaign deleted.', { variant: 'success' });
           }
           setDeleteTarget(null);
         }}

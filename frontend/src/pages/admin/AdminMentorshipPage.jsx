@@ -36,7 +36,7 @@ import {
   ADMIN_STATUS_CHIP_SX,
   formatStatusLabel,
 } from '../../constants/adminUiShared';
-import useAdminMentorshipsLocal from '../../hooks/admin/useAdminMentorshipsLocal';
+import useAdminMentorshipData from '../../hooks/admin/useAdminMentorshipData';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const statusColorMap = {
@@ -65,7 +65,7 @@ const AdminMentorshipPage = () => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
-  } = useAdminMentorshipsLocal();
+  } = useAdminMentorshipData();
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -74,10 +74,10 @@ const AdminMentorshipPage = () => {
     <>
       <AdminSectionPanel
         title="Mentorship management"
-        subtitle="Mock moderation UI for mentorship sessions, statuses, and basic actions."
+        subtitle="Moderation UI for mentorship sessions integrated with API data."
         action={
           <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX}>
-            Create session (mock)
+            Create session
           </Button>
         }
       >
@@ -266,12 +266,12 @@ const AdminMentorshipPage = () => {
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
         title="Delete mentorship record"
-        description={deleteTarget ? `Delete session #${deleteTarget.id} (mock action)?` : ''}
+        description={deleteTarget ? `Delete session #${deleteTarget.id}?` : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={() => {
           if (deleteTarget) {
             deleteItem(deleteTarget.id);
-            enqueueSnackbar('Mentorship record deleted from mock list.', { variant: 'success' });
+            enqueueSnackbar('Mentorship record deleted.', { variant: 'success' });
           }
           setDeleteTarget(null);
         }}
