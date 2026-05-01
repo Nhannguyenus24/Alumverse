@@ -232,6 +232,7 @@ export const useAuth = () => {
       await apiClient.post('/auth/logout');
     } finally {
       store.reset();
+      useOrganizationStore.getState().reset();
     }
   };
 

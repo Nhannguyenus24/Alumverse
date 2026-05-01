@@ -164,13 +164,10 @@ public class PollService {
                 .build();
 
         return pollVoteRepository.save(vote)
-                .flatMap(savedVote -> {
-                    // Update vote count
-                    option.setVoteCount(option.getVoteCount() != null ? option.getVoteCount() + 1 : 1);
-                    option.setUpdatedAt(LocalDateTime.now());
-                    return pollOptionRepository.save(option)
-                            .map(updatedOption -> convertToVoteDTO(savedVote));
-                });
+                .flatMap(savedVote ->
+                    pollOptionRepository.incrementVoteCount(option.getId())
+                            .thenReturn(convertToVoteDTO(savedVote))
+                );
     }
 
     // Remove vote (allow member to change their vote)
@@ -184,12 +181,7 @@ public class PollService {
                 }))
                 .flatMap(vote -> {
                     // Decrease vote count
-                    return pollOptionRepository.findById(vote.getPollOptionId())
-                            .flatMap(option -> {
-                                option.setVoteCount(option.getVoteCount() != null ? Math.max(0, option.getVoteCount() - 1) : 0);
-                                option.setUpdatedAt(LocalDateTime.now());
-                                return pollOptionRepository.save(option);
-                            })
+                    return pollOptionRepository.decrementVoteCount(vote.getPollOptionId())
                             .then(pollVoteRepository.deleteById(vote.getId()));
                 })
                 .doOnSuccess(result -> log.info("Successfully removed vote from member {} on poll {}", memberId, pollId))

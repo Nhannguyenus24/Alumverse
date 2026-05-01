@@ -7,6 +7,8 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
 import Page from "../../components/Page";
@@ -14,11 +16,12 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import useOrganizationStore from "../../stores/organizationStore";
 import { fundApi } from "../../api/fundApi";
-import DonationHeader from "./components/DonationHeader";
-import DonationFiltersBar from "./components/DonationFiltersBar";
-import DonationSearchBox from "./components/DonationSearchBox";
-import DonationCampaignGrid from "./components/DonationCampaignGrid";
-import DonationCloseDialog from "./components/DonationCloseDialog";
+import SearchBar from "../../components/SearchBar";
+import Sidebar from "../../components/Sidebar";
+import DonationHeader from "../../components/donation/DonationHeader";
+import DonationFiltersBar from "../../components/donation/DonationFiltersBar";
+import DonationCampaignGrid from "../../components/donation/DonationCampaignGrid";
+import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 
 const FILTER_OPTIONS = {
   trending: [
@@ -43,6 +46,11 @@ const DEFAULT_FILTERS = {
   minAmount: "",
   maxAmount: "",
 };
+
+const DONATION_SIDEBAR_ITEMS = [
+  { id: "list", label: "Danh sách quỹ", icon: <FormatListBulletedIcon /> },
+  { id: "create", label: "Mở thêm quỹ", icon: <AddCircleOutlineIcon /> },
+];
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
@@ -266,80 +274,103 @@ export default function DonationPage() {
     >
       <Box sx={{ minHeight: "100vh", background: "linear-gradient(180deg, #f7faff 0%, #ffffff 46%)" }}>
         <Container maxWidth="xl" sx={{ py: { xs: 4, md: 5 } }}>
-          <DonationHeader
-            isAdmin={isAdmin}
-            adminBannerItems={adminBannerItems}
-            onCreateFund={() => navigate("/donations/create")}
-          />
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 } }}>
+            {isAdmin ? (
+              <Stack spacing={2} sx={{ width: { xs: "100%", md: 260 }, flexShrink: 0 }}>
+                <Box sx={{ position: { md: "sticky" }, top: { md: 24 } }}>
+                  <Sidebar
+                    items={DONATION_SIDEBAR_ITEMS}
+                    useRouting={false}
+                    value="list"
+                    onChange={(itemId) => {
+                      if (itemId === "create") {
+                        navigate("/donations/create");
+                      }
+                    }}
+                  />
+                </Box>
+              </Stack>
+            ) : null}
 
-          <DonationFiltersBar
-            draftFilters={draftFilters}
-            statusOptions={statusOptions}
-            filterOptions={FILTER_OPTIONS}
-            amountButtonLabel={amountButtonLabel}
-            amountAnchorEl={amountAnchorEl}
-            amountMenuOpen={amountMenuOpen}
-            onFilterSectionKeyDown={handleFilterSectionKeyDown}
-            onFilterChange={handleFilterChange}
-            onOpenAmountMenu={(event) => setAmountAnchorEl(event.currentTarget)}
-            onCloseAmountMenu={() => setAmountAnchorEl(null)}
-            onResetAmountRange={() => {
-              setDraftFilters((prev) => ({ ...prev, minAmount: "", maxAmount: "" }));
-            }}
-            onApplyAmountMenu={() => setAmountAnchorEl(null)}
-            onClearAllFilters={clearAllFilters}
-            onApplySearchAndFilters={applySearchAndFilters}
-          />
+            <Stack spacing={0} sx={{ flex: 1, minWidth: 0 }}>
+              <DonationHeader isAdmin={isAdmin} adminBannerItems={adminBannerItems} />
 
-          <DonationSearchBox
-            value={draftSearch}
-            onChange={(event) => {
-              setDraftSearch(event.target.value);
-            }}
-            onKeyDown={handleFilterSectionKeyDown}
-          />
+              <DonationFiltersBar
+                draftFilters={draftFilters}
+                statusOptions={statusOptions}
+                filterOptions={FILTER_OPTIONS}
+                amountButtonLabel={amountButtonLabel}
+                amountAnchorEl={amountAnchorEl}
+                amountMenuOpen={amountMenuOpen}
+                onFilterSectionKeyDown={handleFilterSectionKeyDown}
+                onFilterChange={handleFilterChange}
+                onOpenAmountMenu={(event) => setAmountAnchorEl(event.currentTarget)}
+                onCloseAmountMenu={() => setAmountAnchorEl(null)}
+                onResetAmountRange={() => {
+                  setDraftFilters((prev) => ({ ...prev, minAmount: "", maxAmount: "" }));
+                }}
+                onApplyAmountMenu={() => setAmountAnchorEl(null)}
+                onClearAllFilters={clearAllFilters}
+                onApplySearchAndFilters={applySearchAndFilters}
+              />
 
-          {isLoading || isLoadingStatus ? (
-            <Box sx={{ mb: 3 }}>
-              <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
-            </Box>
-          ) : null}
+              <SearchBar
+                value={draftSearch}
+                onChange={setDraftSearch}
+                placeholder="Tìm kiếm chiến dịch quyên góp..."
+                onKeyDown={handleFilterSectionKeyDown}
+                sx={{ mb: 4 }}
+                inputSx={{
+                  borderRadius: 999,
+                  backgroundColor: "#ffffff",
+                  boxShadow: "0 4px 16px rgba(17, 72, 156, 0.08)",
+                }}
+                iconSx={{ color: "#6581b4" }}
+              />
 
-          {errorMessage ? (
-            <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
-              <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
-            </Box>
-          ) : null}
+              {isLoading || isLoadingStatus ? (
+                <Box sx={{ mb: 3 }}>
+                  <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
+                </Box>
+              ) : null}
 
-          {!isLoading && !errorMessage && campaigns.length === 0 ? (
-            <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
-              <Typography sx={{ color: "#43608e", fontWeight: 600 }}>
-                Không có quỹ nào phù hợp với bộ lọc hiện tại.
-              </Typography>
-            </Box>
-          ) : null}
+              {errorMessage ? (
+                <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
+                  <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
+                </Box>
+              ) : null}
 
-          <DonationCampaignGrid
-            campaigns={campaigns}
-            isAdmin={isAdmin}
-            onNavigate={(campaign) => navigate(`/donations/${campaign.id}`)}
-            onEdit={(campaign) => navigate(`/donations/${campaign.id}/edit`)}
-            onClose={handleOpenCloseDialog}
-          />
+              {!isLoading && !errorMessage && campaigns.length === 0 ? (
+                <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
+                  <Typography sx={{ color: "#43608e", fontWeight: 600 }}>
+                    Không có quỹ nào phù hợp với bộ lọc hiện tại.
+                  </Typography>
+                </Box>
+              ) : null}
 
-          <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
-            <Pagination
-              count={pageCount || 1}
-              page={page}
-              onChange={(_, value) => setPage(value)}
-              color="primary"
-              shape="rounded"
-              size="large"
-              sx={{
-                "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 },
-              }}
-            />
-          </Stack>
+              <DonationCampaignGrid
+                campaigns={campaigns}
+                isAdmin={isAdmin}
+                onNavigate={(campaign) => navigate(`/donations/${campaign.id}`)}
+                onEdit={(campaign) => navigate(`/donations/${campaign.id}/edit`)}
+                onClose={handleOpenCloseDialog}
+              />
+
+              <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
+                <Pagination
+                  count={pageCount || 1}
+                  page={page}
+                  onChange={(_, value) => setPage(value)}
+                  color="primary"
+                  shape="rounded"
+                  size="large"
+                  sx={{
+                    "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 },
+                  }}
+                />
+              </Stack>
+            </Stack>
+          </Box>
 
           <DonationCloseDialog
             open={closeDialogOpen}
