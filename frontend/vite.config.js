@@ -12,4 +12,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router'],
+          'vendor-mui': ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+          'vendor-query': ['@tanstack/react-query', 'axios', 'zustand'],
+          'vendor-charts': ['recharts'],
+          'vendor-editor': ['react-quill-new', 'dompurify'],
+          'vendor-misc': ['framer-motion', 'emoji-picker-react', 'dayjs'],
+        },
+      },
+    },
+  },
 })

@@ -144,7 +144,7 @@ public class ForumController {
      * Update forum topic by id
      */
     @PutMapping("/topic/{id}")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> daupdateTopic(
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopic(
             @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id,
             @Valid @RequestBody UpdateForumTopicRequest request) {
         return forumService.updateTopic(id, request)
@@ -227,13 +227,10 @@ public class ForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> reactToPost(
             @Valid @RequestBody CreateForumPostReactionRequest request) {
         return forumService.reactToPost(request)
-                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Like added successfully", reaction)))
-                .onErrorResume(error -> {
-                    if ("REACTION_REMOVED".equals(error.getMessage())) {
-                        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null)));
-                    }
-                    return handleError(error);
-                });
+                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Like added successfully", reaction)))
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null))))
+                .onErrorResume(this::handleError);
     }
 
     @PostMapping("/post/{id}/report")
