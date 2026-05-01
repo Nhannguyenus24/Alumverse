@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
-import { fundApi } from "../../../../api/fundApi";
+import { fundApi } from "../../../api/fundApi";
 import DonationListItemCard from "./DonationListItemCard";
 import FundraisingListFilters from "./FundraisingListFilters";
 

@@ -1,17 +1,72 @@
 import { Box, Button, FormControl, InputLabel, Menu, MenuItem, Select, Stack, TextField } from "@mui/material";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+
+const filterControlSx = {
+  minWidth: { xs: "100%", sm: 180 },
+  "& .MuiOutlinedInput-root": {
+    height: 40,
+    borderRadius: 10,
+    color: "primary.main",
+    fontWeight: 600,
+    backgroundColor: "#fff",
+    "& fieldset": {
+      borderColor: "primary.main",
+    },
+    "&:hover fieldset": {
+      borderColor: "primary.main",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "primary.main",
+      borderWidth: 1.5,
+    },
+  },
+  "& .MuiInputLabel-root": {
+    color: "primary.main",
+    fontWeight: 600,
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "primary.main",
+  },
+};
+
+const filterActionButtonSx = {
+  height: 40,
+  borderRadius: 10,
+  px: 2.5,
+  textTransform: "none",
+  fontWeight: 600,
+  fontSize: "0.9rem",
+};
+
+const primaryActionButtonSx = {
+  height: 42,
+  borderRadius: 8,
+  px: 2.8,
+  textTransform: "none",
+  fontWeight: 700,
+  fontSize: "0.92rem",
+};
+
+const clearActionButtonSx = {
+  height: 42,
+  borderRadius: 8,
+  px: 2.8,
+  textTransform: "none",
+  fontWeight: 700,
+  fontSize: "0.92rem",
+  borderColor: "#b6c0cf",
+  color: "#445065",
+  backgroundColor: "#f8fafc",
+  "&:hover": {
+    borderColor: "#9aa7b9",
+    backgroundColor: "#eef2f7",
+  },
+};
 
 function FilterDropdown({ label, value, onChange, options }) {
   return (
-    <FormControl
-      size="small"
-      sx={{
-        minWidth: { xs: "100%", sm: 180 },
-        "& .MuiOutlinedInput-root": {
-          borderRadius: 999,
-          backgroundColor: "#f7faff",
-        },
-      }}
-    >
+    <FormControl size="small" sx={filterControlSx}>
       <InputLabel>{label}</InputLabel>
       <Select
         value={value}
@@ -69,11 +124,8 @@ export default function DonationFiltersBar({
         onChange={onFilterChange("timeStartedFrom")}
         InputLabelProps={{ shrink: true }}
         sx={{
+          ...filterControlSx,
           minWidth: { xs: "100%", sm: 190 },
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 999,
-            backgroundColor: "#f7faff",
-          },
         }}
       />
       <TextField
@@ -84,27 +136,21 @@ export default function DonationFiltersBar({
         onChange={onFilterChange("timeStartedTo")}
         InputLabelProps={{ shrink: true }}
         sx={{
+          ...filterControlSx,
           minWidth: { xs: "100%", sm: 190 },
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 999,
-            backgroundColor: "#f7faff",
-          },
         }}
       />
       <Button
         onClick={onOpenAmountMenu}
         sx={{
+          ...filterActionButtonSx,
           minWidth: { xs: "100%", sm: 200 },
           justifyContent: "space-between",
-          borderRadius: 999,
-          px: 2,
-          py: 1,
-          textTransform: "none",
-          color: "#2f4b75",
-          border: "1px solid #d8e2f7",
-          backgroundColor: "#f7faff",
-          fontWeight: 500,
-          "&:hover": { backgroundColor: "#eef4ff", borderColor: "#b8caef" },
+          color: "primary.main",
+          border: "1px solid",
+          borderColor: "primary.main",
+          backgroundColor: "#fff",
+          "&:hover": { backgroundColor: "rgba(25, 118, 210, 0.06)", borderColor: "primary.main" },
         }}
       >
         {amountButtonLabel}
@@ -135,24 +181,30 @@ export default function DonationFiltersBar({
             placeholder="0"
           />
           <Stack direction="row" spacing={1}>
-            <Button variant="outlined" fullWidth onClick={onResetAmountRange}>
+            <Button variant="outlined" fullWidth onClick={onResetAmountRange} sx={{ textTransform: "none", fontWeight: 600 }}>
               Xóa
             </Button>
-            <Button variant="contained" fullWidth onClick={onApplyAmountMenu}>
+            <Button variant="contained" fullWidth onClick={onApplyAmountMenu} sx={{ textTransform: "none", fontWeight: 600 }}>
               Áp dụng
             </Button>
           </Stack>
         </Box>
       </Menu>
-      <Button variant="outlined" onClick={onClearAllFilters} sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}>
-        Xóa hết bộ lọc
+      <Button
+        variant="outlined"
+        onClick={onClearAllFilters}
+        sx={clearActionButtonSx}
+        startIcon={<RestartAltIcon />}
+      >
+        Xóa hết filter
       </Button>
       <Button
         variant="contained"
         onClick={onApplySearchAndFilters}
-        sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}
+        sx={primaryActionButtonSx}
+        startIcon={<FilterListIcon />}
       >
-        Áp dụng bộ lọc
+        Áp dụng filter
       </Button>
     </Stack>
   );
