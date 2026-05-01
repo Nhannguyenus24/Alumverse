@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router';
+import { NavLink, useMatch } from 'react-router';
 import { Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
@@ -14,6 +14,8 @@ import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggr
 import { useAuth } from '../../hooks/useAuth';
 
 const AdminDashboardPage = () => {
+  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const { loading, metrics, timeline, organizations } = useAdminSystemContext();
@@ -108,7 +110,7 @@ const AdminDashboardPage = () => {
                 </Typography>
                 <Button
                   component={NavLink}
-                  to="/admin/users"
+                  to={`${adminBase}/users`}
                   variant="outlined"
                   startIcon={<GroupsOutlinedIcon />}
                   sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
@@ -118,7 +120,7 @@ const AdminDashboardPage = () => {
                 </Button>
                 <Button
                   component={NavLink}
-                  to="/admin/forum/posts"
+                  to={`${adminBase}/forum/posts`}
                   variant="outlined"
                   startIcon={<ForumOutlinedIcon />}
                   sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
@@ -127,7 +129,7 @@ const AdminDashboardPage = () => {
                 </Button>
                 <Button
                   component={NavLink}
-                  to="/admin/audit-logs"
+                  to={`${adminBase}/audit-logs`}
                   variant="outlined"
                   startIcon={<GavelOutlinedIcon />}
                   sx={{ textTransform: 'none', justifyContent: 'flex-start' }}

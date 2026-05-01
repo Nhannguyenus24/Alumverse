@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useMatch, useNavigate } from 'react-router';
 
 import { useSnackbar } from 'notistack';
 import {
@@ -33,13 +34,17 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { resetPasswordByAdmin } from '../../api/adminUserApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUsersListPage = () => {
-  const navigate = useOrgNavigate();
+  const navigate = useNavigate();
+  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const adminBase = useMemo(
+    () => (slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin'),
+    [slugMatch?.params?.slug],
+  );
   const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const {
@@ -229,7 +234,7 @@ const AdminUsersListPage = () => {
               </TableRow>
             ) : (
               users.map((u) => (
-                <TableRow key={u.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/users/${u.id}`)}>
+                <TableRow key={u.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`${adminBase}/users/${u.id}`)}>
                   <TableCell>{u.id}</TableCell>
                   <TableCell>{u.email || '-'}</TableCell>
                   <TableCell>{u.userName || '-'}</TableCell>
@@ -272,7 +277,7 @@ const AdminUsersListPage = () => {
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
                       <Tooltip title="View">
-                        <IconButton size="small" color="primary" onClick={() => navigate(`/admin/users/${u.id}`)}>
+                        <IconButton size="small" color="primary" onClick={() => navigate(`${adminBase}/users/${u.id}`)}>
                           <VisibilityOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
