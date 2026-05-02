@@ -214,9 +214,12 @@ const AdminUserDetailPage = () => {
                   color="success"
                   size="small"
                   startIcon={<LockOpenOutlinedIcon />}
-                  onClick={() => {
-                    unbanUser(user.id);
-                    enqueueSnackbar('User unbanned.', { variant: 'success' });
+                  onClick={async () => {
+                    try {
+                      await unbanUser(user.id);
+                    } catch {
+                      /* snackbar in hook */
+                    }
                   }}
                   sx={{ textTransform: 'none' }}
                 >
@@ -483,10 +486,12 @@ const AdminUserDetailPage = () => {
         mode="edit"
         user={user}
         onClose={() => setEditOpen(false)}
-        onSubmit={(payload) => {
-          updateUser(user.id, payload);
-          enqueueSnackbar('User updated.', { variant: 'success' });
-          setEditOpen(false);
+        onSubmit={async (payload) => {
+          try {
+            await updateUser(user.id, payload);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
@@ -494,10 +499,13 @@ const AdminUserDetailPage = () => {
         open={banOpen}
         user={user}
         onClose={() => setBanOpen(false)}
-        onConfirm={(payload) => {
-          banUser(user.id, payload);
-          enqueueSnackbar('User banned.', { variant: 'success' });
-          setBanOpen(false);
+        onConfirm={async (payload) => {
+          try {
+            await banUser(user.id, payload);
+            setBanOpen(false);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
@@ -506,11 +514,14 @@ const AdminUserDetailPage = () => {
         title="Delete account"
         description={`Remove ${user.fullName} (#${user.id})? Demo: local state only.`}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          deleteUser(user.id);
-          enqueueSnackbar('User deleted.', { variant: 'success' });
-          setDeleteOpen(false);
-          navigate(`${adminBase}/users`);
+        onConfirm={async () => {
+          try {
+            await deleteUser(user.id);
+            setDeleteOpen(false);
+            navigate(`${adminBase}/users`);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
     </>

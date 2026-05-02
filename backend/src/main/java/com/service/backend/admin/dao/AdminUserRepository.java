@@ -229,4 +229,24 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
            "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
     Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
+
+    @Modifying
+    @Query("""
+            INSERT INTO global_profiles (user_id, full_name, updated_at)
+            VALUES (:userId, :fullName, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id) DO UPDATE SET
+                full_name = EXCLUDED.full_name,
+                updated_at = CURRENT_TIMESTAMP
+            """)
+    Mono<Integer> upsertGlobalProfileFullName(@Param("userId") Integer userId, @Param("fullName") String fullName);
+
+    @Query("SELECT id FROM organization_members WHERE user_id = :userId ORDER BY id ASC LIMIT 1")
+    Mono<Integer> findFirstOrganizationMemberIdByUserId(@Param("userId") Integer userId);
+
+    @Modifying
+    @Query("UPDATE organization_members SET organization_id = :organizationId, updated_at = CURRENT_TIMESTAMP "
+            + "WHERE id = :memberId")
+    Mono<Integer> updateOrganizationMemberOrganization(
+            @Param("memberId") Integer memberId,
+            @Param("organizationId") Integer organizationId);
 }

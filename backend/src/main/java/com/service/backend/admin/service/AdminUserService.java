@@ -1,11 +1,15 @@
 package com.service.backend.admin.service;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
+import com.service.backend.admin.dao.AdminUserOrganizationPreviewRepository;
 import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.AdminResetPasswordRequest;
 import com.service.backend.admin.dto.UserActivityResponse;
@@ -16,6 +20,8 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.auth.entity.User;
 import com.service.backend.admin.entity.AdminAuditLog;
+import com.service.backend.shared.dao.UserDisplayInfo;
+import com.service.backend.shared.dao.UserDisplayInfoRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -29,14 +35,20 @@ public class AdminUserService {
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final PasswordEncoder passwordEncoder;
-    
+    private final UserDisplayInfoRepository userDisplayInfoRepository;
+    private final AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository;
+
     public AdminUserService(
             AdminUserRepository adminUserRepository,
             AdminAuditLogRepository adminAuditLogRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            UserDisplayInfoRepository userDisplayInfoRepository,
+            AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository) {
         this.adminUserRepository = adminUserRepository;
         this.adminAuditLogRepository = adminAuditLogRepository;
         this.passwordEncoder = passwordEncoder;
+        this.userDisplayInfoRepository = userDisplayInfoRepository;
+        this.adminUserOrganizationPreviewRepository = adminUserOrganizationPreviewRepository;
     }
     
     /**
@@ -46,16 +58,15 @@ public class AdminUserService {
         logger.info("Fetching users for organization: {} with page: {}, size: {}", organizationId, page, size);
         
         int offset = page * size;
-        
-        Flux<UserResponse> usersFlux = adminUserRepository
-                .findUsersByOrganizationWithPagination(organizationId, size, offset)
-                .map(this::mapToUserResponse);
-        
+
         Mono<Long> totalCount = adminUserRepository.countUsersByOrganization(organizationId);
-        
-        return Mono.zip(usersFlux.collectList(), totalCount)
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
-                .doOnSuccess(response -> logger.info("Successfully fetched {} users from organization {}", 
+
+        return Mono.zip(
+                        adminUserRepository.findUsersByOrganizationWithPagination(organizationId, size, offset).collectList(),
+                        totalCount)
+                .flatMap(tuple -> enrichUserResponses(tuple.getT1())
+                        .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
+                .doOnSuccess(response -> logger.info("Successfully fetched {} users from organization {}",
                         response.getItems().size(), organizationId))
                 .doOnError(error -> logger.error("Error fetching users for organization: {}", organizationId, error));
     }
@@ -67,15 +78,12 @@ public class AdminUserService {
         logger.info("Fetching all users with page: {}, size: {}", page, size);
         
         int offset = page * size;
-        
-        Flux<UserResponse> usersFlux = adminUserRepository
-                .findAllUsersWithPagination(size, offset)
-                .map(this::mapToUserResponse);
-        
+
         Mono<Long> totalCount = adminUserRepository.countAllUsers();
-        
-        return Mono.zip(usersFlux.collectList(), totalCount)
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+
+        return Mono.zip(adminUserRepository.findAllUsersWithPagination(size, offset).collectList(), totalCount)
+                .flatMap(tuple -> enrichUserResponses(tuple.getT1())
+                        .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
                 .doOnSuccess(response -> logger.info("Successfully fetched {} users", response.getItems().size()))
                 .doOnError(error -> logger.error("Error fetching all users", error));
     }
@@ -185,6 +193,7 @@ public class AdminUserService {
         
         return adminUserRepository.findById(userId)
                 .map(this::mapToUserResponse)
+                .flatMap(this::enrichOne)
                 .doOnSuccess(user -> logger.info("Successfully fetched user: {}", userId))
                 .doOnError(error -> logger.error("Error fetching user: {}", userId, error));
     }
@@ -217,9 +226,87 @@ public class AdminUserService {
                     user.setUpdatedAt(LocalDateTime.now());
                     return adminUserRepository.save(user);
                 })
-                .map(this::mapToUserResponse)
+                .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
                 .doOnSuccess(u -> logger.info("User {} updated successfully", userId))
                 .doOnError(e -> logger.error("Error updating user {}", userId, e));
+    }
+
+    private Mono<Void> applyProfileAndOrg(Integer userId, UpdateUserRequest request) {
+        Mono<Void> profile = Mono.empty();
+        if (StringUtils.hasText(request.getFullName())) {
+            profile = adminUserRepository
+                    .upsertGlobalProfileFullName(userId, request.getFullName().trim())
+                    .then();
+        }
+        Mono<Void> org = Mono.empty();
+        if (request.getOrganizationId() != null) {
+            org = syncPrimaryOrganization(userId, request.getOrganizationId());
+        }
+        return Mono.when(profile, org);
+    }
+
+    private Mono<Void> syncPrimaryOrganization(Integer userId, Integer organizationId) {
+        return adminUserRepository
+                .findFirstOrganizationMemberIdByUserId(userId)
+                .flatMap(memberId -> adminUserRepository
+                        .updateOrganizationMemberOrganization(memberId, organizationId)
+                        .then())
+                .switchIfEmpty(adminUserRepository
+                        .createOrganizationMember(
+                                organizationId,
+                                userId,
+                                null,
+                                null,
+                                null,
+                                null,
+                                0,
+                                "active")
+                        .then());
+    }
+
+    private Mono<List<UserResponse>> enrichUserResponses(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Mono.just(List.of());
+        }
+        List<Integer> ids = users.stream().map(User::getId).toList();
+        return Mono.zip(
+                        userDisplayInfoRepository.findByUserIds(ids),
+                        adminUserOrganizationPreviewRepository.findPrimaryOrgByUserIds(ids))
+                .map(tuple -> {
+                    var displayMap = tuple.getT1();
+                    var orgMap = tuple.getT2();
+                    return users.stream()
+                            .map(u -> mergeEnrichment(
+                                    mapToUserResponse(u),
+                                    displayMap.get(u.getId()),
+                                    orgMap.get(u.getId())))
+                            .toList();
+                });
+    }
+
+    private Mono<UserResponse> enrichOne(UserResponse base) {
+        if (base.getId() == null) {
+            return Mono.just(base);
+        }
+        return Mono.zip(
+                        userDisplayInfoRepository.findByUserId(base.getId()).defaultIfEmpty(new UserDisplayInfo()),
+                        adminUserOrganizationPreviewRepository.findPrimaryOrgByUserIds(List.of(base.getId())))
+                .map(t -> mergeEnrichment(base, t.getT1(), t.getT2().get(base.getId())));
+    }
+
+    private UserResponse mergeEnrichment(
+            UserResponse base,
+            UserDisplayInfo di,
+            AdminUserOrganizationPreviewRepository.PrimaryOrg org) {
+        UserResponse.UserResponseBuilder b = base.toBuilder();
+        if (di != null && StringUtils.hasText(di.getFullName())) {
+            b.fullName(di.getFullName());
+        }
+        if (org != null && org.organizationId() != null) {
+            b.organizationId(org.organizationId());
+            b.organizationName(org.organizationName());
+        }
+        return b.build();
     }
 
     /**

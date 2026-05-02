@@ -32,7 +32,6 @@ import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
-import useAdminForumPostsLocal from '../hooks/admin/useAdminForumPostsLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminSystemProvider } from '../contexts/AdminSystemContext';
 import { AdminUsersProvider } from '../contexts/AdminUsersContext';
@@ -292,10 +291,7 @@ const AdminLayoutShell = () => {
 const AdminLayout = () => {
   const system = useAdminSystemData();
   const users = useAdminUsersLocal();
-  const forumLocal = useAdminForumPostsLocal();
-  const forumData = useAdminForumData(system.activeOrgId);
-
-  const forum = { ...forumLocal, ...forumData };
+  const forum = useAdminForumData(system.activeOrgId);
 
   return (
     <AdminSystemProvider value={system}>

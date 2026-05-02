@@ -26,9 +26,13 @@ export const unbanUser = (userId) =>
 export const deleteUser = (userId, hardDelete = false) =>
   apiClient.delete(BASE, { data: { userId, hardDelete } });
 
-// UpdateUserRequest: email, userName, role, status — no fullName or organizationId
+// UpdateUserRequest: email, userName, role, status, optional fullName, organizationId
 export const updateUser = (userId, payload) =>
   apiClient.put(`${BASE}/${userId}`, payload);
+
+/** Creates an ADMIN user (CreateAdminRequest). */
+export const createAdminAccount = (body) =>
+  apiClient.post(`${BASE}/admins`, body);
 
 // ========== VERIFICATION ==========
 

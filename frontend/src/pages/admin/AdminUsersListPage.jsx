@@ -301,9 +301,12 @@ const AdminUsersListPage = () => {
                           <IconButton
                             size="small"
                             color="success"
-                            onClick={() => {
-                              unbanUser(u.id);
-                              enqueueSnackbar('User unbanned.', { variant: 'success' });
+                            onClick={async () => {
+                              try {
+                                await unbanUser(u.id);
+                              } catch {
+                                /* snackbar in hook */
+                              }
                             }}
                           >
                             <LockOpenOutlinedIcon fontSize="small" />
@@ -388,9 +391,12 @@ const AdminUsersListPage = () => {
                 <MenuItem
                   key={st}
                   selected={active}
-                  onClick={() => {
-                    updateUserStatus(userStatusMenu.user.id, st);
-                    enqueueSnackbar(`User status set to ${formatAccountStatusLabel(st)}.`, { variant: 'success' });
+                  onClick={async () => {
+                    try {
+                      await updateUserStatus(userStatusMenu.user.id, st);
+                    } catch {
+                      /* snackbar in hook */
+                    }
                     setUserStatusMenu(null);
                   }}
                 >
@@ -406,13 +412,11 @@ const AdminUsersListPage = () => {
         mode={userFormMode}
         user={editingUser}
         onClose={() => setUserFormOpen(false)}
-        onSubmit={(payload) => {
+        onSubmit={async (payload) => {
           if (userFormMode === 'create') {
-            createUser(payload);
-            enqueueSnackbar('User created successfully.', { variant: 'success' });
+            await createUser(payload);
           } else if (editingUser) {
-            updateUser(editingUser.id, payload);
-            enqueueSnackbar('User updated successfully.', { variant: 'success' });
+            await updateUser(editingUser.id, payload);
           }
         }}
       />
@@ -421,10 +425,14 @@ const AdminUsersListPage = () => {
         open={Boolean(banTarget)}
         user={banTarget}
         onClose={() => setBanTarget(null)}
-        onConfirm={(banPayload) => {
-          if (banTarget) {
-            banUser(banTarget.id, banPayload);
-            enqueueSnackbar('User banned.', { variant: 'success' });
+        onConfirm={async (banPayload) => {
+          if (!banTarget) {
+            return;
+          }
+          try {
+            await banUser(banTarget.id, banPayload);
+          } catch {
+            /* snackbar in hook */
           }
           setBanTarget(null);
         }}
@@ -435,14 +443,18 @@ const AdminUsersListPage = () => {
         title="Delete user"
         description={
           deleteTarget
-            ? `This will remove ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id}). Demo: local state only.`
+            ? `Soft-delete ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id})? Status becomes DELETED on the server.`
             : ''
         }
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (deleteTarget) {
-            deleteUser(deleteTarget.id);
-            enqueueSnackbar('User removed from list.', { variant: 'success' });
+        onConfirm={async () => {
+          if (!deleteTarget) {
+            return;
+          }
+          try {
+            await deleteUser(deleteTarget.id);
+          } catch {
+            /* snackbar in hook */
           }
           setDeleteTarget(null);
         }}

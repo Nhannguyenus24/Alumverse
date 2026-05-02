@@ -154,7 +154,6 @@ const AdminForumPostsPage = () => {
     search,
     setSearch,
     updatePostStatus,
-    deletePost,
     // API-driven data
     bannedPosts,
     bannedPage,
@@ -209,7 +208,7 @@ const AdminForumPostsPage = () => {
     <>
       <AdminSectionPanel
         title="Forum posts moderation"
-        subtitle="Review, ban/unban, and delete posts. Switch tabs for banned or recently posted content."
+        subtitle="All posts lists yesterday’s new posts plus banned posts from the API. Other tabs are paginated from the server."
       >
         <Tabs
           value={activeTab}
@@ -392,10 +391,12 @@ const AdminForumPostsPage = () => {
                       <MenuItem
                         key={st}
                         selected={active}
-                        onClick={() => {
-                          updatePostStatus(forumStatusMenu.post.id, st);
-                          enqueueSnackbar(`Status set to ${forumModerationLabel(st)}.`, { variant: 'success' });
-                          setForumStatusMenu(null);
+                        onClick={async () => {
+                          try {
+                            await updatePostStatus(forumStatusMenu.post.id, st);
+                          } finally {
+                            setForumStatusMenu(null);
+                          }
                         }}
                       >
                         {forumModerationLabel(st)}
@@ -642,17 +643,9 @@ const AdminForumPostsPage = () => {
         onClose={() => setForumDeletePost(null)}
         onConfirm={async () => {
           if (forumDeletePost) {
-            // Try API first, fall back to local
-            if (deletePostApi) {
-              const ok = await deletePostApi(forumDeletePost.id);
-              if (!ok) {
-                deletePost(forumDeletePost.id);
-              }
-            } else {
-              deletePost(forumDeletePost.id);
-            }
-            enqueueSnackbar('Post deleted.', { variant: 'success' });
-            if (forumDetailPost?.id === forumDeletePost.id) {
+            const ok = await deletePostApi(forumDeletePost.id);
+            enqueueSnackbar(ok ? 'Post deleted.' : 'Failed to delete post.', { variant: ok ? 'success' : 'error' });
+            if (ok && forumDetailPost?.id === forumDeletePost.id) {
               setForumDetailPost(null);
             }
           }

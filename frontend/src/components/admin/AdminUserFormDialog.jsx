@@ -27,6 +27,15 @@ const emptyForm = {
   organizationId: ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
 };
 
+/** API list often omits fullName; keep edit form aligned with table column fallback. */
+const resolvedFullNameForEdit = (u) => {
+  if (!u) return '';
+  const found = [u.fullName, u.userName, u.email]
+    .map((x) => (typeof x === 'string' ? x.trim() : x))
+    .find(Boolean);
+  return typeof found === 'string' ? found : '';
+};
+
 const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [form, setForm] = useState(emptyForm);
@@ -42,7 +51,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
       setForm({
         email: user.email || '',
         userName: user.userName || '',
-        fullName: user.fullName || '',
+        fullName: resolvedFullNameForEdit(user),
         password: '',
         role: user.role || 'STUDENT',
         status: user.status || 'ACTIVE',
@@ -89,7 +98,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
     return keys.length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) {
       return;
     }
@@ -106,8 +115,12 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
     if (mode === 'create' || (mode === 'edit' && form.password)) {
       payload.password = form.password;
     }
-    onSubmit(payload);
-    onClose();
+    try {
+      await Promise.resolve(onSubmit(payload));
+      onClose();
+    } catch {
+      // Parent / hook shows errors; keep dialog open
+    }
   };
 
   // Keeps OutlinedInput `notched` in sync with the label inside Dialog (MUI v7).
