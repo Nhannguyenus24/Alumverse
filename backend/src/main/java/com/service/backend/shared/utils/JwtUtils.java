@@ -53,14 +53,16 @@ public class JwtUtils {
         return signAndSerialize(claimsSet);
     }
 
-    public String generateRefreshToken(Integer userId) {
+    public String generateRefreshToken(Integer userId, Integer organizationId) {
         Instant now = Instant.now();
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusMillis(refreshTokenExpirationMs)))
-                .build();
-        return signAndSerialize(claimsSet);
+                .expirationTime(Date.from(now.plusMillis(refreshTokenExpirationMs)));
+        if (organizationId != null) {
+            builder.claim("organizationId", organizationId);
+        }
+        return signAndSerialize(builder.build());
     }
 
     public JWTClaimsSet validateToken(String token) {
