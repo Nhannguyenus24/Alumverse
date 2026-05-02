@@ -367,16 +367,30 @@ public class AdminUserService {
                     if (count <= 0) {
                         return Mono.just(false);
                     }
-                    return adminAuditLogRepository.save(com.service.backend.admin.entity.AdminAuditLog.builder()
-                                    .adminUserId(adminUserId)
-                                    .targetUserId(userId)
-                                    .action("RESET_PASSWORD")
-                                    .resourceType("USER")
-                                    .resourceId(String.valueOf(userId))
-                                    .metadata(request.getReason())
-                                    .createdAt(LocalDateTime.now())
-                                    .build())
-                            .thenReturn(true);
+                    LocalDateTime now = LocalDateTime.now();
+                    return adminAuditLogRepository
+                            .insertResetPasswordAuditLog(
+                                    adminUserId,
+                                    userId,
+                                    "RESET_PASSWORD",
+                                    "USER",
+                                    String.valueOf(userId),
+                                    request.getReason(),
+                                    now)
+                            .onErrorResume(primaryErr -> {
+                                logger.warn("Primary audit-log insert failed, retrying legacy schema for user {}", userId, primaryErr);
+                                return adminAuditLogRepository
+                                        .insertResetPasswordAuditLogLegacy(
+                                                adminUserId,
+                                                userId,
+                                                "RESET_PASSWORD",
+                                                now);
+                            })
+                            .thenReturn(true)
+                            .onErrorResume(e -> {
+                                logger.warn("Password reset succeeded but all audit-log insert attempts failed for user {}", userId, e);
+                                return Mono.just(true);
+                            });
                 });
     }
 
