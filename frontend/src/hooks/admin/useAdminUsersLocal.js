@@ -145,6 +145,7 @@ const useAdminUsersLocal = () => {
         fullName: String(payload.fullName || '').trim(),
         userName: String(payload.userName || '').trim(),
         password: payload.password,
+        organizationId: Number(payload.organizationId),
       });
       enqueueSnackbar('Admin account created.', { variant: 'success' });
       await loadUsers();

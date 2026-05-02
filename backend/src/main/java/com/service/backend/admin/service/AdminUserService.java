@@ -394,6 +394,9 @@ public class AdminUserService {
                                     encodedPassword)
                             .flatMap(adminUserId -> adminUserRepository
                                     .createGlobalProfile(adminUserId, request.getFullName())
+                                    .then(adminUserRepository.upsertOrganizationMemberByUserId(
+                                            request.getOrganizationId(),
+                                            adminUserId))
                                     .thenReturn(true));
                 })
                 .doOnSuccess(created -> logger.info("Admin account created for email={}", request.getEmail()))
