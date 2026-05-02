@@ -1,5 +1,6 @@
 import axios from 'axios';
 import useAuthStore from '../stores/authStore';
+import { userFromAccessToken } from './jwt';
 
 const BASE_URL = '/api';
 
@@ -63,7 +64,7 @@ const forceLogout = () => {
  * Gọi refresh token API, trả về access token mới
  * Throw error nếu thất bại
  */
-const refreshAccessToken = async () => {
+export async function refreshSessionAccessToken() {
   const res = await refreshClient.post('/auth/refresh');
   const newToken = res?.data?.data?.accessToken;
 
@@ -72,7 +73,14 @@ const refreshAccessToken = async () => {
   }
 
   return newToken;
-};
+}
+
+/** Cập nhật token + user trong store từ access JWT (dùng chung cho interceptor và useAuth). */
+export function syncAuthStoreFromAccessToken(accessToken) {
+  useAuthStore.getState().setToken(accessToken);
+  const authUser = userFromAccessToken(accessToken);
+  if (authUser) useAuthStore.getState().setUser(authUser);
+}
 
 // --- Request Interceptor: Đính kèm Token vào Header ---
 apiClient.interceptors.request.use(
@@ -121,10 +129,9 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const newToken = await refreshAccessToken();
+      const newToken = await refreshSessionAccessToken();
 
-      // Cập nhật token mới vào store
-      useAuthStore.getState().setToken(newToken);
+      syncAuthStoreFromAccessToken(newToken);
 
       // Giải phóng hàng đợi
       processQueue(null, newToken);
