@@ -60,4 +60,8 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
            "HAVING COUNT(DISTINCT ulh.login_ip) > 3 " +
            "ORDER BY distinct_ip_count DESC")
     Flux<Object> findSuspiciousLogins();
+    
+       @Query("SELECT COUNT(DISTINCT user_id) FROM user_login_histories WHERE login_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'")
+       Mono<Long> countDailyActive();
+
 }

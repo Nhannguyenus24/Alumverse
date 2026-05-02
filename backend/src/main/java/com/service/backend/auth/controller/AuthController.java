@@ -125,6 +125,7 @@ public class AuthController {
         ResponseCookie refreshTokenCookie = ResponseCookie
                 .from("refreshToken", "")
                 .httpOnly(true)
+                .path("/")
                 .maxAge(0)
                 .sameSite("Lax")
                 .build();
@@ -208,12 +209,13 @@ public class AuthController {
                             user.getAvatarUrl(),
                             organizationId
                     );
-                    String refreshToken = jwtUtils.generateRefreshToken(user.getId());
+                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId);
 
                     ResponseCookie refreshTokenCookie = ResponseCookie
                             .from("refreshToken", refreshToken)
                             .httpOnly(true)
                             // .secure(true) // turn on when in https
+                            .path("/")
                             .maxAge(Duration.ofDays(7))
                             .sameSite("Lax")
                             .build();
