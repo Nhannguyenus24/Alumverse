@@ -369,18 +369,20 @@ public class AdminUserService {
                     }
                     LocalDateTime now = LocalDateTime.now();
                     return adminAuditLogRepository
-                            .insertResetPasswordAuditLog(
+                            .insertAuditLog(
                                     adminUserId,
                                     userId,
                                     "RESET_PASSWORD",
                                     "USER",
                                     String.valueOf(userId),
+                                    null,
+                                    null,
                                     request.getReason(),
                                     now)
                             .onErrorResume(primaryErr -> {
                                 logger.warn("Primary audit-log insert failed, retrying legacy schema for user {}", userId, primaryErr);
                                 return adminAuditLogRepository
-                                        .insertResetPasswordAuditLogLegacy(
+                                        .insertAuditLogLegacy(
                                                 adminUserId,
                                                 userId,
                                                 "RESET_PASSWORD",

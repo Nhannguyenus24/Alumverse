@@ -676,16 +676,30 @@ public class AdminForumService {
         if (adminUserId == null) {
             return Mono.empty();
         }
-        return adminAuditLogRepository.save(com.service.backend.admin.entity.AdminAuditLog.builder()
-                        .adminUserId(adminUserId)
-                        .targetUserId(targetUserId)
-                        .action(action)
-                        .resourceType(resourceType)
-                        .resourceId(resourceId)
-                        .beforeData(beforeData)
-                        .afterData(afterData)
-                        .createdAt(LocalDateTime.now())
-                        .build())
+        LocalDateTime now = LocalDateTime.now();
+        return adminAuditLogRepository
+                .insertAuditLog(
+                        adminUserId,
+                        targetUserId,
+                        action,
+                        resourceType,
+                        resourceId,
+                        beforeData,
+                        afterData,
+                        null,
+                        now)
+                .onErrorResume(primaryErr -> {
+                    log.warn("Primary forum audit-log insert failed, retrying legacy schema for action {}", action, primaryErr);
+                    return adminAuditLogRepository.insertAuditLogLegacy(
+                            adminUserId,
+                            targetUserId,
+                            action,
+                            now);
+                })
+                .onErrorResume(fallbackErr -> {
+                    log.warn("All forum audit-log insert attempts failed for action {}", action, fallbackErr);
+                    return Mono.empty();
+                })
                 .then();
     }
 
