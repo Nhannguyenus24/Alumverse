@@ -18,6 +18,7 @@ import NetworkChatPanel from '../../components/network/NetworkChatPanel';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
 import { formatRating } from '../../utils/numberFormatter';
+import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 
 const SIDEBAR_ITEMS = [
   { id: '/network/search', label: 'Tìm kiếm', icon: <SearchIcon /> },
@@ -102,6 +103,8 @@ const NetworkPage = () => {
     if (pageCount === 0) return;
     setPage((p) => Math.min(p, pageCount));
   }, [pageCount]);
+
+  const handlePageChange = usePaginationScrollToTop({ currentPage: safePage, setPage });
 
   return (
     <Page title="Network">
@@ -224,7 +227,7 @@ const NetworkPage = () => {
                       <Pagination
                         count={pageCount || 1}
                         page={safePage}
-                        onChange={(_, value) => setPage(value)}
+                        onChange={handlePageChange}
                         color="primary"
                         shape="rounded"
                         size="large"
