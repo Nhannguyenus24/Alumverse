@@ -7,10 +7,14 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  InputAdornment,
   MenuItem,
   TextField,
   Typography,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 
 const emptyForm = {
@@ -27,11 +31,13 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
   const { enqueueSnackbar } = useSnackbar();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!open) {
       return;
     }
+    setShowPassword(false);
     if (mode === 'edit' && user) {
       setForm({
         email: user.email || '',
@@ -151,7 +157,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
         />
         <TextField
           label={mode === 'edit' ? 'New password (optional)' : 'Password'}
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           value={form.password}
           onChange={handleChange('password')}
           error={!!errors.password}
@@ -164,7 +170,23 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           }
           fullWidth
           autoComplete="new-password"
-          slotProps={{ inputLabel: inputLabelSlotProps }}
+          slotProps={{
+            inputLabel: inputLabelSlotProps,
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPassword((v) => !v)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
         />
         <TextField
           select

@@ -30,6 +30,13 @@ const Chart = ({
   showLegend = true,
   showGrid = true,
 }) => {
+  // Recharts ResponsiveContainer with height="100%" often measures -1 until a parent
+  // chain has explicit height (flex/tabs). Use a concrete pixel height instead.
+  const chartHeight =
+    typeof height === "number" && Number.isFinite(height) && height > 0
+      ? height
+      : 300;
+
   if (!data || data.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: "center" }}>
@@ -135,8 +142,8 @@ const Chart = ({
           {title}
         </Typography>
       )}
-      <Box sx={{ width: "100%", height }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <Box sx={{ width: "100%", height: chartHeight, minWidth: 0 }}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           {renderChart()}
         </ResponsiveContainer>
       </Box>
