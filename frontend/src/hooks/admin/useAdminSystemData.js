@@ -38,6 +38,54 @@ const mapLoginHistoryToAuditLog = (entry) => ({
   errorMessage: null,
 });
 
+const normalizeActivitiesPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.content)) return payload.content;
+  return [];
+};
+
+const buildTimelineFromActivities = (items) => {
+  const byDay = new Map();
+  items.forEach((item) => {
+    const ts = item?.timestamp || item?.createdAt;
+    if (!ts) return;
+    const d = new Date(ts);
+    if (Number.isNaN(d.getTime())) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    byDay.set(key, (byDay.get(key) || 0) + 1);
+  });
+  return Array.from(byDay.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, count]) => ({ date, count }));
+};
+
+const mapActivityToAuditLog = (item, usersById) => {
+  const actor = usersById.get(Number(item?.adminUserId));
+  return {
+    id: item.id,
+    timestamp: item.timestamp,
+    userId: item.adminUserId,
+    userName: actor?.userName || `admin#${item.adminUserId ?? '-'}`,
+    userEmail: actor?.email || '',
+    action: item.action,
+    entityType: item.resourceType,
+    entityId: item.resourceId,
+    entityName: item.resourceType && item.resourceId ? `${item.resourceType} #${item.resourceId}` : '',
+    status: 'SUCCESS',
+    description: item.metadata
+      ? `${item.action || 'ACTION'} on ${item.resourceType || 'RESOURCE'} #${item.resourceId || '-'} (${item.metadata})`
+      : `${item.action || 'ACTION'} on ${item.resourceType || 'RESOURCE'} #${item.resourceId || '-'}`,
+    ipAddress: null,
+    userAgent: null,
+    requestPath: null,
+    executionTime: null,
+    oldValue: null,
+    newValue: null,
+    errorMessage: null,
+  };
+};
+
 const fetchSafe = async (request, fallbackValue) => {
   try {
     const response = await request();
@@ -62,9 +110,9 @@ const useAdminSystemData = () => {
   const loadData = useCallback(async () => {
     setLoading(true);
 
-    const [metrics, timeline, users, organizations, rawAuditLogs] = await Promise.all([
+    const [metrics, activitiesPayload, users, organizations, rawLoginLogs] = await Promise.all([
       fetchSafe(() => apiClient.get('/admin/dashboard/metrics'), emptyMetrics),
-      fetchSafe(() => apiClient.get('/admin/dashboard/activities'), []),
+      fetchSafe(() => apiClient.get('/admin/dashboard/activities', { params: { page: 0, size: 200 } }), []),
       fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 20 } }), []),
       fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 20 } }), []),
       fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20 } }), null),
@@ -72,14 +120,18 @@ const useAdminSystemData = () => {
 
     const normalizedUsers = normalizeList(users);
     const normalizedOrgs = normalizeList(organizations);
-    const rawAuditList = normalizeList(rawAuditLogs);
-    const auditLogs = rawAuditList.length > 0
-      ? rawAuditList.map(mapLoginHistoryToAuditLog)
-      : [];
+    const usersById = new Map(normalizedUsers.map((u) => [Number(u.id), u]));
+    const activities = normalizeActivitiesPayload(activitiesPayload);
+    const loginRows = normalizeList(rawLoginLogs);
+
+    const auditLogs = activities.length > 0
+      ? activities.map((item) => mapActivityToAuditLog(item, usersById))
+      : loginRows.map(mapLoginHistoryToAuditLog);
+    const timeline = buildTimelineFromActivities(activities);
 
     setState({
       metrics: metrics || emptyMetrics,
-      timeline: Array.isArray(timeline) ? timeline : [],
+      timeline,
       users: normalizedUsers,
       organizations: normalizedOrgs,
       auditLogs,
