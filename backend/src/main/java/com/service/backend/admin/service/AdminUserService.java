@@ -246,22 +246,7 @@ public class AdminUserService {
     }
 
     private Mono<Void> syncPrimaryOrganization(Integer userId, Integer organizationId) {
-        return adminUserRepository
-                .findFirstOrganizationMemberIdByUserId(userId)
-                .flatMap(memberId -> adminUserRepository
-                        .updateOrganizationMemberOrganization(memberId, organizationId)
-                        .then())
-                .switchIfEmpty(adminUserRepository
-                        .createOrganizationMember(
-                                organizationId,
-                                userId,
-                                null,
-                                null,
-                                null,
-                                null,
-                                0,
-                                "active")
-                        .then());
+        return adminUserRepository.upsertOrganizationMemberByUserId(organizationId, userId).then();
     }
 
     private Mono<List<UserResponse>> enrichUserResponses(List<User> users) {

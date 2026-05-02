@@ -240,13 +240,23 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             """)
     Mono<Integer> upsertGlobalProfileFullName(@Param("userId") Integer userId, @Param("fullName") String fullName);
 
-    @Query("SELECT id FROM organization_members WHERE user_id = :userId ORDER BY id ASC LIMIT 1")
-    Mono<Integer> findFirstOrganizationMemberIdByUserId(@Param("userId") Integer userId);
-
+    /**
+     * One membership row per user ({@code organization_members_user_id_key}).
+     * Insert if missing, otherwise move user to the given organization.
+     */
     @Modifying
-    @Query("UPDATE organization_members SET organization_id = :organizationId, updated_at = CURRENT_TIMESTAMP "
-            + "WHERE id = :memberId")
-    Mono<Integer> updateOrganizationMemberOrganization(
-            @Param("memberId") Integer memberId,
-            @Param("organizationId") Integer organizationId);
+    @Query("""
+            INSERT INTO organization_members (
+                organization_id, user_id, graduated_year, graduation_status, program, major,
+                verification_level, is_trusted_verifier, status, created_at, updated_at)
+            VALUES (
+                :organizationId, :userId, NULL, NULL, NULL, NULL, 0, false, 'active',
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id) DO UPDATE SET
+                organization_id = EXCLUDED.organization_id,
+                updated_at = CURRENT_TIMESTAMP
+            """)
+    Mono<Integer> upsertOrganizationMemberByUserId(
+            @Param("organizationId") Integer organizationId,
+            @Param("userId") Integer userId);
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMatch, useNavigate } from 'react-router';
 
 import { useSnackbar } from 'notistack';
@@ -32,11 +32,12 @@ import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAuth } from '../../hooks/useAuth';
 import { resetPasswordByAdmin } from '../../api/adminUserApi';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 
 const AdminUsersListPage = () => {
   const navigate = useNavigate();
@@ -80,6 +81,25 @@ const AdminUsersListPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [userStatusMenu, setUserStatusMenu] = useState(null);
   const [banTarget, setBanTarget] = useState(null);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <>
@@ -171,7 +191,7 @@ const AdminUsersListPage = () => {
             sx={{ minWidth: 220 }}
           >
             <MenuItem value="ALL">All organizations</MenuItem>
-            {ADMIN_ORGANIZATION_OPTIONS.map((org) => (
+            {organizationOptions.map((org) => (
               <MenuItem key={org.id} value={String(org.id)}>
                 {org.name}
               </MenuItem>
@@ -411,6 +431,7 @@ const AdminUsersListPage = () => {
         open={userFormOpen}
         mode={userFormMode}
         user={editingUser}
+        organizationOptions={organizationOptions}
         onClose={() => setUserFormOpen(false)}
         onSubmit={async (payload) => {
           if (userFormMode === 'create') {

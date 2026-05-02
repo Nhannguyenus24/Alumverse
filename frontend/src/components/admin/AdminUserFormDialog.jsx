@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -15,16 +15,16 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 
-const emptyForm = {
+const defaultEmptyForm = {
   email: '',
   userName: '',
   fullName: '',
   password: '',
   role: 'STUDENT',
   status: 'ACTIVE',
-  organizationId: ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
+  organizationId: '',
 };
 
 /** API list often omits fullName; keep edit form aligned with table column fallback. */
@@ -36,9 +36,13 @@ const resolvedFullNameForEdit = (u) => {
   return typeof found === 'string' ? found : '';
 };
 
-const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
+const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organizationOptions = [] }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const [form, setForm] = useState(emptyForm);
+  const firstOrganizationId = useMemo(
+    () => (organizationOptions.length > 0 ? Number(organizationOptions[0].id) : ''),
+    [organizationOptions],
+  );
+  const [form, setForm] = useState(() => ({ ...defaultEmptyForm, organizationId: firstOrganizationId }));
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
@@ -55,13 +59,13 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
         password: '',
         role: user.role || 'STUDENT',
         status: user.status || 'ACTIVE',
-        organizationId: user.organizationId ?? ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
+        organizationId: user.organizationId ?? firstOrganizationId,
       });
     } else {
-      setForm(emptyForm);
+      setForm({ ...defaultEmptyForm, organizationId: firstOrganizationId });
     }
     setErrors({});
-  }, [open, mode, user]);
+  }, [open, mode, user, firstOrganizationId]);
 
   const handleChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -102,7 +106,11 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
     if (!validate()) {
       return;
     }
-    const org = ADMIN_ORGANIZATION_OPTIONS.find((o) => o.id === Number(form.organizationId));
+    if (!form.organizationId) {
+      enqueueSnackbar('Organization is required', { variant: 'error' });
+      return;
+    }
+    const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
     const payload = {
       email: form.email,
       userName: form.userName,
@@ -209,7 +217,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           fullWidth
           slotProps={{ inputLabel: inputLabelSlotProps }}
         >
-          {ADMIN_ORGANIZATION_OPTIONS.map((org) => (
+          {organizationOptions.map((org) => (
             <MenuItem key={org.id} value={org.id}>
               {org.name}
             </MenuItem>

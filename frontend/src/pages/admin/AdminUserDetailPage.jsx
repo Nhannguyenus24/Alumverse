@@ -38,6 +38,7 @@ import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { useAuth } from '../../hooks/useAuth';
 import { getLoginHistoryByUser } from '../../api/adminAuditApi';
 import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const demoProfile = (user) => ({
@@ -89,6 +90,7 @@ const AdminUserDetailPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [banOpen, setBanOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
 
   // Fallback: filter global audit logs from context
   const auditTrail = useMemo(
@@ -154,6 +156,24 @@ const AdminUserDetailPage = () => {
   useEffect(() => {
     if (tab === 5) fetchUserLoginHistory();
   }, [tab, fetchUserLoginHistory]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const profile = user ? demoProfile(user) : {};
   const academic = user ? demoAcademic() : [];
@@ -485,6 +505,7 @@ const AdminUserDetailPage = () => {
         open={editOpen}
         mode="edit"
         user={user}
+        organizationOptions={organizationOptions}
         onClose={() => setEditOpen(false)}
         onSubmit={async (payload) => {
           try {
