@@ -238,7 +238,9 @@ const AdminUsersListPage = () => {
                   <TableCell>{u.id}</TableCell>
                   <TableCell>{u.email || '-'}</TableCell>
                   <TableCell>{u.userName || '-'}</TableCell>
-                  <TableCell>{u.fullName || '-'}</TableCell>
+                  <TableCell>
+                    {[u.fullName, u.userName, u.email].map((x) => (typeof x === 'string' ? x.trim() : x)).find(Boolean) || '-'}
+                  </TableCell>
                   <TableCell>{u.role || '-'}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <AdminStatusChip

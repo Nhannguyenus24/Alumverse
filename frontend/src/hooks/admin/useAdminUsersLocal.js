@@ -19,6 +19,15 @@ const normalizeList = (payload) => {
   return [];
 };
 
+/** UserResponse has no fullName; overlay may set it. Fall back so "Sort by name" matches visible identity. */
+const sortableDisplayName = (user) => {
+  const name = user?.fullName?.trim();
+  if (name) return name;
+  const login = user?.userName?.trim();
+  if (login) return login;
+  return String(user?.email ?? '').trim();
+};
+
 const useAdminUsersLocal = () => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
@@ -88,8 +97,18 @@ const useAdminUsersLocal = () => {
     const dir = sortOrder === 'ASC' ? 1 : -1;
     const list = [...filteredUsers];
     list.sort((a, b) => {
-      if (sortBy === 'fullName') return dir * String(a.fullName || '').localeCompare(String(b.fullName || ''));
-      if (sortBy === 'email') return dir * String(a.email || '').localeCompare(String(b.email || ''));
+      if (sortBy === 'fullName') {
+        const sa = sortableDisplayName(a);
+        const sb = sortableDisplayName(b);
+        let cmp = sa.localeCompare(sb, undefined, { sensitivity: 'base' });
+        if (cmp === 0) {
+          cmp = String(a.email || '').localeCompare(String(b.email || ''), undefined, { sensitivity: 'base' });
+        }
+        return dir * cmp;
+      }
+      if (sortBy === 'email') {
+        return dir * String(a.email || '').localeCompare(String(b.email || ''), undefined, { sensitivity: 'base' });
+      }
       if (sortBy === 'updatedAt') {
         const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
         const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
