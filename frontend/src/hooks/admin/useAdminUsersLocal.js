@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import { DEFAULT_ADMIN_USERS } from '../../constants/adminDefaultUsers';
 import * as adminUserApi from '../../api/adminUserApi';
 
 const addDaysIso = (days) => {
@@ -52,7 +51,7 @@ const useAdminUsersLocal = () => {
       const items = normalizeList(payload);
       setServerUsers(Array.isArray(items) ? items : []);
     } catch {
-      setServerUsers((prev) => (prev.length > 0 ? prev : DEFAULT_ADMIN_USERS));
+      setServerUsers([]);
     } finally {
       setLoading(false);
     }

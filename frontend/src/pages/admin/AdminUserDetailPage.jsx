@@ -41,39 +41,6 @@ import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
 import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
-const demoProfile = (user) => ({
-  phone: user?.phone || '0901 234 567',
-  dob: user?.dob || '1998-05-15',
-  gender: user?.gender || 'MALE',
-  bio: user?.bio || 'Alumni demo profile — connect to API for real data.',
-});
-
-const demoAcademic = () => [
-  {
-    studentCode: 'N1900001',
-    degreeType: 'BACHELOR',
-    className: 'K19',
-    startYear: 2019,
-    graduatedYear: 2023,
-  },
-];
-
-const demoMemberships = (user) => [
-  {
-    organizationName: user?.organizationName || '-',
-    verificationLevel: 2,
-    status: user?.membershipStatus || 'active',
-    createdAt: user?.createdAt,
-  },
-];
-
-const demoActivity = () => ({
-  postsCreated: 12,
-  comments: 48,
-  eventsAttended: 3,
-  pageViewsSample: 120,
-});
-
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
@@ -106,6 +73,7 @@ const AdminUserDetailPage = () => {
   const [userLoginHistory, setUserLoginHistory] = useState(null);
   const [userAdminActions, setUserAdminActions] = useState([]);
   const [userVerificationLogs, setUserVerificationLogs] = useState([]);
+  const [userActivitySummary, setUserActivitySummary] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchUserLoginHistory = useCallback(() => {
@@ -131,6 +99,7 @@ const AdminUserDetailPage = () => {
         );
         setUserVerificationLogs(verifications);
         setUserAdminActions(actions);
+        setUserActivitySummary(data?.summary || null);
       })
       .catch(() => {
         getLoginHistoryByUser(userId, 0, 50)
@@ -175,14 +144,31 @@ const AdminUserDetailPage = () => {
     };
   }, []);
 
-  const profile = user ? demoProfile(user) : {};
-  const academic = user ? demoAcademic() : [];
-  const memberships = user ? demoMemberships(user) : [];
-  const activity = user ? demoActivity() : null;
+  const profile = user
+    ? {
+        phone: user?.phone || '-',
+        dob: user?.dob || '-',
+        gender: user?.gender || '-',
+        bio: user?.bio || '-',
+      }
+    : {};
+  const academic = Array.isArray(user?.academicRecords) ? user.academicRecords : [];
+  const memberships = user ? [{
+    organizationName: user?.organizationName || '-',
+    verificationLevel: user?.verificationLevel ?? '-',
+    status: user?.membershipStatus || '-',
+    createdAt: user?.createdAt,
+  }] : [];
+  const activity = userActivitySummary || {
+    postsCreated: user?.postsCreated ?? '-',
+    comments: user?.commentsCount ?? '-',
+    eventsAttended: user?.eventsAttended ?? '-',
+    pageViewsSample: user?.pageViews ?? '-',
+  };
 
   if (!user) {
     return (
-      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list (demo data).">
+      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list.">
         <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
           Back to users
         </Button>
@@ -333,15 +319,22 @@ const AdminUserDetailPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {academic.map((row) => (
-                    <TableRow key={row.studentCode}>
-                      <TableCell>{row.studentCode}</TableCell>
-                      <TableCell>{row.degreeType}</TableCell>
-                      <TableCell>{row.className}</TableCell>
-                      <TableCell>{row.startYear}</TableCell>
-                      <TableCell>{row.graduatedYear}</TableCell>
+                  {academic.map((row, idx) => (
+                    <TableRow key={`${row.studentCode || row.id || `row-${idx}`}`}>
+                      <TableCell>{row.studentCode || '-'}</TableCell>
+                      <TableCell>{row.degreeType || '-'}</TableCell>
+                      <TableCell>{row.className || '-'}</TableCell>
+                      <TableCell>{row.startYear || '-'}</TableCell>
+                      <TableCell>{row.graduatedYear || '-'}</TableCell>
                     </TableRow>
                   ))}
+                  {academic.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Typography variant="body2" color="text.secondary">No academic records from API.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
                 </TableBody>
               </Table>
             ) : null}
@@ -359,10 +352,10 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 3 ? (
               <Stack spacing={0.5}>
-                <Typography variant="body2">Posts created: {activity?.postsCreated}</Typography>
-                <Typography variant="body2">Comments: {activity?.comments}</Typography>
-                <Typography variant="body2">Events attended: {activity?.eventsAttended}</Typography>
-                <Typography variant="body2">Page views (sample): {activity?.pageViewsSample}</Typography>
+                <Typography variant="body2">Posts created: {activity?.postsCreated ?? '-'}</Typography>
+                <Typography variant="body2">Comments: {activity?.comments ?? '-'}</Typography>
+                <Typography variant="body2">Events attended: {activity?.eventsAttended ?? '-'}</Typography>
+                <Typography variant="body2">Page views: {activity?.pageViewsSample ?? '-'}</Typography>
               </Stack>
             ) : null}
             {tab === 4 ? (
@@ -533,7 +526,7 @@ const AdminUserDetailPage = () => {
       <AdminConfirmDeleteDialog
         open={deleteOpen}
         title="Delete account"
-        description={`Remove ${user.fullName} (#${user.id})? Demo: local state only.`}
+        description={`Remove ${user.fullName} (#${user.id})?`}
         onClose={() => setDeleteOpen(false)}
         onConfirm={async () => {
           try {

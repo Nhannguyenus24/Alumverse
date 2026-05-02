@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_ADMIN_FUNDRAISINGS } from '../../constants/adminDefaultFundraisings';
 import { includesQuery, paginateRows, sortByField } from '../../utils/adminTableState';
 import { fundApi } from '../../api/fundApi';
 
@@ -33,7 +32,9 @@ const extractFunds = (payload) => {
 };
 
 const useAdminFundraisingsData = () => {
-  const [allRows, setAllRows] = useState(DEFAULT_ADMIN_FUNDRAISINGS);
+  const [allRows, setAllRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('updatedAt');
@@ -42,14 +43,17 @@ const useAdminFundraisingsData = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const loadFunds = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
     try {
       const data = await fundApi.getFunds({ page: 0, limit: 200 });
       const rows = extractFunds(data).map(mapFundRow);
-      if (rows.length > 0) {
-        setAllRows(rows);
-      }
+      setAllRows(rows);
     } catch {
-      // keep fallback rows
+      setAllRows([]);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -94,6 +98,8 @@ const useAdminFundraisingsData = () => {
   return {
     fundraisings: pagedRows,
     filteredCount: sortedRows.length,
+    loading,
+    loadError,
     search,
     setSearch,
     statusFilter,
