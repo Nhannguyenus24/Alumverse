@@ -326,9 +326,9 @@ export const useAuth = () => {
       !!token &&
       !!user &&
       !isTokenExpired(token),
-    /** Guards: persist + bootstrap only — không gộp submitting API để tránh flicker fullscreen */
+    /** Route guard: persist + bootstrap only — not API submit to avoid fullscreen flicker */
     isLoading: isBootLoading,
-    /** Nút/form đang gọi login/register/OTP/password */
+    /** Button/form busy: login, register, OTP, password flows */
     isSubmitting: loading,
     needsOrganizationSetup,
     user,

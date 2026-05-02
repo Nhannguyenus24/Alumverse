@@ -22,7 +22,7 @@ const emptyForm = {
   userName: '',
   fullName: '',
   password: '',
-  role: 'USER',
+  role: 'STUDENT',
   status: 'ACTIVE',
   organizationId: ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
 };
@@ -44,7 +44,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
         userName: user.userName || '',
         fullName: user.fullName || '',
         password: '',
-        role: user.role || 'USER',
+        role: user.role || 'STUDENT',
         status: user.status || 'ACTIVE',
         organizationId: user.organizationId ?? ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
       });

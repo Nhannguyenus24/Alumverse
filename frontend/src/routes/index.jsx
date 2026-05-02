@@ -14,10 +14,10 @@ const Loadable = (Component) => (props) => (
   </Suspense>
 );
 
-/** Inline fallback trong AuthLayout — tránh fullscreen LoadingScreen khi logout → /auth/login */
+/** Inline Suspense fallback in AuthLayout — avoids fullscreen LoadingScreen on logout → /auth/login */
 const AuthRouteSuspenseFallback = () => (
   <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
-    <CircularProgress size={36} thickness={4} aria-label="Đang tải" />
+    <CircularProgress size={36} thickness={4} aria-label="Loading" />
   </Box>
 );
 
@@ -43,7 +43,7 @@ const FacultiesPage = Loadable(
   lazy(() => import("../pages/public/FacultiesPage")),
 );
 
-// Authentication pages (fallback nhẹ — xem AuthLoadable)
+// Authentication pages (light fallback — see AuthLoadable)
 const LoginPage = AuthLoadable(
   lazy(() => import("../pages/authentication/LoginPage")),
 );
@@ -647,7 +647,7 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+      <ProtectedRoute allowedRoles={["ADMIN"]}>
         <AdminLayout />
       </ProtectedRoute>
     ),
