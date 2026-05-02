@@ -108,6 +108,17 @@ public class AdminForumController {
                 .onErrorResume(this::handleError);
     }
 
+    @GetMapping("/admin/posts")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> adminGetAllPosts(
+            @Parameter(example = "0")
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @Parameter(example = "20")
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminForumService.getAllPostsWithPagination(page, size)
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum posts", paginatedResponse)))
+                .onErrorResume(this::handleError);
+    }
+
     @GetMapping("/reports")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostReportDTO>>>> getPendingReports(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,

@@ -277,7 +277,7 @@ const AdminForumPostsPage = () => {
                   <TableCell sx={{ maxWidth: 280 }}>Content preview</TableCell>
                   <TableCell>Category</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Flags</TableCell>
+                  <TableCell>Reports</TableCell>
                   <TableCell>Created</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>

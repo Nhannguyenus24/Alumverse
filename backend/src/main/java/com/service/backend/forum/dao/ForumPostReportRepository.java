@@ -17,4 +17,7 @@ public interface ForumPostReportRepository extends R2dbcRepository<ForumPostRepo
 
     @Query("SELECT COUNT(*) FROM forum_post_reports WHERE status = :status")
     Mono<Long> countByStatus(@Param("status") String status);
+
+    @Query("SELECT COUNT(*) FROM forum_post_reports WHERE post_id = :postId")
+    Mono<Long> countByPostId(@Param("postId") Integer postId);
 }

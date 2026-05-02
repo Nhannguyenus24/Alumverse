@@ -74,23 +74,6 @@ const normalizePostRowForAdmin = (dto) => {
   };
 };
 
-const mergeYesterdayAndBannedLists = (yesterdayList, bannedList) => {
-  const map = new Map();
-  (Array.isArray(yesterdayList) ? yesterdayList : []).forEach((raw) => {
-    const row = normalizePostRowForAdmin(raw);
-    if (row) map.set(row.id, row);
-  });
-  (Array.isArray(bannedList) ? bannedList : []).forEach((raw) => {
-    const row = normalizePostRowForAdmin(raw);
-    if (row) map.set(row.id, row);
-  });
-  return Array.from(map.values()).sort((a, b) => {
-    const ta = new Date(a.postedAt || a.createdAt || 0).getTime();
-    const tb = new Date(b.postedAt || b.createdAt || 0).getTime();
-    return tb - ta;
-  });
-};
-
 /* ─── Hook ─── */
 
 const useAdminForumData = (activeOrgId) => {
@@ -211,13 +194,17 @@ const useAdminForumData = (activeOrgId) => {
   }, [loadReports]);
 
   const loadMergedModerationPosts = useCallback(async () => {
-    const [bannedPayload, yesterdayPayload] = await Promise.all([
-      safeFetch(() => api.getBannedPosts(0, 100), fallbackPaginated),
-      safeFetch(() => api.getNewPostsYesterdayPaginated(0, 100), fallbackPaginated),
-    ]);
-    const banned = normalizePaginated(bannedPayload, 100).content;
-    const yesterday = normalizePaginated(yesterdayPayload, 100).content;
-    setMergedModerationPosts(mergeYesterdayAndBannedLists(yesterday, banned));
+    const allPayload = await safeFetch(() => api.getAllPosts(0, 200), fallbackPaginated);
+    const all = normalizePaginated(allPayload, 200).content;
+    const normalized = (Array.isArray(all) ? all : [])
+      .map(normalizePostRowForAdmin)
+      .filter(Boolean)
+      .sort((a, b) => {
+        const ta = new Date(a.postedAt || a.createdAt || 0).getTime();
+        const tb = new Date(b.postedAt || b.createdAt || 0).getTime();
+        return tb - ta;
+      });
+    setMergedModerationPosts(normalized);
   }, []);
 
   useEffect(() => {

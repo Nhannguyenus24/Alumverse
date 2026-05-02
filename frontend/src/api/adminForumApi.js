@@ -25,6 +25,9 @@ export const getNewPostsYesterdayPaginated = (page = 0, size = 10) =>
 export const getBannedPosts = (page = 0, size = 10) =>
   apiClient.get(`${BASE}/posts/banned/list`, { params: { page, size } });
 
+export const getAllPosts = (page = 0, size = 20) =>
+  apiClient.get(`${BASE}/posts`, { params: { page, size } });
+
 export const banPost = (postId) =>
   apiClient.post(`${BASE}/posts/${postId}/ban`);
 
