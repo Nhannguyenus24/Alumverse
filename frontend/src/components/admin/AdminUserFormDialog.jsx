@@ -22,7 +22,7 @@ const defaultEmptyForm = {
   userName: '',
   fullName: '',
   password: '',
-  role: 'STUDENT',
+  role: 'ADMIN',
   status: 'ACTIVE',
   organizationId: '',
 };
@@ -62,7 +62,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         organizationId: user.organizationId ?? firstOrganizationId,
       });
     } else {
-      setForm({ ...defaultEmptyForm, organizationId: firstOrganizationId });
+      setForm({ ...defaultEmptyForm, role: 'ADMIN', organizationId: firstOrganizationId });
     }
     setErrors({});
   }, [open, mode, user, firstOrganizationId]);
@@ -115,7 +115,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       email: form.email,
       userName: form.userName,
       fullName: form.fullName,
-      role: form.role,
+      role: mode === 'create' ? 'ADMIN' : form.role,
       status: form.status,
       organizationId: Number(form.organizationId),
       organizationName: org?.name ?? '',
@@ -229,10 +229,11 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label="Role"
             value={form.role}
             onChange={handleChange('role')}
+            disabled={mode === 'create'}
             fullWidth
             slotProps={{ inputLabel: inputLabelSlotProps }}
           >
-            {USER_ROLES.map((role) => (
+            {(mode === 'create' ? ['ADMIN'] : USER_ROLES).map((role) => (
               <MenuItem key={role} value={role}>
                 {role}
               </MenuItem>
