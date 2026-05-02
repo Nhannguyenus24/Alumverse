@@ -103,13 +103,13 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Flux<Object> findPeerVerificationsByUserId(@Param("userId") Integer userId);
     
     /**
-     * Delete a user by user id (soft delete by setting status to 'deleted')
+     * Delete a user by user id (soft delete: {@code UserStatus.DELETED})
      * Note: Hard delete should be avoided due to foreign key constraints
      * @param userId The user ID to delete
      * @return Mono of updated rows count
      */
     @Modifying
-    @Query("UPDATE users SET status = 'deleted', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET status = 'DELETED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> softDeleteUserById(@Param("userId") Integer userId);
     
     /**
