@@ -17,7 +17,7 @@ const LoginPage = () => {
   const toOrgPath = useOrgPath();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
-  const { login, loginWithGoogle, isLoading: loading, setError, forgotPassword } = useAuth();
+  const { login, loginWithGoogle, isSubmitting: loading, setError, forgotPassword } = useAuth();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 

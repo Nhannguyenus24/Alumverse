@@ -88,7 +88,7 @@ export default function NotistackProvider({ children }) {
         ref={notistackRef}
         dense
         maxSnack={5}
-        autoHideDuration={4000}
+        autoHideDuration={2000}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         Components={{
           success: StyledMaterialDesignContent,
