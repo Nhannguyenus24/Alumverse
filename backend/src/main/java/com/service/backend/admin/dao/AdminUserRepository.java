@@ -45,12 +45,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUsersByOrganization(@Param("organizationId") Integer organizationId);
 
     /**
-     * Ban a user by setting status to 'banned'
+     * Ban a user by setting status to {@code UserStatus.BANNED}
      * @param userId The user ID to ban
      * @return Mono of updated rows count
      */
     @Modifying
-    @Query("UPDATE users SET status = 'banned', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET status = 'BANNED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> banUserById(@Param("userId") Integer userId);
 
     /**
