@@ -185,8 +185,10 @@ public class AdminForumController {
             @Parameter(example = "General Discussion")
             @RequestParam @NotBlank(message = "Category name is required") String name,
             @Parameter(example = "General discussion topics")
-            @RequestParam(required = false) String description) {
-        return adminForumService.createCategory(organizationId, name, description)
+            @RequestParam(required = false) String description,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer parentId) {
+        return adminForumService.createCategory(organizationId, name, description, parentId)
                 .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)))
                 .onErrorResume(this::handleError);
     }
@@ -197,8 +199,10 @@ public class AdminForumController {
             @Parameter(example = "General Discussion")
             @RequestParam(required = false) String name,
             @Parameter(example = "General discussion topics")
-            @RequestParam(required = false) String description) {
-        return adminForumService.updateCategory(categoryId, name, description)
+            @RequestParam(required = false) String description,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer parentId) {
+        return adminForumService.updateCategory(categoryId, name, description, parentId)
                 .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)))
                 .onErrorResume(this::handleError);
     }

@@ -297,9 +297,9 @@ const useAdminForumData = (activeOrgId) => {
     }
   }, [loadStatistics, loadBannedPosts, loadYesterdayPosts, loadReports, loadMergedModerationPosts]);
 
-  const handleCreateCategory = useCallback(async (orgId, name, description) => {
+  const handleCreateCategory = useCallback(async (orgId, name, description, parentId) => {
     try {
-      await api.createCategory(orgId, name, description);
+      await api.createCategory(orgId, name, description, parentId);
       await loadCategories(orgId);
       return true;
     } catch {
@@ -307,9 +307,9 @@ const useAdminForumData = (activeOrgId) => {
     }
   }, [loadCategories]);
 
-  const handleUpdateCategory = useCallback(async (categoryId, name, description) => {
+  const handleUpdateCategory = useCallback(async (categoryId, name, description, parentId) => {
     try {
-      await api.updateCategory(categoryId, name, description);
+      await api.updateCategory(categoryId, name, description, parentId);
       if (activeOrgId) await loadCategories(activeOrgId);
       return true;
     } catch {

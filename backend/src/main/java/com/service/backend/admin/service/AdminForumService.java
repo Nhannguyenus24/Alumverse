@@ -270,10 +270,11 @@ public class AdminForumService {
      * Create a new forum category
      */
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> createCategory(
-            Integer organizationId, String name, String description) {
+            Integer organizationId, String name, String description, Integer parentId) {
         log.info("Creating forum category: {}", name);
         com.service.backend.forum.entity.ForumCategory category = 
             com.service.backend.forum.entity.ForumCategory.builder()
+                .parentId(parentId)
                 .organizationId(organizationId)
                 .name(name)
                 .description(description)
@@ -291,13 +292,14 @@ public class AdminForumService {
      * Update a forum category
      */
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> updateCategory(
-            Integer categoryId, String name, String description) {
+            Integer categoryId, String name, String description, Integer parentId) {
         log.info("Updating forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Category not found with ID: " + categoryId)))
                 .flatMap(category -> {
                     if (name != null) category.setName(name);
                     if (description != null) category.setDescription(description);
+                    if (parentId != null) category.setParentId(parentId);
                     category.setUpdatedAt(java.time.LocalDateTime.now());
                     return forumCategoryRepository.save(category);
                 })

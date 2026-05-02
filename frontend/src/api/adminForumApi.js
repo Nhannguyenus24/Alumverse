@@ -54,11 +54,15 @@ export const getAllCategories = (organizationId) =>
 export const getCategoryById = (categoryId) =>
   apiClient.get(`${BASE}/categories/${categoryId}`);
 
-export const createCategory = (organizationId, name, description) =>
-  apiClient.post(`${BASE}/categories`, null, { params: { organizationId, name, description } });
+export const createCategory = (organizationId, name, description, parentId) =>
+  apiClient.post(`${BASE}/categories`, null, {
+    params: { organizationId, name, description, ...(parentId ? { parentId } : {}) },
+  });
 
-export const updateCategory = (categoryId, name, description) =>
-  apiClient.put(`${BASE}/categories/${categoryId}`, null, { params: { name, description } });
+export const updateCategory = (categoryId, name, description, parentId) =>
+  apiClient.put(`${BASE}/categories/${categoryId}`, null, {
+    params: { name, description, ...(parentId ? { parentId } : {}) },
+  });
 
 export const deleteCategory = (categoryId) =>
   apiClient.delete(`${BASE}/categories/${categoryId}`);
