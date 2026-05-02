@@ -85,10 +85,14 @@ const AdminEventsPage = () => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
-    updateStatus,
-    deleteItem,
+    publishEvent,
+    unpublishEvent,
+    createEvent,
+    updateEvent,
+    deleteEvent,
   } = useAdminEventsData();
 
+  const [createOpen, setCreateOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
@@ -144,7 +148,7 @@ const AdminEventsPage = () => {
         title="Event management"
         subtitle="Review event records, moderate status, and remove events via API."
         action={
-          <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX}>
+          <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX} onClick={() => setCreateOpen(true)}>
             Create event
           </Button>
         }
@@ -436,6 +440,17 @@ const AdminEventsPage = () => {
       </Dialog>
 
       <AdminEventFormDialog
+        open={createOpen}
+        event={null}
+        onClose={() => setCreateOpen(false)}
+        onSubmit={async (payload) => {
+          const ok = await createEvent(payload);
+          enqueueSnackbar(ok ? 'Event created.' : 'Failed to create event.', { variant: ok ? 'success' : 'error' });
+          return ok;
+        }}
+      />
+
+      <AdminEventFormDialog
         open={Boolean(editTarget)}
         event={editTarget}
         onClose={() => setEditTarget(null)}
@@ -453,13 +468,7 @@ const AdminEventsPage = () => {
         title="Delete event"
         description={deleteTarget ? `Delete "${deleteTarget.title}"?` : ''}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (deleteTarget) {
-            deleteItem(deleteTarget.id);
-            enqueueSnackbar('Event deleted.', { variant: 'success' });
-          }
-          setDeleteTarget(null);
-        }}
+        onConfirm={handleDelete}
       />
     </>
   );
