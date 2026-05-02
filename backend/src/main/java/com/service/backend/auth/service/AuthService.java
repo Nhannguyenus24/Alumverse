@@ -2,6 +2,7 @@ package com.service.backend.auth.service;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.AbstractMap;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -273,32 +274,33 @@ public class AuthService {
             return Mono.error(new RuntimeException(ErrorCode.REFRESH_TOKEN_NOT_FOUND.getMessage()));
         }
 
-        // Use reactive approach: wrap token validation in Mono.fromCallable
-        return Mono.fromCallable(() -> {
-            Integer userId = jwtUtils.getUserIdFromToken(refreshToken);
-            Integer organizationId = jwtUtils.getOrganizationIdFromToken(refreshToken);
-            return new Object[]{userId, organizationId};
-        })
+        return Mono.fromCallable(() -> new AbstractMap.SimpleEntry<>(
+                        jwtUtils.getUserIdFromToken(refreshToken),
+                        jwtUtils.getOrganizationIdFromToken(refreshToken)))
                 .onErrorMap(e -> new RuntimeException(ErrorCode.INVALID_REFRESH_TOKEN.getMessage(), e))
-                .flatMap(userOrgPair -> {
-                    Integer userId = (Integer) ((Object[]) userOrgPair)[0];
-                    Integer organizationId = (Integer) ((Object[]) userOrgPair)[1];
+                .flatMap(entry -> {
+                    Integer userId = entry.getKey();
+                    Integer organizationIdFromRefresh = entry.getValue();
 
-                    return authRepository.findById(userId)
-                            .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
-                            .map(user -> {
-                                String accessToken = jwtUtils.generateAccessToken(
-                                        user.getId(),
-                                        user.getEmail(),
-                                        user.getRole().name(),
-                                        user.getUserName(),
-                                        user.getAvatarUrl(),
-                                        organizationId
-                                );
-                                logger.info("Access token refreshed successfully for user id: {}", userId);
-                                return accessToken;
-                            })
-                            .doOnError(error -> logger.error("Failed to refresh token", error));
+                    Mono<Integer> resolvedOrgMono = organizationIdFromRefresh != null
+                            ? Mono.just(organizationIdFromRefresh)
+                            : authRepository.getOrganizationIdByUserId(userId).next();
+
+                    return resolvedOrgMono.switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
+                            .flatMap(organizationId -> authRepository.findById(userId)
+                                    .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
+                                    .map(user -> {
+                                        String accessToken = jwtUtils.generateAccessToken(
+                                                user.getId(),
+                                                user.getEmail(),
+                                                user.getRole().name(),
+                                                user.getUserName(),
+                                                user.getAvatarUrl(),
+                                                organizationId
+                                        );
+                                        logger.info("Access token refreshed successfully for user id: {}", userId);
+                                        return accessToken;
+                                    }));
                 });
     }
 

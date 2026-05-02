@@ -1,5 +1,6 @@
-import apiClient from '../utils/axios';
-import { userFromAccessToken, isTokenExpired } from '../utils/jwt';
+import { useEffect, useState } from 'react';
+import apiClient, { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from '../utils/axios';
+import { userFromAccessToken, isTokenExpired, getSecondsUntilExpire } from '../utils/jwt';
 import {
   loginSchema,
   registerSchema,
@@ -18,6 +19,70 @@ export const useAuth = () => {
   const store = useAuthStore();
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error, needsOrganizationSetup } = store;
+
+  const [authResolved, setAuthResolved] = useState(() => {
+    const { token: t, user: u } = useAuthStore.getState();
+    if (!t || !u) return true;
+    return !isTokenExpired(t);
+  });
+
+  useEffect(() => {
+    const { token: t, user: u } = useAuthStore.getState();
+    if (!t || !u) {
+      setAuthResolved(true);
+      return undefined;
+    }
+    if (!isTokenExpired(t)) {
+      setAuthResolved(true);
+      return undefined;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const newToken = await refreshSessionAccessToken();
+        if (!cancelled) syncAuthStoreFromAccessToken(newToken);
+      } catch {
+        if (!cancelled) {
+          useAuthStore.getState().reset();
+          useOrganizationStore.getState().reset();
+        }
+      } finally {
+        if (!cancelled) setAuthResolved(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!token || !user || !authResolved) return undefined;
+
+    const maybeRefresh = () => {
+      const t = useAuthStore.getState().token;
+      if (!t) return;
+      if (getSecondsUntilExpire(t) <= 120) {
+        refreshSessionAccessToken()
+          .then((newToken) => syncAuthStoreFromAccessToken(newToken))
+          .catch(() => {});
+      }
+    };
+
+    const intervalId = setInterval(maybeRefresh, 30_000);
+    maybeRefresh();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') maybeRefresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [token, user, authResolved]);
 
   const setLoading = (value) => {
     store.setLoading(value);
@@ -237,8 +302,8 @@ export const useAuth = () => {
   };
 
   return {
-    isAuthenticated: !!token && !isTokenExpired(token),
-    isLoading: loading,
+    isAuthenticated: !!token && !!user && authResolved && !isTokenExpired(token),
+    isLoading: loading || !authResolved,
     needsOrganizationSetup,
     user,
     error,
