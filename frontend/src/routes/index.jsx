@@ -120,6 +120,9 @@ const ActivitiesEventsPage = Loadable(
 const ActivitiesNewsPage = Loadable(
   lazy(() => import("../pages/activities/ActivitiesNewsPage")),
 );
+const NetworkPage = Loadable(
+  lazy(() => import("../pages/network/NetworkPage")),
+);
 
 // Development pages
 const DevelopmentPage = Loadable(
@@ -304,6 +307,14 @@ export const router = createBrowserRouter([
             element: <ActivitiesNewsPage />,
           }
         ],
+      },
+      {
+        path: "network/search",
+        element: <NetworkPage />,
+      },
+      {
+        path: "network/chat",
+        element: <NetworkPage />,
       },
       {
         path: "post",
