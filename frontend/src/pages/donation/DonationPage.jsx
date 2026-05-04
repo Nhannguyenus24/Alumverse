@@ -14,6 +14,7 @@ import { useSnackbar } from "notistack";
 import Page from "../../components/Page";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import usePaginationScrollToTop from "../../hooks/usePaginationScrollToTop";
 import useOrganizationStore from "../../stores/organizationStore";
 import { fundApi } from "../../api/fundApi";
 import SearchBar from "../../components/SearchBar";
@@ -90,6 +91,7 @@ export default function DonationPage() {
   const amountMenuOpen = Boolean(amountAnchorEl);
   const closeDialogOpen = Boolean(closeDialogCampaign);
   const pageSize = 3;
+  const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const handleFilterChange = (key) => (event) => {
     setDraftFilters((prev) => ({ ...prev, [key]: event.target.value }));
@@ -360,7 +362,7 @@ export default function DonationPage() {
                 <Pagination
                   count={pageCount || 1}
                   page={page}
-                  onChange={(_, value) => setPage(value)}
+                  onChange={handlePageChange}
                   color="primary"
                   shape="rounded"
                   size="large"

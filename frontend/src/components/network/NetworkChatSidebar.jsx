@@ -1,0 +1,148 @@
+import { useMemo, useState } from 'react';
+import { useSnackbar } from 'notistack';
+import { Avatar, Box, ListItemIcon, ListItemText, MenuItem, Typography } from '@mui/material';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import Scrollbar from '../Scrollbar';
+import SearchBar from '../SearchBar';
+import IconButtonMenu from '../IconButtonMenu';
+
+function initials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+const NetworkChatSidebar = ({ chats, activeChatId, onSelectChat, onCreateGroupChat }) => {
+  const [search, setSearch] = useState('');
+  const { enqueueSnackbar } = useSnackbar();
+
+  const filteredChats = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return chats;
+    return chats.filter((chat) => {
+      const name = String(chat.name ?? '').toLowerCase();
+      const preview = String(chat.preview ?? '').toLowerCase();
+      return name.includes(q) || preview.includes(q);
+    });
+  }, [chats, search]);
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        bgcolor: 'background.paper',
+        borderRight: { xs: 'none', md: 1 },
+        borderColor: 'divider',
+        width: { xs: '100%', md: 320 },
+        minWidth: { xs: '100%', md: 280 },
+        maxWidth: { xs: '100%', md: 320 },
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 1,
+          px: 2,
+          py: 1.5,
+          borderBottom: 1,
+          borderColor: 'divider',
+        }}
+      >
+        <Typography variant="subtitle1" fontWeight={600} sx={{ minWidth: 0 }}>
+          Chats
+        </Typography>
+        <IconButtonMenu
+          menuId="network-chat-list-menu"
+          buttonAriaLabel="Tùy chọn danh sách chat"
+        >
+          {({ close }) => (
+            <MenuItem
+              onClick={() => {
+                close();
+                if (onCreateGroupChat) {
+                  onCreateGroupChat();
+                } else {
+                  enqueueSnackbar('Tạo nhóm chat đang được phát triển.', { variant: 'info' });
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <GroupAddIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText
+                primary="Tạo nhóm chat"
+                primaryTypographyProps={{ variant: 'body2' }}
+              />
+            </MenuItem>
+          )}
+        </IconButtonMenu>
+      </Box>
+
+      <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Tìm trong danh sách chat"
+        />
+      </Box>
+
+      <Scrollbar sx={{ flex: 1, minHeight: 0 }}>
+        {filteredChats.length === 0 ? (
+          <Box sx={{ px: 2, py: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Không có cuộc trò chuyện khớp từ khóa.
+            </Typography>
+          </Box>
+        ) : (
+          filteredChats.map((chat) => {
+            const active = chat.id === activeChatId;
+            return (
+              <Box
+                key={chat.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectChat(chat.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelectChat(chat.id);
+                  }
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  cursor: 'pointer',
+                  bgcolor: active ? 'action.selected' : 'transparent',
+                  '&:hover': { bgcolor: 'action.hover' },
+                }}
+              >
+                <Avatar sx={{ width: 42, height: 42, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+                  {initials(chat.name)}
+                </Avatar>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="subtitle2" fontWeight={600} noWrap>
+                    {chat.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" noWrap>
+                    {chat.preview}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })
+        )}
+      </Scrollbar>
+    </Box>
+  );
+};
+
+export default NetworkChatSidebar;
