@@ -16,4 +16,8 @@ public class UpdateUserRequest {
     private String userName;
     private UserRole role;
     private UserStatus status;
+    /** Display name stored in global_profiles (upserted when non-blank). */
+    private String fullName;
+    /** Moves the user's primary membership (lowest organization_members.id) or creates one. */
+    private Integer organizationId;
 }

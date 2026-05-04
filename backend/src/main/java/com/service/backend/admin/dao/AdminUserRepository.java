@@ -45,12 +45,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUsersByOrganization(@Param("organizationId") Integer organizationId);
 
     /**
-     * Ban a user by setting status to 'banned'
+     * Ban a user by setting status to {@code UserStatus.BANNED}
      * @param userId The user ID to ban
      * @return Mono of updated rows count
      */
     @Modifying
-    @Query("UPDATE users SET status = 'banned', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET status = 'BANNED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> banUserById(@Param("userId") Integer userId);
 
     /**
@@ -103,13 +103,13 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Flux<Object> findPeerVerificationsByUserId(@Param("userId") Integer userId);
     
     /**
-     * Delete a user by user id (soft delete by setting status to 'deleted')
+     * Delete a user by user id (soft delete: {@code UserStatus.DELETED})
      * Note: Hard delete should be avoided due to foreign key constraints
      * @param userId The user ID to delete
      * @return Mono of updated rows count
      */
     @Modifying
-    @Query("UPDATE users SET status = 'deleted', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET status = 'DELETED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> softDeleteUserById(@Param("userId") Integer userId);
     
     /**
@@ -229,4 +229,34 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
            "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
     Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
+
+    @Modifying
+    @Query("""
+            INSERT INTO global_profiles (user_id, full_name, updated_at)
+            VALUES (:userId, :fullName, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id) DO UPDATE SET
+                full_name = EXCLUDED.full_name,
+                updated_at = CURRENT_TIMESTAMP
+            """)
+    Mono<Integer> upsertGlobalProfileFullName(@Param("userId") Integer userId, @Param("fullName") String fullName);
+
+    /**
+     * One membership row per user ({@code organization_members_user_id_key}).
+     * Insert if missing, otherwise move user to the given organization.
+     */
+    @Modifying
+    @Query("""
+            INSERT INTO organization_members (
+                organization_id, user_id, graduated_year, graduation_status, program, major,
+                verification_level, is_trusted_verifier, status, created_at, updated_at)
+            VALUES (
+                :organizationId, :userId, NULL, NULL, NULL, NULL, 0, false, 'active',
+                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT (user_id) DO UPDATE SET
+                organization_id = EXCLUDED.organization_id,
+                updated_at = CURRENT_TIMESTAMP
+            """)
+    Mono<Integer> upsertOrganizationMemberByUserId(
+            @Param("organizationId") Integer organizationId,
+            @Param("userId") Integer userId);
 }

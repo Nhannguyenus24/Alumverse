@@ -3,7 +3,6 @@ import { useSnackbar } from 'notistack';
 import {
   Box,
   Chip,
-  Button,
   IconButton,
   Menu,
   MenuItem,
@@ -23,6 +22,9 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDetailDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
@@ -152,7 +154,6 @@ const AdminForumPostsPage = () => {
     search,
     setSearch,
     updatePostStatus,
-    deletePost,
     // API-driven data
     bannedPosts,
     bannedPage,
@@ -207,7 +208,7 @@ const AdminForumPostsPage = () => {
     <>
       <AdminSectionPanel
         title="Forum posts moderation"
-        subtitle="Review, ban/unban, and delete posts. Switch tabs for banned or recently posted content."
+        subtitle="All posts lists yesterday’s new posts plus banned posts from the API. Other tabs are paginated from the server."
       >
         <Tabs
           value={activeTab}
@@ -276,7 +277,7 @@ const AdminForumPostsPage = () => {
                   <TableCell sx={{ maxWidth: 280 }}>Content preview</TableCell>
                   <TableCell>Category</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Flags</TableCell>
+                  <TableCell>Reports</TableCell>
                   <TableCell>Created</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
@@ -390,10 +391,12 @@ const AdminForumPostsPage = () => {
                       <MenuItem
                         key={st}
                         selected={active}
-                        onClick={() => {
-                          updatePostStatus(forumStatusMenu.post.id, st);
-                          enqueueSnackbar(`Status set to ${forumModerationLabel(st)}.`, { variant: 'success' });
-                          setForumStatusMenu(null);
+                        onClick={async () => {
+                          try {
+                            await updatePostStatus(forumStatusMenu.post.id, st);
+                          } finally {
+                            setForumStatusMenu(null);
+                          }
                         }}
                       >
                         {forumModerationLabel(st)}
@@ -483,94 +486,111 @@ const AdminForumPostsPage = () => {
                       <TableCell>
                         <Chip label={report.status || 'PENDING'} size="small" color="warning" />
                       </TableCell>
-                      <TableCell align="right">
-                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            disabled={reportActionLoading || !adminUserId}
-                            onClick={async () => {
-                              setReportActionLoading(true);
-                              const ok = await reviewReport?.(report.id, {
-                                decision: 'APPROVED',
-                                action: 'HIDE_POST',
-                                reviewNote: 'Hidden from moderation queue',
-                                adminUserId,
-                              });
-                              if (ok) {
-                                await updatePostVisibility?.(report.postId, true, adminUserId);
-                              }
-                              enqueueSnackbar(ok ? 'Report approved and post hidden.' : 'Failed to process report.', {
-                                variant: ok ? 'success' : 'error',
-                              });
-                              setReportActionLoading(false);
-                            }}
-                          >
-                            Hide
-                          </Button>
-                          <Button
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                            disabled={reportActionLoading || !adminUserId}
-                            onClick={async () => {
-                              setReportActionLoading(true);
-                              const ok = await reviewReport?.(report.id, {
-                                decision: 'APPROVED',
-                                action: 'BAN_POST',
-                                reviewNote: 'Banned by moderator',
-                                adminUserId,
-                              });
-                              enqueueSnackbar(ok ? 'Report approved and post banned.' : 'Failed to ban post.', {
-                                variant: ok ? 'success' : 'error',
-                              });
-                              setReportActionLoading(false);
-                            }}
-                          >
-                            Ban
-                          </Button>
-                          <Button
-                            size="small"
-                            color="info"
-                            variant="outlined"
-                            disabled={reportActionLoading || !adminUserId}
-                            onClick={async () => {
-                              setReportActionLoading(true);
-                              const ok = await reviewReport?.(report.id, {
-                                decision: 'APPROVED',
-                                action: 'WARN',
-                                reviewNote: 'Warning action only',
-                                adminUserId,
-                              });
-                              enqueueSnackbar(ok ? 'Report marked as warning.' : 'Failed to warn.', {
-                                variant: ok ? 'success' : 'error',
-                              });
-                              setReportActionLoading(false);
-                            }}
-                          >
-                            Warn
-                          </Button>
-                          <Button
-                            size="small"
-                            color="inherit"
-                            variant="outlined"
-                            disabled={reportActionLoading || !adminUserId}
-                            onClick={async () => {
-                              setReportActionLoading(true);
-                              const ok = await reviewReport?.(report.id, {
-                                decision: 'REJECTED',
-                                action: 'WARN',
-                                reviewNote: 'Rejected report',
-                                adminUserId,
-                              });
-                              enqueueSnackbar(ok ? 'Report rejected.' : 'Failed to reject report.', {
-                                variant: ok ? 'success' : 'error',
-                              });
-                              setReportActionLoading(false);
-                            }}
-                          >
-                            Reject
-                          </Button>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                          <Tooltip title="Hide post">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Hide post from report"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'APPROVED',
+                                    action: 'HIDE_POST',
+                                    reviewNote: 'Hidden from moderation queue',
+                                    adminUserId,
+                                  });
+                                  if (ok) {
+                                    await updatePostVisibility?.(report.postId, true, adminUserId);
+                                  }
+                                  enqueueSnackbar(ok ? 'Report approved and post hidden.' : 'Failed to process report.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <VisibilityOffOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Ban post">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="warning"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Ban post from report"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'APPROVED',
+                                    action: 'BAN_POST',
+                                    reviewNote: 'Banned by moderator',
+                                    adminUserId,
+                                  });
+                                  enqueueSnackbar(ok ? 'Report approved and post banned.' : 'Failed to ban post.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <BlockOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Warn only">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="info"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Mark report as warning"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'APPROVED',
+                                    action: 'WARN',
+                                    reviewNote: 'Warning action only',
+                                    adminUserId,
+                                  });
+                                  enqueueSnackbar(ok ? 'Report marked as warning.' : 'Failed to warn.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <WarningAmberOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Reject report">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="inherit"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Reject report"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'REJECTED',
+                                    action: 'WARN',
+                                    reviewNote: 'Rejected report',
+                                    adminUserId,
+                                  });
+                                  enqueueSnackbar(ok ? 'Report rejected.' : 'Failed to reject report.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <CancelOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -623,17 +643,9 @@ const AdminForumPostsPage = () => {
         onClose={() => setForumDeletePost(null)}
         onConfirm={async () => {
           if (forumDeletePost) {
-            // Try API first, fall back to local
-            if (deletePostApi) {
-              const ok = await deletePostApi(forumDeletePost.id);
-              if (!ok) {
-                deletePost(forumDeletePost.id);
-              }
-            } else {
-              deletePost(forumDeletePost.id);
-            }
-            enqueueSnackbar('Post deleted.', { variant: 'success' });
-            if (forumDetailPost?.id === forumDeletePost.id) {
+            const ok = await deletePostApi(forumDeletePost.id);
+            enqueueSnackbar(ok ? 'Post deleted.' : 'Failed to delete post.', { variant: ok ? 'success' : 'error' });
+            if (ok && forumDetailPost?.id === forumDeletePost.id) {
               setForumDetailPost(null);
             }
           }

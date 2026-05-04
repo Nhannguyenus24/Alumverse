@@ -124,7 +124,9 @@ const AvatarWrapper = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
 }));
 
-const AnimatedAvatar = styled(Avatar)(({ theme, isAnimating }) => ({
+const AnimatedAvatar = styled(Avatar, {
+  shouldForwardProp: (prop) => prop !== 'isAnimating',
+})(({ theme, isAnimating }) => ({
   width: 60,
   height: 60,
   backgroundColor: theme.palette.primary.main,
@@ -204,13 +206,17 @@ const MessageContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-const Message = styled(Box)(({ theme, isBot }) => ({
+const Message = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isBot',
+})(({ theme, isBot }) => ({
   display: 'flex',
   justifyContent: isBot ? 'flex-start' : 'flex-end',
   animation: `${slideUp} 0.3s ease-out`,
 }));
 
-const MessageBubble = styled(Box)(({ theme, isBot }) => ({
+const MessageBubble = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isBot',
+})(({ theme, isBot }) => ({
   maxWidth: '80%',
   padding: theme.spacing(1.2, 1.6),
   borderRadius: theme.spacing(2),

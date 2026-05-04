@@ -12,7 +12,7 @@ export const DEFAULT_ADMIN_USERS = [
     email: 'an.nguyen@alumverse.io',
     userName: 'annguyen',
     fullName: 'An Nguyen',
-    role: 'USER',
+    role: 'ALUMNI',
     status: 'ACTIVE',
     organizationId: 1,
     organizationName: 'HCMUS Alumni Tech Club',
@@ -26,7 +26,7 @@ export const DEFAULT_ADMIN_USERS = [
     email: 'linh.tran@alumverse.io',
     userName: 'linhtran',
     fullName: 'Linh Tran',
-    role: 'USER',
+    role: 'ALUMNI',
     status: 'BANNED',
     organizationId: 2,
     organizationName: 'HCMUS Data Science Network',
@@ -42,7 +42,7 @@ export const DEFAULT_ADMIN_USERS = [
     email: 'minh.le@alumverse.io',
     userName: 'minhle',
     fullName: 'Minh Le',
-    role: 'MODERATOR',
+    role: 'STAFF',
     status: 'ACTIVE',
     organizationId: 1,
     organizationName: 'HCMUS Alumni Tech Club',
@@ -53,8 +53,20 @@ export const DEFAULT_ADMIN_USERS = [
   },
 ];
 
-export const USER_ROLES = ['ADMIN', 'USER', 'MODERATOR'];
-export const USER_STATUSES = ['ACTIVE', 'BANNED', 'INACTIVE'];
+/** Must match backend com.service.backend.shared.enums.UserRole */
+export const USER_ROLES = ['ADMIN', 'STUDENT', 'ALUMNI', 'STAFF', 'GUEST'];
+
+/** Must match backend com.service.backend.shared.enums.UserStatus (order + spelling) */
+export const USER_STATUSES = [
+  'ACTIVE',
+  'INACTIVE',
+  'BANNED',
+  'SUSPENDED',
+  'DELETED',
+  'DISABLED',
+  'PENDING',
+  'UNVERIFIED',
+];
 
 export const BAN_REASON_OPTIONS = [
   { value: 'SPAM', label: 'Spam' },

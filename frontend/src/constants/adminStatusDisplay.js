@@ -10,8 +10,13 @@ export const formatAccountStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
     ACTIVE: 'Active',
-    BANNED: 'Banned',
     INACTIVE: 'Inactive',
+    BANNED: 'Banned',
+    SUSPENDED: 'Suspended',
+    DELETED: 'Deleted',
+    DISABLED: 'Disabled',
+    PENDING: 'Pending',
+    UNVERIFIED: 'Unverified',
   };
   return map[key] || formatTitleCase(status);
 };
@@ -50,8 +55,14 @@ export const resolveAdminStatusChip = (status, category) => {
     if (key === 'BANNED') {
       return { label: formatAccountStatusLabel(status), color: 'error' };
     }
-    if (key === 'INACTIVE') {
+    if (key === 'INACTIVE' || key === 'SUSPENDED' || key === 'UNVERIFIED') {
       return { label: formatAccountStatusLabel(status), color: 'warning' };
+    }
+    if (key === 'PENDING') {
+      return { label: formatAccountStatusLabel(status), color: 'info' };
+    }
+    if (key === 'DELETED' || key === 'DISABLED') {
+      return { label: formatAccountStatusLabel(status), color: 'default' };
     }
     return { label: formatAccountStatusLabel(status), color: 'default' };
   }

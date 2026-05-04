@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  MenuItem,
   List,
   ListItemButton,
   ListItemText,
@@ -141,8 +142,9 @@ const AdminForumCategoriesPage = () => {
 
   const [expanded, setExpanded] = useState({});
   const [modal, setModal] = useState({ open: false, mode: 'create', node: null });
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState({ name: '', description: '', parentId: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const inputLabelSlotProps = { shrink: true };
 
   // Auto-expand root on first load
   useMemo(() => {
@@ -158,7 +160,7 @@ const AdminForumCategoriesPage = () => {
   };
 
   const openCreateRoot = () => {
-    setForm({ name: '', description: '' });
+    setForm({ name: '', description: '', parentId: '' });
     setModal({ open: true, mode: 'create', node: null });
   };
 
@@ -166,6 +168,7 @@ const AdminForumCategoriesPage = () => {
     setForm({
       name: node.name,
       description: node.description || '',
+      parentId: node.parentId ?? '',
     });
     setModal({ open: true, mode: 'edit', node });
   };
@@ -180,12 +183,22 @@ const AdminForumCategoriesPage = () => {
         enqueueSnackbar('No organization selected.', { variant: 'warning' });
         return;
       }
-      const ok = await createCategory?.(activeOrgId, form.name, form.description);
+      const ok = await createCategory?.(
+        activeOrgId,
+        form.name,
+        form.description,
+        form.parentId === '' ? null : Number(form.parentId),
+      );
       enqueueSnackbar(ok ? 'Category created.' : 'Failed to create category.', {
         variant: ok ? 'success' : 'error',
       });
     } else {
-      const ok = await updateCategory?.(modal.node.id, form.name, form.description);
+      const ok = await updateCategory?.(
+        modal.node.id,
+        form.name,
+        form.description,
+        form.parentId === '' ? null : Number(form.parentId),
+      );
       enqueueSnackbar(ok ? 'Category updated.' : 'Failed to update category.', {
         variant: ok ? 'success' : 'error',
       });
@@ -252,18 +265,24 @@ const AdminForumCategoriesPage = () => {
       </AdminSectionPanel>
 
       {/* ─── Create / Edit dialog ─── */}
-      <Dialog open={modal.open} onClose={() => setModal((m) => ({ ...m, open: false }))} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontWeight: 800 }}>
+      <Dialog
+        open={modal.open}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        fullWidth
+        maxWidth="sm"
+        scroll="body"
+      >
+        <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
           {modal.mode === 'create' ? 'Create category' : 'Edit category'}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
           <TextField
             label="Name"
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{ inputLabel: inputLabelSlotProps }}
           />
           <TextField
             label="Description"
@@ -272,8 +291,25 @@ const AdminForumCategoriesPage = () => {
             fullWidth
             multiline
             minRows={2}
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{ inputLabel: inputLabelSlotProps }}
           />
+          <TextField
+            select
+            label="Parent category"
+            value={form.parentId}
+            onChange={(e) => setForm((f) => ({ ...f, parentId: e.target.value }))}
+            fullWidth
+            slotProps={{ inputLabel: inputLabelSlotProps }}
+          >
+            <MenuItem value="">None (root)</MenuItem>
+            {(categories ?? [])
+              .filter((cat) => !modal.node || cat.id !== modal.node.id)
+              .map((cat) => (
+                <MenuItem key={cat.id} value={cat.id}>
+                  {cat.name || `Category #${cat.id}`}
+                </MenuItem>
+              ))}
+          </TextField>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setModal((m) => ({ ...m, open: false }))} sx={{ textTransform: 'none' }}>

@@ -14,8 +14,12 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Stack
+  Stack,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import SecurityIcon from '@mui/icons-material/Security';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -115,6 +119,9 @@ export default function SettingPage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loginHistory, setLoginHistory] = useState([]);
 
@@ -384,9 +391,81 @@ const renderPersonalSettings = () => (
           Đặt lại mật khẩu
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
-          <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label="Mật khẩu hiện tại" type="password" placeholder="Nhập mật khẩu hiện tại" />
-          <TextField fullWidth name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} label="Mật khẩu mới" type="password" placeholder="Nhập mật khẩu mới" />
-          <TextField fullWidth name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} label="Xác nhận mật khẩu" type="password" placeholder="Xác nhận mật khẩu" />
+          <TextField
+            fullWidth
+            name="oldPassword"
+            value={passwordForm.oldPassword}
+            onChange={handlePasswordChange}
+            label="Mật khẩu hiện tại"
+            type={showOldPassword ? 'text' : 'password'}
+            placeholder="Nhập mật khẩu hiện tại"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showOldPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowOldPassword((v) => !v)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showOldPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            fullWidth
+            name="newPassword"
+            value={passwordForm.newPassword}
+            onChange={handlePasswordChange}
+            label="Mật khẩu mới"
+            type={showNewPassword ? 'text' : 'password'}
+            placeholder="Nhập mật khẩu mới"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            fullWidth
+            name="confirmPassword"
+            value={passwordForm.confirmPassword}
+            onChange={handlePasswordChange}
+            label="Xác nhận mật khẩu"
+            type={showConfirmPassword ? 'text' : 'password'}
+            placeholder="Xác nhận mật khẩu"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
         </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="contained" color="primary" onClick={handleChangePassword}>Cập nhật mật khẩu</Button>

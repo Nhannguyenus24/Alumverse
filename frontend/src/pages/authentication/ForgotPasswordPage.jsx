@@ -9,7 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 
 const ForgotPasswordPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { forgotPassword, isLoading: loading, setError } = useAuth();
+  const { forgotPassword, isSubmitting: loading, setError } = useAuth();
 
   const {
     register,
