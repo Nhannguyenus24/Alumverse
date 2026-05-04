@@ -9,8 +9,6 @@ import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.chat.entity.ChatGroup;
 import com.service.backend.chat.entity.ChatGroupMember;
 import com.service.backend.chat.entity.ChatMessage;
-import com.service.backend.chat.dao.ChatGroupMemberRepository;
-import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -41,8 +39,6 @@ import java.util.List;
 public class ChatController {
 
     private final ChatService chatService;
-    private final ChatGroupMemberRepository chatGroupMemberRepository;
-    private final ChatGroupRepository chatGroupRepository;
 
     @GetMapping("/groups")
     public Mono<ResponseEntity<ApiResponse<List<ChatGroup>>>> listChatGroups() {

@@ -45,6 +45,7 @@ const NAV_ITEMS = [
       { label: 'Cơ hội việc làm', href: '/development/jobs' },
     ],
   },
+  { label: 'Network', href: '/network/search' },
   { label: 'Diễn đàn', href: '/forum' },
   { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
