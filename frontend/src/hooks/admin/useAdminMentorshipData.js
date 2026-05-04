@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_ADMIN_MENTORSHIPS } from '../../constants/adminDefaultMentorships';
 import { includesQuery, paginateRows, sortByField } from '../../utils/adminTableState';
 import {
   cancelSession,
@@ -37,7 +36,9 @@ const dedupeById = (rows) => {
 };
 
 const useAdminMentorshipData = () => {
-  const [allRows, setAllRows] = useState(DEFAULT_ADMIN_MENTORSHIPS);
+  const [allRows, setAllRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('sessionDate');
@@ -46,6 +47,8 @@ const useAdminMentorshipData = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const loadSessions = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
     try {
       const [mentorRes, menteeRes] = await Promise.all([
         getMyMentorSessions({ page: 0, limit: 100 }),
@@ -55,11 +58,12 @@ const useAdminMentorshipData = () => {
         ...extractList(mentorRes).map(mapSession),
         ...extractList(menteeRes).map(mapSession),
       ]);
-      if (rows.length > 0) {
-        setAllRows(rows);
-      }
+      setAllRows(rows);
     } catch {
-      // keep fallback rows
+      setAllRows([]);
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -106,6 +110,8 @@ const useAdminMentorshipData = () => {
   return {
     mentorships: pagedRows,
     filteredCount: sortedRows.length,
+    loading,
+    loadError,
     search,
     setSearch,
     statusFilter,

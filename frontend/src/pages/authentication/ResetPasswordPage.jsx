@@ -13,7 +13,7 @@ const ResetPasswordPage = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
-  const { resetPassword, isLoading: loading, setError } = useAuth();
+  const { resetPassword, isSubmitting: loading, setError } = useAuth();
 
   const {
     register,

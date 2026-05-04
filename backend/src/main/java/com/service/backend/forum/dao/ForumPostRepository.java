@@ -97,6 +97,21 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     );
 
     /**
+     * Find all forum posts with pagination (admin moderation list).
+     */
+    @Query("SELECT * FROM forum_posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findAllPostsWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
+     * Count all forum posts (admin moderation list).
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts")
+    Mono<Long> countAllPosts();
+
+    /**
      * Count all banned forum posts
      */
     @Query("SELECT COUNT(*) FROM forum_posts WHERE is_banned = true")

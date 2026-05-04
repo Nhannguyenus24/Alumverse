@@ -9,6 +9,13 @@ const TextField = (theme) => {
       defaultProps: {
         variant: 'outlined',
         size: 'medium',
+        slotProps: {
+          select: {
+            MenuProps: {
+              disableScrollLock: true,
+            },
+          },
+        },
       },
     },
     MuiOutlinedInput: {

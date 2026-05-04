@@ -20,13 +20,32 @@ export const useAuth = () => {
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error, needsOrganizationSetup } = store;
 
-  const [authResolved, setAuthResolved] = useState(() => {
-    const { token: t, user: u } = useAuthStore.getState();
-    if (!t || !u) return true;
-    return !isTokenExpired(t);
-  });
+  const [storageHydrated, setStorageHydrated] = useState(() =>
+    typeof useAuthStore.persist?.hasHydrated === 'function'
+      ? useAuthStore.persist.hasHydrated()
+      : true,
+  );
+  /** Session bootstrap (persist + optional refresh token) finished — used by guards only */
+  const [authResolved, setAuthResolved] = useState(false);
 
   useEffect(() => {
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => {
+      setStorageHydrated(true);
+    });
+    if (typeof useAuthStore.persist?.hasHydrated === 'function' && useAuthStore.persist.hasHydrated()) {
+      setStorageHydrated(true);
+    }
+    return () => {
+      unsub?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!storageHydrated) {
+      return undefined;
+    }
+
+    let cancelled = false;
     const { token: t, user: u } = useAuthStore.getState();
     if (!t || !u) {
       setAuthResolved(true);
@@ -37,7 +56,6 @@ export const useAuth = () => {
       return undefined;
     }
 
-    let cancelled = false;
     (async () => {
       try {
         const newToken = await refreshSessionAccessToken();
@@ -55,10 +73,10 @@ export const useAuth = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [storageHydrated]);
 
   useEffect(() => {
-    if (!token || !user || !authResolved) return undefined;
+    if (!storageHydrated || !token || !user || !authResolved) return undefined;
 
     const maybeRefresh = () => {
       const t = useAuthStore.getState().token;
@@ -82,7 +100,7 @@ export const useAuth = () => {
       clearInterval(intervalId);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-  }, [token, user, authResolved]);
+  }, [storageHydrated, token, user, authResolved]);
 
   const setLoading = (value) => {
     store.setLoading(value);
@@ -291,8 +309,6 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    store.setLoading(true);
-    store.setError(null);
     try {
       await apiClient.post('/auth/logout');
     } finally {
@@ -301,9 +317,19 @@ export const useAuth = () => {
     }
   };
 
+  const isBootLoading = !storageHydrated || !authResolved;
+
   return {
-    isAuthenticated: !!token && !!user && authResolved && !isTokenExpired(token),
-    isLoading: loading || !authResolved,
+    isAuthenticated:
+      storageHydrated &&
+      authResolved &&
+      !!token &&
+      !!user &&
+      !isTokenExpired(token),
+    /** Route guard: persist + bootstrap only — not API submit to avoid fullscreen flicker */
+    isLoading: isBootLoading,
+    /** Button/form busy: login, register, OTP, password flows */
+    isSubmitting: loading,
     needsOrganizationSetup,
     user,
     error,

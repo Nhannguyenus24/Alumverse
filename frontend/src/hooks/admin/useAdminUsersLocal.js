@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ADMIN_ORGANIZATION_OPTIONS, DEFAULT_ADMIN_USERS } from '../../constants/adminDefaultUsers';
+import { enqueueSnackbar } from 'notistack';
 import * as adminUserApi from '../../api/adminUserApi';
-
-const ADMIN_ORG_FALLBACK_ID = ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1;
-
-const nextLocalId = () => `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
 const addDaysIso = (days) => {
   const d = new Date();
@@ -19,6 +15,15 @@ const normalizeList = (payload) => {
   return [];
 };
 
+/** UserResponse has no fullName; overlay may set it. Fall back so "Sort by name" matches visible identity. */
+const sortableDisplayName = (user) => {
+  const name = user?.fullName?.trim();
+  if (name) return name;
+  const login = user?.userName?.trim();
+  if (login) return login;
+  return String(user?.email ?? '').trim();
+};
+
 const useAdminUsersLocal = () => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
@@ -26,9 +31,6 @@ const useAdminUsersLocal = () => {
 
   // Local overlay for fields the backend doesn't return (fullName, orgId, ban details…)
   const [localOverlay, setLocalOverlay] = useState({});
-
-  // Users created via createUser() — no backend endpoint, lives local-only
-  const [localOnlyUsers, setLocalOnlyUsers] = useState([]);
 
   // ── Filter / sort / pagination state ────────────────────────────────────
   const [search, setSearch] = useState('');
@@ -47,9 +49,9 @@ const useAdminUsersLocal = () => {
       const res = await adminUserApi.getUsers(0, 100);
       const payload = res?.data?.data;
       const items = normalizeList(payload);
-      setServerUsers(items.length > 0 ? items : DEFAULT_ADMIN_USERS);
+      setServerUsers(Array.isArray(items) ? items : []);
     } catch {
-      setServerUsers((prev) => (prev.length > 0 ? prev : DEFAULT_ADMIN_USERS));
+      setServerUsers([]);
     } finally {
       setLoading(false);
     }
@@ -65,8 +67,8 @@ const useAdminUsersLocal = () => {
       ...u,
       ...(localOverlay[u.id] ?? {}),
     }));
-    return [...merged, ...localOnlyUsers];
-  }, [serverUsers, localOverlay, localOnlyUsers]);
+    return merged;
+  }, [serverUsers, localOverlay]);
 
   // ── Client-side filtering ─────────────────────────────────────────────────
   const filteredUsers = useMemo(() => {
@@ -88,8 +90,18 @@ const useAdminUsersLocal = () => {
     const dir = sortOrder === 'ASC' ? 1 : -1;
     const list = [...filteredUsers];
     list.sort((a, b) => {
-      if (sortBy === 'fullName') return dir * String(a.fullName || '').localeCompare(String(b.fullName || ''));
-      if (sortBy === 'email') return dir * String(a.email || '').localeCompare(String(b.email || ''));
+      if (sortBy === 'fullName') {
+        const sa = sortableDisplayName(a);
+        const sb = sortableDisplayName(b);
+        let cmp = sa.localeCompare(sb, undefined, { sensitivity: 'base' });
+        if (cmp === 0) {
+          cmp = String(a.email || '').localeCompare(String(b.email || ''), undefined, { sensitivity: 'base' });
+        }
+        return dir * cmp;
+      }
+      if (sortBy === 'email') {
+        return dir * String(a.email || '').localeCompare(String(b.email || ''), undefined, { sensitivity: 'base' });
+      }
       if (sortBy === 'updatedAt') {
         const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
         const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
@@ -108,125 +120,152 @@ const useAdminUsersLocal = () => {
   }, [sortedUsers, page, rowsPerPage]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
-  const isLocalOnly = useCallback(
-    (id) => localOnlyUsers.some((u) => u.id === id),
-    [localOnlyUsers],
-  );
-
   // Keep a ref snapshot for optimistic-revert patterns
   const serverUsersRef = useRef(serverUsers);
   useEffect(() => { serverUsersRef.current = serverUsers; }, [serverUsers]);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
 
-  const createUser = useCallback((payload) => {
-    const { password: _omit, ...rest } = payload;
-    const now = new Date().toISOString();
-    setLocalOnlyUsers((prev) => [
-      ...prev,
-      {
-        id: nextLocalId(),
-        ...rest,
-        email: rest.email?.trim() ?? '',
-        userName: rest.userName?.trim() ?? '',
-        fullName: rest.fullName?.trim() ?? '',
-        organizationId: rest.organizationId ?? ADMIN_ORG_FALLBACK_ID,
-        organizationName:
-          rest.organizationName ??
-          ADMIN_ORGANIZATION_OPTIONS.find((o) => o.id === (rest.organizationId ?? ADMIN_ORG_FALLBACK_ID))?.name ??
-          '',
-        membershipStatus: rest.membershipStatus ?? 'pending',
-        createdAt: now,
-        updatedAt: now,
-      },
-    ]);
-  }, []);
+  const createUser = useCallback(async (payload) => {
+    if (String(payload?.role || '').toUpperCase() !== 'ADMIN') {
+      enqueueSnackbar(
+        'Only ADMIN accounts can be created here. Use public sign-up for STUDENT, ALUMNI, STAFF, or GUEST.',
+        { variant: 'warning' },
+      );
+      throw new Error('CREATE_ROLE');
+    }
+    if (!payload?.password) {
+      enqueueSnackbar('Password is required.', { variant: 'error' });
+      throw new Error('CREATE_PASSWORD');
+    }
+    try {
+      await adminUserApi.createAdminAccount({
+        email: String(payload.email || '').trim(),
+        fullName: String(payload.fullName || '').trim(),
+        userName: String(payload.userName || '').trim(),
+        password: payload.password,
+        organizationId: Number(payload.organizationId),
+      });
+      enqueueSnackbar('Admin account created.', { variant: 'success' });
+      await loadUsers();
+    } catch (e) {
+      if (e?.message === 'CREATE_ROLE' || e?.message === 'CREATE_PASSWORD') {
+        throw e;
+      }
+      const msg = e?.response?.data?.message || 'Failed to create admin.';
+      enqueueSnackbar(msg, { variant: 'error' });
+      throw e;
+    }
+  }, [loadUsers]);
 
   const updateUser = useCallback(
     async (id, payload) => {
-      const { password: _omit, fullName, organizationId, organizationName, membershipStatus, ...apiPayload } = payload;
+      const uid = Number(id);
+      const snapshot = serverUsersRef.current;
+      const {
+        password: _omit,
+        fullName,
+        organizationId,
+        organizationName: _orgName,
+        membershipStatus,
+        ...rest
+      } = payload;
       const now = new Date().toISOString();
 
-      // Save display-only fields to overlay
-      setLocalOverlay((prev) => ({
-        ...prev,
-        [id]: {
-          ...(prev[id] ?? {}),
-          ...(fullName !== undefined ? { fullName } : {}),
-          ...(organizationId !== undefined ? { organizationId } : {}),
-          ...(organizationName !== undefined ? { organizationName } : {}),
-          ...(membershipStatus !== undefined ? { membershipStatus } : {}),
-        },
-      }));
+      const body = {
+        ...rest,
+        ...(fullName !== undefined ? { fullName: String(fullName || '').trim() } : {}),
+        ...(organizationId !== undefined && organizationId !== '' && !Number.isNaN(Number(organizationId))
+          ? { organizationId: Number(organizationId) }
+          : {}),
+      };
 
-      if (isLocalOnly(id)) {
-        setLocalOnlyUsers((prev) =>
-          prev.map((u) => (u.id === id ? { ...u, ...payload, updatedAt: now } : u)),
-        );
-        return;
-      }
-
-      // Optimistic server update
       setServerUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, ...apiPayload, updatedAt: now } : u)),
+        prev.map((u) =>
+          Number(u.id) === uid
+            ? {
+                ...u,
+                ...rest,
+                ...(fullName !== undefined ? { fullName } : {}),
+                ...(organizationId !== undefined ? { organizationId: Number(organizationId) } : {}),
+                ...(payload.organizationName !== undefined ? { organizationName: payload.organizationName } : {}),
+                ...(membershipStatus !== undefined ? { membershipStatus } : {}),
+                updatedAt: now,
+              }
+            : u,
+        ),
       );
 
       try {
-        const res = await adminUserApi.updateUser(id, apiPayload);
-        const updated = res?.data?.data;
-        if (updated) {
-          setServerUsers((prev) => prev.map((u) => (u.id === id ? { ...u, ...updated } : u)));
-        }
-      } catch {
-        // Revert server fields to snapshot
-        setServerUsers(serverUsersRef.current);
+        await adminUserApi.updateUser(uid, body);
+        await loadUsers();
+        setLocalOverlay((prev) => {
+          const next = { ...prev };
+          delete next[uid];
+          return next;
+        });
+        enqueueSnackbar('User updated successfully.', { variant: 'success' });
+      } catch (e) {
+        setServerUsers(snapshot);
+        setLocalOverlay((prev) => {
+          const next = { ...prev };
+          delete next[uid];
+          return next;
+        });
+        enqueueSnackbar(e?.response?.data?.message || e?.message || 'Failed to update user.', { variant: 'error' });
+        throw e;
       }
     },
-    [isLocalOnly],
+    [loadUsers],
   );
 
   const deleteUser = useCallback(
     async (id) => {
-      if (isLocalOnly(id)) {
-        setLocalOnlyUsers((prev) => prev.filter((u) => u.id !== id));
-        return;
-      }
-
-      // Optimistic remove
+      const uid = Number(id);
       const snapshot = serverUsersRef.current;
-      setServerUsers((prev) => prev.filter((u) => u.id !== id));
+      setServerUsers((prev) => prev.filter((u) => Number(u.id) !== uid));
       setLocalOverlay((prev) => {
         const next = { ...prev };
-        delete next[id];
+        delete next[uid];
         return next;
       });
 
       try {
-        await adminUserApi.deleteUser(id, false);
-      } catch {
+        await adminUserApi.deleteUser(uid, false);
+        enqueueSnackbar('User removed from list.', { variant: 'success' });
+        await loadUsers();
+      } catch (e) {
         setServerUsers(snapshot);
+        enqueueSnackbar(e?.response?.data?.message || 'Delete failed.', { variant: 'error' });
+        throw e;
       }
     },
-    [isLocalOnly],
+    [loadUsers],
   );
 
   const updateUserStatus = useCallback(async (id, status) => {
+    const uid = Number(id);
     const now = new Date().toISOString();
     const snapshot = serverUsersRef.current;
 
     setServerUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status, updatedAt: now } : u)),
+      prev.map((u) => (Number(u.id) === uid ? { ...u, status, updatedAt: now } : u)),
     );
 
     try {
-      await adminUserApi.updateUser(id, { status });
-    } catch {
+      await adminUserApi.updateUser(uid, { status });
+      await loadUsers();
+      enqueueSnackbar('User status saved.', { variant: 'success' });
+    } catch (e) {
       setServerUsers(snapshot);
+      enqueueSnackbar(e?.response?.data?.message || 'Failed to update status.', { variant: 'error' });
+      throw e;
     }
-  }, []);
+  }, [loadUsers]);
 
   const banUser = useCallback(
     async (id, { reason, customReason, durationDays, isPermanent }) => {
+      const uid = Number(id);
       const now = new Date().toISOString();
       const finalReason =
         reason === 'OTHER' ? (customReason || '').trim() || 'Other' : reason || 'Moderation';
@@ -234,50 +273,62 @@ const useAdminUsersLocal = () => {
         isPermanent || durationDays == null ? null : addDaysIso(Number(durationDays) || 0);
       const snapshot = serverUsersRef.current;
 
-      // Optimistic status update
       setServerUsers((prev) =>
-        prev.map((u) => (u.id === id ? { ...u, status: 'BANNED', updatedAt: now } : u)),
+        prev.map((u) => (Number(u.id) === uid ? { ...u, status: 'BANNED', updatedAt: now } : u)),
       );
 
-      // Store display-only ban details in overlay
       setLocalOverlay((prev) => {
-        const existing = prev[id] ?? {};
+        const existing = prev[uid] ?? {};
         const history = Array.isArray(existing.banHistory) ? [...existing.banHistory] : [];
         history.unshift({ at: now, reason: finalReason, durationDays: isPermanent ? null : durationDays });
         return {
           ...prev,
-          [id]: { ...existing, banReason: finalReason, bannedUntil, banHistory: history },
+          [uid]: { ...existing, banReason: finalReason, bannedUntil, banHistory: history },
         };
       });
 
       try {
-        await adminUserApi.banUser(id);
-      } catch {
+        await adminUserApi.banUser(uid);
+        await loadUsers();
+        enqueueSnackbar('User banned.', { variant: 'success' });
+      } catch (e) {
         setServerUsers(snapshot);
+        setLocalOverlay((prev) => {
+          const next = { ...prev };
+          delete next[uid];
+          return next;
+        });
+        enqueueSnackbar(e?.response?.data?.message || 'Ban failed.', { variant: 'error' });
+        throw e;
       }
     },
-    [],
+    [loadUsers],
   );
 
   const unbanUser = useCallback(async (id) => {
+    const uid = Number(id);
     const now = new Date().toISOString();
     const snapshot = serverUsersRef.current;
 
     setServerUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, status: 'ACTIVE', updatedAt: now } : u)),
+      prev.map((u) => (Number(u.id) === uid ? { ...u, status: 'ACTIVE', updatedAt: now } : u)),
     );
 
     setLocalOverlay((prev) => ({
       ...prev,
-      [id]: { ...(prev[id] ?? {}), banReason: undefined, bannedUntil: undefined },
+      [uid]: { ...(prev[uid] ?? {}), banReason: undefined, bannedUntil: undefined },
     }));
 
     try {
-      await adminUserApi.unbanUser(id);
-    } catch {
+      await adminUserApi.unbanUser(uid);
+      await loadUsers();
+      enqueueSnackbar('User unbanned.', { variant: 'success' });
+    } catch (e) {
       setServerUsers(snapshot);
+      enqueueSnackbar(e?.response?.data?.message || 'Unban failed.', { variant: 'error' });
+      throw e;
     }
-  }, []);
+  }, [loadUsers]);
 
   return {
     loading,

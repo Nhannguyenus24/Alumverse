@@ -110,7 +110,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        Edit event {event ? `#${event.id}` : ''}
+        {event ? `Edit event #${event.id}` : 'Create event'}
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
         <TextField

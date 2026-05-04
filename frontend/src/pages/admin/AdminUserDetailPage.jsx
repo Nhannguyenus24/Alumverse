@@ -38,40 +38,8 @@ import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { useAuth } from '../../hooks/useAuth';
 import { getLoginHistoryByUser } from '../../api/adminAuditApi';
 import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { formatDateTime } from '../../utils/dateFormatter';
-
-const demoProfile = (user) => ({
-  phone: user?.phone || '0901 234 567',
-  dob: user?.dob || '1998-05-15',
-  gender: user?.gender || 'MALE',
-  bio: user?.bio || 'Alumni demo profile — connect to API for real data.',
-});
-
-const demoAcademic = () => [
-  {
-    studentCode: 'N1900001',
-    degreeType: 'BACHELOR',
-    className: 'K19',
-    startYear: 2019,
-    graduatedYear: 2023,
-  },
-];
-
-const demoMemberships = (user) => [
-  {
-    organizationName: user?.organizationName || '-',
-    verificationLevel: 2,
-    status: user?.membershipStatus || 'active',
-    createdAt: user?.createdAt,
-  },
-];
-
-const demoActivity = () => ({
-  postsCreated: 12,
-  comments: 48,
-  eventsAttended: 3,
-  pageViewsSample: 120,
-});
 
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
@@ -89,6 +57,7 @@ const AdminUserDetailPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [banOpen, setBanOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
 
   // Fallback: filter global audit logs from context
   const auditTrail = useMemo(
@@ -104,6 +73,7 @@ const AdminUserDetailPage = () => {
   const [userLoginHistory, setUserLoginHistory] = useState(null);
   const [userAdminActions, setUserAdminActions] = useState([]);
   const [userVerificationLogs, setUserVerificationLogs] = useState([]);
+  const [userActivitySummary, setUserActivitySummary] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
 
   const fetchUserLoginHistory = useCallback(() => {
@@ -129,6 +99,7 @@ const AdminUserDetailPage = () => {
         );
         setUserVerificationLogs(verifications);
         setUserAdminActions(actions);
+        setUserActivitySummary(data?.summary || null);
       })
       .catch(() => {
         getLoginHistoryByUser(userId, 0, 50)
@@ -155,14 +126,49 @@ const AdminUserDetailPage = () => {
     if (tab === 5) fetchUserLoginHistory();
   }, [tab, fetchUserLoginHistory]);
 
-  const profile = user ? demoProfile(user) : {};
-  const academic = user ? demoAcademic() : [];
-  const memberships = user ? demoMemberships(user) : [];
-  const activity = user ? demoActivity() : null;
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const profile = user
+    ? {
+        phone: user?.phone || '-',
+        dob: user?.dob || '-',
+        gender: user?.gender || '-',
+        bio: user?.bio || '-',
+      }
+    : {};
+  const academic = Array.isArray(user?.academicRecords) ? user.academicRecords : [];
+  const memberships = user ? [{
+    organizationName: user?.organizationName || '-',
+    verificationLevel: user?.verificationLevel ?? '-',
+    status: user?.membershipStatus || '-',
+    createdAt: user?.createdAt,
+  }] : [];
+  const activity = userActivitySummary || {
+    postsCreated: user?.postsCreated ?? '-',
+    comments: user?.commentsCount ?? '-',
+    eventsAttended: user?.eventsAttended ?? '-',
+    pageViewsSample: user?.pageViews ?? '-',
+  };
 
   if (!user) {
     return (
-      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list (demo data).">
+      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list.">
         <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
           Back to users
         </Button>
@@ -214,9 +220,12 @@ const AdminUserDetailPage = () => {
                   color="success"
                   size="small"
                   startIcon={<LockOpenOutlinedIcon />}
-                  onClick={() => {
-                    unbanUser(user.id);
-                    enqueueSnackbar('User unbanned.', { variant: 'success' });
+                  onClick={async () => {
+                    try {
+                      await unbanUser(user.id);
+                    } catch {
+                      /* snackbar in hook */
+                    }
                   }}
                   sx={{ textTransform: 'none' }}
                 >
@@ -310,15 +319,22 @@ const AdminUserDetailPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {academic.map((row) => (
-                    <TableRow key={row.studentCode}>
-                      <TableCell>{row.studentCode}</TableCell>
-                      <TableCell>{row.degreeType}</TableCell>
-                      <TableCell>{row.className}</TableCell>
-                      <TableCell>{row.startYear}</TableCell>
-                      <TableCell>{row.graduatedYear}</TableCell>
+                  {academic.map((row, idx) => (
+                    <TableRow key={`${row.studentCode || row.id || `row-${idx}`}`}>
+                      <TableCell>{row.studentCode || '-'}</TableCell>
+                      <TableCell>{row.degreeType || '-'}</TableCell>
+                      <TableCell>{row.className || '-'}</TableCell>
+                      <TableCell>{row.startYear || '-'}</TableCell>
+                      <TableCell>{row.graduatedYear || '-'}</TableCell>
                     </TableRow>
                   ))}
+                  {academic.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Typography variant="body2" color="text.secondary">No academic records from API.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
                 </TableBody>
               </Table>
             ) : null}
@@ -336,10 +352,10 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 3 ? (
               <Stack spacing={0.5}>
-                <Typography variant="body2">Posts created: {activity?.postsCreated}</Typography>
-                <Typography variant="body2">Comments: {activity?.comments}</Typography>
-                <Typography variant="body2">Events attended: {activity?.eventsAttended}</Typography>
-                <Typography variant="body2">Page views (sample): {activity?.pageViewsSample}</Typography>
+                <Typography variant="body2">Posts created: {activity?.postsCreated ?? '-'}</Typography>
+                <Typography variant="body2">Comments: {activity?.comments ?? '-'}</Typography>
+                <Typography variant="body2">Events attended: {activity?.eventsAttended ?? '-'}</Typography>
+                <Typography variant="body2">Page views: {activity?.pageViewsSample ?? '-'}</Typography>
               </Stack>
             ) : null}
             {tab === 4 ? (
@@ -482,11 +498,14 @@ const AdminUserDetailPage = () => {
         open={editOpen}
         mode="edit"
         user={user}
+        organizationOptions={organizationOptions}
         onClose={() => setEditOpen(false)}
-        onSubmit={(payload) => {
-          updateUser(user.id, payload);
-          enqueueSnackbar('User updated.', { variant: 'success' });
-          setEditOpen(false);
+        onSubmit={async (payload) => {
+          try {
+            await updateUser(user.id, payload);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
@@ -494,23 +513,29 @@ const AdminUserDetailPage = () => {
         open={banOpen}
         user={user}
         onClose={() => setBanOpen(false)}
-        onConfirm={(payload) => {
-          banUser(user.id, payload);
-          enqueueSnackbar('User banned.', { variant: 'success' });
-          setBanOpen(false);
+        onConfirm={async (payload) => {
+          try {
+            await banUser(user.id, payload);
+            setBanOpen(false);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
       <AdminConfirmDeleteDialog
         open={deleteOpen}
         title="Delete account"
-        description={`Remove ${user.fullName} (#${user.id})? Demo: local state only.`}
+        description={`Remove ${user.fullName} (#${user.id})?`}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          deleteUser(user.id);
-          enqueueSnackbar('User deleted.', { variant: 'success' });
-          setDeleteOpen(false);
-          navigate(`${adminBase}/users`);
+        onConfirm={async () => {
+          try {
+            await deleteUser(user.id);
+            setDeleteOpen(false);
+            navigate(`${adminBase}/users`);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
     </>

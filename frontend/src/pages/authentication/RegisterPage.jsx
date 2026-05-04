@@ -24,7 +24,7 @@ const RegisterPage = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
-  const { register: registerUser, forgotPassword, isLoading: loading, setError } = useAuth();
+  const { register: registerUser, forgotPassword, isSubmitting: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 

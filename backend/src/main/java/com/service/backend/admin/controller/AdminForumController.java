@@ -108,6 +108,17 @@ public class AdminForumController {
                 .onErrorResume(this::handleError);
     }
 
+    @GetMapping("/admin/posts")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> adminGetAllPosts(
+            @Parameter(example = "0")
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @Parameter(example = "20")
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminForumService.getAllPostsWithPagination(page, size)
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum posts", paginatedResponse)))
+                .onErrorResume(this::handleError);
+    }
+
     @GetMapping("/reports")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostReportDTO>>>> getPendingReports(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
@@ -174,8 +185,10 @@ public class AdminForumController {
             @Parameter(example = "General Discussion")
             @RequestParam @NotBlank(message = "Category name is required") String name,
             @Parameter(example = "General discussion topics")
-            @RequestParam(required = false) String description) {
-        return adminForumService.createCategory(organizationId, name, description)
+            @RequestParam(required = false) String description,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer parentId) {
+        return adminForumService.createCategory(organizationId, name, description, parentId)
                 .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)))
                 .onErrorResume(this::handleError);
     }
@@ -186,8 +199,10 @@ public class AdminForumController {
             @Parameter(example = "General Discussion")
             @RequestParam(required = false) String name,
             @Parameter(example = "General discussion topics")
-            @RequestParam(required = false) String description) {
-        return adminForumService.updateCategory(categoryId, name, description)
+            @RequestParam(required = false) String description,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer parentId) {
+        return adminForumService.updateCategory(categoryId, name, description, parentId)
                 .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)))
                 .onErrorResume(this::handleError);
     }

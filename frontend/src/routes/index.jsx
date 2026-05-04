@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
+import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import ProtectedRoute from "./ProtectedRoute";
@@ -13,6 +14,25 @@ const Loadable = (Component) => (props) => (
   </Suspense>
 );
 
+/** Inline Suspense fallback in AuthLayout — avoids fullscreen LoadingScreen on logout → /auth/login */
+const AuthRouteSuspenseFallback = () => (
+  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+    <CircularProgress size={36} thickness={4} aria-label="Loading" />
+  </Box>
+);
+
+const AuthLoadable = (Component) => (props) => (
+  <Suspense fallback={<AuthRouteSuspenseFallback />}>
+    <Component {...props} />
+  </Suspense>
+);
+
+if (typeof window !== "undefined") {
+  queueMicrotask(() => {
+    void import("../pages/authentication/LoginPage");
+  });
+}
+
 // Public pages
 const HomePage = Loadable(lazy(() => import("../pages/public/HomePage")));
 const IntroducePage = Loadable(
@@ -23,20 +43,20 @@ const FacultiesPage = Loadable(
   lazy(() => import("../pages/public/FacultiesPage")),
 );
 
-// Authentication pages
-const LoginPage = Loadable(
+// Authentication pages (light fallback — see AuthLoadable)
+const LoginPage = AuthLoadable(
   lazy(() => import("../pages/authentication/LoginPage")),
 );
-const RegisterPage = Loadable(
+const RegisterPage = AuthLoadable(
   lazy(() => import("../pages/authentication/RegisterPage")),
 );
-const SignupCodePage = Loadable(
+const SignupCodePage = AuthLoadable(
   lazy(() => import("../pages/authentication/SignupCodePage")),
 );
-const ForgotPasswordPage = Loadable(
+const ForgotPasswordPage = AuthLoadable(
   lazy(() => import("../pages/authentication/ForgotPasswordPage")),
 );
-const ResetPasswordPage = Loadable(
+const ResetPasswordPage = AuthLoadable(
   lazy(() => import("../pages/authentication/ResetPasswordPage")),
 );
 const OrganizationRegistrationPage = Loadable(
@@ -627,7 +647,7 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: (
-      <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+      <ProtectedRoute allowedRoles={["ADMIN"]}>
         <AdminLayout />
       </ProtectedRoute>
     ),

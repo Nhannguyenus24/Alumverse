@@ -63,6 +63,7 @@ const AdminForumTopicsPage = () => {
   // Create/Edit dialog
   const [dialog, setDialog] = useState({ open: false, mode: 'create', topic: null });
   const [form, setForm] = useState({ title: '', categoryId: '' });
+  const inputLabelSlotProps = { shrink: true };
 
   const filteredTopics = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -90,7 +91,12 @@ const AdminForumTopicsPage = () => {
         enqueueSnackbar('No organization selected.', { variant: 'warning' });
         return;
       }
-      const ok = await createTopic?.(activeOrgId, form.categoryId, form.title, null);
+      const createdByMemberId = Number(user?.id);
+      if (!createdByMemberId) {
+        enqueueSnackbar('Cannot determine current user id.', { variant: 'error' });
+        return;
+      }
+      const ok = await createTopic?.(activeOrgId, form.categoryId, form.title, createdByMemberId);
       enqueueSnackbar(ok ? 'Topic created.' : 'Failed to create topic.', { variant: ok ? 'success' : 'error' });
     } else {
       const ok = await updateTopic?.(dialog.topic.id, form.title, form.categoryId);
@@ -289,18 +295,19 @@ const AdminForumTopicsPage = () => {
         onClose={() => setDialog((d) => ({ ...d, open: false }))}
         fullWidth
         maxWidth="sm"
+        scroll="body"
       >
-        <DialogTitle sx={{ fontWeight: 800 }}>
+        <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
           {dialog.mode === 'create' ? 'Create topic' : 'Edit topic'}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
           <TextField
             label="Title"
             required
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{ inputLabel: inputLabelSlotProps }}
           />
           <TextField
             select
@@ -308,7 +315,7 @@ const AdminForumTopicsPage = () => {
             value={form.categoryId}
             onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
             fullWidth
-            slotProps={{ inputLabel: { shrink: true } }}
+            slotProps={{ inputLabel: inputLabelSlotProps }}
           >
             {(categories ?? []).length === 0 ? (
               <MenuItem value="">No categories loaded</MenuItem>

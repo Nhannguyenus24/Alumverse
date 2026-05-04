@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMatch, useNavigate } from 'react-router';
 
 import { useSnackbar } from 'notistack';
@@ -32,11 +32,12 @@ import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAuth } from '../../hooks/useAuth';
 import { resetPasswordByAdmin } from '../../api/adminUserApi';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 
 const AdminUsersListPage = () => {
   const navigate = useNavigate();
@@ -80,6 +81,25 @@ const AdminUsersListPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [userStatusMenu, setUserStatusMenu] = useState(null);
   const [banTarget, setBanTarget] = useState(null);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <>
@@ -171,7 +191,7 @@ const AdminUsersListPage = () => {
             sx={{ minWidth: 220 }}
           >
             <MenuItem value="ALL">All organizations</MenuItem>
-            {ADMIN_ORGANIZATION_OPTIONS.map((org) => (
+            {organizationOptions.map((org) => (
               <MenuItem key={org.id} value={String(org.id)}>
                 {org.name}
               </MenuItem>
@@ -238,7 +258,9 @@ const AdminUsersListPage = () => {
                   <TableCell>{u.id}</TableCell>
                   <TableCell>{u.email || '-'}</TableCell>
                   <TableCell>{u.userName || '-'}</TableCell>
-                  <TableCell>{u.fullName || '-'}</TableCell>
+                  <TableCell>
+                    {[u.fullName, u.userName, u.email].map((x) => (typeof x === 'string' ? x.trim() : x)).find(Boolean) || '-'}
+                  </TableCell>
                   <TableCell>{u.role || '-'}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <AdminStatusChip
@@ -299,9 +321,12 @@ const AdminUsersListPage = () => {
                           <IconButton
                             size="small"
                             color="success"
-                            onClick={() => {
-                              unbanUser(u.id);
-                              enqueueSnackbar('User unbanned.', { variant: 'success' });
+                            onClick={async () => {
+                              try {
+                                await unbanUser(u.id);
+                              } catch {
+                                /* snackbar in hook */
+                              }
                             }}
                           >
                             <LockOpenOutlinedIcon fontSize="small" />
@@ -386,9 +411,12 @@ const AdminUsersListPage = () => {
                 <MenuItem
                   key={st}
                   selected={active}
-                  onClick={() => {
-                    updateUserStatus(userStatusMenu.user.id, st);
-                    enqueueSnackbar(`User status set to ${formatAccountStatusLabel(st)}.`, { variant: 'success' });
+                  onClick={async () => {
+                    try {
+                      await updateUserStatus(userStatusMenu.user.id, st);
+                    } catch {
+                      /* snackbar in hook */
+                    }
                     setUserStatusMenu(null);
                   }}
                 >
@@ -403,14 +431,13 @@ const AdminUsersListPage = () => {
         open={userFormOpen}
         mode={userFormMode}
         user={editingUser}
+        organizationOptions={organizationOptions}
         onClose={() => setUserFormOpen(false)}
-        onSubmit={(payload) => {
+        onSubmit={async (payload) => {
           if (userFormMode === 'create') {
-            createUser(payload);
-            enqueueSnackbar('User created successfully.', { variant: 'success' });
+            await createUser(payload);
           } else if (editingUser) {
-            updateUser(editingUser.id, payload);
-            enqueueSnackbar('User updated successfully.', { variant: 'success' });
+            await updateUser(editingUser.id, payload);
           }
         }}
       />
@@ -419,10 +446,14 @@ const AdminUsersListPage = () => {
         open={Boolean(banTarget)}
         user={banTarget}
         onClose={() => setBanTarget(null)}
-        onConfirm={(banPayload) => {
-          if (banTarget) {
-            banUser(banTarget.id, banPayload);
-            enqueueSnackbar('User banned.', { variant: 'success' });
+        onConfirm={async (banPayload) => {
+          if (!banTarget) {
+            return;
+          }
+          try {
+            await banUser(banTarget.id, banPayload);
+          } catch {
+            /* snackbar in hook */
           }
           setBanTarget(null);
         }}
@@ -433,14 +464,18 @@ const AdminUsersListPage = () => {
         title="Delete user"
         description={
           deleteTarget
-            ? `This will remove ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id}). Demo: local state only.`
+            ? `Soft-delete ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id})? Status becomes DELETED on the server.`
             : ''
         }
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (deleteTarget) {
-            deleteUser(deleteTarget.id);
-            enqueueSnackbar('User removed from list.', { variant: 'success' });
+        onConfirm={async () => {
+          if (!deleteTarget) {
+            return;
+          }
+          try {
+            await deleteUser(deleteTarget.id);
+          } catch {
+            /* snackbar in hook */
           }
           setDeleteTarget(null);
         }}
