@@ -1,12 +1,15 @@
 package com.service.backend.organization.controller;
 
+import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
 import com.service.backend.organization.entity.Organization;
+import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.service.OrganizationService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -76,6 +79,30 @@ public class OrganizationController {
                     }
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(new ApiResponse<>("Failed to retrieve organization", null)));
+                });
+    }
+
+    @PostMapping("/{organizationId}/feedbacks")
+    @Operation(
+            summary = "Create school feedback",
+            description = "Submit feedback for an organization"
+    )
+    public Mono<ResponseEntity<ApiResponse<SchoolFeedback>>> createSchoolFeedback(
+            @Parameter(description = "Organization ID", example = "1")
+            @PathVariable Long organizationId,
+            @Valid @RequestBody CreateSchoolFeedbackRequest request) {
+        logger.info("Creating school feedback for organization id: {}", organizationId);
+        return organizationService.createSchoolFeedback(organizationId, request)
+                .map(feedback -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("School feedback created successfully", feedback)))
+                .onErrorResume(error -> {
+                    logger.error("Error creating school feedback for organization id: {}", organizationId, error);
+                    if (error instanceof ApplicationException appException) {
+                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse<>(appException.getMessage(), null)));
+                    }
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(new ApiResponse<>("Failed to create school feedback", null)));
                 });
     }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import {
   AppBar, Toolbar, Box, Typography,
   Button, IconButton, Drawer, List, 
@@ -56,6 +56,7 @@ const Header = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const location = useLocation();
+  const { slug: routeSlug } = useParams();
   const { isAuthenticated, user } = useAuth();
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
@@ -65,7 +66,16 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const isHomePage = location.pathname === '/';
+  const normalizedPathname = (() => {
+    if (!routeSlug) return location.pathname;
+    const slugPrefix = `/${routeSlug}`;
+    if (location.pathname === slugPrefix) return '/';
+    if (location.pathname.startsWith(`${slugPrefix}/`)) {
+      return location.pathname.slice(slugPrefix.length) || '/';
+    }
+    return location.pathname;
+  })();
+  const isHomePage = normalizedPathname === '/';
   const isAdmin = user?.role === 'ADMIN';
 
   const isTransparent = isHomePage && !isScrolled;

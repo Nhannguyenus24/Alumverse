@@ -20,6 +20,7 @@ import com.service.backend.admin.dto.config.FeatureConfig;
 
 import java.util.Map;
 import com.service.backend.organization.entity.Organization;
+import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminOrganizationService;
@@ -74,6 +75,26 @@ public class AdminOrganizationController {
                 .onErrorResume(error -> Mono.just(
                         ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(new ApiResponse<>(error.getMessage(), null))));
+    }
+
+    @GetMapping("/feedbacks")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<SchoolFeedback>>>> getSchoolFeedbacks(
+            @RequestParam(required = false) Integer organizationId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
+        return organizationService.getSchoolFeedbacks(organizationId, page, size)
+                .map(response -> ResponseEntity.ok(
+                        new ApiResponse<>("School feedbacks fetched successfully", response)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
+    }
+
+    @PatchMapping("/feedbacks/{feedbackId}/read")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> markSchoolFeedbackAsRead(
+            @PathVariable Integer feedbackId) {
+        return organizationService.markSchoolFeedbackAsRead(feedbackId)
+                .thenReturn(ResponseEntity.ok(
+                        new ApiResponse<>("School feedback marked as read", true)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, false)));
     }
     
     /**
