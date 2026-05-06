@@ -521,3 +521,9 @@ INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "creat
 (2, 1, 4, NOW() - INTERVAL '1 day'),
 (2, 2, 6, NOW() - INTERVAL '1 day'),
 (2, 1, 8, NOW());
+
+-- ============= SCHOOL FEEDBACKS DATA =============
+INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email", "subject", "content", "created_at", "is_read") VALUES
+(1, 'Nguyễn Minh Khang', '0908123456', 'khang.nguyen@example.com', 'Góp ý về lịch workshop', 'Mong trường công bố lịch workshop sớm hơn để sinh viên chủ động đăng ký.', NOW() - INTERVAL '4 days', false),
+(1, 'Trần Thu Hà', '0912233445', 'ha.tran@example.com', 'Đề xuất cải thiện diễn đàn', 'Nên có bộ lọc theo chuyên ngành để tìm chủ đề nhanh hơn.', NOW() - INTERVAL '2 days', true),
+(2, 'Lê Quốc Bảo', '0988776655', 'bao.le@example.com', 'Hỗ trợ thông tin học bổng', 'Mình mong có chuyên mục riêng cập nhật học bổng theo từng học kỳ.', NOW() - INTERVAL '1 day', false);
