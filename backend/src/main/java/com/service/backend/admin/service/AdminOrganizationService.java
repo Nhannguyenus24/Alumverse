@@ -12,7 +12,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.service.backend.admin.dto.config.FeatureConfig;
+import com.service.backend.organization.dao.SchoolFeedbackRepository;
 import com.service.backend.organization.entity.Organization;
+import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -28,6 +30,7 @@ public class AdminOrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(AdminOrganizationService.class);
     
     private final AdminOrganizationRepository organizationRepository;
+    private final SchoolFeedbackRepository schoolFeedbackRepository;
     
     /**
      * Get all organizations with pagination
@@ -153,6 +156,29 @@ public class AdminOrganizationService {
                 .onErrorResume(error -> {
                     logger.error("Failed to delete organization - ID: {}", organizationId, error);
                     return Mono.just(false);
+                });
+    }
+
+    public Mono<PaginatedResponse<SchoolFeedback>> getSchoolFeedbacks(Integer organizationId, int page, int size) {
+        logger.info("Fetching school feedbacks - organizationId: {}, page: {}, size: {}", organizationId, page, size);
+        int offset = page * size;
+        return Mono.zip(
+                schoolFeedbackRepository.findByOrganizationIdWithPagination(organizationId, offset, size).collectList(),
+                schoolFeedbackRepository.countByOrganizationId(organizationId)
+        ).map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnError(error -> logger.error("Failed to fetch school feedbacks", error));
+    }
+
+    public Mono<Void> markSchoolFeedbackAsRead(Integer feedbackId) {
+        logger.info("Marking school feedback as read - feedbackId: {}", feedbackId);
+        return schoolFeedbackRepository.markAsRead(feedbackId)
+                .flatMap(updatedRows -> {
+                    if (updatedRows == null || updatedRows <= 0) {
+                        return Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "School feedback not found"));
+                    }
+                    return Mono.empty();
                 });
     }
 

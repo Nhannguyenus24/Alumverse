@@ -12,4 +12,9 @@ export const organizationApi = {
     const response = await apiClient.get('/organizations');
     return unwrap(response) ?? [];
   },
+
+  async createSchoolFeedback(organizationId, payload) {
+    const response = await apiClient.post(`/organizations/${organizationId}/feedbacks`, payload);
+    return unwrap(response);
+  },
 };
