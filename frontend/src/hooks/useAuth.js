@@ -135,11 +135,6 @@ export const useAuth = () => {
       return { ok: false, error: msg };
     }
     const organizationId = payload.organizationId ?? organizationIdFromStore;
-    if (!organizationId) {
-      const msg = 'Organization ID is required';
-      store.setError(msg);
-      return { ok: false, error: msg };
-    }
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/login', {

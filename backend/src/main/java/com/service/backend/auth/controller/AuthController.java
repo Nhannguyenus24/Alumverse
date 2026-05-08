@@ -199,6 +199,37 @@ public class AuthController {
     }
 
     private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId) {
+        if (organizationId == null) {
+            // For admin login without organization, generate token with null orgId
+            String accessToken = jwtUtils.generateAccessToken(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole().name(),
+                    user.getUserName(),
+                    user.getAvatarUrl(),
+                    null
+            );
+            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null);
+
+            ResponseCookie refreshTokenCookie = ResponseCookie
+                    .from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    // .secure(true) // turn on when in https
+                    .path("/")
+                    .maxAge(Duration.ofDays(7))
+                    .sameSite("Lax")
+                    .build();
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .accessToken(accessToken)
+                    .needsOrganizationSetup(false)
+                    .build();
+
+            return Mono.just(ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body(new ApiResponse<>("Login successful", loginResponse)));
+        }
+
         return authService.existsOrganizationMembership(user.getId(), organizationId)
                 .map(isMember -> {
                     String accessToken = jwtUtils.generateAccessToken(

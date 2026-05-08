@@ -89,6 +89,7 @@ const ArticlePage = Loadable(
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
+const AdminLoginPage = Loadable(lazy(() => import("../pages/admin/AdminLoginPage")));
 const AdminDashboardPage = Loadable(lazy(() => import("../pages/admin/AdminDashboardPage")));
 const AdminUsersListPage = Loadable(lazy(() => import("../pages/admin/AdminUsersListPage")));
 const AdminUserDetailPage = Loadable(lazy(() => import("../pages/admin/AdminUserDetailPage")));
@@ -479,7 +480,7 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminLayout />
           </ProtectedRoute>
         ),
@@ -491,7 +492,7 @@ export const router = createBrowserRouter([
           {
             path: "users",
             element: (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminUsersListPage />
               </ProtectedRoute>
             ),
@@ -506,12 +507,16 @@ export const router = createBrowserRouter([
           },
           {
             path: "forum/posts",
-            element: <AdminForumPostsPage />,
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+                <AdminForumPostsPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: "forum/topics",
             element: (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminForumTopicsPage />
               </ProtectedRoute>
             ),
@@ -656,6 +661,10 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/admin/login",
+    element: <AdminLoginPage />,
+  },
+  {
     path: "/admin",
     element: (
       <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -685,7 +694,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "forum/posts",
-        element: <AdminForumPostsPage />,
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminForumPostsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "forum/topics",
