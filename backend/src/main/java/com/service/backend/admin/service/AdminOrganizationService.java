@@ -11,15 +11,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
+import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dao.SchoolFeedbackRepository;
+import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 import com.service.backend.organization.entity.Organization;
+import com.service.backend.organization.entity.OrganizationIntroduction;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
+import reactor.core.publisher.Flux;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
@@ -31,6 +37,8 @@ public class AdminOrganizationService {
     
     private final AdminOrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
+    private final OrganizationIntroductionRepository introductionRepository;
+    private final ImageService imageService;
     
     /**
      * Get all organizations with pagination
@@ -180,6 +188,37 @@ public class AdminOrganizationService {
                     }
                     return Mono.empty();
                 });
+    }
+
+    public Mono<OrganizationIntroductionResponse> upsertIntroduction(
+            Integer orgaId, UpsertOrganizationIntroductionRequest request) {
+        logger.info("Upserting introduction for organization id: {}", orgaId);
+        Mono<List<String>> uploadedUrls = uploadImages(request.getImages());
+        return requireOrganization(orgaId)
+                .flatMap(org -> uploadedUrls)
+                .flatMap(urls -> introductionRepository.findByOrgaId(orgaId)
+                        .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
+                        .flatMap(intro -> {
+                            intro.setContent(request.getContent());
+                            intro.setImageUrls(JsonUtils.toJson(urls));
+                            intro.setUpdatedAt(LocalDateTime.now());
+                            return introductionRepository.save(intro).thenReturn(urls);
+                        }))
+                .map(urls -> OrganizationIntroductionResponse.builder()
+                        .orgaId(orgaId)
+                        .content(request.getContent())
+                        .imageUrls(urls)
+                        .build())
+                .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
+    }
+
+    private Mono<List<String>> uploadImages(List<String> base64Images) {
+        if (base64Images == null || base64Images.isEmpty()) {
+            return Mono.just(List.of());
+        }
+        return Flux.fromIterable(base64Images)
+                .flatMapSequential(imageService::uploadBase64IfPresent)
+                .collectList();
     }
 
     public Mono<FeatureConfig> getConfig(Integer organizationId) {
