@@ -1,6 +1,7 @@
 package com.service.backend.organization.controller;
 
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
+import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 import com.service.backend.organization.entity.Organization;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.service.OrganizationService;
@@ -79,6 +80,29 @@ public class OrganizationController {
                     }
                     return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(new ApiResponse<>("Failed to retrieve organization", null)));
+                });
+    }
+
+    @GetMapping("/{organizationId}/introduction")
+    @Operation(
+            summary = "Get organization introduction",
+            description = "Retrieve introduction content and images for an organization"
+    )
+    public Mono<ResponseEntity<ApiResponse<OrganizationIntroductionResponse>>> getIntroduction(
+            @Parameter(description = "Organization ID", example = "1")
+            @PathVariable Integer organizationId) {
+        logger.info("Fetching introduction for organization id: {}", organizationId);
+        return organizationService.getIntroduction(organizationId)
+                .map(intro -> ResponseEntity.ok(
+                        new ApiResponse<>("Introduction retrieved successfully", intro)))
+                .onErrorResume(error -> {
+                    logger.error("Error fetching introduction for organization id: {}", organizationId, error);
+                    if (error instanceof ApplicationException appException) {
+                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                .body(new ApiResponse<>(appException.getMessage(), null)));
+                    }
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(new ApiResponse<>("Failed to retrieve introduction", null)));
                 });
     }
 
