@@ -1,14 +1,19 @@
 package com.service.backend.organization.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
+import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.entity.OrganizationIntroduction;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.entity.Organization;
 import com.service.backend.organization.dao.OrganizationRepository;
 import com.service.backend.organization.dao.SchoolFeedbackRepository;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +28,7 @@ public class OrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(OrganizationService.class);
     private final OrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
+    private final OrganizationIntroductionRepository introductionRepository;
 
     public Mono<Organization> getOrganizationById(Long id) {
         logger.info("Fetching organization with id: {}", id);
@@ -52,6 +58,29 @@ public class OrganizationService {
                 .doOnNext(org -> logger.debug("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
                 .doOnComplete(() -> logger.info("Successfully retrieved all organizations"))
                 .doOnError(error -> logger.error("Failed to fetch organizations", error));
+    }
+
+    public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
+        logger.info("Fetching introduction for organization id: {}", orgaId);
+        return introductionRepository.findByOrgaId(orgaId)
+                .map(this::toResponse)
+                .switchIfEmpty(Mono.just(OrganizationIntroductionResponse.builder()
+                        .orgaId(orgaId)
+                        .content(null)
+                        .imageUrls(List.of())
+                        .build()))
+                .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
+    }
+
+    private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
+        List<String> urls = intro.getImageUrls() != null
+                ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
+                : List.of();
+        return OrganizationIntroductionResponse.builder()
+                .orgaId(intro.getOrgaId())
+                .content(intro.getContent())
+                .imageUrls(urls)
+                .build();
     }
 
     public Mono<SchoolFeedback> createSchoolFeedback(Long organizationId, CreateSchoolFeedbackRequest request) {

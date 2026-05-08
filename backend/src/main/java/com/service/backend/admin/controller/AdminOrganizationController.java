@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.OrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationOptionRequest;
+import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
+import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 
 import java.util.Map;
 import com.service.backend.organization.entity.Organization;
@@ -163,6 +165,16 @@ public class AdminOrganizationController {
                     }
                 })
                 .onErrorResume(error -> Mono.just(toErrorResponse(error, false)));
+    }
+
+    @PutMapping("/{organizationId}/introduction")
+    public Mono<ResponseEntity<ApiResponse<OrganizationIntroductionResponse>>> upsertIntroduction(
+            @PathVariable Integer organizationId,
+            @RequestBody UpsertOrganizationIntroductionRequest request) {
+        return organizationService.upsertIntroduction(organizationId, request)
+                .map(intro -> ResponseEntity.ok(
+                        new ApiResponse<>("Introduction saved successfully", intro)))
+                .onErrorResume(error -> Mono.just(toErrorResponse(error, null)));
     }
 
     @GetMapping("/{organizationId}/programs")
