@@ -12,6 +12,9 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  Menu,
+  MenuItem,
+  Stack,
   Toolbar,
   Tooltip,
   Typography,
@@ -95,75 +98,137 @@ const NavButton = ({ to, end, icon, label }) => (
   </NavLink>
 );
 
-const AdminHeader = ({ navItems, onMenuOpen, user, onLogout }) => (
-  <AppBar
-    position="fixed"
-    elevation={0}
-    sx={{
-      bgcolor: 'background.paper',
-      borderBottom: 1,
-      borderColor: 'divider',
-      color: 'text.primary',
-    }}
-  >
-    <Toolbar sx={{ gap: 1, minHeight: `${HEADER_HEIGHT}px !important` }}>
-      <IconButton edge="start" onClick={onMenuOpen} sx={{ display: { md: 'none' } }}>
-        <MenuIcon />
-      </IconButton>
+const AdminHeader = ({ navItems, onMenuOpen, user, onLogout }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexShrink: 0 }}>
-        <AdminPanelSettingsOutlinedIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main', letterSpacing: -0.5 }}>
-          Admin
-        </Typography>
-      </Box>
+  const handleOpenUserMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
 
-      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, display: { xs: 'none', md: 'flex' } }} />
+  const handleCloseUserMenu = () => {
+    setAnchorEl(null);
+  };
 
-      <Box
-        sx={{
-          display: { xs: 'none', md: 'flex' },
-          gap: 0.5,
-          flex: 1,
-          overflowX: 'auto',
-          alignItems: 'center',
-          scrollbarWidth: 'none',
-          '&::-webkit-scrollbar': { display: 'none' },
-        }}
-      >
-        {navItems.map(({ to, end, icon, label }) => (
-          <NavButton key={to} to={to} end={end} icon={icon} label={label} />
-        ))}
-      </Box>
+  const handleLogout = () => {
+    handleCloseUserMenu();
+    onLogout();
+  };
 
-      <Box sx={{ flex: 1, display: { md: 'none' } }} />
+  return (
+    <AppBar
+      position="fixed"
+      elevation={0}
+      sx={{
+        bgcolor: 'background.paper',
+        borderBottom: 1,
+        borderColor: 'divider',
+        color: 'text.primary',
+      }}
+    >
+      <Toolbar sx={{ gap: 1, minHeight: `${HEADER_HEIGHT}px !important` }}>
+        <IconButton edge="start" onClick={onMenuOpen} sx={{ display: { md: 'none' } }}>
+          <MenuIcon />
+        </IconButton>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-        <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}>
-          {(user?.fullName || user?.userName || 'A')[0].toUpperCase()}
-        </Avatar>
-        <Typography
-          variant="body2"
+        <Box
           sx={{
-            display: { xs: 'none', sm: 'block' },
-            fontWeight: 500,
-            maxWidth: 140,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            display: { xs: 'none', md: 'flex' },
+            gap: 0.5,
+            flex: 1,
+            overflowX: 'auto',
+            alignItems: 'center',
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
           }}
         >
-          {user?.fullName || user?.userName || 'Admin'}
-        </Typography>
-        <Tooltip title="Đăng xuất">
-          <IconButton size="small" onClick={onLogout} sx={{ color: 'text.secondary' }}>
-            <LogoutOutlinedIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
-    </Toolbar>
-  </AppBar>
-);
+          {navItems.map(({ to, end, icon, label }) => (
+            <NavButton key={to} to={to} end={end} icon={icon} label={label} />
+          ))}
+        </Box>
+
+        <Box sx={{ flex: 1, display: { md: 'none' } }} />
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+          <Button
+            onClick={handleOpenUserMenu}
+            sx={{
+              textTransform: 'none',
+              color: 'inherit',
+              borderRadius: 2,
+              px: 1,
+              py: 0.5,
+              '&:hover': { bgcolor: 'action.hover' },
+            }}
+          >
+            <Stack direction="row" spacing={1.25} alignItems="center">
+              <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: 13, fontWeight: 700 }}>
+                {(user?.fullName || user?.userName || 'A')[0].toUpperCase()}
+              </Avatar>
+              <Typography
+                variant="body2"
+                sx={{
+                  display: { xs: 'none', sm: 'block' },
+                  fontWeight: 600,
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {user?.fullName || user?.userName || 'Admin'}
+              </Typography>
+            </Stack>
+          </Button>
+
+          <Menu
+            anchorEl={anchorEl}
+            open={open}
+            onClose={handleCloseUserMenu}
+            onClick={handleCloseUserMenu}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            PaperProps={{
+              elevation: 0,
+              sx: {
+                overflow: 'visible',
+                filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.12))',
+                mt: 1.5,
+                borderRadius: 2,
+                minWidth: 160,
+                '& .MuiAvatar-root': {
+                  width: 32,
+                  height: 32,
+                  ml: -0.5,
+                  mr: 1,
+                },
+                '&::before': {
+                  content: '""',
+                  display: 'block',
+                  position: 'absolute',
+                  top: 0,
+                  right: 14,
+                  width: 10,
+                  height: 10,
+                  bgcolor: 'background.paper',
+                  transform: 'translateY(-50%) rotate(45deg)',
+                  zIndex: 0,
+                },
+              },
+            }}
+          >
+            <MenuItem onClick={handleLogout} sx={{ py: 1, px: 2 }}>
+              <ListItemIcon>
+                <LogoutOutlinedIcon fontSize="small" />
+              </ListItemIcon>
+              <Typography variant="body2" fontWeight={500}>Đăng xuất</Typography>
+            </MenuItem>
+          </Menu>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
+};
 
 const AdminNavDrawer = ({ open, onClose, navItems }) => (
   <Drawer
@@ -173,13 +238,7 @@ const AdminNavDrawer = ({ open, onClose, navItems }) => (
     sx={{ display: { md: 'none' }, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
   >
     <Box sx={{ pt: 1 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, pb: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <AdminPanelSettingsOutlinedIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-          <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Admin
-          </Typography>
-        </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', px: 2, py: 1 }}>
         <IconButton size="small" onClick={onClose}>
           <CloseIcon fontSize="small" />
         </IconButton>
