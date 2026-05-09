@@ -2,26 +2,29 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
-  Button,
   IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   Tooltip,
   Typography,
-  Chip,
+  Stack,
+  useTheme,
+  Grid,
 } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import MarkEmailUnreadOutlinedIcon from '@mui/icons-material/MarkEmailUnreadOutlined';
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminSchoolFeedbackDetailDialog from '../../components/admin/AdminSchoolFeedbackDetailDialog';
 import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminSchoolFeedbackPage = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [feedbacks, setFeedbacks] = useState([]);
@@ -47,7 +50,7 @@ const AdminSchoolFeedbackPage = () => {
       }
     } catch (error) {
       enqueueSnackbar(
-        error?.response?.data?.message || 'Failed to load feedbacks',
+        error?.response?.data?.message || 'Lỗi tải phản hồi',
         { variant: 'error' },
       );
     } finally {
@@ -68,10 +71,10 @@ const AdminSchoolFeedbackPage = () => {
       if (selectedFeedback?.id === id) {
         setSelectedFeedback((prev) => ({ ...prev, isRead: true }));
       }
-      enqueueSnackbar('Feedback marked as read', { variant: 'success' });
+      enqueueSnackbar('Đã đánh dấu là đã đọc', { variant: 'success' });
     } catch (error) {
       enqueueSnackbar(
-        error?.response?.data?.message || 'Failed to update feedback',
+        error?.response?.data?.message || 'Lỗi cập nhật phản hồi',
         { variant: 'error' },
       );
     }
@@ -82,86 +85,120 @@ const AdminSchoolFeedbackPage = () => {
     setDetailOpen(true);
   };
 
+  const columns = [
+    { id: 'id', label: 'ID', width: 60 },
+    { 
+      id: 'fullName', 
+      label: 'Người gửi',
+      render: (val, row) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 700 }}>{val}</Typography>
+          <Typography variant="caption" color="text.secondary">{row.email}</Typography>
+        </Box>
+      )
+    },
+    { id: 'subject', label: 'Tiêu đề', render: (val, row) => <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 600 }}>{val}</Typography> },
+    { 
+      id: 'isRead', 
+      label: 'Trạng thái', 
+      render: (val) => (
+        <AdminStatusChip
+          status={val ? 'READ' : 'NEW'}
+          category="feedback"
+          label={val ? 'Đã đọc' : 'Mới'}
+        />
+      )
+    },
+    { id: 'createdAt', label: 'Ngày gửi', render: (val) => formatDateTime(val) },
+    {
+      id: 'actions',
+      label: '',
+      align: 'right',
+      render: (_, row) => (
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Xem chi tiết">
+            <IconButton size="small" onClick={() => handleViewDetails(row)}>
+              <VisibilityOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {!row.isRead && (
+            <Tooltip title="Đánh dấu đã đọc">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => handleMarkAsRead(row.id)}
+              >
+                <MarkEmailReadOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      )
+    }
+  ];
+
+  const stats = {
+    total: total,
+    new: feedbacks.filter(f => !f.isRead).length,
+    read: feedbacks.filter(f => f.isRead).length,
+    lastFeedback: feedbacks.length > 0 ? formatDateTime(feedbacks[0].createdAt) : 'N/A'
+  };
+
   return (
-    <AdminSectionPanel
-      title="School Feedbacks"
-      subtitle="Manage and respond to feedback submitted by students and alumni for organizations."
-    >
-      <Box sx={{ overflowX: 'auto' }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Full Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Subject</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created At</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {feedbacks.length === 0 && !loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  <Typography variant="body2" sx={{ py: 3, color: 'text.secondary' }}>
-                    No feedbacks found.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              feedbacks.map((f) => (
-                <TableRow key={f.id} hover sx={{ opacity: f.isRead ? 0.7 : 1 }}>
-                  <TableCell>{f.id}</TableCell>
-                  <TableCell sx={{ fontWeight: f.isRead ? 400 : 600 }}>{f.fullName}</TableCell>
-                  <TableCell>{f.email}</TableCell>
-                  <TableCell>{f.subject}</TableCell>
-                  <TableCell>
-                    {f.isRead ? (
-                      <Chip label="Read" size="small" variant="outlined" color="default" />
-                    ) : (
-                      <Chip label="New" size="small" color="primary" />
-                    )}
-                  </TableCell>
-                  <TableCell>{formatDateTime(f.createdAt)}</TableCell>
-                  <TableCell align="right">
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Tooltip title="View Details">
-                        <IconButton size="small" onClick={() => handleViewDetails(f)}>
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      {!f.isRead && (
-                        <Tooltip title="Mark as Read">
-                          <IconButton
-                            size="small"
-                            color="success"
-                            onClick={() => handleMarkAsRead(f.id)}
-                          >
-                            <MarkEmailReadOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          Phản hồi từ người dùng
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+          Quản lý và phản hồi các ý kiến đóng góp từ sinh viên và cựu sinh viên.
+        </Typography>
       </Box>
 
-      <TablePagination
-        component="div"
-        count={total}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Tổng phản hồi"
+            value={stats.total}
+            icon={<FeedbackOutlinedIcon />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Phản hồi mới"
+            value={stats.new}
+            icon={<MarkEmailUnreadOutlinedIcon />}
+            valueColor="info.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Đã xử lý"
+            value={stats.read}
+            icon={<MarkEmailReadIcon />}
+            valueColor="success.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Gửi gần nhất"
+            value={stats.lastFeedback}
+            icon={<HistoryOutlinedIcon />}
+            valueColor="warning.main"
+          />
+        </Grid>
+      </Grid>
+
+      <AdminDataTable
+        columns={columns}
+        rows={feedbacks}
+        totalCount={total}
         page={page}
-        onPageChange={(_, next) => setPage(next)}
         rowsPerPage={rowsPerPage}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[10, 20, 50]}
+        onPageChange={(_, next) => setPage(next)}
+        onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
+        loading={loading}
+        onRowClick={(row) => handleViewDetails(row)}
       />
 
       <AdminSchoolFeedbackDetailDialog
@@ -170,7 +207,7 @@ const AdminSchoolFeedbackPage = () => {
         onClose={() => setDetailOpen(false)}
         onMarkAsRead={handleMarkAsRead}
       />
-    </AdminSectionPanel>
+    </Box>
   );
 };
 

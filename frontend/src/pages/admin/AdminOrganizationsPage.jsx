@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { Box, Button, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, Grid, Paper, Stack, Typography, useTheme, Skeleton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -11,13 +11,14 @@ import AdminOrganizationEditDialog from '../../components/admin/AdminOrganizatio
 import AdminOrganizationIntroductionDialog from '../../components/admin/AdminOrganizationIntroductionDialog';
 import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { organizationApi } from '../../api/organizationApi';
-
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 const withDefaults = (organization) => ({
   ...organization,
   status: String(organization?.status || 'ACTIVE').toUpperCase(),
 });
 
 const AdminOrganizationsPage = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
@@ -36,50 +37,28 @@ const AdminOrganizationsPage = () => {
       setOrganizations(Array.isArray(rows) ? rows.map(withDefaults) : []);
     } catch (error) {
       setOrganizations([]);
-      enqueueSnackbar(
-        error?.response?.data?.message || 'Failed to load organizations',
-        { variant: 'error' },
-      );
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể tải danh sách tổ chức', { variant: 'error' });
     } finally {
       setLoading(false);
     }
   }, [enqueueSnackbar]);
 
-  useEffect(() => {
-    loadOrganizations();
-  }, [loadOrganizations]);
+  useEffect(() => { loadOrganizations(); }, [loadOrganizations]);
 
   useEffect(() => {
-    if (organizations.length === 0) {
-      return;
-    }
+    if (organizations.length === 0) return;
     setSelectedOrganizationId((prev) => {
-      if (prev == null) {
-        return organizations[0].id;
-      }
-      if (organizations.some((o) => o.id === prev)) {
-        return prev;
-      }
-      return organizations[0].id;
+      if (prev == null || !organizations.some((o) => o.id === prev)) return organizations[0].id;
+      return prev;
     });
   }, [organizations]);
 
-  // Load introduction when selection changes
   useEffect(() => {
     if (selectedOrganizationId) {
-      const fetchIntro = async () => {
-        try {
-          const data = await organizationApi.getIntroduction(selectedOrganizationId);
-          setIntroduction(data || null);
-        } catch (error) {
-          console.error('Failed to load introduction', error);
-          setIntroduction(null);
-        }
-      };
-      fetchIntro();
-    } else {
-      setIntroduction(null);
-    }
+      organizationApi.getIntroduction(selectedOrganizationId)
+        .then(data => setIntroduction(data || null))
+        .catch(() => setIntroduction(null));
+    } else setIntroduction(null);
   }, [selectedOrganizationId]);
 
   const selectedOrganization = useMemo(
@@ -91,16 +70,11 @@ const AdminOrganizationsPage = () => {
     if (!editTarget) return;
     try {
       const updated = await adminOrganizationApi.updateOrganization(editTarget.id, payload);
-      setOrganizations((prev) =>
-        prev.map((item) => (item.id === editTarget.id ? withDefaults(updated || { ...item, ...payload }) : item)),
-      );
+      setOrganizations((prev) => prev.map((item) => (item.id === editTarget.id ? withDefaults(updated || { ...item, ...payload }) : item)));
       setEditDialogOpen(false);
       enqueueSnackbar('Đã cập nhật thông tin tổ chức', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(
-        error?.response?.data?.message || 'Không thể cập nhật tổ chức',
-        { variant: 'error' },
-      );
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật tổ chức', { variant: 'error' });
     }
   }, [editTarget, enqueueSnackbar]);
 
@@ -112,10 +86,7 @@ const AdminOrganizationsPage = () => {
       setIntroDialogOpen(false);
       enqueueSnackbar('Đã cập nhật giới thiệu tổ chức', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(
-        error?.response?.data?.message || 'Không thể cập nhật giới thiệu',
-        { variant: 'error' },
-      );
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật giới thiệu', { variant: 'error' });
     }
   }, [selectedOrganizationId, introduction, enqueueSnackbar]);
 
@@ -133,87 +104,81 @@ const AdminOrganizationsPage = () => {
       setEditDialogOpen(false);
       enqueueSnackbar('Đã tạo tổ chức mới thành công', { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(
-        error?.response?.data?.message || 'Không thể tạo tổ chức mới',
-        { variant: 'error' },
-      );
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể tạo tổ chức mới', { variant: 'error' });
     }
   }, [enqueueSnackbar]);
 
   if (loading && organizations.length === 0) {
     return (
-      <AdminSectionPanel title="Organizations" subtitle="Đang tải danh sách tổ chức...">
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Grid container spacing={2}>
-            {[1, 2, 3].map(i => (
-              <Grid item xs={12} md={4} key={i}>
-                <Paper sx={{ p: 2, height: 100, borderRadius: 2, bgcolor: 'action.hover' }} />
-              </Grid>
-            ))}
-          </Grid>
-          <Paper sx={{ height: 400, borderRadius: 2, bgcolor: 'action.hover' }} />
-        </Box>
-      </AdminSectionPanel>
+      <Stack spacing={3}>
+        <Skeleton variant="rounded" height={100} />
+        <Grid container spacing={3}>
+          {[1, 2, 3].map(i => (
+            <Grid item xs={12} md={4} key={i}><Skeleton variant="rounded" height={120} /></Grid>
+          ))}
+        </Grid>
+        <Skeleton variant="rounded" height={600} />
+      </Stack>
     );
   }
 
   return (
-    <AdminSectionPanel
-      title="Organizations"
-      subtitle="Quản lý và cấu hình các tổ chức/trường học trong hệ thống."
-      action={
+    <Box>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+            Quản lý tổ chức
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            Cấu hình thông tin, giới thiệu và nhân sự cho các đơn vị trường học/tổ chức.
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => {
-            setEditTarget(null);
-            setEditDialogOpen(true);
-          }}
-          sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+          onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
+          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
           Thêm tổ chức
         </Button>
-      }
-    >
-      <Stack spacing={3}>
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} sm={4}>
-            <StatCard
-              label="Tổng tổ chức"
-              value={stats.total}
-              icon={<BusinessIcon sx={{ color: 'primary.main' }} />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <StatCard
-              label="Đang hoạt động"
-              value={stats.active}
-              icon={<CheckCircleIcon sx={{ color: 'success.main' }} />}
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <StatCard
-              label="Tạm ngưng"
-              value={stats.inactive}
-              icon={<ErrorIcon sx={{ color: 'error.main' }} />}
-            />
-          </Grid>
-        </Grid>
+      </Box>
 
-        <AdminOrganizationMasterDetail
-          organizations={organizations}
-          selectedOrganizationId={selectedOrganizationId}
-          onSelectOrganizationId={setSelectedOrganizationId}
-          selectedOrganization={selectedOrganization}
-          selectedIntroduction={introduction}
-          onEditOrganization={(org) => {
-            setEditTarget(org);
-            setEditDialogOpen(true);
-          }}
-          onEditIntroduction={() => setIntroDialogOpen(true)}
-          onRefresh={loadOrganizations}
-        />
-      </Stack>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={4}>
+          <AdminDashboardMetricTile
+            label="Tổng tổ chức"
+            value={stats.total}
+            icon={<BusinessIcon />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <AdminDashboardMetricTile
+            label="Đang hoạt động"
+            value={stats.active}
+            icon={<CheckCircleIcon />}
+            valueColor="success.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <AdminDashboardMetricTile
+            label="Tạm ngưng"
+            value={stats.inactive}
+            icon={<ErrorIcon />}
+            valueColor="error.main"
+          />
+        </Grid>
+      </Grid>
+
+      <AdminOrganizationMasterDetail
+        organizations={organizations}
+        selectedOrganizationId={selectedOrganizationId}
+        onSelectOrganizationId={setSelectedOrganizationId}
+        selectedOrganization={selectedOrganization}
+        selectedIntroduction={introduction}
+        onEditOrganization={(org) => { setEditTarget(org); setEditDialogOpen(true); }}
+        onEditIntroduction={() => setIntroDialogOpen(true)}
+        onRefresh={loadOrganizations}
+      />
 
       <AdminOrganizationEditDialog
         open={editDialogOpen}
@@ -228,7 +193,7 @@ const AdminOrganizationsPage = () => {
         introduction={introduction}
         onConfirm={handleUpdateIntroduction}
       />
-    </AdminSectionPanel>
+    </Box>
   );
 };
 

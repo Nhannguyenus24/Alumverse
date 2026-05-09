@@ -1,44 +1,49 @@
-import { Box, Paper, Typography } from '@mui/material';
+import { Box, Typography, useTheme, alpha } from '@mui/material';
 
-const AdminSectionPanel = ({ title, subtitle, action, children }) => {
+const AdminSectionPanel = ({ title, subtitle, action, children, sx }) => {
+  const theme = useTheme();
+
   return (
-    <Paper
-      elevation={0}
+    <Box
       sx={{
-        border: 1,
-        borderColor: 'divider',
-        borderRadius: 2,
+        bgcolor: 'background.paper',
+        borderRadius: 3,
+        border: `1px solid ${theme.palette.divider}`,
         overflow: 'hidden',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.03)',
+        mb: 4,
+        ...sx,
       }}
     >
       <Box
         sx={{
+          px: 3,
+          py: 2.5,
+          borderBottom: `1px solid ${theme.palette.divider}`,
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          px: 2.5,
-          py: 2,
-          borderBottom: 1,
-          borderColor: 'divider',
-          bgcolor: 'background.neutral',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           gap: 2,
-          flexWrap: 'wrap',
+          bgcolor: alpha(theme.palette.background.default, 0.2),
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography variant="h6" sx={{ color: 'primary.main', fontWeight: 700 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -0.5 }}>
             {title}
           </Typography>
-          {subtitle ? (
-            <Typography variant="body2" color="text.secondary">
+          {subtitle && (
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
               {subtitle}
             </Typography>
-          ) : null}
+          )}
         </Box>
-        {action || null}
+        {action && <Box sx={{ flexShrink: 0 }}>{action}</Box>}
       </Box>
-      <Box sx={{ p: 2.5 }}>{children}</Box>
-    </Paper>
+      <Box sx={{ p: 3 }}>
+        {children}
+      </Box>
+    </Box>
   );
 };
 
