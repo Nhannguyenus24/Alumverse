@@ -10,6 +10,8 @@ import {
   Divider,
   alpha,
   useTheme,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
@@ -22,8 +24,11 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 const DRAWER_WIDTH = 280;
+const COLLAPSED_WIDTH = 88;
 
 const NAV_GROUPS = (adminBase) => [
   {
@@ -59,19 +64,53 @@ const NAV_GROUPS = (adminBase) => [
   },
 ];
 
-const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRole }) => {
+const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRole, collapsed = false, onToggle }) => {
   const theme = useTheme();
   const groups = NAV_GROUPS(adminBase);
 
   const sidebarContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', position: 'relative' }}>
+      {/* Floating Toggle Button - Desktop Only */}
+      {variant === 'permanent' && (
+        <IconButton
+          onClick={onToggle}
+          size="small"
+          sx={{
+            position: 'absolute',
+            right: -12,
+            top: 28,
+            width: 24,
+            height: 24,
+            bgcolor: 'background.paper',
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            zIndex: 10,
+            '&:hover': { 
+              bgcolor: 'primary.main',
+              color: 'white',
+              borderColor: 'primary.main'
+            },
+            display: { xs: 'none', md: 'flex' },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          {collapsed ? <ChevronRightIcon sx={{ fontSize: 16 }} /> : <ChevronLeftIcon sx={{ fontSize: 16 }} />}
+        </IconButton>
+      )}
+
       {/* Brand Header */}
-      <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box sx={{ 
+        p: 3, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: collapsed ? 'center' : 'flex-start',
+        minHeight: 88
+      }}>
         <Box
           component="img"
-          src="/alumverse_logo/Logo_Main_Full.svg"
+          src={collapsed ? "/alumverse_logo/Logo_Main.svg" : "/alumverse_logo/Logo_Main_Full.svg"}
           alt="ALUMVERSE"
-          sx={{ height: 40, width: 'auto' }}
+          sx={{ height: collapsed ? 36 : 40, width: 'auto', transition: 'all 0.2s' }}
         />
       </Box>
 
@@ -80,25 +119,26 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
       {/* Nav Items */}
       <Box sx={{ flex: 1, overflowY: 'auto', py: 2, px: 1.5 }}>
         {groups.map((group, idx) => {
-          // Filter items by role
           const filteredItems = group.items.filter(item => !item.role || item.role === userRole);
           if (filteredItems.length === 0) return null;
 
           return (
             <Box key={idx} sx={{ mb: 3 }}>
-              <Typography
-                variant="overline"
-                sx={{
-                  px: 2,
-                  mb: 1,
-                  display: 'block',
-                  color: 'text.disabled',
-                  fontWeight: 700,
-                  letterSpacing: 1.2,
-                }}
-              >
-                {group.title}
-              </Typography>
+              {!collapsed && (
+                <Typography
+                  variant="overline"
+                  sx={{
+                    px: 2,
+                    mb: 1,
+                    display: 'block',
+                    color: 'text.disabled',
+                    fontWeight: 700,
+                    letterSpacing: 1.2,
+                  }}
+                >
+                  {group.title}
+                </Typography>
+              )}
               <List disablePadding>
                 {filteredItems.map((item) => (
                   <NavLink
@@ -109,48 +149,54 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
                     onClick={variant === 'temporary' ? onClose : undefined}
                   >
                     {({ isActive }) => (
-                      <ListItemButton
-                        sx={{
-                          borderRadius: 2,
-                          mb: 0.5,
-                          py: 1,
-                          px: 2,
-                          position: 'relative',
-                          bgcolor: isActive ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
-                          color: isActive ? 'primary.main' : 'text.secondary',
-                          '&:hover': {
-                            bgcolor: isActive ? alpha(theme.palette.primary.main, 0.12) : 'action.hover',
-                          },
-                          // Indicator line
-                          '&::before': isActive ? {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            top: '20%',
-                            bottom: '20%',
-                            width: 3,
-                            bgcolor: 'primary.main',
-                            borderRadius: '0 4px 4px 0',
-                          } : {},
-                        }}
-                      >
-                        <ListItemIcon
+                      <Tooltip title={collapsed ? item.label : ""} placement="right">
+                        <ListItemButton
                           sx={{
-                            minWidth: 40,
+                            borderRadius: 2,
+                            mb: 0.5,
+                            py: 1.25,
+                            px: collapsed ? 0 : 2,
+                            justifyContent: collapsed ? 'center' : 'flex-start',
+                            position: 'relative',
+                            bgcolor: isActive ? alpha(theme.palette.primary.main, 0.08) : 'transparent',
                             color: isActive ? 'primary.main' : 'text.secondary',
-                            '& svg': { fontSize: 22 },
+                            '&:hover': {
+                              bgcolor: isActive ? alpha(theme.palette.primary.main, 0.12) : 'action.hover',
+                            },
+                            '&::before': (isActive && !collapsed) ? {
+                              content: '""',
+                              position: 'absolute',
+                              left: 0,
+                              top: '20%',
+                              bottom: '20%',
+                              width: 3,
+                              bgcolor: 'primary.main',
+                              borderRadius: '0 4px 4px 0',
+                            } : {},
                           }}
                         >
-                          {item.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={item.label}
-                          primaryTypographyProps={{
-                            fontSize: 14,
-                            fontWeight: isActive ? 700 : 500,
-                          }}
-                        />
-                      </ListItemButton>
+                          <ListItemIcon
+                            sx={{
+                              minWidth: collapsed ? 0 : 40,
+                              color: isActive ? 'primary.main' : 'text.secondary',
+                              justifyContent: 'center',
+                              '& svg': { fontSize: 24 },
+                            }}
+                          >
+                            {item.icon}
+                          </ListItemIcon>
+                          {!collapsed && (
+                            <ListItemText
+                              primary={item.label}
+                              primaryTypographyProps={{
+                                fontSize: 14,
+                                fontWeight: isActive ? 700 : 500,
+                                noWrap: true
+                              }}
+                            />
+                          )}
+                        </ListItemButton>
+                      </Tooltip>
                     )}
                   </NavLink>
                 ))}
@@ -158,13 +204,6 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
             </Box>
           );
         })}
-      </Box>
-
-      {/* Sidebar Footer (Optional) */}
-      <Box sx={{ p: 2, borderTop: `1px solid ${theme.palette.divider}`, bgcolor: 'action.hover' }}>
-        <Typography variant="caption" color="text.disabled" fontWeight={600} align="center" display="block">
-          HCMUS ALUMNI ADMIN v2.0
-        </Typography>
       </Box>
     </Box>
   );
@@ -186,18 +225,29 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
     );
   }
 
+  const currentWidth = collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
+
   return (
     <Drawer
       variant="permanent"
       sx={{
-        width: DRAWER_WIDTH,
+        width: currentWidth,
         flexShrink: 0,
         display: { xs: 'none', md: 'block' },
+        transition: theme.transitions.create('width', {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
         '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
+          width: currentWidth,
           boxSizing: 'border-box',
           borderRight: `1px solid ${theme.palette.divider}`,
           boxShadow: 'none',
+          transition: theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
+          overflow: 'visible' // CRITICAL: Allow the floating button to be seen
         },
       }}
     >

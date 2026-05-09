@@ -14,9 +14,11 @@ import Page from '../components/Page';
 
 const HEADER_HEIGHT = 70;
 const SIDEBAR_WIDTH = 280;
+const SIDEBAR_COLLAPSED_WIDTH = 88;
 
 const AdminLayoutShell = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const theme = useTheme();
   
   const slugMatchNested = useMatch('/:slug/admin/*');
@@ -27,6 +29,8 @@ const AdminLayoutShell = () => {
   const adminBase = isSlugContext ? `/${slug}/admin` : '/admin';
   
   const { user, logout } = useAuth();
+
+  const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
   return (
     <Page
@@ -42,6 +46,8 @@ const AdminLayoutShell = () => {
         variant="permanent"
         adminBase={adminBase}
         userRole={user?.role}
+        collapsed={isSidebarCollapsed}
+        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       
       <AdminSidebar
@@ -58,11 +64,16 @@ const AdminLayoutShell = () => {
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
-          width: { md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
+          width: { md: `calc(100% - ${currentSidebarWidth}px)` },
+          transition: theme.transitions.create(['width'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.enteringScreen,
+          }),
         }}
       >
         <AdminHeader
           onMenuOpen={() => setMobileOpen(true)}
+          isSidebarCollapsed={isSidebarCollapsed}
           user={user}
           onLogout={logout}
         />
@@ -80,36 +91,6 @@ const AdminLayoutShell = () => {
         >
           <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
             <Outlet />
-          </Box>
-        </Box>
-
-        {/* Footer */}
-        <Box
-          component="footer"
-          sx={{
-            py: 3,
-            px: 4,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            bgcolor: 'background.paper',
-            textAlign: 'center',
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box
-                component="img"
-                src="/alumverse_logo/Logo_Main_Full.svg"
-                alt="Logo"
-                sx={{ height: 24, opacity: 0.6 }}
-              />
-              <Box sx={{ width: 1, height: 16, bgcolor: 'divider', mx: 1 }} />
-              <Box component="span" sx={{ fontSize: 12, color: 'text.disabled', fontWeight: 600 }}>
-                CONTROL CENTER v2.0
-              </Box>
-            </Box>
-            <Box component="span" sx={{ fontSize: 13, color: 'text.secondary', fontWeight: 500 }}>
-              © {new Date().getFullYear()} HCMUS Alumni. Bảo lưu mọi quyền.
-            </Box>
           </Box>
         </Box>
       </Box>

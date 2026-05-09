@@ -15,16 +15,13 @@ import {
   Link as MuiLink,
   alpha,
   useTheme,
-  Tooltip,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 
-const AdminHeader = ({ onMenuOpen, user, onLogout }) => {
+const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -37,23 +34,32 @@ const AdminHeader = ({ onMenuOpen, user, onLogout }) => {
     onLogout();
   };
 
+  const SIDEBAR_WIDTH = 280;
+  const SIDEBAR_COLLAPSED_WIDTH = 88;
+  const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
+
   return (
     <AppBar
       position="fixed"
       elevation={0}
       sx={{
-        width: { md: `calc(100% - 280px)` },
-        ml: { md: `280px` },
+        width: { md: `calc(100% - ${currentSidebarWidth}px)` },
+        ml: { md: `${currentSidebarWidth}px` },
         bgcolor: alpha(theme.palette.background.paper, 0.8),
         backdropFilter: 'blur(8px)',
         borderBottom: `1px solid ${theme.palette.divider}`,
         color: 'text.primary',
         zIndex: theme.zIndex.appBar,
+        transition: theme.transitions.create(['width', 'margin'], {
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
       }}
     >
       <Toolbar sx={{ justifyContent: 'space-between', minHeight: 70 }}>
-        {/* Left Side: Mobile Menu & Breadcrumbs */}
+        {/* Left Side: Toggle (Mobile Only) & Breadcrumbs */}
         <Stack direction="row" alignItems="center" spacing={1}>
+          {/* Mobile Toggle */}
           <IconButton
             edge="start"
             onClick={onMenuOpen}
@@ -82,41 +88,8 @@ const AdminHeader = ({ onMenuOpen, user, onLogout }) => {
           </Breadcrumbs>
         </Stack>
 
-        {/* Right Side: Search, Actions, Profile */}
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          {/* Global Search Button */}
-          <Tooltip title="Tìm kiếm (Ctrl+K)">
-            <IconButton
-              sx={{
-                bgcolor: 'action.hover',
-                borderRadius: 2,
-                '&:hover': { bgcolor: 'action.selected' }
-              }}
-            >
-              <SearchIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          {/* Quick Action Button */}
-          <Button
-            variant="contained"
-            startIcon={<AddCircleOutlineIcon />}
-            size="small"
-            sx={{
-              display: { xs: 'none', sm: 'flex' },
-              textTransform: 'none',
-              fontWeight: 700,
-              borderRadius: 2,
-              px: 2,
-              boxShadow: theme.customShadows?.primary,
-            }}
-          >
-            Tạo mới
-          </Button>
-
-          <Box sx={{ width: 1, height: 24, bgcolor: 'divider', mx: 1, display: { xs: 'none', sm: 'block' } }} />
-
-          {/* Profile Dropdown */}
+        {/* Right Side: Profile Dropdown Only */}
+        <Stack direction="row" alignItems="center">
           <Button
             onClick={handleOpenUserMenu}
             sx={{
@@ -124,27 +97,17 @@ const AdminHeader = ({ onMenuOpen, user, onLogout }) => {
               color: 'inherit',
               borderRadius: 2.5,
               p: 0.5,
-              pl: 1,
+              pl: 1.5,
               '&:hover': { bgcolor: 'action.hover' },
             }}
           >
-            <Stack direction="row" spacing={1.25} alignItems="center">
-              <Typography
-                variant="body2"
-                sx={{
-                  display: { xs: 'none', lg: 'block' },
-                  fontWeight: 700,
-                  color: 'text.primary',
-                }}
-              >
-                {user?.fullName || user?.userName || 'Admin'}
-              </Typography>
+            <Stack direction="row" spacing={1.5} alignItems="center">
               <Avatar
                 sx={{
-                  width: 36,
-                  height: 36,
+                  width: 40,
+                  height: 40,
                   bgcolor: 'primary.main',
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: 800,
                   boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
                 }}
@@ -165,7 +128,7 @@ const AdminHeader = ({ onMenuOpen, user, onLogout }) => {
               elevation: 0,
               sx: {
                 mt: 1.5,
-                minWidth: 200,
+                minWidth: 220,
                 borderRadius: 3,
                 border: `1px solid ${theme.palette.divider}`,
                 boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
