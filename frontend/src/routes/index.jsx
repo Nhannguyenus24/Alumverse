@@ -143,6 +143,9 @@ const ActivitiesNewsPage = Loadable(
 const NetworkPage = Loadable(
   lazy(() => import("../pages/network/NetworkPage")),
 );
+const ChatPage = Loadable(
+  lazy(() => import("../pages/chat/ChatPage")),
+);
 
 // Development pages
 const DevelopmentPage = Loadable(
@@ -165,9 +168,7 @@ const MentorshipProfilePage = Loadable(
 const MentorshipProfileEditPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipProfileEditPage")),
 );
-const MentorshipChatPage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipChatPage")),
-);
+
 const MentorshipDashboardPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipDashboardPage")),
 );
@@ -334,7 +335,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "network/chat",
-        element: <NetworkPage />,
+        element: <ChatPage />,
       },
       {
         path: "post",
@@ -456,21 +457,6 @@ export const router = createBrowserRouter([
               {
                 path: "signup",
                 element: <MentorshipSignupPage />,
-              },
-              {
-                path: "chat",
-                children: [
-                  {
-                    index: true,
-                    element: <MentorshipChatPage />,
-                    handle: { hideFooter: true },
-                  },
-                  {
-                    path: ":chatId",
-                    element: <MentorshipChatPage />,
-                    handle: { hideFooter: true },
-                  },
-                ],
               },
             ],
           },
