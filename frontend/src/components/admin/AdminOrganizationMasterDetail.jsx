@@ -5,6 +5,7 @@ import {
   Card,
   CardContent,
   Fade,
+  Grid,
   InputAdornment,
   MenuItem,
   Paper,
@@ -22,6 +23,7 @@ import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AdminStatusChip from './AdminStatusChip';
 
 const formatOrgDate = (value) => {
@@ -71,8 +73,10 @@ const AdminOrganizationMasterDetail = ({
   organizations = [],
   selectedOrganization,
   selectedOrganizationId,
+  selectedIntroduction, // New prop
   onSelectOrganizationId,
   onEditOrganization,
+  onEditIntroduction, // New prop
   onRefresh,
 }) => {
   const [orgSearch, setOrgSearch] = useState('');
@@ -373,15 +377,67 @@ const AdminOrganizationMasterDetail = ({
                 </Box>
 
                 <Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 700 }}>
+                      Giới thiệu & Tầm nhìn
+                    </Typography>
+                    <Button
+                      size="small"
+                      startIcon={<EditOutlinedIcon />}
+                      onClick={() => onEditIntroduction?.(selectedOrg)}
+                      sx={{ textTransform: 'none', fontWeight: 600, py: 0 }}
+                    >
+                      Cập nhật giới thiệu
+                    </Button>
+                  </Box>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                        Giới thiệu chung
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>
+                        {selectedIntroduction?.content || 'Chưa có thông tin giới thiệu.'}
+                      </Typography>
+                    </Box>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          Tầm nhìn
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                          {selectedIntroduction?.vision || '—'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          Sứ mạng
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                          {selectedIntroduction?.mission || '—'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                          Giá trị cốt lõi
+                        </Typography>
+                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                          {selectedIntroduction?.coreValues || '—'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Box>
+
+                <Box>
                   <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 700, mb: 1 }}>
                     Cấu hình dữ liệu
                   </Typography>
                   <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                      Features config
+                      Features config (JSON)
                     </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5, wordBreak: 'break-word' }}>
-                      {selectedOrg.featuresConfig || 'Chưa có dữ liệu'}
+                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5, wordBreak: 'break-word', fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                      {selectedOrg.featuresConfig || 'Default config'}
                     </Typography>
                   </Paper>
                 </Box>
