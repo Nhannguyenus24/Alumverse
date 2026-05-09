@@ -14,11 +14,18 @@ import PersonIcon from '@mui/icons-material/Person';
 import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
+import MessagesNavDropdown from './MessagesNavDropdown';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
+
+/** Single source for the chat route; desktop uses MessagesNavDropdown only for this href */
+const MESSAGES_NAV_PATH = '/network/chat';
+
+/** Parent nav hrefs hidden for guests (add more paths here without affecting dropdown behavior) */
+const NAV_GUEST_HIDDEN_PATHS = new Set([MESSAGES_NAV_PATH]);
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
@@ -45,7 +52,8 @@ const NAV_ITEMS = [
       { label: 'Cơ hội việc làm', href: '/development/jobs' },
     ],
   },
-  { label: 'Network', href: '/network/search' },
+  { label: 'Kết nối', href: '/network/search' },
+  { label: 'Nhắn tin', href: '/network/chat' },
   { label: 'Diễn đàn', href: '/forum' },
   { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
@@ -58,6 +66,9 @@ const Header = () => {
   const location = useLocation();
   const { slug: routeSlug } = useParams();
   const { isAuthenticated, user } = useAuth();
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => !NAV_GUEST_HIDDEN_PATHS.has(item.href) || isAuthenticated,
+  );
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
@@ -153,16 +164,20 @@ const Header = () => {
         {isDesktop && (
           <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
                      display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
-            {NAV_ITEMS.map((item) => (
+            {visibleNavItems.map((item) => (
               <Box
                 key={item.label}
                 onMouseEnter={() => item.children && setHoveredNav(item.label)}
                 onMouseLeave={() => setHoveredNav(null)}
                 sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
               >
-                <Button component={Link} to={toOrgPath(item.href)} sx={navButtonSx}>
-                  {item.label}
-                </Button>
+                {item.href === MESSAGES_NAV_PATH ? (
+                  <MessagesNavDropdown label={item.label} navButtonSx={navButtonSx} />
+                ) : (
+                  <Button component={Link} to={toOrgPath(item.href)} sx={navButtonSx}>
+                    {item.label}
+                  </Button>
+                )}
 
                 {item.children && hoveredNav === item.label && (
                   <Box
@@ -266,7 +281,7 @@ const Header = () => {
         <Divider />
 
         <List component="nav" sx={{ py: 1 }}>
-          {NAV_ITEMS.map((item) =>
+          {visibleNavItems.map((item) =>
           item.children ? (
             <Box key={item.label}>
               <ListItemButton sx={{ py: 1.25 }}>
