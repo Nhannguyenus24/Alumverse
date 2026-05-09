@@ -7,6 +7,8 @@ import {
   DialogTitle,
   TextField,
   Box,
+  Typography,
+  Divider
 } from '@mui/material';
 
 const AdminOrganizationIntroductionDialog = ({ open, onClose, introduction, onConfirm }) => {
@@ -45,61 +47,81 @@ const AdminOrganizationIntroductionDialog = ({ open, onClose, introduction, onCo
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>
-        Cập nhật thông tin giới thiệu tổ chức
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ p: 3, pb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          Cập nhật thông tin giới thiệu
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Các thông tin này sẽ được hiển thị công khai trên trang chủ của tổ chức.
+        </Typography>
       </DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <DialogContent sx={{ p: 3, pt: 1 }}>
+        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
           <TextField
             fullWidth
             label="Giới thiệu chung"
             name="content"
             value={formData.content}
             onChange={handleChange}
-            size="small"
             multiline
-            rows={6}
-            placeholder="Mô tả tóm tắt về lịch sử, quy mô, thành tựu..."
+            rows={8}
+            placeholder="Mô tả tóm tắt về lịch sử, quy mô, thành tựu của tổ chức..."
+            helperText="Nội dung chính hiển thị ở phần đầu trang giới thiệu."
           />
-          <TextField
-            fullWidth
-            label="Tầm nhìn"
-            name="vision"
-            value={formData.vision}
-            onChange={handleChange}
-            size="small"
-            multiline
-            rows={3}
-          />
-          <TextField
-            fullWidth
-            label="Sứ mạng"
-            name="mission"
-            value={formData.mission}
-            onChange={handleChange}
-            size="small"
-            multiline
-            rows={3}
-          />
-          <TextField
-            fullWidth
-            label="Giá trị cốt lõi"
-            name="coreValues"
-            value={formData.coreValues}
-            onChange={handleChange}
-            size="small"
-            multiline
-            rows={3}
-          />
+          <Divider sx={{ my: 0.5 }}>
+            <Typography variant="caption" color="text.disabled" fontWeight={700}>MỤC TIÊU & GIÁ TRỊ</Typography>
+          </Divider>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            <TextField
+              fullWidth
+              label="Tầm nhìn"
+              name="vision"
+              value={formData.vision}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              placeholder="Định hướng phát triển dài hạn..."
+            />
+            <TextField
+              fullWidth
+              label="Sứ mạng"
+              name="mission"
+              value={formData.mission}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              placeholder="Mục đích cốt lõi và nhiệm vụ của tổ chức..."
+            />
+            <TextField
+              fullWidth
+              label="Giá trị cốt lõi"
+              name="coreValues"
+              value={formData.coreValues}
+              onChange={handleChange}
+              multiline
+              rows={3}
+              placeholder="Các nguyên tắc dẫn dắt và triết lý hoạt động..."
+            />
+          </Box>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600 }}>
-          Hủy
+      <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
+        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
+          Hủy bỏ
         </Button>
-        <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Cập nhật giới thiệu
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 4,
+            borderRadius: 2,
+            boxShadow: (theme) => theme.customShadows?.primary,
+          }}
+        >
+          Cập nhật nội dung
         </Button>
       </DialogActions>
     </Dialog>

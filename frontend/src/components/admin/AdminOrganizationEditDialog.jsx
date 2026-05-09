@@ -9,6 +9,8 @@ import {
   TextField,
   Box,
   Grid,
+  Typography,
+  Divider
 } from '@mui/material';
 
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
@@ -50,32 +52,39 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle sx={{ fontWeight: 800, color: 'primary.main' }}>
-        Chỉnh sửa thông tin tổ chức
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle sx={{ p: 3, pb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          {organization ? 'Chỉnh sửa tổ chức' : 'Thêm tổ chức mới'}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Cập nhật thông tin cơ bản và cấu hình cho tổ chức.
+        </Typography>
       </DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 1.5, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <DialogContent sx={{ p: 3, pt: 1 }}>
+        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <TextField
             fullWidth
             label="Tên tổ chức"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            size="small"
+            placeholder="Ví dụ: Trường Đại học Khoa học Tự nhiên"
+            variant="outlined"
           />
           <Grid container spacing={2}>
-            <Grid item xs={6}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Slug"
+                label="Slug (Alias)"
                 name="slug"
                 value={formData.slug}
                 onChange={handleChange}
-                size="small"
+                placeholder="hcmus"
+                helperText="Dùng cho đường dẫn URL"
               />
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 select
                 fullWidth
@@ -83,10 +92,9 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
-                size="small"
               >
-                <MenuItem value="ACTIVE">Active</MenuItem>
-                <MenuItem value="INACTIVE">Inactive</MenuItem>
+                <MenuItem value="ACTIVE">Active (Đang hoạt động)</MenuItem>
+                <MenuItem value="INACTIVE">Inactive (Tạm ngưng)</MenuItem>
               </TextField>
             </Grid>
           </Grid>
@@ -96,46 +104,63 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
             name="logoUrl"
             value={formData.logoUrl}
             onChange={handleChange}
-            size="small"
+            placeholder="https://example.com/logo.png"
           />
+          <Divider sx={{ my: 1 }}>
+            <Typography variant="caption" color="text.disabled" fontWeight={700}>DỮ LIỆU ĐÀO TẠO</Typography>
+          </Divider>
           <TextField
             fullWidth
-            label="Chương trình đào tạo (phân tách bằng dấu phẩy)"
+            label="Chương trình đào tạo"
             name="programs"
             value={formData.programs}
             onChange={handleChange}
-            size="small"
             multiline
             rows={2}
+            helperText="Các chương trình phân tách bằng dấu phẩy"
           />
           <TextField
             fullWidth
-            label="Chuyên ngành (phân tách bằng dấu phẩy)"
+            label="Chuyên ngành"
             name="majors"
             value={formData.majors}
             onChange={handleChange}
-            size="small"
             multiline
             rows={2}
+            helperText="Các chuyên ngành phân tách bằng dấu phẩy"
           />
+          <Divider sx={{ my: 1 }}>
+            <Typography variant="caption" color="text.disabled" fontWeight={700}>CẤU HÌNH HỆ THỐNG</Typography>
+          </Divider>
           <TextField
             fullWidth
-            label="Cấu hình tính năng (JSON)"
+            label="Features Configuration (JSON)"
             name="featuresConfig"
             value={formData.featuresConfig}
             onChange={handleChange}
-            size="small"
             multiline
-            rows={3}
+            rows={4}
+            sx={{ '& .MuiInputBase-input': { fontFamily: 'monospace', fontSize: 13 } }}
+            placeholder='{ "mentorship": true, "fundraising": true }'
           />
         </Box>
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600 }}>
-          Hủy
+      <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
+        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
+          Hủy bỏ
         </Button>
-        <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Lưu thay đổi
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          sx={{
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 4,
+            borderRadius: 2,
+            boxShadow: (theme) => theme.customShadows?.primary,
+          }}
+        >
+          {organization ? 'Lưu thay đổi' : 'Tạo tổ chức'}
         </Button>
       </DialogActions>
     </Dialog>
