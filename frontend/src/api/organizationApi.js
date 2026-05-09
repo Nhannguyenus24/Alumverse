@@ -17,4 +17,9 @@ export const organizationApi = {
     const response = await apiClient.post(`/organizations/${organizationId}/feedbacks`, payload);
     return unwrap(response);
   },
+
+  async getIntroduction(organizationId) {
+    const response = await apiClient.get(`/organizations/${organizationId}/introduction`);
+    return unwrap(response);
+  },
 };

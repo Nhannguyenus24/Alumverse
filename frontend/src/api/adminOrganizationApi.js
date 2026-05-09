@@ -19,4 +19,21 @@ export const adminOrganizationApi = {
     const response = await apiClient.put(`/admin/organizations/${id}`, payload);
     return unwrap(response);
   },
+
+  async upsertIntroduction(id, payload) {
+    const response = await apiClient.put(`/admin/organizations/${id}/introduction`, payload);
+    return unwrap(response);
+  },
+
+  async getSchoolFeedbacks({ organizationId, page = 0, size = 10 } = {}) {
+    const params = { page, size };
+    if (organizationId) params.organizationId = organizationId;
+    const response = await apiClient.get('/admin/organizations/feedbacks', { params });
+    return unwrap(response);
+  },
+
+  async markSchoolFeedbackAsRead(feedbackId) {
+    const response = await apiClient.patch(`/admin/organizations/feedbacks/${feedbackId}/read`);
+    return unwrap(response);
+  },
 };
