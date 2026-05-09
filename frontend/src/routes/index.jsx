@@ -98,6 +98,7 @@ const AdminForumTopicsPage = Loadable(lazy(() => import("../pages/admin/AdminFor
 const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/AdminForumCategoriesPage")));
 const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
 const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
+const AdminSchoolFeedbackPage = Loadable(lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")));
 const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
 const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
@@ -546,6 +547,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "feedbacks",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminSchoolFeedbackPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "mentorship",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -729,6 +738,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminEventsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "feedbacks",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSchoolFeedbackPage />
           </ProtectedRoute>
         ),
       },

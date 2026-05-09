@@ -29,6 +29,7 @@ import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
+import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
@@ -53,6 +54,7 @@ function buildNavItems(adminBase, isAdmin) {
       { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon fontSize="small" />, label: 'Topics' },
       { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon fontSize="small" />, label: 'Categories' },
       { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon fontSize="small" />, label: 'Organizations' },
+      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon fontSize="small" />, label: 'Feedbacks' },
     ] : []),
     ...(isAdmin ? [
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon fontSize="small" />, label: 'Events' },
