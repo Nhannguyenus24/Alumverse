@@ -121,170 +121,224 @@ const AdminLoginPage = () => {
         sx={{
           minHeight: '100vh',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.primary.dark, 0.05)} 100%)`,
-          p: 2,
+          flexDirection: { xs: 'column', md: 'row' },
+          overflow: 'hidden',
+          bgcolor: 'background.paper',
         }}
       >
-        <Card
+        {/* Left Side: Login Form */}
+        <Box
           sx={{
-            maxWidth: 480,
-            width: '100%',
-            boxShadow: `0 8px 32px ${alpha(theme.palette.common.black, 0.1)}`,
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            borderRadius: 4,
+            flex: { xs: '1 1 auto', md: '0 0 50%' },
+            width: { xs: '100%', md: '50%' },
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
           }}
         >
-          <CardContent sx={{ p: 4 }}>
-            {/* Admin Header */}
-            <Box sx={{ textAlign: 'center', mb: 3 }}>
+          {/* Logo at Top Left */}
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              pt: { xs: 2, sm: 3 },
+              pl: { xs: 2, sm: 3 },
+              zIndex: 1,
+            }}
+          >
+            <Box
+              component={Link}
+              to="/"
+              sx={{ display: 'block', textDecoration: 'none' }}
+            >
               <Box
-                sx={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 64,
-                  height: 64,
-                  borderRadius: 3,
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main,
-                  mb: 2,
-                }}
-              >
-                <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 36 }} />
+                component="img"
+                src="/alumverse_logo/Logo_Main_Full.svg"
+                alt="ALUMVERSE HCMUS"
+                sx={{ height: { xs: 40, sm: 50, md: 60 }, width: 'auto' }}
+              />
+            </Box>
+          </Box>
+
+          {/* Form Content */}
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              px: { xs: 2, sm: 4, md: 6 },
+              pt: { xs: 12, md: 0 },
+              pb: 4,
+            }}
+          >
+            <Box sx={{ maxWidth: 420, width: '100%' }}>
+              <Box sx={{ mb: 4, textAlign: 'center' }}>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 60,
+                    height: 60,
+                    borderRadius: 2,
+                    bgcolor: alpha(theme.palette.primary.main, 0.1),
+                    color: theme.palette.primary.main,
+                    mb: 2,
+                  }}
+                >
+                  <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 36 }} />
+                </Box>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
+                  Admin Login
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Hệ thống quản trị HCMUS Alumni
+                </Typography>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: theme.palette.primary.main, mb: 1 }}>
-                Admin Login
-              </Typography>
-              <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 2 }}>
-                Đăng nhập vào trang quản trị hệ thống HCMUS Alumni
-              </Typography>
+
               <Alert
                 severity="info"
-                sx={{ mb: 2 }}
                 icon={<SecurityIcon fontSize="small" />}
+                sx={{ mb: 3, borderRadius: 2, fontSize: '0.85rem' }}
               >
-                Chỉ quản trị viên và moderator mới có thể truy cập trang này
+                Chỉ dành cho Quản trị viên và Điều phối viên.
               </Alert>
-            </Box>
 
-            <Box
-              component="form"
-              onSubmit={handleSubmit(onSubmit)}
-              sx={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'stretch',
-                gap: 2,
-              }}
-            >
-              <Input
-                label="Email Admin"
-                placeholder="admin@example.com"
-                error={!!errors.email}
-                helperText={errors.email?.message}
-                {...register('email')}
-                startAdornment={<LockIcon sx={{ fontSize: 20, color: theme.palette.text.secondary, mr: 1 }} />}
-              />
-              <Input
-                label="Mật khẩu"
-                placeholder="••••••••"
-                type="password"
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                {...register('password')}
-                startAdornment={<LockIcon sx={{ fontSize: 20, color: theme.palette.text.secondary, mr: 1 }} />}
-              />
-
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                <FormControlLabel
-                  control={<Checkbox size="small" color="primary" />}
-                  label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
-                />
-                <Typography
-                  component={Link}
-                  to="/auth/forgot-password"
-                  variant="body2"
-                  color="primary.main"
-                  sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-                >
-                  Quên mật khẩu?
-                </Typography>
-              </Box>
-
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                fullWidth
-                size="large"
-                disabled={loading}
-                sx={{ 
-                  mt: 1,
-                  py: 1.5,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                }}
+              <Box
+                component="form"
+                onSubmit={handleSubmit(onSubmit)}
+                sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
               >
-                {loading ? 'Đang xử lý...' : 'Đăng nhập Admin'}
-              </Button>
+                <Input
+                  label="Email Admin"
+                  placeholder="admin@example.com"
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                  {...register('email')}
+                />
+                <Input
+                  label="Mật khẩu"
+                  placeholder="••••••••"
+                  type="password"
+                  error={!!errors.password}
+                  helperText={errors.password?.message}
+                  {...register('password')}
+                />
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                <Divider sx={{ flex: 1 }} />
-                <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-                  hoặc tiếp tục với
-                </Typography>
-                <Divider sx={{ flex: 1 }} />
-              </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <FormControlLabel
+                    control={<Checkbox size="small" />}
+                    label={<Typography variant="body2">Ghi nhớ</Typography>}
+                  />
+                  <Typography
+                    component={Link}
+                    to="/auth/forgot-password"
+                    variant="body2"
+                    color="primary.main"
+                    sx={{ textDecoration: 'none', fontWeight: 600 }}
+                  >
+                    Quên mật khẩu?
+                  </Typography>
+                </Box>
 
-              {googleClientId ? (
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  disabled={loading}
+                  sx={{
+                    py: 1.5,
+                    fontSize: '1rem',
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.customShadows?.primary,
+                  }}
+                >
+                  {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
+                </Button>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 1 }}>
+                  <Divider sx={{ flex: 1 }} />
+                  <Typography variant="caption" color="text.secondary">hoặc</Typography>
+                  <Divider sx={{ flex: 1 }} />
+                </Box>
+
                 <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={handleGoogleError}
-                    useOneTap={false}
-                    size="large"
-                    shape="pill"
-                    text="signin_with"
                     locale="vi"
                     width="100%"
                   />
                 </Box>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outlined"
-                  fullWidth
-                  size="large"
-                  startIcon={<GoogleIcon />}
-                  disabled
-                  sx={{ textTransform: 'none', borderColor: 'divider' }}
-                >
-                  Google chưa được cấu hình
-                </Button>
-              )}
 
-              <Box sx={{ mt: 2, pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
-                <Typography variant="body2" color="text.secondary" textAlign="center">
-                  Không phải là admin?{' '}
-                  <Typography
-                    component={Link}
-                    to="/"
-                    variant="body2"
-                    color="primary.main"
-                    fontWeight={600}
-                    sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-                  >
-                    Về trang chủ
+                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Bạn không có quyền quản trị?{' '}
+                    <Typography
+                      component={Link}
+                      to="/"
+                      variant="body2"
+                      color="primary.main"
+                      fontWeight={700}
+                      sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                    >
+                      Quay lại Trang chủ
+                    </Typography>
                   </Typography>
-                </Typography>
+                </Box>
               </Box>
             </Box>
-          </CardContent>
-        </Card>
+          </Box>
+        </Box>
+
+        {/* Right Side: Image */}
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            flex: '0 0 50%',
+            width: '50%',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: 'url(/auth_school.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              transition: 'transform 0.5s ease',
+              '&:hover': { transform: 'scale(1.02)' },
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              bgcolor: alpha(theme.palette.primary.dark, 0.4),
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              px: 8,
+              color: 'common.white',
+            }}
+          >
+            <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, lineHeight: 1.2 }}>
+              Quản trị Hệ thống <br /> HCMUS Alumni
+            </Typography>
+            <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, maxWidth: 480 }}>
+              Chào mừng bạn trở lại. Hãy đăng nhập để quản lý cộng đồng cựu sinh viên và các hoạt động của trường.
+            </Typography>
+          </Box>
+        </Box>
       </Box>
     </Page>
   );
