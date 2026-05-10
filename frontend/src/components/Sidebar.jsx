@@ -7,12 +7,23 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { useLocation } from 'react-router';
+import { useLocation, useParams } from 'react-router';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const Sidebar = ({ items, value, onChange, useRouting = true }) => {
   const navigate = useOrgNavigate();
   const location = useLocation();
+  const { slug } = useParams();
+
+  const normalizedPathname = (() => {
+    if (!slug) return location.pathname;
+    const slugPrefix = `/${slug}`;
+    if (location.pathname === slugPrefix) return '/';
+    if (location.pathname.startsWith(`${slugPrefix}/`)) {
+      return location.pathname.slice(slugPrefix.length) || '/';
+    }
+    return location.pathname;
+})();
 
   return (
     <Paper
@@ -29,7 +40,7 @@ const Sidebar = ({ items, value, onChange, useRouting = true }) => {
         <List disablePadding>
           {items.map((item) => {
             const selected = useRouting
-            ? location.pathname === item.id
+            ? normalizedPathname === item.id
             : value === item.id;
 
           const handleClick = () => {

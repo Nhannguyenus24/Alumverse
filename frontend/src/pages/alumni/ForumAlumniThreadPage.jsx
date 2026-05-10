@@ -705,7 +705,6 @@ const ForumAlumniThreadPage = () => {
         disableGutters
         sx={{
           pb: { xs: 4, md: 6 },
-          backgroundColor: '#F3F6FB',
           overflowX: 'hidden',
         }}
       >
