@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GroupsIcon from '@mui/icons-material/Groups';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -13,6 +13,9 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
+import { toCardShape } from '../../hooks/articles/toCardShape';
 
 const SIDEBAR = [
   { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
@@ -41,30 +44,23 @@ const FILTERS = [
   },
 ];
 
-const FEATURED_ARTICLE = {
-  title: 'Lê Yên Thanh',
-  date: '12/12/2023',
-  description:
-    'Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup, sau đó khởi nghiệp với BusMap. CEO sinh năm 1994 là ...',
-  image: 'https://vcdn1-vnexpress.vnecdn.net/2025/07/28/ai-1753664373-1753664398-5310-1753664411.jpg?w=680&h=0&q=100&dpr=1&fit=crop&s=L9Jh3NGehMlCpb4bdZ8xzA',
-};
-
-const ALUMNI_ARTICLES = Array(9).fill({
-  title: 'Lê Yên Thanh',
-  date: '12/12/2023',
-  description:
-    'Từng có cơ hội làm việc cho Google nhưng Lê Yên Thanh từ chối để ở lại Việt Nam đầu quân cho một số startup...',
-  image: 'https://forbes.vn/wp-content/uploads/2021/09/under30_2022_Le-Yen-Thanh.jpg',
-});
-
-
 const HonorsAlumniPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { user } = useAuth();
+  const { articles } = usePublishedAlumniPosts(0, 12);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+
+  const [featured, ...rest] = articles;
+  const featuredCard = featured ? toCardShape(featured) : null;
+  const cards = rest.slice(0, 9).map(toCardShape);
+
+  const openArticle = (article) => {
+    if (!article?.id) return;
+    navigate(`/article/${article.channel}/${article.id}`);
+  };
 
   return (
     <Page title="Cựu sinh viên">
@@ -131,30 +127,38 @@ const HonorsAlumniPage = () => {
               </Stack>
 
               {/* FEATURED ARTICLE */}
-              <FeaturedArticleCard article={FEATURED_ARTICLE} />
+              {featuredCard && (
+                <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
+                  <FeaturedArticleCard article={featuredCard} />
+                </Box>
+              )}
 
               {/* ALUMNI SECTION */}
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={3}>
-                  Cựu sinh viên tiêu biểu
-                </Typography>
+              {cards.length > 0 && (
+                <Box>
+                  <Typography variant="h4" fontWeight={700} mb={3}>
+                    Cựu sinh viên tiêu biểu
+                  </Typography>
 
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 4,
-                  }}
-                >
-                  {ALUMNI_ARTICLES.map((article, i) => (
-                    <ArticleCard key={i} article={article} />
-                  ))}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 4,
+                    }}
+                  >
+                    {cards.map((card, i) => (
+                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
+                        <ArticleCard article={card} />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
 
             </Stack>
           </Box>

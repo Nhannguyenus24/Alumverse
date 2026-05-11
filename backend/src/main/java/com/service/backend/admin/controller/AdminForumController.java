@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,13 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.admin.dto.ForumStatisticsDTO;
 import com.service.backend.admin.dto.MonthlyActivityDTO;
 import com.service.backend.admin.dto.OrganizationEngagementDTO;
+import com.service.backend.admin.dto.ReviewForumReportRequest;
 import com.service.backend.admin.dto.TopContributorDTO;
+import com.service.backend.admin.dto.UpdatePostVisibilityRequest;
+import com.service.backend.admin.dto.UpdateTopicLockRequest;
 import com.service.backend.admin.service.AdminForumService;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,6 +37,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.Valid;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -101,6 +108,56 @@ public class AdminForumController {
                 .onErrorResume(this::handleError);
     }
 
+    @GetMapping("/admin/posts")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> adminGetAllPosts(
+            @Parameter(example = "0")
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @Parameter(example = "20")
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminForumService.getAllPostsWithPagination(page, size)
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum posts", paginatedResponse)))
+                .onErrorResume(this::handleError);
+    }
+
+    @GetMapping("/reports")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostReportDTO>>>> getPendingReports(
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminForumService.getPendingReports(page, size)
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Retrieved pending reports", data)))
+                .onErrorResume(this::handleError);
+    }
+
+    @PutMapping("/reports/{reportId}")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reviewReport(
+            @PathVariable Long reportId,
+            @Valid @RequestBody ReviewForumReportRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.reviewReport(reportId, request, adminId.intValue()))
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Reviewed report successfully", data)))
+                .onErrorResume(this::handleError);
+    }
+
+    @PutMapping("/posts/{postId}/visibility")
+    public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> updatePostVisibility(
+            @PathVariable Integer postId,
+            @Valid @RequestBody UpdatePostVisibilityRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.updatePostVisibility(postId, request.getHidden(), adminId.intValue()))
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated post visibility successfully", data)))
+                .onErrorResume(this::handleError);
+    }
+
+    @PutMapping("/topics/{topicId}/lock")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopicLock(
+            @PathVariable Integer topicId,
+            @Valid @RequestBody UpdateTopicLockRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.updateTopicLock(topicId, request.getLocked(), adminId.intValue()))
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic lock status successfully", data)))
+                .onErrorResume(this::handleError);
+    }
+
     // ========== ADMIN CATEGORY MANAGEMENT ==========
 
     @GetMapping("/admin/categories")
@@ -128,8 +185,10 @@ public class AdminForumController {
             @Parameter(example = "General Discussion")
             @RequestParam @NotBlank(message = "Category name is required") String name,
             @Parameter(example = "General discussion topics")
-            @RequestParam(required = false) String description) {
-        return adminForumService.createCategory(organizationId, name, description)
+            @RequestParam(required = false) String description,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer parentId) {
+        return adminForumService.createCategory(organizationId, name, description, parentId)
                 .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)))
                 .onErrorResume(this::handleError);
     }
@@ -140,8 +199,10 @@ public class AdminForumController {
             @Parameter(example = "General Discussion")
             @RequestParam(required = false) String name,
             @Parameter(example = "General discussion topics")
-            @RequestParam(required = false) String description) {
-        return adminForumService.updateCategory(categoryId, name, description)
+            @RequestParam(required = false) String description,
+            @Parameter(example = "1")
+            @RequestParam(required = false) Integer parentId) {
+        return adminForumService.updateCategory(categoryId, name, description, parentId)
                 .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)))
                 .onErrorResume(this::handleError);
     }

@@ -32,6 +32,12 @@ public class Organization {
     @Column("features_config")
     private String featuresConfig;
 
+    @Column("programs")
+    private String programs;
+
+    @Column("majors")
+    private String majors;
+
     @Column("created_at")
     private LocalDateTime createdAt;
 }

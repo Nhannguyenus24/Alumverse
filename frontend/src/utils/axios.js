@@ -1,17 +1,18 @@
 import axios from 'axios';
 import useAuthStore from '../stores/authStore';
+import { userFromAccessToken } from './jwt';
 
 const BASE_URL = '/api';
 
-// Exact paths — không dùng includes() để tránh substring bypass
-const AUTH_WHITELIST = ['/auth/login', '/auth/refresh'];
+// Exact paths — avoid includes() to prevent substring bypass
+const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh'];
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
 });
 
-// Instance riêng cho refresh — không có interceptor → tránh loop
+// Dedicated refresh instance — no interceptors → avoids refresh loops
 const refreshClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true,
@@ -22,11 +23,11 @@ let isRefreshing = false;
 let failedQueue = [];
 
 /**
- * Resolve/reject tất cả request đang chờ trong queue
+ * Resolve or reject every request waiting in the queue
  */
 const processQueue = (error, token = null) => {
   const queue = [...failedQueue];
-  failedQueue = []; // Clear queue TRƯỚC khi process → tránh race condition
+  failedQueue = []; // Clear queue before processing to avoid races
   queue.forEach(({ resolve, reject }) => {
     if (error) {
       reject(error);
@@ -37,10 +38,10 @@ const processQueue = (error, token = null) => {
 };
 
 /**
- * Kiểm tra URL có nằm trong whitelist hay không (exact match sau baseURL)
+ * Whether the URL is on the auth whitelist (exact match after stripping base URL)
  */
 const isAuthWhitelistedURL = (url = '') => {
-  // Loại bỏ baseURL prefix nếu có, chỉ so sánh phần path
+  // Strip baseURL prefix if present; compare paths only
   const path = url.replace(BASE_URL, '');
   return AUTH_WHITELIST.some(
     (whitelisted) =>
@@ -49,7 +50,7 @@ const isAuthWhitelistedURL = (url = '') => {
 };
 
 /**
- * Đăng xuất user và redirect về trang login
+ * Logs the user out and redirects to login
  */
 const forceLogout = () => {
   useAuthStore.getState().reset();
@@ -60,10 +61,9 @@ const forceLogout = () => {
 };
 
 /**
- * Gọi refresh token API, trả về access token mới
- * Throw error nếu thất bại
+ * Calls refresh-token API and returns the new access token (throws if it fails)
  */
-const refreshAccessToken = async () => {
+export async function refreshSessionAccessToken() {
   const res = await refreshClient.post('/auth/refresh');
   const newToken = res?.data?.data?.accessToken;
 
@@ -72,9 +72,16 @@ const refreshAccessToken = async () => {
   }
 
   return newToken;
-};
+}
 
-// --- Request Interceptor: Đính kèm Token vào Header ---
+/** Updates token and user in the store from the access JWT (interceptor + useAuth). */
+export function syncAuthStoreFromAccessToken(accessToken) {
+  useAuthStore.getState().setToken(accessToken);
+  const authUser = userFromAccessToken(accessToken);
+  if (authUser) useAuthStore.getState().setUser(authUser);
+}
+
+// --- Request interceptor: attach Bearer token ---
 apiClient.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
@@ -86,16 +93,16 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// --- Response Interceptor: Xử lý lỗi 401 và Refresh Token ---
+// --- Response interceptor: 401 handling + refresh ---
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Không xử lý nếu:
-    // - Không phải 401
-    // - Request đã retry rồi (chỉ retry 1 lần duy nhất)
-    // - Request thuộc auth whitelist (login, refresh)
+    // Skip handling when:
+    // - Not 401
+    // - Already retried (single retry only)
+    // - URL is auth whitelist (login, refresh)
     if (
       error.response?.status !== 401 ||
       originalRequest._retried ||
@@ -104,10 +111,10 @@ apiClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Đánh dấu đã retry — không bao giờ retry lần 2
+    // Mark retried — never retry twice
     originalRequest._retried = true;
 
-    // Nếu đang refresh → xếp vào hàng đợi
+    // If refresh in progress → enqueue
     if (isRefreshing) {
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
@@ -117,23 +124,22 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // Bắt đầu refresh
+    // Start refresh
     isRefreshing = true;
 
     try {
-      const newToken = await refreshAccessToken();
+      const newToken = await refreshSessionAccessToken();
 
-      // Cập nhật token mới vào store
-      useAuthStore.getState().setToken(newToken);
+      syncAuthStoreFromAccessToken(newToken);
 
-      // Giải phóng hàng đợi
+      // Drain the queue
       processQueue(null, newToken);
 
-      // Retry request gốc với token mới
+      // Retry original request with new token
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return apiClient(originalRequest);
     } catch (refreshError) {
-      // Refresh thất bại → reject toàn bộ queue + đăng xuất
+      // Refresh failed → reject queue + force logout
       processQueue(refreshError, null);
       forceLogout();
       return Promise.reject(refreshError);

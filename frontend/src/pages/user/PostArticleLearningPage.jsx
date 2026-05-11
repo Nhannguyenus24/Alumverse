@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
@@ -7,23 +7,24 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateLearningResource } from '../../hooks/news/useCreateLearningResource';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostLearningPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createLearning, isPending } = useCreateLearningResource();
+  const { createLearningResource, isPending } = useCreateLearningResource();
 
-  // Form states
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -34,16 +35,14 @@ const PostLearningPage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
-        thumbnailUrl: coverImage || null,
-        topic,
+      const payload = {
+        title: title.trim(),
+        description: content.trim(),
       };
 
-      const result = await createLearning(payload);
+      const result = await createLearningResource(payload);
       showSuccess('Bài viết học tập đã được đăng thành công!');
-      navigate(`/learning/${result.id}`);
+      navigate(`/article/learning/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
@@ -53,9 +52,9 @@ const PostLearningPage = () => {
     <Page title="Đăng bài học tập" meta={<meta name="description" content="Đăng bài học tập - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
+        <CoverUpload
+          value={coverPreview}
+          onChange={handleCoverUpload}
         />
 
         {/* Form Container */}

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMatch, useNavigate, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Skeleton,
   Stack,
   Tab,
   Table,
@@ -34,55 +35,19 @@ import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-';
-  }
-  try {
-    return new Date(value).toLocaleString('vi-VN');
-  } catch {
-    return String(value);
-  }
-};
-
-const demoProfile = (user) => ({
-  phone: user?.phone || '0901 234 567',
-  dob: user?.dob || '1998-05-15',
-  gender: user?.gender || 'MALE',
-  bio: user?.bio || 'Alumni demo profile — connect to API for real data.',
-});
-
-const demoAcademic = () => [
-  {
-    studentCode: 'N1900001',
-    degreeType: 'BACHELOR',
-    className: 'K19',
-    startYear: 2019,
-    graduatedYear: 2023,
-  },
-];
-
-const demoMemberships = (user) => [
-  {
-    organizationName: user?.organizationName || '-',
-    verificationLevel: 2,
-    status: user?.membershipStatus || 'active',
-    createdAt: user?.createdAt,
-  },
-];
-
-const demoActivity = () => ({
-  postsCreated: 12,
-  comments: 48,
-  eventsAttended: 3,
-  pageViewsSample: 120,
-});
+import { useAuth } from '../../hooks/useAuth';
+import { getLoginHistoryByUser } from '../../api/adminAuditApi';
+import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { enqueueSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
   const { auditLogs } = useAdminSystemContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
 
@@ -92,7 +57,9 @@ const AdminUserDetailPage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [banOpen, setBanOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
 
+  // Fallback: filter global audit logs from context
   const auditTrail = useMemo(
     () =>
       auditLogs.filter(
@@ -102,15 +69,107 @@ const AdminUserDetailPage = () => {
     [auditLogs, userId],
   );
 
-  const profile = user ? demoProfile(user) : {};
-  const academic = user ? demoAcademic() : [];
-  const memberships = user ? demoMemberships(user) : [];
-  const activity = user ? demoActivity() : null;
+  // Per-user login history fetched lazily when tab 5 is opened
+  const [userLoginHistory, setUserLoginHistory] = useState(null);
+  const [userAdminActions, setUserAdminActions] = useState([]);
+  const [userVerificationLogs, setUserVerificationLogs] = useState([]);
+  const [userActivitySummary, setUserActivitySummary] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  const fetchUserLoginHistory = useCallback(() => {
+    if (userLoginHistory !== null || !userId) return;
+    setAuditLoading(true);
+    getUserActivity(userId)
+      .then((res) => {
+        const data = res?.data?.data || {};
+        const logins = Array.isArray(data.loginHistories) ? data.loginHistories : [];
+        const verifications = Array.isArray(data.verificationRequests) ? data.verificationRequests : [];
+        const actions = Array.isArray(data.adminActions) ? data.adminActions : [];
+
+        setUserLoginHistory(
+          logins.map((entry) => ({
+            id: entry.id,
+            timestamp: entry.loginAt,
+            action: entry.loginMethod ?? 'LOGIN',
+            status: 'SUCCESS',
+            description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown'}`,
+            ipAddress: entry.loginIp,
+            userAgent: entry.userAgent,
+          })),
+        );
+        setUserVerificationLogs(verifications);
+        setUserAdminActions(actions);
+        setUserActivitySummary(data?.summary || null);
+      })
+      .catch(() => {
+        getLoginHistoryByUser(userId, 0, 50)
+          .then((res) => {
+            const items = res?.data?.data?.items ?? [];
+            setUserLoginHistory(
+              items.map((entry) => ({
+                id: entry.id,
+                timestamp: entry.loginAt,
+                action: entry.loginMethod ?? 'LOGIN',
+                status: 'SUCCESS',
+                description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown'}`,
+                ipAddress: entry.loginIp,
+                userAgent: entry.userAgent,
+              })),
+            );
+          })
+          .catch(() => setUserLoginHistory(auditTrail));
+      })
+      .finally(() => setAuditLoading(false));
+  }, [userId, userLoginHistory, auditTrail]);
+
+  useEffect(() => {
+    if (tab === 5) fetchUserLoginHistory();
+  }, [tab, fetchUserLoginHistory]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const profile = user
+    ? {
+        phone: user?.phone || '-',
+        dob: user?.dob || '-',
+        gender: user?.gender || '-',
+        bio: user?.bio || '-',
+      }
+    : {};
+  const academic = Array.isArray(user?.academicRecords) ? user.academicRecords : [];
+  const memberships = user ? [{
+    organizationName: user?.organizationName || '-',
+    verificationLevel: user?.verificationLevel ?? '-',
+    status: user?.membershipStatus || '-',
+    createdAt: user?.createdAt,
+  }] : [];
+  const activity = userActivitySummary || {
+    postsCreated: user?.postsCreated ?? '-',
+    comments: user?.commentsCount ?? '-',
+    eventsAttended: user?.eventsAttended ?? '-',
+    pageViewsSample: user?.pageViews ?? '-',
+  };
 
   if (!user) {
     return (
-      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list (demo data).">
-        <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate('/admin/users')} sx={{ textTransform: 'none' }}>
+      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list.">
+        <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
           Back to users
         </Button>
       </AdminSectionPanel>
@@ -122,7 +181,7 @@ const AdminUserDetailPage = () => {
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Tooltip title="Back">
-            <IconButton onClick={() => navigate('/admin/users')} color="primary">
+            <IconButton onClick={() => navigate(`${adminBase}/users`)} color="primary">
               <ArrowBackOutlinedIcon />
             </IconButton>
           </Tooltip>
@@ -148,7 +207,7 @@ const AdminUserDetailPage = () => {
                 <AdminStatusChip status={user.status} category="account" />
               </Box>
               <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                Created: {formatDate(user.createdAt)} · Updated: {formatDate(user.updatedAt)}
+                Created: {formatDateTime(user.createdAt)} · Updated: {formatDateTime(user.updatedAt)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
@@ -161,9 +220,12 @@ const AdminUserDetailPage = () => {
                   color="success"
                   size="small"
                   startIcon={<LockOpenOutlinedIcon />}
-                  onClick={() => {
-                    unbanUser(user.id);
-                    enqueueSnackbar('User unbanned.', { variant: 'success' });
+                  onClick={async () => {
+                    try {
+                      await unbanUser(user.id);
+                    } catch {
+                      /* snackbar in hook */
+                    }
                   }}
                   sx={{ textTransform: 'none' }}
                 >
@@ -181,7 +243,31 @@ const AdminUserDetailPage = () => {
                   Ban
                 </Button>
               )}
-              <Button variant="outlined" size="small" disabled sx={{ textTransform: 'none' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: 'none' }}
+                onClick={async () => {
+                  const nextPassword = window.prompt('Enter a new temporary password (min 8 chars):', '');
+                  if (!nextPassword) return;
+                  if (nextPassword.length < 8) {
+                    enqueueSnackbar('Password must be at least 8 characters.', { variant: 'warning' });
+                    return;
+                  }
+                  try {
+                    await resetPasswordByAdmin(user.id, {
+                      newPassword: nextPassword,
+                      adminUserId: Number(currentUser?.id),
+                      reason: 'Support reset from admin detail page',
+                    });
+                    enqueueSnackbar('Password reset successfully.', { variant: 'success' });
+                  } catch (error) {
+                    enqueueSnackbar(error?.response?.data?.message || 'Failed to reset password.', {
+                      variant: 'error',
+                    });
+                  }
+                }}
+              >
                 Reset password
               </Button>
               <Button variant="outlined" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
@@ -233,15 +319,22 @@ const AdminUserDetailPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {academic.map((row) => (
-                    <TableRow key={row.studentCode}>
-                      <TableCell>{row.studentCode}</TableCell>
-                      <TableCell>{row.degreeType}</TableCell>
-                      <TableCell>{row.className}</TableCell>
-                      <TableCell>{row.startYear}</TableCell>
-                      <TableCell>{row.graduatedYear}</TableCell>
+                  {academic.map((row, idx) => (
+                    <TableRow key={`${row.studentCode || row.id || `row-${idx}`}`}>
+                      <TableCell>{row.studentCode || '-'}</TableCell>
+                      <TableCell>{row.degreeType || '-'}</TableCell>
+                      <TableCell>{row.className || '-'}</TableCell>
+                      <TableCell>{row.startYear || '-'}</TableCell>
+                      <TableCell>{row.graduatedYear || '-'}</TableCell>
                     </TableRow>
                   ))}
+                  {academic.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Typography variant="body2" color="text.secondary">No academic records from API.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
                 </TableBody>
               </Table>
             ) : null}
@@ -259,10 +352,10 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 3 ? (
               <Stack spacing={0.5}>
-                <Typography variant="body2">Posts created: {activity?.postsCreated}</Typography>
-                <Typography variant="body2">Comments: {activity?.comments}</Typography>
-                <Typography variant="body2">Events attended: {activity?.eventsAttended}</Typography>
-                <Typography variant="body2">Page views (sample): {activity?.pageViewsSample}</Typography>
+                <Typography variant="body2">Posts created: {activity?.postsCreated ?? '-'}</Typography>
+                <Typography variant="body2">Comments: {activity?.comments ?? '-'}</Typography>
+                <Typography variant="body2">Events attended: {activity?.eventsAttended ?? '-'}</Typography>
+                <Typography variant="body2">Page views: {activity?.pageViewsSample ?? '-'}</Typography>
               </Stack>
             ) : null}
             {tab === 4 ? (
@@ -277,7 +370,7 @@ const AdminUserDetailPage = () => {
                 ) : null}
                 {user.bannedUntil ? (
                   <Typography variant="body2">
-                    <strong>Banned until:</strong> {formatDate(user.bannedUntil)}
+                    <strong>Banned until:</strong> {formatDateTime(user.bannedUntil)}
                   </Typography>
                 ) : user.status === 'BANNED' ? (
                   <Typography variant="body2">
@@ -292,7 +385,7 @@ const AdminUserDetailPage = () => {
                   : [{ at: user.updatedAt, reason: user.banReason || '—' }]
                 ).map((entry, idx) => (
                   <Typography key={`${entry.at}-${idx}`} variant="caption" display="block" color="text.secondary">
-                    {formatDate(entry.at)} — {entry.reason}
+                    {formatDateTime(entry.at)} — {entry.reason}
                   </Typography>
                 ))}
               </Stack>
@@ -300,47 +393,101 @@ const AdminUserDetailPage = () => {
             {tab === 5 ? (
               <Stack spacing={2}>
                 <Typography variant="body2" color="text.secondary">
-                  View consolidated audit entries where the entity is this user account.
+                  Login history for this user account fetched from the audit service.
                 </Typography>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Time</TableCell>
-                      <TableCell>Action</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Description</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {auditTrail.length === 0 ? (
+                {auditLoading ? (
+                  <Stack spacing={1}>
+                    <Skeleton variant="rounded" height={36} />
+                    <Skeleton variant="rounded" height={36} />
+                    <Skeleton variant="rounded" height={36} />
+                  </Stack>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={4}>
-                          <Typography variant="body2" color="text.secondary">
-                            No audit entries for this user in the current log set.
-                          </Typography>
-                        </TableCell>
+                        <TableCell>Time</TableCell>
+                        <TableCell>Action</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Description</TableCell>
                       </TableRow>
-                    ) : (
-                      auditTrail.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatDate(log.timestamp)}</TableCell>
-                          <TableCell>{log.action}</TableCell>
-                          <TableCell>
-                            <AdminStatusChip status={log.status} category="audit" />
+                    </TableHead>
+                    <TableBody>
+                      {(userLoginHistory ?? auditTrail).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4}>
+                            <Typography variant="body2" color="text.secondary">
+                              No login history found for this user.
+                            </Typography>
                           </TableCell>
-                          <TableCell>{log.description || '-'}</TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        (userLoginHistory ?? auditTrail).map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>{formatDateTime(log.timestamp)}</TableCell>
+                            <TableCell>{log.action}</TableCell>
+                            <TableCell>
+                              <AdminStatusChip status={log.status} category="audit" />
+                            </TableCell>
+                            <TableCell>{log.description || '-'}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
                 <Button
                   variant="text"
-                  onClick={() => navigate('/admin/audit-logs')}
+                  onClick={() => navigate(`${adminBase}/audit-logs`)}
                   sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
                 >
                   Open full audit log page
                 </Button>
+                {userVerificationLogs.length > 0 ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Verification requests
+                    </Typography>
+                    <List dense>
+                      {userVerificationLogs.map((item, idx) => (
+                        <ListItem key={`${item.id || idx}`} disablePadding sx={{ py: 0.5 }}>
+                          <ListItemText
+                            primary={`#${item.id || '-'} · ${item.status || 'unknown'}`}
+                            secondary={`Type: ${item.documentType || '-'} · Created: ${formatDateTime(item.createdAt)}`}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                ) : null}
+                {userAdminActions.length > 0 ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Admin actions
+                    </Typography>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Time</TableCell>
+                          <TableCell>Action</TableCell>
+                          <TableCell>Resource</TableCell>
+                          <TableCell>Before</TableCell>
+                          <TableCell>After</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {userAdminActions.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{formatDateTime(item.createdAt)}</TableCell>
+                            <TableCell>{item.action || '-'}</TableCell>
+                            <TableCell>{`${item.resourceType || '-'} #${item.resourceId || '-'}`}</TableCell>
+                            <TableCell>{item.beforeData || '-'}</TableCell>
+                            <TableCell>{item.afterData || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : null}
               </Stack>
             ) : null}
           </Box>
@@ -351,11 +498,14 @@ const AdminUserDetailPage = () => {
         open={editOpen}
         mode="edit"
         user={user}
+        organizationOptions={organizationOptions}
         onClose={() => setEditOpen(false)}
-        onSubmit={(payload) => {
-          updateUser(user.id, payload);
-          enqueueSnackbar('User updated.', { variant: 'success' });
-          setEditOpen(false);
+        onSubmit={async (payload) => {
+          try {
+            await updateUser(user.id, payload);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
@@ -363,23 +513,29 @@ const AdminUserDetailPage = () => {
         open={banOpen}
         user={user}
         onClose={() => setBanOpen(false)}
-        onConfirm={(payload) => {
-          banUser(user.id, payload);
-          enqueueSnackbar('User banned.', { variant: 'success' });
-          setBanOpen(false);
+        onConfirm={async (payload) => {
+          try {
+            await banUser(user.id, payload);
+            setBanOpen(false);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
       <AdminConfirmDeleteDialog
         open={deleteOpen}
         title="Delete account"
-        description={`Remove ${user.fullName} (#${user.id})? Demo: local state only.`}
+        description={`Remove ${user.fullName} (#${user.id})?`}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          deleteUser(user.id);
-          enqueueSnackbar('User deleted.', { variant: 'success' });
-          setDeleteOpen(false);
-          navigate('/admin/users');
+        onConfirm={async () => {
+          try {
+            await deleteUser(user.id);
+            setDeleteOpen(false);
+            navigate(`${adminBase}/users`);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
     </>

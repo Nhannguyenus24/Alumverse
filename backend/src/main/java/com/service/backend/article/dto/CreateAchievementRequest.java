@@ -25,6 +25,9 @@ public class CreateAchievementRequest {
     @URL
     private String imageUrl;
 
+    /** Optional base64-encoded image. When present, backend uploads and stores the resulting URL. */
+    private String imageBase64;
+
     private LocalDate awardedDate;
 
     @Size(max = 50)

@@ -16,9 +16,11 @@ import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
+import com.service.backend.forum.dto.CreateForumPostReportRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -28,10 +30,12 @@ import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.entity.ForumCategory;
 import com.service.backend.forum.entity.ForumPost;
 import com.service.backend.forum.entity.ForumPostReaction;
+import com.service.backend.forum.entity.ForumPostReport;
 import com.service.backend.forum.entity.ForumTopic;
 import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
+import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
 
 import reactor.core.publisher.Flux;
@@ -45,21 +49,24 @@ public class ForumService {
     private final ForumTopicRepository forumTopicRepository;
     private final ForumPostRepository forumPostRepository;
     private final ForumPostReactionRepository forumPostReactionRepository;
+    private final ForumPostReportRepository forumPostReportRepository;
 
     public ForumService(ForumCategoryRepository forumCategoryRepository,
                         ForumTopicRepository forumTopicRepository,
                         ForumPostRepository forumPostRepository,
-                        ForumPostReactionRepository forumPostReactionRepository) {
+                        ForumPostReactionRepository forumPostReactionRepository,
+                        ForumPostReportRepository forumPostReportRepository) {
         this.forumCategoryRepository = forumCategoryRepository;
         this.forumTopicRepository = forumTopicRepository;
         this.forumPostRepository = forumPostRepository;
         this.forumPostReactionRepository = forumPostReactionRepository;
+        this.forumPostReportRepository = forumPostReportRepository;
     }
 
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
         return forumCategoryRepository.findByOrganizationId(organizationId)
-                .map(this::convertToCategoryDTO)
+                .flatMap(this::convertToCategoryDTOWithStats)
                 .doOnComplete(() -> log.info("Successfully retrieved forum categories for organization ID: {}", organizationId))
                 .doOnError(error -> log.error("Error finding forum categories for organization ID: {}", organizationId, error));
     }
@@ -76,7 +83,7 @@ public class ForumService {
                 .build();
         
         return forumCategoryRepository.save(category)
-                .map(this::convertToCategoryDTO)
+            .flatMap(this::convertToCategoryDTOWithStats)
                 .doOnSuccess(result -> log.info("Successfully created forum category with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
     }
@@ -97,7 +104,7 @@ public class ForumService {
                     category.setUpdatedAt(LocalDateTime.now());
                     return forumCategoryRepository.save(category);
                 })
-                .map(this::convertToCategoryDTO)
+                .flatMap(this::convertToCategoryDTOWithStats)
                 .doOnSuccess(result -> log.info("Successfully updated forum category ID: {}", id))
                 .doOnError(error -> log.error("Error updating forum category ID: {}", id, error));
     }
@@ -105,7 +112,7 @@ public class ForumService {
     // Topic methods
     public Mono<ForumTopicDTO> findTopicByTitle(String title) {
         return forumTopicRepository.findByTitle(title)
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> {
                     if (result != null) {
                         log.info("Successfully found forum topic: {}", title);
@@ -120,7 +127,7 @@ public class ForumService {
         long offset = (long) page * size;
         
         return forumTopicRepository.findByCategoryIdWithPagination(categoryId, size, offset)
-                .map(this::convertToTopicDTO)
+                .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
                 .zipWith(forumTopicRepository.countByCategoryId(categoryId))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
@@ -143,13 +150,14 @@ public class ForumService {
                             .createdByMemberId(request.getCreatedByMemberId())
                             .categoryId(request.getCategoryId())
                             .viewCount(0)
+                            .isLocked(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
                     
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully created forum topic with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
     }
@@ -170,7 +178,7 @@ public class ForumService {
                     topic.setUpdatedAt(LocalDateTime.now());
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully updated forum topic ID: {}", id))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
@@ -232,12 +240,16 @@ public class ForumService {
                     return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(topic -> {
+                    if (Boolean.TRUE.equals(topic.getIsLocked())) {
+                        return Mono.error(new RuntimeException("Topic is locked"));
+                    }
                     ForumPost post = ForumPost.builder()
                             .topicId(request.getTopicId())
                             .authorMemberId(request.getAuthorMemberId())
                             .content(request.getContent())
                             .answerToPostId(request.getAnswerToPostId())
                             .isBanned(false)
+                            .isHidden(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
@@ -291,6 +303,24 @@ public class ForumService {
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
     }
 
+    public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
+        return forumPostRepository.findById(postId)
+                .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage())))
+                .flatMap(post -> {
+                    ForumPostReport report = ForumPostReport.builder()
+                            .postId(postId)
+                            .reporterMemberId(request.getReporterMemberId())
+                            .reason(request.getReason())
+                            .description(request.getDescription())
+                            .status("PENDING")
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    return forumPostReportRepository.save(report);
+                })
+                .map(this::convertToReportDTO);
+    }
+
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
     /**
@@ -308,12 +338,12 @@ public class ForumService {
                     return forumPostReactionRepository.findByPostIdAndMemberId(
                             request.getPostId(), request.getMemberId())
                             .flatMap(existingReaction -> {
-                                // If reaction exists, remove it (unlike)
-                                log.info("Removing existing like from post ID: {}, member: {}", 
+                                // If reaction exists, remove it (unlike) — return empty to signal removal
+                                log.info("Removing existing like from post ID: {}, member: {}",
                                         request.getPostId(), request.getMemberId());
                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                         request.getPostId(), request.getMemberId())
-                                        .then(Mono.<ForumPostReaction>error(new RuntimeException("REACTION_REMOVED")));
+                                        .then(Mono.<ForumPostReaction>empty());
                             })
                             .switchIfEmpty(Mono.defer(() -> {
                                 // No existing reaction, create new one (like)
@@ -329,11 +359,7 @@ public class ForumService {
                 })
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("Successfully toggled like for post ID: {}", request.getPostId()))
-                .doOnError(error -> {
-                    if (!"REACTION_REMOVED".equals(error.getMessage())) {
-                        log.error("Error toggling like for post ID: {}", request.getPostId(), error);
-                    }
-                });
+                .doOnError(error -> log.error("Error toggling like for post ID: {}", request.getPostId(), error));
     }
 
     /**
@@ -363,13 +389,32 @@ public class ForumService {
     // Helper methods to convert entities to DTOs
     public Mono<ForumCategoryDTO> findCategoryById(Integer id) {
         return forumCategoryRepository.findById(id)
-                .map(this::convertToCategoryDTO)
+                .flatMap(this::convertToCategoryDTOWithStats)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum category not found with ID: {}", id);
                     return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
                 }))
                 .doOnSuccess(result -> log.info("Successfully found forum category ID: {}", id))
                 .doOnError(error -> log.error("Error finding forum category ID: {}", id, error));
+    }
+
+    private Mono<ForumCategoryDTO> convertToCategoryDTOWithStats(ForumCategory category) {
+        ForumCategoryDTO base = convertToCategoryDTO(category);
+        if (category.getParentId() == null) {
+            return Mono.just(base);
+        }
+
+        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId()).defaultIfEmpty(0L);
+        Mono<Long> participantCountMono = forumTopicRepository
+                .countDistinctParticipantsByCategoryId(category.getId())
+                .defaultIfEmpty(0L);
+
+        return Mono.zip(topicCountMono, participantCountMono)
+                .map(tuple -> {
+                    base.setTopicCount(tuple.getT1());
+                    base.setParticipantCount(tuple.getT2());
+                    return base;
+                });
     }
 
     private ForumCategoryDTO convertToCategoryDTO(ForumCategory category) {
@@ -379,12 +424,20 @@ public class ForumService {
                 .organizationId(category.getOrganizationId())
                 .name(category.getName())
                 .description(category.getDescription())
+                .topicCount(null)
+                .participantCount(null)
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
                 .build();
     }
 
-    private ForumTopicDTO convertToTopicDTO(ForumTopic topic) {
+    private Mono<ForumTopicDTO> convertToTopicDTOWithPostCount(ForumTopic topic) {
+        return forumPostRepository.countByTopicId(topic.getId())
+                .defaultIfEmpty(0L)
+                .map(postCount -> convertToTopicDTO(topic, postCount));
+    }
+
+    private ForumTopicDTO convertToTopicDTO(ForumTopic topic, Long postCount) {
         return ForumTopicDTO.builder()
                 .id(topic.getId())
                 .organizationId(topic.getOrganizationId())
@@ -392,6 +445,7 @@ public class ForumService {
                 .createdByMemberId(topic.getCreatedByMemberId())
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
+                .postCount(postCount)
                 .createdAt(topic.getCreatedAt())
                 .updatedAt(topic.getUpdatedAt())
                 .build();
@@ -409,9 +463,25 @@ public class ForumService {
                 .content(post.getContent())
                 .answerToPostId(post.getAnswerToPostId())
                 .isBanned(post.getIsBanned())
+                .isHidden(post.getIsHidden())
                 .isLike(isLike)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
+                .build();
+    }
+
+    private ForumPostReportDTO convertToReportDTO(ForumPostReport report) {
+        return ForumPostReportDTO.builder()
+                .id(report.getId())
+                .postId(report.getPostId())
+                .reporterMemberId(report.getReporterMemberId())
+                .reason(report.getReason())
+                .description(report.getDescription())
+                .status(report.getStatus())
+                .reviewedByUserId(report.getReviewedByUserId())
+                .reviewNote(report.getReviewNote())
+                .createdAt(report.getCreatedAt())
+                .updatedAt(report.getUpdatedAt())
                 .build();
     }
 

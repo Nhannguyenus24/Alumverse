@@ -1,28 +1,31 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
+import { fileToBase64 } from '../../hooks/images/fileToBase64';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostArticlePage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -33,16 +36,17 @@ const PostArticlePage = () => {
     }
 
     try {
-      const payload = { 
-        title: title.trim(), 
-        content: content.trim(), 
-        thumbnailUrl: coverImage || null,
-        topic,
+      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+
+      const payload = {
+        title: title.trim(),
+        content: content.trim(),
+        thumbnailBase64,
       };
 
       const result = await createNews(payload);
       showSuccess('Bài viết đã được đăng thành công!');
-      navigate(`/article/${result.id}`);
+      navigate(`/article/news/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng bài thất bại');
     }
@@ -52,9 +56,9 @@ const PostArticlePage = () => {
     <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload 
-          value={coverImage} 
-          onChange={handleCoverUpload} 
+        <CoverUpload
+          value={coverPreview}
+          onChange={handleCoverUpload}
         />
 
         {/* Form Container */}

@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useSnackbar } from 'notistack';
 import {
   Box,
   Button,
-  Card,
-  CardContent,
   TextField,
   Typography,
   Stack,
-  Alert,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -25,7 +23,19 @@ const CreatePollDialog = ({ open, onClose, topicId, organizationId, memberId, on
   const [description, setDescription] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [allowMultipleVotes, setAllowMultipleVotes] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
+  const lastApiErrorRef = useRef('');
   const { createPollAsync, isPending, errorMessage, reset } = useCreatePoll();
+
+  useEffect(() => {
+    if (errorMessage && errorMessage !== lastApiErrorRef.current) {
+      enqueueSnackbar(errorMessage, { variant: 'error' });
+      lastApiErrorRef.current = errorMessage;
+    }
+    if (!errorMessage) {
+      lastApiErrorRef.current = '';
+    }
+  }, [errorMessage, enqueueSnackbar]);
 
   const handleAddOption = () => {
     setOptions([...options, '']);
@@ -46,13 +56,13 @@ const CreatePollDialog = ({ open, onClose, topicId, organizationId, memberId, on
   const handleSubmit = async () => {
     // Validate
     if (!title.trim()) {
-      alert('Vui lòng nhập tiêu đề poll');
+      enqueueSnackbar('Vui lòng nhập tiêu đề poll', { variant: 'warning' });
       return;
     }
 
     const validOptions = options.filter(opt => opt.trim());
     if (validOptions.length < 2) {
-      alert('Poll cần ít nhất 2 lựa chọn');
+      enqueueSnackbar('Poll cần ít nhất 2 lựa chọn', { variant: 'warning' });
       return;
     }
 
@@ -68,7 +78,8 @@ const CreatePollDialog = ({ open, onClose, topicId, organizationId, memberId, on
       };
 
       await createPollAsync(pollData);
-      
+
+      enqueueSnackbar('Tạo poll thành công.', { variant: 'success' });
       // Reset form
       setTitle('');
       setDescription('');
@@ -96,11 +107,6 @@ const CreatePollDialog = ({ open, onClose, topicId, organizationId, memberId, on
       <DialogTitle>Tạo Poll</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
-          {/* Error Message */}
-          {errorMessage && (
-            <Alert severity="error">{errorMessage}</Alert>
-          )}
-
           {/* Title */}
           <TextField
             label="Tiêu đề"

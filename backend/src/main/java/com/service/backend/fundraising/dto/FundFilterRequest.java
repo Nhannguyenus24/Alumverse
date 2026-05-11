@@ -7,6 +7,7 @@ import lombok.Data;
 @Builder
 public class FundFilterRequest {
     private String q;
+    private String organizationId;
     private String statusId;
     private String timeStartedFrom;
     private String timeStartedTo;

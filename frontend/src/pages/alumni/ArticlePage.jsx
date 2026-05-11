@@ -1,12 +1,126 @@
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router";
-import { Box, Container, Typography, CircularProgress } from "@mui/material";
+import { useSnackbar } from "notistack";
+import { Box, Container, Typography, CircularProgress, Button, Stack } from "@mui/material";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
-import { useNewsById } from "../../hooks/news/useNewsById";
+import { useArticleById } from "../../hooks/articles/useArticleById";
+import DOMPurify from "dompurify";
+import { formatDate, formatDateRange } from "../../utils/dateFormatter";
+import { formatNumberVi } from "../../utils/numberFormatter";
+
+const ArticleHighlightCard = ({ data, channel }) => {
+  const [isInterested, setIsInterested] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
+
+  return (
+    <Box
+      sx={{
+        mt: 3,
+        mb: 6,
+        p: 5,
+        bgcolor: "primary.light",
+        borderRadius: 2,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        gap: 3,
+      }}
+    >
+      {/* LEFT */}
+      <Box sx={{ flex: 1 }}>
+        <Typography variant="h4" sx={{ color: "primary.main" }}>
+          {data.channel}
+        </Typography>
+
+        <Typography variant="h2" sx={{ color: "primary.main" }}>
+          {data.title}
+        </Typography>
+
+        <Typography variant="body1">{data.organizer}</Typography>
+
+        <Typography variant="body2" color="text.secondary">
+          {data.date}
+        </Typography>
+      </Box>
+
+      {/* RIGHT */}
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 2,
+        }}
+      >
+        {/* STATS */}
+        <Box sx={{ display: "flex", justifyContent: "space-around" }}>
+          {data.stats?.map((item, i) => (
+            <Box key={i} textAlign="center">
+              <Typography variant="h2" fontWeight={700}>
+                {item.value}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {item.label}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* BUTTONS */}
+        {channel === "donation" ? (
+          <Button fullWidth variant="contained">
+            Quyên góp
+          </Button>
+        ) : (
+          <Stack direction="row" spacing={1}>
+            <Button
+              fullWidth
+              variant={isInterested ? "outlined" : "contained"}
+              onClick={() => setIsInterested(!isInterested)}
+            >
+              {isInterested ? "Đã quan tâm" : "Quan tâm"}
+            </Button>
+
+            <Button
+              fullWidth
+              variant={isJoined ? "outlined" : "contained"}
+              sx={{
+                bgcolor: isJoined ? "transparent" : "grey.700",
+                color: isJoined ? "grey.700" : "common.white",
+              }}
+              onClick={() => setIsJoined(!isJoined)}
+            >
+              {isJoined ? "Đã tham gia" : "Tham gia"}
+            </Button>
+          </Stack>
+        )}
+      </Box>
+    </Box>
+  );
+};
 
 const ArticlePage = () => {
-  const { id } = useParams();
-  const { article, isPending, isError, errorMessage } = useNewsById(id);
+  const { channel, id } = useParams();
+  const { enqueueSnackbar } = useSnackbar();
+  const loadErrorShownRef = useRef(false);
+  const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
+
+  const cleanContent = article?.content
+  ? DOMPurify.sanitize(article.content)
+  : "";
+
+  useEffect(() => {
+    if (isPending) return;
+    if (isError || !article) {
+      if (!loadErrorShownRef.current) {
+        enqueueSnackbar(errorMessage ?? "Không tìm thấy bài viết", { variant: "error" });
+        loadErrorShownRef.current = true;
+      }
+      return;
+    }
+    loadErrorShownRef.current = false;
+  }, [isPending, isError, article, errorMessage, enqueueSnackbar]);
 
   if (isPending) {
     return (
@@ -19,11 +133,44 @@ const ArticlePage = () => {
   if (isError || !article) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <Typography color="error">{errorMessage ?? "Không tìm thấy bài viết"}</Typography>
+        <Typography color="text.secondary">Không thể hiển thị bài viết.</Typography>
       </Box>
     );
   }
 
+  const resolvedChannel = article.channel;
+
+  const highlightData =
+    resolvedChannel === "event"
+      ? {
+          channel: "Sự kiện",
+          title: article.title,
+          organizer: article.organizer ?? article.location ?? "",
+          date: formatDateRange(article.eventDate, article.eventEndDate),
+          stats: [
+            { value: article.interestedCount ?? 0, label: "người quan tâm" },
+            { value: article.joinedCount ?? 0, label: "người tham gia" },
+          ],
+        }
+      : resolvedChannel === "donation"
+      ? {
+          channel: "Quyên góp",
+          title: article.title,
+          organizer: article.organizer ?? "",
+          date: formatDateRange(article.donationDate, article.donationEndDate),
+          stats: [
+            { value: article.donorCount ?? 0, label: "người quyên góp" },
+            {
+              value:
+                article.targetAmount != null
+                  ? `${formatNumberVi(article.targetAmount)} VNĐ`
+                  : "0 VNĐ",
+              label: "mục tiêu",
+            },
+          ],
+        }
+      : null;
+  
   return (
     <Page
       title={article.title}
@@ -119,8 +266,13 @@ const ArticlePage = () => {
                     mb: 4,
                   }}
                 >
-                  {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
+                  {formatDate(article.publishedAt)}
                 </Typography>
+              )}
+
+              {/* HIGHLIGHT */}
+              {highlightData && (
+                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} />
               )}
 
               {/* Thumbnail */}
@@ -146,17 +298,7 @@ const ArticlePage = () => {
               )}
 
               {/* Article Content */}
-              <Typography
-                variant="body1"
-                sx={{
-                  lineHeight: 1.8,
-                  textAlign: "justify",
-                  color: "text.primary",
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {article.content}
-              </Typography>
+              <Box dangerouslySetInnerHTML={{ __html: cleanContent }} />
             </Box>
           </Box>
         </Box>

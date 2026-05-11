@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -10,9 +10,10 @@ import {
 } from '@mui/material';
 
 import Page from '../../components/Page';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const RequestAchievementsPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

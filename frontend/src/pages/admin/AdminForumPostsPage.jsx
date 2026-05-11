@@ -22,24 +22,19 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDetailDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPosts';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
+import { useAuth } from '../../hooks/useAuth';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
 
 const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
-
-const forumModerationLabel = (status) => {
-  const key = String(status || '').toUpperCase();
-  const map = {
-    PENDING: 'Pending',
-    FLAGGED: 'Flagged',
-    APPROVED: 'Approved',
-    REJECTED: 'Rejected',
-  };
-  return map[key] || key || '-';
-};
 
 const forumModerationChipColor = (status) => {
   const key = String(status || '').toUpperCase();
@@ -48,27 +43,6 @@ const forumModerationChipColor = (status) => {
   if (key === 'FLAGGED') return 'error';
   if (key === 'PENDING') return 'warning';
   return 'default';
-};
-
-const truncateText = (text, maxLen = 72) => {
-  if (text == null || text === '') return '-';
-  const s = String(text);
-  return s.length <= maxLen ? s : `${s.slice(0, maxLen)}…`;
-};
-
-const formatDate = (value) => {
-  if (!value) return '-';
-  try {
-    return new Date(value).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
 };
 
 /* ─── Reusable posts table ─── */
@@ -121,8 +95,8 @@ const PostsTable = ({
                 )}
               </TableCell>
               <TableCell>{post.answerToPostId ? `#${post.answerToPostId}` : '-'}</TableCell>
-              <TableCell>{formatDate(post.postedAt || post.createdAt)}</TableCell>
-              <TableCell>{formatDate(post.updatedAt)}</TableCell>
+              <TableCell>{formatDateTime(post.postedAt || post.createdAt)}</TableCell>
+              <TableCell>{formatDateTime(post.updatedAt)}</TableCell>
               <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                 <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                   {showBanActions && (
@@ -180,7 +154,6 @@ const AdminForumPostsPage = () => {
     search,
     setSearch,
     updatePostStatus,
-    deletePost,
     // API-driven data
     bannedPosts,
     bannedPage,
@@ -191,15 +164,24 @@ const AdminForumPostsPage = () => {
     banPost: banPostApi,
     unbanPost: unbanPostApi,
     deletePostApi,
+    reports,
+    reportsPage,
+    setReportsPage,
+    reviewReport,
+    updatePostVisibility,
   } = useAdminForumContext();
+  const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState(0);
   const [forumDetailPost, setForumDetailPost] = useState(null);
   const [forumDeletePost, setForumDeletePost] = useState(null);
   const [forumStatusMenu, setForumStatusMenu] = useState(null);
+  const [reportActionLoading, setReportActionLoading] = useState(false);
 
   const bannedContent = bannedPosts?.content ?? [];
   const yesterdayContent = yesterdayPosts?.content ?? [];
+  const reportContent = reports?.content ?? [];
+  const adminUserId = Number(user?.id);
 
   const handleBan = async (post) => {
     if (banPostApi) {
@@ -226,7 +208,7 @@ const AdminForumPostsPage = () => {
     <>
       <AdminSectionPanel
         title="Forum posts moderation"
-        subtitle="Review, ban/unban, and delete posts. Switch tabs for banned or recently posted content."
+        subtitle="All posts lists yesterday’s new posts plus banned posts from the API. Other tabs are paginated from the server."
       >
         <Tabs
           value={activeTab}
@@ -240,6 +222,10 @@ const AdminForumPostsPage = () => {
           />
           <Tab
             label={`New yesterday (${yesterdayPosts?.totalElements ?? 0})`}
+            sx={{ textTransform: 'none', fontWeight: 600 }}
+          />
+          <Tab
+            label={`Reports (${reports?.totalElements ?? 0})`}
             sx={{ textTransform: 'none', fontWeight: 600 }}
           />
         </Tabs>
@@ -291,7 +277,7 @@ const AdminForumPostsPage = () => {
                   <TableCell sx={{ maxWidth: 280 }}>Content preview</TableCell>
                   <TableCell>Category</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Flags</TableCell>
+                  <TableCell>Reports</TableCell>
                   <TableCell>Created</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
@@ -357,7 +343,7 @@ const AdminForumPostsPage = () => {
                           />
                         </TableCell>
                         <TableCell>{post.flagsCount ?? 0}</TableCell>
-                        <TableCell>{formatDate(post.postedAt)}</TableCell>
+                        <TableCell>{formatDateTime(post.postedAt)}</TableCell>
                         <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                             <Tooltip title="Ban post">
@@ -405,10 +391,12 @@ const AdminForumPostsPage = () => {
                       <MenuItem
                         key={st}
                         selected={active}
-                        onClick={() => {
-                          updatePostStatus(forumStatusMenu.post.id, st);
-                          enqueueSnackbar(`Status set to ${forumModerationLabel(st)}.`, { variant: 'success' });
-                          setForumStatusMenu(null);
+                        onClick={async () => {
+                          try {
+                            await updatePostStatus(forumStatusMenu.post.id, st);
+                          } finally {
+                            setForumStatusMenu(null);
+                          }
                         }}
                       >
                         {forumModerationLabel(st)}
@@ -463,6 +451,163 @@ const AdminForumPostsPage = () => {
             />
           </>
         )}
+
+        {activeTab === 3 && (
+          <>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Report ID</TableCell>
+                  <TableCell>Post ID</TableCell>
+                  <TableCell>Reporter</TableCell>
+                  <TableCell>Reason</TableCell>
+                  <TableCell sx={{ maxWidth: 280 }}>Description</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {reportContent.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                        No pending reports.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  reportContent.map((report) => (
+                    <TableRow key={report.id} hover>
+                      <TableCell>{report.id}</TableCell>
+                      <TableCell>#{report.postId}</TableCell>
+                      <TableCell>{report.reporterMemberId ?? '-'}</TableCell>
+                      <TableCell>{report.reason || '-'}</TableCell>
+                      <TableCell sx={{ maxWidth: 280 }}>{truncateText(report.description || '-')}</TableCell>
+                      <TableCell>
+                        <Chip label={report.status || 'PENDING'} size="small" color="warning" />
+                      </TableCell>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                          <Tooltip title="Hide post">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Hide post from report"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'APPROVED',
+                                    action: 'HIDE_POST',
+                                    reviewNote: 'Hidden from moderation queue',
+                                    adminUserId,
+                                  });
+                                  if (ok) {
+                                    await updatePostVisibility?.(report.postId, true, adminUserId);
+                                  }
+                                  enqueueSnackbar(ok ? 'Report approved and post hidden.' : 'Failed to process report.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <VisibilityOffOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Ban post">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="warning"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Ban post from report"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'APPROVED',
+                                    action: 'BAN_POST',
+                                    reviewNote: 'Banned by moderator',
+                                    adminUserId,
+                                  });
+                                  enqueueSnackbar(ok ? 'Report approved and post banned.' : 'Failed to ban post.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <BlockOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Warn only">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="info"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Mark report as warning"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'APPROVED',
+                                    action: 'WARN',
+                                    reviewNote: 'Warning action only',
+                                    adminUserId,
+                                  });
+                                  enqueueSnackbar(ok ? 'Report marked as warning.' : 'Failed to warn.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <WarningAmberOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title="Reject report">
+                            <span>
+                              <IconButton
+                                size="small"
+                                color="inherit"
+                                disabled={reportActionLoading || !adminUserId}
+                                aria-label="Reject report"
+                                onClick={async () => {
+                                  setReportActionLoading(true);
+                                  const ok = await reviewReport?.(report.id, {
+                                    decision: 'REJECTED',
+                                    action: 'WARN',
+                                    reviewNote: 'Rejected report',
+                                    adminUserId,
+                                  });
+                                  enqueueSnackbar(ok ? 'Report rejected.' : 'Failed to reject report.', {
+                                    variant: ok ? 'success' : 'error',
+                                  });
+                                  setReportActionLoading(false);
+                                }}
+                              >
+                                <CancelOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={reports?.totalElements ?? 0}
+              page={reportsPage ?? 0}
+              rowsPerPage={reports?.size ?? 10}
+              onPageChange={(_, p) => setReportsPage?.(p)}
+              rowsPerPageOptions={[10]}
+            />
+          </>
+        )}
       </AdminSectionPanel>
 
       <AdminForumPostDetailDialog
@@ -498,17 +643,9 @@ const AdminForumPostsPage = () => {
         onClose={() => setForumDeletePost(null)}
         onConfirm={async () => {
           if (forumDeletePost) {
-            // Try API first, fall back to local
-            if (deletePostApi) {
-              const ok = await deletePostApi(forumDeletePost.id);
-              if (!ok) {
-                deletePost(forumDeletePost.id);
-              }
-            } else {
-              deletePost(forumDeletePost.id);
-            }
-            enqueueSnackbar('Post deleted.', { variant: 'success' });
-            if (forumDetailPost?.id === forumDeletePost.id) {
+            const ok = await deletePostApi(forumDeletePost.id);
+            enqueueSnackbar(ok ? 'Post deleted.' : 'Failed to delete post.', { variant: ok ? 'success' : 'error' });
+            if (ok && forumDetailPost?.id === forumDeletePost.id) {
               setForumDetailPost(null);
             }
           }

@@ -26,4 +26,6 @@ public class UpdateNewsRequest {
 
     @URL
     private String thumbnailUrl;
+
+    private String thumbnailBase64;
 }

@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsIcon from "@mui/icons-material/Settings";
+import { formatTimeAgoVi } from "../utils/dateFormatter";
 
 // Mock notification data
 const mockNotifications = [
@@ -43,24 +44,6 @@ const mockNotifications = [
     isRead: true,
   },
 ];
-
-// Utility function to format time ago
-const formatTimeAgo = (timestamp) => {
-  const now = new Date();
-  const diffInSeconds = Math.floor((now - timestamp) / 1000);
-
-  if (diffInSeconds < 60) return "Vừa xong";
-  if (diffInSeconds < 3600) {
-    const minutes = Math.floor(diffInSeconds / 60);
-    return `${minutes} phút trước`;
-  }
-  if (diffInSeconds < 86400) {
-    const hours = Math.floor(diffInSeconds / 3600);
-    return `${hours} giờ trước`;
-  }
-  const days = Math.floor(diffInSeconds / 86400);
-  return `${days} ngày trước`;
-};
 
 const Notification = ({ headerTextColor = "text.primary" }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -258,7 +241,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
                       color: "text.secondary",
                     }}
                   >
-                    {formatTimeAgo(notification.timestamp)}
+                    {formatTimeAgoVi(notification.timestamp)}
                   </Typography>
                 </Box>
 

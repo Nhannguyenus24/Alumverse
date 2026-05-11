@@ -20,4 +20,19 @@ public class UpdateMentorProfileRequest {
 
     @Size(max = 5000)
     private String bio;
+
+    @Size(max = 500)
+    private String avatarUrl;
+
+    @Size(max = 500)
+    private String coverUrl;
+
+    @Size(max = 500)
+    private String defaultMeetingLink;
+
+    @Size(max = 5000)
+    private String bookingWindowSettings;
+
+    @Size(max = 20000)
+    private String extendedProfile;
 }

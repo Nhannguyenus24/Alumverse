@@ -7,10 +7,11 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { useNavigate, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
-const Sidebar = ({ items }) => {
-  const navigate = useNavigate();
+const Sidebar = ({ items, value, onChange, useRouting = true }) => {
+  const navigate = useOrgNavigate();
   const location = useLocation();
 
   return (
@@ -21,18 +22,28 @@ const Sidebar = ({ items }) => {
         borderColor: 'divider',
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: '#fff',
+        backgroundColor: 'white',
       }}
     >
       <Box sx={{ p: 1 }}>
         <List disablePadding>
           {items.map((item) => {
-            const selected = location.pathname === item.id;
+            const selected = useRouting
+            ? location.pathname === item.id
+            : value === item.id;
+
+          const handleClick = () => {
+            if (useRouting) {
+              navigate(item.id);
+            } else {
+              onChange?.(item.id);
+            }
+          };
 
             return (
               <ListItemButton
                 key={item.id}
-                onClick={() => navigate(item.id)}
+                onClick={handleClick}
                 sx={{
                   borderRadius: 1,
                   py: 1.2,

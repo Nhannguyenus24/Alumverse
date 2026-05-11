@@ -1,9 +1,7 @@
 package com.service.backend.shared.utils;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -40,7 +38,7 @@ public class JwtUtils {
         }
     }
 
-    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, List<Integer> organizationId) {
+    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, Integer organizationId) {
         Instant now = Instant.now();
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
@@ -55,14 +53,16 @@ public class JwtUtils {
         return signAndSerialize(claimsSet);
     }
 
-    public String generateRefreshToken(Integer userId) {
+    public String generateRefreshToken(Integer userId, Integer organizationId) {
         Instant now = Instant.now();
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusMillis(refreshTokenExpirationMs)))
-                .build();
-        return signAndSerialize(claimsSet);
+                .expirationTime(Date.from(now.plusMillis(refreshTokenExpirationMs)));
+        if (organizationId != null) {
+            builder.claim("organizationId", organizationId);
+        }
+        return signAndSerialize(builder.build());
     }
 
     public JWTClaimsSet validateToken(String token) {
@@ -97,15 +97,12 @@ public class JwtUtils {
         return (String) validateToken(token).getClaim("role");
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Integer> getOrganizationIdsFromToken(String token) {
-        Object orgIds = validateToken(token).getClaim("organizationId");
-        if (orgIds instanceof List<?>) {
-            return ((List<Number>) orgIds).stream()
-                    .map(Number::intValue)
-                    .toList();
+    public Integer getOrganizationIdFromToken(String token) {
+        Object orgId = validateToken(token).getClaim("organizationId");
+        if (orgId instanceof Number) {
+            return ((Number) orgId).intValue();
         }
-        return Collections.emptyList();
+        return null;
     }
 
     private String signAndSerialize(JWTClaimsSet claimsSet) {

@@ -48,12 +48,13 @@ export function userFromAccessToken(token) {
  * @param {string} token - JWT access token
  * @returns {boolean} true if token is expired, false otherwise
  */
-export function isTokenExpired(token) {
+/** Skew (seconds) so we refresh slightly before true expiry and avoid race with the server clock. */
+export function isTokenExpired(token, skewSeconds = 60) {
   if (!token) return true;
   const payload = decodeJwtPayload(token);
   if (!payload || !payload.exp) return true;
-  // exp is in seconds, convert to milliseconds
-  return Date.now() >= payload.exp * 1000;
+  const skewMs = Math.max(0, skewSeconds) * 1000;
+  return Date.now() >= payload.exp * 1000 - skewMs;
 }
 
 /**

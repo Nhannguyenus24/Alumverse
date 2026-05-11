@@ -20,9 +20,11 @@ import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
+import com.service.backend.forum.dto.CreateForumPostReportRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
@@ -142,7 +144,7 @@ public class ForumController {
      * Update forum topic by id
      */
     @PutMapping("/topic/{id}")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> daupdateTopic(
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopic(
             @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id,
             @Valid @RequestBody UpdateForumTopicRequest request) {
         return forumService.updateTopic(id, request)
@@ -225,13 +227,20 @@ public class ForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> reactToPost(
             @Valid @RequestBody CreateForumPostReactionRequest request) {
         return forumService.reactToPost(request)
-                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Like added successfully", reaction)))
-                .onErrorResume(error -> {
-                    if ("REACTION_REMOVED".equals(error.getMessage())) {
-                        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null)));
-                    }
-                    return handleError(error);
-                });
+                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Like added successfully", reaction)))
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null))))
+                .onErrorResume(this::handleError);
+    }
+
+    @PostMapping("/post/{id}/report")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reportPost(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id,
+            @Valid @RequestBody CreateForumPostReportRequest request) {
+        return forumService.reportPost(id, request)
+                .map(report -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Post report submitted successfully", report)))
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -290,6 +299,9 @@ public class ForumController {
 
         if (ErrorCode.INVALID_TOPIC_ID.getMessage().equals(message)) {
             return HttpStatus.BAD_REQUEST;
+        }
+        if ("Topic is locked".equals(message)) {
+            return HttpStatus.FORBIDDEN;
         }
 
         return HttpStatus.INTERNAL_SERVER_ERROR;

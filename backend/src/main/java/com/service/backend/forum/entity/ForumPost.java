@@ -35,6 +35,9 @@ public class ForumPost {
     
     @Column("is_banned")
     private Boolean isBanned;
+
+    @Column("is_hidden")
+    private Boolean isHidden;
     
     @Column("created_at")
     private LocalDateTime createdAt;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router';
+import { useParams, useLocation } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
@@ -7,32 +7,23 @@ import Breadcrumb from '../../components/Breadcrumb';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrganization } from '../../hooks/useOrganization';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useForumTopics } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
-
-const formatTopicDate = (iso) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now - d;
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Vừa xong';
-  if (diffMins < 60) return `${diffMins} phút trước`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} giờ trước`;
-  return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
+import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 
 const ForumCategoryPage = () => {
   const { categoryId: categoryIdParam } = useParams();
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { organization } = useOrganization();
   const { showError } = useNotification();
   const hasShownTopicsErrorRef = useRef(false);
+  const invalidCategoryShownRef = useRef(false);
 
-  const organizationId = user?.organizationId ?? 1;
+  const organizationId = organization?.id ?? null;
   const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
 
   const categoryId = useMemo(() => {
@@ -43,6 +34,18 @@ const ForumCategoryPage = () => {
   const { topics, isPending: topicsPending, isError } = useForumTopics(categoryId, 0, 50);
 
   useEffect(() => {
+    if (categoryId != null) {
+      invalidCategoryShownRef.current = false;
+      return;
+    }
+    if (!invalidCategoryShownRef.current) {
+      showError('Danh mục không hợp lệ.');
+      invalidCategoryShownRef.current = true;
+    }
+  }, [categoryId, showError]);
+
+  useEffect(() => {
+    if (categoryId == null) return;
     if (isError) {
       if (!hasShownTopicsErrorRef.current) {
         showError('Không thể tải danh sách chủ đề.');
@@ -51,7 +54,7 @@ const ForumCategoryPage = () => {
       return;
     }
     hasShownTopicsErrorRef.current = false;
-  }, [isError, showError]);
+  }, [categoryId, isError, showError]);
 
   const parentCategories = useMemo(() => {
     const list = (categories ?? []).filter((c) => c.parentId == null);
@@ -118,7 +121,7 @@ const ForumCategoryPage = () => {
     return (
       <Page title="Không tìm thấy" meta={<meta name="description" content="Danh mục không hợp lệ" />}>
         <Container sx={{ py: 4 }}>
-          <Typography>Danh mục không hợp lệ.</Typography>
+          <Typography color="text.secondary">Danh mục không hợp lệ.</Typography>
           <Button sx={{ mt: 2 }} onClick={() => navigate('/forum')} variant="contained">
             Về diễn đàn
           </Button>
@@ -286,25 +289,6 @@ const ForumCategoryPage = () => {
                             minWidth: 0,
                           }}
                         >
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: '50%',
-                              bgcolor: 'primary.main',
-                              color: 'primary.contrastText',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Typography variant="subtitle2" fontWeight={700}>
-                              {topic.createdByMemberId != null
-                                ? String(topic.createdByMemberId).slice(-1)
-                                : '?'}
-                            </Typography>
-                          </Box>
                           <Box sx={{ minWidth: 0 }}>
                             <Typography
                               variant="subtitle1"
@@ -320,7 +304,7 @@ const ForumCategoryPage = () => {
                               {topic.title}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              Thành viên #{topic.createdByMemberId ?? '—'} · {formatTopicDate(topic.createdAt)}
+                              Được tạo lúc · {formatRelativeTimeVi(topic.createdAt)}
                             </Typography>
                           </Box>
                         </Box>
@@ -348,7 +332,7 @@ const ForumCategoryPage = () => {
                               Thảo luận
                             </Typography>
                             <Typography variant="body2" fontWeight={800}>
-                              —
+                              {topic.postCount ?? 0}
                             </Typography>
                           </Box>
                           <Box
@@ -380,7 +364,7 @@ const ForumCategoryPage = () => {
                                 Thành viên #{topic.createdByMemberId ?? '—'}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {formatTopicDate(topic.updatedAt ?? topic.createdAt)}
+                                {formatRelativeTimeVi(topic.updatedAt)}
                               </Typography>
                             </Box>
                           </Box>

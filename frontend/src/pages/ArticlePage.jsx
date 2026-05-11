@@ -1,5 +1,5 @@
-import { Link } from "react-router";
-import { Box, Container, Typography, Button } from "@mui/material";
+import { useState } from "react";
+import { Box, Container, Typography, Button, Stack } from "@mui/material";
 import Page from "../components/Page";
 import Breadcrumb from "../components/Breadcrumb";
 
@@ -19,7 +19,127 @@ const ARTICLE_POST = {
   ],
 };
 
-const ArticlePage = () => {
+const EVENT_DATA = {
+  channel: "Sự kiện",
+  title: "HCMC Metro Opening",
+  organizer: "HURC Metro",
+  date: "January 21, 2026 - January 24, 2026",
+  stats: [
+    { value: 124, label: "người quan tâm" },
+    { value: 100, label: "người tham gia" },
+  ],
+};
+
+const DONATION_DATA = {
+  channel: "Quyên góp",
+  title: "Quỹ Cộng đồng Cựu sinh viên Khoa học",
+  organizer: "Giáo vụ",
+  date: "January 21, 2026 - January 24, 2026",
+  stats: [
+    { value: 57, label: "người quyên góp" },
+    { value: "108,492 VNĐ", label: "trung bình quyên góp" },
+  ],
+};
+
+const ArticleHighlightCard = ({ data, channel }) => {
+  const [isInterested, setIsInterested] = useState(false);
+  const [isJoined, setIsJoined] = useState(false);
+
+  return (
+    <Box
+      sx={{
+        mt: 3,
+        mb: 6,
+        p: 5,
+        bgcolor: "primary.light",
+        borderRadius: 2,
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        gap: 3,
+      }}
+    >
+      {/* LEFT */}
+      <Box sx={{ flex: 1 }}>
+        <Typography variant="h4" sx={{ color: "primary.main" }}>
+          {data.channel}
+        </Typography>
+
+        <Typography variant="h2" sx={{ color: "primary.main" }}>
+          {data.title}
+        </Typography>
+
+        <Typography variant="body1" color="text.primary">
+          {data.organizer}
+        </Typography>
+
+        <Typography variant="body2" color="text.secondary">
+          {data.date}
+        </Typography>
+      </Box>
+
+      {/* RIGHT */}
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 2,
+        }}
+      >
+        {/* STATS */}
+        <Box sx={{ display: "flex", justifyContent: "space-around" }}>
+          {data.stats.map((item, i) => (
+            <Box key={i} textAlign="center">
+              <Typography variant="h2" fontWeight={700}>
+                {item.value}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {item.label}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* BUTTONS */}
+        {channel === "donation" ? (
+          <Button fullWidth variant="contained">
+            Quyên góp
+          </Button>
+        ) : (
+          <Stack direction="row" spacing={1}>
+            <Button
+              fullWidth
+              variant={isInterested ? 'outlined' : 'contained'}
+              color="primary"
+              onClick={() => setIsInterested(!isInterested)}
+            >
+              {isInterested ? 'Đã quan tâm' : 'Quan tâm'}
+            </Button>
+
+            {/* JOIN BUTTON */}
+            <Button
+              fullWidth
+              variant={isJoined ? 'outlined' : 'contained'}
+              sx={{
+                bgcolor: isJoined ? 'transparent' : 'grey.700',
+                color: isJoined ? 'grey.700' : 'common.white',
+                '&:hover': {
+                  bgcolor: isJoined ? 'grey.100' : 'grey.500',
+                },
+              }}
+              onClick={() => setIsJoined(!isJoined)}
+            >
+              {isJoined ? 'Đã tham gia' : 'Tham gia'}
+            </Button>
+          </Stack>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+const ArticlePage = ({ channel = "event" }) => {
   return (
     <Page
       title="Lê Yên Thanh"
@@ -115,6 +235,15 @@ const ArticlePage = () => {
               >
                 {ARTICLE_POST.author} • {ARTICLE_POST.date}
               </Typography>
+
+              {/* 🔥 CONDITIONAL HIGHLIGHT */}
+              {channel === "event" && (
+                <ArticleHighlightCard channel="event" data={EVENT_DATA} />
+              )}
+
+              {channel === "donation" && (
+                <ArticleHighlightCard channel="donation" data={DONATION_DATA} />
+              )}
 
               {/* Article Image */}
               <Box

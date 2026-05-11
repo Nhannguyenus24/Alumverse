@@ -1,7 +1,8 @@
 import { useForm, Controller } from 'react-hook-form';
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
+import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -10,6 +11,8 @@ import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
 import { registerSchema } from '../../schemas/authSchemas';
 import { useAuth } from '../../hooks/useAuth';
+import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
+import useOrganizationStore from '../../stores/organizationStore';
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
@@ -18,9 +21,12 @@ const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
-  const { register: registerUser, forgotPassword, isLoading: loading, error, setError } = useAuth();
+  const navigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
+  const { enqueueSnackbar } = useSnackbar();
+  const { register: registerUser, forgotPassword, isSubmitting: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
+  const organizationId = useOrganizationStore((state) => state.organization?.id);
 
   const passwordRequirements = {
     length: passwordValue.length >= 8,
@@ -56,10 +62,19 @@ const RegisterPage = () => {
       enrollmentYear: data.enrollmentYear,
       password: data.password,
       confirmPassword: data.confirmPassword,
+      organizationId,
     });
     if (result?.ok) {
-      forgotPassword({ email: data.email });
+      enqueueSnackbar('Đăng ký thành công. Vui lòng kiểm tra email để nhận mã xác thực.', {
+        variant: 'success',
+      });
+      const fp = await forgotPassword({ email: data.email });
+      if (!fp?.ok) {
+        enqueueSnackbar(fp?.error ?? 'Không gửi được mã xác thực.', { variant: 'error' });
+      }
       navigate('/auth/signup-code', { state: { email: data.email }, replace: true });
+    } else if (result?.error) {
+      enqueueSnackbar(result.error, { variant: 'error' });
     }
   };
 
@@ -101,12 +116,6 @@ const RegisterPage = () => {
         >
           Đăng ký
         </Typography>
-
-        {error && (
-          <Typography variant="body2" color="error" textAlign="center">
-            {error}
-          </Typography>
-        )}
 
         <Input
           label="Họ và tên"
@@ -208,7 +217,7 @@ const RegisterPage = () => {
           Bạn đã có tài khoản?{' '}
           <Typography
             component={Link}
-            to="/auth/login"
+            to={toOrgPath('/auth/login')}
             variant="body2"
             color="primary.main"
             fontWeight={600}

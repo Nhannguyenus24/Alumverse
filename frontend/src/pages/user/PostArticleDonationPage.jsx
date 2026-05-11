@@ -1,30 +1,40 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+
 import { Box, Button, Container, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
-import { useCreateNews } from '../../hooks/news/useCreateNews';
+import { useCreateFund } from '../../hooks/news/useCreateFund';
+import { fileToBase64 } from '../../hooks/images/fileToBase64';
 import { useNotification } from '../../hooks/useNotification';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+
+const MOCK_ORGANIZATION_ID = 1;
+
+const toIsoDateTime = (value) => {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+};
 
 const PostDonationPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
-  const { createNews, isPending } = useCreateNews(); // No donation hook yet
+  const { createFund, isPending } = useCreateFund();
 
-  // Main content
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverImage, setCoverImage] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
-  // Donation-specific fields
   const [donationData, setDonationData] = useState({
     donationFundName: '',
     organizer: '',
-    status: '',
-    qrImage: null,
+    statusId: '',
+    fundReceivingInfoId: '',
     donationGoal: '',
     reasonForDonation: '',
     startDate: '',
@@ -39,8 +49,8 @@ const PostDonationPage = () => {
   const handleCoverUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCoverImage(imageUrl);
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -49,19 +59,43 @@ const PostDonationPage = () => {
       showError('Vui lòng nhập tiêu đề và nội dung');
       return;
     }
+    if (!donationData.donationFundName.trim()) {
+      showError('Vui lòng nhập tên quỹ');
+      return;
+    }
+    if (!donationData.statusId || !donationData.fundReceivingInfoId) {
+      showError('Vui lòng chọn trạng thái và tài khoản nhận');
+      return;
+    }
+    if (!donationData.donationGoal || Number(donationData.donationGoal) <= 0) {
+      showError('Vui lòng nhập mục tiêu quyên góp hợp lệ');
+      return;
+    }
+    if (!donationData.startDate || !donationData.endDate) {
+      showError('Vui lòng nhập thời gian bắt đầu và kết thúc');
+      return;
+    }
 
     try {
+      const logoBase64 = coverFile ? await fileToBase64(coverFile) : null;
+
       const payload = {
-        title: title.trim(),
-        content: content.trim(),
-        thumbnailUrl: coverImage || null,
-        topic,
-        donationData,
+        name: donationData.donationFundName.trim(),
+        description_short: donationData.reasonForDonation?.trim() || title.trim(),
+        description_full: content.trim(),
+        managerName: donationData.organizer?.trim() || null,
+        logoBase64,
+        organizationId: MOCK_ORGANIZATION_ID,
+        fundReceivingInfoId: Number(donationData.fundReceivingInfoId),
+        status_id: Number(donationData.statusId),
+        targetAmount: Number(donationData.donationGoal),
+        timeStarted: toIsoDateTime(donationData.startDate),
+        timeEnded: toIsoDateTime(donationData.endDate),
       };
 
-      const result = await createNews(payload);
+      const result = await createFund(payload);
       showSuccess('Thông tin quyên góp đã được đăng thành công!');
-      navigate(`/donation/${result.id}`);
+      navigate(`/article/donation/${result.id}`);
     } catch (err) {
       showError(err.response?.data?.message ?? 'Đăng quyên góp thất bại');
     }
@@ -71,7 +105,7 @@ const PostDonationPage = () => {
     <Page title="Tạo quyên góp" meta={<meta name="description" content="Tạo quyên góp - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
-        <CoverUpload value={coverImage} onChange={handleCoverUpload} />
+        <CoverUpload value={coverPreview} onChange={handleCoverUpload} />
 
         {/* Form Container */}
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>

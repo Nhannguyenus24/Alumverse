@@ -6,7 +6,7 @@ const CoverUpload = ({ value, onChange }) => {
   return (
     <Box
       sx={{
-        height: 280,
+        height: { xs: 130, md: 180 },
         backgroundColor: 'primary.dark',
         backgroundImage: value ? `url(${value})` : 'none',
         backgroundSize: 'cover',
@@ -39,7 +39,10 @@ const CoverUpload = ({ value, onChange }) => {
           hidden 
           type="file" 
           accept="image/*" 
-          onChange={onChange} 
+          onChange={(e) => {
+            onChange(e);
+            e.target.value = null;
+          }} 
         />
       </Button>
     </Box>

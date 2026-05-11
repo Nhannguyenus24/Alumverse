@@ -1,6 +1,7 @@
 import apiClient from '../utils/axios';
 
 const BASE = '/admin/forum/admin';
+const BASE_V2 = '/admin/forum';
 
 // ========== STATISTICS ==========
 
@@ -24,6 +25,9 @@ export const getNewPostsYesterdayPaginated = (page = 0, size = 10) =>
 export const getBannedPosts = (page = 0, size = 10) =>
   apiClient.get(`${BASE}/posts/banned/list`, { params: { page, size } });
 
+export const getAllPosts = (page = 0, size = 20) =>
+  apiClient.get(`${BASE}/posts`, { params: { page, size } });
+
 export const banPost = (postId) =>
   apiClient.post(`${BASE}/posts/${postId}/ban`);
 
@@ -33,6 +37,15 @@ export const unbanPost = (postId) =>
 export const deletePost = (postId) =>
   apiClient.delete(`${BASE}/posts/${postId}`);
 
+export const getPendingReports = (page = 0, size = 10) =>
+  apiClient.get(`${BASE_V2}/reports`, { params: { page, size } });
+
+export const reviewReport = (reportId, payload) =>
+  apiClient.put(`${BASE_V2}/reports/${reportId}`, payload);
+
+export const updatePostVisibility = (postId, payload) =>
+  apiClient.put(`${BASE_V2}/posts/${postId}/visibility`, payload);
+
 // ========== CATEGORIES ==========
 
 export const getAllCategories = (organizationId) =>
@@ -41,11 +54,15 @@ export const getAllCategories = (organizationId) =>
 export const getCategoryById = (categoryId) =>
   apiClient.get(`${BASE}/categories/${categoryId}`);
 
-export const createCategory = (organizationId, name, description) =>
-  apiClient.post(`${BASE}/categories`, null, { params: { organizationId, name, description } });
+export const createCategory = (organizationId, name, description, parentId) =>
+  apiClient.post(`${BASE}/categories`, null, {
+    params: { organizationId, name, description, ...(parentId ? { parentId } : {}) },
+  });
 
-export const updateCategory = (categoryId, name, description) =>
-  apiClient.put(`${BASE}/categories/${categoryId}`, null, { params: { name, description } });
+export const updateCategory = (categoryId, name, description, parentId) =>
+  apiClient.put(`${BASE}/categories/${categoryId}`, null, {
+    params: { name, description, ...(parentId ? { parentId } : {}) },
+  });
 
 export const deleteCategory = (categoryId) =>
   apiClient.delete(`${BASE}/categories/${categoryId}`);
@@ -66,3 +83,6 @@ export const updateTopic = (topicId, title, categoryId) =>
 
 export const deleteTopic = (topicId) =>
   apiClient.delete(`${BASE}/topics/${topicId}`);
+
+export const updateTopicLock = (topicId, payload) =>
+  apiClient.put(`${BASE_V2}/topics/${topicId}/lock`, payload);

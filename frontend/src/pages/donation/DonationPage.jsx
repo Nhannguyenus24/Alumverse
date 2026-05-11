@@ -1,437 +1,388 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
-  Typography,
-  Button,
-  TextField,
-  InputAdornment,
-  Card,
-  CardMedia,
-  CardContent,
-  Grid,
   Container,
+  LinearProgress,
+  Pagination,
   Stack,
-  Paper,
+  Typography,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import dayjs from "dayjs";
+import { useSnackbar } from "notistack";
 import Page from "../../components/Page";
-import Dropdown from "../../components/Dropdown";
+import { useAuth } from "../../hooks/useAuth";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import usePaginationScrollToTop from "../../hooks/usePaginationScrollToTop";
+import useOrganizationStore from "../../stores/organizationStore";
+import { fundApi } from "../../api/fundApi";
+import SearchBar from "../../components/SearchBar";
+import Sidebar from "../../components/Sidebar";
+import DonationHeader from "../../components/donation/DonationHeader";
+import DonationFiltersBar from "../../components/donation/DonationFiltersBar";
+import DonationCampaignGrid from "../../components/donation/DonationCampaignGrid";
+import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 
-// --- Featured Campaign Banner ---
-const FeaturedBanner = () => (
-  <Paper
-    elevation={0}
-    sx={{
-      display: "flex",
-      flexDirection: { xs: "column", sm: "row" },
-      borderRadius: 2,
-      overflow: "hidden",
-      border: "1px solid #e0e0e0",
-      mb: 4,
-      minHeight: { xs: "auto", sm: 200 },
-    }}
-  >
-    {/* Left: Image / Logo side */}
-    <Box
-      sx={{
-        width: { xs: "100%", sm: "40%" },
-        background: "linear-gradient(135deg, #f0f4ff 0%, #dde6f5 100%)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        p: 3,
-        gap: 1,
-      }}
-    >
-      {/* SVG Alumni Badge */}
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r="38" fill="#1a3a6b" />
-        <circle cx="40" cy="40" r="34" fill="none" stroke="#e87722" strokeWidth="3" />
-        <text
-          x="40"
-          y="26"
-          textAnchor="middle"
-          fill="white"
-          fontSize="11"
-          fontWeight="800"
-          fontFamily="sans-serif"
-        >
-          HCM
-        </text>
-        <text
-          x="40"
-          y="42"
-          textAnchor="middle"
-          fill="white"
-          fontSize="14"
-          fontWeight="900"
-          fontFamily="sans-serif"
-        >
-          US
-        </text>
-        <text
-          x="40"
-          y="56"
-          textAnchor="middle"
-          fill="#e87722"
-          fontSize="10"
-          fontWeight="700"
-          fontFamily="sans-serif"
-        >
-          Alumni
-        </text>
-      </svg>
-      <Typography
-        sx={{
-          fontWeight: 700,
-          fontSize: "11px",
-          letterSpacing: 1,
-          color: "#1a3a6b",
-          textAlign: "center",
-        }}
-      >
-        CỘNG ĐỒNG CỰU SINH VIÊN KHOA HỌC
-      </Typography>
-    </Box>
+const FILTER_OPTIONS = {
+  trending: [
+    { value: "none", label: "No" },
+    { value: "asc", label: "ASC" },
+    { value: "desc", label: "DESC" },
+  ],
+};
 
-    {/* Right: Info */}
-    <Box sx={{ flex: 1, p: { xs: 2, sm: 3 }, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-      <Box>
-        <Typography
-          variant="caption"
-          sx={{
-            color: "#e87722",
-            fontWeight: 700,
-            fontSize: "0.8rem",
-          }}
-        >
-          March 1, 2026 - March 5, 2026
-        </Typography>
-        <Typography
-          sx={{
-            mt: 0.5,
-            mb: 0.5,
-            fontSize: "1.2rem",
-            fontWeight: 700,
-            color: "#1a1a1a",
-          }}
-        >
-          Quỹ Cộng đồng Cựu sinh viên Khoa học
-        </Typography>
-        <Typography sx={{ color: "#666", mb: 0.3, fontSize: "0.9rem" }}>Giáo vụ</Typography>
-        <Typography sx={{ color: "#888", mb: 1.5, fontSize: "0.9rem" }}>100 người đã quyên góp</Typography>
-        <Typography
-          sx={{
-            color: "#444",
-            lineHeight: 1.6,
-            fontSize: "0.9rem",
-            display: "-webkit-box",
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          Là một trong hai nhà khoa học nữ xuất sắc nhận Giải thưởng Kovalevskaia năm 2021, GS.TS.
-          Nguyễn Thị Thanh Mai được biết đến như một nhà giáo, nhà khoa học say mê nghiên cứu, luôn dấn
-          thân tìm kiếm những điều mới mẻ và có nhiều sáng kiến khoa học…
-        </Typography>
-      </Box>
-      <Button
-        variant="contained"
-        color="primary"
-        sx={{
-          mt: 2,
-          alignSelf: "flex-start",
-          px: 4,
-          py: 1.2,
-          textTransform: "none",
-          fontWeight: 600,
-        }}
-      >
-        Quyên góp
-      </Button>
-    </Box>
-  </Paper>
-);
+const DEFAULT_ADMIN_STATS = {
+  totalCurrentAmount: 0,
+  totalFunds: 0,
+  totalDonations: 0,
+  totalDonationsAmountThisMonth: 0,
+};
 
-// --- Campaign Card ---
-const campaigns = [
-  { id: 1, title: "Quỹ Nuôi trẻ", org: "HURC Metro", donors: 50, dates: "January 21, 2026 - January 24, 2026", donated: false, img: "https://placehold.co/400x220/e8d5b0/7a6040?text=Fund" },
-  { id: 2, title: "Quỹ Học tập Nâng cao", org: "Giáo vụ", donors: 100, dates: "March 1, 2026 - March 5, 2026", donated: false, img: "https://placehold.co/400x220/c8dfc8/3a6040?text=Fund" },
-  { id: 3, title: "Quỹ Nuôi trẻ", org: "HURC Metro", donors: 50, dates: "January 21, 2026 - January 24, 2026", donated: false, img: "https://placehold.co/400x220/e8d5b0/7a6040?text=Fund" },
-  { id: 4, title: "Quỹ Học tập Nâng cao", org: "Giáo vụ", donors: 100, dates: "March 1, 2026 - March 5, 2026", donated: false, img: "https://placehold.co/400x220/c8dfc8/3a6040?text=Fund" },
-  { id: 5, title: "Quỹ Nuôi trẻ", org: "HURC Metro", donors: 50, dates: "January 21, 2026 - January 24, 2026", donated: true, img: "https://placehold.co/400x220/e8d5b0/7a6040?text=Fund" },
-  { id: 6, title: "Quỹ Học tập Nâng cao", org: "Giáo vụ", donors: 100, dates: "March 1, 2026 - March 5, 2026", donated: false, img: "https://placehold.co/400x220/c8dfc8/3a6040?text=Fund" },
+const DEFAULT_FILTERS = {
+  statusId: "all",
+  timeStartedFrom: "",
+  timeStartedTo: "",
+  trending: "none",
+  minAmount: "",
+  maxAmount: "",
+};
+
+const DONATION_SIDEBAR_ITEMS = [
+  { id: "list", label: "Danh sách quỹ", icon: <FormatListBulletedIcon /> },
+  { id: "create", label: "Mở thêm quỹ", icon: <AddCircleOutlineIcon /> },
 ];
 
-const CampaignCard = ({ title, org, donors, dates, donated, img }) => (
-  <Card
-    elevation={0}
-    sx={{
-      border: "1px solid #e5e5e5",
-      borderRadius: 2,
-      height: "100%",
-      width: "100%",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden",
-      transition: "box-shadow 0.2s",
-      "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" },
-    }}
-  >
-    <CardMedia component="img" height="110" image={img} alt={title} sx={{ objectFit: "cover" }} />
-    <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: { xs: 1, sm: 1.5 } }}>
-      <Typography
-        variant="caption"
-        sx={{
-          color: "#e87722",
-          fontWeight: 700,
-          mb: 0.3,
-          display: "block",
-          fontSize: "0.75rem",
-        }}
-      >
-        {dates}
-      </Typography>
-      <Typography
-        sx={{
-          mb: 0.3,
-          fontSize: "0.95rem",
-          fontWeight: 700,
-          color: "#1a1a1a",
-          lineHeight: 1.2,
-        }}
-      >
-        {title}
-      </Typography>
-      <Typography sx={{ color: "#666", mb: 0.2, fontSize: "0.85rem" }}>{org}</Typography>
-      <Typography sx={{ color: "#888", mb: 1, fontSize: "0.85rem" }}>{donors} người đã quyên góp</Typography>
-      <Typography
-        sx={{
-          color: "#444",
-          lineHeight: 1.5,
-          mb: 1,
-          flexGrow: 1,
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          fontSize: "0.85rem",
-        }}
-      >
-        Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Cum sociis natoque penatibus et magnis
-        dis parturient montes, nascetur.
-      </Typography>
-      <Button
-        variant={donated ? "outlined" : "contained"}
-        color="primary"
-        fullWidth
-        sx={{
-          py: 0.8,
-          mt: "auto",
-          textTransform: "none",
-          fontWeight: 600,
-          fontSize: "0.85rem",
-        }}
-      >
-        {donated ? "Đã quyên góp" : "Quyên góp"}
-      </Button>
-    </CardContent>
-  </Card>
-);
+function formatCurrency(value) {
+  return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
+}
 
-// --- Section ---
-const SectionGrid = ({ title, items }) => (
-  <Box sx={{ mb: 5 }}>
-    <Typography
-      sx={{
-        mb: 3,
-        fontSize: "1.1rem",
-        fontWeight: 700,
-        color: "primary.main",
-      }}
-    >
-      {title}
-    </Typography>
-    <Grid container spacing={{ xs: 1.5, sm: 2, md: 2 }} sx={{ width: "100%" }}>
-      {items.map((item) => (
-        <Grid item xs={12} sm={6} lg={4} key={item.id} sx={{ display: "flex" }}>
-          <CampaignCard {...item} />
-        </Grid>
-      ))}
-    </Grid>
-  </Box>
-);
+function toIsoStartOfDay(value) {
+  return dayjs(value).startOf("day").format("YYYY-MM-DDTHH:mm:ss");
+}
 
-// --- Main Page ---
+function toIsoEndOfDay(value) {
+  return dayjs(value).endOf("day").format("YYYY-MM-DDTHH:mm:ss");
+}
+
 export default function DonationPage() {
-  const [activeFilter, setActiveFilter] = useState("Tất cả");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [importanceFilter, setImportanceFilter] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [trendingFilter, setTrendingFilter] = useState("");
-  const [amountFilter, setAmountFilter] = useState("");
+  const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const { user, isAuthenticated } = useAuth();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+  const isAdmin = isAuthenticated && user?.role === "ADMIN";
+  const [campaigns, setCampaigns] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([{ value: "all", label: "Tất cả" }]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
+  const [appliedFilters, setAppliedFilters] = useState(DEFAULT_FILTERS);
+  const [draftSearch, setDraftSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+  const [amountAnchorEl, setAmountAnchorEl] = useState(null);
+  const [closeDialogCampaign, setCloseDialogCampaign] = useState(null);
+  const [isClosingFund, setIsClosingFund] = useState(false);
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
+  const warningSetRef = useRef(new Set());
+  const amountMenuOpen = Boolean(amountAnchorEl);
+  const closeDialogOpen = Boolean(closeDialogCampaign);
+  const pageSize = 3;
+  const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
-  // Filter options
-  const importanceOptions = [
-    { value: "high", label: "Quan trọng cao" },
-    { value: "medium", label: "Quan trọng vừa" },
-    { value: "low", label: "Quan trọng thấp" },
-  ];
+  const handleFilterChange = (key) => (event) => {
+    setDraftFilters((prev) => ({ ...prev, [key]: event.target.value }));
+  };
 
-  const locationOptions = [
-    { value: "hcm", label: "TP. Hồ Chí Minh" },
-    { value: "hanoi", label: "Hà Nội" },
-    { value: "danang", label: "Đà Nẵng" },
-    { value: "other", label: "Khác" },
-  ];
+  const applySearchAndFilters = () => {
+    setAppliedFilters(draftFilters);
+    setAppliedSearch(draftSearch);
+    setPage(1);
+  };
 
-  const dateOptions = [
-    { value: "today", label: "Hôm nay" },
-    { value: "week", label: "Tuần này" },
-    { value: "month", label: "Tháng này" },
-    { value: "all", label: "Tất cả" },
-  ];
+  const clearAllFilters = () => {
+    setDraftFilters(DEFAULT_FILTERS);
+    setAppliedFilters(DEFAULT_FILTERS);
+    setDraftSearch("");
+    setAppliedSearch("");
+    setPage(1);
+    setAmountAnchorEl(null);
+  };
 
-  const trendingOptions = [
-    { value: "trending", label: "Đang thịnh hành" },
-    { value: "new", label: "Mới nhất" },
-    { value: "popular", label: "Phổ biến" },
-  ];
+  const handleFilterSectionKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      applySearchAndFilters();
+    }
+  };
 
-  const amountOptions = [
-    { value: "under1m", label: "Dưới 1 triệu VNĐ" },
-    { value: "1m5m", label: "1-5 triệu VNĐ" },
-    { value: "5m50m", label: "5-50 triệu VNĐ" },
-    { value: "over50m", label: "Trên 50 triệu VNĐ" },
-  ];
+  useEffect(() => {
+    let ignore = false;
+    const fetchStatuses = async () => {
+      setIsLoadingStatus(true);
+      try {
+        const statuses = await fundApi.getFundStatuses();
+        if (ignore) return;
+        setStatusOptions([
+          { value: "all", label: "Tất cả" },
+          ...statuses.map((item) => ({
+            value: String(item.id),
+            label: item.name,
+          })),
+        ]);
+      } catch (error) {
+        if (ignore) return;
+        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải danh sách trạng thái quỹ.", { variant: "error" });
+      } finally {
+        if (!ignore) setIsLoadingStatus(false);
+      }
+    };
+
+    fetchStatuses();
+
+    return () => {
+      ignore = true;
+    };
+  }, [enqueueSnackbar]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    let ignore = false;
+
+    const fetchStatistics = async () => {
+      try {
+        const stats = await fundApi.getFundStatistics();
+        if (ignore) return;
+        setAdminStats({
+          totalCurrentAmount: Number(stats?.totalCurrentAmount ?? 0),
+          totalFunds: Number(stats?.totalFunds ?? 0),
+          totalDonations: Number(stats?.totalDonations ?? 0),
+          totalDonationsAmountThisMonth: Number(stats?.totalDonationsAmountThisMonth ?? 0),
+        });
+      } catch (error) {
+        if (ignore) return;
+        setAdminStats(DEFAULT_ADMIN_STATS);
+        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải thống kê quỹ.", { variant: "error" });
+      }
+    };
+
+    fetchStatistics();
+
+    return () => {
+      ignore = true;
+    };
+  }, [enqueueSnackbar, isAdmin]);
+
+  useEffect(() => {
+    const debounce = setTimeout(() => {
+      let ignore = false;
+      const fetchFunds = async () => {
+        setIsLoading(true);
+        setErrorMessage("");
+        try {
+          const params = {
+            page: page - 1,
+            limit: pageSize,
+            organizationId: organizationId != null ? String(organizationId) : undefined,
+            q: appliedSearch.trim() || undefined,
+            statusId: appliedFilters.statusId !== "all" ? appliedFilters.statusId : undefined,
+            targetAmountMin: appliedFilters.minAmount || undefined,
+            targetAmountMax: appliedFilters.maxAmount || undefined,
+            sortBy: appliedFilters.trending !== "none" ? "donor_count" : undefined,
+            direction: appliedFilters.trending !== "none" ? appliedFilters.trending : undefined,
+            timeStartedFrom: appliedFilters.timeStartedFrom ? toIsoStartOfDay(appliedFilters.timeStartedFrom) : undefined,
+            timeStartedTo: appliedFilters.timeStartedTo ? toIsoEndOfDay(appliedFilters.timeStartedTo) : undefined,
+          };
+          const payload = await fundApi.getFunds(params);
+          if (ignore) return;
+          const warnings = payload?.warnings ?? [];
+          warnings.forEach((warning) => {
+            const key = String(warning);
+            if (!warningSetRef.current.has(key)) {
+              warningSetRef.current.add(key);
+              enqueueSnackbar(key, { variant: "warning" });
+            }
+          });
+          const pagedData = payload?.data;
+          setCampaigns(pagedData?.items ?? []);
+          setPageCount(Math.max(1, Number(pagedData?.totalPage ?? 1)));
+        } catch (error) {
+          if (ignore) return;
+          setCampaigns([]);
+          setPageCount(1);
+          setErrorMessage(error?.response?.data?.message ?? "Không thể tải danh sách quỹ quyên góp.");
+        } finally {
+          if (!ignore) setIsLoading(false);
+        }
+      };
+
+      fetchFunds();
+
+      return () => {
+        ignore = true;
+      };
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [appliedFilters, appliedSearch, enqueueSnackbar, organizationId, page, refreshToken]);
+
+  const amountButtonLabel = useMemo(() => {
+    const { minAmount, maxAmount } = draftFilters;
+    if (!minAmount && !maxAmount) return "Mức quyên góp";
+    return `Mức quyên góp: ${minAmount || 0} - ${maxAmount || "∞"}`;
+  }, [draftFilters]);
+
+  const adminBannerItems = useMemo(
+    () => [
+      { value: `${formatCurrency(adminStats.totalCurrentAmount)} VND`, label: "tổng quỹ gây được" },
+      { value: formatCurrency(adminStats.totalFunds), label: "quỹ đang mở" },
+      { value: formatCurrency(adminStats.totalDonations), label: "lượt quyên góp" },
+      { value: `${formatCurrency(adminStats.totalDonationsAmountThisMonth)} VND`, label: "tổng quỹ tháng này" },
+    ],
+    [adminStats]
+  );
+
+  const handleOpenCloseDialog = (campaign) => {
+    setCloseDialogCampaign(campaign);
+  };
+
+  const handleCloseDialog = () => {
+    setCloseDialogCampaign(null);
+  };
+
+  const handleConfirmCloseFund = async () => {
+    if (!closeDialogCampaign?.id || isClosingFund) return;
+
+    setIsClosingFund(true);
+    try {
+      await fundApi.closeFund(closeDialogCampaign.id);
+      enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
+      setCloseDialogCampaign(null);
+      setRefreshToken((prev) => prev + 1);
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message ?? "Không thể đóng quỹ lúc này.", { variant: "error" });
+    } finally {
+      setIsClosingFund(false);
+    }
+  };
 
   return (
     <Page
-      title="Quyên Góp"
-      meta={<meta name="description" content="Quyên góp để hỗ trợ cộng đồng cựu sinh viên" />}
+      title="Quyên góp"
+      meta={<meta name="description" content="Trang quyên góp hiện đại cho cộng đồng cựu sinh viên." />}
     >
-      <Container maxWidth="lg" sx={{ py: { xs: 3, sm: 4, md: 5 } }}>
-        {/* Page Header */}
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h3"
-            component="h1"
-            fontWeight={700}
-            sx={{
-              fontSize: { xs: "24px", sm: "28px", md: "32px" },
-              color: "primary.main",
-              mb: 1,
-            }}
-          >
-            QUYÊN GÓP
-          </Typography>
-          <Typography
-            sx={{
-              fontSize: "14px",
-              color: "#666",
-              maxWidth: "800px",
-            }}
-          >
-            Quyên góp để giúp đỡ và hỗ trợ những đồng bào, mạnh thường quân, hoàn cảnh đặc biệt.
-          </Typography>
-        </Box>
+      <Box sx={{ minHeight: "100vh", background: "linear-gradient(180deg, #f7faff 0%, #ffffff 46%)" }}>
+        <Container maxWidth="xl" sx={{ py: { xs: 4, md: 5 } }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 } }}>
+            {isAdmin ? (
+              <Stack spacing={2} sx={{ width: { xs: "100%", md: 260 }, flexShrink: 0 }}>
+                <Box sx={{ position: { md: "sticky" }, top: { md: 24 } }}>
+                  <Sidebar
+                    items={DONATION_SIDEBAR_ITEMS}
+                    useRouting={false}
+                    value="list"
+                    onChange={(itemId) => {
+                      if (itemId === "create") {
+                        navigate("/donations/create");
+                      }
+                    }}
+                  />
+                </Box>
+              </Stack>
+            ) : null}
 
-        {/* Filter Bar */}
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{
-            mb: 3,
-            flexWrap: { xs: "wrap", md: "nowrap" },
-            gap: { xs: 1.5, md: 2 },
-          }}
-        >
-          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "auto" } }}>
-            <Dropdown
-              label="Quan trọng"
-              placeholder="Chọn mức độ"
-              options={importanceOptions}
-              value={importanceFilter}
-              onChange={(e) => setImportanceFilter(e.target.value)}
-              fullWidth
-            />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "auto" } }}>
-            <Dropdown
-              label="Địa điểm"
-              placeholder="Chọn địa điểm"
-              options={locationOptions}
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-              fullWidth
-            />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "auto" } }}>
-            <Dropdown
-              label="Ngày diễn ra"
-              placeholder="Chọn thời gian"
-              options={dateOptions}
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              fullWidth
-            />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "auto" } }}>
-            <Dropdown
-              label="Thịnh hành"
-              placeholder="Chọn loại"
-              options={trendingOptions}
-              value={trendingFilter}
-              onChange={(e) => setTrendingFilter(e.target.value)}
-              fullWidth
-            />
-          </Box>
-          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "auto" } }}>
-            <Dropdown
-              label="Mức quyên góp"
-              placeholder="Chọn mức"
-              options={amountOptions}
-              value={amountFilter}
-              onChange={(e) => setAmountFilter(e.target.value)}
-              fullWidth
-            />
-          </Box>
-        </Stack>
+            <Stack spacing={0} sx={{ flex: 1, minWidth: 0 }}>
+              <DonationHeader isAdmin={isAdmin} adminBannerItems={adminBannerItems} />
 
-        {/* Search Bar */}
-        <TextField
-          placeholder="Tìm kiếm"
-          fullWidth
-          size="small"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{
-            mb: 4,
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-              backgroundColor: "#f7f7f7",
-              "& fieldset": { borderColor: "#e0e0e0" },
-            },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon sx={{ color: "#999", fontSize: 20 }} />
-              </InputAdornment>
-            ),
-          }}
-        />
+              <DonationFiltersBar
+                draftFilters={draftFilters}
+                statusOptions={statusOptions}
+                filterOptions={FILTER_OPTIONS}
+                amountButtonLabel={amountButtonLabel}
+                amountAnchorEl={amountAnchorEl}
+                amountMenuOpen={amountMenuOpen}
+                onFilterSectionKeyDown={handleFilterSectionKeyDown}
+                onFilterChange={handleFilterChange}
+                onOpenAmountMenu={(event) => setAmountAnchorEl(event.currentTarget)}
+                onCloseAmountMenu={() => setAmountAnchorEl(null)}
+                onResetAmountRange={() => {
+                  setDraftFilters((prev) => ({ ...prev, minAmount: "", maxAmount: "" }));
+                }}
+                onApplyAmountMenu={() => setAmountAnchorEl(null)}
+                onClearAllFilters={clearAllFilters}
+                onApplySearchAndFilters={applySearchAndFilters}
+              />
 
-        {/* Featured Banner */}
-        <FeaturedBanner />
+              <SearchBar
+                value={draftSearch}
+                onChange={setDraftSearch}
+                placeholder="Tìm kiếm chiến dịch quyên góp..."
+                onKeyDown={handleFilterSectionKeyDown}
+                sx={{ mb: 4 }}
+                inputSx={{
+                  borderRadius: 999,
+                  backgroundColor: "#ffffff",
+                  boxShadow: "0 4px 16px rgba(17, 72, 156, 0.08)",
+                }}
+                iconSx={{ color: "#6581b4" }}
+              />
 
-        {/* Campaign Sections */}
-        <SectionGrid title="Quan trọng" items={campaigns.slice(0, 3)} />
-        <SectionGrid title="Vùng sâu vùng xa" items={campaigns.slice(3, 6)} />
-      </Container>
+              {isLoading || isLoadingStatus ? (
+                <Box sx={{ mb: 3 }}>
+                  <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
+                </Box>
+              ) : null}
+
+              {errorMessage ? (
+                <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
+                  <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
+                </Box>
+              ) : null}
+
+              {!isLoading && !errorMessage && campaigns.length === 0 ? (
+                <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
+                  <Typography sx={{ color: "#43608e", fontWeight: 600 }}>
+                    Không có quỹ nào phù hợp với bộ lọc hiện tại.
+                  </Typography>
+                </Box>
+              ) : null}
+
+              <DonationCampaignGrid
+                campaigns={campaigns}
+                isAdmin={isAdmin}
+                onNavigate={(campaign) => navigate(`/donations/${campaign.id}`)}
+                onEdit={(campaign) => navigate(`/donations/${campaign.id}/edit`)}
+                onClose={handleOpenCloseDialog}
+              />
+
+              <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
+                <Pagination
+                  count={pageCount || 1}
+                  page={page}
+                  onChange={handlePageChange}
+                  color="primary"
+                  shape="rounded"
+                  size="large"
+                  sx={{
+                    "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 },
+                  }}
+                />
+              </Stack>
+            </Stack>
+          </Box>
+
+          <DonationCloseDialog
+            open={closeDialogOpen}
+            campaign={closeDialogCampaign}
+            onClose={handleCloseDialog}
+            onConfirm={handleConfirmCloseFund}
+            isSubmitting={isClosingFund}
+          />
+        </Container>
+      </Box>
     </Page>
   );
 }

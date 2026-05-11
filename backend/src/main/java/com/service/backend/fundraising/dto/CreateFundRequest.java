@@ -72,4 +72,7 @@ public class CreateFundRequest {
     @NotNull
     @Schema(example = "2026-12-31T23:59:59")
     private LocalDateTime timeEnded;
+
+    /** Optional base64-encoded fund logo. When present, backend uploads and stores the resulting URL. */
+    private String logoBase64;
 }
