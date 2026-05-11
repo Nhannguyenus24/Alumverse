@@ -141,17 +141,16 @@ const ContactPage = () => {
                 borderRadius: 1,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
                 overflow: 'hidden',
-                py: { xs: 3, md: 4 },
-                px: { xs: 2.5, md: 4 },
+                py: { xs: 5, md: 6 },
+                px: { xs: 5, md: 6 },
               }}
             >
               <Typography
                 variant="h1"
-                component="h2"
-                fontWeight={700}
+                fontWeight={800}
                 color="primary.main"
                 textAlign="center"
-                sx={{ mb: 3, fontSize: { xs: '1.75rem', md: '2rem' } }}
+                sx={{ mb: 5, fontSize: { xs: '1.8rem', md: '2.3rem' } }}
               >
                 LIÊN HỆ
               </Typography>

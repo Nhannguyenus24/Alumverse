@@ -31,7 +31,13 @@ const Dropdown = ({
         value={value}
         onChange={onChange}
         displayEmpty
-        renderValue={(v) => (v === '' ? placeholder : v)}
+        renderValue={(v) => {
+          if (v === '') return placeholder;
+          const selectedOption = options.find(
+            (opt) => (opt.value ?? opt) === v
+          );
+          return selectedOption?.label ?? selectedOption ?? v;
+        }}
         IconComponent={KeyboardArrowDownIcon}
         {...rest}
       >
