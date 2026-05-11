@@ -171,6 +171,7 @@ const ForumCategoryPage = () => {
                 px: { xs: 1.5, sm: 2, md: 2.75 },
               }}
             >
+              <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
               <Box
                 sx={{
                   flex: 1,
@@ -188,7 +189,6 @@ const ForumCategoryPage = () => {
                     borderColor: 'divider',
                   }}
                 >
-                  <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
                   <Box
                     sx={{
                       display: 'flex',
