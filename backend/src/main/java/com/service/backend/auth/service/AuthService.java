@@ -107,17 +107,24 @@ public class AuthService {
                         return Mono.error(new RuntimeException(ErrorCode.ACCOUNT_NOT_VERIFIED.getMessage()));
                     }
 
-                    // Check organization membership
-                    return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
-                            .flatMap(isMember -> {
-                                if (Boolean.FALSE.equals(isMember)) {
-                                    logger.warn("Login failed - user {} is not a member of organization {}", email, organizationId);
-                                    return Mono.error(new RuntimeException("User is not a member of this organization"));
-                                }
-                                logger.info("Login successful for email: {}", email);
-                                recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
-                                return Mono.just(user);
-                            });
+                    // Check organization membership if organizationId is provided
+                    if (organizationId != null) {
+                        return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
+                                .flatMap(isMember -> {
+                                    if (Boolean.FALSE.equals(isMember)) {
+                                        logger.warn("Login failed - user {} is not a member of organization {}", email, organizationId);
+                                        return Mono.error(new RuntimeException("User is not a member of this organization"));
+                                    }
+                                    logger.info("Login successful for email: {}", email);
+                                    recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
+                                    return Mono.just(user);
+                                });
+                    } else {
+                        // No organization check for admin or global login
+                        logger.info("Login successful for email: {} (no organization check)", email);
+                        recordLoginSuccessAsync(user.getId(), "EMAIL", userAgent, loginIp);
+                        return Mono.just(user);
+                    }
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                 .doOnError(error -> logger.error("Login error for email: {}", email, error));
@@ -138,17 +145,24 @@ public class AuthService {
                         return Mono.error(new RuntimeException(ErrorCode.ACCOUNT_NOT_VERIFIED.getMessage()));
                     }
 
-                    // Check organization membership
-                    return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
-                            .flatMap(isMember -> {
-                                if (Boolean.FALSE.equals(isMember)) {
-                                    logger.warn("Login failed - user {} is not a member of organization {}", userName, organizationId);
-                                    return Mono.error(new RuntimeException("User is not a member of this organization"));
-                                }
-                                logger.info("Login successful for username: {}", userName);
-                                recordLoginSuccessAsync(user.getId(), "USERNAME", userAgent, loginIp);
-                                return Mono.just(user);
-                            });
+                    // Check organization membership if organizationId is provided
+                    if (organizationId != null) {
+                        return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
+                                .flatMap(isMember -> {
+                                    if (Boolean.FALSE.equals(isMember)) {
+                                        logger.warn("Login failed - user {} is not a member of organization {}", userName, organizationId);
+                                        return Mono.error(new RuntimeException("User is not a member of this organization"));
+                                    }
+                                    logger.info("Login successful for username: {}", userName);
+                                    recordLoginSuccessAsync(user.getId(), "USERNAME", userAgent, loginIp);
+                                    return Mono.just(user);
+                                });
+                    } else {
+                        // No organization check for admin or global login
+                        logger.info("Login successful for username: {} (no organization check)", userName);
+                        recordLoginSuccessAsync(user.getId(), "USERNAME", userAgent, loginIp);
+                        return Mono.just(user);
+                    }
                 })
                 .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.USER_NOT_FOUND.getMessage())))
                 .doOnError(error -> logger.error("Login error for username: {}", userName, error));

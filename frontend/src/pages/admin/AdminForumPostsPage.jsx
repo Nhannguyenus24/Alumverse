@@ -2,32 +2,33 @@ import { useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
-  Chip,
   IconButton,
   Menu,
   MenuItem,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   Tabs,
   TextField,
   Tooltip,
   Typography,
+  Stack,
+  useTheme,
+  Avatar,
+  Grid,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import GppBadOutlinedIcon from '@mui/icons-material/GppBadOutlined';
+
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminForumPostDetailDialog from '../../components/admin/AdminForumPostDetailDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPosts';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -36,116 +37,8 @@ import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
 
 const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
 
-const forumModerationChipColor = (status) => {
-  const key = String(status || '').toUpperCase();
-  if (key === 'APPROVED') return 'success';
-  if (key === 'REJECTED') return 'default';
-  if (key === 'FLAGGED') return 'error';
-  if (key === 'PENDING') return 'warning';
-  return 'default';
-};
-
-/* ─── Reusable posts table ─── */
-const PostsTable = ({
-  rows,
-  onRowClick,
-  onDeleteClick,
-  onBanClick,
-  onUnbanClick,
-  showBanActions = false,
-  emptyMessage = 'No posts match your filters.',
-}) => (
-  <Table size="small">
-    <TableHead>
-      <TableRow>
-        <TableCell>ID</TableCell>
-        <TableCell>Author</TableCell>
-        <TableCell>Topic</TableCell>
-        <TableCell sx={{ maxWidth: 280 }}>Content preview</TableCell>
-        <TableCell>Banned</TableCell>
-        <TableCell>Reply to</TableCell>
-        <TableCell>Created</TableCell>
-        <TableCell>Updated</TableCell>
-        <TableCell align="right">Actions</TableCell>
-      </TableRow>
-    </TableHead>
-    <TableBody>
-      {rows.length === 0 ? (
-        <TableRow>
-          <TableCell colSpan={9}>
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-              {emptyMessage}
-            </Typography>
-          </TableCell>
-        </TableRow>
-      ) : (
-        rows.map((post) => {
-          const isBanned = post.isBanned === true || post.isBanned === 'true';
-          return (
-            <TableRow key={post.id} hover onClick={() => onRowClick?.(post)} sx={{ cursor: 'pointer' }}>
-              <TableCell>{post.id}</TableCell>
-              <TableCell>{post.authorName || post.createdByMemberId || '-'}</TableCell>
-              <TableCell sx={{ maxWidth: 200 }}>{post.topicTitle || post.topicId || '-'}</TableCell>
-              <TableCell sx={{ maxWidth: 280 }}>{truncateText(post.content)}</TableCell>
-              <TableCell>
-                {isBanned ? (
-                  <Chip label="Banned" color="error" size="small" variant="filled" />
-                ) : (
-                  <Chip label="Active" color="success" size="small" variant="outlined" />
-                )}
-              </TableCell>
-              <TableCell>{post.answerToPostId ? `#${post.answerToPostId}` : '-'}</TableCell>
-              <TableCell>{formatDateTime(post.postedAt || post.createdAt)}</TableCell>
-              <TableCell>{formatDateTime(post.updatedAt)}</TableCell>
-              <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                  {showBanActions && (
-                    isBanned ? (
-                      <Tooltip title="Unban post">
-                        <IconButton
-                          size="small"
-                          color="success"
-                          onClick={() => onUnbanClick?.(post)}
-                          aria-label="Unban post"
-                        >
-                          <CheckCircleOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title="Ban post">
-                        <IconButton
-                          size="small"
-                          color="warning"
-                          onClick={() => onBanClick?.(post)}
-                          aria-label="Ban post"
-                        >
-                          <BlockOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )
-                  )}
-                  <Tooltip title="Delete post">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => onDeleteClick?.(post)}
-                      aria-label="Delete post"
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </TableCell>
-            </TableRow>
-          );
-        })
-      )}
-    </TableBody>
-  </Table>
-);
-
-/* ─── Main page ─── */
 const AdminForumPostsPage = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const {
     posts,
@@ -154,7 +47,6 @@ const AdminForumPostsPage = () => {
     search,
     setSearch,
     updatePostStatus,
-    // API-driven data
     bannedPosts,
     bannedPage,
     setBannedPage,
@@ -176,483 +68,292 @@ const AdminForumPostsPage = () => {
   const [forumDetailPost, setForumDetailPost] = useState(null);
   const [forumDeletePost, setForumDeletePost] = useState(null);
   const [forumStatusMenu, setForumStatusMenu] = useState(null);
-  const [reportActionLoading, setReportActionLoading] = useState(false);
 
-  const bannedContent = bannedPosts?.content ?? [];
-  const yesterdayContent = yesterdayPosts?.content ?? [];
-  const reportContent = reports?.content ?? [];
   const adminUserId = Number(user?.id);
 
   const handleBan = async (post) => {
     if (banPostApi) {
       const ok = await banPostApi(post.id);
-      enqueueSnackbar(ok ? 'Post banned.' : 'Failed to ban post.', { variant: ok ? 'success' : 'error' });
+      enqueueSnackbar(ok ? 'Đã chặn bài viết.' : 'Lỗi khi chặn bài viết.', { variant: ok ? 'success' : 'error' });
     }
   };
 
   const handleUnban = async (post) => {
     if (unbanPostApi) {
       const ok = await unbanPostApi(post.id);
-      enqueueSnackbar(ok ? 'Post unbanned.' : 'Failed to unban post.', { variant: ok ? 'success' : 'error' });
+      enqueueSnackbar(ok ? 'Đã bỏ chặn bài viết.' : 'Lỗi khi bỏ chặn.', { variant: ok ? 'success' : 'error' });
     }
   };
 
-  const handleDeleteApi = async (post) => {
+  const handleDeletePost = async (post) => {
     if (deletePostApi) {
       const ok = await deletePostApi(post.id);
-      enqueueSnackbar(ok ? 'Post deleted.' : 'Failed to delete post.', { variant: ok ? 'success' : 'error' });
+      enqueueSnackbar(ok ? 'Đã xóa bài viết.' : 'Lỗi khi xóa.', { variant: ok ? 'success' : 'error' });
     }
+  };
+
+  const columns = [
+    {
+      id: 'author',
+      label: 'Tác giả',
+      render: (_, p) => (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: 'primary.main' }}>
+            {(p.authorName || '?')[0].toUpperCase()}
+          </Avatar>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.authorName || 'Ẩn danh'}</Typography>
+        </Stack>
+      )
+    },
+    { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
+    { id: 'content', label: 'Nội dung', render: (val) => truncateText(val, 50) },
+    {
+      id: 'moderationStatus',
+      label: 'Trạng thái',
+      render: (st, p) => (
+        <AdminStatusChip
+          status={st}
+          category="forum"
+          label={forumModerationLabel(st)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setForumStatusMenu({ anchorEl: e.currentTarget, post: p });
+          }}
+          sx={{ cursor: 'pointer' }}
+        />
+      )
+    },
+    { id: 'postedAt', label: 'Ngày đăng', render: (val) => formatDateTime(val) },
+    {
+      id: 'actions',
+      label: '',
+      align: 'right',
+      render: (_, p) => (
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Chặn">
+            <IconButton size="small" color="warning" onClick={() => handleBan(p)}>
+              <BlockOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Xóa">
+            <IconButton size="small" color="error" onClick={() => setForumDeletePost(p)}>
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )
+    }
+  ];
+
+  const stats = {
+    total: posts.length,
+    pending: posts.filter(p => p.moderationStatus === 'PENDING').length,
+    reported: reports?.totalElements ?? 0,
+    banned: bannedPosts?.totalElements ?? 0,
   };
 
   return (
-    <>
-      <AdminSectionPanel
-        title="Forum posts moderation"
-        subtitle="All posts lists yesterday’s new posts plus banned posts from the API. Other tabs are paginated from the server."
+    <Box>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+            Kiểm duyệt diễn đàn
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            Theo dõi, xử lý báo cáo và kiểm duyệt các bài viết trên cộng đồng.
+          </Typography>
+        </Box>
+      </Box>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Tổng bài viết"
+            value={stats.total}
+            icon={<ArticleOutlinedIcon />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Chờ duyệt"
+            value={stats.pending}
+            icon={<HistoryOutlinedIcon />}
+            valueColor="info.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Báo cáo vi phạm"
+            value={stats.reported}
+            icon={<ReportProblemOutlinedIcon />}
+            valueColor="error.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Bài viết bị chặn"
+            value={stats.banned}
+            icon={<GppBadOutlinedIcon />}
+            valueColor="warning.main"
+          />
+        </Grid>
+      </Grid>
+
+      <Tabs
+        value={activeTab}
+        onChange={(_, v) => setActiveTab(v)}
+        sx={{ 
+          mb: 3, 
+          '& .MuiTab-root': { textTransform: 'none', fontWeight: 700, fontSize: 15, minWidth: 100, py: 1.5 },
+          borderBottom: 1,
+          borderColor: 'divider'
+        }}
       >
-        <Tabs
-          value={activeTab}
-          onChange={(_, v) => setActiveTab(v)}
-          sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
-        >
-          <Tab label="All posts" sx={{ textTransform: 'none', fontWeight: 600 }} />
-          <Tab
-            label={`Banned (${bannedPosts?.totalElements ?? 0})`}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
-          />
-          <Tab
-            label={`New yesterday (${yesterdayPosts?.totalElements ?? 0})`}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
-          />
-          <Tab
-            label={`Reports (${reports?.totalElements ?? 0})`}
-            sx={{ textTransform: 'none', fontWeight: 600 }}
-          />
-        </Tabs>
+        <Tab label="Tất cả bài viết" />
+        <Tab label={`Đã chặn (${bannedPosts?.totalElements ?? 0})`} />
+        <Tab label={`Mới hôm qua (${yesterdayPosts?.totalElements ?? 0})`} />
+        <Tab label={`Báo cáo (${reports?.totalElements ?? 0})`} />
+      </Tabs>
 
-        {/* ─── Tab 0: All posts (local) ─── */}
-        {activeTab === 0 && (
-          <>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
-                flexWrap: 'wrap',
-                gap: 2,
-                mb: 2,
-                alignItems: { xs: 'stretch', md: 'center' },
-                justifyContent: 'space-between',
-              }}
+      {activeTab === 0 && (
+        <AdminDataTable
+          columns={columns}
+          rows={posts}
+          totalCount={posts.length}
+          page={0}
+          rowsPerPage={100}
+          onSearchChange={(v) => setSearch(v)}
+          searchValue={search}
+          filters={
+            <TextField
+              select
+              size="small"
+              label="Trạng thái"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{ minWidth: 160 }}
             >
-              <TextField
-                size="small"
-                label="Search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Content, author, topic…"
-                sx={{ flex: '1 1 220px', minWidth: 200, maxWidth: { md: '100%' } }}
-              />
-              <TextField
-                select
-                size="small"
-                label="Status"
-                value={statusFilter}
-                onChange={(event) => setStatusFilter(event.target.value)}
-                sx={{ minWidth: 200 }}
-              >
-                {FORUM_STATUS_FILTER_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
+              {FORUM_STATUS_FILTER_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+              ))}
+            </TextField>
+          }
+          onRowClick={(p) => setForumDetailPost(p)}
+        />
+      )}
 
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Author</TableCell>
-                  <TableCell>Topic</TableCell>
-                  <TableCell sx={{ maxWidth: 280 }}>Content preview</TableCell>
-                  <TableCell>Category</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Reports</TableCell>
-                  <TableCell>Created</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {posts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={9}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                        No posts match your filters.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  posts.map((post) => {
-                    const mod = post.moderationStatus || 'PENDING';
-                    const isRejected = mod === 'REJECTED';
-                    return (
-                      <TableRow
-                        key={post.id}
-                        hover
-                        onClick={() => setForumDetailPost(post)}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell>{post.id}</TableCell>
-                        <TableCell>{post.authorName || '-'}</TableCell>
-                        <TableCell sx={{ maxWidth: 200 }}>{post.topicTitle || '-'}</TableCell>
-                        <TableCell sx={{ maxWidth: 280 }}>{truncateText(post.content)}</TableCell>
-                        <TableCell>{post.categoryName || '-'}</TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Chip
-                            variant="filled"
-                            size="small"
-                            color={isRejected ? 'default' : forumModerationChipColor(mod)}
-                            label={
-                              <Box
-                                component="span"
-                                sx={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 0.25,
-                                  pr: 0.25,
-                                }}
-                              >
-                                {forumModerationLabel(mod)}
-                                <ArrowDropDownIcon sx={{ fontSize: 18, opacity: 0.9 }} />
-                              </Box>
-                            }
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setForumStatusMenu({ anchorEl: e.currentTarget, post });
-                            }}
-                            sx={{
-                              cursor: 'pointer',
-                              fontWeight: 600,
-                              maxWidth: '100%',
-                              ...(isRejected && {
-                                bgcolor: 'grey.700',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: 'grey.800' },
-                              }),
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell>{post.flagsCount ?? 0}</TableCell>
-                        <TableCell>{formatDateTime(post.postedAt)}</TableCell>
-                        <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                            <Tooltip title="Ban post">
-                              <IconButton
-                                size="small"
-                                color="warning"
-                                onClick={() => handleBan(post)}
-                                aria-label="Ban post"
-                              >
-                                <BlockOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete post">
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => setForumDeletePost(post)}
-                                aria-label="Delete post"
-                              >
-                                <DeleteOutlineIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
+      {activeTab === 1 && (
+        <AdminDataTable
+          columns={columns}
+          rows={bannedPosts?.content ?? []}
+          totalCount={bannedPosts?.totalElements ?? 0}
+          page={bannedPage}
+          onPageChange={(_, p) => setBannedPage(p)}
+          onRowClick={(p) => setForumDetailPost(p)}
+        />
+      )}
 
-            <Menu
-              anchorEl={forumStatusMenu?.anchorEl}
-              open={Boolean(forumStatusMenu)}
-              onClose={() => setForumStatusMenu(null)}
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-              transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-              disableScrollLock
-              slotProps={{ paper: { sx: { minWidth: 200 } } }}
-            >
-              {forumStatusMenu
-                ? FORUM_STATUS_MENU_ORDER.map((st) => {
-                    const active = (forumStatusMenu.post.moderationStatus || 'PENDING') === st;
-                    return (
-                      <MenuItem
-                        key={st}
-                        selected={active}
-                        onClick={async () => {
-                          try {
-                            await updatePostStatus(forumStatusMenu.post.id, st);
-                          } finally {
-                            setForumStatusMenu(null);
-                          }
-                        }}
-                      >
-                        {forumModerationLabel(st)}
-                      </MenuItem>
-                    );
-                  })
-                : null}
-            </Menu>
-          </>
-        )}
+      {activeTab === 2 && (
+        <AdminDataTable
+          columns={columns}
+          rows={yesterdayPosts?.content ?? []}
+          totalCount={yesterdayPosts?.totalElements ?? 0}
+          page={yesterdayPage}
+          onPageChange={(_, p) => setYesterdayPage(p)}
+          onRowClick={(p) => setForumDetailPost(p)}
+        />
+      )}
 
-        {/* ─── Tab 1: Banned posts (API) ─── */}
-        {activeTab === 1 && (
-          <>
-            <PostsTable
-              rows={bannedContent}
-              onRowClick={setForumDetailPost}
-              onDeleteClick={(p) => handleDeleteApi(p)}
-              onUnbanClick={(p) => handleUnban(p)}
-              showBanActions
-              emptyMessage="No banned posts."
-            />
-            <TablePagination
-              component="div"
-              count={bannedPosts?.totalElements ?? 0}
-              page={bannedPage ?? 0}
-              rowsPerPage={bannedPosts?.size ?? 10}
-              onPageChange={(_, p) => setBannedPage?.(p)}
-              rowsPerPageOptions={[10]}
-            />
-          </>
-        )}
+      {activeTab === 3 && (
+        <AdminDataTable
+          columns={[
+            { id: 'id', label: 'ID' },
+            { id: 'postId', label: 'Post ID', render: (v) => `#${v}` },
+            { id: 'reason', label: 'Lý do' },
+            { id: 'description', label: 'Chi tiết', render: (v) => truncateText(v, 40) },
+            { id: 'status', label: 'Trạng thái', render: (v) => <AdminStatusChip status={v} category="forum" label={v} /> },
+            {
+              id: 'actions',
+              label: '',
+              align: 'right',
+              render: (_, r) => (
+                <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                  <Tooltip title="Ẩn bài viết">
+                    <IconButton 
+                      size="small" 
+                      color="primary"
+                      onClick={async () => {
+                        const ok = await reviewReport(r.id, { decision: 'APPROVED', action: 'HIDE_POST', adminUserId });
+                        if (ok) await updatePostVisibility(r.postId, true, adminUserId);
+                      }}
+                    >
+                      <VisibilityOffOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Chặn bài">
+                    <IconButton size="small" color="warning" onClick={() => reviewReport(r.id, { decision: 'APPROVED', action: 'BAN_POST', adminUserId })}>
+                      <BlockOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Từ chối">
+                    <IconButton size="small" onClick={() => reviewReport(r.id, { decision: 'REJECTED', action: 'WARN', adminUserId })}>
+                      <CancelOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              )
+            }
+          ]}
+          rows={reports?.content ?? []}
+          totalCount={reports?.totalElements ?? 0}
+          page={reportsPage}
+          onPageChange={(_, p) => setReportsPage(p)}
+        />
+      )}
 
-        {/* ─── Tab 2: Yesterday posts (API) ─── */}
-        {activeTab === 2 && (
-          <>
-            <PostsTable
-              rows={yesterdayContent}
-              onRowClick={setForumDetailPost}
-              onDeleteClick={(p) => handleDeleteApi(p)}
-              onBanClick={(p) => handleBan(p)}
-              showBanActions
-              emptyMessage="No new posts from yesterday."
-            />
-            <TablePagination
-              component="div"
-              count={yesterdayPosts?.totalElements ?? 0}
-              page={yesterdayPage ?? 0}
-              rowsPerPage={yesterdayPosts?.size ?? 10}
-              onPageChange={(_, p) => setYesterdayPage?.(p)}
-              rowsPerPageOptions={[10]}
-            />
-          </>
-        )}
+      {/* Status Menu */}
+      <Menu
+        anchorEl={forumStatusMenu?.anchorEl}
+        open={Boolean(forumStatusMenu)}
+        onClose={() => setForumStatusMenu(null)}
+        PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 160, boxShadow: theme.shadows[10] } }}
+      >
+        {FORUM_STATUS_MENU_ORDER.map((st) => (
+          <MenuItem
+            key={st}
+            selected={forumStatusMenu?.post.moderationStatus === st}
+            onClick={async () => {
+              await updatePostStatus(forumStatusMenu.post.id, st);
+              setForumStatusMenu(null);
+            }}
+            sx={{ fontSize: 14, fontWeight: 500 }}
+          >
+            {forumModerationLabel(st)}
+          </MenuItem>
+        ))}
+      </Menu>
 
-        {activeTab === 3 && (
-          <>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Report ID</TableCell>
-                  <TableCell>Post ID</TableCell>
-                  <TableCell>Reporter</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell sx={{ maxWidth: 280 }}>Description</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {reportContent.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7}>
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                        No pending reports.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  reportContent.map((report) => (
-                    <TableRow key={report.id} hover>
-                      <TableCell>{report.id}</TableCell>
-                      <TableCell>#{report.postId}</TableCell>
-                      <TableCell>{report.reporterMemberId ?? '-'}</TableCell>
-                      <TableCell>{report.reason || '-'}</TableCell>
-                      <TableCell sx={{ maxWidth: 280 }}>{truncateText(report.description || '-')}</TableCell>
-                      <TableCell>
-                        <Chip label={report.status || 'PENDING'} size="small" color="warning" />
-                      </TableCell>
-                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                          <Tooltip title="Hide post">
-                            <span>
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                disabled={reportActionLoading || !adminUserId}
-                                aria-label="Hide post from report"
-                                onClick={async () => {
-                                  setReportActionLoading(true);
-                                  const ok = await reviewReport?.(report.id, {
-                                    decision: 'APPROVED',
-                                    action: 'HIDE_POST',
-                                    reviewNote: 'Hidden from moderation queue',
-                                    adminUserId,
-                                  });
-                                  if (ok) {
-                                    await updatePostVisibility?.(report.postId, true, adminUserId);
-                                  }
-                                  enqueueSnackbar(ok ? 'Report approved and post hidden.' : 'Failed to process report.', {
-                                    variant: ok ? 'success' : 'error',
-                                  });
-                                  setReportActionLoading(false);
-                                }}
-                              >
-                                <VisibilityOffOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Ban post">
-                            <span>
-                              <IconButton
-                                size="small"
-                                color="warning"
-                                disabled={reportActionLoading || !adminUserId}
-                                aria-label="Ban post from report"
-                                onClick={async () => {
-                                  setReportActionLoading(true);
-                                  const ok = await reviewReport?.(report.id, {
-                                    decision: 'APPROVED',
-                                    action: 'BAN_POST',
-                                    reviewNote: 'Banned by moderator',
-                                    adminUserId,
-                                  });
-                                  enqueueSnackbar(ok ? 'Report approved and post banned.' : 'Failed to ban post.', {
-                                    variant: ok ? 'success' : 'error',
-                                  });
-                                  setReportActionLoading(false);
-                                }}
-                              >
-                                <BlockOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Warn only">
-                            <span>
-                              <IconButton
-                                size="small"
-                                color="info"
-                                disabled={reportActionLoading || !adminUserId}
-                                aria-label="Mark report as warning"
-                                onClick={async () => {
-                                  setReportActionLoading(true);
-                                  const ok = await reviewReport?.(report.id, {
-                                    decision: 'APPROVED',
-                                    action: 'WARN',
-                                    reviewNote: 'Warning action only',
-                                    adminUserId,
-                                  });
-                                  enqueueSnackbar(ok ? 'Report marked as warning.' : 'Failed to warn.', {
-                                    variant: ok ? 'success' : 'error',
-                                  });
-                                  setReportActionLoading(false);
-                                }}
-                              >
-                                <WarningAmberOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Reject report">
-                            <span>
-                              <IconButton
-                                size="small"
-                                color="inherit"
-                                disabled={reportActionLoading || !adminUserId}
-                                aria-label="Reject report"
-                                onClick={async () => {
-                                  setReportActionLoading(true);
-                                  const ok = await reviewReport?.(report.id, {
-                                    decision: 'REJECTED',
-                                    action: 'WARN',
-                                    reviewNote: 'Rejected report',
-                                    adminUserId,
-                                  });
-                                  enqueueSnackbar(ok ? 'Report rejected.' : 'Failed to reject report.', {
-                                    variant: ok ? 'success' : 'error',
-                                  });
-                                  setReportActionLoading(false);
-                                }}
-                              >
-                                <CancelOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-            <TablePagination
-              component="div"
-              count={reports?.totalElements ?? 0}
-              page={reportsPage ?? 0}
-              rowsPerPage={reports?.size ?? 10}
-              onPageChange={(_, p) => setReportsPage?.(p)}
-              rowsPerPageOptions={[10]}
-            />
-          </>
-        )}
-      </AdminSectionPanel>
-
+      {/* Dialogs */}
       <AdminForumPostDetailDialog
         open={Boolean(forumDetailPost)}
         post={forumDetailPost}
         statusLabel={forumDetailPost ? forumModerationLabel(forumDetailPost.moderationStatus) : ''}
-        statusColor={forumDetailPost ? forumModerationChipColor(forumDetailPost.moderationStatus) : 'default'}
         onClose={() => setForumDetailPost(null)}
-        onBan={async (id) => {
-          if (banPostApi) {
-            const ok = await banPostApi(id);
-            enqueueSnackbar(ok ? 'Post banned.' : 'Ban failed.', { variant: ok ? 'success' : 'error' });
-            if (ok) setForumDetailPost(null);
-          }
-        }}
-        onUnban={async (id) => {
-          if (unbanPostApi) {
-            const ok = await unbanPostApi(id);
-            enqueueSnackbar(ok ? 'Post unbanned.' : 'Unban failed.', { variant: ok ? 'success' : 'error' });
-            if (ok) setForumDetailPost(null);
-          }
-        }}
+        onBan={handleBan}
+        onUnban={handleUnban}
       />
 
       <AdminConfirmDeleteDialog
         open={Boolean(forumDeletePost)}
-        title="Delete post"
-        description={
-          forumDeletePost
-            ? `Remove post #${forumDeletePost.id} ("${forumDeletePost.topicTitle || 'Untitled'}")? This action calls the backend API.`
-            : ''
-        }
+        title="Xóa bài viết"
+        description={forumDeletePost ? `Bạn có chắc chắn muốn xóa bài viết #${forumDeletePost.id}?` : ''}
         onClose={() => setForumDeletePost(null)}
         onConfirm={async () => {
-          if (forumDeletePost) {
-            const ok = await deletePostApi(forumDeletePost.id);
-            enqueueSnackbar(ok ? 'Post deleted.' : 'Failed to delete post.', { variant: ok ? 'success' : 'error' });
-            if (ok && forumDetailPost?.id === forumDeletePost.id) {
-              setForumDetailPost(null);
-            }
-          }
+          if (forumDeletePost) await handleDeletePost(forumDeletePost);
           setForumDeletePost(null);
         }}
       />
-    </>
+    </Box>
   );
 };
 

@@ -17,14 +17,23 @@ import {
   TextField,
   Tooltip,
   Typography,
+  Stack,
+  alpha,
+  useTheme,
+  Grid,
 } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
+import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { formatDate } from '../../utils/dateFormatter';
@@ -48,65 +57,53 @@ const buildTree = (flatList) => {
 };
 
 const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete }) => {
+  const theme = useTheme();
   const hasChildren = node.children && node.children.length > 0;
   const open = expanded[node.id];
 
   return (
-    <Box sx={{ pl: depth * 2 }}>
-      <ListItemButton dense onClick={() => hasChildren && toggle(node.id)} sx={{ borderRadius: 1 }}>
+    <Box sx={{ pl: depth * 2.5 }}>
+      <ListItemButton 
+        onClick={() => hasChildren && toggle(node.id)} 
+        sx={{ 
+          borderRadius: 2, 
+          mb: 0.5,
+          '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.05) }
+        }}
+      >
         {hasChildren ? (
-          <IconButton size="small" edge="start" sx={{ mr: 0.5 }}>
+          <IconButton size="small" edge="start" sx={{ mr: 1, color: 'primary.main' }}>
             {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </IconButton>
         ) : (
-          <Box sx={{ width: 32 }} />
+          <Box sx={{ width: 36 }} />
         )}
         <ListItemText
           primary={
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
               {node.name}
             </Typography>
           }
           secondary={
-            [
-              node.description,
-              node.organizationId ? `Org #${node.organizationId}` : null,
-              node.createdAt ? `Created: ${formatDate(node.createdAt)}` : null,
-              node.updatedAt ? `Updated: ${formatDate(node.updatedAt)}` : null,
-            ]
-              .filter(Boolean)
-              .join(' · ') || '-'
+            <Typography variant="caption" color="text.secondary">
+              {node.description || 'Không có mô tả'}
+            </Typography>
           }
         />
-        <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <Tooltip title="Edit">
-            <Button
-              size="small"
-              startIcon={<EditOutlinedIcon />}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(node);
-              }}
-              sx={{ textTransform: 'none' }}
-            >
-              Edit
-            </Button>
+        <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Chỉnh sửa">
+            <IconButton size="small" onClick={() => onEdit(node)}>
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
-          <Tooltip title="Delete">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(node);
-              }}
-            >
+          <Tooltip title="Xóa">
+            <IconButton size="small" color="error" onClick={() => onDelete(node)}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </Box>
+        </Stack>
       </ListItemButton>
-      {hasChildren ? (
+      {hasChildren && (
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
             {node.children.map((child) => (
@@ -122,12 +119,13 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete })
             ))}
           </List>
         </Collapse>
-      ) : null}
+      )}
     </Box>
   );
 };
 
 const AdminForumCategoriesPage = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { activeOrgId } = useAdminSystemContext();
   const {
@@ -144,16 +142,14 @@ const AdminForumCategoriesPage = () => {
   const [modal, setModal] = useState({ open: false, mode: 'create', node: null });
   const [form, setForm] = useState({ name: '', description: '', parentId: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const inputLabelSlotProps = { shrink: true };
 
-  // Auto-expand root on first load
   useMemo(() => {
     if (tree.length > 0 && Object.keys(expanded).length === 0) {
       const init = {};
       tree.forEach((n) => { init[n.id] = true; });
       setExpanded(init);
     }
-  }, [tree]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tree]);
 
   const toggle = (id) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -175,23 +171,17 @@ const AdminForumCategoriesPage = () => {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      enqueueSnackbar('Name is required.', { variant: 'warning' });
+      enqueueSnackbar('Vui lòng nhập tên danh mục.', { variant: 'warning' });
       return;
     }
     if (modal.mode === 'create') {
-      if (!activeOrgId) {
-        enqueueSnackbar('No organization selected.', { variant: 'warning' });
-        return;
-      }
       const ok = await createCategory?.(
         activeOrgId,
         form.name,
         form.description,
         form.parentId === '' ? null : Number(form.parentId),
       );
-      enqueueSnackbar(ok ? 'Category created.' : 'Failed to create category.', {
-        variant: ok ? 'success' : 'error',
-      });
+      enqueueSnackbar(ok ? 'Đã tạo danh mục.' : 'Lỗi tạo danh mục.', { variant: ok ? 'success' : 'error' });
     } else {
       const ok = await updateCategory?.(
         modal.node.id,
@@ -199,9 +189,7 @@ const AdminForumCategoriesPage = () => {
         form.description,
         form.parentId === '' ? null : Number(form.parentId),
       );
-      enqueueSnackbar(ok ? 'Category updated.' : 'Failed to update category.', {
-        variant: ok ? 'success' : 'error',
-      });
+      enqueueSnackbar(ok ? 'Đã cập nhật danh mục.' : 'Lỗi cập nhật.', { variant: ok ? 'success' : 'error' });
     }
     setModal({ open: false, mode: 'create', node: null });
   };
@@ -209,150 +197,159 @@ const AdminForumCategoriesPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteCategory?.(deleteTarget.id);
-    enqueueSnackbar(ok ? 'Category deleted.' : 'Failed to delete category.', {
-      variant: ok ? 'success' : 'error',
-    });
+    enqueueSnackbar(ok ? 'Đã xóa danh mục.' : 'Lỗi xóa.', { variant: ok ? 'success' : 'error' });
     setDeleteTarget(null);
   };
 
+  const stats = {
+    total: categories?.length || 0,
+    roots: tree.length,
+    sub: (categories?.length || 0) - tree.length,
+    lastUpdate: categories?.[0]?.updatedAt ? formatDate(categories[0].updatedAt) : 'N/A'
+  };
+
   return (
-    <>
-      <AdminSectionPanel
-        title="Forum categories"
-        subtitle={`Manage categories via real API${activeOrgId ? ` (Org #${activeOrgId})` : ''}. Create, edit, and delete categories.`}
-        action={
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddOutlinedIcon />}
-            onClick={openCreateRoot}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
-            Add category
-          </Button>
-        }
-      >
+    <Box>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+            Danh mục diễn đàn
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            Cấu trúc phân cấp diễn đàn, quản lý các chuyên mục chính và chuyên mục con.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreateRoot}
+          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+        >
+          Thêm danh mục
+        </Button>
+      </Box>
+
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Tổng danh mục"
+            value={stats.total}
+            icon={<CategoryOutlinedIcon />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Danh mục chính"
+            value={stats.roots}
+            icon={<AccountTreeOutlinedIcon />}
+            valueColor="info.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Danh mục con"
+            value={stats.sub}
+            icon={<SubtitlesOutlinedIcon />}
+            valueColor="success.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Cập nhật gần nhất"
+            value={stats.lastUpdate}
+            icon={<HistoryOutlinedIcon />}
+            valueColor="warning.main"
+          />
+        </Grid>
+      </Grid>
+
+      <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
         {categoriesLoading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <Skeleton variant="rounded" height={36} />
-            <Skeleton variant="rounded" height={36} />
-            <Skeleton variant="rounded" height={36} />
+          <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Skeleton variant="rounded" height={60} />
+            <Skeleton variant="rounded" height={60} />
+            <Skeleton variant="rounded" height={60} />
           </Box>
         ) : (
-          <PaperLike>
+          <List sx={{ p: 2 }}>
             {tree.length === 0 ? (
-              <Box sx={{ p: 2 }}>
+              <Box sx={{ p: 4, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
-                  No categories found{activeOrgId ? ` for Org #${activeOrgId}` : ''}. Create one to get started.
+                  Chưa có danh mục nào. Hãy tạo danh mục đầu tiên.
                 </Typography>
               </Box>
             ) : (
-              <List disablePadding>
-                {tree.map((root) => (
-                  <CategoryBranch
-                    key={root.id}
-                    node={root}
-                    expanded={expanded}
-                    toggle={toggle}
-                    onEdit={openEdit}
-                    onDelete={setDeleteTarget}
-                  />
-                ))}
-              </List>
+              tree.map((root) => (
+                <CategoryBranch
+                  key={root.id}
+                  node={root}
+                  expanded={expanded}
+                  toggle={toggle}
+                  onEdit={openEdit}
+                  onDelete={setDeleteTarget}
+                />
+              ))
             )}
-          </PaperLike>
+          </List>
         )}
-      </AdminSectionPanel>
+      </Box>
 
-      {/* ─── Create / Edit dialog ─── */}
-      <Dialog
-        open={modal.open}
-        onClose={() => setModal((m) => ({ ...m, open: false }))}
-        fullWidth
-        maxWidth="sm"
-        scroll="body"
-      >
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-          {modal.mode === 'create' ? 'Create category' : 'Edit category'}
+      {/* Create / Edit Dialog */}
+      <Dialog open={modal.open} onClose={() => setModal(m => ({ ...m, open: false }))} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {modal.mode === 'create' ? 'Tạo danh mục mới' : 'Chỉnh sửa danh mục'}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
-            label="Name"
+            label="Tên danh mục"
             required
-            value={form.name}
-            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             fullWidth
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            value={form.name}
+            onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
-            label="Description"
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            label="Mô tả"
             fullWidth
             multiline
             minRows={2}
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            value={form.description}
+            onChange={(e) => setForm(f => ({ ...f, description: e.target.value }))}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             select
-            label="Parent category"
-            value={form.parentId}
-            onChange={(e) => setForm((f) => ({ ...f, parentId: e.target.value }))}
+            label="Danh mục cha"
             fullWidth
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            value={form.parentId}
+            onChange={(e) => setForm(f => ({ ...f, parentId: e.target.value }))}
+            slotProps={{ inputLabel: { shrink: true } }}
           >
-            <MenuItem value="">None (root)</MenuItem>
+            <MenuItem value="">Không có (Danh mục gốc)</MenuItem>
             {(categories ?? [])
-              .filter((cat) => !modal.node || cat.id !== modal.node.id)
-              .map((cat) => (
+              .filter(cat => !modal.node || cat.id !== modal.node.id)
+              .map(cat => (
                 <MenuItem key={cat.id} value={cat.id}>
-                  {cat.name || `Category #${cat.id}`}
+                  {cat.name}
                 </MenuItem>
               ))}
           </TextField>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setModal((m) => ({ ...m, open: false }))} sx={{ textTransform: 'none' }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
-            Save
-          </Button>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setModal(m => ({ ...m, open: false }))}>Hủy</Button>
+          <Button variant="contained" onClick={handleSave} sx={{ borderRadius: 2 }}>Lưu</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ─── Delete confirm ─── */}
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Delete category"
-        description={
-          deleteTarget
-            ? `Delete category "${deleteTarget.name}" (ID: ${deleteTarget.id})? This calls the backend API and cannot be undone.`
-            : ''
-        }
+        title="Xóa danh mục"
+        description={deleteTarget ? `Xóa danh mục "${deleteTarget.name}" (ID: ${deleteTarget.id})? Hành động này không thể hoàn tác.` : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-    </>
+    </Box>
   );
 };
-
-const PaperLike = ({ children }) => (
-  <Box
-    sx={{
-      border: 1,
-      borderColor: 'divider',
-      borderRadius: 2,
-      overflow: 'hidden',
-      bgcolor: 'background.paper',
-    }}
-  >
-    {children}
-  </Box>
-);
 
 export default AdminForumCategoriesPage;

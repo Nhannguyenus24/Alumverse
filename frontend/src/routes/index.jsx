@@ -89,6 +89,7 @@ const ArticlePage = Loadable(
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
+const AdminLoginPage = Loadable(lazy(() => import("../pages/admin/AdminLoginPage")));
 const AdminDashboardPage = Loadable(lazy(() => import("../pages/admin/AdminDashboardPage")));
 const AdminUsersListPage = Loadable(lazy(() => import("../pages/admin/AdminUsersListPage")));
 const AdminUserDetailPage = Loadable(lazy(() => import("../pages/admin/AdminUserDetailPage")));
@@ -97,6 +98,7 @@ const AdminForumTopicsPage = Loadable(lazy(() => import("../pages/admin/AdminFor
 const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/AdminForumCategoriesPage")));
 const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
 const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
+const AdminSchoolFeedbackPage = Loadable(lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")));
 const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
 const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
@@ -465,7 +467,7 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: (
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminLayout />
           </ProtectedRoute>
         ),
@@ -477,7 +479,7 @@ export const router = createBrowserRouter([
           {
             path: "users",
             element: (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminUsersListPage />
               </ProtectedRoute>
             ),
@@ -492,12 +494,16 @@ export const router = createBrowserRouter([
           },
           {
             path: "forum/posts",
-            element: <AdminForumPostsPage />,
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+                <AdminForumPostsPage />
+              </ProtectedRoute>
+            ),
           },
           {
             path: "forum/topics",
             element: (
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminForumTopicsPage />
               </ProtectedRoute>
             ),
@@ -523,6 +529,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminEventsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "feedbacks",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminSchoolFeedbackPage />
               </ProtectedRoute>
             ),
           },
@@ -642,6 +656,10 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    path: "/admin/login",
+    element: <AdminLoginPage />,
+  },
+  {
     path: "/admin",
     element: (
       <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -671,7 +689,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "forum/posts",
-        element: <AdminForumPostsPage />,
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminForumPostsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "forum/topics",
@@ -702,6 +724,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminEventsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "feedbacks",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminSchoolFeedbackPage />
           </ProtectedRoute>
         ),
       },
