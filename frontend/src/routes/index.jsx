@@ -97,6 +97,8 @@ const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminO
 const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
 const AdminSchoolFeedbackPage = Loadable(lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")));
 const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
+const AdminArticlesPage = Loadable(lazy(() => import("../pages/admin/AdminArticlesPage")));
+const AdminEditArticlePage = Loadable(lazy(() => import("../pages/admin/AdminEditArticlePage")));
 const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
 
@@ -365,7 +367,7 @@ export const router = createBrowserRouter([
         element: <PostArticleDonationPage />,
       },
       {
-        path: "article/:id",
+        path: "article/:channel/:id",
         element: <ArticlePage />,
       },
       {
@@ -554,6 +556,22 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "article",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+                <AdminArticlesPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "article/:channel/:id/edit",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+                <AdminEditArticlePage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "audit-logs",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -737,6 +755,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminFundraisingsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "article",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminArticlesPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "article/:channel/:id/edit",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminEditArticlePage />
           </ProtectedRoute>
         ),
       },

@@ -21,6 +21,7 @@ public class AlumniPostResponse {
     private String slug;
     private String content;
     private String thumbnailUrl;
+    private String topic;
     private Boolean isHidden;
     private LocalDateTime publishedAt;
 
@@ -33,6 +34,7 @@ public class AlumniPostResponse {
                 .slug(post.getSlug())
                 .content(post.getContent())
                 .thumbnailUrl(post.getThumbnailUrl())
+                .topic(post.getTopic())
                 .isHidden(post.getIsHidden())
                 .publishedAt(post.getPublishedAt())
                 .build();

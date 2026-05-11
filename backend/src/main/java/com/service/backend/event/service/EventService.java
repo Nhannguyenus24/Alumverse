@@ -42,6 +42,7 @@ public class EventService {
                                         .registrationStartAt(request.getRegistrationStartAt())
                                         .registrationEndAt(request.getRegistrationEndAt())
                                         .maxCapacity(request.getMaxCapacity())
+                                        .topic(request.getTopic())
                                         .creatorMemberId(userId)
                                         .organizationId(orgId)
                                         .build();
@@ -66,6 +67,7 @@ public class EventService {
                                     .registrationStartAt(request.getRegistrationStartAt())
                                     .registrationEndAt(request.getRegistrationEndAt())
                                     .maxCapacity(request.getMaxCapacity())
+                                    .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
                                     .build();
                             return eventRepository.updateEvent(eventId, updatedEvent);
                         }));

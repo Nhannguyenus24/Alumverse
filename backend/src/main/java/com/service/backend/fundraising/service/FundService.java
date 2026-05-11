@@ -92,6 +92,7 @@ public class FundService {
                                                     .currentAmount(java.math.BigDecimal.ZERO)
                                                     .timeStarted(request.getTimeStarted())
                                                     .statusId(statusId)
+                                                    .topic(request.getTopic())
                                                     .timeEnded(request.getTimeEnded())
                                                     .build();
 
@@ -439,6 +440,7 @@ public class FundService {
                                 existing.setStatusId(newStatusId);
                                 existing.setTimeStarted(newStart);
                                 existing.setTimeEnded(newEnd);
+                                if (request.getTopic() != null) existing.setTopic(request.getTopic());
                                 return fundR2dbcRepository.save(existing);
                             });
                 });

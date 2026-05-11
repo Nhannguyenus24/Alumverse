@@ -33,6 +33,8 @@ public class FundDetailResponse {
     private LocalDateTime timeStarted;
     private LocalDateTime timeEnded;
 
+    private String topic;
+
     private FundReceivingInfos fundReceivingInfo;
 
     public static FundDetailResponse from(
@@ -59,6 +61,7 @@ public class FundDetailResponse {
                 .currentAmount(fund.getCurrentAmount())
                 .timeStarted(fund.getTimeStarted())
                 .timeEnded(fund.getTimeEnded())
+                .topic(fund.getTopic())
                 .fundReceivingInfo(fundReceivingInfo)
                 .build();
     }

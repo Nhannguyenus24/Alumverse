@@ -44,7 +44,9 @@ import { formatDateTime } from '../../utils/dateFormatter';
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const slugMatchWildcard = useMatch('/:slug/admin/*');
+  const slugMatchExact = useMatch('/:slug/admin');
+  const slugMatch = slugMatchWildcard ?? slugMatchExact;
   const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { enqueueSnackbar } = useSnackbar();
   const { user: currentUser } = useAuth();
@@ -123,6 +125,7 @@ const AdminUserDetailPage = () => {
   }, [userId, userLoginHistory, auditTrail]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (tab === 5) fetchUserLoginHistory();
   }, [tab, fetchUserLoginHistory]);
 

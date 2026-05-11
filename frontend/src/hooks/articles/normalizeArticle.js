@@ -7,6 +7,7 @@ export const normalizeNews = (data) => {
     content: data.content,
     thumbnailUrl: data.thumbnailUrl,
     publishedAt: data.publishedAt,
+    topic: data.topic,
   };
 };
 
@@ -19,6 +20,7 @@ export const normalizeAlumniPost = (data) => {
     content: data.content,
     thumbnailUrl: data.thumbnailUrl,
     publishedAt: data.publishedAt,
+    topic: data.topic,
   };
 };
 
@@ -38,6 +40,7 @@ export const normalizeEvent = (data) => {
     interestedCount: data.interestedCount ?? 0,
     joinedCount: data.joinedCount ?? 0,
     maxCapacity: data.maxCapacity,
+    topic: data.topic,
   };
 };
 
@@ -69,6 +72,7 @@ export const normalizeAchievement = (data) => {
     thumbnailUrl: data.imageUrl,
     publishedAt: data.awardedDate,
     status: data.status,
+    topic: data.topic,
   };
 };
 
@@ -101,5 +105,6 @@ export const normalizeFund = (data) => {
     donorCount: data.donorCount ?? 0,
     targetAmount: data.targetAmount,
     currentAmount: data.currentAmount,
+    topic: data.topic,
   };
 };
