@@ -526,4 +526,53 @@ INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "creat
 INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email", "subject", "content", "created_at", "is_read") VALUES
 (1, 'Nguyễn Minh Khang', '0908123456', 'khang.nguyen@example.com', 'Góp ý về lịch workshop', 'Mong trường công bố lịch workshop sớm hơn để sinh viên chủ động đăng ký.', NOW() - INTERVAL '4 days', false),
 (1, 'Trần Thu Hà', '0912233445', 'ha.tran@example.com', 'Đề xuất cải thiện diễn đàn', 'Nên có bộ lọc theo chuyên ngành để tìm chủ đề nhanh hơn.', NOW() - INTERVAL '2 days', true),
-(2, 'Lê Quốc Bảo', '0988776655', 'bao.le@example.com', 'Hỗ trợ thông tin học bổng', 'Mình mong có chuyên mục riêng cập nhật học bổng theo từng học kỳ.', NOW() - INTERVAL '1 day', false);
+(2, 'Lê Quốc Bảo', '0988776655', 'bao.le@example.com', 'Hỗ trợ thông tin học bổng', 'Mình mong có chuyên mục riêng cập nhật học bổng theo từng học kỳ.', NOW() - INTERVAL '1 day', false),
+(1, 'Phạm Tuấn Anh', '0933445566', 'tuananh.pham@example.com', 'Hỏi về quy trình cấp lại bằng', 'Mình làm mất bằng tốt nghiệp, trường cho mình hỏi quy trình cấp lại như thế nào ạ?', NOW() - INTERVAL '3 days', false),
+(2, 'Đỗ Thị Lan', '0944556677', 'lan.do@example.com', 'Góp ý về mentor', 'Chất lượng mentor rất tốt, mong có thêm nhiều buổi offline hơn.', NOW() - INTERVAL '5 days', true);
+
+-- ============= ORGANIZATION INTRODUCTIONS DATA =============
+INSERT INTO "organization_introductions" ("orga_id", "content", "image_urls", "updated_at") VALUES
+(1, 'Chào mừng bạn đến với Khoa Khoa học Máy tính - Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM. Khoa là đơn vị đào tạo và nghiên cứu hàng đầu về Công nghệ Thông tin tại Việt Nam, đặc biệt là trong các lĩnh vực Trí tuệ Nhân tạo, Khoa học Dữ liệu và Khoa học Máy tính.', '["https://images.unsplash.com/photo-1517694712202-14dd9538aa97", "https://images.unsplash.com/photo-1550751827-4bd374c3f58b"]', NOW()),
+(2, 'Khoa Công nghệ Thông tin là một trong những khoa nòng cốt của HCMUS, với đội ngũ giảng viên giàu kinh nghiệm và cơ sở vật chất hiện đại. Chúng tôi cung cấp các chương trình đào tạo đa dạng từ Cử nhân đến Tiến sĩ, giúp sinh viên sẵn sàng cho thị trường lao động toàn cầu.', '["https://images.unsplash.com/photo-1518770660439-4636190af475", "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5"]', NOW()),
+(3, 'Khoa Quản trị Kinh doanh tập trung vào việc đào tạo những nhà lãnh đạo tương lai với tư duy sáng tạo và khả năng thích nghi cao. Các chương trình của chúng tôi kết hợp giữa lý thuyết và thực tiễn, giúp sinh viên nắm vững các kỹ năng quản trị hiện đại.', '["https://images.unsplash.com/photo-1507679799987-c73779587ccf", "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab"]', NOW()),
+(4, 'Khoa Kỹ thuật là nơi ươm mầm cho những kỹ sư sáng tạo và đầy nhiệt huyết. Chúng tôi chú trọng vào việc đào tạo kỹ năng thực hành và nghiên cứu ứng dụng, giúp giải quyết các vấn đề thực tế trong ngành công nghiệp.', '["https://images.unsplash.com/photo-1581091226825-a6a2a5aee158", "https://images.unsplash.com/photo-1504384308090-c89eec2488bc"]', NOW());
+
+-- ============= FUNDRAISING DATA =============
+INSERT INTO "fund_statuses" ("name") VALUES
+('Active'), ('Completed'), ('Urgent'), ('Emergency');
+
+INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name", "is_active") VALUES
+('123456789', 'HCMUS ALUMNI FUND', 'VCB', true),
+('987654321', 'HCMUS CHARITY', 'ICB', true);
+
+INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "time_ended") VALUES
+(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d', 1, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 1, NOW() + INTERVAL '5 months'),
+(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://images.unsplash.com/photo-1531482615713-2afd69097998', 2, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 3, NOW() + INTERVAL '3 months');
+
+INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
+(1, 2, 'John Doe', 1000000, 'District 5, HCM', '0901234567', 'john.doe@example.com', 'Chúc các em học tốt!', 'SUCCESS', NOW() - INTERVAL '10 days'),
+(1, 3, 'Jane Smith', 500000, 'District 1, HCM', '0911223344', 'jane.smith@example.com', 'Hy vọng giúp ích được phần nào.', 'SUCCESS', NOW() - INTERVAL '5 days'),
+(2, 5, 'Trần Thị B', 2000000, 'Thu Duc, HCM', '0933445566', 'tranthib@example.com', 'Ủng hộ phòng Lab phát triển.', 'SUCCESS', NOW() - INTERVAL '2 days'),
+(1, NULL, 'Mạnh thường quân', 10000000, NULL, NULL, NULL, 'Gửi tặng các em sinh viên.', 'SUCCESS', NOW() - INTERVAL '1 day');
+
+-- ============= MENTORSHIP DATA =============
+INSERT INTO "mentor_profiles" ("member_id", "current_job_title", "current_company", "bio", "rating_avg", "total_sessions", "is_approved", "cover_url", "default_meeting_link", "created_at") VALUES
+(2, 'Senior Software Engineer', 'Google', 'Cựu sinh viên K2019, đam mê chia sẻ kiến thức về kiến trúc phần mềm và lộ trình nghề nghiệp.', 4.8, 15, true, 'https://images.unsplash.com/photo-1522071823991-b9671f903f79', 'https://meet.google.com/abc-defg-hij', NOW() - INTERVAL '6 months'),
+(3, 'Product Manager', 'VNG Corporation', 'Tốt nghiệp loại giỏi ngành Hệ thống thông tin. Sẵn sàng hỗ trợ các bạn về tư duy sản phẩm.', 4.9, 8, true, 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2', 'https://meet.google.com/xyz-uvwx-yz', NOW() - INTERVAL '4 months'),
+(5, 'Data Scientist', 'Momo', 'Chuyên gia về Machine Learning và Phân tích dữ liệu. Mình sẽ giúp các bạn định hướng ngành Data.', 4.7, 12, true, 'https://images.unsplash.com/photo-1580489944761-15a19d654956', 'https://meet.google.com/mmm-nnnn-ooo', NOW() - INTERVAL '5 months');
+
+INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience", "description", "category", "tag") VALUES
+(2, 'Software Architecture', 5, 'Hướng dẫn thiết kế hệ thống có khả năng mở rộng cao.', 'Technical', 'Backend'),
+(2, 'Career Path', 6, 'Định hướng lộ trình phát triển sự nghiệp trong ngành Big Tech.', 'Soft Skills', 'Career'),
+(3, 'Product Strategy', 4, 'Lên kế hoạch phát triển sản phẩm từ ý tưởng đến thực thi.', 'Management', 'Product'),
+(5, 'Deep Learning', 3, 'Các kỹ thuật xây dựng và tối ưu mô hình mạng nơ-ron.', 'Technical', 'AI');
+
+INSERT INTO "mentor_availabilities" ("mentor_member_id", "start_time", "end_time", "status") VALUES
+(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 11 hours', 'Available'),
+(2, NOW() + INTERVAL '2 days 14 hours', NOW() + INTERVAL '2 days 15 hours', 'Available'),
+(3, NOW() + INTERVAL '1 day 9 hours', NOW() + INTERVAL '1 day 10 hours', 'Available'),
+(5, NOW() + INTERVAL '3 days 19 hours', NOW() + INTERVAL '3 days 20 hours', 'Available');
+
+INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "created_at") VALUES
+(1, 4, 'Confirmed', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'Career Advice', NOW() - INTERVAL '1 day'),
+(3, 12, 'Pending', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'General Info', NOW());

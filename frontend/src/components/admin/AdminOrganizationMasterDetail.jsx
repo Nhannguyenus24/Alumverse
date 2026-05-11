@@ -1,13 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
 import {
+  Avatar,
   Box,
   Button,
   Card,
-  CardContent,
+  Divider,
   Fade,
+  Grid,
+  IconButton,
   InputAdornment,
+  List,
+  ListItemButton,
+  ListItemText,
   MenuItem,
   Paper,
+  Stack,
+  Tab,
+  Tabs,
   Table,
   TableBody,
   TableCell,
@@ -22,8 +30,12 @@ import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import AdminStatusChip from './AdminStatusChip';
-
+import { useState, useMemo, useEffect } from 'react';
 const formatOrgDate = (value) => {
   if (!value) {
     return '—';
@@ -71,12 +83,15 @@ const AdminOrganizationMasterDetail = ({
   organizations = [],
   selectedOrganization,
   selectedOrganizationId,
+  selectedIntroduction,
   onSelectOrganizationId,
   onEditOrganization,
+  onEditIntroduction,
   onRefresh,
 }) => {
   const [orgSearch, setOrgSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [activeTab, setActiveTab] = useState(0);
 
   const filteredOrganizations = useMemo(() => {
     let list = organizations;
@@ -123,269 +138,283 @@ const AdminOrganizationMasterDetail = ({
     [selectedOrg?.majors],
   );
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   return (
     <Box
       sx={{
         display: 'flex',
-        flexDirection: 'row',
+        flexDirection: { xs: 'column', lg: 'row' },
         alignItems: 'stretch',
-        gap: 2.5,
-        minHeight: { xs: 'auto', lg: 520 },
-        '@media (max-width:1100px)': {
-          flexDirection: 'column',
-        },
+        gap: 3,
+        minHeight: 600,
       }}
     >
+      {/* MASTER LIST */}
       <Card
         elevation={0}
         sx={{
-          flex: '0 0 38%',
-          maxWidth: '40%',
-          minWidth: 280,
+          flex: '0 0 350px',
           border: 1,
           borderColor: 'divider',
-          borderRadius: 2,
+          borderRadius: 3,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          '@media (max-width:1100px)': {
-            flex: '1 1 auto',
-            maxWidth: '100%',
-          },
+          bgcolor: 'background.paper',
         }}
       >
-        <Box
-          sx={{
-            px: 2,
-            py: 1.75,
-            borderBottom: 1,
-            borderColor: 'divider',
-            bgcolor: 'background.neutral',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1.5,
-          }}
-        >
-          <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-            Danh sách tổ chức
-          </Typography>
-          <TextField
-            size="small"
-            fullWidth
-            placeholder="Tìm theo tên..."
-            value={orgSearch}
-            onChange={(e) => setOrgSearch(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchOutlinedIcon fontSize="small" color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
-          <TextField
-            select
-            size="small"
-            fullWidth
-            label="Lọc theo trạng thái"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <MenuItem value="ALL">Tất cả</MenuItem>
-            <MenuItem value="ACTIVE">Active</MenuItem>
-            <MenuItem value="INACTIVE">Inactive</MenuItem>
-          </TextField>
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'action.hover' }}>
+          <Stack spacing={2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+              Tổ chức ({filteredOrganizations.length})
+            </Typography>
+            <TextField
+              size="small"
+              fullWidth
+              placeholder="Tìm theo tên..."
+              value={orgSearch}
+              onChange={(e) => setOrgSearch(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchOutlinedIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              select
+              size="small"
+              fullWidth
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
+              <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
+              <MenuItem value="INACTIVE">Tạm ngưng</MenuItem>
+            </TextField>
+          </Stack>
         </Box>
-        <TableContainer sx={{ flex: 1, maxHeight: { xs: 360, lg: 'calc(100vh - 320px)' } }}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredOrganizations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={1}>
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                      Không có tổ chức phù hợp bộ lọc.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredOrganizations.map((org) => {
-                  const isSelected = org.id === selectedOrganizationId;
-                  return (
-                    <TableRow
-                      key={org.id}
-                      hover
-                      selected={isSelected}
-                      onClick={() => onSelectOrganizationId(org.id)}
-                      sx={{
-                        cursor: 'pointer',
-                        transition: 'background-color 0.15s ease',
-                        '&.Mui-selected': {
-                          bgcolor: 'action.selected',
-                          '&:hover': { bgcolor: 'action.selected' },
-                        },
-                        '&:hover': {
-                          bgcolor: isSelected ? 'action.selected' : 'action.hover',
-                        },
-                      }}
+
+        <Box sx={{ flex: 1, overflowY: 'auto', maxHeight: { lg: 'calc(100vh - 400px)' } }}>
+          <List disablePadding>
+            {filteredOrganizations.map((org) => {
+              const isSelected = org.id === selectedOrganizationId;
+              return (
+                <ListItemButton
+                  key={org.id}
+                  selected={isSelected}
+                  onClick={() => onSelectOrganizationId(org.id)}
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    borderLeft: 4,
+                    borderColor: isSelected ? 'primary.main' : 'transparent',
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.lighter',
+                      '&:hover': { bgcolor: 'primary.lighter' },
+                    },
+                  }}
+                >
+                  <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: '100%' }}>
+                    <Avatar
+                      src={org.logoUrl}
+                      sx={{ width: 36, height: 36, border: 1, borderColor: 'divider', bgcolor: 'background.neutral' }}
                     >
-                      <TableCell sx={{ fontWeight: isSelected ? 700 : 600 }}>{org.name}</TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                      <BusinessOutlinedIcon sx={{ fontSize: 18 }} />
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle2" noWrap sx={{ fontWeight: isSelected ? 700 : 600 }}>
+                        {org.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                        {org.slug}
+                      </Typography>
+                    </Box>
+                    <AdminStatusChip status={org.status} category="organization" size="small" />
+                  </Stack>
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Box>
       </Card>
 
+      {/* DETAIL VIEW */}
       <Card
         elevation={0}
         sx={{
-          flex: '1 1 62%',
-          minWidth: 0,
+          flex: 1,
           border: 1,
           borderColor: 'divider',
-          borderRadius: 2,
+          borderRadius: 3,
           display: 'flex',
           flexDirection: 'column',
-          '@media (max-width:1100px)': {
-            flex: '1 1 auto',
-          },
+          bgcolor: 'background.paper',
         }}
       >
         {!selectedOrg ? (
-          <CardContent
-            sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              py: 8,
-              px: 3,
-              textAlign: 'center',
-            }}
-          >
-            <BusinessOutlinedIcon sx={{ fontSize: 64, color: 'action.disabled', mb: 2 }} />
-            <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 600, maxWidth: 400 }}>
-              Chọn một tổ chức từ danh sách bên trái để xem chi tiết
+          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+            <BusinessOutlinedIcon sx={{ fontSize: 80, color: 'text.disabled', opacity: 0.5, mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" fontWeight={700}>
+              Chọn một tổ chức để xem chi tiết
             </Typography>
-          </CardContent>
+          </Box>
         ) : (
-          <Fade in timeout={280}>
-            <Box key={selectedOrg.id} sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-              <Box
-                sx={{
-                  px: 2.5,
-                  py: 2.25,
-                  borderBottom: 1,
-                  borderColor: 'divider',
-                  bgcolor: 'background.neutral',
-                }}
-              >
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flexWrap: 'wrap' }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.25 }}>
-                      {selectedOrg.name}
-                    </Typography>
-                    <AdminStatusChip status={selectedOrg.status} category="organization" />
-                  </Box>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Fade in key={selectedOrg.id}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: 1, borderColor: 'divider' }}>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} justifyContent="space-between">
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Avatar
+                      src={selectedOrg.logoUrl}
+                      sx={{ width: 56, height: 56, border: 2, borderColor: 'primary.main', p: 0.5, bgcolor: 'white' }}
+                    >
+                      <BusinessOutlinedIcon sx={{ fontSize: 32 }} />
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>{selectedOrg.name}</Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="body2" color="text.secondary" fontWeight={500}>{selectedOrg.slug}</Typography>
+                        <AdminStatusChip status={selectedOrg.status} category="organization" />
+                      </Stack>
+                    </Box>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
                     <Button
-                      size="small"
                       variant="outlined"
+                      size="small"
                       startIcon={<EditOutlinedIcon />}
-                      onClick={() => onEditOrganization?.(selectedOrg)}
-                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                      onClick={() => onEditOrganization(selectedOrg)}
+                      sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
                     >
-                      Chỉnh sửa
+                      Sửa thông tin
                     </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<RefreshOutlinedIcon />}
-                      onClick={onRefresh}
-                      sx={{ textTransform: 'none', fontWeight: 600 }}
-                    >
-                      Tải lại
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<VisibilityOutlinedIcon />}
-                      onClick={() => {
-                        const currentPath = window.location.pathname.replace(/\/+$/, '');
-                        const adminRoot = currentPath.endsWith('/organizations')
-                          ? currentPath.slice(0, -'/organizations'.length)
-                          : currentPath;
-                        window.open(`${adminRoot}/organizations/${selectedOrg.id}`, '_blank');
-                      }}
-                      sx={{ textTransform: 'none', fontWeight: 700 }}
-                    >
-                      ID: {selectedOrg.id}
-                    </Button>
-                  </Box>
-                </Box>
+                    <IconButton size="small" onClick={onRefresh} sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
+                      <RefreshOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Stack>
+
+                <Tabs
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  sx={{
+                    mt: 3,
+                    '& .MuiTab-root': {
+                      minHeight: 48,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: 14,
+                    },
+                  }}
+                >
+                  <Tab icon={<InfoOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Tổng quan" />
+                  <Tab icon={<AutoStoriesOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Giới thiệu" />
+                  <Tab icon={<SchoolOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Đào tạo" />
+                  <Tab icon={<SettingsOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Cấu hình" />
+                </Tabs>
               </Box>
 
-              <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                <Box>
-                  <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 700, mb: 1.5 }}>
-                    Thông tin cơ bản
-                  </Typography>
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                      {[
-                        { label: 'Slug', value: selectedOrg.slug || '—' },
-                        { label: 'Created', value: formatOrgDate(selectedOrg.createdAt) },
-                        { label: 'Logo URL', value: selectedOrg.logoUrl || '—' },
-                      ].map((row) => (
-                        <Box key={row.label} sx={{ flex: '1 1 180px', minWidth: 160 }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                            {row.label}
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 700, mt: 0.25 }}>
-                            {row.value}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                        Programs
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {selectedPrograms.length > 0 ? selectedPrograms.join(', ') : 'Chưa cấu hình'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mt: 0.5 }}>
-                        Majors
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {selectedMajors.length > 0 ? selectedMajors.join(', ') : 'Chưa cấu hình'}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Box>
+              <Box sx={{ flex: 1, p: 3, overflowY: 'auto', maxHeight: 'calc(100vh - 450px)' }}>
+                {activeTab === 0 && (
+                  <Stack spacing={3}>
+                    <DetailSection title="Thông tin cơ bản">
+                      <Grid container spacing={2}>
+                        <DetailItem label="ID Hệ thống" value={selectedOrg.id} />
+                        <DetailItem label="Slug / Alias" value={selectedOrg.slug} />
+                        <DetailItem label="Ngày tạo" value={formatOrgDate(selectedOrg.createdAt)} />
+                        <DetailItem label="Cập nhật lần cuối" value={formatOrgDate(selectedOrg.updatedAt)} />
+                        <DetailItem label="Logo URL" value={selectedOrg.logoUrl || 'N/A'} isFullWidth />
+                      </Grid>
+                    </DetailSection>
+                  </Stack>
+                )}
 
-                <Box>
-                  <Typography variant="subtitle2" color="primary.main" sx={{ fontWeight: 700, mb: 1 }}>
-                    Cấu hình dữ liệu
-                  </Typography>
-                  <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                      Features config
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5, wordBreak: 'break-word' }}>
-                      {selectedOrg.featuresConfig || 'Chưa có dữ liệu'}
-                    </Typography>
-                  </Paper>
-                </Box>
-              </CardContent>
+                {activeTab === 1 && (
+                  <Stack spacing={3}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <Button
+                        size="small"
+                        startIcon={<EditOutlinedIcon />}
+                        onClick={() => onEditIntroduction(selectedOrg)}
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Chỉnh sửa giới thiệu
+                      </Button>
+                    </Box>
+                    <DetailSection title="Nội dung giới thiệu">
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'text.secondary', lineHeight: 1.6 }}>
+                        {selectedIntroduction?.content || 'Chưa có mô tả chi tiết.'}
+                      </Typography>
+                    </DetailSection>
+                    <Grid container spacing={2.5}>
+                      <Grid item xs={12} md={4}>
+                        <DetailSection title="Tầm nhìn">
+                          <Typography variant="body2">{selectedIntroduction?.vision || '—'}</Typography>
+                        </DetailSection>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <DetailSection title="Sứ mạng">
+                          <Typography variant="body2">{selectedIntroduction?.mission || '—'}</Typography>
+                        </DetailSection>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <DetailSection title="Giá trị cốt lõi">
+                          <Typography variant="body2">{selectedIntroduction?.coreValues || '—'}</Typography>
+                        </DetailSection>
+                      </Grid>
+                    </Grid>
+                  </Stack>
+                )}
+
+                {activeTab === 2 && (
+                  <Stack spacing={3}>
+                    <DetailSection title="Chương trình đào tạo">
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {selectedPrograms.length > 0 ? (
+                          selectedPrograms.map(p => <Paper key={p} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{p}</Paper>)
+                        ) : <Typography variant="body2" color="text.disabled">Chưa cấu hình chương trình</Typography>}
+                      </Stack>
+                    </DetailSection>
+                    <DetailSection title="Các chuyên ngành">
+                      <Stack direction="row" flexWrap="wrap" gap={1}>
+                        {selectedMajors.length > 0 ? (
+                          selectedMajors.map(m => <Paper key={m} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{m}</Paper>)
+                        ) : <Typography variant="body2" color="text.disabled">Chưa cấu hình chuyên ngành</Typography>}
+                      </Stack>
+                    </DetailSection>
+                  </Stack>
+                )}
+
+                {activeTab === 3 && (
+                  <Stack spacing={3}>
+                    <DetailSection title="Cấu hình hệ thống (JSON)">
+                      <Paper
+                        variant="outlined"
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          bgcolor: 'grey.900',
+                          color: 'common.white',
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          overflowX: 'auto',
+                        }}
+                      >
+                        <pre style={{ margin: 0 }}>
+                          {selectedOrg.featuresConfig
+                            ? JSON.stringify(JSON.parse(selectedOrg.featuresConfig), null, 2)
+                            : '// Sử dụng cấu hình mặc định'}
+                        </pre>
+                      </Paper>
+                    </DetailSection>
+                  </Stack>
+                )}
+              </Box>
             </Box>
           </Fade>
         )}
@@ -393,5 +422,27 @@ const AdminOrganizationMasterDetail = ({
     </Box>
   );
 };
+
+const DetailSection = ({ title, children }) => (
+  <Box>
+    <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800, mb: 1.5, display: 'block' }}>
+      {title}
+    </Typography>
+    <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: 1, borderColor: 'divider' }}>
+      {children}
+    </Paper>
+  </Box>
+);
+
+const DetailItem = ({ label, value, isFullWidth = false }) => (
+  <Grid item xs={12} sm={isFullWidth ? 12 : 6}>
+    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'block' }}>
+      {label}
+    </Typography>
+    <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.25 }}>
+      {value || '—'}
+    </Typography>
+  </Grid>
+);
 
 export default AdminOrganizationMasterDetail;
