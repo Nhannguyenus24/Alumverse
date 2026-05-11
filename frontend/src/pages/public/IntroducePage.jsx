@@ -58,19 +58,10 @@ const IntroducePage = () => {
       }
     >
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
-      {/* Hero + absolute content frame wrapper */}
-      <Box
-        sx={{
-          position: "relative",
-          height: { xs: "70vh", sm: "75vh", md: "85vh" },
-          minHeight: { xs: 360, md: 480 },
-        }}
-      >
-        {/* Hero banner */}
+        {/* HERO COVER */}
         <Box
           sx={{
-            position: "absolute",
-            inset: 0,
+            height: { xs: 260, md: 600 },
             backgroundImage: `url(${BANNER_IMG})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
@@ -78,40 +69,41 @@ const IntroducePage = () => {
           }}
         />
 
-        {/* Main content frame – absolute, overlaps bottom of hero */}
+        {/* CONTENT WRAPPER */}
         <Box
           sx={{
-            position: "absolute",
-            top: { xs: "50%", sm: "52%", md: "55%" },
-            left: 0,
-            right: 0,
-            display: "flex",
-            justifyContent: "center",
             px: { xs: 2, sm: 3 },
-            pointerEvents: "auto",
+            mt: { xs: -15, md: -40 }, // overlap lên hero
+            mb: 8,
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <Box
             sx={{
               width: "100%",
               maxWidth: 1200,
+              mx: "auto",
               backgroundColor: "#fff",
-              borderRadius: 2,
+              borderRadius: 1,
               boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)",
               overflow: "hidden",
-              py: { xs: 3, md: 4 },
-              px: { xs: 2.5, md: 3 },
+              py: { xs: 5, md: 6 },
+              px: { xs: 5, md: 6 },
             }}
           >
             <Typography
               variant="h1"
               component="h2"
-              fontWeight={700}
+              fontWeight={800}
               color="primary.main"
               textAlign="center"
-              sx={{ mb: 4, fontSize: { xs: "1.75rem", md: "2rem" } }}
+              sx={{
+                mb: 5,
+                fontSize: { xs: "1.8rem", md: "2.3rem" },
+              }}
             >
-              Giới thiệu
+              GIỚI THIỆU
             </Typography>
 
             {HISTORY_SECTIONS.map((section) => (
@@ -183,7 +175,6 @@ const IntroducePage = () => {
                 mt: 5,
                 py: 3,
                 px: 2,
-                backgroundColor: "grey.50",
                 borderRadius: 2,
               }}
             >
@@ -203,10 +194,6 @@ const IntroducePage = () => {
             </Box>
           </Box>
         </Box>
-      </Box>
-
-      {/* Placeholder space so page scrolls and frame content is not cut off */}
-      <Box sx={{ minHeight: { xs: 5125, md: 2500 } }} />
       </Container>
     </Page>
   );

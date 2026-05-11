@@ -1,20 +1,42 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Container,
-  Pagination,
-  Stack,
-  Typography,
-} from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import ChatIcon from '@mui/icons-material/Chat';
+import { Alert, Box, Container, Pagination, Stack, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
 import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import { formatRating } from '../../utils/numberFormatter';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
+import DynamicFilterBar from '../../components/DynamicFilterBar';
+
+const FILTERS = [
+  {
+    type: 'dropdown',
+    key: 'industry',
+    label: 'Lĩnh vực',
+    multiple: true,
+    options: ['Công nghệ', 'Thiết kế', 'Dữ liệu', 'AI', 'Kinh doanh', 'Marketing'],
+  },
+  {
+    type: 'dropdown',
+    key: 'experience',
+    label: 'Kinh nghiệm',
+    options: ['0-2 năm', '3-5 năm', '5-10 năm', '10+ năm'],
+  },
+  {
+    type: 'dropdown',
+    key: 'company',
+    label: 'Công ty',
+    multiple: true,
+    options: ['FPT', 'Shopee', 'Momo', 'VNG', 'TMA', 'Global Alumni'],
+  },
+  {
+    type: 'range',
+    key: 'rating',
+    label: 'Đánh giá',
+    min: 1,
+    max: 5,
+  },
+];
 
 /** mockData instead of API call, will use API call later**/
 const PAGE_SIZE = 9;
@@ -52,6 +74,9 @@ function matchesMentorSearch(mentor, query) {
 const NetworkPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState({
+    all: true,
+  });
 
   const filteredMentors = useMemo(
     () => MOCK_NETWORK_MENTORS.filter((m) => matchesMentorSearch(m, searchQuery)),
@@ -81,57 +106,50 @@ const NetworkPage = () => {
     <Page title="Network">
       <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
         <Container
-          maxWidth="xl"
+          maxWidth="lg"
           sx={{
             pt: { xs: 2, sm: 3, md: 4 },
             px: { xs: 2, sm: 3, lg: 6 },
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: { xs: 2, md: 3 },
-            }}
-          >
-
             <Stack
-              spacing={3}
+              spacing={5}
               sx={{
-                flex: 1,
-                minWidth: 0,
                 width: '100%',
+                mx: 'auto',
                 px: { xs: 1.5, sm: 2, md: 2.75 },
               }}
             >
+              <Stack gap={2}>
               <Typography
                 variant="h1"
                 fontWeight={800}
                 color="primary.main"
                 sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
               >
-                Kết nối
+                KẾT NỐI
               </Typography>
 
               <Stack spacing={3}>
                 <Typography color="text.secondary">
-                  Tìm và kết nối với cựu sinh viên.
+                  Tìm và kết nối với các sinh viên và các cựu sinh viên trên nền tảng.
                 </Typography>
+                  <DynamicFilterBar
+                    config={FILTERS}
+                    value={filters}
+                    onChange={setFilters}
+                  />
 
-                <Box>
-                  <Typography variant="h4" fontWeight={700} mb={2}>
-                    Tìm kiếm kết nối
-                  </Typography>
                   <SearchBar
                     value={searchQuery}
                     onChange={(v) => {
                       setSearchQuery(v);
                       setPage(1);
                     }}
-                    placeholder="Tìm theo tên"
+                    placeholder="Tìm theo tên, công ty, kỹ năng..."
                   />
-                </Box>
-
+                </Stack>
+              
                 {mentorsOnPage.length === 0 ? (
                   <Alert severity="info">
                     {searchQuery.trim()
@@ -194,7 +212,6 @@ const NetworkPage = () => {
                 )}
               </Stack>
             </Stack>
-          </Box>
         </Container>
       </Container>
     </Page>
