@@ -731,13 +731,16 @@ const ForumAlumniThreadPage = () => {
               />
             </Stack>
 
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Breadcrumb
-                items={breadcrumbItems}
-                uppercase
-                color="primary"
-                fontSize="0.8rem"
-              />
+            <Stack
+              spacing={0}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                width: '100%',
+                px: { xs: 1.5, sm: 2, md: 2.75 },
+              }}
+            >
+              <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
               <Box
                 sx={{
                   backgroundColor: '#fff',
@@ -1107,7 +1110,7 @@ const ForumAlumniThreadPage = () => {
                 </Box>
               </Box>
               </Box>
-            </Box>
+            </Stack>
           </Box>
         </Container>
       </Container>

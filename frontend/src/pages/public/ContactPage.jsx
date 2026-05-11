@@ -103,8 +103,9 @@ const ContactPage = () => {
         <Box
           sx={{
             position: 'relative',
-            height: { xs: 'auto', md: '85vh' },
-            minHeight: { xs: 640, md: 560 },
+            py: { xs: 8, md: 12 },
+            px: { xs: 2, sm: 3 },
+            overflow: 'hidden',
           }}
         >
           {/* Background image */}
@@ -114,6 +115,7 @@ const ContactPage = () => {
               inset: 0,
               backgroundImage: `url(${BACKGROUND_IMG})`,
               backgroundSize: 'cover',
+              backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
             }}
           />
@@ -121,14 +123,10 @@ const ContactPage = () => {
           {/* White card overlapping background */}
           <Box
             sx={{
-              position: 'absolute',
-              top: { xs: '16%', sm: '20%', md: '24%' },
-              left: 0,
-              right: 0,
+              position: 'relative',
+              zIndex: 1,
               display: 'flex',
               justifyContent: 'center',
-              px: { xs: 2, sm: 3 },
-              pointerEvents: 'auto',
             }}
           >
             <Box
@@ -269,9 +267,6 @@ const ContactPage = () => {
             </Box>
           </Box>
         </Box>
-
-        {/* Spacer so content is not cut off when scrolling */}
-        <Box sx={{ minHeight: { xs: 640, sm: 480, md: 280 } }} />
       </Container>
     </Page>
   );

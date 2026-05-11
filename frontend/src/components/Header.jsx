@@ -232,11 +232,13 @@ const Header = () => {
                 <>
                   <Button component={Link} to={toOrgPath('/auth/register')}
                           variant="outlined" size="small"
-                          sx={{ 
-                            fontWeight: 600, 
+                          sx={{
+                            fontWeight: 600,
                             color: isTransparent ? '#FFFFFF' : 'primary.main',
                             borderColor: isTransparent ? '#FFFFFF' : 'primary.main',
-                            '&:hover': { borderColor: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)' }
+                            '&:hover': isTransparent
+                              ? { borderColor: '#FFFFFF', color: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)', }
+                              : { borderColor: 'primary.dark', color: 'primary.main', bgcolor: 'primary.lighter', },
                           }}
                   >
                     Đăng ký

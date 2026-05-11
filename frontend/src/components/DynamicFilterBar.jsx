@@ -42,13 +42,14 @@ const handleAllClick = () => {
       reset[item.key] = [item.min, item.max];
     } else if (item.type === 'date') {
       reset[item.key] = '';
+    } else if (item.type === 'dropdown') {
+      reset[item.key] = item.multiple ? [] : '';
     } else {
       reset[item.key] = [];
     }
   });
-
-  updateState(reset);
-};
+    updateState(reset);
+  };
 
   // ===== TOPICS =====
   const handleTopicToggle = (key, option) => {
@@ -137,33 +138,51 @@ return (
 
         // ===== DROPDOWN =====
         if (filter.type === 'dropdown') {
+          const currentValue =
+            internalValue[filter.key] ??
+            (filter.multiple ? [] : '');
+
+          const isActive = filter.multiple
+            ? currentValue.length > 0
+            : Boolean(currentValue);
+
           return (
             <Select
-                key={filter.key}
-                multiple={filter.multiple}
-                value={internalValue[filter.key] || []}
-                onChange={(e) =>
-                    handleDropdownChange(filter.key, e.target.value)}
-                displayEmpty
-                renderValue={(selected) => {
-                    if (selected.length === 0) return filter.label;
-                    if (selected.length === 1) return selected[0];
-                    return `${filter.label} (${selected.length})`;
-                }}
-                sx={(theme) =>
-                    filterBaseSx(theme, (internalValue[filter.key] || []).length > 0)
+              key={filter.key}
+              multiple={filter.multiple}
+              value={currentValue}
+              onChange={(e) =>
+                handleDropdownChange(filter.key, e.target.value)
+              }
+              displayEmpty
+              renderValue={(selected) => {
+                // MULTIPLE SELECT
+                if (filter.multiple) {
+                  if (selected.length === 0) {
+                    return filter.label;
+                  }
+
+                  if (selected.length === 1) {
+                    return selected[0];
+                  }
+
+                  return `${filter.label} (${selected.length})`;
                 }
-                inputProps={{ sx: { p: 0 } }}
+
+                // SINGLE SELECT
+                return selected || filter.label;
+              }}
+              sx={(theme) => filterBaseSx(theme, isActive)}
+              inputProps={{ sx: { p: 0 } }}
             >
               {filter.options.map((option) => (
                 <MenuItem key={option} value={option}>
                   {filter.multiple && (
                     <Checkbox
-                      checked={
-                        (internalValue[filter.key] || []).indexOf(option) > -1
-                      }
+                      checked={currentValue.indexOf(option) > -1}
                     />
                   )}
+
                   <ListItemText primary={option} />
                 </MenuItem>
               ))}
@@ -218,40 +237,58 @@ return (
 
         // ===== RANGE SLIDER =====
         if (filter.type === 'range') {
-            const valueRange =
-                internalValue[filter.key] || [filter.min, filter.max];
+          const valueRange =
+            internalValue[filter.key] || [filter.min, filter.max];
 
-            const active =
-                valueRange[0] !== filter.min || valueRange[1] !== filter.max;
+          const active =
+            valueRange[0] !== filter.min || valueRange[1] !== filter.max;
 
-            return (
-                <Box
-                key={filter.key}
-                sx={(theme) => ({
-                    ...filterBaseSx(theme, active),
-                    width: 220,
-                    flexDirection: 'column',
-                    alignItems: 'stretch',
-                    py: 1,
-                })}
-                >
-                <Typography variant="caption">
-                    {filter.label}: {valueRange[0]} - {valueRange[1]}
-                </Typography>
+          return (
+            <Box
+              key={filter.key}
+              sx={(theme) => ({
+                ...filterBaseSx(theme, active),
+                width: 220,
+                height: 40,
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                overflow: 'visible',
+              })}
+            >
+              {/* LABEL */}
+              <Typography
+                sx={{
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  lineHeight: 1,
+                }}
+              >
+                {filter.label}: {valueRange[0]} - {valueRange[1]}
+              </Typography>
 
+              {/* SLIDER */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: 12,
+                  right: 12,
+                  bottom: -20,
+                }}
+              >
                 <Slider
-                    value={valueRange}
-                    onChange={(e, newValue) =>
+                  value={valueRange}
+                  onChange={(e, newValue) =>
                     handleRangeChange(filter.key, newValue)
-                    }
-                    size="small"
-                    min={filter.min}
-                    max={filter.max}
+                  }
+                  size="small"
+                  min={filter.min}
+                  max={filter.max}
                 />
-                </Box>
-            );
+              </Box>
+            </Box>
+          );
         }
-
         return null;
       })}
     </Stack>
