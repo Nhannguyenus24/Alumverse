@@ -1,6 +1,6 @@
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
-const LoadingScreen = ({ message = "Loading..." }) => {
+const LoadingScreen = ({ message}) => {
   return (
     <Box
       sx={{
@@ -15,9 +15,33 @@ const LoadingScreen = ({ message = "Loading..." }) => {
         justifyContent: "center",
         backgroundColor: "background.default",
         zIndex: 9999,
+        "@keyframes dotBounce": {
+          "0%, 80%, 100%": {
+            transform: "translateY(0)",
+            opacity: 0.6,
+          },
+          "40%": {
+            transform: "translateY(-8px)",
+            opacity: 1,
+          },
+        },
       }}
     >
-      <CircularProgress size={60} thickness={4} />
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {[0, 1, 2].map((i) => (
+          <Box
+            key={i}
+            sx={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              backgroundColor: "primary.main",
+              animation: "dotBounce 1s ease-in-out infinite",
+              animationDelay: `${i * 0.15}s`,
+            }}
+          />
+        ))}
+      </Box>
       {message && (
         <Typography
           variant="body1"

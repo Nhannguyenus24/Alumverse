@@ -15,7 +15,9 @@ INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "a
 ('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/vog.jpg', NOW(), NOW()),
 ('test@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'testuser', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/test.jpg', NOW(), NOW()),
 ('bui.van.h@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'buivanh', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/buih.jpg', NOW(), NOW()),
-('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'lythii', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/lyi.jpg', NOW(), NOW());
+('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'lythii', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/lyi.jpg', NOW(), NOW()),
+('admin@gmail.com', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'testadmin', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/test.jpg', NOW(), NOW()); -- Admin2026@
+
 
 -- ============= GLOBAL PROFILES DATA =============
 INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "gender", "settings") VALUES

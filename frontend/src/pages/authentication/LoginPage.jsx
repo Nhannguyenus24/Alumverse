@@ -21,7 +21,7 @@ const LoginPage = () => {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 
-  const redirectTo = location.state?.from?.pathname || '/dashboard';
+  const redirectTo = location.state?.from?.pathname || '/';
 
   const {
     register,
