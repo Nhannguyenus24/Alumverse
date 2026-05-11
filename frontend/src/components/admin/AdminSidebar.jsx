@@ -20,6 +20,7 @@ import TopicOutlinedIcon from '@mui/icons-material/TopicOutlined';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
@@ -52,6 +53,7 @@ const NAV_GROUPS = (adminBase) => [
       { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: 'Chủ đề', role: 'ADMIN' },
       { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: 'Danh mục', role: 'ADMIN' },
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
+      { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: 'Bài viết', role: 'ADMIN' },
       { to: `${adminBase}/fundraising`, icon: <VolunteerActivismOutlinedIcon />, label: 'Gây quỹ', role: 'ADMIN' },
     ],
   },

@@ -20,14 +20,14 @@ const AdminLayoutShell = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const theme = useTheme();
-  
+
   const slugMatchNested = useMatch('/:slug/admin/*');
   const slugMatchExact = useMatch('/:slug/admin');
   const slugMatch = slugMatchNested ?? slugMatchExact;
   const isSlugContext = Boolean(slugMatch);
   const slug = slugMatch?.params?.slug;
   const adminBase = isSlugContext ? `/${slug}/admin` : '/admin';
-  
+
   const { user, logout } = useAuth();
 
   const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
@@ -36,10 +36,10 @@ const AdminLayoutShell = () => {
     <Page
       title="Quản trị hệ thống"
       meta={<meta name="description" content="Khu vực quản trị HCMUS Alumni" />}
-      sx={{ 
-        display: 'flex', 
+      sx={{
+        display: 'flex',
         minHeight: '100vh',
-        bgcolor: alpha(theme.palette.background.default, 0.4) 
+        bgcolor: alpha(theme.palette.background.default, 0.4),
       }}
     >
       <AdminSidebar
@@ -49,7 +49,7 @@ const AdminLayoutShell = () => {
         collapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
-      
+
       <AdminSidebar
         variant="temporary"
         open={mobileOpen}
@@ -85,7 +85,7 @@ const AdminLayoutShell = () => {
             pt: `${HEADER_HEIGHT + 24}px`,
             pb: 6,
             px: { xs: 2, sm: 3, lg: 4 },
-            backgroundColor: (theme) => alpha(theme.palette.background.default, 0.5),
+            backgroundColor: (t) => alpha(t.palette.background.default, 0.5),
             minHeight: '100vh',
           }}
         >
