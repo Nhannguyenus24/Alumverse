@@ -64,9 +64,6 @@ const OrganizationRegistrationPage = Loadable(
 );
 
 // Alumni pages
-const DashboardPage = Loadable(
-  lazy(() => import("../pages/alumni/DashboardPage")),
-);
 const FacultyCNTTPage = Loadable(
   lazy(() => import("../pages/alumni/FacultyCNTTPage")),
 );
@@ -594,14 +591,6 @@ export const router = createBrowserRouter([
             element: <DetailDonationPage />,
           },
         ],
-      },
-      {
-        path: "dashboard",
-        element: (
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        ),
       },
     ],
   },
