@@ -55,6 +55,10 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
+    if (!organizationId) {
+      enqueueSnackbar('Đang tải thông tin tổ chức, vui lòng đợi vài giây rồi thử lại.', { variant: 'warning' });
+      return;
+    }
     const result = await registerUser({
       email: data.email,
       fullName: data.fullName,
