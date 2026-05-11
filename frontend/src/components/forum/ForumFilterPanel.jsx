@@ -7,6 +7,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
+
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 
 const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
@@ -18,41 +19,45 @@ const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
         borderColor: 'divider',
         borderRadius: 0,
         overflow: 'hidden',
-        backgroundColor: '#fff',
-        boxShadow: 'none',
+        backgroundColor: 'white',
       }}
     >
-      <Box sx={{ p: { xs: 0.75, sm: 1 } }}>
+      <Box sx={{ p: 1 }}>
         <List disablePadding>
           {filters.map((f) => {
             const selected = f.id === selectedId;
+
             return (
               <ListItemButton
                 key={f.id}
                 onClick={() => onChange?.(f.id)}
                 sx={{
                   borderRadius: 1,
-                  py: { xs: 1, sm: 1.35 },
-                  px: { xs: 1, sm: 1.25 },
-                  '&:hover': { backgroundColor: 'action.hover' },
+                  py: 1.2,
+                  px: 1.25,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  },
                 }}
               >
+                {/* ICON */}
                 <ListItemIcon
                   sx={{
-                    minWidth: { xs: 32, sm: 36 },
-                    color: selected ? '#0B4D8D' : 'text.primary',
+                    minWidth: 36,
+                    color: selected ? 'primary.main' : 'text.primary',
                   }}
                 >
-                  <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
+                  <ChatBubbleOutlineOutlinedIcon />
                 </ListItemIcon>
+
+                {/* TEXT */}
                 <ListItemText
                   primary={
                     <Typography
-                      variant="body1"
-                      fontWeight={selected ? 800 : 500}
+                      fontSize="1rem"
+                      fontWeight={selected ? 700 : 500}
                       sx={{
-                        color: selected ? '#0B4D8D' : 'text.primary',
-                        fontSize: { xs: '1rem', md: '1.05rem' },
+                        color: selected ? 'primary.main' : 'text.primary',
                       }}
                     >
                       {f.label}
@@ -69,4 +74,3 @@ const ForumFilterPanel = ({ filters, selectedId, onChange }) => {
 };
 
 export default ForumFilterPanel;
-
