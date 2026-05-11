@@ -39,6 +39,9 @@ public class AlumniPost {
     @Column("thumbnail_url")
     private String thumbnailUrl;
 
+    @Column("topic")
+    private String topic;
+
     @Column("is_hidden")
     @Builder.Default
     private Boolean isHidden = false;

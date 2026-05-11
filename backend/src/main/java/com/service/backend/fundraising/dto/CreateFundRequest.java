@@ -75,4 +75,7 @@ public class CreateFundRequest {
 
     /** Optional base64-encoded fund logo. When present, backend uploads and stores the resulting URL. */
     private String logoBase64;
+
+    @Schema(example = "Học bổng sinh viên")
+    private String topic;
 }

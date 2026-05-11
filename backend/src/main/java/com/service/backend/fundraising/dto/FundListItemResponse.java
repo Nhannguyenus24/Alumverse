@@ -31,6 +31,8 @@ public class FundListItemResponse {
     private LocalDateTime timeStarted;
     private LocalDateTime timeEnded;
 
+    private String topic;
+
     public static FundListItemResponse from(Funds fund) {
         if (fund == null) {
             return null;
@@ -49,6 +51,7 @@ public class FundListItemResponse {
                 .currentAmount(fund.getCurrentAmount())
                 .timeStarted(fund.getTimeStarted())
                 .timeEnded(fund.getTimeEnded())
+                .topic(fund.getTopic())
                 .build();
     }
 }

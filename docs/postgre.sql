@@ -108,6 +108,7 @@ CREATE TABLE "events" (
   "registration_end_at" timestamp,
   "max_capacity" integer,
   "interested_count" integer DEFAULT 0,
+  "topic" varchar,
   "is_published" boolean DEFAULT false,
   "created_at" timestamp
 );
@@ -197,6 +198,7 @@ CREATE TABLE "news" (
   "slug" varchar,
   "content" text,
   "thumbnail_url" varchar,
+  "topic" varchar,
   "is_hidden" boolean,
   "published_at" timestamp
 );
@@ -209,6 +211,7 @@ CREATE TABLE "alumni_posts" (
   "slug" varchar,
   "content" text,
   "thumbnail_url" varchar,
+  "topic" varchar,
   "is_hidden" boolean,
   "published_at" timestamp
 );
@@ -229,6 +232,7 @@ CREATE TABLE "achievements" (
   "description" text,
   "image_url" varchar,
   "awarded_date" date,
+  "topic" varchar,
   "status" varchar
 );
 
@@ -278,6 +282,7 @@ CREATE TABLE "funds" (
   "time_started" timestamp,
   "donor_count" integer DEFAULT 0, -- so luong donate, phuc vu frontend
   "status_id" integer,  -- khoa ngoai den fund_statuses
+  "topic" varchar,
   "time_ended" timestamp
 );
 

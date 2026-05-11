@@ -20,6 +20,7 @@ public class AchievementResponse {
     private String description;
     private String imageUrl;
     private LocalDate awardedDate;
+    private String topic;
     private String status;
 
     public static AchievementResponse from(Achievement achievement) {
@@ -30,6 +31,7 @@ public class AchievementResponse {
                 .description(achievement.getDescription())
                 .imageUrl(achievement.getImageUrl())
                 .awardedDate(achievement.getAwardedDate())
+                .topic(achievement.getTopic())
                 .status(achievement.getStatus())
                 .build();
     }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -143,13 +143,14 @@ const AdminForumCategoriesPage = () => {
   const [form, setForm] = useState({ name: '', description: '', parentId: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  useMemo(() => {
+  useEffect(() => {
     if (tree.length > 0 && Object.keys(expanded).length === 0) {
       const init = {};
       tree.forEach((n) => { init[n.id] = true; });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpanded(init);
     }
-  }, [tree]);
+  }, [tree]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = (id) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));

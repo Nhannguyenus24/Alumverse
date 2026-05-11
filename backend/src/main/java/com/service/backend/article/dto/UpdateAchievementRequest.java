@@ -31,4 +31,6 @@ public class UpdateAchievementRequest {
 
     @Size(max = 50)
     private String status;
+
+    private String topic;
 }

@@ -70,4 +70,7 @@ public class UpdateFundRequest {
     @NotNull
     @Schema(example = "2026-06-01T23:59:59")
     private LocalDateTime timeEnded;
+
+    @Schema(example = "Học bổng sinh viên")
+    private String topic;
 }
