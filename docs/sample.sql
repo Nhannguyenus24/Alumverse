@@ -304,7 +304,7 @@ INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "descrip
 (NULL, 1, 'Job & Career', 'Job opportunities and career advice', NOW() - INTERVAL '365 days', NOW()),
 (NULL, 2, 'General Discussion', 'General topics and announcements', NOW() - INTERVAL '360 days', NOW()),
 (NULL, 2, 'Technical Help', 'Questions and help with programming', NOW() - INTERVAL '360 days', NOW()),
-(NULL, 2, 'Alumni Stories', 'Share your success stories', NOW() - INTERVAL '360 days', NOW()),
+(1, 1, 'Alumni Stories', 'Share your success stories', NOW() - INTERVAL '360 days', NOW()),
 (NULL, 3, 'Business Topics', 'Business and management discussions', NOW() - INTERVAL '350 days', NOW()),
 (NULL, 4, 'Engineering Projects', 'Share and discuss engineering projects', NOW() - INTERVAL '340 days', NOW());
 
@@ -315,7 +315,7 @@ INSERT INTO "forum_topics" ("organization_id", "title", "created_by_member_id", 
 (1, 'Job Search Strategy for New Graduates', 6, 3, 234, false, NOW() - INTERVAL '30 days', NOW() - INTERVAL '2 days'),
 (1, 'Database Optimization Techniques', 6, 2, 156, true, NOW() - INTERVAL '25 days', NOW() - INTERVAL '8 days'),
 (2, 'Getting Started with Node.js', 5, 5, 78, false, NOW() - INTERVAL '20 days', NOW() - INTERVAL '3 days'),
-(2, 'From Startup to IPO - My Journey', 3, 6, 412, false, NOW() - INTERVAL '15 days', NOW() - INTERVAL '1 day'),
+(1, 'From Startup to IPO - My Journey', 3, 6, 412, false, NOW() - INTERVAL '15 days', NOW() - INTERVAL '1 day'),
 (2, 'Microservices Architecture Discussion', 8, 5, 145, false, NOW() - INTERVAL '12 days', NOW() - INTERVAL '4 days'),
 (3, 'Leadership Lessons from Successful Entrepreneurs', 7, 7, 93, false, NOW() - INTERVAL '10 days', NOW() - INTERVAL '6 days'),
 (4, 'Sustainable Engineering for the Future', 6, 8, 67, false, NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days');
