@@ -2,18 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { includesQuery, paginateRows, sortByField } from '../../utils/adminTableState';
 import {
   cancelSession,
-  getMyMenteeSessions,
-  getMyMentorSessions,
   updateSessionStatus,
 } from '../../api/mentorshipApi';
+import { adminMentorshipApi } from '../../api/adminMentorshipApi';
 
 const SEARCH_KEYS = ['mentorName', 'menteeName', 'topic', 'status'];
 
 const extractList = (payload) => {
-  const data = payload?.data?.data;
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.content)) return data.content;
-  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.content)) return payload.content;
   return [];
 };
 
@@ -50,16 +48,14 @@ const useAdminMentorshipData = () => {
     setLoading(true);
     setLoadError(false);
     try {
-      const [mentorRes, menteeRes] = await Promise.all([
-        getMyMentorSessions({ page: 0, limit: 100 }),
-        getMyMenteeSessions({ page: 0, limit: 100 }),
-      ]);
-      const rows = dedupeById([
-        ...extractList(mentorRes).map(mapSession),
-        ...extractList(menteeRes).map(mapSession),
-      ]);
+      const data = await adminMentorshipApi.getAllSessions({ 
+        page: 0, 
+        size: 200 // Load a large batch for local filtering
+      });
+      const rows = extractList(data).map(mapSession);
       setAllRows(rows);
-    } catch {
+    } catch (error) {
+      console.error('Failed to load mentorship sessions:', error);
       setAllRows([]);
       setLoadError(true);
     } finally {

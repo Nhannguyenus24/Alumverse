@@ -1,10 +1,8 @@
-import { useMemo, useState } from 'react';
-import { useSnackbar } from 'notistack';
+import { useMemo, useState } from "react";
+import { useSnackbar } from "notistack";
 import {
   Box,
   Button,
-  Chip,
-  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -12,58 +10,40 @@ import {
   Grid,
   IconButton,
   MenuItem,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
-} from '@mui/material';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
-import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
-import AdminEventFormDialog from '../../components/admin/AdminEventFormDialog';
-import AdminEventTicketsDialog from '../../components/admin/AdminEventTicketsDialog';
+  useTheme,
+  alpha,
+} from "@mui/material";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
+import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PeopleIcon from "@mui/icons-material/People";
+
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
+import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
+import AdminEventFormDialog from "../../components/admin/AdminEventFormDialog";
+import AdminEventTicketsDialog from "../../components/admin/AdminEventTicketsDialog";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
   ADMIN_EVENT_SORT_OPTIONS,
   ADMIN_EVENT_STATUS_OPTIONS,
-} from '../../constants/adminDefaultEvents';
-import {
-  ADMIN_FILTER_BAR_SX,
-  ADMIN_PRIMARY_ACTION_BUTTON_SX,
-  ADMIN_STATUS_CHIP_SX,
-  formatStatusLabel,
-} from '../../constants/adminUiShared';
-import useAdminEventsData from '../../hooks/admin/useAdminEventsData';
-import { formatDateTime } from '../../utils/dateFormatter';
-
-const publishStatusChip = (isPublished) =>
-  isPublished
-    ? { color: 'success', label: 'Published' }
-    : { color: 'default', label: 'Draft' };
-
-const StatTile = ({ label, value }) => (
-  <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center', height: '100%' }}>
-    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-      {label}
-    </Typography>
-    <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
-      {value ?? '-'}
-    </Typography>
-  </Paper>
-);
+} from "../../constants/adminDefaultEvents";
+import useAdminEventsData from "../../hooks/admin/useAdminEventsData";
+import { formatDateTime } from "../../utils/dateFormatter";
 
 const AdminEventsPage = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const {
     events,
@@ -77,10 +57,6 @@ const AdminEventsPage = () => {
     setStatusFilter,
     organizationFilter,
     setOrganizationFilter,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
     page,
     setPage,
     rowsPerPage,
@@ -106,335 +82,363 @@ const AdminEventsPage = () => {
 
   const handlePublish = async (event) => {
     const ok = await publishEvent(event.id);
-    enqueueSnackbar(
-      ok ? 'Event published.' : 'Failed to publish event.',
-      { variant: ok ? 'success' : 'error' },
-    );
+    enqueueSnackbar(ok ? "Đã công khai sự kiện." : "Lỗi khi công khai.", {
+      variant: ok ? "success" : "error",
+    });
   };
 
   const handleUnpublish = async (event) => {
     const ok = await unpublishEvent(event.id);
-    enqueueSnackbar(
-      ok ? 'Event unpublished.' : 'Failed to unpublish event.',
-      { variant: ok ? 'success' : 'warning' },
-    );
+    enqueueSnackbar(ok ? "Đã gỡ sự kiện." : "Lỗi khi gỡ.", {
+      variant: ok ? "success" : "warning",
+    });
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteEvent(deleteTarget.id);
-    enqueueSnackbar(
-      ok ? 'Event deleted.' : 'Failed to delete event.',
-      { variant: ok ? 'success' : 'error' },
-    );
+    enqueueSnackbar(ok ? "Đã xóa sự kiện." : "Lỗi khi xóa.", {
+      variant: ok ? "success" : "error",
+    });
     setDeleteTarget(null);
   };
 
   const handleEditSubmit = async (payload) => {
     if (!editTarget) return false;
     const ok = await updateEvent(editTarget.id, payload);
-    enqueueSnackbar(
-      ok ? 'Event updated.' : 'Failed to update event.',
-      { variant: ok ? 'success' : 'error' },
-    );
+    enqueueSnackbar(ok ? "Đã cập nhật sự kiện." : "Lỗi khi cập nhật.", {
+      variant: ok ? "success" : "error",
+    });
     return ok;
   };
 
-  const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? '-'}`;
+  const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
+
+  const columns = [
+    { id: "id", label: "ID" },
+    {
+      id: "title",
+      label: "Tiêu đề",
+      render: (val) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {val}
+        </Typography>
+      ),
+    },
+    { id: "organizationId", label: "Tổ chức", render: (val) => orgLabel(val) },
+    {
+      id: "isPublished",
+      label: "Trạng thái",
+      render: (val) => (
+        <AdminStatusChip
+          status={val ? "PUBLISHED" : "DRAFT"}
+          category="event"
+          label={val ? "Đã đăng" : "Bản nháp"}
+        />
+      ),
+    },
+    {
+      id: "timeline",
+      label: "Thời gian",
+      render: (_, row) => (
+        <Box>
+          <Typography
+            variant="caption"
+            sx={{ display: "block", fontWeight: 500 }}
+          >
+            {formatDateTime(row.startTime)}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            đến {formatDateTime(row.endTime)}
+          </Typography>
+        </Box>
+      ),
+    },
+    { id: "interestedCount", label: "Quan tâm", align: "right" },
+    {
+      id: "actions",
+      label: "",
+      align: "right",
+      render: (_, e) => (
+        <Stack
+          direction="row"
+          spacing={0.5}
+          justifyContent="flex-end"
+          onClick={(ev) => ev.stopPropagation()}
+        >
+          <Tooltip title="Chi tiết">
+            <IconButton size="small" onClick={() => setDetailItem(e)}>
+              <VisibilityOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Chỉnh sửa">
+            <IconButton size="small" onClick={() => setEditTarget(e)}>
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Danh sách đăng ký">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => setParticipantsTarget(e)}
+            >
+              <GroupOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {e.isPublished ? (
+            <Tooltip title="Gỡ bài">
+              <IconButton
+                size="small"
+                color="warning"
+                onClick={() => handleUnpublish(e)}
+              >
+                <CancelOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Đăng bài">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => handlePublish(e)}
+              >
+                <CheckCircleOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title="Xóa">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => setDeleteTarget(e)}
+            >
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+  ];
+
+  const Filters = (
+    <Stack direction="row" spacing={1}>
+      <TextField
+        select
+        size="small"
+        label="Trạng thái"
+        value={statusFilter}
+        onChange={(e) => {
+          setStatusFilter(e.target.value);
+          setPage(0);
+        }}
+        sx={{ minWidth: 140 }}
+      >
+        {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
+          <MenuItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </TextField>
+      <TextField
+        select
+        size="small"
+        label="Tổ chức"
+        value={organizationFilter}
+        onChange={(e) => {
+          setOrganizationFilter(e.target.value);
+          setPage(0);
+        }}
+        sx={{ minWidth: 180 }}
+      >
+        <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
+        {(organizations || []).map((org) => (
+          <MenuItem key={org.id} value={String(org.id)}>
+            {org.name}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Stack>
+  );
 
   return (
-    <>
-      <AdminSectionPanel
-        title="Event management"
-        subtitle="Review event records, moderate status, and remove events via API."
-        action={
-          <Button variant="contained" size="small" sx={ADMIN_PRIMARY_ACTION_BUTTON_SX} onClick={() => setCreateOpen(true)}>
-            Create event
-          </Button>
-        }
+    <Box>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+        }}
       >
-        {statistics ? (
-          <Grid container spacing={1.5} sx={{ mb: 2 }}>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Total events" value={statistics.totalEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Published" value={statistics.publishedEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Draft" value={statistics.unpublishedEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Upcoming" value={statistics.upcomingEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Ongoing" value={statistics.ongoingEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Past" value={statistics.pastEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Tickets registered" value={statistics.registeredTickets} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Tickets checked-in" value={statistics.checkedInTickets} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Tickets cancelled" value={statistics.cancelledTickets} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Total interests" value={statistics.totalInterests} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="New today" value={statistics.newEventsToday} />
-            </Grid>
-          </Grid>
-        ) : null}
-
-        <Box sx={ADMIN_FILTER_BAR_SX}>
-          <TextField
-            size="small"
-            label="Search"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(0);
-            }}
-            placeholder="Title or description..."
-            sx={{ flex: '1 1 220px', minWidth: 220 }}
-          />
-          <TextField
-            select
-            size="small"
-            label="Status"
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 200 }}
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+            Quản lý sự kiện
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Organization"
-            value={organizationFilter}
-            onChange={(e) => {
-              setOrganizationFilter(e.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 220 }}
-          >
-            <MenuItem value="ALL">All organizations</MenuItem>
-            {(organizations || []).map((org) => (
-              <MenuItem key={org.id} value={String(org.id)}>
-                {org.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Sort by"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            sx={{ minWidth: 180 }}
-          >
-            {ADMIN_EVENT_SORT_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Order"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            sx={{ minWidth: 140 }}
-          >
-            <MenuItem value="DESC">Descending</MenuItem>
-            <MenuItem value="ASC">Ascending</MenuItem>
-          </TextField>
+            Tạo mới, phê duyệt và theo dõi các sự kiện cộng đồng, workshop và
+            hội thảo.
+          </Typography>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={() => setCreateOpen(true)}
+          sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
+        >
+          Tạo sự kiện
+        </Button>
+      </Box>
 
-        {loading ? (
-          <Stack alignItems="center" sx={{ py: 4 }}>
-            <CircularProgress size={28} />
-          </Stack>
-        ) : (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Organization</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Timeline</TableCell>
-                <TableCell align="right">Capacity</TableCell>
-                <TableCell align="right">Interested</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {events.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9}>
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                      No events match current filters.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                events.map((event) => {
-                  const chip = publishStatusChip(event.isPublished);
-                  return (
-                    <TableRow
-                      key={event.id}
-                      hover
-                      onClick={() => setDetailItem(event)}
-                      sx={{ cursor: 'pointer' }}
-                    >
-                      <TableCell>{event.id}</TableCell>
-                      <TableCell sx={{ maxWidth: 240 }}>
-                        <Typography variant="body2" noWrap>
-                          {event.title}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ maxWidth: 180 }}>
-                        <Typography variant="body2" noWrap>
-                          {orgLabel(event.organizationId)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Chip
-                          size="small"
-                          color={chip.color}
-                          label={chip.label}
-                          sx={ADMIN_STATUS_CHIP_SX}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {formatDateTime(event.startTime)} - {formatDateTime(event.endTime)}
-                      </TableCell>
-                      <TableCell align="right">{event.maxCapacity ?? '-'}</TableCell>
-                      <TableCell align="right">{event.interestedCount ?? 0}</TableCell>
-                      <TableCell>{formatDateTime(event.createdAt)}</TableCell>
-                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                          <Tooltip title="View">
-                            <IconButton size="small" color="primary" onClick={() => setDetailItem(event)}>
-                              <VisibilityOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Edit">
-                            <IconButton size="small" color="primary" onClick={() => setEditTarget(event)}>
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Tickets & interests">
-                            <IconButton size="small" color="primary" onClick={() => setParticipantsTarget(event)}>
-                              <GroupOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          {event.isPublished ? (
-                            <Tooltip title="Unpublish">
-                              <IconButton size="small" color="warning" onClick={() => handleUnpublish(event)}>
-                                <CancelOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          ) : (
-                            <Tooltip title="Publish">
-                              <IconButton size="small" color="success" onClick={() => handlePublish(event)}>
-                                <CheckCircleOutlineIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          <Tooltip title="Delete">
-                            <IconButton size="small" color="error" onClick={() => setDeleteTarget(event)}>
-                              <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        )}
+      {statistics && (
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <AdminDashboardMetricTile
+              label="Tổng sự kiện"
+              value={statistics.totalEvents}
+              icon={<CalendarTodayOutlinedIcon />}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <AdminDashboardMetricTile
+              label="Đã đăng"
+              value={statistics.publishedEvents}
+              icon={<CheckCircleIcon />}
+              valueColor="success.main"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <AdminDashboardMetricTile
+              label="Sắp diễn ra"
+              value={statistics.upcomingEvents}
+              icon={<AccessTimeIcon />}
+              valueColor="warning.main"
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <AdminDashboardMetricTile
+              label="Lượt quan tâm"
+              value={statistics.totalInterests}
+              icon={<PeopleIcon />}
+              valueColor="primary.main"
+            />
+          </Grid>
+        </Grid>
+      )}
 
-        <TablePagination
-          component="div"
-          count={totalItems}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(Number(e.target.value));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[10, 20, 50]}
-        />
-      </AdminSectionPanel>
+      <AdminDataTable
+        columns={columns}
+        rows={events}
+        totalCount={totalItems}
+        page={page}
+        onPageChange={(_, p) => setPage(p)}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(Number(e.target.value));
+          setPage(0);
+        }}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(0);
+        }}
+        searchValue={search}
+        filters={Filters}
+        onRowClick={(e) => setDetailItem(e)}
+        loading={loading}
+      />
 
-      <Dialog open={Boolean(detailItem)} onClose={() => setDetailItem(null)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 800 }}>Event detail</DialogTitle>
-        {detailItem ? (
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-            <Typography variant="body2"><strong>ID:</strong> {detailItem.id}</Typography>
-            <Typography variant="body2"><strong>Title:</strong> {detailItem.title}</Typography>
-            <Typography variant="body2"><strong>Organization:</strong> {orgLabel(detailItem.organizationId)}</Typography>
-            <Typography variant="body2"><strong>Creator member ID:</strong> {detailItem.creatorMemberId ?? '-'}</Typography>
-            <Typography variant="body2"><strong>Status:</strong> {detailItem.isPublished ? 'Published' : 'Draft'}</Typography>
-            <Typography variant="body2"><strong>Location:</strong> {detailItem.location || '-'}</Typography>
-            <Typography variant="body2"><strong>Start:</strong> {formatDateTime(detailItem.startTime)}</Typography>
-            <Typography variant="body2"><strong>End:</strong> {formatDateTime(detailItem.endTime)}</Typography>
-            <Typography variant="body2"><strong>Registration window:</strong> {formatDateTime(detailItem.registrationStartAt)} - {formatDateTime(detailItem.registrationEndAt)}</Typography>
-            <Typography variant="body2"><strong>Capacity:</strong> {detailItem.maxCapacity ?? '-'}</Typography>
-            <Typography variant="body2"><strong>Interested:</strong> {detailItem.interestedCount ?? 0}</Typography>
-            <Typography variant="body2"><strong>Created at:</strong> {formatDateTime(detailItem.createdAt)}</Typography>
-            {detailItem.description ? (
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                <strong>Description:</strong> {detailItem.description}
+      {/* Dialogs */}
+      <Dialog
+        open={Boolean(detailItem)}
+        onClose={() => setDetailItem(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>Chi tiết sự kiện</DialogTitle>
+        {detailItem && (
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Typography
+                variant="h6"
+                color="primary.main"
+                sx={{ fontWeight: 700 }}
+              >
+                {detailItem.title}
               </Typography>
-            ) : null}
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block" }}
+                >
+                  Tổ chức
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {orgLabel(detailItem.organizationId)}
+                </Typography>
+              </Box>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block" }}
+                  >
+                    Bắt đầu
+                  </Typography>
+                  <Typography variant="body2">
+                    {formatDateTime(detailItem.startTime)}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block" }}
+                  >
+                    Kết thúc
+                  </Typography>
+                  <Typography variant="body2">
+                    {formatDateTime(detailItem.endTime)}
+                  </Typography>
+                </Grid>
+              </Grid>
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block" }}
+                >
+                  Địa điểm
+                </Typography>
+                <Typography variant="body2">
+                  {detailItem.location || "-"}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block" }}
+                >
+                  Mô tả
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                  {detailItem.description || "Không có mô tả."}
+                </Typography>
+              </Box>
+            </Stack>
           </DialogContent>
-        ) : null}
-        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+        )}
+        <DialogActions sx={{ p: 3 }}>
           <Button
             variant="outlined"
-            startIcon={<GroupOutlinedIcon />}
-            onClick={() => {
-              setParticipantsTarget(detailItem);
-              setDetailItem(null);
-            }}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
+            onClick={() => setDetailItem(null)}
+            sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Tickets & interests
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<EditOutlinedIcon />}
-            onClick={() => {
-              setEditTarget(detailItem);
-              setDetailItem(null);
-            }}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
-            Edit
-          </Button>
-          <Button variant="contained" onClick={() => setDetailItem(null)} sx={{ textTransform: 'none', fontWeight: 700 }}>
-            Close
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>
@@ -443,9 +447,9 @@ const AdminEventsPage = () => {
         open={createOpen}
         event={null}
         onClose={() => setCreateOpen(false)}
-        onSubmit={async (payload) => {
-          const ok = await createEvent(payload);
-          enqueueSnackbar(ok ? 'Event created.' : 'Failed to create event.', { variant: ok ? 'success' : 'error' });
+        onSubmit={async (p) => {
+          const ok = await createEvent(p);
+          if (ok) enqueueSnackbar("Đã tạo sự kiện.", { variant: "success" });
           return ok;
         }}
       />
@@ -465,12 +469,16 @@ const AdminEventsPage = () => {
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Delete event"
-        description={deleteTarget ? `Delete "${deleteTarget.title}"?` : ''}
+        title="Xóa sự kiện"
+        description={
+          deleteTarget
+            ? `Bạn có chắc chắn muốn xóa sự kiện "${deleteTarget.title}"?`
+            : ""
+        }
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-    </>
+    </Box>
   );
 };
 

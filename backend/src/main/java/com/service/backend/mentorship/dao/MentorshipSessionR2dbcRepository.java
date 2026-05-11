@@ -91,4 +91,5 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status != 'Rejected' AND status != 'Cancelled'")
     Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
+
 }

@@ -23,11 +23,17 @@ const mapFundRow = (fund) => ({
 });
 
 const extractFunds = (payload) => {
-  const data = payload;
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.content)) return data.content;
-  if (Array.isArray(data?.items)) return data.items;
-  if (Array.isArray(data?.data?.content)) return data.data.content;
+  // If payload is already the inner data object (due to unwrap in fundApi)
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.items)) return payload.items;
+  if (Array.isArray(payload?.content)) return payload.content;
+  
+  // If payload still has a data wrapper (double nesting)
+  const nestedData = payload?.data;
+  if (Array.isArray(nestedData)) return nestedData;
+  if (Array.isArray(nestedData?.items)) return nestedData.items;
+  if (Array.isArray(nestedData?.content)) return nestedData.content;
+
   return [];
 };
 

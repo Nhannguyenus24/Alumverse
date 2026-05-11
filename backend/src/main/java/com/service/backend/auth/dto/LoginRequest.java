@@ -17,8 +17,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LoginRequest {
 
-    @NotNull(message = "Organization ID is required")
-    @Min(value = 1, message = "Organization ID must be greater than 0")
     @Schema(example = "1")
     private Integer organizationId;
 

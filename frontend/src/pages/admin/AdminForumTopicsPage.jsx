@@ -9,21 +9,24 @@ import {
   DialogTitle,
   IconButton,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
+  Grid,
+  Stack,
+  useTheme,
 } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
+import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
+import ChatOutlinedIcon from '@mui/icons-material/ChatOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useAdminForumContext } from '../../contexts/AdminForumContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
@@ -31,6 +34,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { formatDate } from '../../utils/dateFormatter';
 
 const AdminForumTopicsPage = () => {
+  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { activeOrgId } = useAdminSystemContext();
   const {
@@ -59,17 +63,85 @@ const AdminForumTopicsPage = () => {
   const [search, setSearch] = useState('');
   const [detailTopic, setDetailTopic] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-
-  // Create/Edit dialog
   const [dialog, setDialog] = useState({ open: false, mode: 'create', topic: null });
   const [form, setForm] = useState({ title: '', categoryId: '' });
-  const inputLabelSlotProps = { shrink: true };
 
-  const filteredTopics = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return topicsList;
-    return topicsList.filter((t) => String(t.title || '').toLowerCase().includes(q));
-  }, [topicsList, search]);
+  const columns = [
+    { id: 'id', label: 'ID', width: 60 },
+    { 
+      id: 'title', 
+      label: 'Tiêu đề', 
+      render: (val, row) => (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>{val}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {categories?.find(c => c.id === row.categoryId)?.name || `Category #${row.categoryId}`}
+          </Typography>
+        </Box>
+      )
+    },
+    { 
+      id: 'createdByName', 
+      label: 'Người tạo',
+      render: (val, row) => val || row.createdByMemberId || '-'
+    },
+    { id: 'viewCount', label: 'Lượt xem', align: 'center' },
+    { 
+      id: 'isLocked', 
+      label: 'Trạng thái', 
+      render: (val, row) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {val ? (
+             <Tooltip title="Mở khóa">
+              <IconButton size="small" color="warning" onClick={(e) => {
+                e.stopPropagation();
+                updateTopicLock?.(row.id, false, Number(user?.id));
+              }}>
+                <LockOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Khóa">
+              <IconButton size="small" color="inherit" onClick={(e) => {
+                e.stopPropagation();
+                updateTopicLock?.(row.id, true, Number(user?.id));
+              }}>
+                <LockOpenOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Typography variant="caption" sx={{ fontWeight: 600 }}>
+            {val ? 'Đã khóa' : 'Mở'}
+          </Typography>
+        </Box>
+      )
+    },
+    { id: 'createdAt', label: 'Ngày tạo', render: (val) => formatDate(val) },
+    {
+      id: 'actions',
+      label: '',
+      align: 'right',
+      render: (_, row) => (
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Chi tiết">
+            <IconButton size="small" onClick={() => setDetailTopic(row)}>
+              <VisibilityOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Chỉnh sửa">
+            <IconButton size="small" onClick={() => openEdit(row)}>
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Xóa">
+            <IconButton size="small" color="error" onClick={() => setDeleteTarget(row)}>
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )
+    }
+  ];
 
   const openCreate = () => {
     setForm({ title: '', categoryId: categories?.[0]?.id || '' });
@@ -83,24 +155,15 @@ const AdminForumTopicsPage = () => {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      enqueueSnackbar('Title is required.', { variant: 'warning' });
+      enqueueSnackbar('Vui lòng nhập tiêu đề.', { variant: 'warning' });
       return;
     }
     if (dialog.mode === 'create') {
-      if (!activeOrgId) {
-        enqueueSnackbar('No organization selected.', { variant: 'warning' });
-        return;
-      }
-      const createdByMemberId = Number(user?.id);
-      if (!createdByMemberId) {
-        enqueueSnackbar('Cannot determine current user id.', { variant: 'error' });
-        return;
-      }
-      const ok = await createTopic?.(activeOrgId, form.categoryId, form.title, createdByMemberId);
-      enqueueSnackbar(ok ? 'Topic created.' : 'Failed to create topic.', { variant: ok ? 'success' : 'error' });
+      const ok = await createTopic?.(activeOrgId, form.categoryId, form.title, Number(user?.id));
+      enqueueSnackbar(ok ? 'Đã tạo chủ đề.' : 'Lỗi tạo chủ đề.', { variant: ok ? 'success' : 'error' });
     } else {
       const ok = await updateTopic?.(dialog.topic.id, form.title, form.categoryId);
-      enqueueSnackbar(ok ? 'Topic updated.' : 'Failed to update topic.', { variant: ok ? 'success' : 'error' });
+      enqueueSnackbar(ok ? 'Đã cập nhật chủ đề.' : 'Lỗi cập nhật.', { variant: ok ? 'success' : 'error' });
     }
     setDialog({ open: false, mode: 'create', topic: null });
   };
@@ -108,245 +171,143 @@ const AdminForumTopicsPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteTopic?.(deleteTarget.id);
-    enqueueSnackbar(ok ? 'Topic deleted.' : 'Failed to delete topic.', { variant: ok ? 'success' : 'error' });
+    enqueueSnackbar(ok ? 'Đã xóa chủ đề.' : 'Lỗi xóa.', { variant: ok ? 'success' : 'error' });
     setDeleteTarget(null);
   };
 
+  const stats = {
+    total: totalElements,
+    locked: topicsList.filter(t => t.isLocked).length,
+    mostViewed: topicsList.length > 0 ? Math.max(...topicsList.map(t => t.viewCount || 0)) : 0,
+    categoriesCount: categories?.length || 0,
+  };
+
   return (
-    <>
-      <AdminSectionPanel
-        title="Forum topics management"
-        subtitle={`Manage topics via real API${activeOrgId ? ` (Org #${activeOrgId})` : ''}. Create, edit, and delete topics with server-side pagination.`}
-        action={
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddOutlinedIcon />}
-            onClick={openCreate}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
-          >
-            Create topic
-          </Button>
-        }
-      >
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-          <TextField
-            size="small"
-            label="Search title"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{ flex: '1 1 220px', minWidth: 200 }}
-          />
-        </Box>
-
-        {topicsLoading ? (
-          <Typography color="text.secondary" sx={{ py: 2 }}>
-            Loading topics…
+    <Box>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+            Chủ đề diễn đàn
           </Typography>
-        ) : (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>ID</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Category ID</TableCell>
-                <TableCell>Org ID</TableCell>
-                <TableCell>Creator</TableCell>
-                <TableCell>Views</TableCell>
-                    <TableCell>Locked</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell>Updated</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredTopics.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={10}>
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                      No topics found.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredTopics.map((topic) => (
-                  <TableRow key={topic.id} hover>
-                    <TableCell>{topic.id}</TableCell>
-                    <TableCell sx={{ maxWidth: 220 }}>{topic.title}</TableCell>
-                    <TableCell>{topic.categoryId ?? '-'}</TableCell>
-                    <TableCell>{topic.organizationId ?? '-'}</TableCell>
-                    <TableCell>{topic.createdByName || topic.createdByMemberId || '-'}</TableCell>
-                    <TableCell>{topic.viewCount ?? 0}</TableCell>
-                    <TableCell>
-                      {topic.isLocked ? (
-                        <Button
-                          size="small"
-                          color="warning"
-                          variant="outlined"
-                          sx={{ textTransform: 'none' }}
-                          onClick={async () => {
-                            const ok = await updateTopicLock?.(topic.id, false, Number(user?.id));
-                            enqueueSnackbar(ok ? 'Topic unlocked.' : 'Failed to unlock topic.', {
-                              variant: ok ? 'success' : 'error',
-                            });
-                          }}
-                        >
-                          Unlock
-                        </Button>
-                      ) : (
-                        <Button
-                          size="small"
-                          color="inherit"
-                          variant="outlined"
-                          sx={{ textTransform: 'none' }}
-                          onClick={async () => {
-                            const ok = await updateTopicLock?.(topic.id, true, Number(user?.id));
-                            enqueueSnackbar(ok ? 'Topic locked.' : 'Failed to lock topic.', {
-                              variant: ok ? 'success' : 'error',
-                            });
-                          }}
-                        >
-                          Lock
-                        </Button>
-                      )}
-                    </TableCell>
-                    <TableCell>{formatDate(topic.createdAt)}</TableCell>
-                    <TableCell>{formatDate(topic.updatedAt)}</TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                        <Tooltip title="View">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => setDetailTopic(topic)}
-                          >
-                            <VisibilityOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit">
-                          <IconButton size="small" color="info" onClick={() => openEdit(topic)}>
-                            <EditOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => setDeleteTarget(topic)}
-                          >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            Quản lý các cuộc thảo luận, khóa chủ đề không phù hợp và phân loại nội dung.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreate}
+          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+        >
+          Tạo chủ đề
+        </Button>
+      </Box>
 
-        <TablePagination
-          component="div"
-          count={totalElements}
-          page={topicsPage ?? 0}
-          rowsPerPage={topicsSize ?? 10}
-          onPageChange={(_, p) => setTopicsPage?.(p)}
-          onRowsPerPageChange={(e) => {
-            setTopicsSize?.(Number(e.target.value));
-            setTopicsPage?.(0);
-          }}
-          rowsPerPageOptions={[10, 20]}
-        />
-      </AdminSectionPanel>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Tổng chủ đề"
+            value={stats.total}
+            icon={<ForumOutlinedIcon />}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Đang thảo luận"
+            value={stats.total - stats.locked}
+            icon={<ChatOutlinedIcon />}
+            valueColor="success.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Lượt xem cao nhất"
+            value={stats.mostViewed}
+            icon={<VisibilityIcon />}
+            valueColor="info.main"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <AdminDashboardMetricTile
+            label="Chủ đề bị khóa"
+            value={stats.locked}
+            icon={<LockOutlinedIcon />}
+            valueColor="warning.main"
+          />
+        </Grid>
+      </Grid>
 
-      {/* ─── Detail dialog ─── */}
-      <Dialog
-        open={Boolean(detailTopic)}
-        onClose={() => setDetailTopic(null)}
-        fullWidth
-        maxWidth="sm"
-        scroll="body"
-      >
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Topic detail</DialogTitle>
+      <AdminDataTable
+        columns={columns}
+        rows={topicsList}
+        totalCount={totalElements}
+        page={topicsPage}
+        rowsPerPage={topicsSize}
+        onPageChange={(_, p) => setTopicsPage?.(p)}
+        onRowsPerPageChange={(e) => { setTopicsSize?.(Number(e.target.value)); setTopicsPage?.(0); }}
+        onSearchChange={(v) => setSearch(v)}
+        searchValue={search}
+        searchPlaceholder="Tìm kiếm tiêu đề..."
+        loading={topicsLoading}
+      />
+
+      {/* Detail Dialog */}
+      <Dialog open={Boolean(detailTopic)} onClose={() => setDetailTopic(null)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>Chi tiết chủ đề</DialogTitle>
         {detailTopic && (
           <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Typography variant="body2"><strong>ID:</strong> {detailTopic.id}</Typography>
-            <Typography variant="body2"><strong>Title:</strong> {detailTopic.title}</Typography>
-            <Typography variant="body2"><strong>Category ID:</strong> {detailTopic.categoryId ?? '-'}</Typography>
-            <Typography variant="body2"><strong>Organization ID:</strong> {detailTopic.organizationId ?? '-'}</Typography>
-            <Typography variant="body2"><strong>Created by:</strong> {detailTopic.createdByName || detailTopic.createdByMemberId || '-'}</Typography>
-            <Typography variant="body2"><strong>Views:</strong> {detailTopic.viewCount ?? 0}</Typography>
-            <Typography variant="body2"><strong>Locked:</strong> {detailTopic.isLocked ? 'Yes' : 'No'}</Typography>
-            <Typography variant="body2"><strong>Created:</strong> {formatDate(detailTopic.createdAt)}</Typography>
-            <Typography variant="body2"><strong>Updated:</strong> {formatDate(detailTopic.updatedAt)}</Typography>
+            <Typography variant="body2"><strong>Tiêu đề:</strong> {detailTopic.title}</Typography>
+            <Typography variant="body2"><strong>Người tạo:</strong> {detailTopic.createdByName || detailTopic.createdByMemberId || '-'}</Typography>
+            <Typography variant="body2"><strong>Lượt xem:</strong> {detailTopic.viewCount ?? 0}</Typography>
+            <Typography variant="body2"><strong>Trạng thái:</strong> {detailTopic.isLocked ? 'Đã khóa' : 'Đang mở'}</Typography>
+            <Typography variant="body2"><strong>Ngày tạo:</strong> {formatDate(detailTopic.createdAt)}</Typography>
           </DialogContent>
         )}
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDetailTopic(null)} variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }}>
-            Close
-          </Button>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setDetailTopic(null)} variant="outlined" sx={{ borderRadius: 2 }}>Đóng</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ─── Create/Edit dialog ─── */}
-      <Dialog
-        open={dialog.open}
-        onClose={() => setDialog((d) => ({ ...d, open: false }))}
-        fullWidth
-        maxWidth="sm"
-        scroll="body"
-      >
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-          {dialog.mode === 'create' ? 'Create topic' : 'Edit topic'}
-        </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
+      {/* Create/Edit Dialog */}
+      <Dialog open={dialog.open} onClose={() => setDialog(d => ({ ...d, open: false }))} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>{dialog.mode === 'create' ? 'Tạo chủ đề mới' : 'Chỉnh sửa chủ đề'}</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
-            label="Title"
+            label="Tiêu đề"
             required
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             fullWidth
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            value={form.title}
+            onChange={(e) => setForm(f => ({ ...f, title: e.target.value }))}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
             select
-            label="Category"
-            value={form.categoryId}
-            onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+            label="Danh mục"
             fullWidth
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            value={form.categoryId}
+            onChange={(e) => setForm(f => ({ ...f, categoryId: e.target.value }))}
+            slotProps={{ inputLabel: { shrink: true } }}
           >
-            {(categories ?? []).length === 0 ? (
-              <MenuItem value="">No categories loaded</MenuItem>
-            ) : (
-              (categories ?? []).map((cat) => (
-                <MenuItem key={cat.id} value={cat.id}>
-                  {cat.name || `Category #${cat.id}`}
-                </MenuItem>
-              ))
-            )}
+            {categories?.map(cat => (
+              <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>
+            ))}
           </TextField>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setDialog((d) => ({ ...d, open: false }))} sx={{ textTransform: 'none' }}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={handleSave} sx={{ textTransform: 'none', fontWeight: 700 }}>
-            Save
-          </Button>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setDialog(d => ({ ...d, open: false }))}>Hủy</Button>
+          <Button variant="contained" onClick={handleSave} sx={{ borderRadius: 2 }}>Lưu</Button>
         </DialogActions>
       </Dialog>
 
-      {/* ─── Delete confirm ─── */}
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Delete topic"
-        description={deleteTarget ? `Delete topic "${deleteTarget.title}" (ID: ${deleteTarget.id})? This calls the backend API.` : ''}
+        title="Xóa chủ đề"
+        description={deleteTarget ? `Bạn có chắc chắn muốn xóa chủ đề "${deleteTarget.title}"?` : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-    </>
+    </Box>
   );
 };
 

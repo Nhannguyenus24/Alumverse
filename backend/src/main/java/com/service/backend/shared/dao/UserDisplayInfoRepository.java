@@ -39,6 +39,34 @@ public class UserDisplayInfoRepository {
                 .collectMap(UserDisplayInfo::getUserId, info -> info);
     }
 
+    /**
+     * Batch fetch display info for organization members (mapping member_id -> user display info).
+     */
+    public Mono<Map<Integer, UserDisplayInfo>> findByMemberIds(Collection<Integer> memberIds) {
+        if (memberIds == null || memberIds.isEmpty()) {
+            return Mono.just(Map.of());
+        }
+        List<Integer> distinctIds = memberIds.stream().distinct().toList();
+        return databaseClient
+                .sql("SELECT om.id AS member_id, u.avatar_url, gp.full_name " +
+                        "FROM organization_members om " +
+                        "JOIN users u ON om.user_id = u.id " +
+                        "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
+                        "WHERE om.id IN (:ids)")
+                .bind("ids", distinctIds)
+                .map((row, meta) -> {
+                    Integer memberId = row.get("member_id", Integer.class);
+                    UserDisplayInfo info = UserDisplayInfo.builder()
+                            .userId(memberId) // We map memberId as the key in UserDisplayInfo for convenience in lookup
+                            .fullName(row.get("full_name", String.class))
+                            .avatarUrl(row.get("avatar_url", String.class))
+                            .build();
+                    return info;
+                })
+                .all()
+                .collectMap(UserDisplayInfo::getUserId, info -> info);
+    }
+
     public Mono<UserDisplayInfo> findByUserId(Integer userId) {
         if (userId == null) return Mono.empty();
         return findByUserIds(List.of(userId))
