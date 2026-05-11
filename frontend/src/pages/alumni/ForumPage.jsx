@@ -121,7 +121,7 @@ const ForumPage = () => {
 
   const handleFilterChange = useCallback(
     (id) => {
-      navigate('.', { replace: true, state: { ...(location.state ?? {}), selectedFilterId: id } });
+      navigate('/forum', { replace: true, state: { ...(location.state ?? {}), selectedFilterId: id } });
     },
     [navigate, location.state]
   );
