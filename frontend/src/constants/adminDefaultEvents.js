@@ -10,3 +10,5 @@ export const ADMIN_EVENT_SORT_OPTIONS = [
   { value: 'title', label: 'Title' },
   { value: 'interestedCount', label: 'Interested count' },
 ];
+
+export const DEFAULT_ADMIN_EVENTS = [];

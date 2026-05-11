@@ -46,6 +46,14 @@ const AdminUsersListPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const slugMatchWildcard = useMatch('/:slug/admin/*');
+  const slugMatchExact = useMatch('/:slug/admin');
+  const slugMatch = slugMatchWildcard ?? slugMatchExact;
+  const adminBase = useMemo(
+    () => (slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin'),
+    [slugMatch?.params?.slug],
+  );
+  const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const {
     users,
