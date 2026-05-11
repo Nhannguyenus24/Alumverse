@@ -36,6 +36,7 @@ public class NewsService {
                                         .slug(request.getSlug())
                                         .content(request.getContent())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
+                                        .topic(request.getTopic())
                                         .isHidden(true)
                                         .build();
 
@@ -54,6 +55,7 @@ public class NewsService {
                             existing.setSlug(request.getSlug());
                             existing.setContent(request.getContent());
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
+                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             return newsRepository.save(existing);
                         }))
                 .map(NewsResponse::from);

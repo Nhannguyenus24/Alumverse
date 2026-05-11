@@ -32,6 +32,7 @@ public class AchievementService {
                                     .description(request.getDescription())
                                     .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
                                     .awardedDate(request.getAwardedDate())
+                                    .topic(request.getTopic())
                                     .status(request.getStatus())
                                     .build();
 
@@ -50,6 +51,7 @@ public class AchievementService {
                             existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
                             existing.setAwardedDate(request.getAwardedDate());
                             existing.setStatus(request.getStatus());
+                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             return achievementRepository.save(existing);
                         }))
                 .map(AchievementResponse::from);
