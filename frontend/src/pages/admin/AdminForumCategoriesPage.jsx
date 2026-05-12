@@ -269,39 +269,41 @@ const AdminForumCategoriesPage = () => {
         </Stack>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng danh mục"
-            value={stats.total}
-            icon={<CategoryOutlinedIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Danh mục chính"
-            value={stats.roots}
-            icon={<AccountTreeOutlinedIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Danh mục con"
-            value={stats.sub}
-            icon={<SubtitlesOutlinedIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Cập nhật gần nhất"
-            value={stats.lastUpdate}
-            icon={<HistoryOutlinedIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng danh mục"
+          value={stats.total}
+          icon={<CategoryOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Danh mục chính"
+          value={stats.roots}
+          icon={<AccountTreeOutlinedIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Danh mục con"
+          value={stats.sub}
+          icon={<SubtitlesOutlinedIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Cập nhật gần nhất"
+          value={stats.lastUpdate}
+          icon={<HistoryOutlinedIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
         {categoriesLoading ? (

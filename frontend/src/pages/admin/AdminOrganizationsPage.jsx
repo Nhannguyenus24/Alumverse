@@ -149,31 +149,35 @@ const AdminOrganizationsPage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <AdminDashboardMetricTile
-            label="Tổng tổ chức"
-            value={stats.total}
-            icon={<BusinessIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <AdminDashboardMetricTile
-            label="Đang hoạt động"
-            value={stats.active}
-            icon={<CheckCircleIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <AdminDashboardMetricTile
-            label="Tạm ngưng"
-            value={stats.inactive}
-            icon={<ErrorIcon />}
-            valueColor="error.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 16px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng tổ chức"
+          value={stats.total}
+          icon={<BusinessIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Đang hoạt động"
+          value={stats.active}
+          icon={<CheckCircleIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tạm ngưng"
+          value={stats.inactive}
+          icon={<ErrorIcon />}
+          valueColor="error.main"
+        />
+      </Box>
 
       <AdminOrganizationMasterDetail
         organizations={organizations}

@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useSnackbar } from 'notistack';
+import { useMemo, useState } from "react";
+import { useSnackbar } from "notistack";
 import {
   Box,
   Button,
@@ -23,37 +23,48 @@ import {
   TextField,
   Tooltip,
   Typography,
-} from '@mui/material';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
-import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
-import AdminEventFormDialog from '../../components/admin/AdminEventFormDialog';
-import AdminEventTicketsDialog from '../../components/admin/AdminEventTicketsDialog';
+} from "@mui/material";
+import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import AdminSectionPanel from "../../components/admin/AdminSectionPanel";
+import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
+import AdminEventFormDialog from "../../components/admin/AdminEventFormDialog";
+import AdminEventTicketsDialog from "../../components/admin/AdminEventTicketsDialog";
 import {
   ADMIN_EVENT_SORT_OPTIONS,
   ADMIN_EVENT_STATUS_OPTIONS,
-} from '../../constants/adminDefaultEvents';
-import { ADMIN_FILTER_BAR_SX, ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
-import useAdminEvents from '../../hooks/admin/useAdminEvents';
-import { formatDateTime } from '../../utils/dateFormatter';
+} from "../../constants/adminDefaultEvents";
+import {
+  ADMIN_FILTER_BAR_SX,
+  ADMIN_STATUS_CHIP_SX,
+} from "../../constants/adminUiShared";
+import useAdminEvents from "../../hooks/admin/useAdminEvents";
+import { formatDateTime } from "../../utils/dateFormatter";
+import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
 const publishStatusChip = (isPublished) =>
   isPublished
-    ? { color: 'success', label: 'Published' }
-    : { color: 'default', label: 'Draft' };
+    ? { color: "success", label: "Published" }
+    : { color: "default", label: "Draft" };
 
 const StatTile = ({ label, value }) => (
-  <Paper variant="outlined" sx={{ p: 1.5, textAlign: 'center', height: '100%' }}>
-    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+  <Paper
+    variant="outlined"
+    sx={{ p: 1.5, textAlign: "center", height: "100%" }}
+  >
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{ display: "block" }}
+    >
       {label}
     </Typography>
     <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
-      {value ?? '-'}
+      {value ?? "-"}
     </Typography>
   </Paper>
 );
@@ -99,41 +110,37 @@ const AdminEventsPage = () => {
 
   const handlePublish = async (event) => {
     const ok = await publishEvent(event.id);
-    enqueueSnackbar(
-      ok ? 'Event published.' : 'Failed to publish event.',
-      { variant: ok ? 'success' : 'error' },
-    );
+    enqueueSnackbar(ok ? "Event published." : "Failed to publish event.", {
+      variant: ok ? "success" : "error",
+    });
   };
 
   const handleUnpublish = async (event) => {
     const ok = await unpublishEvent(event.id);
-    enqueueSnackbar(
-      ok ? 'Event unpublished.' : 'Failed to unpublish event.',
-      { variant: ok ? 'success' : 'warning' },
-    );
+    enqueueSnackbar(ok ? "Event unpublished." : "Failed to unpublish event.", {
+      variant: ok ? "success" : "warning",
+    });
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteEvent(deleteTarget.id);
-    enqueueSnackbar(
-      ok ? 'Event deleted.' : 'Failed to delete event.',
-      { variant: ok ? 'success' : 'error' },
-    );
+    enqueueSnackbar(ok ? "Event deleted." : "Failed to delete event.", {
+      variant: ok ? "success" : "error",
+    });
     setDeleteTarget(null);
   };
 
   const handleEditSubmit = async (payload) => {
     if (!editTarget) return false;
     const ok = await updateEvent(editTarget.id, payload);
-    enqueueSnackbar(
-      ok ? 'Event updated.' : 'Failed to update event.',
-      { variant: ok ? 'success' : 'error' },
-    );
+    enqueueSnackbar(ok ? "Event updated." : "Failed to update event.", {
+      variant: ok ? "success" : "error",
+    });
     return ok;
   };
 
-  const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? '-'}`;
+  const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
 
   return (
     <>
@@ -142,41 +149,77 @@ const AdminEventsPage = () => {
         subtitle="Cross-organization event listing, publish moderation and removal — backed by /api/admin/events."
       >
         {statistics ? (
-          <Grid container spacing={1.5} sx={{ mb: 2 }}>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Total events" value={statistics.totalEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Published" value={statistics.publishedEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Draft" value={statistics.unpublishedEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Upcoming" value={statistics.upcomingEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Ongoing" value={statistics.ongoingEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Past" value={statistics.pastEvents} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Tickets registered" value={statistics.registeredTickets} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Tickets checked-in" value={statistics.checkedInTickets} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Tickets cancelled" value={statistics.cancelledTickets} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="Total interests" value={statistics.totalInterests} />
-            </Grid>
-            <Grid item xs={6} sm={4} md={2}>
-              <StatTile label="New today" value={statistics.newEventsToday} />
-            </Grid>
-          </Grid>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              mb: 3,
+              "& > *": {
+                flex: {
+                  xs: "1 1 calc(50% - 12px)",
+                  sm: "1 1 calc(33.333% - 12px)",
+                  md: "1 1 calc(20% - 12px)",
+                  lg: "1 1 0",
+                },
+              },
+            }}
+          >
+            <AdminDashboardMetricTile
+              label="Total events"
+              value={statistics.totalEvents}
+            />
+            <AdminDashboardMetricTile
+              label="Published"
+              value={statistics.publishedEvents}
+              valueColor="success.main"
+            />
+            <AdminDashboardMetricTile
+              label="Draft"
+              value={statistics.unpublishedEvents}
+              valueColor="text.secondary"
+            />
+            <AdminDashboardMetricTile
+              label="Upcoming"
+              value={statistics.upcomingEvents}
+              valueColor="info.main"
+            />
+            <AdminDashboardMetricTile
+              label="Ongoing"
+              value={statistics.ongoingEvents}
+              valueColor="warning.main"
+            />
+            <AdminDashboardMetricTile
+              label="Past"
+              value={statistics.pastEvents}
+              valueColor="text.disabled"
+            />
+            <AdminDashboardMetricTile
+              label="Tickets registered"
+              value={statistics.registeredTickets}
+              valueColor="primary.main"
+            />
+            <AdminDashboardMetricTile
+              label="Tickets checked-in"
+              value={statistics.checkedInTickets}
+              valueColor="success.dark"
+            />
+            <AdminDashboardMetricTile
+              label="Tickets cancelled"
+              value={statistics.cancelledTickets}
+              valueColor="error.main"
+            />
+            <AdminDashboardMetricTile
+              label="Total interests"
+              value={statistics.totalInterests}
+              valueColor="secondary.main"
+            />
+            <AdminDashboardMetricTile
+              label="New today"
+              value={statistics.newEventsToday}
+              valueColor="success.main"
+            />
+          </Box>
         ) : null}
 
         <Box sx={ADMIN_FILTER_BAR_SX}>
@@ -189,7 +232,7 @@ const AdminEventsPage = () => {
               setPage(0);
             }}
             placeholder="Title or description..."
-            sx={{ flex: '1 1 220px', minWidth: 220 }}
+            sx={{ flex: "1 1 220px", minWidth: 220 }}
           />
           <TextField
             select
@@ -276,7 +319,11 @@ const AdminEventsPage = () => {
               {events.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9}>
-                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ py: 2 }}
+                    >
                       No events match current filters.
                     </Typography>
                   </TableCell>
@@ -289,7 +336,7 @@ const AdminEventsPage = () => {
                       key={event.id}
                       hover
                       onClick={() => setDetailItem(event)}
-                      sx={{ cursor: 'pointer' }}
+                      sx={{ cursor: "pointer" }}
                     >
                       <TableCell>{event.id}</TableCell>
                       <TableCell sx={{ maxWidth: 240 }}>
@@ -311,43 +358,81 @@ const AdminEventsPage = () => {
                         />
                       </TableCell>
                       <TableCell>
-                        {formatDateTime(event.startTime)} - {formatDateTime(event.endTime)}
+                        {formatDateTime(event.startTime)} -{" "}
+                        {formatDateTime(event.endTime)}
                       </TableCell>
-                      <TableCell align="right">{event.maxCapacity ?? '-'}</TableCell>
-                      <TableCell align="right">{event.interestedCount ?? 0}</TableCell>
+                      <TableCell align="right">
+                        {event.maxCapacity ?? "-"}
+                      </TableCell>
+                      <TableCell align="right">
+                        {event.interestedCount ?? 0}
+                      </TableCell>
                       <TableCell>{formatDateTime(event.createdAt)}</TableCell>
-                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                      <TableCell
+                        align="right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 0.5,
+                          }}
+                        >
                           <Tooltip title="View">
-                            <IconButton size="small" color="primary" onClick={() => setDetailItem(event)}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setDetailItem(event)}
+                            >
                               <VisibilityOutlinedIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Edit">
-                            <IconButton size="small" color="primary" onClick={() => setEditTarget(event)}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setEditTarget(event)}
+                            >
                               <EditOutlinedIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           <Tooltip title="Tickets & interests">
-                            <IconButton size="small" color="primary" onClick={() => setParticipantsTarget(event)}>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setParticipantsTarget(event)}
+                            >
                               <GroupOutlinedIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                           {event.isPublished ? (
                             <Tooltip title="Unpublish">
-                              <IconButton size="small" color="warning" onClick={() => handleUnpublish(event)}>
+                              <IconButton
+                                size="small"
+                                color="warning"
+                                onClick={() => handleUnpublish(event)}
+                              >
                                 <CancelOutlinedIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           ) : (
                             <Tooltip title="Publish">
-                              <IconButton size="small" color="success" onClick={() => handlePublish(event)}>
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() => handlePublish(event)}
+                              >
                                 <CheckCircleOutlineIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           )}
                           <Tooltip title="Delete">
-                            <IconButton size="small" color="error" onClick={() => setDeleteTarget(event)}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => setDeleteTarget(event)}
+                            >
                               <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -375,24 +460,63 @@ const AdminEventsPage = () => {
         />
       </AdminSectionPanel>
 
-      <Dialog open={Boolean(detailItem)} onClose={() => setDetailItem(null)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ color: 'primary.main', fontWeight: 800 }}>Event detail</DialogTitle>
+      <Dialog
+        open={Boolean(detailItem)}
+        onClose={() => setDetailItem(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
+          Event detail
+        </DialogTitle>
         {detailItem ? (
-          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-            <Typography variant="body2"><strong>ID:</strong> {detailItem.id}</Typography>
-            <Typography variant="body2"><strong>Title:</strong> {detailItem.title}</Typography>
-            <Typography variant="body2"><strong>Organization:</strong> {orgLabel(detailItem.organizationId)}</Typography>
-            <Typography variant="body2"><strong>Creator member ID:</strong> {detailItem.creatorMemberId ?? '-'}</Typography>
-            <Typography variant="body2"><strong>Status:</strong> {detailItem.isPublished ? 'Published' : 'Draft'}</Typography>
-            <Typography variant="body2"><strong>Location:</strong> {detailItem.location || '-'}</Typography>
-            <Typography variant="body2"><strong>Start:</strong> {formatDateTime(detailItem.startTime)}</Typography>
-            <Typography variant="body2"><strong>End:</strong> {formatDateTime(detailItem.endTime)}</Typography>
-            <Typography variant="body2"><strong>Registration window:</strong> {formatDateTime(detailItem.registrationStartAt)} - {formatDateTime(detailItem.registrationEndAt)}</Typography>
-            <Typography variant="body2"><strong>Capacity:</strong> {detailItem.maxCapacity ?? '-'}</Typography>
-            <Typography variant="body2"><strong>Interested:</strong> {detailItem.interestedCount ?? 0}</Typography>
-            <Typography variant="body2"><strong>Created at:</strong> {formatDateTime(detailItem.createdAt)}</Typography>
+          <DialogContent
+            sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}
+          >
+            <Typography variant="body2">
+              <strong>ID:</strong> {detailItem.id}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Title:</strong> {detailItem.title}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Organization:</strong>{" "}
+              {orgLabel(detailItem.organizationId)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Creator member ID:</strong>{" "}
+              {detailItem.creatorMemberId ?? "-"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Status:</strong>{" "}
+              {detailItem.isPublished ? "Published" : "Draft"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Location:</strong> {detailItem.location || "-"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Start:</strong> {formatDateTime(detailItem.startTime)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>End:</strong> {formatDateTime(detailItem.endTime)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Registration window:</strong>{" "}
+              {formatDateTime(detailItem.registrationStartAt)} -{" "}
+              {formatDateTime(detailItem.registrationEndAt)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Capacity:</strong> {detailItem.maxCapacity ?? "-"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Interested:</strong> {detailItem.interestedCount ?? 0}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Created at:</strong>{" "}
+              {formatDateTime(detailItem.createdAt)}
+            </Typography>
             {detailItem.description ? (
-              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                 <strong>Description:</strong> {detailItem.description}
               </Typography>
             ) : null}
@@ -406,7 +530,7 @@ const AdminEventsPage = () => {
               setParticipantsTarget(detailItem);
               setDetailItem(null);
             }}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
+            sx={{ textTransform: "none", fontWeight: 700 }}
           >
             Tickets & interests
           </Button>
@@ -417,11 +541,15 @@ const AdminEventsPage = () => {
               setEditTarget(detailItem);
               setDetailItem(null);
             }}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
+            sx={{ textTransform: "none", fontWeight: 700 }}
           >
             Edit
           </Button>
-          <Button variant="contained" onClick={() => setDetailItem(null)} sx={{ textTransform: 'none', fontWeight: 700 }}>
+          <Button
+            variant="contained"
+            onClick={() => setDetailItem(null)}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
             Close
           </Button>
         </DialogActions>
@@ -443,7 +571,11 @@ const AdminEventsPage = () => {
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
         title="Delete event"
-        description={deleteTarget ? `Permanently delete "${deleteTarget.title}" (#${deleteTarget.id})?` : ''}
+        description={
+          deleteTarget
+            ? `Permanently delete "${deleteTarget.title}" (#${deleteTarget.id})?`
+            : ""
+        }
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />

@@ -69,41 +69,43 @@ const AdminDashboardPage = () => {
       </Box>
 
       {/* Primary Metrics Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng thành viên"
-            value={totalUsers.toLocaleString()}
-            icon={<PeopleAltOutlinedIcon />}
-            trend={12}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Bài viết chờ duyệt"
-            value={pendingPosts}
-            icon={<MarkChatUnreadOutlinedIcon />}
-            valueColor="warning.main"
-            caption="Cần xử lý ngay"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổ chức / Đơn vị"
-            value={totalOrgs}
-            icon={<BusinessCenterOutlinedIcon />}
-            trend={2}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Hoạt động hệ thống"
-            value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
-            icon={<TrendingUpIcon />}
-            caption="Bản ghi mới hôm nay"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng thành viên"
+          value={totalUsers.toLocaleString()}
+          icon={<PeopleAltOutlinedIcon />}
+          trend={12}
+        />
+        <AdminDashboardMetricTile
+          label="Bài viết chờ duyệt"
+          value={pendingPosts}
+          icon={<MarkChatUnreadOutlinedIcon />}
+          valueColor="warning.main"
+          caption="Cần xử lý ngay"
+        />
+        <AdminDashboardMetricTile
+          label="Tổ chức / Đơn vị"
+          value={totalOrgs}
+          icon={<BusinessCenterOutlinedIcon />}
+          trend={2}
+        />
+        <AdminDashboardMetricTile
+          label="Hoạt động hệ thống"
+          value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
+          icon={<TrendingUpIcon />}
+          caption="Bản ghi mới hôm nay"
+        />
+      </Box>
 
       <Grid container spacing={3}>
         {/* Main Chart Section */}

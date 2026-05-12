@@ -294,39 +294,41 @@ const AdminForumTopicsPage = () => {
         </Stack>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng chủ đề"
-            value={stats.total}
-            icon={<ForumOutlinedIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Đang thảo luận"
-            value={stats.total - stats.locked}
-            icon={<ChatOutlinedIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Lượt xem cao nhất"
-            value={stats.mostViewed}
-            icon={<VisibilityIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Chủ đề bị khóa"
-            value={stats.locked}
-            icon={<LockOutlinedIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 3,
+          mb: 4,
+          "& > *": {
+            flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 12px)", md: "1 1 0" },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng chủ đề"
+          value={stats.total}
+          icon={<ForumOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Đang thảo luận"
+          value={stats.total - stats.locked}
+          icon={<ChatOutlinedIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Lượt xem cao nhất"
+          value={stats.mostViewed}
+          icon={<VisibilityIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Chủ đề bị khóa"
+          value={stats.locked}
+          icon={<LockOutlinedIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <AdminDataTable
         columns={columns}

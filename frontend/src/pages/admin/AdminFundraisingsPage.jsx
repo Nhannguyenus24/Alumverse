@@ -241,39 +241,41 @@ const AdminFundraisingsPage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng tiền quyên góp"
-            value={formatCurrencyVnd(stats.totalRaised)}
-            icon={<AccountBalanceWalletIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Chiến dịch đang chạy"
-            value={stats.activeCampaigns}
-            icon={<TrendingUpIcon />}
-            valueColor="primary.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng lượt ủng hộ"
-            value={stats.totalDonors}
-            icon={<GroupIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tỷ lệ hoàn thành"
-            value={`${stats.avgCompletion}%`}
-            icon={<VolunteerActivismIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng tiền quyên góp"
+          value={formatCurrencyVnd(stats.totalRaised)}
+          icon={<AccountBalanceWalletIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Chiến dịch đang chạy"
+          value={stats.activeCampaigns}
+          icon={<TrendingUpIcon />}
+          valueColor="primary.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tổng lượt ủng hộ"
+          value={stats.totalDonors}
+          icon={<GroupIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Tỷ lệ hoàn thành"
+          value={`${stats.avgCompletion}%`}
+          icon={<VolunteerActivismIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <AdminDataTable
         columns={columns}

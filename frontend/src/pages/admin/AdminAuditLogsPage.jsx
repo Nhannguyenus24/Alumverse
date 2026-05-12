@@ -258,39 +258,41 @@ const AdminAuditLogsPage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng nhật ký"
-            value={stats.totalLogs}
-            icon={<HistoryIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Hoạt động 24h"
-            value={stats.last24h}
-            icon={<HistoryIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Người dùng hoạt động"
-            value={stats.distinctUsers}
-            icon={<SecurityIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Lỗi hệ thống"
-            value={stats.failedLogs}
-            icon={<SecurityIcon />}
-            valueColor="error.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng nhật ký"
+          value={stats.totalLogs}
+          icon={<HistoryIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Hoạt động 24h"
+          value={stats.last24h}
+          icon={<HistoryIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Người dùng hoạt động"
+          value={stats.distinctUsers}
+          icon={<SecurityIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Lỗi hệ thống"
+          value={stats.failedLogs}
+          icon={<SecurityIcon />}
+          valueColor="error.main"
+        />
+      </Box>
 
       <AdminDataTable
         columns={columns}

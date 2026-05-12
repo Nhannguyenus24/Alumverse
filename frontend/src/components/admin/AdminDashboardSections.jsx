@@ -1,4 +1,4 @@
-import { Box, Chip, List, ListItem, ListItemText, Typography } from '@mui/material';
+import { Box, Chip, List, ListItem, ListItemText, Typography, Grid } from '@mui/material';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
 import Chart from '../Chart';
@@ -22,7 +22,17 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         title="Users"
         subtitle="Accounts, registration trend, and status breakdown (local demo data)."
       >
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 3,
+            '& > *': {
+              flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 12px)', lg: '1 1 0' },
+            },
+          }}
+        >
           <AdminDashboardMetricTile label="Total users" value={user.totalUsers} valueColor="primary.main" />
           <AdminDashboardMetricTile
             label="New (7 days)"
@@ -57,18 +67,28 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         subtitle="Post volume, moderation mix, and live statistics from backend API."
       >
         {/* Row 1: core metrics from local aggregates + API stats */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 3,
+            '& > *': {
+              flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 12px)', md: '1 1 calc(20% - 12px)', lg: '1 1 0' },
+            },
+          }}
+        >
           <AdminDashboardMetricTile label="Total posts" value={stats.totalPosts ?? forum.totalPosts} valueColor="primary.main" />
           <AdminDashboardMetricTile label="Total topics" value={stats.totalTopics ?? 0} valueColor="info.main" />
           <AdminDashboardMetricTile label="Total categories" value={stats.totalCategories ?? 0} valueColor="info.dark" />
-          <AdminDashboardMetricTile label="Banned posts" value={stats.bannedPosts ?? 0} valueColor="error.main" />
-          <AdminDashboardMetricTile label="New topics today" value={stats.newTopicsToday ?? 0} valueColor="success.main" />
-          <AdminDashboardMetricTile label="New posts today" value={stats.newPostsToday ?? 0} valueColor="success.dark" />
+          <AdminDashboardMetricTile label="Banned" value={stats.bannedPosts ?? 0} valueColor="error.main" />
+          <AdminDashboardMetricTile label="Today Topics" value={stats.newTopicsToday ?? 0} valueColor="success.main" />
+          <AdminDashboardMetricTile label="Today Posts" value={stats.newPostsToday ?? 0} valueColor="success.dark" />
           <AdminDashboardMetricTile label="Pending" value={forum.pending} valueColor="warning.main" />
           <AdminDashboardMetricTile label="Flagged" value={forum.flagged} valueColor="error.light" />
           <AdminDashboardMetricTile label="Approved" value={forum.approved} valueColor="success.main" />
           <AdminDashboardMetricTile label="Rejected" value={forum.rejected} valueColor="text.secondary" />
-          <AdminDashboardMetricTile label="Total reports (flags)" value={forum.totalFlags} valueColor="secondary.main" />
+          <AdminDashboardMetricTile label="Reports" value={forum.totalFlags} valueColor="secondary.main" />
         </Box>
 
         {/* Row 2: charts */}
@@ -212,7 +232,17 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         title="Organizations"
         subtitle="Lifecycle snapshot and top communities by membership (mock / API fallback)."
       >
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 2,
+            mb: 3,
+            '& > *': {
+              flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 12px)', md: '1 1 0' },
+            },
+          }}
+        >
           <AdminDashboardMetricTile
             label="Total organizations"
             value={organization.totalOrganizations}

@@ -307,39 +307,41 @@ const AdminUsersListPage = () => {
         </Stack>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng người dùng"
-            value={stats.total}
-            icon={<PeopleAltOutlinedIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Thành viên mới (24h)"
-            value={stats.newToday}
-            icon={<PersonAddOutlinedIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tài khoản hoạt động"
-            value={stats.active}
-            icon={<VerifiedUserOutlinedIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tài khoản bị chặn"
-            value={stats.banned}
-            icon={<GppBadOutlinedIcon />}
-            valueColor="error.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng người dùng"
+          value={stats.total}
+          icon={<PeopleAltOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Thành viên mới (24h)"
+          value={stats.newToday}
+          icon={<PersonAddOutlinedIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tài khoản hoạt động"
+          value={stats.active}
+          icon={<VerifiedUserOutlinedIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tài khoản bị chặn"
+          value={stats.banned}
+          icon={<GppBadOutlinedIcon />}
+          valueColor="error.main"
+        />
+      </Box>
 
       <AdminDataTable
         columns={columns}
