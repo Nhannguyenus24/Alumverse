@@ -21,7 +21,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 
-const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout }) => {
+const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -82,9 +82,30 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout }) => {
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />
               Admin
             </MuiLink>
-            <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
-              Dashboard
-            </Typography>
+            
+            {breadcrumbs ? (
+              breadcrumbs.map((crumb, idx) => (
+                crumb.href ? (
+                  <MuiLink
+                    key={idx}
+                    underline="hover"
+                    color="inherit"
+                    href={crumb.href}
+                    sx={{ fontSize: 14, fontWeight: crumb.active ? 600 : 500 }}
+                  >
+                    {crumb.label}
+                  </MuiLink>
+                ) : (
+                  <Typography key={idx} color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
+                    {crumb.label}
+                  </Typography>
+                )
+              ))
+            ) : (
+              <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
+                Dashboard
+              </Typography>
+            )}
           </Breadcrumbs>
         </Stack>
 

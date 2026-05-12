@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMatch, useNavigate } from 'react-router';
+import { useMatch, useNavigate, useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -16,6 +16,9 @@ import {
   Avatar,
   Grid,
 } from '@mui/material';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import { useDebounce } from '../../hooks/useDebounce';
+import { exportToCSV } from '../../utils/exportUtils';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -76,7 +79,33 @@ const AdminUsersListPage = () => {
     deleteUser,
     banUser,
     unbanUser,
+    sortedUsers,
   } = useAdminUsersContext();
+
+  const { setBreadcrumbs } = useOutletContext();
+  const [searchTerm, setSearchTerm] = useState(search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Người dùng', active: true }]);
+  }, [setBreadcrumbs]);
+
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch, setSearch]);
+
+  const handleExport = () => {
+    const exportData = sortedUsers.map(u => ({
+      ID: u.id,
+      'Họ tên': u.fullName || u.userName,
+      Email: u.email,
+      'Vai trò': u.role,
+      'Trạng thái': formatAccountStatusLabel(u.status),
+      'Tổ chức': u.organizationName || '-',
+      'Ngày tham gia': formatDateTime(u.createdAt)
+    }));
+    exportToCSV(exportData, `users_export_${new Date().getTime()}.csv`);
+  };
 
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [userFormMode, setUserFormMode] = useState('create');
@@ -258,14 +287,24 @@ const AdminUsersListPage = () => {
             Quản lý tài khoản, phân quyền và trạng thái hoạt động của thành viên.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-        >
-          Thêm người dùng
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<FileDownloadOutlinedIcon />}
+            onClick={handleExport}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+          >
+            Xuất Excel
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+          >
+            Thêm người dùng
+          </Button>
+        </Stack>
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -310,8 +349,8 @@ const AdminUsersListPage = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={(_, next) => setPage(next)}
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-        onSearchChange={(val) => { setSearch(val); setPage(0); }}
-        searchValue={search}
+        onSearchChange={(val) => { setSearchTerm(val); setPage(0); }}
+        searchValue={searchTerm}
         searchPlaceholder="Tìm theo tên, email, username..."
         filters={Filters}
         onRowClick={(u) => navigate(`/admin/users/${u.id}`)}

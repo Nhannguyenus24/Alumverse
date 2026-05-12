@@ -19,6 +19,7 @@ const SIDEBAR_COLLAPSED_WIDTH = 88;
 const AdminLayoutShell = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [breadcrumbs, setBreadcrumbs] = useState(null);
   const theme = useTheme();
 
   const slugMatchNested = useMatch('/:slug/admin/*');
@@ -76,6 +77,7 @@ const AdminLayoutShell = () => {
           isSidebarCollapsed={isSidebarCollapsed}
           user={user}
           onLogout={logout}
+          breadcrumbs={breadcrumbs}
         />
 
         <Box
@@ -89,8 +91,8 @@ const AdminLayoutShell = () => {
             minHeight: '100vh',
           }}
         >
-          <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
-            <Outlet />
+          <Box>
+            <Outlet context={{ setBreadcrumbs }} />
           </Box>
         </Box>
       </Box>

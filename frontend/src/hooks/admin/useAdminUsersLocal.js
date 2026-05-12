@@ -59,7 +59,7 @@ const useAdminUsersLocal = () => {
 
   useEffect(() => {
     loadUsers();
-  }, [loadUsers]);
+  }, [loadUsers, search, roleFilter, statusFilter, organizationFilter]);
 
   // ── Merged view ───────────────────────────────────────────────────────────
   const allUsers = useMemo(() => {

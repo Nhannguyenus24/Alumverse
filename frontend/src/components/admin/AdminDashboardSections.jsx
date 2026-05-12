@@ -238,37 +238,41 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
           }}
         >
           <Box sx={{ flex: '1 1 280px', minWidth: 260 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'primary.main' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 1 }}>
               Top by members
             </Typography>
-            <List dense disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+            <List disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.default' }}>
               {organization.topOrganizationsByMembers.map((org, index) => (
                 <ListItem
                   key={org.id}
                   sx={{
                     borderBottom: 1,
                     borderColor: 'divider',
+                    py: 1.5,
                     '&:last-of-type': { borderBottom: 'none' },
+                    '&:hover': { bgcolor: 'action.hover' }
                   }}
                 >
                   <ListItemText
                     primary={`${index + 1}. ${org.name}`}
                     secondary={`${org.members ?? 0} members`}
-                    primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
-                    secondaryTypographyProps={{ variant: 'caption' }}
+                    primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
+                    secondaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                   />
                 </ListItem>
               ))}
             </List>
           </Box>
           <Box sx={{ flex: '1 1 280px', minWidth: 260 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'primary.main' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'success.main', textTransform: 'uppercase', letterSpacing: 1 }}>
               Active organizations
             </Typography>
-            <List dense disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+            <List disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.default' }}>
               {organization.activeOrganizationsList.length === 0 ? (
-                <ListItem>
-                  <ListItemText primary="No active organizations" />
+                <ListItem sx={{ py: 3, justifyContent: 'center' }}>
+                  <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
+                    No active organizations
+                  </Typography>
                 </ListItem>
               ) : (
                 organization.activeOrganizationsList.map((org) => (
@@ -277,14 +281,16 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                     sx={{
                       borderBottom: 1,
                       borderColor: 'divider',
+                      py: 1.5,
                       '&:last-of-type': { borderBottom: 'none' },
+                      '&:hover': { bgcolor: 'action.hover' }
                     }}
                   >
                     <ListItemText
                       primary={org.name}
                       secondary={`${org.members ?? 0} members`}
-                      primaryTypographyProps={{ variant: 'body2' }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
+                      primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
+                      secondaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                     />
                   </ListItem>
                 ))

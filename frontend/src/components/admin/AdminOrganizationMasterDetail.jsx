@@ -24,6 +24,7 @@ import {
   TableRow,
   TextField,
   Typography,
+  alpha,
 } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
@@ -34,8 +35,14 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
+import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import DOMPurify from 'dompurify';
 import AdminStatusChip from './AdminStatusChip';
 import { useState, useMemo, useEffect } from 'react';
+import { useTheme } from '@mui/material';
+
 const formatOrgDate = (value) => {
   if (!value) {
     return '—';
@@ -89,6 +96,7 @@ const AdminOrganizationMasterDetail = ({
   onEditIntroduction,
   onRefresh,
 }) => {
+  const theme = useTheme();
   const [orgSearch, setOrgSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [activeTab, setActiveTab] = useState(0);
@@ -347,25 +355,59 @@ const AdminOrganizationMasterDetail = ({
                       </Button>
                     </Box>
                     <DetailSection title="Nội dung giới thiệu">
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'text.secondary', lineHeight: 1.6 }}>
-                        {selectedIntroduction?.content || 'Chưa có mô tả chi tiết.'}
-                      </Typography>
+                      {selectedIntroduction?.bannerUrl && (
+                        <Box
+                          component="img"
+                          src={selectedIntroduction.bannerUrl}
+                          sx={{
+                            width: '100%',
+                            height: 200,
+                            objectFit: 'cover',
+                            borderRadius: 2,
+                            mb: 2,
+                            border: 1,
+                            borderColor: 'divider',
+                          }}
+                        />
+                      )}
+                      <Box 
+                        className="rich-text-content"
+                        sx={{ 
+                          color: 'text.secondary', 
+                          lineHeight: 1.6,
+                          '& img': { maxWidth: '100%', height: 'auto', borderRadius: 1 },
+                          '& p': { mb: 1.5 }
+                        }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedIntroduction?.content || 'Chưa có mô tả chi tiết.') }}
+                      />
                     </DetailSection>
-                    <Grid container spacing={2.5}>
+                    <Grid container spacing={3}>
                       <Grid item xs={12} md={4}>
-                        <DetailSection title="Tầm nhìn">
-                          <Typography variant="body2">{selectedIntroduction?.vision || '—'}</Typography>
-                        </DetailSection>
+                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.info.main, 0.02), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                            <Avatar sx={{ bgcolor: 'info.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'info.dark' }}>Tầm nhìn</Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.vision || '—'}</Typography>
+                        </Card>
                       </Grid>
                       <Grid item xs={12} md={4}>
-                        <DetailSection title="Sứ mạng">
-                          <Typography variant="body2">{selectedIntroduction?.mission || '—'}</Typography>
-                        </DetailSection>
+                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.02), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                            <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}><RocketLaunchRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>Sứ mạng</Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.mission || '—'}</Typography>
+                        </Card>
                       </Grid>
                       <Grid item xs={12} md={4}>
-                        <DetailSection title="Giá trị cốt lõi">
-                          <Typography variant="body2">{selectedIntroduction?.coreValues || '—'}</Typography>
-                        </DetailSection>
+                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
+                          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                            <Avatar sx={{ bgcolor: 'error.main', width: 32, height: 32 }}><FavoriteRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.dark' }}>Giá trị cốt lõi</Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.coreValues || '—'}</Typography>
+                        </Card>
                       </Grid>
                     </Grid>
                   </Stack>

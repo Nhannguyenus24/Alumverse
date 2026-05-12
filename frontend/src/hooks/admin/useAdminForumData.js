@@ -106,6 +106,7 @@ const useAdminForumData = (activeOrgId) => {
   const [mergedModerationPosts, setMergedModerationPosts] = useState([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [organizationFilter, setOrganizationFilter] = useState('ALL');
 
   // Categories (real API)
   const [categories, setCategories] = useState([]);
@@ -216,16 +217,19 @@ const useAdminForumData = (activeOrgId) => {
     if (statusFilter !== 'ALL') {
       list = list.filter((post) => String(post.moderationStatus || '').toUpperCase() === statusFilter);
     }
+    if (organizationFilter !== 'ALL') {
+      list = list.filter((post) => Number(post.organizationId) === Number(organizationFilter));
+    }
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter((post) => {
-      const haystack = [post.topicTitle, post.authorName, post.content, String(post.id)]
+      const haystack = [post.topicTitle, post.authorName, post.content, String(post.id), post.organizationName]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
       return haystack.includes(q);
     });
-  }, [mergedModerationPosts, statusFilter, search]);
+  }, [mergedModerationPosts, statusFilter, organizationFilter, search]);
 
   /* ─── Load categories ─── */
 
@@ -466,6 +470,8 @@ const useAdminForumData = (activeOrgId) => {
     setSearch,
     statusFilter,
     setStatusFilter,
+    organizationFilter,
+    setOrganizationFilter,
     updatePostStatus,
     deletePost: handleDeletePost,
 

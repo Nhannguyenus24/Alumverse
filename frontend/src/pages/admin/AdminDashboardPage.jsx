@@ -1,4 +1,5 @@
-import { NavLink, useMatch } from 'react-router';
+import { useEffect } from 'react';
+import { NavLink, useMatch, useOutletContext } from 'react-router';
 import { Box, Button, Grid, Skeleton, Stack, Typography, alpha, useTheme } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
@@ -28,6 +29,11 @@ const AdminDashboardPage = () => {
   const { allUsers } = useAdminUsersContext();
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Dashboard', active: true }]);
+  }, [setBreadcrumbs]);
 
   const chartData = Array.isArray(timeline) ? timeline : [];
   const totalUsers = metrics?.totalUsers ?? aggregates.user.totalUsers;

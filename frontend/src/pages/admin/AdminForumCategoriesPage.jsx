@@ -22,6 +22,8 @@ import {
   useTheme,
   Grid,
 } from '@mui/material';
+import { useOutletContext } from 'react-router';
+import * as adminOrgApi from '../../api/adminOrganizationApi';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -134,7 +136,30 @@ const AdminForumCategoriesPage = () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    refreshCategories,
   } = useAdminForumContext();
+
+  const { setBreadcrumbs } = useOutletContext();
+  const { setActiveOrgId } = useAdminSystemContext();
+  const [organizations, setOrganizations] = useState([]);
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Danh mục & Chủ đề', active: true }]);
+    
+    const fetchOrgs = async () => {
+      try {
+        const res = await adminOrgApi.getOrganizations();
+        const orgList = res?.data?.data || [];
+        setOrganizations(orgList);
+        if (orgList.length > 0 && !activeOrgId) {
+          setActiveOrgId(orgList[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch organizations', err);
+      }
+    };
+    fetchOrgs();
+  }, [setBreadcrumbs, activeOrgId, setActiveOrgId]);
 
   const tree = useMemo(() => buildTree(categories), [categories]);
 
@@ -220,14 +245,28 @@ const AdminForumCategoriesPage = () => {
             Cấu trúc phân cấp diễn đàn, quản lý các chuyên mục chính và chuyên mục con.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={openCreateRoot}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-        >
-          Thêm danh mục
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <TextField
+            select
+            size="small"
+            label="Tổ chức"
+            value={activeOrgId || ''}
+            onChange={(e) => setActiveOrgId(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            {organizations.map((org) => (
+              <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+            ))}
+          </TextField>
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={openCreateRoot}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+          >
+            Thêm danh mục
+          </Button>
+        </Stack>
       </Box>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>

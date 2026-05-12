@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { Box, Button, Grid, Paper, Stack, Typography, useTheme, Skeleton } from '@mui/material';
+import { useOutletContext } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -23,7 +24,12 @@ const AdminOrganizationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
-  const [introduction, setIntroduction] = useState(null);
+   const [introduction, setIntroduction] = useState(null);
+  const { setBreadcrumbs } = useOutletContext();
+  
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Tổ chức', active: true }]);
+  }, [setBreadcrumbs]);
   
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
