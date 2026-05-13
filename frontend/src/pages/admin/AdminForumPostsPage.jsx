@@ -20,7 +20,7 @@ import { useOutletContext } from 'react-router';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
-import * as adminOrgApi from '../../api/adminOrganizationApi';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { useEffect } from 'react';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
@@ -82,8 +82,8 @@ const AdminForumPostsPage = () => {
     // Fetch organizations for filter
     const fetchOrgs = async () => {
       try {
-        const res = await adminOrgApi.getOrganizations();
-        setOrganizations(res?.data?.data || []);
+        const data = await adminOrganizationApi.getOrganizations();
+        setOrganizations(data || []);
       } catch (err) {
         console.error('Failed to fetch organizations', err);
       }

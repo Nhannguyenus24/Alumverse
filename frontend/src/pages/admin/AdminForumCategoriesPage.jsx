@@ -23,7 +23,7 @@ import {
   Grid,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
-import * as adminOrgApi from '../../api/adminOrganizationApi';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -148,11 +148,10 @@ const AdminForumCategoriesPage = () => {
     
     const fetchOrgs = async () => {
       try {
-        const res = await adminOrgApi.getOrganizations();
-        const orgList = res?.data?.data || [];
-        setOrganizations(orgList);
-        if (orgList.length > 0 && !activeOrgId) {
-          setActiveOrgId(orgList[0].id);
+        const data = await adminOrganizationApi.getOrganizations();
+        setOrganizations(data || []);
+        if (data && data.length > 0 && !activeOrgId) {
+          setActiveOrgId(data[0].id);
         }
       } catch (err) {
         console.error('Failed to fetch organizations', err);
