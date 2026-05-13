@@ -687,7 +687,7 @@ const ForumAlumniThreadPage = () => {
     if (activeCategory) {
       items.push({
         label: activeCategory.name,
-        path: '/forum',
+        path: `/forum/category/${activeCategory.id}`,
         state: { selectedFilterId: activeCategory.parentId ? `parent-${activeCategory.parentId}` : `parent-${activeCategory.id}` },
       });
     }
