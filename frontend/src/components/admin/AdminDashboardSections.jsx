@@ -29,7 +29,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
             gap: 2,
             mb: 3,
             '& > *': {
-              flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 12px)', lg: '1 1 0' },
+              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.333% - 12px)', lg: '1 1 0' },
             },
           }}
         >
@@ -74,7 +74,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
             gap: 2,
             mb: 3,
             '& > *': {
-              flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 12px)', md: '1 1 calc(20% - 12px)', lg: '1 1 0' },
+              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 12px)', lg: '1 1 0' },
             },
           }}
         >
@@ -239,7 +239,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
             gap: 2,
             mb: 3,
             '& > *': {
-              flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 12px)', md: '1 1 0' },
+              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
             },
           }}
         >

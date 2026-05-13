@@ -27,6 +27,7 @@ const sortableDisplayName = (user) => {
 const useAdminUsersLocal = () => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
   // Local overlay for fields the backend doesn't return (fullName, orgId, ban details…)
@@ -46,20 +47,23 @@ const useAdminUsersLocal = () => {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminUserApi.getUsers(0, 100);
+      const orgId = organizationFilter === 'ALL' ? null : organizationFilter;
+      const res = await adminUserApi.getUsers(page, rowsPerPage, search, roleFilter, statusFilter, orgId);
       const payload = res?.data?.data;
       const items = normalizeList(payload);
       setServerUsers(Array.isArray(items) ? items : []);
+      setTotalCount(payload?.totalItem || payload?.totalElements || items.length || 0);
     } catch {
       setServerUsers([]);
+      setTotalCount(0);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, rowsPerPage, search, roleFilter, statusFilter, organizationFilter]);
 
   useEffect(() => {
     loadUsers();
-  }, [loadUsers, search, roleFilter, statusFilter, organizationFilter]);
+  }, [loadUsers]);
 
   // ── Merged view ───────────────────────────────────────────────────────────
   const allUsers = useMemo(() => {
@@ -70,54 +74,10 @@ const useAdminUsersLocal = () => {
     return merged;
   }, [serverUsers, localOverlay]);
 
-  // ── Client-side filtering ─────────────────────────────────────────────────
-  const filteredUsers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return allUsers.filter((user) => {
-      if (roleFilter !== 'ALL' && user.role !== roleFilter) return false;
-      if (statusFilter !== 'ALL' && user.status !== statusFilter) return false;
-      if (organizationFilter !== 'ALL' && Number(user.organizationId) !== Number(organizationFilter)) return false;
-      if (!q) return true;
-      const haystack = [user.fullName, user.email, user.userName, user.status, user.role, user.organizationName]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [allUsers, search, roleFilter, statusFilter, organizationFilter]);
-
-  const sortedUsers = useMemo(() => {
-    const dir = sortOrder === 'ASC' ? 1 : -1;
-    const list = [...filteredUsers];
-    list.sort((a, b) => {
-      if (sortBy === 'fullName') {
-        const sa = sortableDisplayName(a);
-        const sb = sortableDisplayName(b);
-        let cmp = sa.localeCompare(sb, undefined, { sensitivity: 'base' });
-        if (cmp === 0) {
-          cmp = String(a.email || '').localeCompare(String(b.email || ''), undefined, { sensitivity: 'base' });
-        }
-        return dir * cmp;
-      }
-      if (sortBy === 'email') {
-        return dir * String(a.email || '').localeCompare(String(b.email || ''), undefined, { sensitivity: 'base' });
-      }
-      if (sortBy === 'updatedAt') {
-        const ta = new Date(a.updatedAt || a.createdAt || 0).getTime();
-        const tb = new Date(b.updatedAt || b.createdAt || 0).getTime();
-        return dir * (ta - tb);
-      }
-      const ta = new Date(a.createdAt || 0).getTime();
-      const tb = new Date(b.createdAt || 0).getTime();
-      return dir * (ta - tb);
-    });
-    return list;
-  }, [filteredUsers, sortBy, sortOrder]);
-
-  const pagedUsers = useMemo(() => {
-    const start = page * rowsPerPage;
-    return sortedUsers.slice(start, start + rowsPerPage);
-  }, [sortedUsers, page, rowsPerPage]);
+  // Since we are doing server-side filtering, users are already the paged ones
+  const pagedUsers = allUsers;
+  const filteredUsers = allUsers; // for export or other uses, but server-side it's only current page
+  const sortedUsers = allUsers;
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   // Keep a ref snapshot for optimistic-revert patterns
@@ -333,7 +293,8 @@ const useAdminUsersLocal = () => {
   return {
     loading,
     allUsers,
-    filteredCount: sortedUsers.length,
+    totalCount,
+    filteredCount: totalCount,
     users: pagedUsers,
     sortedUsers,
     search,

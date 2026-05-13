@@ -17,6 +17,8 @@ import {
 } from '@mui/material';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import { useEffect } from 'react';
+import { useOutletContext } from 'react-router';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import { ADMIN_FILTER_BAR_SX, ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
@@ -40,6 +42,7 @@ const idOf = (a) => a.id;
 const createdOf = (a) => a.createdAt || a.created_at || a.timeStarted || a.eventDate || a.publishedAt;
 
 const AdminArticlesPage = () => {
+  const { setBreadcrumbs } = useOutletContext();
   const navigate = useOrgNavigate();
   const {
     channel, setChannel,
@@ -47,6 +50,10 @@ const AdminArticlesPage = () => {
     page, setPage,
     rowsPerPage, setRowsPerPage,
   } = useAdminArticles('news');
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Bài viết', active: true }]);
+  }, [setBreadcrumbs]);
 
   const openEdit = (a) => navigate(`/admin/article/${channel}/${idOf(a)}/edit`);
   const openView = (a) => navigate(`/article/${channel}/${idOf(a)}`);

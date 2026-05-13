@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useOutletContext, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Box,
@@ -35,7 +36,14 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 
 const AdminFundraisingsPage = () => {
+  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: "Quản lý gây quỹ", active: true }]);
+  }, [setBreadcrumbs]);
+
   const {
     fundraisings,
     filteredCount,
@@ -215,8 +223,10 @@ const AdminFundraisingsPage = () => {
         sx={{
           mb: 4,
           display: "flex",
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: "space-between",
-          alignItems: "flex-end",
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2
         }}
       >
         <Box>
@@ -232,13 +242,6 @@ const AdminFundraisingsPage = () => {
             sinh viên.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
-        >
-          Tạo chiến dịch
-        </Button>
       </Box>
 
       <Box
@@ -294,6 +297,15 @@ const AdminFundraisingsPage = () => {
         searchValue={search}
         filters={Filters}
         onRowClick={(f) => setDetailItem(f)}
+        addButton={
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
+          >
+            Tạo chiến dịch
+          </Button>
+        }
       />
 
       {/* Dialogs */}

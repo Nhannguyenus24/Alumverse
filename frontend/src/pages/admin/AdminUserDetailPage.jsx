@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMatch, useNavigate, useParams } from 'react-router';
+import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -51,9 +51,18 @@ const AdminUserDetailPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { user: currentUser } = useAuth();
   const { auditLogs } = useAdminSystemContext();
+  const { setBreadcrumbs } = useOutletContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
-
   const user = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);
+
+  useEffect(() => {
+    if (user) {
+      setBreadcrumbs?.([
+        { label: 'Người dùng', path: `${adminBase}/users` },
+        { label: user.fullName || `@${user.userName}` || `ID: ${user.id}`, active: true },
+      ]);
+    }
+  }, [setBreadcrumbs, user, adminBase]);
 
   const [tab, setTab] = useState(0);
   const [editOpen, setEditOpen] = useState(false);

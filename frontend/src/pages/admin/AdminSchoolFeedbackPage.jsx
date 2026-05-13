@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -26,6 +27,11 @@ import { formatDateTime } from '../../utils/dateFormatter';
 const AdminSchoolFeedbackPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Phản hồi', active: true }]);
+  }, [setBreadcrumbs]);
   const [loading, setLoading] = useState(true);
   const [feedbacks, setFeedbacks] = useState([]);
   const [total, setTotal] = useState(0);

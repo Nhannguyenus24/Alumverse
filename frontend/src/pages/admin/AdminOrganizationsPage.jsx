@@ -156,7 +156,7 @@ const AdminOrganizationsPage = () => {
           gap: 3,
           mb: 4,
           '& > *': {
-            flex: { xs: '1 1 100%', sm: '1 1 calc(33.333% - 16px)', md: '1 1 0' },
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
           },
         }}
       >

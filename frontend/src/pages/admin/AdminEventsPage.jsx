@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Box,
@@ -96,6 +97,11 @@ const AdminEventsPage = () => {
     deleteEvent,
     updateEvent,
   } = useAdminEvents();
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Sự kiện', active: true }]);
+  }, [setBreadcrumbs]);
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -156,12 +162,12 @@ const AdminEventsPage = () => {
               gap: 2,
               mb: 3,
               "& > *": {
-                flex: {
-                  xs: "1 1 calc(50% - 12px)",
-                  sm: "1 1 calc(33.333% - 12px)",
-                  md: "1 1 calc(20% - 12px)",
-                  lg: "1 1 0",
-                },
+              flex: {
+                xs: "1 1 100%",
+                sm: "1 1 calc(50% - 12px)",
+                md: "1 1 calc(25% - 12px)",
+                lg: "1 1 0",
+              },
               },
             }}
           >

@@ -48,13 +48,14 @@ public class AdminOrganizationController {
     }
     
     /**
-     * Get all organizations with pagination
+     * Get all organizations with pagination and search
      */
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Organization>>>> getAllOrganizations(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return organizationService.getAllOrganizations(page, size)
+            @RequestParam(defaultValue = "10") @Min(1) int size,
+            @RequestParam(required = false) String search) {
+        return organizationService.getAllOrganizations(page, size, search)
                 .map(response -> ResponseEntity.ok(
                         new ApiResponse<>("Organizations fetched successfully", response)))
                 .onErrorResume(error -> Mono.just(

@@ -77,7 +77,7 @@ const AdminForumPostsPage = () => {
   const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Diễn đàn', active: true }]);
+    setBreadcrumbs?.([{ label: 'Bài viết Diễn đàn', active: true }]);
     
     // Fetch organizations for filter
     const fetchOrgs = async () => {

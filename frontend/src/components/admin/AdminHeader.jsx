@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router';
 import {
   AppBar,
   Box,
@@ -74,9 +75,10 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
             sx={{ display: { xs: 'none', sm: 'block' } }}
           >
             <MuiLink
+              component={RouterLink}
               underline="hover"
               color="inherit"
-              href="/admin"
+              to="/admin"
               sx={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500 }}
             >
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />
@@ -88,9 +90,10 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                 crumb.href ? (
                   <MuiLink
                     key={idx}
+                    component={RouterLink}
                     underline="hover"
                     color="inherit"
-                    href={crumb.href}
+                    to={crumb.path || crumb.href}
                     sx={{ fontSize: 14, fontWeight: crumb.active ? 600 : 500 }}
                   >
                     {crumb.label}

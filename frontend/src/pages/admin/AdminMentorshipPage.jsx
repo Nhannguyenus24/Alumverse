@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Avatar,
@@ -101,6 +102,7 @@ const PersonCell = ({ name, email, fallback }) => (
 
 const AdminMentorshipPage = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { setBreadcrumbs } = useOutletContext();
   const {
     sessions,
     sessionTotal,
@@ -125,6 +127,10 @@ const AdminMentorshipPage = () => {
     approveMentor,
     statistics,
   } = useAdminMentorship();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Cố vấn (Mentorship)', active: true }]);
+  }, [setBreadcrumbs]);
 
   const [tab, setTab] = useState("sessions");
   const [detailItem, setDetailItem] = useState(null);
@@ -179,12 +185,12 @@ const AdminMentorshipPage = () => {
               gap: 2,
               mb: 3,
               "& > *": {
-                flex: {
-                  xs: "1 1 calc(50% - 12px)",
-                  sm: "1 1 calc(33.333% - 12px)",
-                  md: "1 1 calc(20% - 12px)",
-                  lg: "1 1 0",
-                },
+              flex: {
+                xs: "1 1 100%",
+                sm: "1 1 calc(50% - 12px)",
+                md: "1 1 calc(25% - 12px)",
+                lg: "1 1 0",
+              },
               },
             }}
           >

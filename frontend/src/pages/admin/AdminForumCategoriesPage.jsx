@@ -144,7 +144,7 @@ const AdminForumCategoriesPage = () => {
   const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Danh mục & Chủ đề', active: true }]);
+    setBreadcrumbs?.([{ label: 'Danh mục', active: true }]);
     
     const fetchOrgs = async () => {
       try {

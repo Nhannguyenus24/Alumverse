@@ -278,33 +278,28 @@ const AdminUsersListPage = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: "space-between",
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2
+        }}
+      >
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
             Quản lý người dùng
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Quản lý tài khoản, phân quyền và trạng thái hoạt động của thành viên.
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
+          >
+            Tìm kiếm, phân quyền và giám sát trạng thái tài khoản toàn hệ thống.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <Button
-            variant="outlined"
-            startIcon={<FileDownloadOutlinedIcon />}
-            onClick={handleExport}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-          >
-            Xuất Excel
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-          >
-            Thêm người dùng
-          </Button>
-        </Stack>
       </Box>
 
       <Box
@@ -355,6 +350,18 @@ const AdminUsersListPage = () => {
         searchValue={searchTerm}
         searchPlaceholder="Tìm theo tên, email, username..."
         filters={Filters}
+        onExport={handleExport}
+        addButton={
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', ml: 1 }}
+          >
+            Thêm
+          </Button>
+        }
         onRowClick={(u) => navigate(`/admin/users/${u.id}`)}
       />
 

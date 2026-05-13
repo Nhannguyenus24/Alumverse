@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -52,6 +53,11 @@ const formatIsoDateInput = (date) => {
 const AdminAuditLogsPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Nhật ký hệ thống', active: true }]);
+  }, [setBreadcrumbs]);
   const { loading, auditLogs } = useAdminSystemContext();
 
   const [dateFrom, setDateFrom] = useState('');

@@ -12,6 +12,10 @@ import {
 } from "@mui/material";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import Grid from "@mui/material/Grid2";
+import CoverUpload from "../CoverUpload";
+import { useUploadImage } from "../../hooks/images/useUploadImage";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const AdminOrganizationIntroductionDialog = ({
   open,
@@ -26,6 +30,8 @@ const AdminOrganizationIntroductionDialog = ({
     coreValues: "",
     bannerUrl: "",
   });
+
+  const { uploadFile, isPending: uploading } = useUploadImage();
 
   useEffect(() => {
     if (introduction) {
@@ -114,56 +120,85 @@ const AdminOrganizationIntroductionDialog = ({
               chèn ảnh trực tiếp vào đây.
             </Typography>
           </Box>
-          <TextField
-            fullWidth
-            label="Banner URL"
-            name="bannerUrl"
-            value={formData.bannerUrl}
-            onChange={handleChange}
-            placeholder="https://example.com/banner.jpg"
-            helperText="Ảnh nền lớn cho trang giới thiệu."
-          />
-          <Divider sx={{ my: 0.5 }}>
+          <Box sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
+              Ảnh bìa tổ chức
+            </Typography>
+            <Box sx={{ borderRadius: 3, overflow: 'hidden', border: '1px dashed', borderColor: 'divider', position: 'relative' }}>
+              {uploading && (
+                <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
+                  <CircularProgress size={32} />
+                </Box>
+              )}
+              <CoverUpload
+                value={formData.bannerUrl}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const url = await uploadFile(file);
+                      setFormData(prev => ({ ...prev, bannerUrl: url }));
+                    } catch (err) {
+                      console.error("Upload failed", err);
+                    }
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 1 }}>
             <Typography
               variant="caption"
               color="text.disabled"
               fontWeight={700}
+              sx={{ textTransform: 'uppercase', letterSpacing: 1 }}
             >
-              MỤC TIÊU & GIÁ TRỊ
+              Mục tiêu & Giá trị cốt lõi
             </Typography>
           </Divider>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <TextField
-              fullWidth
-              label="Tầm nhìn"
-              name="vision"
-              value={formData.vision}
-              onChange={handleChange}
-              multiline
-              rows={3}
-              placeholder="Định hướng phát triển dài hạn..."
-            />
-            <TextField
-              fullWidth
-              label="Sứ mạng"
-              name="mission"
-              value={formData.mission}
-              onChange={handleChange}
-              multiline
-              rows={3}
-              placeholder="Mục đích cốt lõi và nhiệm vụ của tổ chức..."
-            />
-            <TextField
-              fullWidth
-              label="Giá trị cốt lõi"
-              name="coreValues"
-              value={formData.coreValues}
-              onChange={handleChange}
-              multiline
-              rows={3}
-              placeholder="Các nguyên tắc dẫn dắt và triết lý hoạt động..."
-            />
-          </Box>
+
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Tầm nhìn"
+                name="vision"
+                value={formData.vision}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                placeholder="Định hướng phát triển dài hạn..."
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Sứ mạng"
+                name="mission"
+                value={formData.mission}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                placeholder="Mục đích cốt lõi và nhiệm vụ của tổ chức..."
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Giá trị cốt lõi"
+                name="coreValues"
+                value={formData.coreValues}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                placeholder="Các nguyên tắc dẫn dắt và triết lý hoạt động..."
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+          </Grid>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: "action.hover" }}>
