@@ -522,7 +522,11 @@ export default function FitBot() {
               justifyContent: 'center',
             }}
           >
-            🤖
+            <img
+              src="/fitbot/FITBOT.svg"
+              alt="FitBot"
+              style={{ width: 36, height: 36 }}
+            />
           </AnimatedAvatar>
         </Tooltip>
 
@@ -541,8 +545,16 @@ export default function FitBot() {
         <ChatWindow>
           {/* Header */}
           <ChatHeader>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              🤖 HCMUS Assistant
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <img
+                src="/fitbot/FITBOT.svg"
+                alt="FitBot"
+                style={{ width: 36, height: 36 }}
+              />
+              HCMUS Assistant
             </Typography>
             <Button
               size="small"
