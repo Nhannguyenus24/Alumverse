@@ -112,6 +112,9 @@ const EditDonationPage = Loadable(
 const DonationPage = Loadable(
   lazy(() => import("../pages/donation/DonationPage")),
 );
+const DonationArticlePage = Loadable(
+  lazy(() => import("../pages/donation/DonationArticlePage")),
+);
 const DetailDonationPage = Loadable(
   lazy(() => import("../pages/alumni/DetailDonationPage")),
 );
@@ -330,12 +333,20 @@ export const router = createBrowserRouter([
         ],
       },
       {
-        path: "network/search",
-        element: <NetworkPage />,
+        path: "search",
+        element: (
+          <ProtectedRoute>
+            <NetworkPage />
+          </ProtectedRoute>
+        ),
       },
       {
-        path: "network/chat",
-        element: <ChatPage />,
+        path: "chat",
+        element: (
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "post",
@@ -576,8 +587,12 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: ":id",
+            path: ":id/contribute",
             element: <DetailDonationPage />,
+          },
+          {
+            path: ":id",
+            element: <DonationArticlePage />,
           },
         ],
       },

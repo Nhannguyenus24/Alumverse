@@ -9,7 +9,6 @@ import {
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import Notification from './Notification';
 import Logo from './Logo';
@@ -21,11 +20,7 @@ import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
 
-/** Single source for the chat route; desktop uses MessagesNavDropdown only for this href */
-const MESSAGES_NAV_PATH = '/network/chat';
-
-/** Parent nav hrefs hidden for guests (add more paths here without affecting dropdown behavior) */
-const NAV_GUEST_HIDDEN_PATHS = new Set([MESSAGES_NAV_PATH]);
+const NAV_GUEST_HIDDEN_PATHS = new Set(['/search']);
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
@@ -52,8 +47,7 @@ const NAV_ITEMS = [
       { label: 'Cơ hội việc làm', href: '/development/jobs' },
     ],
   },
-  { label: 'Kết nối', href: '/network/search' },
-  { label: 'Nhắn tin', href: '/network/chat' },
+  { label: 'Kết nối', href: '/search' },
   { label: 'Diễn đàn', href: '/forum' },
   { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
@@ -171,13 +165,9 @@ const Header = () => {
                 onMouseLeave={() => setHoveredNav(null)}
                 sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
               >
-                {item.href === MESSAGES_NAV_PATH ? (
-                  <MessagesNavDropdown label={item.label} navButtonSx={navButtonSx} />
-                ) : (
-                  <Button component={Link} to={toOrgPath(item.href)} sx={navButtonSx}>
-                    {item.label}
-                  </Button>
-                )}
+                <Button component={Link} to={toOrgPath(item.href)} sx={navButtonSx}>
+                  {item.label}
+                </Button>
 
                 {item.children && hoveredNav === item.label && (
                   <Box
@@ -221,9 +211,7 @@ const Header = () => {
               {isAuthenticated ? (
                 <>
                   <Notification headerTextColor={headerTextColor} />
-                  <IconButton size="small" sx={{ color: headerTextColor }}>
-                    <EmailOutlinedIcon fontSize="small" />
-                  </IconButton>
+                  <MessagesNavDropdown headerTextColor={headerTextColor} />
                   <AccountMenu
                     displayName={displayName} displayRole={displayRole}
                     avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin} />

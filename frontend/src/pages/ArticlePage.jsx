@@ -139,7 +139,7 @@ const ArticleHighlightCard = ({ data, channel }) => {
   );
 };
 
-const ArticlePage = ({ channel = "event" }) => {
+const ArticlePage = ({ channel = "donation" }) => {
   return (
     <Page
       title="Lê Yên Thanh"
