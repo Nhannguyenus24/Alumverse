@@ -107,9 +107,20 @@ const AdminDashboardPage = () => {
         />
       </Box>
 
-      <Grid container spacing={3}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+        }}
+      >
         {/* Main Chart Section */}
-        <Grid item xs={12} lg={8}>
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', lg: '3 1 0' },
+            minWidth: 0,
+          }}
+        >
           <Box
             sx={{
               p: 3,
@@ -133,10 +144,15 @@ const AdminDashboardPage = () => {
               color={theme.palette.primary.main}
             />
           </Box>
-        </Grid>
+        </Box>
 
         {/* Quick Actions Sidebar */}
-        <Grid item xs={12} lg={4}>
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', lg: '1 1 0' },
+            minWidth: 0,
+          }}
+        >
           <Stack spacing={3}>
             <Box
               sx={{
@@ -204,8 +220,8 @@ const AdminDashboardPage = () => {
               </Stack>
             </Box>
           </Stack>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Secondary Detailed Sections */}
       <Box sx={{ mt: 4 }}>
