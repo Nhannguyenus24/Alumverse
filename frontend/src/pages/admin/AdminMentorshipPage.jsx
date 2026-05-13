@@ -45,27 +45,27 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
 const SESSION_STATUS_OPTIONS = [
-  { value: "ALL", label: "All statuses" },
-  { value: "Pending", label: "Pending" },
-  { value: "Confirmed", label: "Confirmed" },
-  { value: "Completed", label: "Completed" },
-  { value: "Cancelled", label: "Cancelled" },
-  { value: "Rejected", label: "Rejected" },
+  { value: "ALL", label: "Tất cả trạng thái" },
+  { value: "Pending", label: "Chờ duyệt" },
+  { value: "Confirmed", label: "Đã xác nhận" },
+  { value: "Completed", label: "Hoàn thành" },
+  { value: "Cancelled", label: "Đã hủy" },
+  { value: "Rejected", label: "Từ chối" },
 ];
 
 const APPROVAL_OPTIONS = [
-  { value: "ALL", label: "All mentors" },
-  { value: "PENDING", label: "Pending approval" },
-  { value: "APPROVED", label: "Approved" },
+  { value: "ALL", label: "Tất cả cố vấn" },
+  { value: "PENDING", label: "Chờ duyệt" },
+  { value: "APPROVED", label: "Đã duyệt" },
 ];
 
 const statusChip = (status) => {
   const k = String(status || "").toLowerCase();
-  if (k === "pending") return { color: "warning", label: "Pending" };
-  if (k === "confirmed") return { color: "info", label: "Confirmed" };
-  if (k === "completed") return { color: "success", label: "Completed" };
-  if (k === "cancelled") return { color: "default", label: "Cancelled" };
-  if (k === "rejected") return { color: "error", label: "Rejected" };
+  if (k === "pending") return { color: "warning", label: "Chờ duyệt" };
+  if (k === "confirmed") return { color: "info", label: "Đã xác nhận" };
+  if (k === "completed") return { color: "success", label: "Hoàn thành" };
+  if (k === "cancelled") return { color: "default", label: "Đã hủy" };
+  if (k === "rejected") return { color: "error", label: "Từ chối" };
   return { color: "default", label: status || "-" };
 };
 
@@ -145,28 +145,28 @@ const AdminMentorshipPage = () => {
   const handleConfirm = async (s) =>
     notify(
       await updateSessionStatus(s.id, "Confirmed"),
-      "Session confirmed.",
-      "Failed to confirm.",
+      "Đã xác nhận phiên.",
+      "Lỗi xác nhận.",
     );
   const handleCancel = async (s) =>
     notify(
       await updateSessionStatus(s.id, "Cancelled"),
-      "Session cancelled.",
-      "Failed to cancel.",
+      "Đã hủy phiên.",
+      "Lỗi hủy phiên.",
     );
   const handleApprove = async (m) =>
     notify(
       await approveMentor(m.memberId),
-      "Mentor approved.",
-      "Failed to approve mentor.",
+      "Đã duyệt cố vấn.",
+      "Lỗi duyệt cố vấn.",
     );
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     notify(
       await deleteSession(deleteTarget.id),
-      "Session deleted.",
-      "Failed to delete session.",
+      "Đã xóa phiên.",
+      "Lỗi xóa phiên.",
     );
     setDeleteTarget(null);
   };
@@ -174,8 +174,8 @@ const AdminMentorshipPage = () => {
   return (
     <>
       <AdminSectionPanel
-        title="Mentorship management"
-        subtitle="Cross-organization mentorship moderation — sessions and mentor approval — backed by /api/admin/mentorship."
+        title="Quản lý cố vấn"
+        subtitle="Kiểm duyệt hoạt động cố vấn - các phiên hẹn và duyệt hồ sơ cố vấn trên toàn hệ thống."
       >
         {statistics ? (
           <Box
@@ -195,56 +195,56 @@ const AdminMentorshipPage = () => {
             }}
           >
             <AdminDashboardMetricTile
-              label="Total sessions"
+              label="Tổng số phiên"
               value={statistics.totalSessions}
             />
             <AdminDashboardMetricTile
-              label="Pending"
+              label="Đang chờ"
               value={statistics.pendingSessions}
               valueColor="warning.main"
             />
             <AdminDashboardMetricTile
-              label="Confirmed"
+              label="Đã xác nhận"
               value={statistics.confirmedSessions}
               valueColor="info.main"
             />
             <AdminDashboardMetricTile
-              label="Completed"
+              label="Hoàn thành"
               value={statistics.completedSessions}
               valueColor="success.main"
             />
             <AdminDashboardMetricTile
-              label="Cancelled"
+              label="Đã hủy"
               value={statistics.cancelledSessions}
               valueColor="text.disabled"
             />
             <AdminDashboardMetricTile
-              label="Rejected"
+              label="Bị từ chối"
               value={statistics.rejectedSessions}
               valueColor="error.main"
             />
             <AdminDashboardMetricTile
-              label="Total mentors"
+              label="Tổng cố vấn"
               value={statistics.totalMentors}
               valueColor="primary.main"
             />
             <AdminDashboardMetricTile
-              label="Approved mentors"
+              label="Đã duyệt"
               value={statistics.approvedMentors}
               valueColor="success.dark"
             />
             <AdminDashboardMetricTile
-              label="Pending mentors"
+              label="Chờ duyệt"
               value={statistics.pendingMentors}
               valueColor="warning.dark"
             />
             <AdminDashboardMetricTile
-              label="Availabilities"
+              label="Lịch trống"
               value={statistics.totalAvailabilities}
               valueColor="info.dark"
             />
             <AdminDashboardMetricTile
-              label="Feedbacks"
+              label="Phản hồi"
               value={statistics.totalFeedbacks}
               valueColor="secondary.main"
             />
@@ -252,8 +252,8 @@ const AdminMentorshipPage = () => {
         ) : null}
 
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-          <Tab value="sessions" label={`Sessions (${sessionTotal})`} />
-          <Tab value="mentors" label={`Mentors (${mentorTotal})`} />
+          <Tab value="sessions" label={`Phiên hẹn (${sessionTotal})`} />
+          <Tab value="mentors" label={`Cố vấn (${mentorTotal})`} />
         </Tabs>
 
         {tab === "sessions" ? (
@@ -262,7 +262,7 @@ const AdminMentorshipPage = () => {
               <TextField
                 select
                 size="small"
-                label="Status"
+                label="Trạng thái"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -287,13 +287,13 @@ const AdminMentorshipPage = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>ID</TableCell>
-                    <TableCell>Mentor</TableCell>
-                    <TableCell>Mentee</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Time slot</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>Cố vấn</TableCell>
+                    <TableCell>Người được cố vấn</TableCell>
+                    <TableCell>Trạng thái</TableCell>
+                    <TableCell>Loại</TableCell>
+                    <TableCell>Thời gian</TableCell>
+                    <TableCell>Ngày tạo</TableCell>
+                    <TableCell align="right">Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -305,7 +305,7 @@ const AdminMentorshipPage = () => {
                           color="text.secondary"
                           sx={{ py: 2 }}
                         >
-                          No mentorship sessions match current filter.
+                          Không có phiên hẹn nào khớp với bộ lọc.
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -374,7 +374,7 @@ const AdminMentorshipPage = () => {
                                 gap: 0.5,
                               }}
                             >
-                              <Tooltip title="View">
+                              <Tooltip title="Xem">
                                 <IconButton
                                   size="small"
                                   color="primary"
@@ -384,7 +384,7 @@ const AdminMentorshipPage = () => {
                                 </IconButton>
                               </Tooltip>
                               {isPending && (
-                                <Tooltip title="Confirm">
+                                <Tooltip title="Xác nhận">
                                   <IconButton
                                     size="small"
                                     color="success"
@@ -395,7 +395,7 @@ const AdminMentorshipPage = () => {
                                 </Tooltip>
                               )}
                               {isCancellable && (
-                                <Tooltip title="Cancel">
+                                <Tooltip title="Hủy">
                                   <IconButton
                                     size="small"
                                     color="warning"
@@ -405,7 +405,7 @@ const AdminMentorshipPage = () => {
                                   </IconButton>
                                 </Tooltip>
                               )}
-                              <Tooltip title="Delete">
+                              <Tooltip title="Xóa">
                                 <IconButton
                                   size="small"
                                   color="error"
@@ -443,7 +443,7 @@ const AdminMentorshipPage = () => {
               <TextField
                 select
                 size="small"
-                label="Approval"
+                label="Phê duyệt"
                 value={approvalFilter}
                 onChange={(e) => {
                   setApprovalFilter(e.target.value);
@@ -467,13 +467,13 @@ const AdminMentorshipPage = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Mentor</TableCell>
-                    <TableCell>Job / Company</TableCell>
-                    <TableCell>Rating</TableCell>
-                    <TableCell align="right">Sessions</TableCell>
-                    <TableCell>Approval</TableCell>
-                    <TableCell>Created</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>Cố vấn</TableCell>
+                    <TableCell>Công việc / Công ty</TableCell>
+                    <TableCell>Đánh giá</TableCell>
+                    <TableCell align="right">Số phiên</TableCell>
+                    <TableCell>Phê duyệt</TableCell>
+                    <TableCell>Ngày tạo</TableCell>
+                    <TableCell align="right">Thao tác</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -485,7 +485,7 @@ const AdminMentorshipPage = () => {
                           color="text.secondary"
                           sx={{ py: 2 }}
                         >
-                          No mentor profiles match current filter.
+                          Không có hồ sơ cố vấn nào khớp với bộ lọc.
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -552,7 +552,7 @@ const AdminMentorshipPage = () => {
                           <Chip
                             size="small"
                             color={m.isApproved ? "success" : "warning"}
-                            label={m.isApproved ? "Approved" : "Pending"}
+                            label={m.isApproved ? "Đã duyệt" : "Chờ duyệt"}
                             sx={ADMIN_STATUS_CHIP_SX}
                           />
                         </TableCell>
@@ -568,7 +568,7 @@ const AdminMentorshipPage = () => {
                               gap: 0.5,
                             }}
                           >
-                            <Tooltip title="View">
+                            <Tooltip title="Xem">
                               <IconButton
                                 size="small"
                                 color="primary"
@@ -578,7 +578,7 @@ const AdminMentorshipPage = () => {
                               </IconButton>
                             </Tooltip>
                             {!m.isApproved && (
-                              <Tooltip title="Approve mentor">
+                              <Tooltip title="Duyệt cố vấn">
                                 <IconButton
                                   size="small"
                                   color="success"
@@ -620,7 +620,7 @@ const AdminMentorshipPage = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
-          Session detail
+          Chi tiết phiên hẹn
         </DialogTitle>
         {detailItem ? (
           <DialogContent
@@ -630,48 +630,48 @@ const AdminMentorshipPage = () => {
               <strong>ID:</strong> {detailItem.id}
             </Typography>
             <Typography variant="body2">
-              <strong>Mentor:</strong>{" "}
+              <strong>Cố vấn:</strong>{" "}
               {detailItem.mentorName || `#${detailItem.mentorMemberId ?? "-"}`}{" "}
               {detailItem.mentorEmail ? `(${detailItem.mentorEmail})` : ""}
             </Typography>
             <Typography variant="body2">
-              <strong>Mentee:</strong>{" "}
+              <strong>Người được cố vấn:</strong>{" "}
               {detailItem.menteeName || `#${detailItem.menteeMemberId ?? "-"}`}{" "}
               {detailItem.menteeEmail ? `(${detailItem.menteeEmail})` : ""}
             </Typography>
             <Typography variant="body2">
-              <strong>Status:</strong> {detailItem.status || "-"}
+              <strong>Trạng thái:</strong> {detailItem.status || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Session type:</strong> {detailItem.sessionType || "-"}
+              <strong>Loại phiên:</strong> {detailItem.sessionType || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Time slot:</strong> {formatDateTime(detailItem.startTime)}{" "}
+              <strong>Thời gian:</strong> {formatDateTime(detailItem.startTime)}{" "}
               → {formatDateTime(detailItem.endTime)}
             </Typography>
             <Typography variant="body2">
-              <strong>Meeting link:</strong> {detailItem.meetingLink || "-"}
+              <strong>Link cuộc họp:</strong> {detailItem.meetingLink || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>CV URL:</strong> {detailItem.cvUrl || "-"}
+              <strong>URL CV:</strong> {detailItem.cvUrl || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Created at:</strong>{" "}
+              <strong>Ngày tạo:</strong>{" "}
               {formatDateTime(detailItem.createdAt)}
             </Typography>
             {detailItem.introduction ? (
               <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>Introduction:</strong> {detailItem.introduction}
+                <strong>Giới thiệu:</strong> {detailItem.introduction}
               </Typography>
             ) : null}
             {detailItem.description ? (
               <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>Description:</strong> {detailItem.description}
+                <strong>Mô tả:</strong> {detailItem.description}
               </Typography>
             ) : null}
             {detailItem.bookingNote ? (
               <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>Booking note:</strong> {detailItem.bookingNote}
+                <strong>Ghi chú đặt lịch:</strong> {detailItem.bookingNote}
               </Typography>
             ) : null}
           </DialogContent>
@@ -682,7 +682,7 @@ const AdminMentorshipPage = () => {
             onClick={() => setDetailItem(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Close
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>
@@ -694,45 +694,45 @@ const AdminMentorshipPage = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
-          Mentor profile
+          Hồ sơ cố vấn
         </DialogTitle>
         {mentorDetail ? (
           <DialogContent
             sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}
           >
             <Typography variant="body2">
-              <strong>Member ID:</strong> {mentorDetail.memberId}
+              <strong>ID thành viên:</strong> {mentorDetail.memberId}
             </Typography>
             <Typography variant="body2">
-              <strong>Name:</strong> {mentorDetail.mentorName || "-"}
+              <strong>Tên:</strong> {mentorDetail.mentorName || "-"}
             </Typography>
             <Typography variant="body2">
               <strong>Email:</strong> {mentorDetail.mentorEmail || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Job:</strong> {mentorDetail.currentJobTitle || "-"}{" "}
+              <strong>Công việc:</strong> {mentorDetail.currentJobTitle || "-"}{" "}
               {mentorDetail.currentCompany
                 ? `@ ${mentorDetail.currentCompany}`
                 : ""}
             </Typography>
             <Typography variant="body2">
-              <strong>Approval:</strong>{" "}
-              {mentorDetail.isApproved ? "Approved" : "Pending"}
+              <strong>Phê duyệt:</strong>{" "}
+              {mentorDetail.isApproved ? "Đã duyệt" : "Chờ duyệt"}
             </Typography>
             <Typography variant="body2">
-              <strong>Rating:</strong>{" "}
+              <strong>Đánh giá:</strong>{" "}
               {Number(mentorDetail.ratingAvg ?? 0).toFixed(2)}
             </Typography>
             <Typography variant="body2">
-              <strong>Total sessions:</strong> {mentorDetail.totalSessions ?? 0}
+              <strong>Tổng số phiên:</strong> {mentorDetail.totalSessions ?? 0}
             </Typography>
             <Typography variant="body2">
-              <strong>Created at:</strong>{" "}
+              <strong>Ngày tạo:</strong>{" "}
               {formatDateTime(mentorDetail.createdAt)}
             </Typography>
             {mentorDetail.bio ? (
               <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>Bio:</strong> {mentorDetail.bio}
+                <strong>Tiểu sử:</strong> {mentorDetail.bio}
               </Typography>
             ) : null}
           </DialogContent>
@@ -749,7 +749,7 @@ const AdminMentorshipPage = () => {
               }}
               sx={{ textTransform: "none", fontWeight: 700 }}
             >
-              Approve
+              Duyệt
             </Button>
           ) : null}
           <Button
@@ -757,16 +757,16 @@ const AdminMentorshipPage = () => {
             onClick={() => setMentorDetail(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Close
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Delete session"
+        title="Xóa phiên hẹn"
         description={
-          deleteTarget ? `Permanently delete session #${deleteTarget.id}?` : ""
+          deleteTarget ? `Xóa vĩnh viễn phiên hẹn #${deleteTarget.id}?` : ""
         }
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}

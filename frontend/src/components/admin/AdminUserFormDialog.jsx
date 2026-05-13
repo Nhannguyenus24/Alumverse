@@ -77,22 +77,22 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   const validate = () => {
     const next = {};
     if (!form.email.trim()) {
-      next.email = 'Email is required';
+      next.email = 'Vui lòng nhập email';
     }
     if (!form.userName.trim()) {
-      next.userName = 'Username is required';
+      next.userName = 'Vui lòng nhập tên đăng nhập';
     }
     if (!form.fullName.trim()) {
-      next.fullName = 'Full name is required';
+      next.fullName = 'Vui lòng nhập họ tên';
     }
     if (mode === 'create' && !form.password) {
-      next.password = 'Password is required';
+      next.password = 'Vui lòng nhập mật khẩu';
     }
     if (mode === 'edit' && form.password && form.password.length < 8) {
-      next.password = 'Password must be at least 8 characters';
+      next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     if (mode === 'create' && form.password && form.password.length < 8) {
-      next.password = 'Password must be at least 8 characters';
+      next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     setErrors(next);
     const keys = Object.keys(next);
@@ -107,7 +107,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       return;
     }
     if (!form.organizationId) {
-      enqueueSnackbar('Organization is required', { variant: 'error' });
+      enqueueSnackbar('Vui lòng chọn tổ chức', { variant: 'error' });
       return;
     }
     const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
@@ -137,7 +137,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        {mode === 'create' ? 'Create user' : 'Edit user'}
+        {mode === 'create' ? 'Tạo người dùng' : 'Sửa người dùng'}
       </DialogTitle>
       <DialogContent
         sx={{
@@ -159,7 +159,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Username"
+          label="Tên đăng nhập"
           value={form.userName}
           onChange={handleChange('userName')}
           error={!!errors.userName}
@@ -168,7 +168,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Full name"
+          label="Họ tên"
           value={form.fullName}
           onChange={handleChange('fullName')}
           error={!!errors.fullName}
@@ -177,7 +177,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label={mode === 'edit' ? 'New password (optional)' : 'Password'}
+          label={mode === 'edit' ? 'Mật khẩu mới (tùy chọn)' : 'Mật khẩu'}
           type={showPassword ? 'text' : 'password'}
           value={form.password}
           onChange={handleChange('password')}
@@ -186,7 +186,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             errors.password
               ? undefined
               : mode === 'edit'
-                ? 'Leave blank to keep current password'
+                ? 'Để trống nếu không muốn đổi mật khẩu'
                 : undefined
           }
           fullWidth
@@ -197,7 +197,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
                     onClick={() => setShowPassword((v) => !v)}
                     onMouseDown={(e) => e.preventDefault()}
                     edge="end"
@@ -211,7 +211,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         />
         <TextField
           select
-          label="Organization"
+          label="Tổ chức"
           value={form.organizationId}
           onChange={handleChange('organizationId')}
           fullWidth
@@ -226,7 +226,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <TextField
             select
-            label="Role"
+            label="Vai trò"
             value={form.role}
             onChange={handleChange('role')}
             disabled={mode === 'create'}
@@ -241,7 +241,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           </TextField>
           <TextField
             select
-            label="Status"
+            label="Trạng thái"
             value={form.status}
             onChange={handleChange('status')}
             fullWidth
@@ -262,10 +262,10 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} sx={{ textTransform: 'none' }}>
-          Cancel
+          Hủy
         </Button>
         <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          {mode === 'create' ? 'Create' : 'Save'}
+          {mode === 'create' ? 'Tạo' : 'Lưu'}
         </Button>
       </DialogActions>
     </Dialog>

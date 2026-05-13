@@ -60,12 +60,12 @@ const AdminArticlesPage = () => {
 
   return (
     <AdminSectionPanel
-      title="Article management"
-      subtitle="Edit any published article across the 7 channels — reuses the post-article form layout."
+      title="Quản lý bài viết"
+      subtitle="Chỉnh sửa bất kỳ bài viết nào đã đăng trên 7 chuyên mục."
     >
       <Box sx={ADMIN_FILTER_BAR_SX}>
         <TextField
-          select size="small" label="Channel"
+          select size="small" label="Chuyên mục"
           value={channel}
           onChange={(e) => setChannel(e.target.value)}
           sx={{ minWidth: 220 }}
@@ -84,9 +84,9 @@ const AdminArticlesPage = () => {
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Created at</TableCell>
-              <TableCell align="right">Actions</TableCell>
+              <TableCell>Tiêu đề</TableCell>
+              <TableCell>Ngày tạo</TableCell>
+              <TableCell align="right">Thao tác</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -94,7 +94,7 @@ const AdminArticlesPage = () => {
               <TableRow>
                 <TableCell colSpan={4}>
                   <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    No articles in this channel yet.
+                    Chưa có bài viết nào trong chuyên mục này.
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -108,12 +108,12 @@ const AdminArticlesPage = () => {
                   <TableCell>{formatDateTime(createdOf(a))}</TableCell>
                   <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                      <Tooltip title="View public page">
+                      <Tooltip title="Xem trang công khai">
                         <IconButton size="small" color="primary" onClick={() => openView(a)}>
                           <VisibilityOutlinedIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Edit">
+                      <Tooltip title="Chỉnh sửa">
                         <IconButton size="small" color="primary" onClick={() => openEdit(a)}>
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>

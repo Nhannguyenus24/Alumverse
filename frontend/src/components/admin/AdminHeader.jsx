@@ -82,7 +82,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               sx={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500 }}
             >
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />
-              Admin
+              Quản trị
             </MuiLink>
             
             {breadcrumbs ? (
@@ -106,7 +106,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               ))
             ) : (
               <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
-                Dashboard
+                Bảng điều khiển
               </Typography>
             )}
           </Breadcrumbs>

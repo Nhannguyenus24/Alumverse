@@ -49,8 +49,8 @@ import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetri
 
 const publishStatusChip = (isPublished) =>
   isPublished
-    ? { color: "success", label: "Published" }
-    : { color: "default", label: "Draft" };
+    ? { color: "success", label: "Đã đăng" }
+    : { color: "default", label: "Bản nháp" };
 
 const StatTile = ({ label, value }) => (
   <Paper
@@ -151,8 +151,8 @@ const AdminEventsPage = () => {
   return (
     <>
       <AdminSectionPanel
-        title="Event management"
-        subtitle="Cross-organization event listing, publish moderation and removal — backed by /api/admin/events."
+        title="Quản lý sự kiện"
+        subtitle="Danh sách sự kiện, kiểm duyệt và xóa sự kiện trên toàn hệ thống."
       >
         {statistics ? (
           <Box
@@ -172,56 +172,56 @@ const AdminEventsPage = () => {
             }}
           >
             <AdminDashboardMetricTile
-              label="Total events"
+              label="Tổng sự kiện"
               value={statistics.totalEvents}
             />
             <AdminDashboardMetricTile
-              label="Published"
+              label="Đã đăng"
               value={statistics.publishedEvents}
               valueColor="success.main"
             />
             <AdminDashboardMetricTile
-              label="Draft"
+              label="Bản nháp"
               value={statistics.unpublishedEvents}
               valueColor="text.secondary"
             />
             <AdminDashboardMetricTile
-              label="Upcoming"
+              label="Sắp tới"
               value={statistics.upcomingEvents}
               valueColor="info.main"
             />
             <AdminDashboardMetricTile
-              label="Ongoing"
+              label="Đang diễn ra"
               value={statistics.ongoingEvents}
               valueColor="warning.main"
             />
             <AdminDashboardMetricTile
-              label="Past"
+              label="Đã qua"
               value={statistics.pastEvents}
               valueColor="text.disabled"
             />
             <AdminDashboardMetricTile
-              label="Tickets registered"
+              label="Vé đã đăng ký"
               value={statistics.registeredTickets}
               valueColor="primary.main"
             />
             <AdminDashboardMetricTile
-              label="Tickets checked-in"
+              label="Vé đã check-in"
               value={statistics.checkedInTickets}
               valueColor="success.dark"
             />
             <AdminDashboardMetricTile
-              label="Tickets cancelled"
+              label="Vé đã hủy"
               value={statistics.cancelledTickets}
               valueColor="error.main"
             />
             <AdminDashboardMetricTile
-              label="Total interests"
+              label="Tổng lượt quan tâm"
               value={statistics.totalInterests}
               valueColor="secondary.main"
             />
             <AdminDashboardMetricTile
-              label="New today"
+              label="Mới hôm nay"
               value={statistics.newEventsToday}
               valueColor="success.main"
             />
@@ -231,19 +231,19 @@ const AdminEventsPage = () => {
         <Box sx={ADMIN_FILTER_BAR_SX}>
           <TextField
             size="small"
-            label="Search"
+            label="Tìm kiếm"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
               setPage(0);
             }}
-            placeholder="Title or description..."
+            placeholder="Tiêu đề hoặc mô tả..."
             sx={{ flex: "1 1 220px", minWidth: 220 }}
           />
           <TextField
             select
             size="small"
-            label="Status"
+            label="Trạng thái"
             value={statusFilter}
             onChange={(e) => {
               setStatusFilter(e.target.value);
@@ -260,7 +260,7 @@ const AdminEventsPage = () => {
           <TextField
             select
             size="small"
-            label="Organization"
+            label="Tổ chức"
             value={organizationFilter}
             onChange={(e) => {
               setOrganizationFilter(e.target.value);
@@ -268,7 +268,7 @@ const AdminEventsPage = () => {
             }}
             sx={{ minWidth: 220 }}
           >
-            <MenuItem value="ALL">All organizations</MenuItem>
+            <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
             {(organizations || []).map((org) => (
               <MenuItem key={org.id} value={String(org.id)}>
                 {org.name}
@@ -278,7 +278,7 @@ const AdminEventsPage = () => {
           <TextField
             select
             size="small"
-            label="Sort by"
+            label="Sắp xếp"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
             sx={{ minWidth: 180 }}
@@ -292,13 +292,13 @@ const AdminEventsPage = () => {
           <TextField
             select
             size="small"
-            label="Order"
+            label="Thứ tự"
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}
             sx={{ minWidth: 140 }}
           >
-            <MenuItem value="DESC">Descending</MenuItem>
-            <MenuItem value="ASC">Ascending</MenuItem>
+            <MenuItem value="DESC">Giảm dần</MenuItem>
+            <MenuItem value="ASC">Tăng dần</MenuItem>
           </TextField>
         </Box>
 
@@ -311,14 +311,14 @@ const AdminEventsPage = () => {
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
-                <TableCell>Title</TableCell>
-                <TableCell>Organization</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Timeline</TableCell>
-                <TableCell align="right">Capacity</TableCell>
-                <TableCell align="right">Interested</TableCell>
-                <TableCell>Created</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell>Tiêu đề</TableCell>
+                <TableCell>Tổ chức</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell>Thời gian</TableCell>
+                <TableCell align="right">Sức chứa</TableCell>
+                <TableCell align="right">Quan tâm</TableCell>
+                <TableCell>Ngày tạo</TableCell>
+                <TableCell align="right">Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -330,7 +330,7 @@ const AdminEventsPage = () => {
                       color="text.secondary"
                       sx={{ py: 2 }}
                     >
-                      No events match current filters.
+                      Không có sự kiện nào khớp với bộ lọc.
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -385,7 +385,7 @@ const AdminEventsPage = () => {
                             gap: 0.5,
                           }}
                         >
-                          <Tooltip title="View">
+                          <Tooltip title="Xem">
                             <IconButton
                               size="small"
                               color="primary"
@@ -394,7 +394,7 @@ const AdminEventsPage = () => {
                               <VisibilityOutlinedIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Edit">
+                          <Tooltip title="Chỉnh sửa">
                             <IconButton
                               size="small"
                               color="primary"
@@ -403,7 +403,7 @@ const AdminEventsPage = () => {
                               <EditOutlinedIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Tickets & interests">
+                          <Tooltip title="Vé & lượt quan tâm">
                             <IconButton
                               size="small"
                               color="primary"
@@ -413,7 +413,7 @@ const AdminEventsPage = () => {
                             </IconButton>
                           </Tooltip>
                           {event.isPublished ? (
-                            <Tooltip title="Unpublish">
+                            <Tooltip title="Gỡ đăng">
                               <IconButton
                                 size="small"
                                 color="warning"
@@ -423,7 +423,7 @@ const AdminEventsPage = () => {
                               </IconButton>
                             </Tooltip>
                           ) : (
-                            <Tooltip title="Publish">
+                            <Tooltip title="Đăng sự kiện">
                               <IconButton
                                 size="small"
                                 color="success"
@@ -433,7 +433,7 @@ const AdminEventsPage = () => {
                               </IconButton>
                             </Tooltip>
                           )}
-                          <Tooltip title="Delete">
+                          <Tooltip title="Xóa">
                             <IconButton
                               size="small"
                               color="error"
@@ -473,7 +473,7 @@ const AdminEventsPage = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
-          Event detail
+          Chi tiết sự kiện
         </DialogTitle>
         {detailItem ? (
           <DialogContent
@@ -483,47 +483,47 @@ const AdminEventsPage = () => {
               <strong>ID:</strong> {detailItem.id}
             </Typography>
             <Typography variant="body2">
-              <strong>Title:</strong> {detailItem.title}
+              <strong>Tiêu đề:</strong> {detailItem.title}
             </Typography>
             <Typography variant="body2">
-              <strong>Organization:</strong>{" "}
+              <strong>Tổ chức:</strong>{" "}
               {orgLabel(detailItem.organizationId)}
             </Typography>
             <Typography variant="body2">
-              <strong>Creator member ID:</strong>{" "}
+              <strong>ID thành viên tạo:</strong>{" "}
               {detailItem.creatorMemberId ?? "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Status:</strong>{" "}
-              {detailItem.isPublished ? "Published" : "Draft"}
+              <strong>Trạng thái:</strong>{" "}
+              {detailItem.isPublished ? "Đã đăng" : "Bản nháp"}
             </Typography>
             <Typography variant="body2">
-              <strong>Location:</strong> {detailItem.location || "-"}
+              <strong>Địa điểm:</strong> {detailItem.location || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Start:</strong> {formatDateTime(detailItem.startTime)}
+              <strong>Bắt đầu:</strong> {formatDateTime(detailItem.startTime)}
             </Typography>
             <Typography variant="body2">
-              <strong>End:</strong> {formatDateTime(detailItem.endTime)}
+              <strong>Kết thúc:</strong> {formatDateTime(detailItem.endTime)}
             </Typography>
             <Typography variant="body2">
-              <strong>Registration window:</strong>{" "}
+              <strong>Thời gian đăng ký:</strong>{" "}
               {formatDateTime(detailItem.registrationStartAt)} -{" "}
               {formatDateTime(detailItem.registrationEndAt)}
             </Typography>
             <Typography variant="body2">
-              <strong>Capacity:</strong> {detailItem.maxCapacity ?? "-"}
+              <strong>Sức chứa:</strong> {detailItem.maxCapacity ?? "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Interested:</strong> {detailItem.interestedCount ?? 0}
+              <strong>Quan tâm:</strong> {detailItem.interestedCount ?? 0}
             </Typography>
             <Typography variant="body2">
-              <strong>Created at:</strong>{" "}
+              <strong>Ngày tạo:</strong>{" "}
               {formatDateTime(detailItem.createdAt)}
             </Typography>
             {detailItem.description ? (
               <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>Description:</strong> {detailItem.description}
+                <strong>Mô tả:</strong> {detailItem.description}
               </Typography>
             ) : null}
           </DialogContent>
@@ -538,7 +538,7 @@ const AdminEventsPage = () => {
             }}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Tickets & interests
+            Vé & lượt quan tâm
           </Button>
           <Button
             variant="outlined"
@@ -549,14 +549,14 @@ const AdminEventsPage = () => {
             }}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Edit
+            Chỉnh sửa
           </Button>
           <Button
             variant="contained"
             onClick={() => setDetailItem(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Close
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>
@@ -576,10 +576,10 @@ const AdminEventsPage = () => {
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Delete event"
+        title="Xóa sự kiện"
         description={
           deleteTarget
-            ? `Permanently delete "${deleteTarget.title}" (#${deleteTarget.id})?`
+            ? `Xóa vĩnh viễn sự kiện "${deleteTarget.title}" (#${deleteTarget.id})?`
             : ""
         }
         onClose={() => setDeleteTarget(null)}
