@@ -280,7 +280,6 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                     borderColor: 'divider',
                     py: 1.5,
                     '&:last-of-type': { borderBottom: 'none' },
-                    '&:hover': { bgcolor: 'action.hover' }
                   }}
                 >
                   <ListItemText
@@ -313,7 +312,6 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                       borderColor: 'divider',
                       py: 1.5,
                       '&:last-of-type': { borderBottom: 'none' },
-                      '&:hover': { bgcolor: 'action.hover' }
                     }}
                   >
                     <ListItemText

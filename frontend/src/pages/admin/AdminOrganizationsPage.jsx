@@ -218,11 +218,6 @@ const StatCard = ({ label, value, icon }) => (
       display: 'flex',
       alignItems: 'center',
       gap: 2,
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: (theme) => theme.customShadows?.z8 || '0 8px 16px 0 rgba(0,0,0,0.08)',
-      },
     }}
   >
     <Box

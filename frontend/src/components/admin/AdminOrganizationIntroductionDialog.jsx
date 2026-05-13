@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import Grid from "@mui/material/Grid2";
+import Grid from "@mui/material/Grid";
 import CoverUpload from "../CoverUpload";
 import { useUploadImage } from "../../hooks/images/useUploadImage";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -124,9 +124,27 @@ const AdminOrganizationIntroductionDialog = ({
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
               Ảnh bìa tổ chức
             </Typography>
-            <Box sx={{ borderRadius: 3, overflow: 'hidden', border: '1px dashed', borderColor: 'divider', position: 'relative' }}>
+            <Box
+              sx={{
+                borderRadius: 3,
+                overflow: "hidden",
+                border: "1px dashed",
+                borderColor: "divider",
+                position: "relative",
+              }}
+            >
               {uploading && (
-                <Box sx={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.7)' }}>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(255,255,255,0.7)",
+                  }}
+                >
                   <CircularProgress size={32} />
                 </Box>
               )}
@@ -137,7 +155,7 @@ const AdminOrganizationIntroductionDialog = ({
                   if (file) {
                     try {
                       const url = await uploadFile(file);
-                      setFormData(prev => ({ ...prev, bannerUrl: url }));
+                      setFormData((prev) => ({ ...prev, bannerUrl: url }));
                     } catch (err) {
                       console.error("Upload failed", err);
                     }
@@ -152,7 +170,7 @@ const AdminOrganizationIntroductionDialog = ({
               variant="caption"
               color="text.disabled"
               fontWeight={700}
-              sx={{ textTransform: 'uppercase', letterSpacing: 1 }}
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
             >
               Mục tiêu & Giá trị cốt lõi
             </Typography>

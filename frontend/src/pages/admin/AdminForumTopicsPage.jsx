@@ -17,7 +17,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useOutletContext } from "react-router";
-import * as adminOrgApi from "../../api/adminOrganizationApi";
+import { adminOrganizationApi } from "../../api/adminOrganizationApi";
 import { useEffect } from "react";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -62,8 +62,8 @@ const AdminForumTopicsPage = () => {
 
     const fetchOrgs = async () => {
       try {
-        const res = await adminOrgApi.getOrganizations();
-        setOrganizations(res?.data?.data || []);
+        const data = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        setOrganizations(data || []);
       } catch (err) {
         console.error("Failed to fetch organizations", err);
       }
