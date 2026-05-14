@@ -79,6 +79,10 @@ public class OrganizationService {
         return OrganizationIntroductionResponse.builder()
                 .orgaId(intro.getOrgaId())
                 .content(intro.getContent())
+                .vision(intro.getVision())
+                .mission(intro.getMission())
+                .coreValues(intro.getCoreValues())
+                .bannerUrl(intro.getBannerUrl())
                 .imageUrls(urls)
                 .build();
     }

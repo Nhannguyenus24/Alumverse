@@ -375,41 +375,43 @@ const AdminOrganizationMasterDetail = ({
                         sx={{ 
                           color: 'text.secondary', 
                           lineHeight: 1.6,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
                           '& img': { maxWidth: '100%', height: 'auto', borderRadius: 1 },
                           '& p': { mb: 1.5 }
                         }}
                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedIntroduction?.content || 'Chưa có mô tả chi tiết.') }}
                       />
                     </DetailSection>
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.info.main, 0.02), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
+                    <Stack spacing={2}>
+                      <Box>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.info.main, 0.02), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'info.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'info.dark' }}>Tầm nhìn</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.vision || '—'}</Typography>
                         </Card>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.02), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                      </Box>
+                      <Box>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.02), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}><RocketLaunchRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>Sứ mạng</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.mission || '—'}</Typography>
                         </Card>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
+                      </Box>
+                      <Box>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'error.main', width: 32, height: 32 }}><FavoriteRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.dark' }}>Giá trị cốt lõi</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.coreValues || '—'}</Typography>
                         </Card>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Stack>
                   </Stack>
                 )}
 

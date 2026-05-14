@@ -200,15 +200,37 @@ public class AdminOrganizationService {
                 .flatMap(urls -> introductionRepository.findByOrgaId(orgaId)
                         .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
                         .flatMap(intro -> {
-                            intro.setContent(request.getContent());
-                            intro.setImageUrls(JsonUtils.toJson(urls));
-                            intro.setUpdatedAt(LocalDateTime.now());
-                            return introductionRepository.save(intro).thenReturn(urls);
+                            String imageUrlsJson = JsonUtils.toJson(urls);
+                            if (intro.getId() != null) {
+                                return introductionRepository.updateFields(
+                                        orgaId, 
+                                        request.getContent(), 
+                                        request.getVision(),
+                                        request.getMission(),
+                                        request.getCoreValues(),
+                                        request.getBannerUrl(),
+                                        imageUrlsJson
+                                )
+                                .then(introductionRepository.findByOrgaId(orgaId))
+                                .thenReturn(urls);
+                            } else {
+                                intro.setContent(request.getContent());
+                                intro.setVision(request.getVision());
+                                intro.setMission(request.getMission());
+                                intro.setCoreValues(request.getCoreValues());
+                                intro.setImageUrls(imageUrlsJson);
+                                intro.setBannerUrl(request.getBannerUrl());
+                                return introductionRepository.save(intro).thenReturn(urls);
+                            }
                         }))
                 .map(urls -> OrganizationIntroductionResponse.builder()
                         .orgaId(orgaId)
                         .content(request.getContent())
+                        .vision(request.getVision())
+                        .mission(request.getMission())
+                        .coreValues(request.getCoreValues())
                         .imageUrls(urls)
+                        .bannerUrl(request.getBannerUrl())
                         .build())
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
     }
