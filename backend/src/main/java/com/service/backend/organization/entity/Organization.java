@@ -42,5 +42,6 @@ public class Organization {
 
     @Column("created_at")
     @CreatedDate
+    @org.springframework.data.annotation.ReadOnlyProperty
     private LocalDateTime createdAt;
 }

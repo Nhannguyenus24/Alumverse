@@ -36,14 +36,32 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
 
   useEffect(() => {
     if (organization) {
+      const parseJsonArray = (val) => {
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string' && val.trim().startsWith('[')) {
+          try {
+            return JSON.parse(val);
+          } catch (e) {
+            console.error("Failed to parse JSON array", e);
+            return val;
+          }
+        }
+        return val;
+      };
+
+      const programsArr = parseJsonArray(organization.programs);
+      const majorsArr = parseJsonArray(organization.majors);
+
       setFormData({
         name: organization.name || '',
         slug: organization.slug || '',
         logoUrl: organization.logoUrl || '',
         status: organization.status || 'ACTIVE',
-        programs: Array.isArray(organization.programs) ? organization.programs.join(', ') : (organization.programs || ''),
-        majors: Array.isArray(organization.majors) ? organization.majors.join(', ') : (organization.majors || ''),
-        featuresConfig: organization.featuresConfig || '',
+        programs: Array.isArray(programsArr) ? programsArr.join(', ') : (programsArr || ''),
+        majors: Array.isArray(majorsArr) ? majorsArr.join(', ') : (majorsArr || ''),
+        featuresConfig: typeof organization.featuresConfig === 'object' 
+          ? JSON.stringify(organization.featuresConfig, null, 2) 
+          : (organization.featuresConfig || ''),
       });
     }
   }, [organization, open]);

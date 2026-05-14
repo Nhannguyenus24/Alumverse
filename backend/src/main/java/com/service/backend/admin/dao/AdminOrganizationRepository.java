@@ -1,5 +1,6 @@
 package com.service.backend.admin.dao;
 
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
@@ -29,6 +30,22 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
      */
     @Query("SELECT COUNT(*) FROM organizations WHERE :search IS NULL OR name ILIKE :search")
     Mono<Long> countWithFilters(@Param("search") String search);
+
+    @Modifying
+    @Query("UPDATE organizations SET name = :name, slug = :slug, logo_url = :logoUrl, " +
+           "brand_config = CAST(:brandConfig AS json), features_config = CAST(:featuresConfig AS json), " +
+           "programs = CAST(:programs AS json), majors = CAST(:majors AS json) " +
+           "WHERE id = :id")
+    Mono<Integer> updateOrganizationFields(
+            @Param("id") Integer id,
+            @Param("name") String name,
+            @Param("slug") String slug,
+            @Param("logoUrl") String logoUrl,
+            @Param("brandConfig") String brandConfig,
+            @Param("featuresConfig") String featuresConfig,
+            @Param("programs") String programs,
+            @Param("majors") String majors
+    );
 
     /**
      * Count active members in a specific organization
