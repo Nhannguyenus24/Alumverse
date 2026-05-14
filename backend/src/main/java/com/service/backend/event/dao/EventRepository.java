@@ -44,6 +44,7 @@ public class EventRepository implements IEventRepository {
                     existing.setRegistrationStartAt(eventData.getRegistrationStartAt());
                     existing.setRegistrationEndAt(eventData.getRegistrationEndAt());
                     existing.setMaxCapacity(eventData.getMaxCapacity());
+                    if (eventData.getTopic() != null) existing.setTopic(eventData.getTopic());
                     return eventRepo.save(existing);
                 });
     }

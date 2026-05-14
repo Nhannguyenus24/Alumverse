@@ -29,4 +29,6 @@ public class CreateAlumniPostRequest {
 
     /** Optional base64-encoded image. When present, backend uploads and stores the resulting URL. */
     private String thumbnailBase64;
+
+    private String topic;
 }

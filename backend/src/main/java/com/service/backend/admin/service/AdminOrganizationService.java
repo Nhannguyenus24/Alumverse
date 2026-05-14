@@ -41,19 +41,21 @@ public class AdminOrganizationService {
     private final ImageService imageService;
     
     /**
-     * Get all organizations with pagination
+     * Get all organizations with pagination and search
      */
-    public Mono<PaginatedResponse<Organization>> getAllOrganizations(int page, int size) {
-        logger.info("Fetching organizations with pagination - page: {}, size: {}", page, size);
+    public Mono<PaginatedResponse<Organization>> getAllOrganizations(int page, int size, String search) {
+        logger.info("Fetching organizations - search: {}, page: {}, size: {}", search, page, size);
         int offset = page * size;
+        String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim() + "%" : null;
+
         return Mono.zip(
-                organizationRepository.findAllWithPagination(offset, size).collectList(),
-                organizationRepository.count()
+                organizationRepository.findAllWithFilters(searchParam, offset, size).collectList(),
+                organizationRepository.countWithFilters(searchParam)
         ).map(tuple -> {
             logger.info("Organizations fetched successfully - total: {}", tuple.getT2());
             return PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size);
         })
-        .doOnError(error -> logger.error("Failed to fetch organizations with pagination - page: {}, size: {}", page, size, error));
+        .doOnError(error -> logger.error("Failed to fetch organizations - search: {}, page: {}, size: {}", search, page, size, error));
     }
     
     /**

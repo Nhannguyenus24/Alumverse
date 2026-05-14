@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -26,6 +27,11 @@ import { formatDateTime } from '../../utils/dateFormatter';
 const AdminSchoolFeedbackPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Phản hồi', active: true }]);
+  }, [setBreadcrumbs]);
   const [loading, setLoading] = useState(true);
   const [feedbacks, setFeedbacks] = useState([]);
   const [total, setTotal] = useState(0);
@@ -155,39 +161,41 @@ const AdminSchoolFeedbackPage = () => {
         </Typography>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng phản hồi"
-            value={stats.total}
-            icon={<FeedbackOutlinedIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Phản hồi mới"
-            value={stats.new}
-            icon={<MarkEmailUnreadOutlinedIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Đã xử lý"
-            value={stats.read}
-            icon={<MarkEmailReadIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Gửi gần nhất"
-            value={stats.lastFeedback}
-            icon={<HistoryOutlinedIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng phản hồi"
+          value={stats.total}
+          icon={<FeedbackOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Phản hồi mới"
+          value={stats.new}
+          icon={<MarkEmailUnreadOutlinedIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Đã xử lý"
+          value={stats.read}
+          icon={<MarkEmailReadIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Gửi gần nhất"
+          value={stats.lastFeedback}
+          icon={<HistoryOutlinedIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <AdminDataTable
         columns={columns}

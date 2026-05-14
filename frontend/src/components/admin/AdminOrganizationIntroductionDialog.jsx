@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Button,
   Dialog,
@@ -8,31 +8,47 @@ import {
   TextField,
   Box,
   Typography,
-  Divider
-} from '@mui/material';
+  Divider,
+} from "@mui/material";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
+import Grid from "@mui/material/Grid";
+import CoverUpload from "../CoverUpload";
+import { useUploadImage } from "../../hooks/images/useUploadImage";
+import CircularProgress from "@mui/material/CircularProgress";
 
-const AdminOrganizationIntroductionDialog = ({ open, onClose, introduction, onConfirm }) => {
+const AdminOrganizationIntroductionDialog = ({
+  open,
+  onClose,
+  introduction,
+  onConfirm,
+}) => {
   const [formData, setFormData] = useState({
-    content: '',
-    vision: '',
-    mission: '',
-    coreValues: '',
+    content: "",
+    vision: "",
+    mission: "",
+    coreValues: "",
+    bannerUrl: "",
   });
+
+  const { uploadFile, isPending: uploading } = useUploadImage();
 
   useEffect(() => {
     if (introduction) {
       setFormData({
-        content: introduction.content || '',
-        vision: introduction.vision || '',
-        mission: introduction.mission || '',
-        coreValues: introduction.coreValues || '',
+        content: introduction.content || "",
+        vision: introduction.vision || "",
+        mission: introduction.mission || "",
+        coreValues: introduction.coreValues || "",
+        bannerUrl: introduction.bannerUrl || "",
       });
     } else {
       setFormData({
-        content: '',
-        vision: '',
-        mission: '',
-        coreValues: '',
+        content: "",
+        vision: "",
+        mission: "",
+        coreValues: "",
+        bannerUrl: "",
       });
     }
   }, [introduction, open]);
@@ -47,74 +63,178 @@ const AdminOrganizationIntroductionDialog = ({ open, onClose, introduction, onCo
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="md"
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
       <DialogTitle sx={{ p: 3, pb: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
+        <Typography
+          variant="h5"
+          sx={{ fontWeight: 800, color: "primary.main" }}
+        >
           Cập nhật thông tin giới thiệu
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Các thông tin này sẽ được hiển thị công khai trên trang chủ của tổ chức.
+          Các thông tin này sẽ được hiển thị công khai trên trang chủ của tổ
+          chức.
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 1 }}>
-        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-          <TextField
-            fullWidth
-            label="Giới thiệu chung"
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            multiline
-            rows={8}
-            placeholder="Mô tả tóm tắt về lịch sử, quy mô, thành tựu của tổ chức..."
-            helperText="Nội dung chính hiển thị ở phần đầu trang giới thiệu."
-          />
-          <Divider sx={{ my: 0.5 }}>
-            <Typography variant="caption" color="text.disabled" fontWeight={700}>MỤC TIÊU & GIÁ TRỊ</Typography>
-          </Divider>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              fullWidth
-              label="Tầm nhìn"
-              name="vision"
-              value={formData.vision}
-              onChange={handleChange}
-              multiline
-              rows={3}
-              placeholder="Định hướng phát triển dài hạn..."
-            />
-            <TextField
-              fullWidth
-              label="Sứ mạng"
-              name="mission"
-              value={formData.mission}
-              onChange={handleChange}
-              multiline
-              rows={3}
-              placeholder="Mục đích cốt lõi và nhiệm vụ của tổ chức..."
-            />
-            <TextField
-              fullWidth
-              label="Giá trị cốt lõi"
-              name="coreValues"
-              value={formData.coreValues}
-              onChange={handleChange}
-              multiline
-              rows={3}
-              placeholder="Các nguyên tắc dẫn dắt và triết lý hoạt động..."
-            />
+        <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
+              Giới thiệu chung (Rich Text)
+            </Typography>
+            <Box
+              sx={{
+                "& .ql-container": {
+                  borderBottomLeftRadius: 8,
+                  borderBottomRightRadius: 8,
+                  minHeight: 200,
+                },
+                "& .ql-toolbar": {
+                  borderTopLeftRadius: 8,
+                  borderTopRightRadius: 8,
+                  bgcolor: "action.hover",
+                },
+              }}
+            >
+              <ReactQuill
+                theme="snow"
+                value={formData.content}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, content: val }))
+                }
+                placeholder="Mô tả tóm tắt về lịch sử, quy mô, thành tựu của tổ chức..."
+              />
+            </Box>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1, display: "block" }}
+            >
+              Nội dung chính hiển thị ở phần đầu trang giới thiệu. Bạn có thể
+              chèn ảnh trực tiếp vào đây.
+            </Typography>
           </Box>
+          <Box sx={{ mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
+              Ảnh bìa tổ chức
+            </Typography>
+            <Box
+              sx={{
+                borderRadius: 3,
+                overflow: "hidden",
+                border: "1px dashed",
+                borderColor: "divider",
+                position: "relative",
+              }}
+            >
+              {uploading && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  <CircularProgress size={32} />
+                </Box>
+              )}
+              <CoverUpload
+                value={formData.bannerUrl}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const url = await uploadFile(file);
+                      setFormData((prev) => ({ ...prev, bannerUrl: url }));
+                    } catch (err) {
+                      console.error("Upload failed", err);
+                    }
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 1 }}>
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              fontWeight={700}
+              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+            >
+              Mục tiêu & Giá trị cốt lõi
+            </Typography>
+          </Divider>
+
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Tầm nhìn"
+                name="vision"
+                value={formData.vision}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                placeholder="Định hướng phát triển dài hạn..."
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Sứ mạng"
+                name="mission"
+                value={formData.mission}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                placeholder="Mục đích cốt lõi và nhiệm vụ của tổ chức..."
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Giá trị cốt lõi"
+                name="coreValues"
+                value={formData.coreValues}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                placeholder="Các nguyên tắc dẫn dắt và triết lý hoạt động..."
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Grid>
+          </Grid>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
+      <DialogActions sx={{ p: 3, pt: 2, bgcolor: "action.hover" }}>
+        <Button
+          onClick={onClose}
+          sx={{
+            textTransform: "none",
+            fontWeight: 600,
+            color: "text.secondary",
+          }}
+        >
           Hủy bỏ
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
           sx={{
-            textTransform: 'none',
+            textTransform: "none",
             fontWeight: 700,
             px: 4,
             borderRadius: 2,

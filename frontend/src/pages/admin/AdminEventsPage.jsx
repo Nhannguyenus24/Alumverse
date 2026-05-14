@@ -1,8 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Box,
   Button,
+  Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -10,12 +13,17 @@ import {
   Grid,
   IconButton,
   MenuItem,
+  Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TablePagination,
+  TableRow,
   TextField,
   Tooltip,
   Typography,
-  useTheme,
-  alpha,
 } from "@mui/material";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -23,27 +31,46 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
-import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
-import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import PeopleIcon from "@mui/icons-material/People";
-
-import AdminStatusChip from "../../components/admin/AdminStatusChip";
-import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+import AdminSectionPanel from "../../components/admin/AdminSectionPanel";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminEventFormDialog from "../../components/admin/AdminEventFormDialog";
 import AdminEventTicketsDialog from "../../components/admin/AdminEventTicketsDialog";
-import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
   ADMIN_EVENT_SORT_OPTIONS,
   ADMIN_EVENT_STATUS_OPTIONS,
 } from "../../constants/adminDefaultEvents";
-import useAdminEventsData from "../../hooks/admin/useAdminEventsData";
+import {
+  ADMIN_FILTER_BAR_SX,
+  ADMIN_STATUS_CHIP_SX,
+} from "../../constants/adminUiShared";
+import useAdminEvents from "../../hooks/admin/useAdminEvents";
 import { formatDateTime } from "../../utils/dateFormatter";
+import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
+
+const publishStatusChip = (isPublished) =>
+  isPublished
+    ? { color: "success", label: "Đã đăng" }
+    : { color: "default", label: "Bản nháp" };
+
+const StatTile = ({ label, value }) => (
+  <Paper
+    variant="outlined"
+    sx={{ p: 1.5, textAlign: "center", height: "100%" }}
+  >
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{ display: "block" }}
+    >
+      {label}
+    </Typography>
+    <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
+      {value ?? "-"}
+    </Typography>
+  </Paper>
+);
 
 const AdminEventsPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const {
     events,
@@ -57,18 +84,25 @@ const AdminEventsPage = () => {
     setStatusFilter,
     organizationFilter,
     setOrganizationFilter,
+    sortBy,
+    setSortBy,
+    sortOrder,
+    setSortOrder,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     publishEvent,
     unpublishEvent,
-    createEvent,
-    updateEvent,
     deleteEvent,
-  } = useAdminEventsData();
+    updateEvent,
+  } = useAdminEvents();
+  const { setBreadcrumbs } = useOutletContext();
 
-  const [createOpen, setCreateOpen] = useState(false);
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Sự kiện', active: true }]);
+  }, [setBreadcrumbs]);
+
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
@@ -82,14 +116,14 @@ const AdminEventsPage = () => {
 
   const handlePublish = async (event) => {
     const ok = await publishEvent(event.id);
-    enqueueSnackbar(ok ? "Đã công khai sự kiện." : "Lỗi khi công khai.", {
+    enqueueSnackbar(ok ? "Event published." : "Failed to publish event.", {
       variant: ok ? "success" : "error",
     });
   };
 
   const handleUnpublish = async (event) => {
     const ok = await unpublishEvent(event.id);
-    enqueueSnackbar(ok ? "Đã gỡ sự kiện." : "Lỗi khi gỡ.", {
+    enqueueSnackbar(ok ? "Event unpublished." : "Failed to unpublish event.", {
       variant: ok ? "success" : "warning",
     });
   };
@@ -97,7 +131,7 @@ const AdminEventsPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteEvent(deleteTarget.id);
-    enqueueSnackbar(ok ? "Đã xóa sự kiện." : "Lỗi khi xóa.", {
+    enqueueSnackbar(ok ? "Event deleted." : "Failed to delete event.", {
       variant: ok ? "success" : "error",
     });
     setDeleteTarget(null);
@@ -106,7 +140,7 @@ const AdminEventsPage = () => {
   const handleEditSubmit = async (payload) => {
     if (!editTarget) return false;
     const ok = await updateEvent(editTarget.id, payload);
-    enqueueSnackbar(ok ? "Đã cập nhật sự kiện." : "Lỗi khi cập nhật.", {
+    enqueueSnackbar(ok ? "Event updated." : "Failed to update event.", {
       variant: ok ? "success" : "error",
     });
     return ok;
@@ -114,327 +148,411 @@ const AdminEventsPage = () => {
 
   const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
 
-  const columns = [
-    { id: "id", label: "ID" },
-    {
-      id: "title",
-      label: "Tiêu đề",
-      render: (val) => (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {val}
-        </Typography>
-      ),
-    },
-    { id: "organizationId", label: "Tổ chức", render: (val) => orgLabel(val) },
-    {
-      id: "isPublished",
-      label: "Trạng thái",
-      render: (val) => (
-        <AdminStatusChip
-          status={val ? "PUBLISHED" : "DRAFT"}
-          category="event"
-          label={val ? "Đã đăng" : "Bản nháp"}
-        />
-      ),
-    },
-    {
-      id: "timeline",
-      label: "Thời gian",
-      render: (_, row) => (
-        <Box>
-          <Typography
-            variant="caption"
-            sx={{ display: "block", fontWeight: 500 }}
-          >
-            {formatDateTime(row.startTime)}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            đến {formatDateTime(row.endTime)}
-          </Typography>
-        </Box>
-      ),
-    },
-    { id: "interestedCount", label: "Quan tâm", align: "right" },
-    {
-      id: "actions",
-      label: "",
-      align: "right",
-      render: (_, e) => (
-        <Stack
-          direction="row"
-          spacing={0.5}
-          justifyContent="flex-end"
-          onClick={(ev) => ev.stopPropagation()}
-        >
-          <Tooltip title="Chi tiết">
-            <IconButton size="small" onClick={() => setDetailItem(e)}>
-              <VisibilityOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Chỉnh sửa">
-            <IconButton size="small" onClick={() => setEditTarget(e)}>
-              <EditOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Danh sách đăng ký">
-            <IconButton
-              size="small"
-              color="primary"
-              onClick={() => setParticipantsTarget(e)}
-            >
-              <GroupOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {e.isPublished ? (
-            <Tooltip title="Gỡ bài">
-              <IconButton
-                size="small"
-                color="warning"
-                onClick={() => handleUnpublish(e)}
-              >
-                <CancelOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title="Đăng bài">
-              <IconButton
-                size="small"
-                color="success"
-                onClick={() => handlePublish(e)}
-              >
-                <CheckCircleOutlineIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Tooltip title="Xóa">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => setDeleteTarget(e)}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-      ),
-    },
-  ];
-
-  const Filters = (
-    <Stack direction="row" spacing={1}>
-      <TextField
-        select
-        size="small"
-        label="Trạng thái"
-        value={statusFilter}
-        onChange={(e) => {
-          setStatusFilter(e.target.value);
-          setPage(0);
-        }}
-        sx={{ minWidth: 140 }}
-      >
-        {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
-          <MenuItem key={opt.value} value={opt.value}>
-            {opt.label}
-          </MenuItem>
-        ))}
-      </TextField>
-      <TextField
-        select
-        size="small"
-        label="Tổ chức"
-        value={organizationFilter}
-        onChange={(e) => {
-          setOrganizationFilter(e.target.value);
-          setPage(0);
-        }}
-        sx={{ minWidth: 180 }}
-      >
-        <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
-        {(organizations || []).map((org) => (
-          <MenuItem key={org.id} value={String(org.id)}>
-            {org.name}
-          </MenuItem>
-        ))}
-      </TextField>
-    </Stack>
-  );
-
   return (
-    <Box>
-      <Box
-        sx={{
-          mb: 4,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-        }}
+    <>
+      <AdminSectionPanel
+        title="Quản lý sự kiện"
+        subtitle="Danh sách sự kiện, kiểm duyệt và xóa sự kiện trên toàn hệ thống."
       >
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
-            Quản lý sự kiện
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 0.5, fontWeight: 500 }}
+        {statistics ? (
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2,
+              mb: 3,
+              "& > *": {
+              flex: {
+                xs: "1 1 100%",
+                sm: "1 1 calc(50% - 12px)",
+                md: "1 1 calc(25% - 12px)",
+                lg: "1 1 0",
+              },
+              },
+            }}
           >
-            Tạo mới, phê duyệt và theo dõi các sự kiện cộng đồng, workshop và
-            hội thảo.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => setCreateOpen(true)}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
-        >
-          Tạo sự kiện
-        </Button>
-      </Box>
-
-      {statistics && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={6} md={3}>
             <AdminDashboardMetricTile
               label="Tổng sự kiện"
               value={statistics.totalEvents}
-              icon={<CalendarTodayOutlinedIcon />}
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
             <AdminDashboardMetricTile
               label="Đã đăng"
               value={statistics.publishedEvents}
-              icon={<CheckCircleIcon />}
               valueColor="success.main"
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
             <AdminDashboardMetricTile
-              label="Sắp diễn ra"
+              label="Bản nháp"
+              value={statistics.unpublishedEvents}
+              valueColor="text.secondary"
+            />
+            <AdminDashboardMetricTile
+              label="Sắp tới"
               value={statistics.upcomingEvents}
-              icon={<AccessTimeIcon />}
+              valueColor="info.main"
+            />
+            <AdminDashboardMetricTile
+              label="Đang diễn ra"
+              value={statistics.ongoingEvents}
               valueColor="warning.main"
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
             <AdminDashboardMetricTile
-              label="Lượt quan tâm"
-              value={statistics.totalInterests}
-              icon={<PeopleIcon />}
+              label="Đã qua"
+              value={statistics.pastEvents}
+              valueColor="text.disabled"
+            />
+            <AdminDashboardMetricTile
+              label="Vé đã đăng ký"
+              value={statistics.registeredTickets}
               valueColor="primary.main"
             />
-          </Grid>
-        </Grid>
-      )}
+            <AdminDashboardMetricTile
+              label="Vé đã check-in"
+              value={statistics.checkedInTickets}
+              valueColor="success.dark"
+            />
+            <AdminDashboardMetricTile
+              label="Vé đã hủy"
+              value={statistics.cancelledTickets}
+              valueColor="error.main"
+            />
+            <AdminDashboardMetricTile
+              label="Tổng lượt quan tâm"
+              value={statistics.totalInterests}
+              valueColor="secondary.main"
+            />
+            <AdminDashboardMetricTile
+              label="Mới hôm nay"
+              value={statistics.newEventsToday}
+              valueColor="success.main"
+            />
+          </Box>
+        ) : null}
 
-      <AdminDataTable
-        columns={columns}
-        rows={events}
-        totalCount={totalItems}
-        page={page}
-        onPageChange={(_, p) => setPage(p)}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(Number(e.target.value));
-          setPage(0);
-        }}
-        onSearchChange={(v) => {
-          setSearch(v);
-          setPage(0);
-        }}
-        searchValue={search}
-        filters={Filters}
-        onRowClick={(e) => setDetailItem(e)}
-        loading={loading}
-      />
+        <Box sx={ADMIN_FILTER_BAR_SX}>
+          <TextField
+            size="small"
+            label="Tìm kiếm"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Tiêu đề hoặc mô tả..."
+            sx={{ flex: "1 1 220px", minWidth: 220 }}
+          />
+          <TextField
+            select
+            size="small"
+            label="Trạng thái"
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 200 }}
+          >
+            {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label="Tổ chức"
+            value={organizationFilter}
+            onChange={(e) => {
+              setOrganizationFilter(e.target.value);
+              setPage(0);
+            }}
+            sx={{ minWidth: 220 }}
+          >
+            <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
+            {(organizations || []).map((org) => (
+              <MenuItem key={org.id} value={String(org.id)}>
+                {org.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label="Sắp xếp"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            sx={{ minWidth: 180 }}
+          >
+            {ADMIN_EVENT_SORT_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            size="small"
+            label="Thứ tự"
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value)}
+            sx={{ minWidth: 140 }}
+          >
+            <MenuItem value="DESC">Giảm dần</MenuItem>
+            <MenuItem value="ASC">Tăng dần</MenuItem>
+          </TextField>
+        </Box>
 
-      {/* Dialogs */}
+        {loading ? (
+          <Stack alignItems="center" sx={{ py: 4 }}>
+            <CircularProgress size={28} />
+          </Stack>
+        ) : (
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Tiêu đề</TableCell>
+                <TableCell>Tổ chức</TableCell>
+                <TableCell>Trạng thái</TableCell>
+                <TableCell>Thời gian</TableCell>
+                <TableCell align="right">Sức chứa</TableCell>
+                <TableCell align="right">Quan tâm</TableCell>
+                <TableCell>Ngày tạo</TableCell>
+                <TableCell align="right">Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {events.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ py: 2 }}
+                    >
+                      Không có sự kiện nào khớp với bộ lọc.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                events.map((event) => {
+                  const chip = publishStatusChip(event.isPublished);
+                  return (
+                    <TableRow
+                      key={event.id}
+                      hover
+                      onClick={() => setDetailItem(event)}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <TableCell>{event.id}</TableCell>
+                      <TableCell sx={{ maxWidth: 240 }}>
+                        <Typography variant="body2" noWrap>
+                          {event.title}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 180 }}>
+                        <Typography variant="body2" noWrap>
+                          {orgLabel(event.organizationId)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Chip
+                          size="small"
+                          color={chip.color}
+                          label={chip.label}
+                          sx={ADMIN_STATUS_CHIP_SX}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {formatDateTime(event.startTime)} -{" "}
+                        {formatDateTime(event.endTime)}
+                      </TableCell>
+                      <TableCell align="right">
+                        {event.maxCapacity ?? "-"}
+                      </TableCell>
+                      <TableCell align="right">
+                        {event.interestedCount ?? 0}
+                      </TableCell>
+                      <TableCell>{formatDateTime(event.createdAt)}</TableCell>
+                      <TableCell
+                        align="right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 0.5,
+                          }}
+                        >
+                          <Tooltip title="Xem">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setDetailItem(event)}
+                            >
+                              <VisibilityOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Chỉnh sửa">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setEditTarget(event)}
+                            >
+                              <EditOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Vé & lượt quan tâm">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => setParticipantsTarget(event)}
+                            >
+                              <GroupOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          {event.isPublished ? (
+                            <Tooltip title="Gỡ đăng">
+                              <IconButton
+                                size="small"
+                                color="warning"
+                                onClick={() => handleUnpublish(event)}
+                              >
+                                <CancelOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          ) : (
+                            <Tooltip title="Đăng sự kiện">
+                              <IconButton
+                                size="small"
+                                color="success"
+                                onClick={() => handlePublish(event)}
+                              >
+                                <CheckCircleOutlineIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Xóa">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => setDeleteTarget(event)}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        )}
+
+        <TablePagination
+          component="div"
+          count={totalItems}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(_, p) => setPage(p)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(Number(e.target.value));
+            setPage(0);
+          }}
+          rowsPerPageOptions={[10, 20, 50]}
+        />
+      </AdminSectionPanel>
+
       <Dialog
         open={Boolean(detailItem)}
         onClose={() => setDetailItem(null)}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontWeight: 800 }}>Chi tiết sự kiện</DialogTitle>
-        {detailItem && (
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <Typography
-                variant="h6"
-                color="primary.main"
-                sx={{ fontWeight: 700 }}
-              >
-                {detailItem.title}
+        <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
+          Chi tiết sự kiện
+        </DialogTitle>
+        {detailItem ? (
+          <DialogContent
+            sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}
+          >
+            <Typography variant="body2">
+              <strong>ID:</strong> {detailItem.id}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Tiêu đề:</strong> {detailItem.title}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Tổ chức:</strong>{" "}
+              {orgLabel(detailItem.organizationId)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>ID thành viên tạo:</strong>{" "}
+              {detailItem.creatorMemberId ?? "-"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Trạng thái:</strong>{" "}
+              {detailItem.isPublished ? "Đã đăng" : "Bản nháp"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Địa điểm:</strong> {detailItem.location || "-"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Bắt đầu:</strong> {formatDateTime(detailItem.startTime)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Kết thúc:</strong> {formatDateTime(detailItem.endTime)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Thời gian đăng ký:</strong>{" "}
+              {formatDateTime(detailItem.registrationStartAt)} -{" "}
+              {formatDateTime(detailItem.registrationEndAt)}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Sức chứa:</strong> {detailItem.maxCapacity ?? "-"}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Quan tâm:</strong> {detailItem.interestedCount ?? 0}
+            </Typography>
+            <Typography variant="body2">
+              <strong>Ngày tạo:</strong>{" "}
+              {formatDateTime(detailItem.createdAt)}
+            </Typography>
+            {detailItem.description ? (
+              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                <strong>Mô tả:</strong> {detailItem.description}
               </Typography>
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block" }}
-                >
-                  Tổ chức
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {orgLabel(detailItem.organizationId)}
-                </Typography>
-              </Box>
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block" }}
-                  >
-                    Bắt đầu
-                  </Typography>
-                  <Typography variant="body2">
-                    {formatDateTime(detailItem.startTime)}
-                  </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block" }}
-                  >
-                    Kết thúc
-                  </Typography>
-                  <Typography variant="body2">
-                    {formatDateTime(detailItem.endTime)}
-                  </Typography>
-                </Grid>
-              </Grid>
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block" }}
-                >
-                  Địa điểm
-                </Typography>
-                <Typography variant="body2">
-                  {detailItem.location || "-"}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: "block" }}
-                >
-                  Mô tả
-                </Typography>
-                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                  {detailItem.description || "Không có mô tả."}
-                </Typography>
-              </Box>
-            </Stack>
+            ) : null}
           </DialogContent>
-        )}
-        <DialogActions sx={{ p: 3 }}>
+        ) : null}
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
           <Button
             variant="outlined"
+            startIcon={<GroupOutlinedIcon />}
+            onClick={() => {
+              setParticipantsTarget(detailItem);
+              setDetailItem(null);
+            }}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Vé & lượt quan tâm
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => {
+              setEditTarget(detailItem);
+              setDetailItem(null);
+            }}
+            sx={{ textTransform: "none", fontWeight: 700 }}
+          >
+            Chỉnh sửa
+          </Button>
+          <Button
+            variant="contained"
             onClick={() => setDetailItem(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
@@ -442,17 +560,6 @@ const AdminEventsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <AdminEventFormDialog
-        open={createOpen}
-        event={null}
-        onClose={() => setCreateOpen(false)}
-        onSubmit={async (p) => {
-          const ok = await createEvent(p);
-          if (ok) enqueueSnackbar("Đã tạo sự kiện.", { variant: "success" });
-          return ok;
-        }}
-      />
 
       <AdminEventFormDialog
         open={Boolean(editTarget)}
@@ -472,13 +579,13 @@ const AdminEventsPage = () => {
         title="Xóa sự kiện"
         description={
           deleteTarget
-            ? `Bạn có chắc chắn muốn xóa sự kiện "${deleteTarget.title}"?`
+            ? `Xóa vĩnh viễn sự kiện "${deleteTarget.title}" (#${deleteTarget.id})?`
             : ""
         }
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-    </Box>
+    </>
   );
 };
 

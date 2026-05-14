@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMatch, useNavigate, useParams } from 'react-router';
+import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -44,14 +44,25 @@ import { formatDateTime } from '../../utils/dateFormatter';
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const slugMatch = useMatch('/:slug/admin/*') ?? useMatch('/:slug/admin');
+  const slugMatchWildcard = useMatch('/:slug/admin/*');
+  const slugMatchExact = useMatch('/:slug/admin');
+  const slugMatch = slugMatchWildcard ?? slugMatchExact;
   const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { enqueueSnackbar } = useSnackbar();
   const { user: currentUser } = useAuth();
   const { auditLogs } = useAdminSystemContext();
+  const { setBreadcrumbs } = useOutletContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
-
   const user = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);
+
+  useEffect(() => {
+    if (user) {
+      setBreadcrumbs?.([
+        { label: 'Người dùng', path: `${adminBase}/users` },
+        { label: user.fullName || `@${user.userName}` || `ID: ${user.id}`, active: true },
+      ]);
+    }
+  }, [setBreadcrumbs, user, adminBase]);
 
   const [tab, setTab] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
@@ -90,9 +101,9 @@ const AdminUserDetailPage = () => {
           logins.map((entry) => ({
             id: entry.id,
             timestamp: entry.loginAt,
-            action: entry.loginMethod ?? 'LOGIN',
+            action: entry.loginMethod ?? 'ĐĂNG NHẬP',
             status: 'SUCCESS',
-            description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown'}`,
+            description: `Đăng nhập qua ${entry.loginMethod ?? 'mật khẩu'} từ ${entry.loginIp ?? 'không xác định'}`,
             ipAddress: entry.loginIp,
             userAgent: entry.userAgent,
           })),
@@ -109,9 +120,9 @@ const AdminUserDetailPage = () => {
               items.map((entry) => ({
                 id: entry.id,
                 timestamp: entry.loginAt,
-                action: entry.loginMethod ?? 'LOGIN',
+                action: entry.loginMethod ?? 'ĐĂNG NHẬP',
                 status: 'SUCCESS',
-                description: `Login via ${entry.loginMethod ?? 'credentials'} from ${entry.loginIp ?? 'unknown'}`,
+                description: `Đăng nhập qua ${entry.loginMethod ?? 'mật khẩu'} từ ${entry.loginIp ?? 'không xác định'}`,
                 ipAddress: entry.loginIp,
                 userAgent: entry.userAgent,
               })),
@@ -123,6 +134,7 @@ const AdminUserDetailPage = () => {
   }, [userId, userLoginHistory, auditTrail]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (tab === 5) fetchUserLoginHistory();
   }, [tab, fetchUserLoginHistory]);
 
@@ -168,9 +180,9 @@ const AdminUserDetailPage = () => {
 
   if (!user) {
     return (
-      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list.">
+      <AdminSectionPanel title="Không tìm thấy người dùng" subtitle="ID này không có trong danh sách hiện tại.">
         <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
-          Back to users
+          Quay lại danh sách
         </Button>
       </AdminSectionPanel>
     );
@@ -180,13 +192,13 @@ const AdminUserDetailPage = () => {
     <>
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title="Back">
+          <Tooltip title="Quay lại">
             <IconButton onClick={() => navigate(`${adminBase}/users`)} color="primary">
               <ArrowBackOutlinedIcon />
             </IconButton>
           </Tooltip>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            User #{user.id}
+            Người dùng #{user.id}
           </Typography>
         </Box>
 
@@ -207,12 +219,12 @@ const AdminUserDetailPage = () => {
                 <AdminStatusChip status={user.status} category="account" />
               </Box>
               <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                Created: {formatDateTime(user.createdAt)} · Updated: {formatDateTime(user.updatedAt)}
+                Ngày tạo: {formatDateTime(user.createdAt)} · Cập nhật: {formatDateTime(user.updatedAt)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
               <Button variant="outlined" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
-                Edit info
+                Sửa thông tin
               </Button>
               {user.status === 'BANNED' ? (
                 <Button
@@ -248,30 +260,30 @@ const AdminUserDetailPage = () => {
                 size="small"
                 sx={{ textTransform: 'none' }}
                 onClick={async () => {
-                  const nextPassword = window.prompt('Enter a new temporary password (min 8 chars):', '');
+                  const nextPassword = window.prompt('Nhập mật khẩu tạm thời mới (tối thiểu 8 ký tự):', '');
                   if (!nextPassword) return;
                   if (nextPassword.length < 8) {
-                    enqueueSnackbar('Password must be at least 8 characters.', { variant: 'warning' });
+                    enqueueSnackbar('Mật khẩu phải có ít nhất 8 ký tự.', { variant: 'warning' });
                     return;
                   }
                   try {
                     await resetPasswordByAdmin(user.id, {
                       newPassword: nextPassword,
                       adminUserId: Number(currentUser?.id),
-                      reason: 'Support reset from admin detail page',
+                      reason: 'Hỗ trợ đặt lại mật khẩu từ trang chi tiết quản trị',
                     });
-                    enqueueSnackbar('Password reset successfully.', { variant: 'success' });
+                    enqueueSnackbar('Đặt lại mật khẩu thành công.', { variant: 'success' });
                   } catch (error) {
-                    enqueueSnackbar(error?.response?.data?.message || 'Failed to reset password.', {
+                    enqueueSnackbar(error?.response?.data?.message || 'Lỗi khi đặt lại mật khẩu.', {
                       variant: 'error',
                     });
                   }
                 }}
               >
-                Reset password
+                Đặt lại mật khẩu
               </Button>
               <Button variant="outlined" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
-                Delete account
+                Xóa tài khoản
               </Button>
             </Box>
           </Box>
@@ -279,31 +291,31 @@ const AdminUserDetailPage = () => {
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
-            <Tab label="General" sx={{ textTransform: 'none' }} />
-            <Tab label="Academic records" sx={{ textTransform: 'none' }} />
-            <Tab label="Memberships" sx={{ textTransform: 'none' }} />
-            <Tab label="Activity" sx={{ textTransform: 'none' }} />
-            <Tab label="Moderation" sx={{ textTransform: 'none' }} />
-            <Tab label="Actions / Audit" sx={{ textTransform: 'none' }} />
+            <Tab label="Thông tin chung" sx={{ textTransform: 'none' }} />
+            <Tab label="Học vấn" sx={{ textTransform: 'none' }} />
+            <Tab label="Thành viên" sx={{ textTransform: 'none' }} />
+            <Tab label="Hoạt động" sx={{ textTransform: 'none' }} />
+            <Tab label="Kiểm duyệt" sx={{ textTransform: 'none' }} />
+            <Tab label="Hành động / Nhật ký" sx={{ textTransform: 'none' }} />
           </Tabs>
           <Divider />
           <Box sx={{ p: 2 }}>
             {tab === 0 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>Full name:</strong> {user.fullName || '-'}
+                  <strong>Họ tên:</strong> {user.fullName || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Phone:</strong> {profile.phone}
+                  <strong>Số điện thoại:</strong> {profile.phone}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Date of birth:</strong> {profile.dob}
+                  <strong>Ngày sinh:</strong> {profile.dob}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Gender:</strong> {profile.gender}
+                  <strong>Giới tính:</strong> {profile.gender}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Bio:</strong> {profile.bio}
+                  <strong>Tiểu sử:</strong> {profile.bio}
                 </Typography>
               </Stack>
             ) : null}
@@ -311,11 +323,11 @@ const AdminUserDetailPage = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Student code</TableCell>
-                    <TableCell>Degree</TableCell>
-                    <TableCell>Class</TableCell>
-                    <TableCell>Start</TableCell>
-                    <TableCell>Graduated</TableCell>
+                    <TableCell>MSSV</TableCell>
+                    <TableCell>Bằng cấp</TableCell>
+                    <TableCell>Lớp</TableCell>
+                    <TableCell>Bắt đầu</TableCell>
+                    <TableCell>Tốt nghiệp</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -331,7 +343,7 @@ const AdminUserDetailPage = () => {
                   {academic.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5}>
-                        <Typography variant="body2" color="text.secondary">No academic records from API.</Typography>
+                        <Typography variant="body2" color="text.secondary">Chưa có thông tin học vấn từ API.</Typography>
                       </TableCell>
                     </TableRow>
                   ) : null}
@@ -344,7 +356,7 @@ const AdminUserDetailPage = () => {
                   <ListItem key={m.organizationName} disablePadding sx={{ py: 0.5 }}>
                     <ListItemText
                       primary={m.organizationName}
-                      secondary={`Verification: ${m.verificationLevel} · Status: ${m.status}`}
+                      secondary={`Xác thực: ${m.verificationLevel} · Trạng thái: ${m.status}`}
                     />
                   </ListItem>
                 ))}
@@ -352,33 +364,33 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 3 ? (
               <Stack spacing={0.5}>
-                <Typography variant="body2">Posts created: {activity?.postsCreated ?? '-'}</Typography>
-                <Typography variant="body2">Comments: {activity?.comments ?? '-'}</Typography>
-                <Typography variant="body2">Events attended: {activity?.eventsAttended ?? '-'}</Typography>
-                <Typography variant="body2">Page views: {activity?.pageViewsSample ?? '-'}</Typography>
+                <Typography variant="body2">Bài viết đã tạo: {activity?.postsCreated ?? '-'}</Typography>
+                <Typography variant="body2">Bình luận: {activity?.comments ?? '-'}</Typography>
+                <Typography variant="body2">Sự kiện đã tham gia: {activity?.eventsAttended ?? '-'}</Typography>
+                <Typography variant="body2">Lượt xem trang: {activity?.pageViewsSample ?? '-'}</Typography>
               </Stack>
             ) : null}
             {tab === 4 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>Account status:</strong> {formatAccountStatusLabel(user.status)}
+                  <strong>Trạng thái tài khoản:</strong> {formatAccountStatusLabel(user.status)}
                 </Typography>
                 {user.banReason ? (
                   <Typography variant="body2">
-                    <strong>Ban reason:</strong> {user.banReason}
+                    <strong>Lý do chặn:</strong> {user.banReason}
                   </Typography>
                 ) : null}
                 {user.bannedUntil ? (
                   <Typography variant="body2">
-                    <strong>Banned until:</strong> {formatDateTime(user.bannedUntil)}
+                    <strong>Bị chặn đến:</strong> {formatDateTime(user.bannedUntil)}
                   </Typography>
                 ) : user.status === 'BANNED' ? (
                   <Typography variant="body2">
-                    <strong>Banned until:</strong> Permanent
+                    <strong>Bị chặn đến:</strong> Vĩnh viễn
                   </Typography>
                 ) : null}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 1 }}>
-                  Ban history
+                  Lịch sử chặn
                 </Typography>
                 {(user.banHistory && user.banHistory.length > 0
                   ? user.banHistory
@@ -393,7 +405,7 @@ const AdminUserDetailPage = () => {
             {tab === 5 ? (
               <Stack spacing={2}>
                 <Typography variant="body2" color="text.secondary">
-                  Login history for this user account fetched from the audit service.
+                  Lịch sử đăng nhập cho tài khoản này được lấy từ dịch vụ nhật ký.
                 </Typography>
                 {auditLoading ? (
                   <Stack spacing={1}>
@@ -405,10 +417,10 @@ const AdminUserDetailPage = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Time</TableCell>
-                        <TableCell>Action</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Description</TableCell>
+                        <TableCell>Thời gian</TableCell>
+                        <TableCell>Hành động</TableCell>
+                        <TableCell>Kết quả</TableCell>
+                        <TableCell>Mô tả</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -416,7 +428,7 @@ const AdminUserDetailPage = () => {
                         <TableRow>
                           <TableCell colSpan={4}>
                             <Typography variant="body2" color="text.secondary">
-                              No login history found for this user.
+                              Không tìm thấy lịch sử đăng nhập cho người dùng này.
                             </Typography>
                           </TableCell>
                         </TableRow>
@@ -440,19 +452,19 @@ const AdminUserDetailPage = () => {
                   onClick={() => navigate(`${adminBase}/audit-logs`)}
                   sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
                 >
-                  Open full audit log page
+                  Mở trang nhật ký đầy đủ
                 </Button>
                 {userVerificationLogs.length > 0 ? (
                   <>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      Verification requests
+                      Yêu cầu xác thực
                     </Typography>
                     <List dense>
                       {userVerificationLogs.map((item, idx) => (
                         <ListItem key={`${item.id || idx}`} disablePadding sx={{ py: 0.5 }}>
                           <ListItemText
-                            primary={`#${item.id || '-'} · ${item.status || 'unknown'}`}
-                            secondary={`Type: ${item.documentType || '-'} · Created: ${formatDateTime(item.createdAt)}`}
+                            primary={`#${item.id || '-'} · ${item.status || 'không xác định'}`}
+                            secondary={`Loại: ${item.documentType || '-'} · Ngày tạo: ${formatDateTime(item.createdAt)}`}
                           />
                         </ListItem>
                       ))}
@@ -462,16 +474,16 @@ const AdminUserDetailPage = () => {
                 {userAdminActions.length > 0 ? (
                   <>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      Admin actions
+                      Hành động quản trị
                     </Typography>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>Time</TableCell>
-                          <TableCell>Action</TableCell>
-                          <TableCell>Resource</TableCell>
-                          <TableCell>Before</TableCell>
-                          <TableCell>After</TableCell>
+                          <TableCell>Thời gian</TableCell>
+                          <TableCell>Hành động</TableCell>
+                          <TableCell>Đối tượng</TableCell>
+                          <TableCell>Trước</TableCell>
+                          <TableCell>Sau</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -525,8 +537,8 @@ const AdminUserDetailPage = () => {
 
       <AdminConfirmDeleteDialog
         open={deleteOpen}
-        title="Delete account"
-        description={`Remove ${user.fullName} (#${user.id})?`}
+        title="Xóa tài khoản"
+        description={`Xóa người dùng ${user.fullName} (#${user.id})?`}
         onClose={() => setDeleteOpen(false)}
         onConfirm={async () => {
           try {

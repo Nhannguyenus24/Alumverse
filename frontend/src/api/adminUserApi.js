@@ -4,8 +4,14 @@ const BASE = '/admin/users';
 
 // ========== USERS ==========
 
-export const getUsers = (page = 0, size = 20) =>
-  apiClient.get(BASE, { params: { page, size } });
+export const getUsers = (page = 0, size = 20, search = '', role = 'ALL', status = 'ALL', organizationId = null) => {
+  const params = { page, size };
+  if (search && search.trim()) params.search = search.trim();
+  if (role && role !== 'ALL') params.role = role;
+  if (status && status !== 'ALL') params.status = status;
+  if (organizationId && organizationId !== 'ALL') params.organizationId = organizationId;
+  return apiClient.get(BASE, { params });
+};
 
 export const getUserById = (userId) =>
   apiClient.get(`${BASE}/${userId}`);

@@ -55,4 +55,7 @@ public class CreateEventRequest {
 
     /** Optional base64-encoded banner. When present, backend uploads and stores the resulting URL. */
     private String bannerBase64;
+
+    @Schema(example = "Workshop")
+    private String topic;
 }

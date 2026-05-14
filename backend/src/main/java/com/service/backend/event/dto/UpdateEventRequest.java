@@ -58,4 +58,7 @@ public class UpdateEventRequest {
 
     /** Optional base64-encoded banner. When present, backend uploads and replaces bannerUrl. */
     private String bannerBase64;
+
+    @Schema(example = "Workshop")
+    private String topic;
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -22,6 +22,8 @@ import {
   useTheme,
   Grid,
 } from '@mui/material';
+import { useOutletContext } from 'react-router';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -134,7 +136,29 @@ const AdminForumCategoriesPage = () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    refreshCategories,
   } = useAdminForumContext();
+
+  const { setBreadcrumbs } = useOutletContext();
+  const { setActiveOrgId } = useAdminSystemContext();
+  const [organizations, setOrganizations] = useState([]);
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Danh mục', active: true }]);
+    
+    const fetchOrgs = async () => {
+      try {
+        const data = await adminOrganizationApi.getOrganizations();
+        setOrganizations(data || []);
+        if (data && data.length > 0 && !activeOrgId) {
+          setActiveOrgId(data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch organizations', err);
+      }
+    };
+    fetchOrgs();
+  }, [setBreadcrumbs, activeOrgId, setActiveOrgId]);
 
   const tree = useMemo(() => buildTree(categories), [categories]);
 
@@ -143,13 +167,14 @@ const AdminForumCategoriesPage = () => {
   const [form, setForm] = useState({ name: '', description: '', parentId: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  useMemo(() => {
+  useEffect(() => {
     if (tree.length > 0 && Object.keys(expanded).length === 0) {
       const init = {};
       tree.forEach((n) => { init[n.id] = true; });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpanded(init);
     }
-  }, [tree]);
+  }, [tree]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = (id) => {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -219,49 +244,65 @@ const AdminForumCategoriesPage = () => {
             Cấu trúc phân cấp diễn đàn, quản lý các chuyên mục chính và chuyên mục con.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={openCreateRoot}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-        >
-          Thêm danh mục
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <TextField
+            select
+            size="small"
+            label="Tổ chức"
+            value={activeOrgId || ''}
+            onChange={(e) => setActiveOrgId(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            {organizations.map((org) => (
+              <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+            ))}
+          </TextField>
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={openCreateRoot}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+          >
+            Thêm danh mục
+          </Button>
+        </Stack>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng danh mục"
-            value={stats.total}
-            icon={<CategoryOutlinedIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Danh mục chính"
-            value={stats.roots}
-            icon={<AccountTreeOutlinedIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Danh mục con"
-            value={stats.sub}
-            icon={<SubtitlesOutlinedIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Cập nhật gần nhất"
-            value={stats.lastUpdate}
-            icon={<HistoryOutlinedIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng danh mục"
+          value={stats.total}
+          icon={<CategoryOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Danh mục chính"
+          value={stats.roots}
+          icon={<AccountTreeOutlinedIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Danh mục con"
+          value={stats.sub}
+          icon={<SubtitlesOutlinedIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Cập nhật gần nhất"
+          value={stats.lastUpdate}
+          icon={<HistoryOutlinedIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
         {categoriesLoading ? (

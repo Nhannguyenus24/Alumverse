@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useOutletContext, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Box,
@@ -35,7 +36,14 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 
 const AdminFundraisingsPage = () => {
+  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: "Quản lý gây quỹ", active: true }]);
+  }, [setBreadcrumbs]);
+
   const {
     fundraisings,
     filteredCount,
@@ -215,8 +223,10 @@ const AdminFundraisingsPage = () => {
         sx={{
           mb: 4,
           display: "flex",
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: "space-between",
-          alignItems: "flex-end",
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2
         }}
       >
         <Box>
@@ -232,48 +242,43 @@ const AdminFundraisingsPage = () => {
             sinh viên.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
-        >
-          Tạo chiến dịch
-        </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng tiền quyên góp"
-            value={formatCurrencyVnd(stats.totalRaised)}
-            icon={<AccountBalanceWalletIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Chiến dịch đang chạy"
-            value={stats.activeCampaigns}
-            icon={<TrendingUpIcon />}
-            valueColor="primary.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng lượt ủng hộ"
-            value={stats.totalDonors}
-            icon={<GroupIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tỷ lệ hoàn thành"
-            value={`${stats.avgCompletion}%`}
-            icon={<VolunteerActivismIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng tiền quyên góp"
+          value={formatCurrencyVnd(stats.totalRaised)}
+          icon={<AccountBalanceWalletIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Chiến dịch đang chạy"
+          value={stats.activeCampaigns}
+          icon={<TrendingUpIcon />}
+          valueColor="primary.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tổng lượt ủng hộ"
+          value={stats.totalDonors}
+          icon={<GroupIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Tỷ lệ hoàn thành"
+          value={`${stats.avgCompletion}%`}
+          icon={<VolunteerActivismIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <AdminDataTable
         columns={columns}
@@ -292,6 +297,15 @@ const AdminFundraisingsPage = () => {
         searchValue={search}
         filters={Filters}
         onRowClick={(f) => setDetailItem(f)}
+        addButton={
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
+          >
+            Tạo chiến dịch
+          </Button>
+        }
       />
 
       {/* Dialogs */}

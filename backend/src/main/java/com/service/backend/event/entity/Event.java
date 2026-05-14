@@ -55,6 +55,9 @@ public class Event {
     @Builder.Default
     private Integer interestedCount = 0;
 
+    @Column("topic")
+    private String topic;
+
     @Column("is_published")
     @Builder.Default
     private Boolean isPublished = false;

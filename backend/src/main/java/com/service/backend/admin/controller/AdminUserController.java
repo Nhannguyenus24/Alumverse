@@ -48,13 +48,17 @@ public class AdminUserController {
     }
     
     /**
-     * Get all users with pagination
+     * Get all users with pagination and filters
      */
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>>> getAllUsers(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return adminUserService.getAllUsers(page, size)
+            @RequestParam(defaultValue = "10") @Min(1) int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer organizationId) {
+        return adminUserService.getAllUsers(page, size, search, role, status, organizationId)
                 .map(pagedResponse -> ResponseEntity.ok(
                         new ApiResponse<>("Users fetched successfully", pagedResponse)))
                 .onErrorResume(error -> Mono.just(

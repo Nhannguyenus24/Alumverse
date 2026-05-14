@@ -4,9 +4,11 @@ import {
   Box,
   Button,
   Divider,
+  IconButton,
   Menu,
   Typography,
 } from '@mui/material';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import Scrollbar from './Scrollbar';
 import {
   MOCK_NETWORK_CHATS,
@@ -15,7 +17,7 @@ import {
 import { formatDateTime } from '../utils/dateFormatter';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
-const MessagesNavDropdown = ({ label = 'Nhắn tin', navButtonSx }) => {
+const MessagesNavDropdown = ({ headerTextColor }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useOrgNavigate();
   const open = Boolean(anchorEl);
@@ -30,34 +32,35 @@ const MessagesNavDropdown = ({ label = 'Nhắn tin', navButtonSx }) => {
 
   const goToAllMessages = () => {
     handleClose();
-    navigate('/network/chat');
+    navigate('/chat');
   };
 
   const handleRowClick = () => {
     handleClose();
-    navigate('/network/chat');
+    navigate('/chat');
   };
 
   return (
     <>
-      <Button
+      <IconButton
         id="messages-nav-trigger"
+        size="small"
         aria-controls={open ? 'messages-nav-menu' : undefined}
         aria-haspopup="true"
         aria-expanded={open ? 'true' : undefined}
         onClick={handleOpen}
-        sx={navButtonSx}
+        sx={{ color: headerTextColor }}
       >
-        {label}
-      </Button>
+        <EmailOutlinedIcon fontSize="small" />
+      </IconButton>
 
       <Menu
         id="messages-nav-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
           paper: {
             sx: {

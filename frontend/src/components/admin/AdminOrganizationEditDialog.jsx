@@ -10,8 +10,15 @@ import {
   Box,
   Grid,
   Typography,
-  Divider
+  Divider,
+  IconButton,
+  Avatar,
+  CircularProgress
 } from '@mui/material';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import BusinessIcon from '@mui/icons-material/Business';
+import { useUploadImage } from '../../hooks/images/useUploadImage';
+import { useRef } from 'react';
 
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +30,9 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
     majors: '',
     featuresConfig: '',
   });
+
+  const { uploadFile, isPending: uploading } = useUploadImage();
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (organization) {
@@ -63,6 +73,58 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 1 }}>
         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
+            <Box sx={{ position: 'relative' }}>
+              <Avatar
+                src={formData.logoUrl}
+                sx={{ 
+                  width: 100, 
+                  height: 100, 
+                  border: `2px solid ${theme => theme.palette.divider}`,
+                  bgcolor: 'background.paper'
+                }}
+              >
+                {!formData.logoUrl && <BusinessIcon sx={{ fontSize: 40, color: 'text.disabled' }} />}
+              </Avatar>
+              <IconButton
+                size="small"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '&:hover': { bgcolor: 'primary.dark' },
+                  boxShadow: 2
+                }}
+              >
+                {uploading ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon fontSize="small" />}
+              </IconButton>
+              <input
+                type="file"
+                hidden
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const url = await uploadFile(file);
+                      setFormData(prev => ({ ...prev, logoUrl: url }));
+                    } catch (err) {
+                      console.error("Logo upload failed", err);
+                    }
+                  }
+                }}
+              />
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+              Logo tổ chức (nên dùng định dạng PNG/SVG)
+            </Typography>
+          </Box>
+
           <TextField
             fullWidth
             label="Tên tổ chức"
@@ -98,14 +160,7 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
               </TextField>
             </Grid>
           </Grid>
-          <TextField
-            fullWidth
-            label="Logo URL"
-            name="logoUrl"
-            value={formData.logoUrl}
-            onChange={handleChange}
-            placeholder="https://example.com/logo.png"
-          />
+
           <Divider sx={{ my: 1 }}>
             <Typography variant="caption" color="text.disabled" fontWeight={700}>DỮ LIỆU ĐÀO TẠO</Typography>
           </Divider>
