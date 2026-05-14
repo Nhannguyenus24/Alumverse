@@ -22,7 +22,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import Page from '../../components/Page';
-import MentorshipProfileLayout from '../../layouts/MentorshipProfileLayout';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
 import MentorshipBookingWindowCard from '../../components/mentorship/MentorshipBookingWindowCard';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';

@@ -12,7 +12,7 @@ import {
 import StarIcon from '@mui/icons-material/Star';
 
 import Page from '../../components/Page';
-import MentorshipProfileLayout from '../../layouts/MentorshipProfileLayout';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
 import MentorshipReviewCard from '../../components/mentorship/MentorshipReviewCard';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
