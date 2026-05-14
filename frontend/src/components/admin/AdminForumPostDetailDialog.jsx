@@ -55,32 +55,32 @@ const AdminForumPostDetailDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
-      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Post detail</DialogTitle>
+      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Chi tiết bài viết</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             ID: {post.id}
           </Typography>
           <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
-          <Chip label={`${post.flagsCount ?? 0} flags`} size="small" variant="outlined" />
+          <Chip label={`${post.flagsCount ?? 0} báo cáo`} size="small" variant="outlined" />
           {isBanned && (
-            <Chip label="Banned" color="error" size="small" variant="filled" />
+            <Chip label="Đã chặn" color="error" size="small" variant="filled" />
           )}
           {post.isLike && (
-            <Chip label="Liked" color="info" size="small" variant="outlined" />
+            <Chip label="Đã thích" color="info" size="small" variant="outlined" />
           )}
         </Box>
 
-        <InfoRow label="Topic">{post.topicTitle || '-'}</InfoRow>
-        <InfoRow label="Author">{post.authorName || '-'}</InfoRow>
+        <InfoRow label="Chủ đề">{post.topicTitle || '-'}</InfoRow>
+        <InfoRow label="Tác giả">{post.authorName || '-'}</InfoRow>
 
         {post.answerToPostId && (
-          <InfoRow label="Reply to Post">#{post.answerToPostId}</InfoRow>
+          <InfoRow label="Trả lời cho bài viết">#{post.answerToPostId}</InfoRow>
         )}
 
         <Box>
           <Typography variant="caption" color="text.secondary">
-            Content
+            Nội dung
           </Typography>
           <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>
             {post.content || '-'}
@@ -90,9 +90,9 @@ const AdminForumPostDetailDialog = ({
         <Divider />
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-          <InfoRow label="Created">{formatDate(post.postedAt || post.createdAt)}</InfoRow>
+          <InfoRow label="Ngày tạo">{formatDate(post.postedAt || post.createdAt)}</InfoRow>
           {post.updatedAt && (
-            <InfoRow label="Updated">{formatDate(post.updatedAt)}</InfoRow>
+            <InfoRow label="Cập nhật">{formatDate(post.updatedAt)}</InfoRow>
           )}
         </Box>
       </DialogContent>
@@ -106,7 +106,7 @@ const AdminForumPostDetailDialog = ({
               startIcon={<CheckCircleOutlineIcon />}
               sx={{ textTransform: 'none', fontWeight: 700, mr: 'auto' }}
             >
-              Unban
+              Bỏ chặn
             </Button>
           ) : (
             <Button
@@ -116,12 +116,12 @@ const AdminForumPostDetailDialog = ({
               startIcon={<BlockOutlinedIcon />}
               sx={{ textTransform: 'none', fontWeight: 700, mr: 'auto' }}
             >
-              Ban
+              Chặn
             </Button>
           )
         )}
         <Button onClick={onClose} variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Close
+          Đóng
         </Button>
       </DialogActions>
     </Dialog>

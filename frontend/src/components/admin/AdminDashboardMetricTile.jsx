@@ -15,11 +15,6 @@ const AdminDashboardMetricTile = ({ label, value, caption, icon, valueColor = 'p
         flexDirection: 'column',
         gap: 1.5,
         bgcolor: 'background.paper',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
-        },
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

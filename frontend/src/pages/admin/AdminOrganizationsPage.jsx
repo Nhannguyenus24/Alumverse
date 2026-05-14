@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import { Box, Button, Grid, Paper, Stack, Typography, useTheme, Skeleton } from '@mui/material';
+import { useOutletContext } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -23,7 +24,12 @@ const AdminOrganizationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
-  const [introduction, setIntroduction] = useState(null);
+   const [introduction, setIntroduction] = useState(null);
+  const { setBreadcrumbs } = useOutletContext();
+  
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Tổ chức', active: true }]);
+  }, [setBreadcrumbs]);
   
   // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -143,31 +149,35 @@ const AdminOrganizationsPage = () => {
         </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <AdminDashboardMetricTile
-            label="Tổng tổ chức"
-            value={stats.total}
-            icon={<BusinessIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <AdminDashboardMetricTile
-            label="Đang hoạt động"
-            value={stats.active}
-            icon={<CheckCircleIcon />}
-            valueColor="success.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <AdminDashboardMetricTile
-            label="Tạm ngưng"
-            value={stats.inactive}
-            icon={<ErrorIcon />}
-            valueColor="error.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng tổ chức"
+          value={stats.total}
+          icon={<BusinessIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Đang hoạt động"
+          value={stats.active}
+          icon={<CheckCircleIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tạm ngưng"
+          value={stats.inactive}
+          icon={<ErrorIcon />}
+          valueColor="error.main"
+        />
+      </Box>
 
       <AdminOrganizationMasterDetail
         organizations={organizations}
@@ -208,11 +218,6 @@ const StatCard = ({ label, value, icon }) => (
       display: 'flex',
       alignItems: 'center',
       gap: 2,
-      transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        boxShadow: (theme) => theme.customShadows?.z8 || '0 8px 16px 0 rgba(0,0,0,0.08)',
-      },
     }}
   >
     <Box

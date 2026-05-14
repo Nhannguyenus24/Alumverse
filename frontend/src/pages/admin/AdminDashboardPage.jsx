@@ -1,4 +1,5 @@
-import { NavLink, useMatch } from 'react-router';
+import { useEffect } from 'react';
+import { NavLink, useMatch, useOutletContext } from 'react-router';
 import { Box, Button, Grid, Skeleton, Stack, Typography, alpha, useTheme } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
@@ -28,6 +29,11 @@ const AdminDashboardPage = () => {
   const { allUsers } = useAdminUsersContext();
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Dashboard', active: true }]);
+  }, [setBreadcrumbs]);
 
   const chartData = Array.isArray(timeline) ? timeline : [];
   const totalUsers = metrics?.totalUsers ?? aggregates.user.totalUsers;
@@ -63,45 +69,58 @@ const AdminDashboardPage = () => {
       </Box>
 
       {/* Primary Metrics Grid */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng thành viên"
-            value={totalUsers.toLocaleString()}
-            icon={<PeopleAltOutlinedIcon />}
-            trend={12}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Bài viết chờ duyệt"
-            value={pendingPosts}
-            icon={<MarkChatUnreadOutlinedIcon />}
-            valueColor="warning.main"
-            caption="Cần xử lý ngay"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổ chức / Đơn vị"
-            value={totalOrgs}
-            icon={<BusinessCenterOutlinedIcon />}
-            trend={2}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Hoạt động hệ thống"
-            value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
-            icon={<TrendingUpIcon />}
-            caption="Bản ghi mới hôm nay"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng thành viên"
+          value={totalUsers.toLocaleString()}
+          icon={<PeopleAltOutlinedIcon />}
+          trend={12}
+        />
+        <AdminDashboardMetricTile
+          label="Bài viết chờ duyệt"
+          value={pendingPosts}
+          icon={<MarkChatUnreadOutlinedIcon />}
+          valueColor="warning.main"
+          caption="Cần xử lý ngay"
+        />
+        <AdminDashboardMetricTile
+          label="Tổ chức / Đơn vị"
+          value={totalOrgs}
+          icon={<BusinessCenterOutlinedIcon />}
+          trend={2}
+        />
+        <AdminDashboardMetricTile
+          label="Hoạt động hệ thống"
+          value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
+          icon={<TrendingUpIcon />}
+          caption="Bản ghi mới hôm nay"
+        />
+      </Box>
 
-      <Grid container spacing={3}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+        }}
+      >
         {/* Main Chart Section */}
-        <Grid item xs={12} lg={8}>
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', lg: '3 1 0' },
+            minWidth: 0,
+          }}
+        >
           <Box
             sx={{
               p: 3,
@@ -125,10 +144,15 @@ const AdminDashboardPage = () => {
               color={theme.palette.primary.main}
             />
           </Box>
-        </Grid>
+        </Box>
 
         {/* Quick Actions Sidebar */}
-        <Grid item xs={12} lg={4}>
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', lg: '1 1 0' },
+            minWidth: 0,
+          }}
+        >
           <Stack spacing={3}>
             <Box
               sx={{
@@ -196,8 +220,8 @@ const AdminDashboardPage = () => {
               </Stack>
             </Box>
           </Stack>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Secondary Detailed Sections */}
       <Box sx={{ mt: 4 }}>
