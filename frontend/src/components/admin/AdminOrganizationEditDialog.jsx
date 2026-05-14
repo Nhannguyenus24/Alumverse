@@ -11,7 +11,9 @@ import {
   Grid,
   Typography,
   Divider,
-  Avatar
+  Avatar,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
@@ -45,6 +47,10 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
       const programsArr = parseJsonArray(organization.programs);
       const majorsArr = parseJsonArray(organization.majors);
 
+      const config = organization.featuresConfig
+        ? (typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig)
+        : { mentorship: true, job: true, fund: true, events: true, forum: true };
+
       setFormData({
         name: organization.name || '',
         slug: organization.slug || '',
@@ -52,9 +58,7 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
         status: organization.status || 'ACTIVE',
         programs: Array.isArray(programsArr) ? programsArr.join(', ') : (programsArr || ''),
         majors: Array.isArray(majorsArr) ? majorsArr.join(', ') : (majorsArr || ''),
-        featuresConfig: typeof organization.featuresConfig === 'object' 
-          ? JSON.stringify(organization.featuresConfig, null, 2) 
-          : (organization.featuresConfig || ''),
+        featuresConfig: config,
       });
     }
   }, [organization, open]);
@@ -69,6 +73,7 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
       ...formData,
       programs: formData.programs.split(',').map(s => s.trim()).filter(Boolean),
       majors: formData.majors.split(',').map(s => s.trim()).filter(Boolean),
+      featuresConfig: JSON.stringify(formData.featuresConfig),
     });
   };
 
@@ -171,19 +176,37 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
             helperText="Các chuyên ngành phân tách bằng dấu phẩy"
           />
           <Divider sx={{ my: 1 }}>
-            <Typography variant="caption" color="text.disabled" fontWeight={700}>CẤU HÌNH HỆ THỐNG</Typography>
+            <Typography variant="caption" color="text.disabled" fontWeight={700}>CẤU HÌNH TÍNH NĂNG</Typography>
           </Divider>
-          <TextField
-            fullWidth
-            label="Features Configuration (JSON)"
-            name="featuresConfig"
-            value={formData.featuresConfig}
-            onChange={handleChange}
-            multiline
-            rows={4}
-            sx={{ '& .MuiInputBase-input': { fontFamily: 'monospace', fontSize: 13 } }}
-            placeholder='{ "mentorship": true, "fundraising": true }'
-          />
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            {[
+              { key: 'mentorship', label: 'Cố vấn' },
+              { key: 'job', label: 'Việc làm' },
+              { key: 'fund', label: 'Gây quỹ' },
+              { key: 'events', label: 'Sự kiện' },
+              { key: 'forum', label: 'Diễn đàn' },
+            ].map((f) => (
+              <FormControlLabel
+                key={f.key}
+                control={
+                  <Switch
+                    checked={formData.featuresConfig[f.key] ?? true}
+                    onChange={(e) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        featuresConfig: {
+                          ...prev.featuresConfig,
+                          [f.key]: e.target.checked
+                        }
+                      }));
+                    }}
+                  />
+                }
+                label={<Typography variant="body2">{f.label}</Typography>}
+              />
+            ))}
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
