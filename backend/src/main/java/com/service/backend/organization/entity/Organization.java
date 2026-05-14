@@ -40,7 +40,11 @@ public class Organization {
     @Column("majors")
     private String majors;
 
+    @Column("status")
+    private String status;
+
     @Column("created_at")
     @CreatedDate
+    @org.springframework.data.annotation.ReadOnlyProperty
     private LocalDateTime createdAt;
 }

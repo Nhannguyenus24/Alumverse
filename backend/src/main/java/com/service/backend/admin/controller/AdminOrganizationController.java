@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.OrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationOptionRequest;
+import com.service.backend.admin.dto.UpdateOrganizationRequest;
 import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
@@ -122,7 +123,7 @@ public class AdminOrganizationController {
      */
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Organization>>> createOrganization(
-            @Valid @RequestBody Organization organization) {
+            @Valid @RequestBody UpdateOrganizationRequest organization) {
         return organizationService.createOrganization(organization)
                 .map(created -> ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Organization created successfully", created)))
@@ -137,7 +138,7 @@ public class AdminOrganizationController {
     @PutMapping("/{organizationId}")
     public Mono<ResponseEntity<ApiResponse<Organization>>> updateOrganization(
             @PathVariable Integer organizationId,
-            @Valid @RequestBody Organization organizationUpdate) {
+            @Valid @RequestBody UpdateOrganizationRequest organizationUpdate) {
         return organizationService.updateOrganization(organizationId, organizationUpdate)
                 .map(updated -> ResponseEntity.ok(
                         new ApiResponse<>("Organization updated successfully", updated)))

@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dto.UpdateOrganizationRequest;
 import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
@@ -113,44 +114,44 @@ public class AdminOrganizationService {
     /**
      * Create new organization
      */
-    public Mono<Organization> createOrganization(Organization organization) {
-        logger.info("Creating new organization: {}", organization.getName());
-        organization.setCreatedAt(LocalDateTime.now());
+    public Mono<Organization> createOrganization(UpdateOrganizationRequest request) {
+        logger.info("Creating new organization: {}", request.getName());
+        Organization organization = Organization.builder()
+                .name(request.getName())
+                .slug(request.getSlug())
+                .logoUrl(request.getLogoUrl())
+                .status(request.getStatus() != null ? request.getStatus() : "ACTIVE")
+                .featuresConfig(request.getFeaturesConfig())
+                .programs(JsonUtils.toJson(request.getPrograms()))
+                .majors(JsonUtils.toJson(request.getMajors()))
+                .createdAt(LocalDateTime.now())
+                .build();
+        
         return organizationRepository.save(organization)
                 .doOnSuccess(saved -> logger.info("Organization created successfully - ID: {}, Name: {}", saved.getId(), saved.getName()))
-                .doOnError(error -> logger.error("Failed to create organization: {}", organization.getName(), error));
+                .doOnError(error -> logger.error("Failed to create organization: {}", request.getName(), error));
     }
     
     /**
      * Update organization
      */
-    public Mono<Organization> updateOrganization(Integer organizationId, Organization organizationUpdate) {
+    public Mono<Organization> updateOrganization(Integer organizationId, UpdateOrganizationRequest organizationUpdate) {
         logger.info("Updating organization with ID: {}", organizationId);
         return organizationRepository.findById(organizationId)
                 .flatMap(existing -> {
-                    if (organizationUpdate.getName() != null) {
-                        existing.setName(organizationUpdate.getName());
-                    }
-                    if (organizationUpdate.getSlug() != null) {
-                        existing.setSlug(organizationUpdate.getSlug());
-                    }
-                    if (organizationUpdate.getLogoUrl() != null) {
-                        existing.setLogoUrl(organizationUpdate.getLogoUrl());
-                    }
-                    if (organizationUpdate.getBrandConfig() != null) {
-                        existing.setBrandConfig(organizationUpdate.getBrandConfig());
-                    }
-                    if (organizationUpdate.getFeaturesConfig() != null) {
-                        existing.setFeaturesConfig(organizationUpdate.getFeaturesConfig());
-                    }
-                    if (organizationUpdate.getPrograms() != null) {
-                        existing.setPrograms(organizationUpdate.getPrograms());
-                    }
-                    if (organizationUpdate.getMajors() != null) {
-                        existing.setMajors(organizationUpdate.getMajors());
-                    }
-                    return organizationRepository.save(existing)
-                            .doOnSuccess(saved -> logger.info("Organization updated successfully - ID: {}", organizationId));
+                    String name = organizationUpdate.getName() != null ? organizationUpdate.getName() : existing.getName();
+                    String slug = organizationUpdate.getSlug() != null ? organizationUpdate.getSlug() : existing.getSlug();
+                    String logoUrl = organizationUpdate.getLogoUrl() != null ? organizationUpdate.getLogoUrl() : existing.getLogoUrl();
+                    String status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
+                    String brandConfig = existing.getBrandConfig(); // Keep existing if not in DTO
+                    String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
+                    String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();
+                    String majors = organizationUpdate.getMajors() != null ? JsonUtils.toJson(organizationUpdate.getMajors()) : existing.getMajors();
+
+                    return organizationRepository.updateOrganizationFields(
+                            organizationId, name, slug, logoUrl, status, brandConfig, featuresConfig, programs, majors
+                    ).flatMap(rows -> organizationRepository.findById(organizationId))
+                    .doOnSuccess(saved -> logger.info("Organization updated successfully - ID: {}", organizationId));
                 })
                 .doOnError(error -> logger.error("Failed to update organization - ID: {}", organizationId, error));
     }
@@ -201,15 +202,37 @@ public class AdminOrganizationService {
                 .flatMap(urls -> introductionRepository.findByOrgaId(orgaId)
                         .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
                         .flatMap(intro -> {
-                            intro.setContent(request.getContent());
-                            intro.setImageUrls(JsonUtils.toJson(urls));
-                            intro.setUpdatedAt(LocalDateTime.now());
-                            return introductionRepository.save(intro).thenReturn(urls);
+                            String imageUrlsJson = JsonUtils.toJson(urls);
+                            if (intro.getId() != null) {
+                                return introductionRepository.updateFields(
+                                        orgaId, 
+                                        request.getContent(), 
+                                        request.getVision(),
+                                        request.getMission(),
+                                        request.getCoreValues(),
+                                        request.getBannerUrl(),
+                                        imageUrlsJson
+                                )
+                                .then(introductionRepository.findByOrgaId(orgaId))
+                                .thenReturn(urls);
+                            } else {
+                                intro.setContent(request.getContent());
+                                intro.setVision(request.getVision());
+                                intro.setMission(request.getMission());
+                                intro.setCoreValues(request.getCoreValues());
+                                intro.setImageUrls(imageUrlsJson);
+                                intro.setBannerUrl(request.getBannerUrl());
+                                return introductionRepository.save(intro).thenReturn(urls);
+                            }
                         }))
                 .map(urls -> OrganizationIntroductionResponse.builder()
                         .orgaId(orgaId)
                         .content(request.getContent())
+                        .vision(request.getVision())
+                        .mission(request.getMission())
+                        .coreValues(request.getCoreValues())
                         .imageUrls(urls)
+                        .bannerUrl(request.getBannerUrl())
                         .build())
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
     }

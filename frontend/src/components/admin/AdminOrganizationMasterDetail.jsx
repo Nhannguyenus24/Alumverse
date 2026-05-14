@@ -25,6 +25,8 @@ import {
   TextField,
   Typography,
   alpha,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
@@ -94,6 +96,7 @@ const AdminOrganizationMasterDetail = ({
   onSelectOrganizationId,
   onEditOrganization,
   onEditIntroduction,
+  onUpdateOrganization,
   onRefresh,
 }) => {
   const theme = useTheme();
@@ -375,41 +378,43 @@ const AdminOrganizationMasterDetail = ({
                         sx={{ 
                           color: 'text.secondary', 
                           lineHeight: 1.6,
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
                           '& img': { maxWidth: '100%', height: 'auto', borderRadius: 1 },
                           '& p': { mb: 1.5 }
                         }}
                         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedIntroduction?.content || 'Chưa có mô tả chi tiết.') }}
                       />
                     </DetailSection>
-                    <Grid container spacing={3}>
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.info.main, 0.02), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
+                    <Stack spacing={2}>
+                      <Box>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.info.main, 0.02), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'info.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'info.dark' }}>Tầm nhìn</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.vision || '—'}</Typography>
                         </Card>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.02), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                      </Box>
+                      <Box>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.02), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}><RocketLaunchRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>Sứ mạng</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.mission || '—'}</Typography>
                         </Card>
-                      </Grid>
-                      <Grid item xs={12} md={4}>
-                        <Card variant="outlined" sx={{ p: 2.5, height: '100%', borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
+                      </Box>
+                      <Box>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'error.main', width: 32, height: 32 }}><FavoriteRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
                             <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.dark' }}>Giá trị cốt lõi</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.coreValues || '—'}</Typography>
                         </Card>
-                      </Grid>
-                    </Grid>
+                      </Box>
+                    </Stack>
                   </Stack>
                 )}
 
@@ -434,25 +439,62 @@ const AdminOrganizationMasterDetail = ({
 
                 {activeTab === 3 && (
                   <Stack spacing={3}>
-                    <DetailSection title="Cấu hình hệ thống (JSON)">
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 2,
-                          borderRadius: 2,
-                          bgcolor: 'grey.900',
-                          color: 'common.white',
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                          overflowX: 'auto',
-                        }}
-                      >
-                        <pre style={{ margin: 0 }}>
-                          {selectedOrg.featuresConfig
-                            ? JSON.stringify(JSON.parse(selectedOrg.featuresConfig), null, 2)
-                            : '// Sử dụng cấu hình mặc định'}
-                        </pre>
-                      </Paper>
+                    <DetailSection title="Cấu hình tính năng">
+                      <List sx={{ p: 0 }}>
+                        {(() => {
+                          const config = selectedOrg.featuresConfig
+                            ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
+                            : { mentorship: true, job: true, fund: true, events: true, forum: true };
+                          
+                          const featureLabels = {
+                            mentorship: 'Tính năng Cố vấn (Mentorship)',
+                            job: 'Tính năng Việc làm (Jobs)',
+                            fund: 'Tính năng Gây quỹ (Fundraising)',
+                            events: 'Tính năng Sự kiện (Events)',
+                            forum: 'Tính năng Diễn đàn (Forum)',
+                          };
+
+                          const handleToggle = (key) => {
+                            const currentVal = config[key] ?? true;
+                            const newConfig = { ...config, [key]: !currentVal };
+                            onUpdateOrganization?.({
+                              ...selectedOrg,
+                              featuresConfig: JSON.stringify(newConfig)
+                            });
+                          };
+
+                          return Object.keys(featureLabels).map((key) => (
+                            <Box key={key} sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'space-between',
+                              py: 1.5,
+                              px: 1,
+                              borderBottom: key !== 'forum' ? 1 : 0,
+                              borderColor: 'divider'
+                            }}>
+                              <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                  {featureLabels[key]}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  Bật hoặc tắt hiển thị {featureLabels[key].toLowerCase()} cho tổ chức này.
+                                </Typography>
+                              </Box>
+                              <Switch
+                                checked={config[key] ?? true}
+                                onChange={() => handleToggle(key)}
+                              />
+                            </Box>
+                          ));
+                        })()}
+                      </List>
+                      <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
+                        <Typography variant="caption" color="primary.darker" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
+                          <InfoOutlinedIcon sx={{ fontSize: 14 }} />
+                          Các thay đổi cấu hình sẽ được lưu tự động khi bạn gạt công tắc.
+                        </Typography>
+                      </Box>
                     </DetailSection>
                   </Stack>
                 )}

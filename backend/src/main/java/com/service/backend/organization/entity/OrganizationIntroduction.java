@@ -25,10 +25,18 @@ public class OrganizationIntroduction {
     private Integer orgaId;
 
     private String content;
+    private String vision;
+    private String mission;
+    @Column("core_values")
+    private String coreValues;
 
     @Column("image_urls")
     private String imageUrls;
 
+    @Column("banner_url")
+    private String bannerUrl;
+
     @Column("updated_at")
+    @org.springframework.data.annotation.ReadOnlyProperty
     private LocalDateTime updatedAt;
 }
