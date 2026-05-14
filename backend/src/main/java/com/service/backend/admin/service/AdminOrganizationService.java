@@ -120,6 +120,7 @@ public class AdminOrganizationService {
                 .name(request.getName())
                 .slug(request.getSlug())
                 .logoUrl(request.getLogoUrl())
+                .status(request.getStatus() != null ? request.getStatus() : "ACTIVE")
                 .featuresConfig(request.getFeaturesConfig())
                 .programs(JsonUtils.toJson(request.getPrograms()))
                 .majors(JsonUtils.toJson(request.getMajors()))
@@ -141,13 +142,14 @@ public class AdminOrganizationService {
                     String name = organizationUpdate.getName() != null ? organizationUpdate.getName() : existing.getName();
                     String slug = organizationUpdate.getSlug() != null ? organizationUpdate.getSlug() : existing.getSlug();
                     String logoUrl = organizationUpdate.getLogoUrl() != null ? organizationUpdate.getLogoUrl() : existing.getLogoUrl();
+                    String status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
                     String brandConfig = existing.getBrandConfig(); // Keep existing if not in DTO
                     String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
                     String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();
                     String majors = organizationUpdate.getMajors() != null ? JsonUtils.toJson(organizationUpdate.getMajors()) : existing.getMajors();
 
                     return organizationRepository.updateOrganizationFields(
-                            organizationId, name, slug, logoUrl, brandConfig, featuresConfig, programs, majors
+                            organizationId, name, slug, logoUrl, status, brandConfig, featuresConfig, programs, majors
                     ).flatMap(rows -> organizationRepository.findById(organizationId))
                     .doOnSuccess(saved -> logger.info("Organization updated successfully - ID: {}", organizationId));
                 })

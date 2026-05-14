@@ -32,7 +32,7 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
     Mono<Long> countWithFilters(@Param("search") String search);
 
     @Modifying
-    @Query("UPDATE organizations SET name = :name, slug = :slug, logo_url = :logoUrl, " +
+    @Query("UPDATE organizations SET name = :name, slug = :slug, logo_url = :logoUrl, status = :status, " +
            "brand_config = CAST(:brandConfig AS json), features_config = CAST(:featuresConfig AS json), " +
            "programs = CAST(:programs AS json), majors = CAST(:majors AS json) " +
            "WHERE id = :id")
@@ -41,6 +41,7 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
             @Param("name") String name,
             @Param("slug") String slug,
             @Param("logoUrl") String logoUrl,
+            @Param("status") String status,
             @Param("brandConfig") String brandConfig,
             @Param("featuresConfig") String featuresConfig,
             @Param("programs") String programs,
