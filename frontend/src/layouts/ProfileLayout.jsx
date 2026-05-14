@@ -2,64 +2,126 @@ import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material
 import TopTabFilter from '../components/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
 
-const MentorshipProfileLayout = ({
+const ProfileLayout = ({
   user,
   tabs,
   onNavigate,
-  mode = 'mentor', // 'mentor' | 'edit' | 'mentee'
+  mode = 'mentor', // 'mentor' | 'mentorEdit' | 'mentee' for MENTORSHIP PROFILE
+                   // 'user' | 'userEdit' | 'userView' for USER PROFILE
   cover,
   onCoverChange,
   mentorId,
   children,
 }) => {
 
+  const handleBack = () => {
+    if (window.history.length > 1) { window.history.back(); }
+    else { onNavigate('/'); }
+  };
+
   const renderButtons = () => {
     switch (mode) {
-      case 'edit':
+      
+      // ================= MENTOR =================
+      case 'mentor':
+        return (
+          <>
+            <Button variant="outlined" onClick={() => onNavigate('/development/mentorship')}>
+              Về trang Cố vấn
+            </Button>
+
+            <Button variant="contained" color="secondary" onClick={() => onNavigate('/development/mentorship/profile/edit')}>
+              Sửa trang cá nhân
+            </Button>
+          </>
+        );
+
+      // ================= MENTOR EDIT =================
+      case 'mentorEdit':
         return (
           <>
             <Button variant="outlined" color="secondary" onClick={() => onNavigate('/development/mentorship/profile')}>
               Huỷ
             </Button>
+
             <Button variant="contained" onClick={() => onNavigate('/development/mentorship/profile')}>
               Lưu thay đổi
             </Button>
           </>
         );
 
+      // ================= MENTEE VIEWING MENTOR =================
       case 'mentee':
-        return (
-          <>
-            <Button variant="outlined">Nhắn tin</Button>
-            <Button
-              variant="contained"
-              onClick={() => onNavigate(`/development/mentorship/mentors/${mentorId ?? 1}/book`)}
-            >
-              Đặt lịch hẹn
-            </Button>
-          </>
-        );
-
-      case 'mentor':
-      default:
         return (
           <>
             <Button variant="outlined" onClick={() => onNavigate('/development/mentorship')}>
               Về trang Cố vấn
             </Button>
-            <Button variant="contained" color="secondary" onClick={() => onNavigate('/development/mentorship/profile/edit')}>
+
+            <Button variant="outlined">
+              Nhắn tin
+            </Button>
+
+            <Button variant="contained" onClick={() => onNavigate(`/development/mentorship/mentors/${mentorId ?? 1}/book`)}>
+              Đặt lịch hẹn
+            </Button>
+          </>
+        );
+
+      // ================= MY USER PROFILE =================
+      case 'user':
+        return (
+          <>
+            <Button variant="outlined" onClick={handleBack}>
+              Quay lại
+            </Button>
+
+            <Button variant="contained" color="secondary" onClick={() => onNavigate('/profile/edit')}>
               Sửa trang cá nhân
             </Button>
           </>
         );
+
+      // ================= USER EDIT =================
+      case 'userEdit':
+        return (
+          <>
+            <Button variant="outlined" color="secondary" onClick={() => onNavigate('/profile')}>
+              Huỷ
+            </Button>
+
+            <Button variant="contained" onClick={() => onNavigate('/profile')}>
+              Lưu thay đổi
+            </Button>
+          </>
+        );
+
+      // ================= OTHER PEOPLE VIEWING USER =================
+      case 'userView':
+        return (
+          <>
+            <Button variant="outlined" onClick={handleBack}>
+              Quay lại
+            </Button>
+
+            <Button variant="contained">
+              Nhắn tin
+            </Button>
+          </>
+        );
+
+      default:
+        return null;
     }
   };
+  
+  const isEditMode = mode === 'mentorEdit' || mode === 'userEdit';
 
   return (
     <Box sx={{ pb: 6 }}>
       {/* ================= COVER ================= */}
       <Box>
-        {mode === 'edit' ? (
+        {isEditMode ? (
           <CoverUpload value={cover} onChange={onCoverChange} />
         ) : (
           <Box
@@ -114,7 +176,7 @@ const MentorshipProfileLayout = ({
               </Box>
 
               {/* BUTTONS */}
-              <Stack direction="row" spacing={1.5} sx={{ pb: { md: 1 } }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} gap={1.5} sx={{ pb: { md: 1 }, width: { xs: '100%', sm: 'auto' } }}>
                 {renderButtons()}
               </Stack>
             </Box>
@@ -137,4 +199,4 @@ const MentorshipProfileLayout = ({
   );
 };
 
-export default MentorshipProfileLayout;
+export default ProfileLayout;

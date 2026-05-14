@@ -84,6 +84,13 @@ const ForumAlumniCreateTopicPage = Loadable(
 const ArticlePage = Loadable(
   lazy(() => import("../pages/alumni/ArticlePage")));
 
+const MyProfilePage = Loadable(
+  lazy(() => import("../pages/user/MyProfilePage")),
+);
+const MyProfileEditPage = Loadable(
+  lazy(() => import("../pages/user/MyProfileEditPage")),
+);
+
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
 const AdminLoginPage = Loadable(lazy(() => import("../pages/admin/AdminLoginPage")));
@@ -348,6 +355,19 @@ export const router = createBrowserRouter([
             <ChatPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "profile",
+        children: [
+          {
+            index: true,
+            element: <MyProfilePage />,
+          },
+          {
+            path: "edit",
+            element: <MyProfileEditPage />,
+          },
+        ],
       },
       {
         path: "post",
