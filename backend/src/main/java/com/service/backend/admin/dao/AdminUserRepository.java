@@ -240,11 +240,6 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             """)
     Mono<Integer> upsertGlobalProfileFullName(@Param("userId") Integer userId, @Param("fullName") String fullName);
 
-    /**
-     * One membership row per user ({@code organization_members_user_id_key}).
-     * Insert if missing, otherwise move user to the given organization.
-     */
-    @Modifying
     @Query("""
             INSERT INTO organization_members (
                 organization_id, user_id, graduated_year, graduation_status, program, major,
@@ -259,4 +254,43 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Integer> upsertOrganizationMemberByUserId(
             @Param("organizationId") Integer organizationId,
             @Param("userId") Integer userId);
+
+    /**
+     * Search users with multiple filters (search term, role, status, organization)
+     */
+    @Query("""
+        SELECT DISTINCT u.* FROM users u
+        LEFT JOIN global_profiles gp ON u.id = gp.user_id
+        LEFT JOIN organization_members om ON u.id = om.user_id
+        WHERE (:search IS NULL OR u.email ILIKE :search OR u.user_name ILIKE :search OR gp.full_name ILIKE :search)
+          AND (:role IS NULL OR u.role = :role)
+          AND (:status IS NULL OR u.status = :status)
+          AND (:organizationId IS NULL OR om.organization_id = :organizationId)
+        ORDER BY u.created_at DESC
+        LIMIT :limit OFFSET :offset
+        """)
+    Flux<User> findUsersWithFilters(
+        @Param("search") String search,
+        @Param("role") String role,
+        @Param("status") String status,
+        @Param("organizationId") Integer organizationId,
+        @Param("limit") int limit,
+        @Param("offset") int offset
+    );
+
+    @Query("""
+        SELECT COUNT(DISTINCT u.id) FROM users u
+        LEFT JOIN global_profiles gp ON u.id = gp.user_id
+        LEFT JOIN organization_members om ON u.id = om.user_id
+        WHERE (:search IS NULL OR u.email ILIKE :search OR u.user_name ILIKE :search OR gp.full_name ILIKE :search)
+          AND (:role IS NULL OR u.role = :role)
+          AND (:status IS NULL OR u.status = :status)
+          AND (:organizationId IS NULL OR om.organization_id = :organizationId)
+        """)
+    Mono<Long> countUsersWithFilters(
+        @Param("search") String search,
+        @Param("role") String role,
+        @Param("status") String status,
+        @Param("organizationId") Integer organizationId
+    );
 }

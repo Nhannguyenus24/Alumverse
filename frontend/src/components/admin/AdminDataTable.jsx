@@ -39,6 +39,8 @@ const AdminDataTable = ({
   searchPlaceholder = 'Tìm kiếm...',
   actions,
   filters,
+  onExport,
+  addButton,
   emptyMessage = 'Không tìm thấy dữ liệu phù hợp.',
   onRowClick,
   renderExpandableRow,
@@ -95,19 +97,31 @@ const AdminDataTable = ({
           />
 
           {/* Actions & Filters */}
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
             {filters}
-            <Tooltip title="Lọc">
-              <IconButton size="small" sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-                <FilterListIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Xuất dữ liệu">
-              <IconButton size="small" sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
-                <FileDownloadOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {onExport && (
+              <Tooltip title="Xuất dữ liệu">
+                <IconButton
+                  size="small"
+                  onClick={onExport}
+                  sx={{ 
+                    border: `1px solid ${theme.palette.divider}`, 
+                    borderRadius: 2, 
+                    color: 'primary.main',
+                    height: 40,
+                    width: 40
+                  }}
+                >
+                  <FileDownloadOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
             {actions}
+            {addButton && (
+              <Box sx={{ ml: 0.5 }}>
+                {addButton}
+              </Box>
+            )}
           </Stack>
         </Stack>
       </Box>

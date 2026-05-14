@@ -72,20 +72,26 @@ public class AdminUserService {
     }
     
     /**
-     * Get all users with pagination
+     * Get all users with filters and pagination
      */
-    public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size) {
-        logger.info("Fetching all users with page: {}, size: {}", page, size);
+    public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
+        logger.info("Fetching users with filters: search={}, role={}, status={}, org={}, page={}, size={}", 
+                search, role, status, organizationId, page, size);
         
         int offset = page * size;
+        String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim() + "%" : null;
+        String roleParam = (role != null && !role.equals("ALL")) ? role : null;
+        String statusParam = (status != null && !status.equals("ALL")) ? status : null;
 
-        Mono<Long> totalCount = adminUserRepository.countAllUsers();
+        Mono<Long> totalCount = adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId);
 
-        return Mono.zip(adminUserRepository.findAllUsersWithPagination(size, offset).collectList(), totalCount)
+        return Mono.zip(
+                adminUserRepository.findUsersWithFilters(searchParam, roleParam, statusParam, organizationId, size, offset).collectList(), 
+                totalCount)
                 .flatMap(tuple -> enrichUserResponses(tuple.getT1())
                         .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
-                .doOnSuccess(response -> logger.info("Successfully fetched {} users", response.getItems().size()))
-                .doOnError(error -> logger.error("Error fetching all users", error));
+                .doOnSuccess(response -> logger.info("Successfully fetched {} users with filters", response.getItems().size()))
+                .doOnError(error -> logger.error("Error fetching users with filters", error));
     }
     
     /**

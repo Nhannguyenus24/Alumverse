@@ -14,7 +14,7 @@ const AdminConfirmDeleteDialog = ({
   onClose,
   onConfirm,
   loading,
-  confirmLabel = 'Delete',
+  confirmLabel = 'Xóa',
   titleColor = 'error.main',
   confirmColor = 'error',
 }) => {
@@ -28,7 +28,7 @@ const AdminConfirmDeleteDialog = ({
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} sx={{ textTransform: 'none' }}>
-          Cancel
+          Hủy
         </Button>
         <Button
           color={confirmColor}

@@ -47,7 +47,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
 
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm" scroll="body">
-      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Ban User</DialogTitle>
+      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Chặn người dùng</DialogTitle>
       <DialogContent
         sx={{
           display: 'flex',
@@ -60,7 +60,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
         {user ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              {user.fullName || 'Unknown user'}
+              {user.fullName || 'Người dùng không xác định'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               @{user.userName || '-'} · {user.email || '-'}
@@ -70,7 +70,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
 
         <TextField
           select
-          label="Reason"
+          label="Lý do"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           fullWidth
@@ -85,7 +85,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
 
         {reason === 'OTHER' ? (
           <TextField
-            label="Custom reason"
+            label="Lý do khác"
             value={customReason}
             onChange={(e) => setCustomReason(e.target.value)}
             fullWidth
@@ -104,13 +104,13 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
               color="primary"
             />
           }
-          label="Permanent ban"
+          label="Chặn vĩnh viễn"
         />
 
         {!isPermanent ? (
           <TextField
             type="number"
-            label="Duration (days)"
+            label="Thời hạn (ngày)"
             value={durationDays}
             onChange={(e) => setDurationDays(Number(e.target.value))}
             fullWidth
@@ -121,7 +121,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} disabled={loading} sx={{ textTransform: 'none' }}>
-          Cancel
+          Hủy
         </Button>
         <Button
           variant="contained"
@@ -129,7 +129,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
           disabled={disableConfirm}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          Confirm
+          Xác nhận
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router';
 import {
   AppBar,
   Box,
@@ -21,7 +22,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 
-const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout }) => {
+const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -74,17 +75,40 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout }) => {
             sx={{ display: { xs: 'none', sm: 'block' } }}
           >
             <MuiLink
+              component={RouterLink}
               underline="hover"
               color="inherit"
-              href="/admin"
+              to="/admin"
               sx={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500 }}
             >
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />
-              Admin
+              Quản trị
             </MuiLink>
-            <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
-              Dashboard
-            </Typography>
+            
+            {breadcrumbs ? (
+              breadcrumbs.map((crumb, idx) => (
+                crumb.href ? (
+                  <MuiLink
+                    key={idx}
+                    component={RouterLink}
+                    underline="hover"
+                    color="inherit"
+                    to={crumb.path || crumb.href}
+                    sx={{ fontSize: 14, fontWeight: crumb.active ? 600 : 500 }}
+                  >
+                    {crumb.label}
+                  </MuiLink>
+                ) : (
+                  <Typography key={idx} color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
+                    {crumb.label}
+                  </Typography>
+                )
+              ))
+            ) : (
+              <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
+                Bảng điều khiển
+              </Typography>
+            )}
           </Breadcrumbs>
         </Stack>
 

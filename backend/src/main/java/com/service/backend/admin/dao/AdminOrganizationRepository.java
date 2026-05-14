@@ -19,15 +19,16 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
     Mono<Organization> findBySlug(String slug);
     
     /**
-     * Find organizations with pagination
+     * Find organizations with search and pagination
      */
-    @Query("SELECT * FROM organizations LIMIT :size OFFSET :offset")
-    Flux<Organization> findAllWithPagination(int offset, int size);
+    @Query("SELECT * FROM organizations WHERE :search IS NULL OR name ILIKE :search LIMIT :size OFFSET :offset")
+    Flux<Organization> findAllWithFilters(@Param("search") String search, @Param("offset") int offset, @Param("size") int size);
     
     /**
-     * Count total organizations
+     * Count total organizations with search
      */
-    Mono<Long> count();
+    @Query("SELECT COUNT(*) FROM organizations WHERE :search IS NULL OR name ILIKE :search")
+    Mono<Long> countWithFilters(@Param("search") String search);
 
     /**
      * Count active members in a specific organization

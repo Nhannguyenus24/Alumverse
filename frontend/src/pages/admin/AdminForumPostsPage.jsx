@@ -14,7 +14,14 @@ import {
   useTheme,
   Avatar,
   Grid,
+  Button,
 } from '@mui/material';
+import { useOutletContext } from 'react-router';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import { useDebounce } from '../../hooks/useDebounce';
+import { exportToCSV } from '../../utils/exportUtils';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { useEffect } from 'react';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -61,7 +68,45 @@ const AdminForumPostsPage = () => {
     setReportsPage,
     reviewReport,
     updatePostVisibility,
+    organizationFilter,
+    setOrganizationFilter,
   } = useAdminForumContext();
+  const { setBreadcrumbs } = useOutletContext();
+  const [searchTerm, setSearchTerm] = useState(search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+  const [organizations, setOrganizations] = useState([]);
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Bài viết Diễn đàn', active: true }]);
+    
+    // Fetch organizations for filter
+    const fetchOrgs = async () => {
+      try {
+        const data = await adminOrganizationApi.getOrganizations();
+        setOrganizations(data || []);
+      } catch (err) {
+        console.error('Failed to fetch organizations', err);
+      }
+    };
+    fetchOrgs();
+  }, [setBreadcrumbs]);
+
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch, setSearch]);
+
+  const handleExport = () => {
+    const exportData = posts.map(p => ({
+      ID: p.id,
+      'Tác giả': p.authorName,
+      'Chủ đề': p.topicTitle,
+      'Nội dung': p.content,
+      'Trạng thái': forumModerationLabel(p.moderationStatus),
+      'Tổ chức': p.organizationName || '-',
+      'Ngày đăng': formatDateTime(p.postedAt)
+    }));
+    exportToCSV(exportData, `forum_posts_export_${new Date().getTime()}.csv`);
+  };
   const { user } = useAuth();
 
   const [activeTab, setActiveTab] = useState(0);
@@ -106,6 +151,7 @@ const AdminForumPostsPage = () => {
       )
     },
     { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
+    { id: 'organizationName', label: 'Tổ chức', render: (val) => val || '-' },
     { id: 'content', label: 'Nội dung', render: (val) => truncateText(val, 50) },
     {
       id: 'moderationStatus',
@@ -163,41 +209,51 @@ const AdminForumPostsPage = () => {
             Theo dõi, xử lý báo cáo và kiểm duyệt các bài viết trên cộng đồng.
           </Typography>
         </Box>
+        <Button
+          variant="outlined"
+          startIcon={<FileDownloadOutlinedIcon />}
+          onClick={handleExport}
+          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+        >
+          Xuất Excel
+        </Button>
       </Box>
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Tổng bài viết"
-            value={stats.total}
-            icon={<ArticleOutlinedIcon />}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Chờ duyệt"
-            value={stats.pending}
-            icon={<HistoryOutlinedIcon />}
-            valueColor="info.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Báo cáo vi phạm"
-            value={stats.reported}
-            icon={<ReportProblemOutlinedIcon />}
-            valueColor="error.main"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <AdminDashboardMetricTile
-            label="Bài viết bị chặn"
-            value={stats.banned}
-            icon={<GppBadOutlinedIcon />}
-            valueColor="warning.main"
-          />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng bài viết"
+          value={stats.total}
+          icon={<ArticleOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Chờ duyệt"
+          value={stats.pending}
+          icon={<HistoryOutlinedIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Báo cáo vi phạm"
+          value={stats.reported}
+          icon={<ReportProblemOutlinedIcon />}
+          valueColor="error.main"
+        />
+        <AdminDashboardMetricTile
+          label="Bài viết bị chặn"
+          value={stats.banned}
+          icon={<GppBadOutlinedIcon />}
+          valueColor="warning.main"
+        />
+      </Box>
 
       <Tabs
         value={activeTab}
@@ -222,21 +278,36 @@ const AdminForumPostsPage = () => {
           totalCount={posts.length}
           page={0}
           rowsPerPage={100}
-          onSearchChange={(v) => setSearch(v)}
-          searchValue={search}
+          onSearchChange={(v) => setSearchTerm(v)}
+          searchValue={searchTerm}
           filters={
-            <TextField
-              select
-              size="small"
-              label="Trạng thái"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              sx={{ minWidth: 160 }}
-            >
-              {FORUM_STATUS_FILTER_OPTIONS.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-              ))}
-            </TextField>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                select
+                size="small"
+                label="Tổ chức"
+                value={organizationFilter}
+                onChange={(e) => setOrganizationFilter(e.target.value)}
+                sx={{ minWidth: 200 }}
+              >
+                <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
+                {organizations.map((org) => (
+                  <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                size="small"
+                label="Trạng thái"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{ minWidth: 160 }}
+              >
+                {FORUM_STATUS_FILTER_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                ))}
+              </TextField>
+            </Stack>
           }
           onRowClick={(p) => setForumDetailPost(p)}
         />

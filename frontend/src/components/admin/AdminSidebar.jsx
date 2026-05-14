@@ -35,7 +35,7 @@ const NAV_GROUPS = (adminBase) => [
   {
     title: 'Tổng quan',
     items: [
-      { to: adminBase, end: true, icon: <DashboardOutlinedIcon />, label: 'Dashboard' },
+      { to: adminBase, end: true, icon: <DashboardOutlinedIcon />, label: 'Bảng điều khiển' },
     ],
   },
   {
