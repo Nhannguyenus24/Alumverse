@@ -9,4 +9,8 @@ public class UpsertOrganizationIntroductionRequest {
 
     private String content;
     private List<String> images;
+    private String vision;
+    private String mission;
+    private String coreValues;
+    private String bannerUrl;
 }

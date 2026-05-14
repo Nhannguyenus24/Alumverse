@@ -54,7 +54,7 @@ const AdminForumTopicsPage = () => {
     updateTopicLock,
   } = useAdminForumContext();
   const { setBreadcrumbs } = useOutletContext();
-  const { setActiveOrgId } = useAdminSystemContext();
+  const { setActiveOrgId, activeOrganization } = useAdminSystemContext();
   const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Repository
-public interface OrganizationRepository extends R2dbcRepository<Organization, Long> {
+public interface OrganizationRepository extends R2dbcRepository<Organization, Integer> {
 
     Mono<Organization> findBySlug(String slug);
 

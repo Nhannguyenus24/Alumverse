@@ -30,7 +30,7 @@ public class OrganizationService {
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
 
-    public Mono<Organization> getOrganizationById(Long id) {
+    public Mono<Organization> getOrganizationById(Integer id) {
         logger.info("Fetching organization with id: {}", id);
         return organizationRepository.findById(id)
                 .doOnNext(org -> logger.info("Organization found with id: {}, name: {}", id, org.getName()))
@@ -79,11 +79,15 @@ public class OrganizationService {
         return OrganizationIntroductionResponse.builder()
                 .orgaId(intro.getOrgaId())
                 .content(intro.getContent())
+                .vision(intro.getVision())
+                .mission(intro.getMission())
+                .coreValues(intro.getCoreValues())
+                .bannerUrl(intro.getBannerUrl())
                 .imageUrls(urls)
                 .build();
     }
 
-    public Mono<SchoolFeedback> createSchoolFeedback(Long organizationId, CreateSchoolFeedbackRequest request) {
+    public Mono<SchoolFeedback> createSchoolFeedback(Integer organizationId, CreateSchoolFeedbackRequest request) {
         logger.info("Creating school feedback for organization id: {}", organizationId);
         return getOrganizationById(organizationId)
                 .flatMap(organization -> {

@@ -72,11 +72,31 @@ const AdminOrganizationsPage = () => {
     [organizations, selectedOrganizationId],
   );
 
-  const handleUpdateOrganization = useCallback(async (payload) => {
-    if (!editTarget) return;
+  const handleUpdateOrganization = useCallback(async (orgId, payload) => {
+    const targetId = orgId || editTarget?.id;
+    if (!targetId) return;
+
+    const parseIfNeeded = (val) => {
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string' && val.trim().startsWith('[')) {
+        try { return JSON.parse(val); } catch (e) { return []; }
+      }
+      return Array.isArray(val) ? val : [];
+    };
+
+    const cleanPayload = {
+      name: payload.name,
+      slug: payload.slug,
+      logoUrl: payload.logoUrl,
+      status: payload.status,
+      featuresConfig: payload.featuresConfig,
+      programs: parseIfNeeded(payload.programs),
+      majors: parseIfNeeded(payload.majors),
+    };
+
     try {
-      const updated = await adminOrganizationApi.updateOrganization(editTarget.id, payload);
-      setOrganizations((prev) => prev.map((item) => (item.id === editTarget.id ? withDefaults(updated || { ...item, ...payload }) : item)));
+      const updated = await adminOrganizationApi.updateOrganization(targetId, cleanPayload);
+      setOrganizations((prev) => prev.map((item) => (item.id === targetId ? withDefaults(updated || { ...item, ...cleanPayload }) : item)));
       setEditDialogOpen(false);
       enqueueSnackbar('Đã cập nhật thông tin tổ chức', { variant: 'success' });
     } catch (error) {
@@ -187,6 +207,7 @@ const AdminOrganizationsPage = () => {
         selectedIntroduction={introduction}
         onEditOrganization={(org) => { setEditTarget(org); setEditDialogOpen(true); }}
         onEditIntroduction={() => setIntroDialogOpen(true)}
+        onUpdateOrganization={(org) => handleUpdateOrganization(org.id, org)}
         onRefresh={loadOrganizations}
       />
 
@@ -194,7 +215,7 @@ const AdminOrganizationsPage = () => {
         open={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
         organization={editTarget}
-        onConfirm={editTarget ? handleUpdateOrganization : handleCreateOrganization}
+        onConfirm={editTarget ? (payload) => handleUpdateOrganization(editTarget.id, payload) : handleCreateOrganization}
       />
 
       <AdminOrganizationIntroductionDialog
