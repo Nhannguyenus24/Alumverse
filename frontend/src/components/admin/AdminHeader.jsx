@@ -87,7 +87,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
             
             {breadcrumbs ? (
               breadcrumbs.map((crumb, idx) => (
-                crumb.href ? (
+                crumb.path || crumb.href ? (
                   <MuiLink
                     key={idx}
                     component={RouterLink}
