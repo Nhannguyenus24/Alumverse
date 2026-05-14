@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 
 import Page from '../../components/Page';
-import MentorshipProfileLayout from '../../layouts/MentorshipProfileLayout';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipTag from '../../components/mentorship/MentorshipTag';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
@@ -149,7 +149,7 @@ const MentorshipProfileEditPage = () => {
         onCoverChange={handleCoverUpload}
         tabs={TOP_TABS}
         onNavigate={navigate}
-        mode="edit"
+        mode="mentorEdit"
       >
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
