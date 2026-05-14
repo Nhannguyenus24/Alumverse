@@ -33,6 +33,7 @@ import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import SubtitlesOutlinedIcon from '@mui/icons-material/SubtitlesOutlined';
 import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
+import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
 
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
@@ -58,7 +59,7 @@ const buildTree = (flatList) => {
   return roots;
 };
 
-const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete }) => {
+const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, activeOrganization }) => {
   const theme = useTheme();
   const hasChildren = node.children && node.children.length > 0;
   const open = expanded[node.id];
@@ -93,6 +94,19 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete })
           }
         />
         <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Xem trên trang diễn đàn">
+            <IconButton
+              size="small"
+              onClick={() => {
+                const slug = activeOrganization?.slug;
+                if (slug) {
+                  window.open(`/${slug}/forum`, "_blank");
+                }
+              }}
+            >
+              <LaunchOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Chỉnh sửa">
             <IconButton size="small" onClick={() => onEdit(node)}>
               <EditOutlinedIcon fontSize="small" />
@@ -117,6 +131,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete })
                 toggle={toggle}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                activeOrganization={activeOrganization}
               />
             ))}
           </List>
@@ -129,7 +144,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete })
 const AdminForumCategoriesPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
-  const { activeOrgId } = useAdminSystemContext();
+  const { activeOrgId, activeOrganization } = useAdminSystemContext();
   const {
     categories,
     categoriesLoading,
@@ -328,6 +343,7 @@ const AdminForumCategoriesPage = () => {
                   toggle={toggle}
                   onEdit={openEdit}
                   onDelete={setDeleteTarget}
+                  activeOrganization={activeOrganization}
                 />
               ))
             )}

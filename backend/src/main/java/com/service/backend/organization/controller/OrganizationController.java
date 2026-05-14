@@ -113,7 +113,7 @@ public class OrganizationController {
     )
     public Mono<ResponseEntity<ApiResponse<SchoolFeedback>>> createSchoolFeedback(
             @Parameter(description = "Organization ID", example = "1")
-            @PathVariable Long organizationId,
+            @PathVariable Integer organizationId,
             @Valid @RequestBody CreateSchoolFeedbackRequest request) {
         logger.info("Creating school feedback for organization id: {}", organizationId);
         return organizationService.createSchoolFeedback(organizationId, request)
