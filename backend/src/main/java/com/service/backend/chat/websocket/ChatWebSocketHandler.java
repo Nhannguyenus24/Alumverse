@@ -2,18 +2,20 @@ package com.service.backend.chat.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.service.backend.chat.entity.ChatMessage;
-import com.service.backend.chat.repository.ChatGroupMemberRepository;
+import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
-import com.service.backend.shared.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.constants.ErrorCode;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,13 +46,14 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     @Override
     public Mono<Void> handle(WebSocketSession session) {
-        // Try to get member ID from security context first
-        Mono<Long> memberIdMono = SecurityUtils.getCurrentUserId()
-                .onErrorResume(error -> {
-                    // If security context is not available, try to extract token from query parameter
-                    log.debug("Security context not available, trying query parameter: {}", error.getMessage());
-                    return extractMemberIdFromToken(session);
-                });
+
+        // Do not use SecurityUtils.getCurrentUserId() because in websocket there is no Security context holder. 
+        Mono<Long> memberIdMono = extractMemberIdFromToken(session)
+        .onErrorResume(error -> {
+            //System.out.println("Error on extracting memberId from token: " + error.getMessage());
+            log.error("Error on extracting memberId from token: " + error.getMessage());
+            return Mono.error(new ApplicationException(ErrorCode.ERROR_EXTRACTING_MEMBERID_FROM_TOKEN, "Error during extracting memberId from token."));
+        });
 
         return memberIdMono
                 .flatMap(memberId -> {
@@ -77,41 +80,34 @@ public class ChatWebSocketHandler implements WebSocketHandler {
      * Fallback when SecurityContext is not available (for example browser WebSocket connections).
      */
     private Mono<Long> extractMemberIdFromToken(WebSocketSession session) {
-        String token = null;
-
-        // Try query parameter first: ws://localhost:8080/ws/chat?token=...
-        String query = session.getHandshakeInfo().getUri().getQuery();
-        if (query != null && query.contains("token=")) {
-            String tokenParam = query.substring(query.indexOf("token=") + 6);
-            int endIndex = tokenParam.indexOf('&');
-            if (endIndex > 0) {
-                token = tokenParam.substring(0, endIndex);
-            } else {
-                token = tokenParam;
-            }
-        }
-
-        // Fallback to Authorization header
-        if (token == null) {
-            String authHeader = session.getHandshakeInfo().getHeaders().getFirst("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-            }
-        }
-
-        if (token == null) {
+        String token = resolveTokenFromQueryParam(session);
+        if (token == null || token.isBlank()) {
             return Mono.error(new RuntimeException("No authentication token found in query parameter or header"));
         }
 
         try {
             Integer userId = jwtUtils.getUserIdFromToken(token);
             Long memberId = userId.longValue();
-            log.debug("Extracted memberId {} from token in query parameter/header", memberId);
+            log.debug("Extracted memberId {} from WebSocket handshake token", memberId);
             return Mono.just(memberId);
         } catch (Exception e) {
-            log.error("Invalid token in query parameter/header", e);
+            log.error("Invalid token in WebSocket handshake", e);
             return Mono.error(new RuntimeException("Invalid or expired token: " + e.getMessage()));
         }
+    }
+
+    private static String resolveTokenFromQueryParam(WebSocketSession session) {
+        String query = session.getHandshakeInfo().getUri().getQuery();
+        if (query != null && query.contains("token=")) {
+            System.out.println("from query param 1111");
+            int start = query.indexOf("token=") + 6;
+            int amp = query.indexOf('&', start);
+            String raw = amp >= 0 ? query.substring(start, amp) : query.substring(start);
+            if (!raw.isEmpty()) {
+                return raw;
+            }
+        }
+        return null;
     }
 
     private Mono<Void> handleMessage(WebSocketSession session, Long memberId, String messageText) {
@@ -193,18 +189,23 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         if (sessions == null || sessions.isEmpty()) {
             return Mono.empty();
         }
+        Object metadataPayload = "";
+        if (message.getMetadata() != null && !message.getMetadata().isBlank()) {
+            metadataPayload = JsonUtils.fromJson(message.getMetadata(), Object.class);
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("id", message.getId());
+        payload.put("groupId", message.getGroupId());
+        payload.put("senderMemberId", message.getSenderMemberId());
+        payload.put("content", message.getContent());
+        payload.put("messageType", message.getMessageType());
+        payload.put("metadata", metadataPayload);
+        payload.put("createdAt", message.getCreatedAt());
 
         String eventJson = JsonUtils.toJson(Map.of(
                 "type", "MESSAGE_CREATED",
-                "payload", Map.of(
-                        "id", message.getId(),
-                        "groupId", message.getGroupId(),
-                        "senderMemberId", message.getSenderMemberId(),
-                        "content", message.getContent(),
-                        "messageType", message.getMessageType(),
-                        "metadata", message.getMetadata() != null ? message.getMetadata() : "",
-                        "createdAt", message.getCreatedAt()
-                )
+                "payload", payload
         ));
 
         return Mono.fromRunnable(() -> {

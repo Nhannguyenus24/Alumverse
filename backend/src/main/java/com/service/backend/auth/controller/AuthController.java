@@ -1,7 +1,6 @@
 package com.service.backend.auth.controller;
 
 import java.time.Duration;
-import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,13 +14,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebExchange;
 import io.swagger.v3.oas.annotations.Parameter;
 import com.service.backend.auth.dto.ChangePasswordRequest;
+import com.service.backend.auth.dto.GoogleLoginRequest;
 import com.service.backend.auth.dto.LoginRequest;
 import com.service.backend.auth.dto.LoginResponse;
 import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.SendOtpRequest;
 import com.service.backend.auth.dto.VerifyOtpRequest;
+import com.service.backend.auth.entity.User;
 import com.service.backend.auth.service.AuthService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.JwtUtils;
@@ -48,7 +50,7 @@ public class AuthController {
     @PostMapping("/register")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
-        return authService.register(request.getEmail(), request.getUserName(), request.getPassword())
+        return authService.register(request.getEmail(), request.getUserName(), request.getPassword(), request.getFullName(), request.getOrganizationId())
                 .then(Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true))))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
     }
@@ -59,42 +61,32 @@ public class AuthController {
      */
     @PostMapping("/login")
     public Mono<ResponseEntity<ApiResponse<LoginResponse>>> login(
-            @Valid @RequestBody LoginRequest request) {
-        return authService.loginByEmail(request.getEmail(), request.getPassword())
-                .switchIfEmpty(Mono.defer(() -> 
-                    authService.loginByUserName(request.getEmail(), request.getPassword())
+            @Valid @RequestBody LoginRequest request,
+            ServerWebExchange exchange) {
+        String userAgent = extractUserAgent(exchange);
+        String loginIp = extractRemoteAddress(exchange);
+
+        return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
+                .switchIfEmpty(Mono.defer(() ->
+                    authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
                 ))
-                .flatMap(user ->
-                    authService.getOrganizationIdByUserId(user.getId())
-                            .defaultIfEmpty(List.of()) // Return empty list if user has no organizations
-                            .map(organizationId -> {
-                                String accessToken = jwtUtils.generateAccessToken(
-                                        user.getId(),
-                                        user.getEmail(),
-                                        user.getRole().name(),
-                                        user.getUserName(),
-                                        user.getAvatarUrl(),
-                                        organizationId
-                                );
-                                String refreshToken = jwtUtils.generateRefreshToken(user.getId());
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()))
+                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(error.getMessage(), null))));
+    }
 
-                                ResponseCookie refreshTokenCookie = ResponseCookie
-                                        .from("refreshToken", refreshToken)
-                                        .httpOnly(true)
-                                        // .secure(true) // turn on when in https
-                                        .maxAge(Duration.ofDays(7))
-                                        .sameSite("Lax")
-                                        .build();
+    /**
+     * Login user with Google ID token
+     */
+    @PostMapping("/google-login")
+    public Mono<ResponseEntity<ApiResponse<LoginResponse>>> googleLogin(
+            @Valid @RequestBody GoogleLoginRequest request,
+            ServerWebExchange exchange) {
+        String userAgent = extractUserAgent(exchange);
+        String loginIp = extractRemoteAddress(exchange);
 
-                                LoginResponse loginResponse = LoginResponse.builder()
-                                        .accessToken(accessToken)
-                                        .build();
-
-                                return ResponseEntity.ok()
-                                        .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
-                                        .body(new ApiResponse<>("Login successful", loginResponse));
-                            })
-                )
+        return authService.loginWithGoogle(request.getIdToken(), request.getOrganizationId(), userAgent, loginIp)
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new ApiResponse<>(error.getMessage(), null))));
     }
@@ -133,6 +125,7 @@ public class AuthController {
         ResponseCookie refreshTokenCookie = ResponseCookie
                 .from("refreshToken", "")
                 .httpOnly(true)
+                .path("/")
                 .maxAge(0)
                 .sameSite("Lax")
                 .build();
@@ -181,5 +174,94 @@ public class AuthController {
         return authService.verifyOtpAndActivate(request.getEmail(), request.getOtp())
                 .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("OTP verified and account activated successfully", true))))
                 .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
+    }
+
+    private String extractUserAgent(ServerWebExchange exchange) {
+        String userAgent = exchange.getRequest().getHeaders().getFirst(HttpHeaders.USER_AGENT);
+        return userAgent != null ? userAgent : "Unknown";
+    }
+
+    private String extractRemoteAddress(ServerWebExchange exchange) {
+        String remoteAddress = null;
+
+        // Try to get from X-Forwarded-For header first (for proxy/load balancer)
+        String xForwardedFor = exchange.getRequest().getHeaders().getFirst("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            remoteAddress = xForwardedFor.split(",")[0].trim();
+        }
+
+        // If not found, get from remote address
+        if (remoteAddress == null && exchange.getRequest().getRemoteAddress() != null) {
+            remoteAddress = exchange.getRequest().getRemoteAddress().getAddress().getHostAddress();
+        }
+
+        return remoteAddress != null ? remoteAddress : "Unknown";
+    }
+
+    private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId) {
+        if (organizationId == null) {
+            // For admin login without organization, generate token with null orgId
+            String accessToken = jwtUtils.generateAccessToken(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole().name(),
+                    user.getUserName(),
+                    user.getAvatarUrl(),
+                    null
+            );
+            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null);
+
+            ResponseCookie refreshTokenCookie = ResponseCookie
+                    .from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    // .secure(true) // turn on when in https
+                    .path("/")
+                    .maxAge(Duration.ofDays(7))
+                    .sameSite("Lax")
+                    .build();
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .accessToken(accessToken)
+                    .needsOrganizationSetup(false)
+                    .build();
+
+            return Mono.just(ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body(new ApiResponse<>("Login successful", loginResponse)));
+        }
+
+        return authService.existsOrganizationMembership(user.getId(), organizationId)
+                .map(isMember -> {
+                    String accessToken = jwtUtils.generateAccessToken(
+                            user.getId(),
+                            user.getEmail(),
+                            user.getRole().name(),
+                            user.getUserName(),
+                            user.getAvatarUrl(),
+                            organizationId
+                    );
+                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId);
+
+                    ResponseCookie refreshTokenCookie = ResponseCookie
+                            .from("refreshToken", refreshToken)
+                            .httpOnly(true)
+                            // .secure(true) // turn on when in https
+                            .path("/")
+                            .maxAge(Duration.ofDays(7))
+                            .sameSite("Lax")
+                            .build();
+
+                    // If user is not a member, set flag to true
+                    Boolean needsSetup = !isMember;
+
+                    LoginResponse loginResponse = LoginResponse.builder()
+                            .accessToken(accessToken)
+                            .needsOrganizationSetup(needsSetup)
+                            .build();
+
+                    return ResponseEntity.ok()
+                            .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                            .body(new ApiResponse<>("Login successful", loginResponse));
+                });
     }
 }

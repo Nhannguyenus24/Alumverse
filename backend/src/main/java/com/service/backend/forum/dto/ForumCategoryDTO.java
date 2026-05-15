@@ -13,9 +13,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ForumCategoryDTO {
     private Integer id;
+    private Integer parentId;
     private Integer organizationId;
     private String name;
     private String description;
+    private Long topicCount;
+    private Long participantCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -1,0 +1,69 @@
+package com.service.backend.fundraising.dto;
+
+import com.service.backend.fundraising.entity.FundReceivingInfos;
+import com.service.backend.fundraising.entity.Funds;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class FundDetailResponse {
+    private Integer id;
+    private String organizationName;
+    private String statusName;
+    private Integer donorCount;
+
+    private String managerName;
+    private String name;
+    private String logoUrl;
+
+    private String descriptionShort;
+    private String descriptionFull;
+
+    private BigDecimal targetAmount;
+    private BigDecimal currentAmount;
+
+    private LocalDateTime timeStarted;
+    private LocalDateTime timeEnded;
+
+    private String topic;
+
+    private FundReceivingInfos fundReceivingInfo;
+
+    public static FundDetailResponse from(
+            Funds fund,
+            FundReceivingInfos fundReceivingInfo,
+            String organizationName,
+            String statusName
+    ) {
+        if (fund == null) {
+            return null;
+        }
+
+        return FundDetailResponse.builder()
+                .id(fund.getId())
+                .organizationName(organizationName)
+                .statusName(statusName)
+                .donorCount(fund.getDonorCount())
+                .managerName(fund.getManagerName())
+                .name(fund.getName())
+                .logoUrl(fund.getLogoUrl())
+                .descriptionShort(fund.getDescriptionShort())
+                .descriptionFull(fund.getDescriptionFull())
+                .targetAmount(fund.getTargetAmount())
+                .currentAmount(fund.getCurrentAmount())
+                .timeStarted(fund.getTimeStarted())
+                .timeEnded(fund.getTimeEnded())
+                .topic(fund.getTopic())
+                .fundReceivingInfo(fundReceivingInfo)
+                .build();
+    }
+}
+

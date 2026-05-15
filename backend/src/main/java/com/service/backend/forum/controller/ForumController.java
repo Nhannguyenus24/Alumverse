@@ -6,11 +6,11 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,22 +20,26 @@ import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
+import com.service.backend.forum.dto.CreateForumPostReportRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
-import com.service.backend.forum.dto.ForumPostPageResponse;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
-import com.service.backend.forum.dto.ForumTopicPageResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
+import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.service.ForumService;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.exception.ApplicationException;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/forum")
@@ -57,7 +61,18 @@ public class ForumController {
         return forumService.findAllCategoriesByOrganizationId(organizationId)
                 .collectList()
                 .map(categories -> ResponseEntity.ok(new ApiResponse<>("Categories retrieved successfully", categories)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
+    }
+
+    /**
+     * Find forum category by id
+     */
+    @GetMapping("/category/{id}")
+    public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> getCategoryById(
+            @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id) {
+        return forumService.findCategoryById(id)
+                .map(category -> ResponseEntity.ok(new ApiResponse<>("Category retrieved successfully", category)))
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -68,7 +83,7 @@ public class ForumController {
             @Valid @RequestBody CreateForumCategoryRequest request) {
         return forumService.createCategory(request)
                 .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -80,19 +95,9 @@ public class ForumController {
             @Valid @RequestBody UpdateForumCategoryRequest request) {
         return forumService.updateCategory(id, request)
                 .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
-    /**
-     * Delete forum category
-     */
-    @DeleteMapping("/category/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deleteCategory(
-            @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id) {
-        return forumService.deleteCategory(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum category deleted successfully", null))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
-    }
 
     // ========== TOPIC ENDPOINTS ==========
 
@@ -105,14 +110,14 @@ public class ForumController {
             @RequestParam String title) {
         return forumService.findTopicByTitle(title)
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Topic found successfully", topic)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
      * Find forum topics by category id with pagination
      */
     @GetMapping("/topic")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicPageResponse>>> getTopicsByCategoryId(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumTopicDTO>>>> getTopicsByCategoryId(
             @Parameter(example = "2")
             @RequestParam Integer categoryId,
             @Parameter(example = "0")
@@ -121,7 +126,7 @@ public class ForumController {
             @RequestParam(defaultValue = "10") int size) {
         return forumService.findTopicsByCategoryId(categoryId, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Topics retrieved successfully", response)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -132,7 +137,7 @@ public class ForumController {
             @Valid @RequestBody CreateForumTopicRequest request) {
         return forumService.createTopic(request)
                 .map(topic -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum topic created successfully", topic)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -144,18 +149,7 @@ public class ForumController {
             @Valid @RequestBody UpdateForumTopicRequest request) {
         return forumService.updateTopic(id, request)
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
-    }
-
-    /**
-     * Delete forum topic by id
-     */
-    @DeleteMapping("/topic/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deleteTopic(
-            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer id) {
-        return forumService.deleteTopic(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum topic deleted successfully", null))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     // ========== POST ENDPOINTS ==========
@@ -164,7 +158,7 @@ public class ForumController {
      * Find forum posts by topic id with pagination
      */
     @GetMapping("/post")
-    public Mono<ResponseEntity<ApiResponse<ForumPostPageResponse>>> getPostsByTopicId(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> getPostsByTopicId(
             @Parameter(example = "10")
             @RequestParam @NotNull(message = "Topic ID is required") Integer topicId,
             @Parameter(example = "0")
@@ -175,7 +169,7 @@ public class ForumController {
             @RequestParam(required = false) Integer memberId) {
         return forumService.findPostsByTopicId(topicId, page, size, memberId)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Posts retrieved successfully", response)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -186,7 +180,7 @@ public class ForumController {
             @Valid @RequestBody CreateForumPostRequest request) {
         return forumService.createPost(request)
                 .map(post -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum post created successfully", post)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -198,40 +192,30 @@ public class ForumController {
             @Valid @RequestBody CreateForumPostRequest request) {
         return forumService.answerToPost(postId, request)
                 .map(post -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Answer posted successfully", post)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
-     * Ban a forum post
+     * Update forum post
      */
-    @PostMapping("/post/{id}/ban")
-    public Mono<ResponseEntity<ApiResponse<Object>>> banPost(
-            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
-        return forumService.banPost(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post banned successfully", null))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+    @PutMapping("/post/{id}")
+    public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> updatePost(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id,
+            @Valid @RequestBody UpdateForumPostRequest request) {
+        return forumService.updatePost(id, request)
+                .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post updated successfully", post)))
+                .onErrorResume(this::handleError);
     }
 
     /**
-     * Unban a forum post
-     */
-    @PostMapping("/post/{id}/unban")
-    public Mono<ResponseEntity<ApiResponse<Object>>> unbanPost(
-            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
-        return forumService.unbanPost(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post unbanned successfully", null))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
-    }
-
-    /**
-     * Delete a forum post
+     * Delete forum post
      */
     @DeleteMapping("/post/{id}")
-    public Mono<ResponseEntity<ApiResponse<Object>>> deletePost(
+    public Mono<ResponseEntity<ApiResponse<Void>>> deletePost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id) {
         return forumService.deletePost(id)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Forum post deleted successfully", null))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Forum post deleted successfully", null))))
+                .onErrorResume(this::handleError);
     }
 
     // ========== REACTION ENDPOINTS (LIKE/DISLIKE) ==========
@@ -243,13 +227,20 @@ public class ForumController {
     public Mono<ResponseEntity<ApiResponse<ForumPostReactionDTO>>> reactToPost(
             @Valid @RequestBody CreateForumPostReactionRequest request) {
         return forumService.reactToPost(request)
-                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Like added successfully", reaction)))
-                .onErrorResume(error -> {
-                    if ("REACTION_REMOVED".equals(error.getMessage())) {
-                        return Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null)));
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null)));
-                });
+                .map(reaction -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Like added successfully", reaction)))
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Like removed successfully", null))))
+                .onErrorResume(this::handleError);
+    }
+
+    @PostMapping("/post/{id}/report")
+    public Mono<ResponseEntity<ApiResponse<ForumPostReportDTO>>> reportPost(
+            @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer id,
+            @Valid @RequestBody CreateForumPostReportRequest request) {
+        return forumService.reportPost(id, request)
+                .map(report -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Post report submitted successfully", report)))
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -260,7 +251,7 @@ public class ForumController {
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
         return forumService.getPostReactionCounts(postId)
                 .map(counts -> ResponseEntity.ok(new ApiResponse<>("Reaction counts retrieved successfully", counts)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), null))));
+                .onErrorResume(this::handleError);
     }
 
     /**
@@ -273,7 +264,61 @@ public class ForumController {
             @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
         return forumService.getUserReaction(postId, memberId)
                 .map(reaction -> ResponseEntity.ok(new ApiResponse<>("User reaction retrieved successfully", reaction)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("No reaction found", null))));
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(
+                        new ApiResponse<>("No reaction found for this post", null))))
+                .onErrorResume(this::handleError);
+    }
+
+    private <T> Mono<ResponseEntity<ApiResponse<T>>> handleError(Throwable error) {
+        HttpStatus status = resolveHttpStatus(error);
+        return Mono.just(ResponseEntity.status(status)
+                .body(new ApiResponse<>(error.getMessage(), null)));
+    }
+
+    private HttpStatus resolveHttpStatus(Throwable error) {
+        if (error instanceof ResponseStatusException responseStatusException) {
+            return HttpStatus.valueOf(responseStatusException.getStatusCode().value());
+        }
+
+        if (error instanceof ApplicationException applicationException) {
+            return mapErrorCodeToHttpStatus(applicationException.getErrorCode());
+        }
+
+        String message = error.getMessage();
+        if (message == null) {
+            return HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+
+        if (ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage().equals(message)
+                || ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage().equals(message)
+                || ErrorCode.FORUM_POST_NOT_FOUND.getMessage().equals(message)
+                || ErrorCode.RESOURCES_NOT_FOUND.getMessage().equals(message)
+                || ErrorCode.USER_NOT_FOUND.getMessage().equals(message)) {
+            return HttpStatus.NOT_FOUND;
+        }
+
+        if (ErrorCode.INVALID_TOPIC_ID.getMessage().equals(message)) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if ("Topic is locked".equals(message)) {
+            return HttpStatus.FORBIDDEN;
+        }
+
+        return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    private HttpStatus mapErrorCodeToHttpStatus(ErrorCode errorCode) {
+        return switch (errorCode) {
+            case FORUM_CATEGORY_NOT_FOUND,
+                 FORUM_TOPIC_NOT_FOUND,
+                 FORUM_POST_NOT_FOUND,
+                 RESOURCES_NOT_FOUND,
+                 USER_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case INVALID_TOPIC_ID -> HttpStatus.BAD_REQUEST;
+            case RESOURCES_DUPLICATE -> HttpStatus.CONFLICT;
+            case FORBIDDEN -> HttpStatus.FORBIDDEN;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
     }
 
 }

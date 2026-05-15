@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dao;
 
-import com.service.backend.mentorship.domain.entity.MentorshipSession;
+import com.service.backend.mentorship.entity.MentorshipSession;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -91,4 +91,5 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status != 'Rejected' AND status != 'Cancelled'")
     Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
+
 }

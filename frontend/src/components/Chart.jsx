@@ -17,16 +17,26 @@ import {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
+const MULTI_LINE_COLORS = ["#1976d2", "#2e7d32", "#ed6c02", "#9c27b0", "#d32f2f"];
+
 const Chart = ({
   type = "line",
   data = [],
   dataKey = "value",
+  dataKeys,
   xAxisKey = "name",
   title,
   height = 300,
   showLegend = true,
   showGrid = true,
 }) => {
+  // Recharts ResponsiveContainer with height="100%" often measures -1 until a parent
+  // chain has explicit height (flex/tabs). Use a concrete pixel height instead.
+  const chartHeight =
+    typeof height === "number" && Number.isFinite(height) && height > 0
+      ? height
+      : 300;
+
   if (!data || data.length === 0) {
     return (
       <Paper sx={{ p: 3, textAlign: "center" }}>
@@ -47,12 +57,26 @@ const Chart = ({
             <YAxis />
             <Tooltip />
             {showLegend && <Legend />}
-            <Line
-              type="monotone"
-              dataKey={dataKey}
-              stroke="#1976d2"
-              strokeWidth={2}
-            />
+            {dataKeys && dataKeys.length > 0 ? (
+              dataKeys.map((dk, idx) => (
+                <Line
+                  key={dk.key}
+                  type="monotone"
+                  dataKey={dk.key}
+                  name={dk.label || dk.key}
+                  stroke={dk.color || MULTI_LINE_COLORS[idx % MULTI_LINE_COLORS.length]}
+                  strokeWidth={2}
+                  dot={false}
+                />
+              ))
+            ) : (
+              <Line
+                type="monotone"
+                dataKey={dataKey}
+                stroke="#1976d2"
+                strokeWidth={2}
+              />
+            )}
           </LineChart>
         );
 
@@ -64,7 +88,18 @@ const Chart = ({
             <YAxis />
             <Tooltip />
             {showLegend && <Legend />}
-            <Bar dataKey={dataKey} fill="#1976d2" />
+            {dataKeys && dataKeys.length > 0 ? (
+              dataKeys.map((dk, idx) => (
+                <Bar
+                  key={dk.key}
+                  dataKey={dk.key}
+                  name={dk.label || dk.key}
+                  fill={dk.color || MULTI_LINE_COLORS[idx % MULTI_LINE_COLORS.length]}
+                />
+              ))
+            ) : (
+              <Bar dataKey={dataKey} fill="#1976d2" />
+            )}
           </BarChart>
         );
 
@@ -107,8 +142,8 @@ const Chart = ({
           {title}
         </Typography>
       )}
-      <Box sx={{ width: "100%", height }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <Box sx={{ width: "100%", height: chartHeight, minWidth: 0 }}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           {renderChart()}
         </ResponsiveContainer>
       </Box>

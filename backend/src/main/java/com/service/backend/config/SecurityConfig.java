@@ -20,10 +20,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://localhost:8080"
+        // Dev-friendly origins for local web, Expo web, and LAN devices (phone/WebView).
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://192.168.*.*:*",
+                "http://172.*.*.*:*",
+                "http://10.*.*.*:*"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
@@ -55,18 +58,24 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/webjars/**",
                                 "/api/guest/**",
+                                "/api/organizations/**",
                                 "/websocket-test.html",
+                                "/ws/chat",
+                                "/ws/chat/**",
                                 "/*.html",
                                 "/*.css",
                                 "/*.js",
                                 "/*.png",
                                 "/*.ico",
-                                "/static/**"
+                                "/static/**",
+                                "/api/funds/**",
+                                "/api/fund-statuses",
+                                "/api/fund-donations/**",
+                                "/api/payment/**"
                         ).permitAll()
 
                         // All other requests require authentication
-                        // .anyExchange().authenticated());
-                        .anyExchange().permitAll()); // Temporary: allow all requests for development
+                        .anyExchange().authenticated());
 
         return http.build();
     }

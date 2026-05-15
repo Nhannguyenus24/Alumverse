@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router';
+
 import {
   Box,
   Button,
@@ -7,17 +7,19 @@ import {
   Stack,
   TextField,
   Typography,
-  MenuItem,
+  MenuItem
 } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
 import Page from '../components/Page';
+import WYSIWYG from '../components/WYSIWYG';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const CHANNEL_OPTIONS = ['Cựu sinh viên', 'Kênh thành tựu'];
 const TOPIC_OPTIONS = ['Education', 'Jobs', 'Chances'];
 
 const PostArticlePage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const fileInputRef = useRef(null);
 
   const [title, setTitle] = useState('');
@@ -164,15 +166,13 @@ const PostArticlePage = () => {
                 }}
               />
 
-              {/* CONTENT INPUT */}
+              {/* WYSIWYG EDITOR */}
               <Box sx={{ mt: 2 }}>
-                <TextField
-                  fullWidth
-                  multiline
-                  minRows={10}
+                <WYSIWYG
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={setContent}
                   placeholder="Bắt đầu viết nội dung tại đây..."
+                  height={400}
                 />
               </Box>
 

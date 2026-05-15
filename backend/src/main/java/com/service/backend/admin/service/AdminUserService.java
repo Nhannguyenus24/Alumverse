@@ -1,88 +1,97 @@
 package com.service.backend.admin.service;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import com.service.backend.admin.dto.PagedResponse;
+import com.service.backend.admin.dao.AdminAuditLogRepository;
+import com.service.backend.admin.dao.AdminUserOrganizationPreviewRepository;
+import com.service.backend.admin.dto.CreateAdminRequest;
+import com.service.backend.admin.dto.AdminResetPasswordRequest;
+import com.service.backend.admin.dto.UserActivityResponse;
+import com.service.backend.admin.dto.UpdateUserRequest;
 import com.service.backend.admin.dto.UserResponse;
-import com.service.backend.admin.repository.AdminUserRepository;
+import com.service.backend.admin.dto.VerificationRequestResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.auth.entity.User;
+import com.service.backend.admin.entity.AdminAuditLog;
+import com.service.backend.shared.dao.UserDisplayInfo;
+import com.service.backend.shared.dao.UserDisplayInfoRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
     
     private final AdminUserRepository adminUserRepository;
-    
-    public AdminUserService(AdminUserRepository adminUserRepository) {
+    private final AdminAuditLogRepository adminAuditLogRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final UserDisplayInfoRepository userDisplayInfoRepository;
+    private final AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository;
+
+    public AdminUserService(
+            AdminUserRepository adminUserRepository,
+            AdminAuditLogRepository adminAuditLogRepository,
+            PasswordEncoder passwordEncoder,
+            UserDisplayInfoRepository userDisplayInfoRepository,
+            AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository) {
         this.adminUserRepository = adminUserRepository;
+        this.adminAuditLogRepository = adminAuditLogRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.userDisplayInfoRepository = userDisplayInfoRepository;
+        this.adminUserOrganizationPreviewRepository = adminUserOrganizationPreviewRepository;
     }
     
     /**
      * Get users in organization with pagination
      */
-    public Mono<PagedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
+    public Mono<PaginatedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
         logger.info("Fetching users for organization: {} with page: {}, size: {}", organizationId, page, size);
         
         int offset = page * size;
-        
-        Flux<UserResponse> usersFlux = adminUserRepository
-                .findUsersByOrganizationWithPagination(organizationId, size, offset)
-                .map(this::mapToUserResponse);
-        
+
         Mono<Long> totalCount = adminUserRepository.countUsersByOrganization(organizationId);
-        
-        return Mono.zip(usersFlux.collectList(), totalCount)
-                .map(tuple -> {
-                    int totalPages = (int) Math.ceil((double) tuple.getT2() / size);
-                    return PagedResponse.<UserResponse>builder()
-                            .items(tuple.getT1())
-                            .totalItems(tuple.getT2())
-                            .totalPages(totalPages)
-                            .currentPage(page)
-                            .pageSize(size)
-                            .hasNext(page < totalPages - 1)
-                            .hasPrevious(page > 0)
-                            .build();
-                })
-                .doOnSuccess(response -> logger.info("Successfully fetched {} users from organization {}", 
+
+        return Mono.zip(
+                        adminUserRepository.findUsersByOrganizationWithPagination(organizationId, size, offset).collectList(),
+                        totalCount)
+                .flatMap(tuple -> enrichUserResponses(tuple.getT1())
+                        .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
+                .doOnSuccess(response -> logger.info("Successfully fetched {} users from organization {}",
                         response.getItems().size(), organizationId))
                 .doOnError(error -> logger.error("Error fetching users for organization: {}", organizationId, error));
     }
     
     /**
-     * Get all users with pagination
+     * Get all users with filters and pagination
      */
-    public Mono<PagedResponse<UserResponse>> getAllUsers(int page, int size) {
-        logger.info("Fetching all users with page: {}, size: {}", page, size);
+    public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
+        logger.info("Fetching users with filters: search={}, role={}, status={}, org={}, page={}, size={}", 
+                search, role, status, organizationId, page, size);
         
         int offset = page * size;
-        
-        Flux<UserResponse> usersFlux = adminUserRepository
-                .findAllUsersWithPagination(size, offset)
-                .map(this::mapToUserResponse);
-        
-        Mono<Long> totalCount = adminUserRepository.countAllUsers();
-        
-        return Mono.zip(usersFlux.collectList(), totalCount)
-                .map(tuple -> {
-                    int totalPages = (int) Math.ceil((double) tuple.getT2() / size);
-                    return PagedResponse.<UserResponse>builder()
-                            .items(tuple.getT1())
-                            .totalItems(tuple.getT2())
-                            .totalPages(totalPages)
-                            .currentPage(page)
-                            .pageSize(size)
-                            .hasNext(page < totalPages - 1)
-                            .hasPrevious(page > 0)
-                            .build();
-                })
-                .doOnSuccess(response -> logger.info("Successfully fetched {} users", response.getItems().size()))
-                .doOnError(error -> logger.error("Error fetching all users", error));
+        String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim() + "%" : null;
+        String roleParam = (role != null && !role.equals("ALL")) ? role : null;
+        String statusParam = (status != null && !status.equals("ALL")) ? status : null;
+
+        Mono<Long> totalCount = adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId);
+
+        return Mono.zip(
+                adminUserRepository.findUsersWithFilters(searchParam, roleParam, statusParam, organizationId, size, offset).collectList(), 
+                totalCount)
+                .flatMap(tuple -> enrichUserResponses(tuple.getT1())
+                        .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
+                .doOnSuccess(response -> logger.info("Successfully fetched {} users with filters", response.getItems().size()))
+                .doOnError(error -> logger.error("Error fetching users with filters", error));
     }
     
     /**
@@ -155,11 +164,21 @@ public class AdminUserService {
      * Create organization member
      */
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId, 
+                               Integer graduatedYear, String graduationStatus,
+                               String program, String major,
                                                    Integer verificationLevel, String status) {
         logger.info("Adding user {} to organization {} with verification level {}", 
                 userId, organizationId, verificationLevel);
         
-        return adminUserRepository.createOrganizationMember(organizationId, userId, verificationLevel, status)
+        return adminUserRepository.createOrganizationMember(
+                organizationId,
+                userId,
+                graduatedYear,
+                graduationStatus,
+                program,
+                major,
+                verificationLevel,
+                status)
                 .map(count -> count > 0)
                 .doOnSuccess(success -> {
                     if (success) {
@@ -180,10 +199,232 @@ public class AdminUserService {
         
         return adminUserRepository.findById(userId)
                 .map(this::mapToUserResponse)
+                .flatMap(this::enrichOne)
                 .doOnSuccess(user -> logger.info("Successfully fetched user: {}", userId))
                 .doOnError(error -> logger.error("Error fetching user: {}", userId, error));
     }
     
+    /**
+     * Unban a user by setting status back to ACTIVE
+     */
+    public Mono<Boolean> unbanUser(Integer userId) {
+        logger.info("Unbanning user: {}", userId);
+        return adminUserRepository.unbanUserById(userId)
+                .map(count -> count > 0)
+                .doOnSuccess(ok -> {
+                    if (ok) logger.info("User {} unbanned", userId);
+                    else logger.warn("User {} not found for unban", userId);
+                })
+                .doOnError(e -> logger.error("Error unbanning user {}", userId, e));
+    }
+
+    /**
+     * Update user fields (partial update — only non-null fields are applied)
+     */
+    public Mono<UserResponse> updateUser(Integer userId, UpdateUserRequest request) {
+        logger.info("Updating user: {}", userId);
+        return adminUserRepository.findById(userId)
+                .flatMap(user -> {
+                    if (request.getEmail() != null) user.setEmail(request.getEmail());
+                    if (request.getUserName() != null) user.setUserName(request.getUserName());
+                    if (request.getRole() != null) user.setRole(request.getRole());
+                    if (request.getStatus() != null) user.setStatus(request.getStatus());
+                    user.setUpdatedAt(LocalDateTime.now());
+                    return adminUserRepository.save(user);
+                })
+                .flatMap(saved -> applyProfileAndOrg(userId, request).then(getUserById(userId)))
+                .doOnSuccess(u -> logger.info("User {} updated successfully", userId))
+                .doOnError(e -> logger.error("Error updating user {}", userId, e));
+    }
+
+    private Mono<Void> applyProfileAndOrg(Integer userId, UpdateUserRequest request) {
+        Mono<Void> profile = Mono.empty();
+        if (StringUtils.hasText(request.getFullName())) {
+            profile = adminUserRepository
+                    .upsertGlobalProfileFullName(userId, request.getFullName().trim())
+                    .then();
+        }
+        Mono<Void> org = Mono.empty();
+        if (request.getOrganizationId() != null) {
+            org = syncPrimaryOrganization(userId, request.getOrganizationId());
+        }
+        return Mono.when(profile, org);
+    }
+
+    private Mono<Void> syncPrimaryOrganization(Integer userId, Integer organizationId) {
+        return adminUserRepository.upsertOrganizationMemberByUserId(organizationId, userId).then();
+    }
+
+    private Mono<List<UserResponse>> enrichUserResponses(List<User> users) {
+        if (users == null || users.isEmpty()) {
+            return Mono.just(List.of());
+        }
+        List<Integer> ids = users.stream().map(User::getId).toList();
+        return Mono.zip(
+                        userDisplayInfoRepository.findByUserIds(ids),
+                        adminUserOrganizationPreviewRepository.findPrimaryOrgByUserIds(ids))
+                .map(tuple -> {
+                    var displayMap = tuple.getT1();
+                    var orgMap = tuple.getT2();
+                    return users.stream()
+                            .map(u -> mergeEnrichment(
+                                    mapToUserResponse(u),
+                                    displayMap.get(u.getId()),
+                                    orgMap.get(u.getId())))
+                            .toList();
+                });
+    }
+
+    private Mono<UserResponse> enrichOne(UserResponse base) {
+        if (base.getId() == null) {
+            return Mono.just(base);
+        }
+        return Mono.zip(
+                        userDisplayInfoRepository.findByUserId(base.getId()).defaultIfEmpty(new UserDisplayInfo()),
+                        adminUserOrganizationPreviewRepository.findPrimaryOrgByUserIds(List.of(base.getId())))
+                .map(t -> mergeEnrichment(base, t.getT1(), t.getT2().get(base.getId())));
+    }
+
+    private UserResponse mergeEnrichment(
+            UserResponse base,
+            UserDisplayInfo di,
+            AdminUserOrganizationPreviewRepository.PrimaryOrg org) {
+        UserResponse.UserResponseBuilder b = base.toBuilder();
+        if (di != null && StringUtils.hasText(di.getFullName())) {
+            b.fullName(di.getFullName());
+        }
+        if (org != null && org.organizationId() != null) {
+            b.organizationId(org.organizationId());
+            b.organizationName(org.organizationName());
+        }
+        return b.build();
+    }
+
+    /**
+     * Get all verification requests with pagination
+     */
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(int page, int size) {
+        logger.info("Fetching all verification requests page={} size={}", page, size);
+        int offset = page * size;
+        return Mono.zip(
+                adminUserRepository.findAllVerificationRequests(size, offset).collectList(),
+                adminUserRepository.countAllVerificationRequests()
+        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+         .doOnError(e -> logger.error("Error fetching verification requests", e));
+    }
+
+    /**
+     * Get pending verification requests with pagination
+     */
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(int page, int size) {
+        logger.info("Fetching pending verification requests page={} size={}", page, size);
+        int offset = page * size;
+        return Mono.zip(
+                adminUserRepository.findPendingVerificationRequests(size, offset).collectList(),
+                adminUserRepository.countPendingVerificationRequests()
+        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+         .doOnError(e -> logger.error("Error fetching pending verification requests", e));
+    }
+
+    /**
+     * Approve or reject a verification request
+     */
+    public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
+        logger.info("Reviewing verification request {} with status={}", requestId, status);
+        return adminUserRepository.reviewVerificationRequest(requestId, status, adminNote)
+                .map(count -> count > 0)
+                .doOnSuccess(ok -> {
+                    if (ok) logger.info("Verification request {} reviewed as {}", requestId, status);
+                    else logger.warn("Verification request {} not found", requestId);
+                })
+                .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e));
+    }
+
+    public Mono<UserActivityResponse> getUserActivity(Integer userId) {
+        return Mono.zip(
+                adminUserRepository.findRecentLoginHistories(userId, 50).collectList(),
+                adminUserRepository.findRecentVerificationRequests(userId, 50).collectList(),
+                adminAuditLogRepository.findRecentByTargetUserId(userId, 50).collectList())
+                .map(tuple -> UserActivityResponse.builder()
+                        .loginHistories(tuple.getT1())
+                        .verificationRequests(tuple.getT2())
+                        .adminActions(tuple.getT3())
+                        .build());
+    }
+
+    public Mono<PaginatedResponse<AdminAuditLog>> getAdminActionLogs(
+            Integer adminUserId,
+            Integer targetUserId,
+            String action,
+            int page,
+            int size) {
+        int offset = page * size;
+        return Mono.zip(
+                adminAuditLogRepository.findAdminActionLogs(adminUserId, targetUserId, action, size, offset).collectList(),
+                adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action))
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnError(e -> logger.error("Error fetching admin action logs", e));
+    }
+
+    public Mono<Boolean> resetPasswordByAdmin(Integer userId, AdminResetPasswordRequest request, Integer adminUserId) {
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        return adminUserRepository.resetPasswordByAdmin(userId, encodedPassword)
+                .flatMap(count -> {
+                    if (count <= 0) {
+                        return Mono.just(false);
+                    }
+                    LocalDateTime now = LocalDateTime.now();
+                    return adminAuditLogRepository
+                            .insertAuditLog(
+                                    adminUserId,
+                                    userId,
+                                    "RESET_PASSWORD",
+                                    "USER",
+                                    String.valueOf(userId),
+                                    null,
+                                    null,
+                                    request.getReason(),
+                                    now)
+                            .onErrorResume(primaryErr -> {
+                                logger.warn("Primary audit-log insert failed, retrying legacy schema for user {}", userId, primaryErr);
+                                return adminAuditLogRepository
+                                        .insertAuditLogLegacy(
+                                                adminUserId,
+                                                userId,
+                                                "RESET_PASSWORD",
+                                                now);
+                            })
+                            .thenReturn(true)
+                            .onErrorResume(e -> {
+                                logger.warn("Password reset succeeded but all audit-log insert attempts failed for user {}", userId, e);
+                                return Mono.just(true);
+                            });
+                });
+    }
+
+    public Mono<Boolean> createAdminAccount(CreateAdminRequest request) {
+        logger.info("Creating new admin account for email={}", request.getEmail());
+        return adminUserRepository.existsByEmailOrUserName(request.getEmail(), request.getUserName())
+                .flatMap(exists -> {
+                    if (exists) {
+                        return Mono.error(new RuntimeException("Email or username already exists"));
+                    }
+                    String encodedPassword = passwordEncoder.encode(request.getPassword());
+                    return adminUserRepository.createAdminUser(
+                                    request.getEmail(),
+                                    request.getUserName(),
+                                    encodedPassword)
+                            .flatMap(adminUserId -> adminUserRepository
+                                    .createGlobalProfile(adminUserId, request.getFullName())
+                                    .then(adminUserRepository.upsertOrganizationMemberByUserId(
+                                            request.getOrganizationId(),
+                                            adminUserId))
+                                    .thenReturn(true));
+                })
+                .doOnSuccess(created -> logger.info("Admin account created for email={}", request.getEmail()))
+                .doOnError(e -> logger.error("Error creating admin account for email={}", request.getEmail(), e));
+    }
+
     /**
      * Map User entity to UserResponse DTO
      */

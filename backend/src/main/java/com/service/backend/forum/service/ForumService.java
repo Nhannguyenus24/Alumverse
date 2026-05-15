@@ -16,23 +16,27 @@ import com.service.backend.forum.dto.CreateForumCategoryRequest;
 import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
+import com.service.backend.forum.dto.CreateForumPostReportRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
-import com.service.backend.forum.dto.ForumPostPageResponse;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
+import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
-import com.service.backend.forum.dto.ForumTopicPageResponse;
-import com.service.backend.shared.dto.PageInfo;
+import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
-import com.service.backend.forum.entities.ForumCategory;
-import com.service.backend.forum.entities.ForumPost;
-import com.service.backend.forum.entities.ForumPostReaction;
-import com.service.backend.forum.entities.ForumTopic;
-import com.service.backend.forum.repository.ForumCategoryRepository;
-import com.service.backend.forum.repository.ForumPostRepository;
-import com.service.backend.forum.repository.ForumPostReactionRepository;
-import com.service.backend.forum.repository.ForumTopicRepository;
+import com.service.backend.forum.dto.UpdateForumPostRequest;
+import com.service.backend.forum.entity.ForumCategory;
+import com.service.backend.forum.entity.ForumPost;
+import com.service.backend.forum.entity.ForumPostReaction;
+import com.service.backend.forum.entity.ForumPostReport;
+import com.service.backend.forum.entity.ForumTopic;
+import com.service.backend.forum.dao.ForumCategoryRepository;
+import com.service.backend.forum.dao.ForumPostRepository;
+import com.service.backend.forum.dao.ForumPostReactionRepository;
+import com.service.backend.forum.dao.ForumPostReportRepository;
+import com.service.backend.forum.dao.ForumTopicRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,35 +49,24 @@ public class ForumService {
     private final ForumTopicRepository forumTopicRepository;
     private final ForumPostRepository forumPostRepository;
     private final ForumPostReactionRepository forumPostReactionRepository;
+    private final ForumPostReportRepository forumPostReportRepository;
 
     public ForumService(ForumCategoryRepository forumCategoryRepository,
                         ForumTopicRepository forumTopicRepository,
                         ForumPostRepository forumPostRepository,
-                        ForumPostReactionRepository forumPostReactionRepository) {
+                        ForumPostReactionRepository forumPostReactionRepository,
+                        ForumPostReportRepository forumPostReportRepository) {
         this.forumCategoryRepository = forumCategoryRepository;
         this.forumTopicRepository = forumTopicRepository;
         this.forumPostRepository = forumPostRepository;
         this.forumPostReactionRepository = forumPostReactionRepository;
-    }
-
-    // Helper method to calculate PageInfo
-    private PageInfo calculatePageInfo(int currentPage, int pageSize, long totalItems) {
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
-        return PageInfo.builder()
-                .currentPage(currentPage)
-                .pageSize(pageSize)
-                .totalPage(totalPages)
-                .totalItem((int) totalItems)
-                .hasNext(currentPage < totalPages - 1)
-                .hasPrevious(currentPage > 0)
-                .build();
+        this.forumPostReportRepository = forumPostReportRepository;
     }
 
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
-        log.info("Finding all forum categories for organization ID: {}", organizationId);
         return forumCategoryRepository.findByOrganizationId(organizationId)
-                .map(this::convertToCategoryDTO)
+                .flatMap(this::convertToCategoryDTOWithStats)
                 .doOnComplete(() -> log.info("Successfully retrieved forum categories for organization ID: {}", organizationId))
                 .doOnError(error -> log.error("Error finding forum categories for organization ID: {}", organizationId, error));
     }
@@ -81,6 +74,7 @@ public class ForumService {
     public Mono<ForumCategoryDTO> createCategory(CreateForumCategoryRequest request) {
         log.info("Creating forum category: {}", request.getName());
         ForumCategory category = ForumCategory.builder()
+                .parentId(request.getParentId())
                 .organizationId(request.getOrganizationId())
                 .name(request.getName())
                 .description(request.getDescription())
@@ -89,17 +83,16 @@ public class ForumService {
                 .build();
         
         return forumCategoryRepository.save(category)
-                .map(this::convertToCategoryDTO)
+            .flatMap(this::convertToCategoryDTOWithStats)
                 .doOnSuccess(result -> log.info("Successfully created forum category with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
     }
 
     public Mono<ForumCategoryDTO> updateCategory(Integer id, UpdateForumCategoryRequest request) {
-        log.info("Updating forum category ID: {}", id);
         return forumCategoryRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum category not found with ID: {}", id);
-                    return Mono.error(new RuntimeException("Forum category not found with ID: " + id));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(category -> {
                     if (request.getName() != null) {
@@ -111,23 +104,15 @@ public class ForumService {
                     category.setUpdatedAt(LocalDateTime.now());
                     return forumCategoryRepository.save(category);
                 })
-                .map(this::convertToCategoryDTO)
+                .flatMap(this::convertToCategoryDTOWithStats)
                 .doOnSuccess(result -> log.info("Successfully updated forum category ID: {}", id))
                 .doOnError(error -> log.error("Error updating forum category ID: {}", id, error));
     }
 
-    public Mono<Void> deleteCategory(Integer id) {
-        log.info("Deleting forum category ID: {}", id);
-        return forumCategoryRepository.deleteById(id)
-                .doOnSuccess(result -> log.info("Successfully deleted forum category ID: {}", id))
-                .doOnError(error -> log.error("Error deleting forum category ID: {}", id, error));
-    }
-
     // Topic methods
     public Mono<ForumTopicDTO> findTopicByTitle(String title) {
-        log.info("Finding forum topic by title: {}", title);
         return forumTopicRepository.findByTitle(title)
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> {
                     if (result != null) {
                         log.info("Successfully found forum topic: {}", title);
@@ -138,35 +123,25 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topic by title: {}", title, error));
     }
 
-    public Mono<ForumTopicPageResponse> findTopicsByCategoryId(Integer categoryId, int page, int size) {
-        log.info("Finding forum topics for category ID: {}, page: {}, size: {}", categoryId, page, size);
+    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, int page, int size) {
         long offset = (long) page * size;
         
         return forumTopicRepository.findByCategoryIdWithPagination(categoryId, size, offset)
-                .map(this::convertToTopicDTO)
+                .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
                 .zipWith(forumTopicRepository.countByCategoryId(categoryId))
-                .map(tuple -> {
-                    var topics = tuple.getT1();
-                    var totalItems = tuple.getT2();
-                    var pageInfo = calculatePageInfo(page, size, totalItems);
-                    return ForumTopicPageResponse.builder()
-                            .items(topics)
-                            .pageInfo(pageInfo)
-                            .build();
-                })
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(result -> log.info("Successfully retrieved forum topics for category ID: {}", categoryId))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
     public Mono<ForumTopicDTO> createTopic(CreateForumTopicRequest request) {
-        log.info("Creating forum topic: {}", request.getTitle());
         
         // Verify category exists before creating topic
         return forumCategoryRepository.findById(request.getCategoryId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Category not found with ID: {}", request.getCategoryId());
-                    return Mono.error(new RuntimeException("Category not found with ID: " + request.getCategoryId()));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(category -> {
                     ForumTopic topic = ForumTopic.builder()
@@ -175,23 +150,23 @@ public class ForumService {
                             .createdByMemberId(request.getCreatedByMemberId())
                             .categoryId(request.getCategoryId())
                             .viewCount(0)
+                            .isLocked(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
                     
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully created forum topic with ID: {}", result.getId()))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
     }
 
     public Mono<ForumTopicDTO> updateTopic(Integer id, UpdateForumTopicRequest request) {
-        log.info("Updating forum topic ID: {}", id);
         return forumTopicRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum topic not found with ID: {}", id);
-                    return Mono.error(new RuntimeException("Forum topic not found with ID: " + id));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(topic -> {
                     if (request.getTitle() != null) {
@@ -203,21 +178,13 @@ public class ForumService {
                     topic.setUpdatedAt(LocalDateTime.now());
                     return forumTopicRepository.save(topic);
                 })
-                .map(this::convertToTopicDTO)
+                .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnSuccess(result -> log.info("Successfully updated forum topic ID: {}", id))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
 
-    public Mono<Void> deleteTopic(Integer id) {
-        log.info("Deleting forum topic ID: {}", id);
-        return forumTopicRepository.deleteById(id)
-                .doOnSuccess(result -> log.info("Successfully deleted forum topic ID: {}", id))
-                .doOnError(error -> log.error("Error deleting forum topic ID: {}", id, error));
-    }
-
     // Post methods
-    public Mono<ForumPostPageResponse> findPostsByTopicId(Integer topicId, int page, int size, Integer memberId) {
-        log.info("Finding forum posts for topic ID: {}, page: {}, size: {}, memberId: {}", topicId, page, size, memberId);
+    public Mono<PaginatedResponse<ForumPostDTO>> findPostsByTopicId(Integer topicId, int page, int size, Integer memberId) {
         
         // Fire and forget: increment view count for topic
         forumTopicRepository.incrementViewCount(topicId)
@@ -248,43 +215,41 @@ public class ForumService {
                     var totalItems = tuple.getT2();
                     var likedPostIds = tuple.getT3();
                     
-                    // Convert posts to DTOs using pre-fetched liked post IDs
                     var postDTOs = posts.stream()
                             .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
                             .collect(Collectors.toList());
                     
-                    var pageInfo = calculatePageInfo(page, size, totalItems);
-                    return ForumPostPageResponse.builder()
-                            .items(postDTOs)
-                            .pageInfo(pageInfo)
-                            .build();
+                    return PaginatedResponse.of(postDTOs, totalItems, page, size);
                 })
                 .doOnSuccess(result -> log.info("Successfully retrieved forum posts for topic ID: {}", topicId))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
 
     public Mono<ForumPostDTO> createPost(CreateForumPostRequest request) {
-        log.info("Creating forum post for topic ID: {}, author: {}", request.getTopicId(), request.getAuthorMemberId());
         
         // Validate topicId is valid (not 0 or negative)
         if (request.getTopicId() == null || request.getTopicId() <= 0) {
             log.warn("Invalid topic ID: {}", request.getTopicId());
-            return Mono.error(new RuntimeException("Invalid topic ID: must be greater than 0"));
+            return Mono.error(new RuntimeException(ErrorCode.INVALID_TOPIC_ID.getMessage()));
         }
         
         // Verify topic exists before creating post
         return forumTopicRepository.findById(request.getTopicId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Topic not found with ID: {}", request.getTopicId());
-                    return Mono.error(new RuntimeException("Topic not found with ID: " + request.getTopicId()));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(topic -> {
+                    if (Boolean.TRUE.equals(topic.getIsLocked())) {
+                        return Mono.error(new RuntimeException("Topic is locked"));
+                    }
                     ForumPost post = ForumPost.builder()
                             .topicId(request.getTopicId())
                             .authorMemberId(request.getAuthorMemberId())
                             .content(request.getContent())
                             .answerToPostId(request.getAnswerToPostId())
                             .isBanned(false)
+                            .isHidden(false)
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build();
@@ -296,37 +261,7 @@ public class ForumService {
                 .doOnError(error -> log.error("Error creating forum post for topic ID: {}", request.getTopicId(), error));
     }
 
-    public Mono<Void> banPost(Integer id) {
-        log.info("Banning forum post ID: {}", id);
-        return forumPostRepository.banPost(id)
-                .then()
-                .doOnSuccess(result -> log.info("Successfully banned forum post ID: {}", id))
-                .doOnError(error -> log.error("Error banning forum post ID: {}", id, error));
-    }
-
-    public Mono<Void> unbanPost(Integer id) {
-        log.info("Unbanning forum post ID: {}", id);
-        return forumPostRepository.unbanPost(id)
-                .then()
-                .doOnSuccess(result -> log.info("Successfully unbanned forum post ID: {}", id))
-                .doOnError(error -> log.error("Error unbanning forum post ID: {}", id, error));
-    }
-
-    public Mono<Void> deletePost(Integer id) {
-        log.info("Deleting forum post ID: {}", id);
-        return forumPostRepository.clearAnswerReferences(id)
-                .flatMap(count -> {
-                    if (count > 0) {
-                        log.info("Cleared {} answer references for post ID: {}", count, id);
-                    }
-                    return forumPostRepository.deleteById(id);
-                })
-                .doOnSuccess(result -> log.info("Successfully deleted forum post ID: {}", id))
-                .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
-    }
-
     public Mono<ForumPostDTO> answerToPost(Integer postId, CreateForumPostRequest request) {
-        log.info("Creating answer to post ID: {}", postId);
         request.setAnswerToPostId(postId);
         return createPost(request)
                 .map(result -> {
@@ -337,32 +272,78 @@ public class ForumService {
                 .doOnError(error -> log.error("Error creating answer to post ID: {}", postId, error));
     }
 
+    public Mono<ForumPostDTO> updatePost(Integer id, UpdateForumPostRequest request) {
+        return forumPostRepository.findById(id)
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Forum post not found with ID: {}", id);
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                }))
+                .flatMap(post -> {
+                    post.setContent(request.getContent());
+                    post.setUpdatedAt(LocalDateTime.now());
+                    return forumPostRepository.save(post);
+                })
+                .map(this::convertToPostDTO)
+                .doOnSuccess(result -> log.info("Successfully updated forum post ID: {}", id))
+                .doOnError(error -> log.error("Error updating forum post ID: {}", id, error));
+    }
+
+    public Mono<Void> deletePost(Integer id) {
+        return forumPostRepository.findById(id)
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Forum post not found with ID: {}", id);
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                }))
+                .flatMap(post -> {
+                    // Delete all reactions for this post first
+                    return forumPostReactionRepository.deleteByPostId(id)
+                            .then(forumPostRepository.deleteById(id));
+                })
+                .doOnSuccess(v -> log.info("Successfully deleted forum post ID: {}", id))
+                .doOnError(error -> log.error("Error deleting forum post ID: {}", id, error));
+    }
+
+    public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
+        return forumPostRepository.findById(postId)
+                .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage())))
+                .flatMap(post -> {
+                    ForumPostReport report = ForumPostReport.builder()
+                            .postId(postId)
+                            .reporterMemberId(request.getReporterMemberId())
+                            .reason(request.getReason())
+                            .description(request.getDescription())
+                            .status("PENDING")
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    return forumPostReportRepository.save(report);
+                })
+                .map(this::convertToReportDTO);
+    }
+
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
     /**
      * Like or unlike a forum post (toggle)
      */
     public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
-        log.info("Adding/removing like to post ID: {}, member: {}", 
-                request.getPostId(), request.getMemberId());
-        
         // Validate post exists
         return forumPostRepository.findById(request.getPostId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Post not found with ID: {}", request.getPostId());
-                    return Mono.error(new RuntimeException("Post not found with ID: " + request.getPostId()));
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
                 }))
                 .flatMap(post -> {
                     // Check if reaction already exists
                     return forumPostReactionRepository.findByPostIdAndMemberId(
                             request.getPostId(), request.getMemberId())
                             .flatMap(existingReaction -> {
-                                // If reaction exists, remove it (unlike)
-                                log.info("Removing existing like from post ID: {}, member: {}", 
+                                // If reaction exists, remove it (unlike) — return empty to signal removal
+                                log.info("Removing existing like from post ID: {}, member: {}",
                                         request.getPostId(), request.getMemberId());
                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                         request.getPostId(), request.getMemberId())
-                                        .then(Mono.<ForumPostReaction>error(new RuntimeException("REACTION_REMOVED")));
+                                        .then(Mono.<ForumPostReaction>empty());
                             })
                             .switchIfEmpty(Mono.defer(() -> {
                                 // No existing reaction, create new one (like)
@@ -378,19 +359,13 @@ public class ForumService {
                 })
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("Successfully toggled like for post ID: {}", request.getPostId()))
-                .doOnError(error -> {
-                    if (!"REACTION_REMOVED".equals(error.getMessage())) {
-                        log.error("Error toggling like for post ID: {}", request.getPostId(), error);
-                    }
-                });
+                .doOnError(error -> log.error("Error toggling like for post ID: {}", request.getPostId(), error));
     }
 
     /**
      * Get like count for a post
      */
     public Mono<Map<String, Long>> getPostReactionCounts(Integer postId) {
-        log.info("Getting like count for post ID: {}", postId);
-        
         return forumPostReactionRepository.countReactionsByPostId(postId)
                 .map(count -> {
                     Map<String, Long> map = new HashMap<>();
@@ -405,7 +380,6 @@ public class ForumService {
      * Get user's reaction for a specific post
      */
     public Mono<ForumPostReactionDTO> getUserReaction(Integer postId, Integer memberId) {
-        log.info("Getting user reaction for post ID: {}, member: {}", postId, memberId);
         return forumPostReactionRepository.findByPostIdAndMemberId(postId, memberId)
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("Found user reaction for post ID: {}", postId))
@@ -413,18 +387,57 @@ public class ForumService {
     }
 
     // Helper methods to convert entities to DTOs
+    public Mono<ForumCategoryDTO> findCategoryById(Integer id) {
+        return forumCategoryRepository.findById(id)
+                .flatMap(this::convertToCategoryDTOWithStats)
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.warn("Forum category not found with ID: {}", id);
+                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
+                }))
+                .doOnSuccess(result -> log.info("Successfully found forum category ID: {}", id))
+                .doOnError(error -> log.error("Error finding forum category ID: {}", id, error));
+    }
+
+    private Mono<ForumCategoryDTO> convertToCategoryDTOWithStats(ForumCategory category) {
+        ForumCategoryDTO base = convertToCategoryDTO(category);
+        if (category.getParentId() == null) {
+            return Mono.just(base);
+        }
+
+        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId()).defaultIfEmpty(0L);
+        Mono<Long> participantCountMono = forumTopicRepository
+                .countDistinctParticipantsByCategoryId(category.getId())
+                .defaultIfEmpty(0L);
+
+        return Mono.zip(topicCountMono, participantCountMono)
+                .map(tuple -> {
+                    base.setTopicCount(tuple.getT1());
+                    base.setParticipantCount(tuple.getT2());
+                    return base;
+                });
+    }
+
     private ForumCategoryDTO convertToCategoryDTO(ForumCategory category) {
         return ForumCategoryDTO.builder()
                 .id(category.getId())
+                .parentId(category.getParentId())
                 .organizationId(category.getOrganizationId())
                 .name(category.getName())
                 .description(category.getDescription())
+                .topicCount(null)
+                .participantCount(null)
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
                 .build();
     }
 
-    private ForumTopicDTO convertToTopicDTO(ForumTopic topic) {
+    private Mono<ForumTopicDTO> convertToTopicDTOWithPostCount(ForumTopic topic) {
+        return forumPostRepository.countByTopicId(topic.getId())
+                .defaultIfEmpty(0L)
+                .map(postCount -> convertToTopicDTO(topic, postCount));
+    }
+
+    private ForumTopicDTO convertToTopicDTO(ForumTopic topic, Long postCount) {
         return ForumTopicDTO.builder()
                 .id(topic.getId())
                 .organizationId(topic.getOrganizationId())
@@ -432,6 +445,7 @@ public class ForumService {
                 .createdByMemberId(topic.getCreatedByMemberId())
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
+                .postCount(postCount)
                 .createdAt(topic.getCreatedAt())
                 .updatedAt(topic.getUpdatedAt())
                 .build();
@@ -449,9 +463,25 @@ public class ForumService {
                 .content(post.getContent())
                 .answerToPostId(post.getAnswerToPostId())
                 .isBanned(post.getIsBanned())
+                .isHidden(post.getIsHidden())
                 .isLike(isLike)
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
+                .build();
+    }
+
+    private ForumPostReportDTO convertToReportDTO(ForumPostReport report) {
+        return ForumPostReportDTO.builder()
+                .id(report.getId())
+                .postId(report.getPostId())
+                .reporterMemberId(report.getReporterMemberId())
+                .reason(report.getReason())
+                .description(report.getDescription())
+                .status(report.getStatus())
+                .reviewedByUserId(report.getReviewedByUserId())
+                .reviewNote(report.getReviewNote())
+                .createdAt(report.getCreatedAt())
+                .updatedAt(report.getUpdatedAt())
                 .build();
     }
 

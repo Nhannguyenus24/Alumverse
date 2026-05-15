@@ -1,9 +1,10 @@
 import { Breadcrumbs, Link, Typography } from '@mui/material';
-import { useNavigate } from 'react-router';
+
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const Breadcrumb = ({ items = [], uppercase = false, color = 'text', fontSize }) => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
 
   // Maximum 3 levels
   const displayItems = items.slice(-3);
@@ -54,7 +55,10 @@ const Breadcrumb = ({ items = [], uppercase = false, color = 'text', fontSize })
             key={index}
             component="button"
             variant="caption"
-            onClick={() => item.path && navigate(item.path)}
+            onClick={() =>
+              item.path &&
+              navigate(item.path, item.state != null ? { state: item.state } : undefined)
+            }
             sx={linkSx}
           >
             {item.label}

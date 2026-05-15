@@ -3,6 +3,84 @@ import { Box, Button, TextField, Paper, Typography, Avatar, Fade, Tooltip } from
 import { Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
 
+const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
+const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CHAT_HISTORY_MAX_MESSAGES = 30;
+
+const buildDefaultMessage = () => ({
+  id: 1,
+  text: 'Xin chào! 👋 Tôi là trợ lý ảo của HCMUS. Tôi có thể giúp bạn tìm hiểu thêm về trường, các chương trình đào tạo, và nhiều thông tin hữu ích khác. Có câu hỏi gì cho tôi không?',
+  isBot: true,
+  timestamp: new Date(),
+});
+
+const normalizeAndPruneMessages = (messages) => {
+  const now = Date.now();
+
+  const normalized = messages
+    .map((message) => ({
+      ...message,
+      timestamp: message.timestamp instanceof Date
+        ? message.timestamp
+        : new Date(message.timestamp),
+    }))
+    .filter((message) => {
+      if (!message || typeof message.text !== 'string' || !message.text.trim()) {
+        return false;
+      }
+
+      const timestampValue = message.timestamp?.getTime?.();
+      if (!Number.isFinite(timestampValue)) {
+        return false;
+      }
+
+      return now - timestampValue <= CHAT_HISTORY_TTL_MS;
+    });
+
+  if (normalized.length <= CHAT_HISTORY_MAX_MESSAGES) {
+    return normalized;
+  }
+
+  return normalized.slice(-CHAT_HISTORY_MAX_MESSAGES);
+};
+
+const loadMessagesFromStorage = () => {
+  try {
+    const rawHistory = localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
+    if (!rawHistory) {
+      return [buildDefaultMessage()];
+    }
+
+    const parsedHistory = JSON.parse(rawHistory);
+    if (!Array.isArray(parsedHistory)) {
+      return [buildDefaultMessage()];
+    }
+
+    const prunedHistory = normalizeAndPruneMessages(parsedHistory);
+    return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage()];
+  } catch (error) {
+    console.error('Error loading chat history from localStorage:', error);
+    return [buildDefaultMessage()];
+  }
+};
+
+const saveMessagesToStorage = (messages) => {
+  try {
+    const prunedMessages = normalizeAndPruneMessages(messages);
+    const serializableMessages = prunedMessages.map((message) => ({
+      ...message,
+      timestamp: message.timestamp.toISOString(),
+    }));
+
+    localStorage.setItem(
+      CHAT_HISTORY_STORAGE_KEY,
+      JSON.stringify(serializableMessages)
+    );
+  } catch (error) {
+    console.error('Error saving chat history to localStorage:', error);
+  }
+};
+
 // Animations
 const pulse = keyframes`
   0%, 100% {
@@ -46,7 +124,9 @@ const AvatarWrapper = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
 }));
 
-const AnimatedAvatar = styled(Avatar)(({ theme, isAnimating }) => ({
+const AnimatedAvatar = styled(Avatar, {
+  shouldForwardProp: (prop) => prop !== 'isAnimating',
+})(({ theme, isAnimating }) => ({
   width: 60,
   height: 60,
   backgroundColor: theme.palette.primary.main,
@@ -126,13 +206,17 @@ const MessageContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-const Message = styled(Box)(({ theme, isBot }) => ({
+const Message = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isBot',
+})(({ theme, isBot }) => ({
   display: 'flex',
   justifyContent: isBot ? 'flex-start' : 'flex-end',
   animation: `${slideUp} 0.3s ease-out`,
 }));
 
-const MessageBubble = styled(Box)(({ theme, isBot }) => ({
+const MessageBubble = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isBot',
+})(({ theme, isBot }) => ({
   maxWidth: '80%',
   padding: theme.spacing(1.2, 1.6),
   borderRadius: theme.spacing(2),
@@ -237,14 +321,7 @@ const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
 
 export default function FitBot() {
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: 'Xin chào! 👋 Tôi là trợ lý ảo của HCMUS. Tôi có thể giúp bạn tìm hiểu thêm về trường, các chương trình đào tạo, và nhiều thông tin hữu ích khác. Có câu hỏi gì cho tôi không?',
-      isBot: true,
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState(() => loadMessagesFromStorage());
   const [inputValue, setInputValue] = useState('');
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState('');
@@ -262,6 +339,11 @@ export default function FitBot() {
       messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isTyping, isChatOpen]);
+
+  // Persist chat history to localStorage
+  useEffect(() => {
+    saveMessagesToStorage(messages);
+  }, [messages]);
 
   // Cleanup SSE on unmount
   useEffect(() => {
@@ -440,7 +522,11 @@ export default function FitBot() {
               justifyContent: 'center',
             }}
           >
-            🤖
+            <img
+              src="/fitbot/FITBOT.svg"
+              alt="FitBot"
+              style={{ width: 36, height: 36 }}
+            />
           </AnimatedAvatar>
         </Tooltip>
 
@@ -459,8 +545,16 @@ export default function FitBot() {
         <ChatWindow>
           {/* Header */}
           <ChatHeader>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              🤖 HCMUS Assistant
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <img
+                src="/fitbot/FITBOT.svg"
+                alt="FitBot"
+                style={{ width: 36, height: 36 }}
+              />
+              HCMUS Assistant
             </Typography>
             <Button
               size="small"

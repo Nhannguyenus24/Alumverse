@@ -1,0 +1,75 @@
+{
+    "no_banks": "52",
+    "data": [
+      {
+        "name": "Ngân hàng TMCP Công thương Việt Nam",
+        "code": "ICB",
+        "bin": "970415",
+        "short_name": "VietinBank",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Quân đội",
+        "code": "MB",
+        "bin": "970422",
+        "short_name": "MBBank",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Á Châu",
+        "code": "ACB",
+        "bin": "970416",
+        "short_name": "ACB",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Việt Nam Thịnh Vượng",
+        "code": "VPB",
+        "bin": "970432",
+        "short_name": "VPBank",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Tiên Phong",
+        "code": "TPB",
+        "bin": "970423",
+        "short_name": "TPBank",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Hàng Hải",
+        "code": "MSB",
+        "bin": "970426",
+        "short_name": "MSB",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam",
+        "code": "BIDV",
+        "bin": "970418",
+        "short_name": "BIDV",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Sài Gòn Thương Tín",
+        "code": "STB",
+        "bin": "970403",
+        "short_name": "Sacombank",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Phương Đông",
+        "code": "OCB",
+        "bin": "970448",
+        "short_name": "OCB",
+        "supported": true
+      },
+      {
+        "name": "Ngân hàng TMCP Kiên Long",
+        "code": "KLB",
+        "bin": "970452",
+        "short_name": "KienLongBank",
+        "supported": true
+      }
+    ]
+  }

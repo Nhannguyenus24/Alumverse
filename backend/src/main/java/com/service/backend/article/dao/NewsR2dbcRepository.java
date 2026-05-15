@@ -1,6 +1,6 @@
 package com.service.backend.article.dao;
 
-import com.service.backend.article.domain.entity.News;
+import com.service.backend.article.entity.News;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
@@ -16,6 +16,9 @@ public interface NewsR2dbcRepository extends ReactiveCrudRepository<News, Intege
 
     @Query("SELECT COUNT(*) FROM news WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
+
+    @Query("SELECT * FROM news ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<News> findAllWithPagination(int limit, int offset);
 
     @Query("SELECT * FROM news WHERE organization_id = :organizationId AND is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<News> findPublishedByOrganizationId(Integer organizationId, int limit, int offset);
