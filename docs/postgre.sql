@@ -38,6 +38,7 @@ CREATE TABLE "organizations" (
   "features_config" json,
   "programs" json,
   "majors" json,
+  "status" varchar DEFAULT 'active',
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
