@@ -1,8 +1,173 @@
-import { useState } from 'react';
-import { Stack, Button, Select, MenuItem,
-         Checkbox, ListItemText, TextField,
-         Slider, Box, Typography, } from '@mui/material';
+import { useEffect, useState } from 'react';
+import {
+  Stack,
+  Button,
+  Select,
+  MenuItem,
+  Checkbox,
+  ListItemText,
+  TextField,
+  Slider,
+  Box,
+  Typography,
+  Popover,
+  Paper,
+} from '@mui/material';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+
+const INPUT_FILTER_DEFAULTS = { text: '', number: '' };
+
+/**
+ * Trigger giống Select; bấm mở panel nhập (text hoặc number qua inputMode).
+ */
+const FilterInputPopover = ({ filter, value, onCommit }) => {
+  const inputMode = filter.inputMode === 'number' ? 'number' : 'text';
+  const storedValue =
+    value === undefined || value === null ? INPUT_FILTER_DEFAULTS[inputMode] : String(value);
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [draft, setDraft] = useState(storedValue);
+
+  const open = Boolean(anchorEl);
+  const isActive = Boolean(String(storedValue).trim());
+
+  useEffect(() => {
+    if (open) {
+      setDraft(storedValue);
+    }
+  }, [open, storedValue]);
+
+  const close = () => setAnchorEl(null);
+
+  const handleOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClear = () => {
+    onCommit('');
+    setDraft('');
+    close();
+  };
+
+  const handleApply = () => {
+    const trimmed = draft.trim();
+
+    if (!trimmed) {
+      onCommit('');
+      close();
+      return;
+    }
+
+    if (inputMode === 'number') {
+      const parsed = Number.parseInt(trimmed, 10);
+      if (Number.isNaN(parsed)) return;
+      if (filter.min != null && parsed < filter.min) return;
+      if (filter.max != null && parsed > filter.max) return;
+      onCommit(String(parsed));
+    } else {
+      onCommit(trimmed);
+    }
+
+    close();
+  };
+
+  const displayLabel = () => {
+    if (!isActive) return filter.label;
+    const shown = String(storedValue);
+    if (inputMode === 'number') return `${filter.label}: ${shown}`;
+    return shown.length > 8 ? `${shown.slice(0, 8)}…` : shown;
+  };
+
+  return (
+    <>
+      <Box
+        role="button"
+        tabIndex={0}
+        onClick={handleOpen}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleOpen(e);
+          }
+        }}
+        sx={(theme) => ({
+          ...filterBaseSx(theme, isActive),
+          minWidth: 140,
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 0.5,
+          userSelect: 'none',
+        })}
+      >
+        <Typography
+          component="span"
+          noWrap
+          sx={{
+            fontSize: 'inherit',
+            fontWeight: 'inherit',
+            lineHeight: 1.2,
+            maxWidth: 200,
+          }}
+        >
+          {displayLabel()}
+        </Typography>
+        <KeyboardArrowDownIcon sx={{ fontSize: '1.1rem', flexShrink: 0 }} />
+      </Box>
+
+      <Popover
+        open={open}
+        anchorEl={anchorEl}
+        onClose={close}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        slotProps={{ paper: { sx: { mt: 0.75 } } }}
+      >
+        <Paper elevation={3} sx={{ p: 2, minWidth: 260 }}>
+          <Stack spacing={1.5}>
+            <Typography variant="subtitle2" fontWeight={700} color="primary.main">
+              {filter.label}
+            </Typography>
+            <TextField
+              autoFocus
+              fullWidth
+              size="small"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={filter.placeholder || ''}
+              type={inputMode === 'number' ? 'number' : 'text'}
+              inputProps={
+                inputMode === 'number'
+                  ? {
+                      min: filter.min,
+                      max: filter.max,
+                      inputMode: 'numeric',
+                    }
+                  : undefined
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleApply();
+                }
+              }}
+            />
+            <Stack direction="row" spacing={1} justifyContent="flex-end">
+              <Button size="small" onClick={handleClear}>
+                Xóa
+              </Button>
+              <Button size="small" variant="contained" onClick={handleApply}>
+                Áp dụng
+              </Button>
+            </Stack>
+          </Stack>
+        </Paper>
+      </Popover>
+    </>
+  );
+};
 
 const filterBaseSx = (theme, active) => ({
   height: 40,
@@ -44,6 +209,10 @@ const handleAllClick = () => {
       reset[item.key] = '';
     } else if (item.type === 'dropdown') {
       reset[item.key] = item.multiple ? [] : '';
+    } else if (item.type === 'input') {
+      reset[item.key] = '';
+    } else if (item.type === 'topics') {
+      reset[item.key] = [];
     } else {
       reset[item.key] = [];
     }
@@ -89,6 +258,15 @@ const handleAllClick = () => {
 
   // ===== RANGE =====
   const handleRangeChange = (key, newValue) => {
+    updateState({
+      ...internalValue,
+      all: false,
+      [key]: newValue,
+    });
+  };
+
+  // ===== INPUT (text / number popover) =====
+  const handleInputCommit = (key, newValue) => {
     updateState({
       ...internalValue,
       all: false,
@@ -233,6 +411,20 @@ return (
                     />
                 </Box>
             );
+        }
+
+        // ===== INPUT POPOVER (text | number) =====
+        if (filter.type === 'input') {
+          const currentValue = internalValue[filter.key] ?? '';
+
+          return (
+            <FilterInputPopover
+              key={filter.key}
+              filter={filter}
+              value={currentValue}
+              onCommit={(newValue) => handleInputCommit(filter.key, newValue)}
+            />
+          );
         }
 
         // ===== RANGE SLIDER =====
