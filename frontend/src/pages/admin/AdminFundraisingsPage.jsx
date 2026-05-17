@@ -19,7 +19,7 @@ import {
   InputLabel,
   Select,
 } from "@mui/material";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -313,8 +313,14 @@ const AdminFundraisingsPage = () => {
           onClick={(ev) => ev.stopPropagation()}
         >
           <Tooltip title="Chi tiết">
-            <IconButton size="small" onClick={() => setDetailItem(fund)}>
-              <VisibilityOutlinedIcon fontSize="small" />
+            <IconButton
+              size="small"
+              onClick={() => {
+                const slug = activeOrganization?.slug || organizations.find(o => o.id === activeOrgId)?.slug || "hcmus";
+                window.open(`/${slug}/donations/${fund.id}`, "_blank");
+              }}
+            >
+              <LaunchOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
