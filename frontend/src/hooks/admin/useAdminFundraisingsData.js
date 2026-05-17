@@ -37,7 +37,7 @@ const extractFunds = (payload) => {
   return [];
 };
 
-const useAdminFundraisingsData = () => {
+const useAdminFundraisingsData = (organizationId) => {
   const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -52,7 +52,11 @@ const useAdminFundraisingsData = () => {
     setLoading(true);
     setLoadError(false);
     try {
-      const data = await fundApi.getFunds({ page: 0, limit: 200 });
+      const params = { page: 0, limit: 200 };
+      if (organizationId) {
+        params.organizationId = organizationId;
+      }
+      const data = await fundApi.getFunds(params);
       const rows = extractFunds(data).map(mapFundRow);
       setAllRows(rows);
     } catch {
@@ -61,7 +65,7 @@ const useAdminFundraisingsData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [organizationId]);
 
   useEffect(() => {
     loadFunds();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useOutletContext, useNavigate } from "react-router";
+import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Box,
@@ -17,6 +17,8 @@ import {
   Typography,
 } from "@mui/material";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
@@ -25,6 +27,10 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useAdminSystemContext } from "../../contexts/AdminSystemContext";
+import { adminOrganizationApi } from "../../api/adminOrganizationApi";
 
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
@@ -36,12 +42,24 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 
 const AdminFundraisingsPage = () => {
-  const navigate = useNavigate();
+  const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
+  const { activeOrgId, setActiveOrgId } = useAdminSystemContext();
+  const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: "Quản lý gây quỹ", active: true }]);
+
+    const fetchOrgs = async () => {
+      try {
+        const data = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        setOrganizations(data || []);
+      } catch (err) {
+        console.error("Failed to fetch organizations", err);
+      }
+    };
+    fetchOrgs();
   }, [setBreadcrumbs]);
 
   const {
@@ -57,10 +75,12 @@ const AdminFundraisingsPage = () => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
-  } = useAdminFundraisingsData();
+  } = useAdminFundraisingsData(activeOrgId);
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [closeTarget, setCloseTarget] = useState(null);
+  const [isClosing, setIsClosing] = useState(false);
 
   // Aggregated stats from current data for visualization
   const stats = {
@@ -155,34 +175,78 @@ const AdminFundraisingsPage = () => {
               <VisibilityOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Kích hoạt">
+          <Tooltip title="Chỉnh sửa">
             <IconButton
               size="small"
-              color="success"
-              onClick={() => {
-                updateStatus(fund.id, "ACTIVE");
-                enqueueSnackbar("Đã kích hoạt chiến dịch.", {
-                  variant: "success",
-                });
-              }}
+              onClick={() => navigate(`/donations/${fund.id}/edit`)}
             >
-              <CheckCircleOutlineIcon fontSize="small" />
+              <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Tạm dừng">
-            <IconButton
-              size="small"
-              color="warning"
-              onClick={() => {
-                updateStatus(fund.id, "PAUSED");
-                enqueueSnackbar("Đã tạm dừng chiến dịch.", {
-                  variant: "warning",
-                });
-              }}
-            >
-              <PauseCircleOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {fund.status === "DRAFT" && (
+            <Tooltip title="Kích hoạt">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => {
+                  updateStatus(fund.id, "ACTIVE");
+                  enqueueSnackbar("Đã kích hoạt chiến dịch.", {
+                    variant: "success",
+                  });
+                }}
+              >
+                <CheckCircleOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {fund.status === "ACTIVE" && (
+            <Tooltip title="Tạm dừng">
+              <IconButton
+                size="small"
+                color="warning"
+                onClick={() => {
+                  updateStatus(fund.id, "PAUSED");
+                  enqueueSnackbar("Đã tạm dừng chiến dịch.", {
+                    variant: "warning",
+                  });
+                }}
+              >
+                <PauseCircleOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {fund.status === "PAUSED" && (
+            <Tooltip title="Kích hoạt lại">
+              <IconButton
+                size="small"
+                color="success"
+                onClick={() => {
+                  updateStatus(fund.id, "ACTIVE");
+                  enqueueSnackbar("Đã kích hoạt lại chiến dịch.", {
+                    variant: "success",
+                  });
+                }}
+              >
+                <CheckCircleOutlineIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {fund.status !== "COMPLETED" && (
+            <Tooltip title="Đóng quỹ">
+              <IconButton
+                size="small"
+                sx={{
+                  color: "#f2cd3c",
+                  "&:hover": {
+                    backgroundColor: "rgba(242, 205, 60, 0.08)",
+                  },
+                }}
+                onClick={() => setCloseTarget(fund)}
+              >
+                <LockOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title="Xóa">
             <IconButton
               size="small"
@@ -223,10 +287,8 @@ const AdminFundraisingsPage = () => {
         sx={{
           mb: 4,
           display: "flex",
-          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: "space-between",
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          gap: 2
+          alignItems: "flex-end",
         }}
       >
         <Box>
@@ -242,6 +304,30 @@ const AdminFundraisingsPage = () => {
             sinh viên.
           </Typography>
         </Box>
+        <Stack direction="row" spacing={2}>
+          <TextField
+            select
+            size="small"
+            label="Tổ chức"
+            value={activeOrgId || ""}
+            onChange={(e) => setActiveOrgId(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            {organizations.map((org) => (
+              <MenuItem key={org.id} value={org.id}>
+                {org.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => navigate("/donations/create")}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
+          >
+            Tạo chiến dịch
+          </Button>
+        </Stack>
       </Box>
 
       <Box
@@ -285,6 +371,7 @@ const AdminFundraisingsPage = () => {
         rows={fundraisings}
         totalCount={filteredCount}
         page={page}
+        rowsPerPage={rowsPerPage}
         onPageChange={(_, p) => setPage(p)}
         onRowsPerPageChange={(e) => {
           setRowsPerPage(Number(e.target.value));
@@ -297,15 +384,6 @@ const AdminFundraisingsPage = () => {
         searchValue={search}
         filters={Filters}
         onRowClick={(f) => setDetailItem(f)}
-        addButton={
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
-          >
-            Tạo chiến dịch
-          </Button>
-        }
       />
 
       {/* Dialogs */}
@@ -445,6 +523,27 @@ const AdminFundraisingsPage = () => {
           }
           setDeleteTarget(null);
         }}
+      />
+
+      <DonationCloseDialog
+        open={Boolean(closeTarget)}
+        campaign={closeTarget ? { name: closeTarget.title } : null}
+        onClose={() => setCloseTarget(null)}
+        onConfirm={async () => {
+          if (!closeTarget) return;
+          setIsClosing(true);
+          try {
+            await updateStatus(closeTarget.id, "COMPLETED");
+            enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
+          } catch (err) {
+            const errorMsg = err?.response?.data?.message || "Đóng quỹ thất bại.";
+            enqueueSnackbar(errorMsg, { variant: "error" });
+          } finally {
+            setIsClosing(false);
+            setCloseTarget(null);
+          }
+        }}
+        isSubmitting={isClosing}
       />
     </Box>
   );
