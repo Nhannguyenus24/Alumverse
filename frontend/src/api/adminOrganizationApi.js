@@ -82,6 +82,16 @@ export const adminOrganizationApi = {
     return unwrap(response);
   },
 
+  async updateProgram(id, oldValue, newValue) {
+    const response = await apiClient.put(`/admin/organizations/${id}/programs`, { oldValue, newValue });
+    return unwrap(response);
+  },
+
+  async removeProgram(id, value) {
+    const response = await apiClient.delete(`/admin/organizations/${id}/programs`, { params: { value } });
+    return unwrap(response);
+  },
+
   async getMajors(id) {
     const response = await apiClient.get(`/admin/organizations/${id}/majors`);
     return unwrap(response);
@@ -89,6 +99,15 @@ export const adminOrganizationApi = {
 
   async addMajor(id, value) {
     const response = await apiClient.post(`/admin/organizations/${id}/majors`, { value });
+    return unwrap(response);
+  },
+  async updateMajor(id, oldValue, newValue) {
+    const response = await apiClient.put(`/admin/organizations/${id}/majors`, { oldValue, newValue });
+    return unwrap(response);
+  },
+
+  async removeMajor(id, value) {
+    const response = await apiClient.delete(`/admin/organizations/${id}/majors`, { params: { value } });
     return unwrap(response);
   },
 };

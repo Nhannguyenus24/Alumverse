@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import useOrganizationStore from '../stores/organizationStore';
 import useAuthStore from '../stores/authStore';
 import apiClient from '../utils/axios';
@@ -11,9 +11,10 @@ import apiClient from '../utils/axios';
  * - Avoids duplicate requests while loading.
  * - Logs out user when switching to a different organization (JWT is org-scoped).
  */
-export const useOrganization = () => {
+export const useOrganization = ({ enabled = true } = {}) => {
   const { slug: routeSlug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const currentSlug = useOrganizationStore((state) => state.currentSlug);
   const organization = useOrganizationStore((state) => state.organization);
@@ -28,7 +29,7 @@ export const useOrganization = () => {
   }, [routeSlug, currentSlug, organization?.slug]);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!enabled || !slug) return;
 
     const isOrgSwitch = currentSlug && currentSlug !== slug;
     const isAuthenticated = !!useAuthStore.getState().token;
@@ -49,7 +50,7 @@ export const useOrganization = () => {
     if (currentSlug === slug && (loading || organization || error)) return;
 
     fetchOrganization(slug);
-  }, [slug, currentSlug, loading, organization, error, fetchOrganization, navigate, reset]);
+  }, [enabled, slug, currentSlug, loading, organization, error, fetchOrganization, navigate, reset, location.pathname]);
 
   const isOrganizationNotFound = statusCode === 404;
 
@@ -60,7 +61,7 @@ export const useOrganization = () => {
     error,
     isOrganizationNotFound,
     fetchOrganization,
-    refetch: () => (slug ? fetchOrganization(slug) : Promise.resolve()),
+    refetch: () => (enabled && slug ? fetchOrganization(slug) : Promise.resolve()),
     reset,
   };
 };

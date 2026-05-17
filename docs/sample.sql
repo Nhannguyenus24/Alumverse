@@ -49,6 +49,44 @@ INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "featur
 ('HCMUS - Business Administration', 'ba-hcmus', 'https://api.example.com/logos/ba.png', '{"primary":"#f57c00","secondary":"#512da8"}', '{"mentorship":true,"job":true,"fund":false,"events":true,"forum":true}', '["Regular"]', '["Business Administration","Marketing","Finance"]', NOW() - INTERVAL '350 days'),
 ('HCMUS - Engineering', 'eng-hcmus', 'https://api.example.com/logos/eng.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Mechanical Engineering","Electrical Engineering","Mechatronics"]', NOW() - INTERVAL '340 days');
 
+-- ============= ORGANIZATION INTRODUCTIONS DATA =============
+INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "mission", "core_values", "image_urls", "banner_url", "updated_at") VALUES
+(1, 
+ 'The Computer Science Department at HCMUS is a leading institution dedicated to advancing computer science education, research, and innovation. We prepare students to become proficient software engineers, researchers, and technology leaders.',
+ 'To be a world-class computer science program recognized for excellence in education and research',
+ 'To provide comprehensive education in computer science and cultivate innovative problem-solvers',
+ 'Excellence, Innovation, Integrity, Collaboration, Continuous Learning',
+ '["https://api.example.com/intro/cs_1.jpg","https://api.example.com/intro/cs_2.jpg","https://api.example.com/intro/cs_3.jpg"]',
+ 'https://api.example.com/banners/cs_banner.jpg',
+ NOW() - INTERVAL '30 days'),
+
+(2,
+ 'The Information Technology Department provides comprehensive IT education focused on practical skills and real-world applications. Our programs equip graduates with the expertise needed to thrive in the rapidly evolving technology industry.',
+ 'To become the leading IT program transforming lives through technology education',
+ 'To deliver quality IT education that prepares students for successful careers and innovation',
+ 'Quality, Relevance, Teamwork, Accountability, Customer-focused',
+ '["https://api.example.com/intro/it_1.jpg","https://api.example.com/intro/it_2.jpg"]',
+ 'https://api.example.com/banners/it_banner.jpg',
+ NOW() - INTERVAL '28 days'),
+
+(3,
+ 'The Business Administration Department develops future business leaders with strong analytical, strategic, and managerial skills. We combine theoretical knowledge with practical experience to prepare students for diverse business careers.',
+ 'To produce ethical and innovative business leaders who drive organizational and societal growth',
+ 'To provide business education that develops strategic thinkers and ethical leaders',
+ 'Integrity, Innovation, Responsibility, Excellence, Inclusivity',
+ '["https://api.example.com/intro/ba_1.jpg","https://api.example.com/intro/ba_2.jpg"]',
+ 'https://api.example.com/banners/ba_banner.jpg',
+ NOW() - INTERVAL '26 days'),
+
+(4,
+ 'The Engineering Department is committed to producing skilled engineers who can design and build solutions to real-world problems. Our programs emphasize practical engineering skills, research capabilities, and professional ethics.',
+ 'To be recognized as a premier engineering program developing innovative solutions',
+ 'To educate and mentor engineers who contribute to technological advancement',
+ 'Precision, Innovation, Sustainability, Professionalism, Teamwork',
+ '["https://api.example.com/intro/eng_1.jpg","https://api.example.com/intro/eng_2.jpg","https://api.example.com/intro/eng_3.jpg"]',
+ 'https://api.example.com/banners/eng_banner.jpg',
+ NOW() - INTERVAL '25 days');
+
 -- ============= ORGANIZATION MEMBERS DATA =============
 INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
 -- CS Department Members
