@@ -40,10 +40,15 @@ import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import ColorLensIcon from '@mui/icons-material/ColorLens';
+import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import DOMPurify from 'dompurify';
 import AdminStatusChip from './AdminStatusChip';
 import { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 
 const formatOrgDate = (value) => {
   if (!value) {
@@ -152,6 +157,48 @@ const AdminOrganizationMasterDetail = ({
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
+
+  // Local editable states for config tab
+  const [brandState, setBrandState] = useState({
+    logoUrl: '',
+    faviconUrl: '',
+    heroBannerUrl: '',
+    themeColors: { primary: '#1976d2', secondary: '#9c27b0', accent: '#ffb300' },
+  });
+  const [programList, setProgramList] = useState([]);
+  const [majorList, setMajorList] = useState([]);
+  const [newProgram, setNewProgram] = useState('');
+  const [newMajor, setNewMajor] = useState('');
+
+  useEffect(() => {
+    if (!selectedOrg) return;
+    // init programs / majors
+    setProgramList(normalizeList(selectedOrg.programs));
+    setMajorList(normalizeList(selectedOrg.majors));
+
+    // init brand/theme from featuresConfig if present
+    let cfg = {};
+    try {
+      cfg = selectedOrg.featuresConfig
+        ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
+        : {};
+    } catch {
+      cfg = {};
+    }
+    const brand = cfg.brand_config || cfg.brandConfig || {};
+    const themeColors = brand.theme_colors || brand.themeColors || {};
+    setBrandState((s) => ({
+      ...s,
+      logoUrl: brand.logo_url || brand.logoUrl || s.logoUrl,
+      faviconUrl: brand.favicon_url || brand.faviconUrl || s.faviconUrl,
+      heroBannerUrl: brand.hero_banner_url || brand.heroBannerUrl || s.heroBannerUrl,
+      themeColors: {
+        primary: themeColors.primary || s.themeColors.primary,
+        secondary: themeColors.secondary || s.themeColors.secondary,
+        accent: themeColors.accent || s.themeColors.accent,
+      },
+    }));
+  }, [selectedOrg]);
 
   return (
     <Box
@@ -454,13 +501,14 @@ const AdminOrganizationMasterDetail = ({
                             forum: 'Tính năng Diễn đàn (Forum)',
                           };
 
-                          const handleToggle = (key) => {
-                            const currentVal = config[key] ?? true;
-                            const newConfig = { ...config, [key]: !currentVal };
-                            onUpdateOrganization?.({
-                              ...selectedOrg,
-                              featuresConfig: JSON.stringify(newConfig)
-                            });
+                          const handleToggle = async (key) => {
+                            try {
+                              await adminOrganizationApi.toggleFeature(selectedOrg.id, key);
+                              // refresh parent view
+                              onRefresh?.();
+                            } catch (err) {
+                              console.error('Toggle feature failed', err);
+                            }
                           };
 
                           return Object.keys(featureLabels).map((key) => (
@@ -489,10 +537,178 @@ const AdminOrganizationMasterDetail = ({
                           ));
                         })()}
                       </List>
+
+                      {/* Brand / theme editor */}
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>Brand & Theme</Typography>
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              label="Logo URL"
+                              size="small"
+                              fullWidth
+                              value={brandState.logoUrl}
+                              onChange={(e) => setBrandState((s) => ({ ...s, logoUrl: e.target.value }))}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              label="Favicon URL"
+                              size="small"
+                              fullWidth
+                              value={brandState.faviconUrl}
+                              onChange={(e) => setBrandState((s) => ({ ...s, faviconUrl: e.target.value }))}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              label="Hero banner URL"
+                              size="small"
+                              fullWidth
+                              value={brandState.heroBannerUrl}
+                              onChange={(e) => setBrandState((s) => ({ ...s, heroBannerUrl: e.target.value }))}
+                            />
+                          </Grid>
+
+                          <Grid item xs={12} sm={4}>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu chính</Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <ColorLensIcon color="action" />
+                              <input
+                                type="color"
+                                value={brandState.themeColors.primary}
+                                onChange={(e) => setBrandState((s) => ({ ...s, themeColors: { ...s.themeColors, primary: e.target.value } }))}
+                                style={{ width: 48, height: 36, border: 0, background: 'transparent' }}
+                              />
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{brandState.themeColors.primary}</Typography>
+                            </Stack>
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu phụ</Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <input
+                                type="color"
+                                value={brandState.themeColors.secondary}
+                                onChange={(e) => setBrandState((s) => ({ ...s, themeColors: { ...s.themeColors, secondary: e.target.value } }))}
+                                style={{ width: 48, height: 36, border: 0, background: 'transparent' }}
+                              />
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{brandState.themeColors.secondary}</Typography>
+                            </Stack>
+                          </Grid>
+                          <Grid item xs={12} sm={4}>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu accent</Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <input
+                                type="color"
+                                value={brandState.themeColors.accent}
+                                onChange={(e) => setBrandState((s) => ({ ...s, themeColors: { ...s.themeColors, accent: e.target.value } }))}
+                                style={{ width: 48, height: 36, border: 0, background: 'transparent' }}
+                              />
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{brandState.themeColors.accent}</Typography>
+                            </Stack>
+                          </Grid>
+
+                          <Grid item xs={12}>
+                            <Button
+                              startIcon={<SaveOutlinedIcon />}
+                              variant="contained"
+                              size="small"
+                                onClick={async () => {
+                                  try {
+                                    let cfg = {};
+                                    try {
+                                      cfg = selectedOrg.featuresConfig
+                                        ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
+                                        : {};
+                                    } catch { cfg = {}; }
+                                    const brand = {
+                                      logo_url: brandState.logoUrl,
+                                      favicon_url: brandState.faviconUrl,
+                                      hero_banner_url: brandState.heroBannerUrl,
+                                      theme_colors: { ...brandState.themeColors },
+                                    };
+                                    const newCfg = { ...cfg, brand_config: brand };
+                                    await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
+                                    onRefresh?.();
+                                  } catch (err) {
+                                    console.error('Save brand/theme failed', err);
+                                  }
+                                }}
+                            >
+                              Lưu brand & theme
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+
+                      {/* Programs & Majors editable lists */}
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>Chương trình & Chuyên ngành</Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Chương trình</Typography>
+                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
+                              {programList.map((p) => (
+                                <Paper key={p} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p}</Typography>
+                                  <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                                </Paper>
+                              ))}
+                            </Stack>
+                            <Stack direction="row" spacing={1}>
+                              <TextField size="small" placeholder="Thêm chương trình" value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
+                              <Button startIcon={<AddIcon />} size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>Thêm</Button>
+                              <Button variant="outlined" size="small" onClick={async () => {
+                                try {
+                                  const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
+                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
+                                  const toAdd = programList.filter(p => !remoteList.includes(p));
+                                  const toRemove = remoteList.filter(p => !programList.includes(p));
+                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
+                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
+                                  onRefresh?.();
+                                } catch (err) {
+                                  console.error('Save programs failed', err);
+                                }
+                              }}>Lưu</Button>
+                            </Stack>
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Chuyên ngành</Typography>
+                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
+                              {majorList.map((m) => (
+                                <Paper key={m} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{m}</Typography>
+                                  <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                                </Paper>
+                              ))}
+                            </Stack>
+                            <Stack direction="row" spacing={1}>
+                              <TextField size="small" placeholder="Thêm chuyên ngành" value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
+                              <Button startIcon={<AddIcon />} size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>Thêm</Button>
+                              <Button variant="outlined" size="small" onClick={async () => {
+                                try {
+                                  const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
+                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
+                                  const toAdd = majorList.filter(p => !remoteList.includes(p));
+                                  const toRemove = remoteList.filter(p => !majorList.includes(p));
+                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
+                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
+                                  onRefresh?.();
+                                } catch (err) {
+                                  console.error('Save majors failed', err);
+                                }
+                              }}>Lưu</Button>
+                            </Stack>
+                          </Grid>
+                        </Grid>
+                      </Box>
+
                       <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
                         <Typography variant="caption" color="primary.darker" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
                           <InfoOutlinedIcon sx={{ fontSize: 14 }} />
-                          Các thay đổi cấu hình sẽ được lưu tự động khi bạn gạt công tắc.
+                          Lưu ý: Các thay đổi chương trình / chuyên ngành lưu khi bạn nhấn nút "Lưu".
                         </Typography>
                       </Box>
                     </DetailSection>
