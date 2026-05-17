@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router";
+import { useOutletContext, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
 import {
   Box,
@@ -28,7 +28,6 @@ import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
-import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useAdminSystemContext } from "../../contexts/AdminSystemContext";
 import { adminOrganizationApi } from "../../api/adminOrganizationApi";
 
@@ -42,10 +41,10 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 
 const AdminFundraisingsPage = () => {
-  const navigate = useOrgNavigate();
+  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
-  const { activeOrgId, setActiveOrgId } = useAdminSystemContext();
+  const { activeOrgId, setActiveOrgId, activeOrganization } = useAdminSystemContext();
   const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
@@ -178,7 +177,10 @@ const AdminFundraisingsPage = () => {
           <Tooltip title="Chỉnh sửa">
             <IconButton
               size="small"
-              onClick={() => navigate(`/donations/${fund.id}/edit`)}
+              onClick={() => {
+                const slug = activeOrganization?.slug || organizations.find(o => o.id === activeOrgId)?.slug || "hcmus";
+                navigate(`/${slug}/donations/${fund.id}/edit`);
+              }}
             >
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
@@ -322,7 +324,10 @@ const AdminFundraisingsPage = () => {
           <Button
             variant="contained"
             startIcon={<AddOutlinedIcon />}
-            onClick={() => navigate("/donations/create")}
+            onClick={() => {
+              const slug = activeOrganization?.slug || organizations.find(o => o.id === activeOrgId)?.slug || "hcmus";
+              navigate(`/${slug}/donations/create`);
+            }}
             sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
           >
             Tạo chiến dịch
