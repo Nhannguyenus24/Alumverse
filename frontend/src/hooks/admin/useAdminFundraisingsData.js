@@ -67,9 +67,12 @@ const useAdminFundraisingsData = (organizationId) => {
     }
   }, [organizationId]);
 
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+  const reload = useCallback(() => setReloadTrigger((prev) => prev + 1), []);
+
   useEffect(() => {
     loadFunds();
-  }, [loadFunds]);
+  }, [loadFunds, reloadTrigger]);
 
   const filteredRows = useMemo(() => {
     return allRows.filter((item) => {
@@ -124,6 +127,7 @@ const useAdminFundraisingsData = (organizationId) => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
+    reload,
   };
 };
 

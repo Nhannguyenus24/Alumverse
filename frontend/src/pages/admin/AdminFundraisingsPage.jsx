@@ -15,6 +15,9 @@ import {
   TextField,
   Tooltip,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -27,9 +30,15 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import { useAdminSystemContext } from "../../contexts/AdminSystemContext";
 import { adminOrganizationApi } from "../../api/adminOrganizationApi";
+import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { fundApi } from "../../api/fundApi";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
 
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
@@ -46,6 +55,26 @@ const AdminFundraisingsPage = () => {
   const { setBreadcrumbs } = useOutletContext();
   const { activeOrgId, setActiveOrgId, activeOrganization } = useAdminSystemContext();
   const [organizations, setOrganizations] = useState([]);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [receivingOptions, setReceivingOptions] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const initialCreateForm = {
+    fundName: "",
+    organizer: "",
+    logoUrl: "",
+    statusId: "",
+    fundReceivingInfoId: "",
+    targetAmount: "",
+    descriptionShort: "",
+    descriptionFull: "",
+    startDate: null,
+    endDate: null,
+    organizationId: activeOrgId || "",
+  };
+
+  const [createForm, setCreateForm] = useState(initialCreateForm);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: "Quản lý gây quỹ", active: true }]);
@@ -58,7 +87,22 @@ const AdminFundraisingsPage = () => {
         console.error("Failed to fetch organizations", err);
       }
     };
+
+    const loadFormOptions = async () => {
+      try {
+        const [statuses, receivingInfos] = await Promise.all([
+          fundApi.getFundStatuses(),
+          fundApi.getActiveFundReceivingInfos(),
+        ]);
+        setStatusOptions(statuses ?? []);
+        setReceivingOptions(receivingInfos ?? []);
+      } catch (err) {
+        console.error("Failed to load form options", err);
+      }
+    };
+
     fetchOrgs();
+    loadFormOptions();
   }, [setBreadcrumbs]);
 
   const {
@@ -74,12 +118,111 @@ const AdminFundraisingsPage = () => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
+    reload,
   } = useAdminFundraisingsData(activeOrgId);
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [closeTarget, setCloseTarget] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
+
+  const handleOpenCreateDialog = () => {
+    setCreateForm({
+      ...initialCreateForm,
+      organizationId: activeOrgId || "",
+    });
+    setCreateDialogOpen(true);
+  };
+
+  const handleInputChange = (field, value) => {
+    setCreateForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleCreateFund = async (e) => {
+    e.preventDefault();
+    if (!createForm.fundName.trim()) {
+      enqueueSnackbar("Vui lòng nhập tên quỹ quyên góp", { variant: "warning" });
+      return;
+    }
+    if (!createForm.organizer.trim()) {
+      enqueueSnackbar("Vui lòng nhập người tổ chức", { variant: "warning" });
+      return;
+    }
+    if (!createForm.statusId) {
+      enqueueSnackbar("Vui lòng chọn trạng thái", { variant: "warning" });
+      return;
+    }
+    if (!createForm.fundReceivingInfoId) {
+      enqueueSnackbar("Vui lòng chọn tài khoản nhận quỹ", { variant: "warning" });
+      return;
+    }
+    if (!createForm.targetAmount || Number(createForm.targetAmount) <= 0) {
+      enqueueSnackbar("Mục tiêu quyên góp phải lớn hơn 0", { variant: "warning" });
+      return;
+    }
+    if (!createForm.descriptionShort.trim()) {
+      enqueueSnackbar("Vui lòng nhập mô tả ngắn", { variant: "warning" });
+      return;
+    }
+    if (!createForm.descriptionFull.trim()) {
+      enqueueSnackbar("Vui lòng nhập mô tả chi tiết", { variant: "warning" });
+      return;
+    }
+    if (!createForm.organizationId) {
+      enqueueSnackbar("Vui lòng chọn tổ chức", { variant: "warning" });
+      return;
+    }
+    if (!createForm.startDate) {
+      enqueueSnackbar("Vui lòng chọn thời gian bắt đầu", { variant: "warning" });
+      return;
+    }
+    if (!createForm.endDate) {
+      enqueueSnackbar("Vui lòng chọn thời gian kết thúc", { variant: "warning" });
+      return;
+    }
+
+    const start = dayjs(createForm.startDate);
+    const end = dayjs(createForm.endDate);
+    const nowPlusOneHour = dayjs().add(1, "hour");
+
+    if (start.isBefore(nowPlusOneHour)) {
+      enqueueSnackbar("Thời gian bắt đầu phải từ hiện tại + 1 giờ", { variant: "warning" });
+      return;
+    }
+    if (end.isBefore(start.add(1, "hour"))) {
+      enqueueSnackbar("Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 giờ", { variant: "warning" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        name: createForm.fundName,
+        managerName: createForm.organizer,
+        logoUrl: createForm.logoUrl?.trim() || null,
+        status_id: Number(createForm.statusId),
+        fundReceivingInfoId: Number(createForm.fundReceivingInfoId),
+        targetAmount: Number(createForm.targetAmount),
+        description_short: createForm.descriptionShort,
+        description_full: createForm.descriptionFull,
+        organizationId: Number(createForm.organizationId),
+        timeStarted: start.format("YYYY-MM-DDTHH:mm:ss"),
+        timeEnded: end.format("YYYY-MM-DDTHH:mm:ss"),
+      };
+
+      await fundApi.createFund(payload);
+      enqueueSnackbar("Tạo quỹ quyên góp thành công.", { variant: "success" });
+      setCreateDialogOpen(false);
+      reload();
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || "Có lỗi xảy ra khi tạo quỹ", { variant: "error" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Aggregated stats from current data for visualization
   const stats = {
@@ -324,10 +467,7 @@ const AdminFundraisingsPage = () => {
           <Button
             variant="contained"
             startIcon={<AddOutlinedIcon />}
-            onClick={() => {
-              const slug = activeOrganization?.slug || organizations.find(o => o.id === activeOrgId)?.slug || "hcmus";
-              navigate(`/${slug}/donations/create`);
-            }}
+            onClick={handleOpenCreateDialog}
             sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
           >
             Tạo chiến dịch
@@ -530,26 +670,302 @@ const AdminFundraisingsPage = () => {
         }}
       />
 
-      <DonationCloseDialog
+      {/* Modal Đóng quỹ sớm (Admin Custom) */}
+      <Dialog
         open={Boolean(closeTarget)}
-        campaign={closeTarget ? { name: closeTarget.title } : null}
-        onClose={() => setCloseTarget(null)}
-        onConfirm={async () => {
-          if (!closeTarget) return;
-          setIsClosing(true);
-          try {
-            await updateStatus(closeTarget.id, "COMPLETED");
-            enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
-          } catch (err) {
-            const errorMsg = err?.response?.data?.message || "Đóng quỹ thất bại.";
-            enqueueSnackbar(errorMsg, { variant: "error" });
-          } finally {
-            setIsClosing(false);
-            setCloseTarget(null);
+        onClose={isClosing ? undefined : () => setCloseTarget(null)}
+        disableScrollLock
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>Xác nhận đóng quỹ sớm</DialogTitle>
+        <DialogContent sx={{ pt: "8px !important" }}>
+          <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>
+            Bạn có chắc muốn đóng sớm quỹ{" "}
+            <Box component="span" sx={{ color: "primary.main", fontWeight: 700 }}>
+              {closeTarget?.title}
+            </Box>{" "}
+            không?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <Button
+            onClick={() => setCloseTarget(null)}
+            variant="outlined"
+            disabled={isClosing}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 700,
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!closeTarget) return;
+              setIsClosing(true);
+              try {
+                await updateStatus(closeTarget.id, "COMPLETED");
+                enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
+              } catch (err) {
+                const errorMsg = err?.response?.data?.message || "Đóng quỹ thất bại.";
+                enqueueSnackbar(errorMsg, { variant: "error" });
+              } finally {
+                setIsClosing(false);
+                setCloseTarget(null);
+              }
+            }}
+            variant="contained"
+            color="error"
+            disabled={isClosing}
+            sx={{
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 700,
+            }}
+          >
+            Đóng quỹ
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal Tạo quỹ quyên góp mới */}
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        fullWidth
+        maxWidth="md"
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            p: { xs: 2.5, md: 4 },
+            borderRadius: 3,
+            boxShadow: "0 8px 30px rgba(0, 0, 0, 0.08)",
           }
         }}
-        isSubmitting={isClosing}
-      />
+      >
+        <DialogTitle sx={{ px: 0, pt: 0, pb: 3 }}>
+          <Typography variant="h4" component="h2" fontWeight={700}>
+            Tạo bài đăng quyên góp
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ px: 0, py: 0 }}>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box
+              component="form"
+              onSubmit={handleCreateFund}
+              noValidate
+            >
+              <Box
+                sx={{
+                  mb: 3.5,
+                }}
+              >
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 2.5 }}>
+                  Thông tin quỹ quyên góp
+                </Typography>
+                
+                {/* 1. Chọn Tổ chức */}
+                <FormControl fullWidth sx={{ mb: 2.5 }}>
+                  <InputLabel id="org-label">Tổ chức</InputLabel>
+                  <Select
+                    labelId="org-label"
+                    label="Tổ chức"
+                    value={createForm.organizationId || ""}
+                    onChange={(e) => handleInputChange("organizationId", e.target.value)}
+                    MenuProps={{ disableScrollLock: true }}
+                  >
+                    {organizations.map((org) => (
+                      <MenuItem key={org.id} value={org.id}>
+                        {org.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {/* 2. Tên quỹ quyên góp */}
+                <TextField
+                  fullWidth
+                  label="Tên quỹ quyên góp"
+                  placeholder="Nhập tên quỹ quyên góp"
+                  value={createForm.fundName}
+                  onChange={(e) => handleInputChange("fundName", e.target.value)}
+                  sx={{
+                    mb: 2.5,
+                    "& .MuiInputBase-input": {
+                      fontSize: "1.05rem",
+                      fontWeight: 600,
+                    },
+                  }}
+                />
+
+                {/* 3. Người tổ chức & Logo URL */}
+                <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Người tổ chức"
+                      placeholder="Nhập tên người tổ chức"
+                      value={createForm.organizer}
+                      onChange={(e) => handleInputChange("organizer", e.target.value)}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Logo URL"
+                      placeholder="https://example.com/logo.png"
+                      value={createForm.logoUrl}
+                      onChange={(e) => handleInputChange("logoUrl", e.target.value)}
+                    />
+                  </Grid>
+                </Grid>
+
+                {/* 4. Trạng thái & Tài khoản nhận quỹ */}
+                <Grid container spacing={2.5} sx={{ mb: 2.5 }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="status-label">Trạng thái</InputLabel>
+                      <Select
+                        labelId="status-label"
+                        label="Trạng thái"
+                        value={createForm.statusId || ""}
+                        onChange={(e) => handleInputChange("statusId", Number(e.target.value))}
+                        MenuProps={{ disableScrollLock: true }}
+                      >
+                        {statusOptions.map((option) => (
+                          <MenuItem key={option.id} value={option.id}>
+                            {option.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="fund-receiving-info-label">Tài khoản nhận quỹ</InputLabel>
+                      <Select
+                        labelId="fund-receiving-info-label"
+                        label="Tài khoản nhận quỹ"
+                        value={createForm.fundReceivingInfoId || ""}
+                        onChange={(e) => handleInputChange("fundReceivingInfoId", Number(e.target.value))}
+                        MenuProps={{ disableScrollLock: true }}
+                      >
+                        {receivingOptions.map((option) => (
+                          <MenuItem key={option.id} value={option.id}>
+                            {`${option.bankName} - ${option.accountName} - ${option.accountNumber}`}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+
+                {/* 5. Số tiền mục tiêu */}
+                <TextField
+                  fullWidth
+                  label="Số tiền mục tiêu để quyên góp (VNĐ)"
+                  placeholder="Nhập số tiền mục tiêu"
+                  type="number"
+                  value={createForm.targetAmount}
+                  onChange={(e) => handleInputChange("targetAmount", e.target.value)}
+                  sx={{ mb: 2.5 }}
+                />
+
+                {/* 6. Mô tả ngắn */}
+                <TextField
+                  fullWidth
+                  label="Mô tả ngắn (tối đa 120 ký tự)"
+                  placeholder="Nhập mô tả ngắn"
+                  inputProps={{ maxLength: 120 }}
+                  value={createForm.descriptionShort}
+                  onChange={(e) => handleInputChange("descriptionShort", e.target.value)}
+                  sx={{ mb: 2.5 }}
+                />
+
+                {/* 7. Mô tả chi tiết */}
+                <TextField
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  label="Mô tả"
+                  placeholder="Nhập mô tả"
+                  value={createForm.descriptionFull}
+                  onChange={(e) => handleInputChange("descriptionFull", e.target.value)}
+                  sx={{ mb: 2.5 }}
+                />
+
+                {/* 8. Thời gian bắt đầu & Thời gian kết thúc */}
+                <Grid container spacing={2.5}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <DateTimePicker
+                      label="Thời gian bắt đầu"
+                      value={createForm.startDate}
+                      onChange={(val) => handleInputChange("startDate", val)}
+                      views={["year", "month", "day", "hours", "minutes", "seconds"]}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <DateTimePicker
+                      label="Thời gian kết thúc"
+                      value={createForm.endDate}
+                      onChange={(val) => handleInputChange("endDate", val)}
+                      views={["year", "month", "day", "hours", "minutes", "seconds"]}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                        },
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Box>
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions sx={{ px: 0, pb: 0, pt: 3, justifyContent: "flex-end", gap: 2 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setCreateDialogOpen(false)}
+            sx={{
+              px: 4,
+              py: 1,
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 700,
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            onClick={handleCreateFund}
+            disabled={isSubmitting}
+            sx={{
+              px: 4,
+              py: 1,
+              borderRadius: 2,
+              textTransform: "none",
+              fontWeight: 700,
+            }}
+          >
+            Đăng
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
