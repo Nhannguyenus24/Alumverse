@@ -18,6 +18,14 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -39,6 +47,7 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { fundApi } from "../../api/fundApi";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
+import SearchIcon from "@mui/icons-material/Search";
 
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
@@ -125,7 +134,43 @@ const AdminFundraisingsPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [closeTarget, setCloseTarget] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [donationsDialogOpen, setDonationsDialogOpen] = useState(false);
+  const [donationsTarget, setDonationsTarget] = useState(null);
+  const [donationsList, setDonationsList] = useState([]);
+  const [donationsLoading, setDonationsLoading] = useState(false);
+  const [donationsPage, setDonationsPage] = useState(1);
+  const [donationsTotalPages, setDonationsTotalPages] = useState(1);
+  const [donationsSearchKeyword, setDonationsSearchKeyword] = useState("");
+  const [keywordInput, setKeywordInput] = useState("");
+  const [donationsSearchBy, setDonationsSearchBy] = useState("name");
 
+  const loadCampaignDonations = async (fundId, pageNum = 1, keyword = "", searchByField = "name") => {
+    setDonationsLoading(true);
+    try {
+      const params = {
+        page: pageNum - 1,
+        limit: 5,
+      };
+      if (keyword.trim()) {
+        params.searchBy = searchByField;
+        params.keyword = keyword.trim();
+      }
+      const res = await fundApi.getFundDonationsByFundId(fundId, params);
+      setDonationsList(res?.items ?? []);
+      setDonationsTotalPages(res?.totalPage ?? 1);
+    } catch (err) {
+      enqueueSnackbar("Không thể tải danh sách lượt quyên góp.", { variant: "error" });
+      setDonationsList([]);
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (donationsDialogOpen && donationsTarget) {
+      loadCampaignDonations(donationsTarget.id, donationsPage, donationsSearchKeyword, donationsSearchBy);
+    }
+  }, [donationsDialogOpen, donationsTarget, donationsPage, donationsSearchKeyword, donationsSearchBy]);
   const handleOpenCreateDialog = () => {
     setCreateForm({
       ...initialCreateForm,
@@ -321,6 +366,22 @@ const AdminFundraisingsPage = () => {
               }}
             >
               <LaunchOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Lượt quyên góp">
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => {
+                setDonationsTarget(fund);
+                setDonationsPage(1);
+                setDonationsSearchKeyword("");
+                setKeywordInput("");
+                setDonationsSearchBy("name");
+                setDonationsDialogOpen(true);
+              }}
+            >
+              <VolunteerActivismIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
@@ -969,6 +1030,158 @@ const AdminFundraisingsPage = () => {
             }}
           >
             Đăng
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ========================================================================= */}
+      {/* DIALOG DANH SÁCH LƯỢT QUYÊN GÓP */}
+      {/* ========================================================================= */}
+      <Dialog
+        open={donationsDialogOpen}
+        onClose={() => setDonationsDialogOpen(false)}
+        maxWidth="lg"
+        fullWidth
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 4,
+            backgroundImage: "none",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+          },
+        }}
+      >
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary" }}>
+            Danh sách lượt quyên góp
+          </Typography>
+          <IconButton onClick={() => setDonationsDialogOpen(false)}>
+            <CloseOutlinedIcon />
+          </IconButton>
+        </Box>
+
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.secondary", mb: 3 }}>
+          Chiến dịch: <span style={{ color: "#1976d2" }}>{donationsTarget?.title || ""}</span>
+        </Typography>
+
+        <DialogContent dividers sx={{ px: 0, py: 3, borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0" }}>
+          {/* Tìm kiếm & Bộ lọc */}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }} alignItems="center">
+            <TextField
+              size="small"
+              label="Từ khóa tìm kiếm"
+              placeholder="Nhập tên, số điện thoại..."
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setDonationsPage(1);
+                  setDonationsSearchKeyword(keywordInput);
+                }
+              }}
+              sx={{ flexGrow: 1 }}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ color: "text.secondary", mr: 1 }} />,
+              }}
+            />
+            <TextField
+              select
+              size="small"
+              label="Tìm kiếm theo"
+              value={donationsSearchBy}
+              onChange={(e) => setDonationsSearchBy(e.target.value)}
+              sx={{ minWidth: 160 }}
+            >
+              <MenuItem value="name">Tên người ủng hộ</MenuItem>
+              <MenuItem value="phone">Số điện thoại</MenuItem>
+              <MenuItem value="email">Email</MenuItem>
+            </TextField>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setDonationsPage(1);
+                setDonationsSearchKeyword(keywordInput);
+              }}
+              sx={{ borderRadius: 2, fontWeight: 700, px: 3, py: 1, textTransform: "none" }}
+            >
+              Tìm kiếm
+            </Button>
+          </Stack>
+
+          {donationsLoading ? (
+            <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
+              <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                Đang tải danh sách lượt quyên góp...
+              </Typography>
+            </Box>
+          ) : donationsList.length === 0 ? (
+            <Box sx={{ py: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <VolunteerActivismIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
+              <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 600 }}>
+                Chưa có lượt quyên góp nào phù hợp.
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <TableContainer component={Paper} elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden" }}>
+                <Table>
+                  <TableHead sx={{ backgroundColor: "grey.50" }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700 }}>Nhà hảo tâm</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Số điện thoại</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
+                      <TableCell sx={{ fontWeight: 700, textAlign: "right" }}>Số tiền ủng hộ</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Lời nhắn</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {donationsList.map((item) => (
+                      <TableRow key={item.id} hover>
+                        <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
+                          {item.donorName || "Nhà hảo tâm"}
+                        </TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>{item.phone || "--"}</TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>{item.email || "--"}</TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>{item.address || "--"}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "success.main", textAlign: "right" }}>
+                          {formatCurrencyVnd(item.amount)}
+                        </TableCell>
+                        <TableCell sx={{ color: "text.secondary", fontStyle: item.message ? "normal" : "italic", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.message}>
+                          {item.message || "--"}
+                        </TableCell>
+                        <TableCell sx={{ color: "text.secondary" }}>
+                          {formatDateTime(item.createdAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              <Stack direction="row" justifyContent="center" sx={{ mt: 3 }}>
+                <Pagination
+                  count={donationsTotalPages}
+                  page={donationsPage}
+                  onChange={(_, value) => setDonationsPage(value)}
+                  color="primary"
+                  shape="rounded"
+                  size="medium"
+                  sx={{ "& .MuiPaginationItem-root": { fontWeight: 700 } }}
+                />
+              </Stack>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 0, pt: 3, pb: 0, justifyContent: "flex-end" }}>
+          <Button
+            variant="contained"
+            onClick={() => setDonationsDialogOpen(false)}
+            sx={{ px: 4, py: 1, borderRadius: 2, textTransform: "none", fontWeight: 700 }}
+          >
+            Đóng
           </Button>
         </DialogActions>
       </Dialog>
