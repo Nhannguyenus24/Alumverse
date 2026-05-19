@@ -2,6 +2,7 @@ package com.service.backend.organization.entity;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -40,6 +41,7 @@ public class SchoolFeedback {
     private String content;
 
     @Column("created_at")
+    @CreatedDate
     private LocalDateTime createdAt;
 
     @Column("is_read")

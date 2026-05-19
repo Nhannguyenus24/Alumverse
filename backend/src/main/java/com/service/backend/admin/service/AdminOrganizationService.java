@@ -447,7 +447,7 @@ public class AdminOrganizationService {
                 }
             }
             return normalized;
-        } catch (RuntimeException ex) {
+        } catch (ApplicationException ex) {
             List<String> fallback = new ArrayList<>();
             Collections.addAll(fallback, rawValue.split(","));
             fallback.replaceAll(value -> value == null ? "" : value.trim());

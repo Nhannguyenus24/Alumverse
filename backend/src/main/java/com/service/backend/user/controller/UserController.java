@@ -2,7 +2,6 @@ package com.service.backend.user.controller;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -37,7 +36,6 @@ import reactor.core.publisher.Mono;
 @Validated
 @RequiredArgsConstructor
 public class UserController {
-
     private final UserService userService;
     private final NotificationService notificationService;
 
@@ -45,9 +43,7 @@ public class UserController {
     public Mono<ResponseEntity<ApiResponse<UserProfileResponse>>> getMyProfile() {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userService::getMyProfile)
-            .map(profile -> ResponseEntity.ok(new ApiResponse<>("Profile retrieved successfully", profile)))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), null))));
+                .map(profile -> ResponseEntity.ok(new ApiResponse<>("Profile retrieved successfully", profile)));
     }
 
     @PutMapping("/profile")
@@ -55,9 +51,7 @@ public class UserController {
             @Valid @RequestBody UpdateMyProfileRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.updateMyProfile(userId, request))
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Profile updated successfully", true))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Profile updated successfully", true)));
     }
 
     @GetMapping("/organization-member")
@@ -65,18 +59,14 @@ public class UserController {
             @RequestParam @Min(1) Integer organizationId) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.getMyOrganizationMember(userId, organizationId))
-                .map(member -> ResponseEntity.ok(new ApiResponse<>("Organization member retrieved successfully", member)))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(error.getMessage(), null))));
+                .map(member -> ResponseEntity.ok(new ApiResponse<>("Organization member retrieved successfully", member)));
     }
 
     @PutMapping("/password")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> changeMyPassword(@Valid @RequestBody ChangeMyPasswordRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.changeMyPassword(userId, request.getOldPassword(), request.getNewPassword()))
-            .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true))))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true)));
     }
 
     @GetMapping("/login-history")
@@ -85,18 +75,14 @@ public class UserController {
             @RequestParam(defaultValue = "20") @Min(1) int limit) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.getMyLoginHistory(userId, page, limit))
-            .map(history -> ResponseEntity.ok(new ApiResponse<>("Login history retrieved successfully", history)))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), null))));
+                .map(history -> ResponseEntity.ok(new ApiResponse<>("Login history retrieved successfully", history)));
     }
 
     @GetMapping("/notification-settings")
     public Mono<ResponseEntity<ApiResponse<NotificationSettingsResponse>>> getMyNotificationSettings() {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userService::getMyNotificationSettings)
-            .map(settings -> ResponseEntity.ok(new ApiResponse<>("Notification settings retrieved successfully", settings)))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), null))));
+                .map(settings -> ResponseEntity.ok(new ApiResponse<>("Notification settings retrieved successfully", settings)));
     }
 
     @PutMapping("/notification-settings")
@@ -104,46 +90,36 @@ public class UserController {
             @RequestBody UpdateNotificationSettingsRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.updateMyNotificationSettings(userId, request))
-            .map(settings -> ResponseEntity.ok(new ApiResponse<>("Notification settings updated successfully", settings)))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), null))));
+                .map(settings -> ResponseEntity.ok(new ApiResponse<>("Notification settings updated successfully", settings)));
     }
 
-        @GetMapping("/notifications")
-        public Mono<ResponseEntity<ApiResponse<List<NotificationResponse>>>> getMyNotifications() {
+    @GetMapping("/notifications")
+    public Mono<ResponseEntity<ApiResponse<List<NotificationResponse>>>> getMyNotifications() {
         return SecurityUtils.getCurrentUserId()
-            .flatMap(notificationService::getMyNotifications)
-            .map(notifications -> ResponseEntity.ok(new ApiResponse<>("Notifications retrieved successfully", notifications)))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), null))));
-        }
+                .flatMap(notificationService::getMyNotifications)
+                .map(notifications -> ResponseEntity.ok(new ApiResponse<>("Notifications retrieved successfully", notifications)));
+    }
 
-        @PutMapping("/notifications/{notificationId}/read")
-        public Mono<ResponseEntity<ApiResponse<Boolean>>> markNotificationAsRead(
+    @PutMapping("/notifications/{notificationId}/read")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> markNotificationAsRead(
             @PathVariable @Min(1) Integer notificationId) {
         return SecurityUtils.getCurrentUserId()
-            .flatMap(userId -> notificationService.markAsRead(userId, notificationId))
-            .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Notification marked as read", true))))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), false))));
-        }
+                .flatMap(userId -> notificationService.markAsRead(userId, notificationId))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Notification marked as read", true)));
+    }
 
-        @DeleteMapping("/notifications/{notificationId}")
-        public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteNotification(
+    @DeleteMapping("/notifications/{notificationId}")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteNotification(
             @PathVariable @Min(1) Integer notificationId) {
         return SecurityUtils.getCurrentUserId()
-            .flatMap(userId -> notificationService.deleteNotification(userId, notificationId))
-            .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Notification deleted successfully", true))))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), false))));
-        }
+                .flatMap(userId -> notificationService.deleteNotification(userId, notificationId))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Notification deleted successfully", true)));
+    }
 
-        @DeleteMapping("/notifications")
-        public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteAllNotifications() {
+    @DeleteMapping("/notifications")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteAllNotifications() {
         return SecurityUtils.getCurrentUserId()
-            .flatMap(notificationService::deleteAllNotifications)
-            .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("All notifications deleted successfully", true))))
-            .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(error.getMessage(), false))));
-        }
+                .flatMap(notificationService::deleteAllNotifications)
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("All notifications deleted successfully", true)));
+    }
 }

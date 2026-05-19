@@ -1,6 +1,5 @@
 package com.service.backend.organization.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
@@ -31,37 +30,43 @@ public class OrganizationService {
     private final OrganizationIntroductionRepository introductionRepository;
 
     public Mono<Organization> getOrganizationById(Integer id) {
-        logger.info("Fetching organization with id: {}", id);
+        logger.debug("Fetching organization with id: {}", id);
         return organizationRepository.findById(id)
-                .doOnNext(org -> logger.info("Organization found with id: {}, name: {}", id, org.getName()))
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.ORGANIZATION_NOT_FOUND,
-                        "Organization not found with id: " + id
-                )))
+                .doOnNext(org -> logger.debug("Organization found with id: {}, name: {}", id, org.getName()))
+                .switchIfEmpty(Mono.defer(() -> {
+                    logger.warn("Organization not found with id: {}", id);
+                    return Mono.error(new ApplicationException(
+                            ErrorCode.ORGANIZATION_NOT_FOUND,
+                            "Organization not found with id: " + id
+                    ));
+                }))
                 .doOnError(error -> logger.error("Failed to fetch organization with id: {}", id, error));
     }
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
-        logger.info("Fetching organization with slug: {}", slug);
+        logger.debug("Fetching organization with slug: {}", slug);
         return organizationRepository.findBySlug(slug)
-                .doOnNext(org -> logger.info("Organization found with slug: {}, name: {}", slug, org.getName()))
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.ORGANIZATION_NOT_FOUND,
-                        "Organization not found with slug: " + slug
-                )))
+                .doOnNext(org -> logger.debug("Organization found with slug: {}, name: {}", slug, org.getName()))
+                .switchIfEmpty(Mono.defer(() -> {
+                    logger.warn("Organization not found with slug: {}", slug);
+                    return Mono.error(new ApplicationException(
+                            ErrorCode.ORGANIZATION_NOT_FOUND,
+                            "Organization not found with slug: " + slug
+                    ));
+                }))
                 .doOnError(error -> logger.error("Failed to fetch organization with slug: {}", slug, error));
     }
 
     public Flux<Organization> getAllOrganizations() {
-        logger.info("Fetching all organizations");
+        logger.debug("Fetching all organizations");
         return organizationRepository.findAll()
                 .doOnNext(org -> logger.debug("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
-                .doOnComplete(() -> logger.info("Successfully retrieved all organizations"))
+                .doOnComplete(() -> logger.debug("Successfully retrieved all organizations"))
                 .doOnError(error -> logger.error("Failed to fetch organizations", error));
     }
 
     public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
-        logger.info("Fetching introduction for organization id: {}", orgaId);
+        logger.debug("Fetching introduction for organization id: {}", orgaId);
         return introductionRepository.findByOrgaId(orgaId)
                 .map(this::toResponse)
                 .switchIfEmpty(Mono.just(OrganizationIntroductionResponse.builder()
@@ -92,13 +97,12 @@ public class OrganizationService {
         return getOrganizationById(organizationId)
                 .flatMap(organization -> {
                     SchoolFeedback feedback = SchoolFeedback.builder()
-                            .organizationId(Math.toIntExact(organization.getId()))
+                            .organizationId(organization.getId())
                             .fullName(request.getFullName())
                             .phone(request.getPhone())
                             .email(request.getEmail())
                             .subject(request.getSubject())
                             .content(request.getContent())
-                            .createdAt(LocalDateTime.now())
                             .isRead(false)
                             .build();
 

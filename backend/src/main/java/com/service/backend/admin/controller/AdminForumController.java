@@ -58,8 +58,7 @@ public class AdminForumController {
     public Mono<ResponseEntity<ApiResponse<List<ForumPostDTO>>>> adminGetNewForumPostsYesterday() {
         return adminForumService.getNewForumPostsYesterday()
                 .collectList()
-                .map(posts -> ResponseEntity.ok(new ApiResponse<>("Retrieved new forum posts created yesterday", posts)))
-                .onErrorResume(this::handleError);
+                .map(posts -> ResponseEntity.ok(new ApiResponse<>("Retrieved new forum posts created yesterday", posts)));
     }
 
     @GetMapping("/admin/posts/yesterday/paginated")
@@ -69,32 +68,28 @@ public class AdminForumController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminForumService.getNewForumPostsYesterdayWithPagination(page, size)
-                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved paginated new forum posts created yesterday", paginatedResponse)))
-                .onErrorResume(this::handleError);
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved paginated new forum posts created yesterday", paginatedResponse)));
     }
 
     @PostMapping("/admin/posts/{postId}/ban")
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> adminBanForumPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
         return adminForumService.banForumPost(postId)
-                .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post banned successfully", post)))
-                .onErrorResume(this::handleError);
+                .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post banned successfully", post)));
     }
 
     @PostMapping("/admin/posts/{postId}/unban")
     public Mono<ResponseEntity<ApiResponse<ForumPostDTO>>> adminUnbanForumPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
         return adminForumService.unbanForumPost(postId)
-                .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post unbanned successfully", post)))
-                .onErrorResume(this::handleError);
+                .map(post -> ResponseEntity.ok(new ApiResponse<>("Forum post unbanned successfully", post)));
     }
 
     @DeleteMapping("/admin/posts/{postId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteForumPost(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
         return adminForumService.deleteForumPost(postId)
-                .map(v -> ResponseEntity.ok(new ApiResponse<Void>("Forum post deleted successfully", null)))
-                .onErrorResume(this::handleError);
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Forum post deleted successfully", null)));
     }
 
     @GetMapping("/admin/posts/banned/list")
@@ -104,8 +99,7 @@ public class AdminForumController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminForumService.getBannedPostsWithPagination(page, size)
-                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved banned forum posts", paginatedResponse)))
-                .onErrorResume(this::handleError);
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved banned forum posts", paginatedResponse)));
     }
 
     @GetMapping("/admin/posts")
@@ -115,8 +109,7 @@ public class AdminForumController {
             @Parameter(example = "20")
             @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminForumService.getAllPostsWithPagination(page, size)
-                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum posts", paginatedResponse)))
-                .onErrorResume(this::handleError);
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum posts", paginatedResponse)));
     }
 
     @GetMapping("/reports")
@@ -124,8 +117,7 @@ public class AdminForumController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminForumService.getPendingReports(page, size)
-                .map(data -> ResponseEntity.ok(new ApiResponse<>("Retrieved pending reports", data)))
-                .onErrorResume(this::handleError);
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Retrieved pending reports", data)));
     }
 
     @PutMapping("/reports/{reportId}")
@@ -134,8 +126,7 @@ public class AdminForumController {
             @Valid @RequestBody ReviewForumReportRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> adminForumService.reviewReport(reportId, request, adminId.intValue()))
-                .map(data -> ResponseEntity.ok(new ApiResponse<>("Reviewed report successfully", data)))
-                .onErrorResume(this::handleError);
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Reviewed report successfully", data)));
     }
 
     @PutMapping("/posts/{postId}/visibility")
@@ -144,8 +135,7 @@ public class AdminForumController {
             @Valid @RequestBody UpdatePostVisibilityRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> adminForumService.updatePostVisibility(postId, request.getHidden(), adminId.intValue()))
-                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated post visibility successfully", data)))
-                .onErrorResume(this::handleError);
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated post visibility successfully", data)));
     }
 
     @PutMapping("/topics/{topicId}/lock")
@@ -154,8 +144,7 @@ public class AdminForumController {
             @Valid @RequestBody UpdateTopicLockRequest request) {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> adminForumService.updateTopicLock(topicId, request.getLocked(), adminId.intValue()))
-                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic lock status successfully", data)))
-                .onErrorResume(this::handleError);
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic lock status successfully", data)));
     }
 
     // ========== ADMIN CATEGORY MANAGEMENT ==========
@@ -166,16 +155,14 @@ public class AdminForumController {
             @RequestParam @Min(value = 1, message = "Organization ID must be greater than 0") Integer organizationId) {
         return adminForumService.getAllCategoriesByOrganization(organizationId)
                 .collectList()
-                .map(categories -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum categories", categories)))
-                .onErrorResume(this::handleError);
+                .map(categories -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum categories", categories)));
     }
 
     @GetMapping("/admin/categories/{categoryId}")
     public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> adminGetCategoryById(
             @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer categoryId) {
         return adminForumService.getCategoryById(categoryId)
-                .map(category -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum category", category)))
-                .onErrorResume(this::handleError);
+                .map(category -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum category", category)));
     }
 
     @PostMapping("/admin/categories")
@@ -189,8 +176,7 @@ public class AdminForumController {
             @Parameter(example = "1")
             @RequestParam(required = false) Integer parentId) {
         return adminForumService.createCategory(organizationId, name, description, parentId)
-                .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)))
-                .onErrorResume(this::handleError);
+                .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)));
     }
 
     @PutMapping("/admin/categories/{categoryId}")
@@ -203,16 +189,14 @@ public class AdminForumController {
             @Parameter(example = "1")
             @RequestParam(required = false) Integer parentId) {
         return adminForumService.updateCategory(categoryId, name, description, parentId)
-                .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)))
-                .onErrorResume(this::handleError);
+                .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)));
     }
 
     @DeleteMapping("/admin/categories/{categoryId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteCategory(
             @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer categoryId) {
         return adminForumService.deleteCategory(categoryId)
-                .map(v -> ResponseEntity.ok(new ApiResponse<Void>("Forum category deleted successfully", null)))
-                .onErrorResume(this::handleError);
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Forum category deleted successfully", null)));
     }
 
     // ========== ADMIN TOPIC MANAGEMENT ==========
@@ -226,16 +210,14 @@ public class AdminForumController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminForumService.getAllTopicsByOrganization(organizationId, page, size)
-                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum topics", paginatedResponse)))
-                .onErrorResume(this::handleError);
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum topics", paginatedResponse)));
     }
 
     @GetMapping("/admin/topics/{topicId}")
     public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> adminGetTopicById(
             @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId) {
         return adminForumService.getTopicById(topicId)
-                .map(topic -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum topic", topic)))
-                .onErrorResume(this::handleError);
+                .map(topic -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum topic", topic)));
     }
 
     @PostMapping("/admin/topics")
@@ -249,8 +231,7 @@ public class AdminForumController {
             @Parameter(example = "1")
             @RequestParam @Min(value = 1, message = "Member ID must be greater than 0") Integer createdByMemberId) {
         return adminForumService.createTopic(organizationId, categoryId, title, createdByMemberId)
-                .map(topic -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum topic created successfully", topic)))
-                .onErrorResume(this::handleError);
+                .map(topic -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum topic created successfully", topic)));
     }
 
     @PutMapping("/admin/topics/{topicId}")
@@ -261,16 +242,14 @@ public class AdminForumController {
             @Parameter(example = "1")
             @RequestParam(required = false) Integer categoryId) {
         return adminForumService.updateTopic(topicId, title, categoryId)
-                .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)))
-                .onErrorResume(this::handleError);
+                .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)));
     }
 
     @DeleteMapping("/admin/topics/{topicId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteForumTopic(
             @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId) {
         return adminForumService.deleteForumTopic(topicId)
-                .map(v -> ResponseEntity.ok(new ApiResponse<Void>("Forum topic and all posts deleted successfully", null)))
-                .onErrorResume(this::handleError);
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Forum topic and all posts deleted successfully", null)));
     }
 
     // ========== ADMIN STATISTICS ==========
@@ -278,8 +257,7 @@ public class AdminForumController {
     @GetMapping("/admin/statistics")
     public Mono<ResponseEntity<ApiResponse<ForumStatisticsDTO>>> adminGetForumStatistics() {
         return adminForumService.getForumStatistics()
-                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Retrieved comprehensive forum statistics", stats)))
-                .onErrorResume(this::handleError);
+                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Retrieved comprehensive forum statistics", stats)));
     }
 
     // ========== TOP CONTRIBUTORS ==========
@@ -295,8 +273,7 @@ public class AdminForumController {
             @RequestParam @Min(value = 2000, message = "Year must be at least 2000") int year) {
         return adminForumService.getTopContributors(month, year)
                 .map(contributors -> ResponseEntity.ok(
-                        new ApiResponse<>("Retrieved top 10 contributors for " + month + "/" + year, contributors)))
-                .onErrorResume(this::handleError);
+                        new ApiResponse<>("Retrieved top 10 contributors for " + month + "/" + year, contributors)));
     }
 
     // ========== ORGANIZATION ENGAGEMENT RATE ==========
@@ -307,8 +284,7 @@ public class AdminForumController {
     public Mono<ResponseEntity<ApiResponse<List<OrganizationEngagementDTO>>>> adminGetOrganizationEngagement() {
         return adminForumService.getOrganizationEngagement()
                 .map(engagement -> ResponseEntity.ok(
-                        new ApiResponse<>("Retrieved organization engagement rates", engagement)))
-                .onErrorResume(this::handleError);
+                        new ApiResponse<>("Retrieved organization engagement rates", engagement)));
     }
 
     // ========== MONTHLY ACTIVITY TIMELINE ==========
@@ -321,14 +297,6 @@ public class AdminForumController {
             @RequestParam @Min(value = 2000, message = "Year must be at least 2000") int year) {
         return adminForumService.getMonthlyActivityTimeline(year)
                 .map(timeline -> ResponseEntity.ok(
-                        new ApiResponse<>("Retrieved monthly activity timeline for " + year, timeline)))
-                .onErrorResume(this::handleError);
-    }
-
-    // ========== ERROR HANDLER ==========
-
-    private <T> Mono<ResponseEntity<ApiResponse<T>>> handleError(Throwable error) {
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(error.getMessage(), null)));
+                        new ApiResponse<>("Retrieved monthly activity timeline for " + year, timeline)));
     }
 }
