@@ -15,6 +15,7 @@ const NetworkSearchMemberCard = ({
   program,
   major,
   onMessage,
+  isDemo = false,
 }) => {
   const displayName = fullName || 'N/A';
   const cohortLabel = startYear != null && startYear !== '' ? startYear : 'N/A';
@@ -27,7 +28,7 @@ const NetworkSearchMemberCard = ({
         p: 3,
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: isDemo ? 'primary.light' : 'divider',
         boxShadow: 'none',
         textAlign: 'center',
         display: 'flex',
@@ -80,7 +81,14 @@ const NetworkSearchMemberCard = ({
         </Box>
       </Stack>
 
-      <Button variant="contained" sx={{ mt: 3 }} fullWidth type="button" onClick={onMessage}>
+      <Button
+        variant="contained"
+        sx={{ mt: 3 }}
+        fullWidth
+        type="button"
+        onClick={onMessage}
+        disabled={!onMessage}
+      >
         Nhắn tin
       </Button>
     </Card>

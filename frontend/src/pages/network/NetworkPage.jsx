@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Box,
@@ -12,9 +12,11 @@ import {
 import Page from '../../components/Page';
 import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
+import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
+import { MOCK_NETWORK_DEMO_MEMBERS } from '../../mocks/networkConversationMock';
 
 const FILTERS = [
   {
@@ -42,7 +44,7 @@ const FILTERS = [
   },
 ];
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 5;
 
 const NetworkPage = () => {
   const [searchInput, setSearchInput] = useState('');
@@ -54,6 +56,8 @@ const NetworkPage = () => {
     major: '',
     startYear: '',
   });
+  const [messagePeer, setMessagePeer] = useState(null);
+  const [isMessageDrawerOpen, setIsMessageDrawerOpen] = useState(false);
 
   const { items, totalPage, isPending, isFetching, isError, errorMessage } = useNetworkMembers({
     appliedFullName,
@@ -82,7 +86,25 @@ const NetworkPage = () => {
   };
 
   const hasActiveCriteria = Boolean(appliedFullName) || !filters.all;
-  const showEmptyState = !isPending && !isFetching && items.length === 0;
+  const showDemoSection = safePage === 1 && MOCK_NETWORK_DEMO_MEMBERS.length > 0;
+  const showEmptyState =
+    !isPending && !isFetching && items.length === 0 && !showDemoSection;
+
+  const handleOpenMessage = useCallback((member) => {
+    setMessagePeer({
+      memberId: member.memberId,
+      fullName: member.fullName,
+      avatarUrl: member.avatarUrl,
+      startYear: member.startYear,
+      program: member.program,
+      major: member.major,
+    });
+    setIsMessageDrawerOpen(true);
+  }, []);
+
+  const handleCloseMessage = useCallback(() => {
+    setIsMessageDrawerOpen(false);
+  }, []);
 
   return (
     <Page title="Network">
@@ -137,6 +159,42 @@ const NetworkPage = () => {
                 <Alert severity="error">{errorMessage}</Alert>
               ) : null}
 
+              {showDemoSection ? (
+                <Stack spacing={2}>
+                  <Alert severity="info" sx={{ borderRadius: 1.5 }}>
+                    <Typography variant="body2" component="span">
+                      <strong>Demo mock (không tính phân trang):</strong> 5 card bên dưới (ID
+                      9001–9005) để test nhắn tin. Danh sách phân trang phía dưới lấy từ API, mỗi
+                      trang tối đa {PAGE_SIZE} người.
+                    </Typography>
+                  </Alert>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 3,
+                    }}
+                  >
+                    {MOCK_NETWORK_DEMO_MEMBERS.map((member) => (
+                      <NetworkSearchMemberCard
+                        key={member.memberId}
+                        avatar={member.avatarUrl}
+                        fullName={member.fullName}
+                        startYear={member.startYear}
+                        program={member.program}
+                        major={member.major}
+                        isDemo
+                        onMessage={() => handleOpenMessage(member)}
+                      />
+                    ))}
+                  </Box>
+                </Stack>
+              ) : null}
+
               {isPending ? (
                 <Stack alignItems="center" py={6}>
                   <CircularProgress color="primary" />
@@ -147,32 +205,40 @@ const NetworkPage = () => {
                     ? 'Không có kết quả phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
                     : 'Chưa có người để hiển thị.'}
                 </Alert>
-              ) : (
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 3,
-                    opacity: isFetching ? 0.6 : 1,
-                    transition: 'opacity 0.2s',
-                  }}
-                >
-                  {items.map((member) => (
-                    <NetworkSearchMemberCard
-                      key={member.memberId}
-                      avatar={member.avatarUrl}
-                      fullName={member.fullName}
-                      startYear={member.startYear}
-                      program={member.program}
-                      major={member.major}
-                    />
-                  ))}
-                </Box>
-              )}
+              ) : items.length > 0 ? (
+                <Stack spacing={2}>
+                  {showDemoSection ? (
+                    <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+                      Kết quả tìm kiếm
+                    </Typography>
+                  ) : null}
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: {
+                        xs: '1fr',
+                        sm: '1fr 1fr',
+                        md: '1fr 1fr 1fr',
+                      },
+                      gap: 3,
+                      opacity: isFetching ? 0.6 : 1,
+                      transition: 'opacity 0.2s',
+                    }}
+                  >
+                    {items.map((member) => (
+                      <NetworkSearchMemberCard
+                        key={member.memberId}
+                        avatar={member.avatarUrl}
+                        fullName={member.fullName}
+                        startYear={member.startYear}
+                        program={member.program}
+                        major={member.major}
+                        onMessage={() => handleOpenMessage(member)}
+                      />
+                    ))}
+                  </Box>
+                </Stack>
+              ) : null}
 
               {pageCount > 0 ? (
                 <Stack
@@ -203,6 +269,12 @@ const NetworkPage = () => {
           </Stack>
         </Container>
       </Container>
+
+      <NetworkMessageDrawer
+        open={isMessageDrawerOpen}
+        onClose={handleCloseMessage}
+        peer={messagePeer}
+      />
     </Page>
   );
 };
