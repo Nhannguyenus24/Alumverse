@@ -11,6 +11,7 @@ import com.service.backend.admin.dto.ActivityItemDTO;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.entity.AdminAuditLog;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 @Service
+@RequiredArgsConstructor
 public class AdminDashboardService {
     private static final Logger log = LoggerFactory.getLogger(AdminDashboardService.class);
 
@@ -35,22 +37,6 @@ public class AdminDashboardService {
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final AuditRepository auditRepository;
     private final CacheUtils cacheUtils;
-
-    public AdminDashboardService(AdminUserRepository adminUserRepository,
-                                 AdminOrganizationRepository adminOrganizationRepository,
-                                 AdminEventRepository adminEventRepository,
-                                 FundDonationsR2dbcRepository fundDonationsRepository,
-                                 AdminAuditLogRepository adminAuditLogRepository,
-                                 AuditRepository auditRepository,
-                                 CacheUtils cacheUtils) {
-        this.adminUserRepository = adminUserRepository;
-        this.adminOrganizationRepository = adminOrganizationRepository;
-        this.adminEventRepository = adminEventRepository;
-        this.fundDonationsRepository = fundDonationsRepository;
-        this.adminAuditLogRepository = adminAuditLogRepository;
-        this.auditRepository = auditRepository;
-        this.cacheUtils = cacheUtils;
-    }
 
     public Mono<DashboardMetricsDTO> getMetrics() {
         Supplier<Mono<DashboardMetricsDTO>> supplier = () -> {

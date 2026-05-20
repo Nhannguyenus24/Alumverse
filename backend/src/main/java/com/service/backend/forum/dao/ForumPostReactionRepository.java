@@ -26,8 +26,7 @@ public interface ForumPostReactionRepository extends R2dbcRepository<ForumPostRe
     /**
      * Count likes (reactions) for a post
      */
-    @Query("SELECT COUNT(*) FROM forum_post_reactions WHERE post_id = :postId")
-    Mono<Long> countReactionsByPostId(@Param("postId") Integer postId);
+    Mono<Long> countByPostId(Integer postId);
     
     /**
      * Delete reaction by post id and member id
