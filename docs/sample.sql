@@ -315,7 +315,12 @@ INSERT INTO "user_notification_settings" ("user_id", "email_enabled", "push_enab
 INSERT INTO "chat_groups" ("type", "title", "created_by", "created_at", "updated_at") VALUES
 ('PRIVATE', NULL, 2, NOW() - INTERVAL '12 days', NOW() - INTERVAL '2 days'),
 ('GROUP', 'CS K60 Mentoring', 6, NOW() - INTERVAL '8 days', NOW() - INTERVAL '1 day'),
-('GROUP', 'IT Internship Sharing', 3, NOW() - INTERVAL '6 days', NOW() - INTERVAL '8 hours');
+('GROUP', 'IT Internship Sharing', 3, NOW() - INTERVAL '6 days', NOW() - INTERVAL '8 hours'),
+('PRIVATE', NULL, 11, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 hour'),
+('GROUP', 'CS K59 Alumni Connect', 11, NOW() - INTERVAL '4 days', NOW() - INTERVAL '30 minutes'),
+('PRIVATE', NULL, 11, NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 hours'),
+('PRIVATE', NULL, 4, NOW() - INTERVAL '2 days', NOW() - INTERVAL '45 minutes'),
+('GROUP', 'CS Backend Study Circle', 11, NOW() - INTERVAL '1 day', NOW() - INTERVAL '15 minutes');
 
 -- ============= CHAT GROUP MEMBERS DATA =============
 INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") VALUES
@@ -327,7 +332,20 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (2, 9, 'member', NOW() - INTERVAL '6 days'),
 (3, 3, 'owner', NOW() - INTERVAL '6 days'),
 (3, 5, 'member', NOW() - INTERVAL '6 days'),
-(3, 8, 'member', NOW() - INTERVAL '5 days');
+(3, 8, 'member', NOW() - INTERVAL '5 days'),
+(4, 11, 'owner', NOW() - INTERVAL '5 days'),
+(4, 2, 'member', NOW() - INTERVAL '5 days'),
+(5, 11, 'owner', NOW() - INTERVAL '4 days'),
+(5, 2, 'admin', NOW() - INTERVAL '4 days'),
+(5, 6, 'member', NOW() - INTERVAL '3 days'),
+(5, 4, 'member', NOW() - INTERVAL '3 days'),
+(6, 11, 'owner', NOW() - INTERVAL '3 days'),
+(6, 6, 'member', NOW() - INTERVAL '3 days'),
+(7, 11, 'member', NOW() - INTERVAL '2 days'),
+(7, 4, 'owner', NOW() - INTERVAL '2 days'),
+(8, 11, 'owner', NOW() - INTERVAL '1 day'),
+(8, 6, 'admin', NOW() - INTERVAL '1 day'),
+(8, 4, 'member', NOW() - INTERVAL '20 hours');
 
 -- ============= CHAT MESSAGES DATA =============
 INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message_type", "metadata", "created_at", "edited_at", "deleted_at") VALUES
@@ -335,7 +353,28 @@ INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message
 (1, 4, 'Dạ em cảm ơn anh. Em muốn hỏi về roadmap backend ạ.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '11 days', NULL, NULL),
 (2, 6, 'Mọi người nhớ chuẩn bị CV trước buổi review tối mai.', 'TEXT', '{"priority":"high"}', NOW() - INTERVAL '2 days', NULL, NULL),
 (2, 2, 'Mình đã pin tài liệu mock interview ở đầu nhóm nhé.', 'TEXT', '{"pinned":true}', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours', NULL),
-(3, 8, 'Có ai muốn referral vị trí intern frontend không?', 'TEXT', '{"tags":["internship","frontend"]}', NOW() - INTERVAL '10 hours', NULL, NULL);
+(3, 8, 'Có ai muốn referral vị trí intern frontend không?', 'TEXT', '{"tags":["internship","frontend"]}', NOW() - INTERVAL '10 hours', NULL, NULL),
+(4, 11, 'Chào anh John, em là Test User — cựu sinh viên CS K59.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '5 days', NULL, NULL),
+(4, 2, 'Chào em! Anh có thể hỗ trợ em về định hướng nghề nghiệp backend.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '4 days 22 hours', NULL, NULL),
+(4, 11, 'Dạ cảm ơn anh. Em đang học Spring Boot, muốn hỏi roadmap ạ.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '4 days 20 hours', NULL, NULL),
+(4, 2, 'Em nên làm REST + JPA trước, sau đó security và testing.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '4 days 18 hours', NULL, NULL),
+(4, 11, 'Vâng em ghi nhận ạ. Anh có tài liệu recommend không?', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 hour', NULL, NULL),
+(5, 11, 'Mọi người ơi, nhóm kết nối cựu sinh viên CS K59 nhé!', 'TEXT', '{"pinned":true}', NOW() - INTERVAL '3 days', NULL, NULL),
+(5, 2, 'Hay quá! Mình sẽ share tài liệu phỏng vấn backend.', 'TEXT', NULL, NOW() - INTERVAL '2 days', NULL, NULL),
+(5, 6, 'Ai cần review CV thì comment ở đây nhé.', 'TEXT', NULL, NOW() - INTERVAL '30 minutes', NULL, NULL),
+(6, 11, 'Anh Phạm ơi, em muốn hỏi về system design cho bài tập cuối kỳ ạ.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '3 days', NULL, NULL),
+(6, 6, 'Em gửi diagram hiện tại, anh review giúp nhé.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 days 22 hours', NULL, NULL),
+(6, 11, 'Dạ em vừa gửi link Figma trong metadata.', 'TEXT', '{"hasAttachment":true}', NOW() - INTERVAL '2 days 20 hours', NULL, NULL),
+(6, 6, 'Nhìn chung ổn, nhưng nên tách service auth ra riêng.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 days', NULL, NULL),
+(6, 11, 'Cảm ơn anh, em sửa lại và báo anh sau nhé!', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 hours', NULL, NULL),
+(7, 4, 'Chào bạn, mình thấy bạn cũng học CS, mình xin lời khuyên về internship được không?', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 days', NULL, NULL),
+(7, 11, 'Chào bạn! Mình tốt nghiệp rồi, cứ hỏi thoải mái nhé.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 day 22 hours', NULL, NULL),
+(7, 4, 'Mình nên ưu tiên thực tập startup hay công ty lớn ạ?', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 day 20 hours', NULL, NULL),
+(7, 11, 'Tùy mục tiêu: startup học nhanh, big corp CV đẹp hơn.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 day', NULL, NULL),
+(7, 4, 'Dạ cảm ơn bạn, mình sẽ apply cả hai loại luôn!', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '45 minutes', NULL, NULL),
+(8, 11, 'Nhóm học backend — tuần này ôn PostgreSQL và indexing nhé.', 'TEXT', '{"topic":"postgresql"}', NOW() - INTERVAL '1 day', NULL, NULL),
+(8, 6, 'Mình có slide về EXPLAIN ANALYZE, share vào nhóm nha.', 'TEXT', NULL, NOW() - INTERVAL '18 hours', NULL, NULL),
+(8, 4, 'Em đang làm bài lab, mai hỏi thêm ạ!', 'TEXT', NULL, NOW() - INTERVAL '15 minutes', NULL, NULL);
 
 -- ============= FORUM CATEGORIES DATA =============
 INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES
