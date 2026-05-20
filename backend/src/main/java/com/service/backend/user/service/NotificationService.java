@@ -31,7 +31,6 @@ public class NotificationService {
 				.title(title)
 				.message(message)
 				.isRead(false)
-				.createdAt(LocalDateTime.now())
 				.build();
 
 		notificationRepository.save(notification)

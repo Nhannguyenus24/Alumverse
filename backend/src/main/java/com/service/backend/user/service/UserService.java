@@ -110,7 +110,6 @@ public class UserService {
                         existing.setForumReplyEnabled(request.getForumReplyEnabled());
                     }
 
-                    existing.setUpdatedAt(LocalDateTime.now());
                     return userNotificationSettingsRepository.save(existing);
                 })
                 .map(this::toNotificationResponse);

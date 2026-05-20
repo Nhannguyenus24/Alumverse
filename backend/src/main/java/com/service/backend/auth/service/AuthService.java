@@ -446,7 +446,6 @@ public class AuthService {
     private void recordLoginSuccessAsync(Integer userId, String loginMethod, String userAgent, String loginIp) {
         UserLoginHistory history = UserLoginHistory.builder()
             .userId(userId)
-            .loginAt(java.time.LocalDateTime.now())
             .loginMethod(loginMethod)
             .userAgent(userAgent)
             .loginIp(loginIp)

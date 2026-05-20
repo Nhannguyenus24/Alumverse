@@ -26,12 +26,10 @@ public interface ForumCategoryRepository extends R2dbcRepository<ForumCategory, 
     /**
      * Count categories by organization id
      */
-    @Query("SELECT COUNT(*) FROM forum_categories WHERE organization_id = :organizationId")
-    Mono<Long> countByOrganizationId(@Param("organizationId") Integer organizationId);
+    Mono<Long> countByOrganizationId(Integer organizationId);
 
     /**
      * Find all categories ordered by name
      */
-    @Query("SELECT * FROM forum_categories WHERE organization_id = :organizationId ORDER BY name ASC")
-    Flux<ForumCategory> findByOrganizationIdOrderByName(@Param("organizationId") Integer organizationId);
+    Flux<ForumCategory> findAllByOrganizationIdOrderByNameAsc(Integer organizationId);
 }
