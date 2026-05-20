@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.service.backend.shared.exception.ApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -92,7 +93,7 @@ public class ForumService {
         return forumCategoryRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum category not found with ID: {}", id);
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
                 }))
                 .flatMap(category -> {
                     if (request.getName() != null) {
@@ -141,7 +142,7 @@ public class ForumService {
         return forumCategoryRepository.findById(request.getCategoryId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Category not found with ID: {}", request.getCategoryId());
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
                 }))
                 .flatMap(category -> {
                     ForumTopic topic = ForumTopic.builder()
@@ -166,7 +167,7 @@ public class ForumService {
         return forumTopicRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum topic not found with ID: {}", id);
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
                 .flatMap(topic -> {
                     if (request.getTitle() != null) {
@@ -230,18 +231,18 @@ public class ForumService {
         // Validate topicId is valid (not 0 or negative)
         if (request.getTopicId() == null || request.getTopicId() <= 0) {
             log.warn("Invalid topic ID: {}", request.getTopicId());
-            return Mono.error(new RuntimeException(ErrorCode.INVALID_TOPIC_ID.getMessage()));
+            return Mono.error(new ApplicationException(ErrorCode.INVALID_TOPIC_ID));
         }
         
         // Verify topic exists before creating post
         return forumTopicRepository.findById(request.getTopicId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Topic not found with ID: {}", request.getTopicId());
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_TOPIC_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
                 .flatMap(topic -> {
                     if (Boolean.TRUE.equals(topic.getIsLocked())) {
-                        return Mono.error(new RuntimeException("Topic is locked"));
+                        return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_LOCKED));
                     }
                     ForumPost post = ForumPost.builder()
                             .topicId(request.getTopicId())
@@ -276,7 +277,7 @@ public class ForumService {
         return forumPostRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum post not found with ID: {}", id);
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
                 .flatMap(post -> {
                     post.setContent(request.getContent());
@@ -292,7 +293,7 @@ public class ForumService {
         return forumPostRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum post not found with ID: {}", id);
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
                 .flatMap(post -> {
                     // Delete all reactions for this post first
@@ -305,7 +306,7 @@ public class ForumService {
 
     public Mono<ForumPostReportDTO> reportPost(Integer postId, CreateForumPostReportRequest request) {
         return forumPostRepository.findById(postId)
-                .switchIfEmpty(Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage())))
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND)))
                 .flatMap(post -> {
                     ForumPostReport report = ForumPostReport.builder()
                             .postId(postId)
@@ -331,7 +332,7 @@ public class ForumService {
         return forumPostRepository.findById(request.getPostId())
                 .switchIfEmpty(Mono.defer(() -> {
                     log.error("Post not found with ID: {}", request.getPostId());
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_POST_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND));
                 }))
                 .flatMap(post -> {
                     // Check if reaction already exists
@@ -392,7 +393,7 @@ public class ForumService {
                 .flatMap(this::convertToCategoryDTOWithStats)
                 .switchIfEmpty(Mono.defer(() -> {
                     log.warn("Forum category not found with ID: {}", id);
-                    return Mono.error(new RuntimeException(ErrorCode.FORUM_CATEGORY_NOT_FOUND.getMessage()));
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND));
                 }))
                 .doOnSuccess(result -> log.info("Successfully found forum category ID: {}", id))
                 .doOnError(error -> log.error("Error finding forum category ID: {}", id, error));

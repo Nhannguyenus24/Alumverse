@@ -38,10 +38,7 @@ public class AuditController {
             @RequestParam(defaultValue = "20") @Min(1) int size) {
         return auditService.getLoginHistories(page, size)
                 .map(data -> ResponseEntity.ok(
-                        new ApiResponse<>("Login histories fetched successfully", data)))
-                .onErrorResume(e -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(e.getMessage(), null))));
+                        new ApiResponse<>("Login histories fetched successfully", data)));
     }
 
     /**
@@ -54,10 +51,7 @@ public class AuditController {
             @RequestParam(defaultValue = "20") @Min(1) int size) {
         return auditService.getLoginHistoriesByUser(userId, page, size)
                 .map(data -> ResponseEntity.ok(
-                        new ApiResponse<>("Login histories fetched successfully", data)))
-                .onErrorResume(e -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(e.getMessage(), null))));
+                        new ApiResponse<>("Login histories fetched successfully", data)));
     }
 
     /**
@@ -67,10 +61,7 @@ public class AuditController {
     public Mono<ResponseEntity<ApiResponse<Map<String, Object>>>> getLoginStats() {
         return auditService.getLoginStats()
                 .map(data -> ResponseEntity.ok(
-                        new ApiResponse<>("Login stats fetched successfully", data)))
-                .onErrorResume(e -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(e.getMessage(), null))));
+                        new ApiResponse<>("Login stats fetched successfully", data)));
     }
 
     /**
@@ -80,9 +71,6 @@ public class AuditController {
     public Mono<ResponseEntity<ApiResponse<List<Object>>>> getSuspiciousLogins() {
         return auditService.getSuspiciousLogins()
                 .map(data -> ResponseEntity.ok(
-                        new ApiResponse<>("Suspicious logins fetched successfully", data)))
-                .onErrorResume(e -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(e.getMessage(), null))));
+                        new ApiResponse<>("Suspicious logins fetched successfully", data)));
     }
 }

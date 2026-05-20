@@ -2,6 +2,8 @@ package com.service.backend.admin.service;
 
 import java.util.List;
 
+import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -407,7 +409,7 @@ public class AdminUserService {
         return adminUserRepository.existsByEmailOrUserName(request.getEmail(), request.getUserName())
                 .flatMap(exists -> {
                     if (exists) {
-                        return Mono.error(new RuntimeException("Email or username already exists"));
+                        return Mono.error(new ApplicationException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED));
                     }
                     String encodedPassword = passwordEncoder.encode(request.getPassword());
                     return adminUserRepository.createAdminUser(
