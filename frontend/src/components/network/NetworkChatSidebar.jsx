@@ -1,6 +1,15 @@
-import { useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { Avatar, Box, ListItemIcon, ListItemText, MenuItem, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  CircularProgress,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Pagination,
+  Stack,
+  Typography,
+} from '@mui/material';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
@@ -13,19 +22,27 @@ function initials(name) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-const NetworkChatSidebar = ({ chats, activeChatId, onSelectChat, onCreateGroupChat }) => {
-  const [search, setSearch] = useState('');
+const NetworkChatSidebar = ({
+  chats = [],
+  activeChatId,
+  onSelectChat,
+  onCreateGroupChat,
+  searchValue = '',
+  onSearchChange,
+  onSearchSubmit,
+  page = 1,
+  totalPage = 0,
+  onPageChange,
+  isPending = false,
+  isFetching = false,
+}) => {
   const { enqueueSnackbar } = useSnackbar();
 
-  const filteredChats = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return chats;
-    return chats.filter((chat) => {
-      const name = String(chat.name ?? '').toLowerCase();
-      const preview = String(chat.preview ?? '').toLowerCase();
-      return name.includes(q) || preview.includes(q);
-    });
-  }, [chats, search]);
+  const handleSearchKeyDown = (event) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    onSearchSubmit?.();
+  };
 
   return (
     <Box
@@ -86,21 +103,26 @@ const NetworkChatSidebar = ({ chats, activeChatId, onSelectChat, onCreateGroupCh
 
       <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
         <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Tìm trong danh sách chat"
+          value={searchValue}
+          onChange={onSearchChange}
+          onKeyDown={handleSearchKeyDown}
+          placeholder="Tìm chat… (Enter để tìm)"
         />
       </Box>
 
-      <Scrollbar sx={{ flex: 1, minHeight: 0 }}>
-        {filteredChats.length === 0 ? (
+      <Scrollbar sx={{ flex: 1, minHeight: 0, opacity: isFetching ? 0.6 : 1, transition: 'opacity 0.2s' }}>
+        {isPending ? (
+          <Stack alignItems="center" py={4}>
+            <CircularProgress size={24} color="primary" />
+          </Stack>
+        ) : chats.length === 0 ? (
           <Box sx={{ px: 2, py: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Không có cuộc trò chuyện khớp từ khóa.
+              Không có cuộc trò chuyện nào.
             </Typography>
           </Box>
         ) : (
-          filteredChats.map((chat) => {
+          chats.map((chat) => {
             const active = chat.id === activeChatId;
             return (
               <Box
@@ -141,6 +163,33 @@ const NetworkChatSidebar = ({ chats, activeChatId, onSelectChat, onCreateGroupCh
           })
         )}
       </Scrollbar>
+
+      {totalPage > 1 ? (
+        <Box
+          sx={{
+            borderTop: 1,
+            borderColor: 'divider',
+            py: 1,
+            display: 'flex',
+            justifyContent: 'center',
+          }}
+        >
+          <Pagination
+            count={totalPage}
+            page={page}
+            onChange={onPageChange}
+            color="primary"
+            shape="rounded"
+            size="small"
+            disabled={isFetching}
+            sx={{
+              '& .MuiPaginationItem-root': {
+                fontWeight: 700,
+              },
+            }}
+          />
+        </Box>
+      ) : null}
     </Box>
   );
 };

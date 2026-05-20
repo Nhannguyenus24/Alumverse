@@ -2,6 +2,8 @@ package com.service.backend.admin.service;
 
 import java.util.List;
 
+import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.exception.ApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,12 +25,14 @@ import com.service.backend.admin.entity.AdminAuditLog;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 
 @Service
+@RequiredArgsConstructor
 public class AdminUserService {
     private static final Logger logger = LoggerFactory.getLogger(AdminUserService.class);
     
@@ -38,19 +42,6 @@ public class AdminUserService {
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository;
 
-    public AdminUserService(
-            AdminUserRepository adminUserRepository,
-            AdminAuditLogRepository adminAuditLogRepository,
-            PasswordEncoder passwordEncoder,
-            UserDisplayInfoRepository userDisplayInfoRepository,
-            AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository) {
-        this.adminUserRepository = adminUserRepository;
-        this.adminAuditLogRepository = adminAuditLogRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.userDisplayInfoRepository = userDisplayInfoRepository;
-        this.adminUserOrganizationPreviewRepository = adminUserOrganizationPreviewRepository;
-    }
-    
     /**
      * Get users in organization with pagination
      */
@@ -373,7 +364,6 @@ public class AdminUserService {
                     if (count <= 0) {
                         return Mono.just(false);
                     }
-                    LocalDateTime now = LocalDateTime.now();
                     return adminAuditLogRepository
                             .insertAuditLog(
                                     adminUserId,
@@ -383,16 +373,14 @@ public class AdminUserService {
                                     String.valueOf(userId),
                                     null,
                                     null,
-                                    request.getReason(),
-                                    now)
+                                    request.getReason())
                             .onErrorResume(primaryErr -> {
                                 logger.warn("Primary audit-log insert failed, retrying legacy schema for user {}", userId, primaryErr);
                                 return adminAuditLogRepository
                                         .insertAuditLogLegacy(
                                                 adminUserId,
                                                 userId,
-                                                "RESET_PASSWORD",
-                                                now);
+                                                "RESET_PASSWORD");
                             })
                             .thenReturn(true)
                             .onErrorResume(e -> {
@@ -407,7 +395,7 @@ public class AdminUserService {
         return adminUserRepository.existsByEmailOrUserName(request.getEmail(), request.getUserName())
                 .flatMap(exists -> {
                     if (exists) {
-                        return Mono.error(new RuntimeException("Email or username already exists"));
+                        return Mono.error(new ApplicationException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED));
                     }
                     String encodedPassword = passwordEncoder.encode(request.getPassword());
                     return adminUserRepository.createAdminUser(

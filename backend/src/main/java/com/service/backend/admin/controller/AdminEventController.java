@@ -48,8 +48,7 @@ public class AdminEventController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminEventService.getAllEvents(page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved all events", paginated)))
-                .onErrorResume(this::handleError);
+                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved all events", paginated)));
     }
 
     @Operation(summary = "List events by organization (paginated)")
@@ -61,8 +60,7 @@ public class AdminEventController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminEventService.getEventsByOrganization(organizationId, page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events for organization", paginated)))
-                .onErrorResume(this::handleError);
+                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events for organization", paginated)));
     }
 
     @Operation(summary = "Search all events by keyword")
@@ -75,8 +73,7 @@ public class AdminEventController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminEventService.searchAllEvents(keyword, page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Search results retrieved", paginated)))
-                .onErrorResume(this::handleError);
+                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Search results retrieved", paginated)));
     }
 
     @Operation(summary = "Filter events by publish status")
@@ -89,8 +86,7 @@ public class AdminEventController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminEventService.getEventsByPublishStatus(isPublished, page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events by publish status", paginated)))
-                .onErrorResume(this::handleError);
+                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events by publish status", paginated)));
     }
 
     @Operation(summary = "Get a single event by ID")
@@ -98,8 +94,7 @@ public class AdminEventController {
     public Mono<ResponseEntity<ApiResponse<Event>>> getEventById(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
         return adminEventService.getEventById(eventId)
-                .map(event -> ResponseEntity.ok(new ApiResponse<>("Retrieved event", event)))
-                .onErrorResume(this::handleError);
+                .map(event -> ResponseEntity.ok(new ApiResponse<>("Retrieved event", event)));
     }
 
 
@@ -109,8 +104,7 @@ public class AdminEventController {
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId,
             @Valid @RequestBody UpdateEventRequest request) {
         return adminEventService.updateEvent(eventId, request)
-                .map(event -> ResponseEntity.ok(new ApiResponse<>("Event updated successfully", event)))
-                .onErrorResume(this::handleError);
+                .map(event -> ResponseEntity.ok(new ApiResponse<>("Event updated successfully", event)));
     }
 
     @Operation(summary = "Delete an event (admin override)")
@@ -118,8 +112,7 @@ public class AdminEventController {
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
         return adminEventService.deleteEvent(eventId)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Event deleted successfully", null))))
-                .onErrorResume(this::handleError);
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Event deleted successfully", null)));
     }
 
     @Operation(summary = "Publish an event")
@@ -127,8 +120,7 @@ public class AdminEventController {
     public Mono<ResponseEntity<ApiResponse<Event>>> publishEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
         return adminEventService.publishEvent(eventId)
-                .map(event -> ResponseEntity.ok(new ApiResponse<>("Event published successfully", event)))
-                .onErrorResume(this::handleError);
+                .map(event -> ResponseEntity.ok(new ApiResponse<>("Event published successfully", event)));
     }
 
     @Operation(summary = "Unpublish an event")
@@ -136,8 +128,7 @@ public class AdminEventController {
     public Mono<ResponseEntity<ApiResponse<Event>>> unpublishEvent(
             @PathVariable @Min(value = 1, message = "Event ID must be greater than 0") Long eventId) {
         return adminEventService.unpublishEvent(eventId)
-                .map(event -> ResponseEntity.ok(new ApiResponse<>("Event unpublished successfully", event)))
-                .onErrorResume(this::handleError);
+                .map(event -> ResponseEntity.ok(new ApiResponse<>("Event unpublished successfully", event)));
     }
 
     @Operation(summary = "List tickets registered for an event")
@@ -149,8 +140,7 @@ public class AdminEventController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminEventService.getTicketsByEvent(eventId, page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved event tickets", paginated)))
-                .onErrorResume(this::handleError);
+                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved event tickets", paginated)));
     }
 
     @Operation(summary = "Cancel a ticket by code (admin override)")
@@ -159,8 +149,7 @@ public class AdminEventController {
             @Parameter(example = "EVT2026-001")
             @PathVariable @NotBlank(message = "Ticket code is required") String ticketCode) {
         return adminEventService.cancelTicket(ticketCode)
-                .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket cancelled successfully", ticket)))
-                .onErrorResume(this::handleError);
+                .map(ticket -> ResponseEntity.ok(new ApiResponse<>("Ticket cancelled successfully", ticket)));
     }
 
     @Operation(summary = "List interests recorded for an event")
@@ -172,8 +161,7 @@ public class AdminEventController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminEventService.getInterestsByEvent(eventId, page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved event interests", paginated)))
-                .onErrorResume(this::handleError);
+                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved event interests", paginated)));
     }
 
     @Operation(summary = "Get comprehensive admin event statistics",
@@ -181,12 +169,6 @@ public class AdminEventController {
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<EventStatisticsDTO>>> getEventStatistics() {
         return adminEventService.getEventStatistics()
-                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Retrieved comprehensive event statistics", stats)))
-                .onErrorResume(this::handleError);
-    }
-
-    private <T> Mono<ResponseEntity<ApiResponse<T>>> handleError(Throwable error) {
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(error.getMessage(), null)));
+                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Retrieved comprehensive event statistics", stats)));
     }
 }

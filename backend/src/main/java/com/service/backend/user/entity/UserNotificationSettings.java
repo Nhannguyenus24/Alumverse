@@ -3,6 +3,7 @@ package com.service.backend.user.entity;
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -37,6 +38,7 @@ public class UserNotificationSettings {
     @Column("forum_reply_enabled")
     private Boolean forumReplyEnabled;
 
+    @LastModifiedDate
     @Column("updated_at")
     private LocalDateTime updatedAt;
 }

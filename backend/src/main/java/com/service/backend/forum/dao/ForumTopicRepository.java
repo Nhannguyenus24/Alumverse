@@ -52,8 +52,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     /**
      * Count topics by category id
      */
-    @Query("SELECT COUNT(*) FROM forum_topics WHERE category_id = :categoryId")
-    Mono<Long> countByCategoryId(@Param("categoryId") Integer categoryId);
+    Mono<Long> countByCategoryId(Integer categoryId);
 
     /**
      * Count distinct discussion participants in a category.
@@ -72,8 +71,7 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     /**
      * Count topics by organization id
      */
-    @Query("SELECT COUNT(*) FROM forum_topics WHERE organization_id = :organizationId")
-    Mono<Long> countByOrganizationId(@Param("organizationId") Integer organizationId);
+    Mono<Long> countByOrganizationId(Integer organizationId);
 
     // ========== STATISTICS QUERIES ==========
 

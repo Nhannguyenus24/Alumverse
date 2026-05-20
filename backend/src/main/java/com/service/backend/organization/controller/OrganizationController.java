@@ -6,15 +6,12 @@ import com.service.backend.organization.entity.Organization;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.service.OrganizationService;
 import com.service.backend.shared.dto.ApiResponse;
-import com.service.backend.shared.exception.ApplicationException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +23,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Tag(name = "Organizations", description = "Public APIs for organization information")
 public class OrganizationController {
-
-    private static final Logger logger = LoggerFactory.getLogger(OrganizationController.class);
     private final OrganizationService organizationService;
 
     @GetMapping
@@ -36,24 +31,11 @@ public class OrganizationController {
             description = "Retrieve all organizations without authentication"
     )
     public Mono<ResponseEntity<ApiResponse<List<Organization>>>> getAllOrganizations() {
-        logger.info("Fetching all organizations from controller");
         return organizationService.getAllOrganizations()
                 .collectList()
-                .map(organizations -> {
-                    logger.info("Successfully retrieved {} organizations", organizations.size());
-                    return ResponseEntity.ok(
-                            new ApiResponse<>("Organizations retrieved successfully", organizations)
-                    );
-                })
-                .onErrorResume(error -> {
-                    logger.error("Error fetching all organizations", error);
-                    if (error instanceof ApplicationException appException) {
-                        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(appException.getMessage(), null)));
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(new ApiResponse<>("Failed to retrieve organizations", null)));
-                });
+                .map(organizations -> ResponseEntity.ok(
+                        new ApiResponse<>("Organizations retrieved successfully", organizations)
+                ));
     }
 
     @GetMapping("/{slug}")
@@ -64,23 +46,10 @@ public class OrganizationController {
     public Mono<ResponseEntity<ApiResponse<Organization>>> getOrganizationBySlug(
             @Parameter(description = "Organization slug", example = "hcmus")
             @PathVariable @NotBlank String slug) {
-        logger.info("Fetching organization with slug: {}", slug);
         return organizationService.getOrganizationBySlug(slug)
-                .map(organization -> {
-                    logger.info("Successfully retrieved organization with slug: {}", slug);
-                    return ResponseEntity.ok(
-                            new ApiResponse<>("Organization retrieved successfully", organization)
-                    );
-                })
-                .onErrorResume(error -> {
-                    logger.error("Error fetching organization with slug: {}", slug, error);
-                    if (error instanceof ApplicationException appException) {
-                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ApiResponse<>(appException.getMessage(), null)));
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(new ApiResponse<>("Failed to retrieve organization", null)));
-                });
+                .map(organization -> ResponseEntity.ok(
+                        new ApiResponse<>("Organization retrieved successfully", organization)
+                ));
     }
 
     @GetMapping("/{organizationId}/introduction")
@@ -91,19 +60,9 @@ public class OrganizationController {
     public Mono<ResponseEntity<ApiResponse<OrganizationIntroductionResponse>>> getIntroduction(
             @Parameter(description = "Organization ID", example = "1")
             @PathVariable Integer organizationId) {
-        logger.info("Fetching introduction for organization id: {}", organizationId);
         return organizationService.getIntroduction(organizationId)
                 .map(intro -> ResponseEntity.ok(
-                        new ApiResponse<>("Introduction retrieved successfully", intro)))
-                .onErrorResume(error -> {
-                    logger.error("Error fetching introduction for organization id: {}", organizationId, error);
-                    if (error instanceof ApplicationException appException) {
-                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ApiResponse<>(appException.getMessage(), null)));
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(new ApiResponse<>("Failed to retrieve introduction", null)));
-                });
+                        new ApiResponse<>("Introduction retrieved successfully", intro)));
     }
 
     @PostMapping("/{organizationId}/feedbacks")
@@ -115,18 +74,8 @@ public class OrganizationController {
             @Parameter(description = "Organization ID", example = "1")
             @PathVariable Integer organizationId,
             @Valid @RequestBody CreateSchoolFeedbackRequest request) {
-        logger.info("Creating school feedback for organization id: {}", organizationId);
         return organizationService.createSchoolFeedback(organizationId, request)
                 .map(feedback -> ResponseEntity.status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("School feedback created successfully", feedback)))
-                .onErrorResume(error -> {
-                    logger.error("Error creating school feedback for organization id: {}", organizationId, error);
-                    if (error instanceof ApplicationException appException) {
-                        return Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ApiResponse<>(appException.getMessage(), null)));
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body(new ApiResponse<>("Failed to create school feedback", null)));
-                });
+                        .body(new ApiResponse<>("School feedback created successfully", feedback)));
     }
 }

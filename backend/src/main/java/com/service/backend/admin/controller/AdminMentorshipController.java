@@ -44,8 +44,7 @@ public class AdminMentorshipController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminMentorshipService.getAllSessions(page, size)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentorship sessions", p)))
-                .onErrorResume(this::handleError);
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentorship sessions", p)));
     }
 
     @Operation(summary = "Filter sessions by status (Pending/Confirmed/Completed/Cancelled/Rejected)")
@@ -58,8 +57,7 @@ public class AdminMentorshipController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminMentorshipService.getSessionsByStatus(status, page, size)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved sessions by status", p)))
-                .onErrorResume(this::handleError);
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved sessions by status", p)));
     }
 
     @Operation(summary = "Get a session by ID")
@@ -67,8 +65,7 @@ public class AdminMentorshipController {
     public Mono<ResponseEntity<ApiResponse<AdminMentorshipSessionDTO>>> getSessionById(
             @PathVariable @Min(value = 1, message = "Session ID must be greater than 0") Integer sessionId) {
         return adminMentorshipService.getSessionById(sessionId)
-                .map(s -> ResponseEntity.ok(new ApiResponse<>("Retrieved session", s)))
-                .onErrorResume(this::handleError);
+                .map(s -> ResponseEntity.ok(new ApiResponse<>("Retrieved session", s)));
     }
 
     @Operation(summary = "Force-update a session status (admin override)")
@@ -78,8 +75,7 @@ public class AdminMentorshipController {
             @Parameter(example = "Cancelled")
             @RequestParam @NotBlank(message = "Status is required") String status) {
         return adminMentorshipService.updateSessionStatus(sessionId, status)
-                .map(s -> ResponseEntity.ok(new ApiResponse<>("Session status updated", s)))
-                .onErrorResume(this::handleError);
+                .map(s -> ResponseEntity.ok(new ApiResponse<>("Session status updated", s)));
     }
 
     @Operation(summary = "Delete a session (admin override)")
@@ -87,8 +83,7 @@ public class AdminMentorshipController {
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteSession(
             @PathVariable @Min(value = 1, message = "Session ID must be greater than 0") Integer sessionId) {
         return adminMentorshipService.deleteSession(sessionId)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Session deleted successfully", null))))
-                .onErrorResume(this::handleError);
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Session deleted successfully", null)));
     }
 
     @Operation(summary = "List all mentor profiles")
@@ -99,8 +94,7 @@ public class AdminMentorshipController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminMentorshipService.getAllMentorProfiles(page, size)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentor profiles", p)))
-                .onErrorResume(this::handleError);
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentor profiles", p)));
     }
 
     @Operation(summary = "Filter mentor profiles by approval status")
@@ -113,8 +107,7 @@ public class AdminMentorshipController {
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
         return adminMentorshipService.getMentorProfilesByApproval(isApproved, page, size)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentor profiles by approval", p)))
-                .onErrorResume(this::handleError);
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentor profiles by approval", p)));
     }
 
     @Operation(summary = "Approve a mentor profile")
@@ -122,20 +115,13 @@ public class AdminMentorshipController {
     public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> approveMentor(
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId) {
         return adminMentorshipService.approveMentor(memberId)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor approved", p)))
-                .onErrorResume(this::handleError);
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor approved", p)));
     }
 
     @Operation(summary = "Get comprehensive mentorship statistics")
     @GetMapping("/statistics")
     public Mono<ResponseEntity<ApiResponse<MentorshipStatisticsDTO>>> getStatistics() {
         return adminMentorshipService.getStatistics()
-                .map(s -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentorship statistics", s)))
-                .onErrorResume(this::handleError);
-    }
-
-    private <T> Mono<ResponseEntity<ApiResponse<T>>> handleError(Throwable error) {
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse<>(error.getMessage(), null)));
+                .map(s -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentorship statistics", s)));
     }
 }

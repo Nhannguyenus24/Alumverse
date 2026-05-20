@@ -49,22 +49,7 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Count total posts by topic id (including banned)
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId")
-    Mono<Long> countAllByTopicId(@Param("topicId") Integer topicId);
-
-    /**
-     * Update post content
-     */
-    @Modifying
-    @Query("UPDATE forum_posts SET content = :content, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
-    Mono<Integer> updatePostContent(@Param("id") Integer id, @Param("content") String content);
-
-    /**
-     * Set answer to another post
-     */
-    @Modifying
-    @Query("UPDATE forum_posts SET answer_to_post_id = :answerToPostId, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
-    Mono<Integer> setAnswerToPost(@Param("id") Integer id, @Param("answerToPostId") Integer answerToPostId);
+    Mono<Long> countAllByTopicId(Integer topicId);
 
     /**
      * Find forum posts created yesterday
@@ -106,16 +91,9 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     );
 
     /**
-     * Count all forum posts (admin moderation list).
-     */
-    @Query("SELECT COUNT(*) FROM forum_posts")
-    Mono<Long> countAllPosts();
-
-    /**
      * Count all banned forum posts
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE is_banned = true")
-    Mono<Long> countBannedPosts();
+    Mono<Long> countByIsBannedTrue();
 
     // ========== STATISTICS QUERIES ==========
 
@@ -134,8 +112,7 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Count posts for a specific topic
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false")
-    Mono<Long> countActivePostsByTopicId(@Param("topicId") Integer topicId);
+    Mono<Long> countByTopicIdAndIsBannedFalse(Integer topicId);
 
     /**
      * Count posts belonging to topics under a specific category

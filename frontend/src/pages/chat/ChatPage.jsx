@@ -1,19 +1,104 @@
-import { useMemo, useState } from 'react';
-import { Box, Container, Stack, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Box, Container, Stack, Typography } from '@mui/material';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
 import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
-import { MOCK_NETWORK_CHATS } from './mockNetworkChats';
+import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
+import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
+
+function normalizeGroupChat(item) {
+  return {
+    id: item.id,
+    name: item.title ?? '(Nhóm không tên)',
+    preview: item.lastMessagePreview ?? '',
+    lastMessageAt: item.lastMessageAt ?? null,
+    type: 'GROUP',
+  };
+}
+
+function normalizePrivateChat(item) {
+  return {
+    id: item.id,
+    name: item.peerUserName ?? item.title ?? '(Không có tên)',
+    preview: item.lastMessagePreview ?? '',
+    lastMessageAt: item.lastMessageAt ?? null,
+    type: 'PRIVATE',
+    peerMemberId: item.peerMemberId,
+  };
+}
 
 const ChatPage = () => {
-  const [activeChatId, setActiveChatId] = useState(MOCK_NETWORK_CHATS[0].id);
+  const [searchInput, setSearchInput] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [activeChatId, setActiveChatId] = useState(null);
+
+  const {
+    items: groupItems,
+    totalPage: groupTotalPage,
+    isPending: groupPending,
+    isFetching: groupFetching,
+    isError: groupError,
+    errorMessage: groupErrorMsg,
+  } = useGroupChatList({ searchQuery: appliedSearch, page });
+
+  const {
+    items: privateItems,
+    totalPage: privateTotalPage,
+    isPending: privatePending,
+    isFetching: privateFetching,
+    isError: privateError,
+    errorMessage: privateErrorMsg,
+  } = usePrivateChatList({ searchQuery: appliedSearch, page });
+
+  const chats = useMemo(() => {
+    const merged = [
+      ...groupItems.map(normalizeGroupChat),
+      ...privateItems.map(normalizePrivateChat),
+    ];
+    merged.sort((a, b) => {
+      if (!a.lastMessageAt && !b.lastMessageAt) return 0;
+      if (!a.lastMessageAt) return 1;
+      if (!b.lastMessageAt) return -1;
+      return new Date(b.lastMessageAt) - new Date(a.lastMessageAt);
+    });
+    return merged;
+  }, [groupItems, privateItems]);
+
+  const totalPage = Math.max(groupTotalPage, privateTotalPage);
+  const safePage = totalPage === 0 ? 1 : Math.min(page, totalPage);
+
+  useEffect(() => {
+    if (totalPage > 0 && page > totalPage) {
+      setPage(totalPage);
+    }
+  }, [totalPage, page]);
+
+  useEffect(() => {
+    if (activeChatId == null && chats.length > 0) {
+      setActiveChatId(chats[0].id);
+    }
+  }, [chats, activeChatId]);
 
   const activeChat = useMemo(
-    () =>
-      MOCK_NETWORK_CHATS.find((chat) => chat.id === activeChatId) ?? MOCK_NETWORK_CHATS[0],
-    [activeChatId],
+    () => chats.find((c) => c.id === activeChatId) ?? null,
+    [chats, activeChatId],
   );
+
+  const isPending = groupPending || privatePending;
+  const isFetching = groupFetching || privateFetching;
+  const isError = groupError || privateError;
+  const errorMessage = groupErrorMsg ?? privateErrorMsg ?? null;
+
+  const handleSearchSubmit = () => {
+    setAppliedSearch(searchInput.trim());
+    setPage(1);
+  };
+
+  const handlePageChange = (_, value) => {
+    setPage(value);
+  };
 
   return (
     <Page title="Chat">
@@ -51,6 +136,12 @@ const ChatPage = () => {
                 NETWORK
               </Typography>
 
+              {isError ? (
+                <Alert severity="error" sx={{ borderRadius: 1.5 }}>
+                  {errorMessage}
+                </Alert>
+              ) : null}
+
               <Box
                 sx={{
                   display: 'flex',
@@ -65,9 +156,17 @@ const ChatPage = () => {
                 }}
               >
                 <NetworkChatSidebar
-                  chats={MOCK_NETWORK_CHATS}
-                  activeChatId={activeChat.id}
+                  chats={chats}
+                  activeChatId={activeChatId}
                   onSelectChat={setActiveChatId}
+                  searchValue={searchInput}
+                  onSearchChange={setSearchInput}
+                  onSearchSubmit={handleSearchSubmit}
+                  page={safePage}
+                  totalPage={totalPage}
+                  onPageChange={handlePageChange}
+                  isPending={isPending}
+                  isFetching={isFetching}
                 />
                 <NetworkChatPanel activeChat={activeChat} />
               </Box>

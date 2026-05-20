@@ -22,8 +22,11 @@ import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.entity.ForumCategory;
 import com.service.backend.forum.entity.ForumPost;
 import com.service.backend.forum.entity.ForumPostReport;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@RequiredArgsConstructor
 public class AdminForumService {
     private static final Logger log = LoggerFactory.getLogger(AdminForumService.class);
 
@@ -41,22 +45,6 @@ public class AdminForumService {
     private final AdminOrganizationRepository adminOrganizationRepository;
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
-
-    public AdminForumService(ForumPostRepository forumPostRepository,
-                            ForumTopicRepository forumTopicRepository,
-                            ForumCategoryRepository forumCategoryRepository,
-                            ForumPostReportRepository forumPostReportRepository,
-                            AdminOrganizationRepository adminOrganizationRepository,
-                            AdminUserRepository adminUserRepository,
-                            AdminAuditLogRepository adminAuditLogRepository) {
-        this.forumPostRepository = forumPostRepository;
-        this.forumTopicRepository = forumTopicRepository;
-        this.forumCategoryRepository = forumCategoryRepository;
-        this.forumPostReportRepository = forumPostReportRepository;
-        this.adminOrganizationRepository = adminOrganizationRepository;
-        this.adminUserRepository = adminUserRepository;
-        this.adminAuditLogRepository = adminAuditLogRepository;
-    }
 
     // ========== VIEW NEW POSTS ==========
 
@@ -94,10 +82,9 @@ public class AdminForumService {
         log.info("Banning forum post ID: {}", postId);
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> forumPostRepository.findById(postId)
-                        .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
+                        .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                         .flatMap(post -> {
                             post.setIsBanned(true);
-                            post.setUpdatedAt(LocalDateTime.now());
                             return forumPostRepository.save(post)
                                     .flatMap(saved -> createAuditLog(adminId.intValue(), post.getAuthorMemberId(),
                                             "BAN_POST", "FORUM_POST", String.valueOf(postId), null, null)
@@ -115,10 +102,9 @@ public class AdminForumService {
         log.info("Unbanning forum post ID: {}", postId);
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> forumPostRepository.findById(postId)
-                        .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
+                        .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                         .flatMap(post -> {
                             post.setIsBanned(false);
-                            post.setUpdatedAt(LocalDateTime.now());
                             return forumPostRepository.save(post)
                                     .flatMap(saved -> createAuditLog(adminId.intValue(), post.getAuthorMemberId(),
                                             "UNBAN_POST", "FORUM_POST", String.valueOf(postId), null, null)
@@ -135,7 +121,7 @@ public class AdminForumService {
     public Mono<Void> deleteForumPost(Integer postId) {
         log.info("Deleting forum post ID: {}", postId);
         return forumPostRepository.findById(postId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                 .flatMap(post -> forumPostRepository.deleteById(postId))
                 .doOnSuccess(v -> log.info("Successfully deleted forum post ID: {}", postId))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", postId, error));
@@ -151,7 +137,7 @@ public class AdminForumService {
         return forumPostRepository.findAllBannedPostsWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
-                .zipWith(forumPostRepository.countBannedPosts())
+                .zipWith(forumPostRepository.countByIsBannedTrue())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
@@ -166,7 +152,7 @@ public class AdminForumService {
         return forumPostRepository.findAllPostsWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
-                .zipWith(forumPostRepository.countAllPosts())
+                .zipWith(forumPostRepository.count())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnError(error -> log.error("Error fetching all forum posts", error));
     }
@@ -182,7 +168,7 @@ public class AdminForumService {
 
     public Mono<ForumPostReportDTO> reviewReport(Long reportId, ReviewForumReportRequest request, Integer adminUserId) {
         return forumPostReportRepository.findById(reportId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Report not found with ID: " + reportId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_REPORT_NOT_FOUND))))
                 .flatMap(report -> applyModerationAction(report, request, adminUserId)
                         .then(Mono.defer(() -> {
                             report.setStatus(request.getDecision().toUpperCase());
@@ -196,7 +182,7 @@ public class AdminForumService {
 
     public Mono<ForumPostDTO> updatePostVisibility(Integer postId, Boolean hidden, Integer adminUserId) {
         return forumPostRepository.findById(postId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + postId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                 .flatMap(post -> {
                     Boolean before = post.getIsHidden();
                     post.setIsHidden(hidden);
@@ -211,7 +197,7 @@ public class AdminForumService {
 
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> updateTopicLock(Integer topicId, Boolean locked, Integer adminUserId) {
         return forumTopicRepository.findById(topicId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Topic not found with ID: " + topicId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> {
                     Boolean before = topic.getIsLocked();
                     topic.setIsLocked(locked);
@@ -232,7 +218,7 @@ public class AdminForumService {
     public Mono<Void> deleteForumTopic(Integer topicId) {
         log.info("Deleting forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Topic not found with ID: " + topicId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> {
                     // Delete all posts in this topic first
                     return forumPostRepository.findByTopicId(topicId)
@@ -261,7 +247,7 @@ public class AdminForumService {
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> getCategoryById(Integer categoryId) {
         log.info("Fetching forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Category not found with ID: " + categoryId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .map(this::convertToCategoryDTO)
                 .doOnError(error -> log.error("Error fetching category ID: {}", categoryId, error));
     }
@@ -295,7 +281,7 @@ public class AdminForumService {
             Integer categoryId, String name, String description, Integer parentId) {
         log.info("Updating forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Category not found with ID: " + categoryId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> {
                     if (name != null) category.setName(name);
                     if (description != null) category.setDescription(description);
@@ -314,7 +300,7 @@ public class AdminForumService {
     public Mono<Void> deleteCategory(Integer categoryId) {
         log.info("Deleting forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Category not found with ID: " + categoryId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> forumCategoryRepository.deleteById(categoryId))
                 .doOnSuccess(v -> log.info("Successfully deleted forum category ID: {}", categoryId))
                 .doOnError(error -> log.error("Error deleting category ID: {}", categoryId, error));
@@ -344,7 +330,7 @@ public class AdminForumService {
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> getTopicById(Integer topicId) {
         log.info("Fetching forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Topic not found with ID: " + topicId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(this::convertToTopicDTOWithPostCount)
                 .doOnError(error -> log.error("Error fetching topic ID: {}", topicId, error));
     }
@@ -356,7 +342,7 @@ public class AdminForumService {
             Integer organizationId, Integer categoryId, String title, Integer createdByMemberId) {
         log.info("Creating forum topic: {}", title);
         return forumCategoryRepository.findById(categoryId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Category not found with ID: " + categoryId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> {
                     com.service.backend.forum.entity.ForumTopic topic = 
                             com.service.backend.forum.entity.ForumTopic.builder()
@@ -383,7 +369,7 @@ public class AdminForumService {
             Integer topicId, String title, Integer categoryId) {
         log.info("Updating forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Topic not found with ID: " + topicId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> {
                     if (title != null) topic.setTitle(title);
                     if (categoryId != null) topic.setCategoryId(categoryId);
@@ -410,7 +396,7 @@ public class AdminForumService {
 
         // 1. Overview & today counts (6 parallel queries)
         Mono<Long> totalPostsMono = forumPostRepository.count();
-        Mono<Long> bannedPostsMono = forumPostRepository.countBannedPosts();
+        Mono<Long> bannedPostsMono = forumPostRepository.countByIsBannedTrue();
         Mono<Long> totalTopicsMono = forumTopicRepository.count();
         Mono<Long> totalCategoriesMono = forumCategoryRepository.count();
         Mono<Long> newTopicsTodayMono = forumTopicRepository.countTopicsCreatedToday();
@@ -431,7 +417,7 @@ public class AdminForumService {
         // 2. Most popular topic
         Mono<ForumStatisticsDTO.TopicSummary> popularTopicMono = forumPostRepository.findTopicIdWithMostPosts()
                 .flatMap(topicId -> forumTopicRepository.findById(topicId)
-                        .zipWith(forumPostRepository.countActivePostsByTopicId(topicId))
+                        .zipWith(forumPostRepository.countByTopicIdAndIsBannedFalse(topicId))
                         .map(tuple -> ForumStatisticsDTO.TopicSummary.builder()
                                 .topicId(tuple.getT1().getId())
                                 .title(tuple.getT1().getTitle())
@@ -539,9 +525,6 @@ public class AdminForumService {
                             .map(tuple -> {
                                 long totalMembers = tuple.getT1();
                                 long activeUsers = tuple.getT2();
-                                double rate = totalMembers > 0
-                                        ? Math.round((double) activeUsers / totalMembers * 10000.0) / 100.0
-                                        : 0.0;
 
                                 return OrganizationEngagementDTO.builder()
                                         .organizationId(org.getId())
@@ -653,7 +636,7 @@ public class AdminForumService {
                     String.valueOf(report.getId()), null, null);
         }
         return forumPostRepository.findById(report.getPostId())
-                .switchIfEmpty(Mono.error(new RuntimeException("Post not found with ID: " + report.getPostId())))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                 .flatMap(post -> {
                     if ("HIDE_POST".equals(action)) {
                         post.setIsHidden(true);
@@ -678,7 +661,6 @@ public class AdminForumService {
         if (adminUserId == null) {
             return Mono.empty();
         }
-        LocalDateTime now = LocalDateTime.now();
         return adminAuditLogRepository
                 .insertAuditLog(
                         adminUserId,
@@ -688,15 +670,13 @@ public class AdminForumService {
                         resourceId,
                         beforeData,
                         afterData,
-                        null,
-                        now)
+                        null)
                 .onErrorResume(primaryErr -> {
                     log.warn("Primary forum audit-log insert failed, retrying legacy schema for action {}", action, primaryErr);
                     return adminAuditLogRepository.insertAuditLogLegacy(
                             adminUserId,
                             targetUserId,
-                            action,
-                            now);
+                            action);
                 })
                 .onErrorResume(fallbackErr -> {
                     log.warn("All forum audit-log insert attempts failed for action {}", action, fallbackErr);

@@ -1,27 +1,34 @@
-import { Avatar, Box, Button, Card, Chip, Stack, Typography } from '@mui/material';
-import StarIcon from '@mui/icons-material/Star';
+import { Avatar, Box, Button, Card, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
- * Tách khỏi MentorshipCard để hai luồng UI có thể phân kỳ sau này.
+ * Dữ liệu khớp nguồn DB: global_profiles (fullName), users (userName),
+ * academic_records.startYear (khóa), organization_members (program, major).
  * `onMessage`: tùy chọn — gắn khi có luồng nhắn tin (chưa truyền thì bấm không làm gì).
  */
 const NetworkSearchMemberCard = ({
   avatar,
-  name,
-  role,
-  rating,
-  reviews,
-  tags = [],
+  fullName,
+  userName,
+  startYear,
+  program,
+  major,
   onMessage,
+  isDemo = false,
 }) => {
+  const displayName = fullName || 'N/A';
+  const cohortLabel = startYear != null && startYear !== '' ? startYear : 'N/A';
+  const programLabel = program ? program : '—';
+  const majorLabel = major ? major : 'N/A';
+
   return (
     <Card
       sx={{
         p: 3,
         borderRadius: 2,
         border: '1px solid',
-        borderColor: 'divider',
+        borderColor: isDemo ? 'primary.light' : 'divider',
         boxShadow: 'none',
         textAlign: 'center',
         display: 'flex',
@@ -31,53 +38,57 @@ const NetworkSearchMemberCard = ({
         '&:hover': { transform: 'translateY(-4px)' },
       }}
     >
-      <Stack spacing={2} alignItems="center">
+      <Stack spacing={1.5} alignItems="center">
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 
-        <Box>
-          <Typography fontWeight={700} variant="subtitle1">
-            {name}
+        <Box sx={{ width: '100%' }}>
+          <Typography fontWeight={700} variant="subtitle1" sx={{ lineHeight: 1.3 }}>
+            {displayName}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {role}
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <StarIcon sx={{ color: 'warning.main', fontSize: 18 }} />
-          <Typography fontWeight={700} color="primary.main">
-            {rating}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            ({reviews} reviews)
-          </Typography>
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            gap: 1,
-          }}
-        >
-          {tags.map((tag, idx) => (
-            <Chip
-              key={idx}
-              label={`#${tag}`}
-              size="small"
-              sx={{
-                fontWeight: 600,
-                bgcolor: 'primary.light',
-                color: 'primary.main',
-                '& .MuiChip-label': { px: 1.2 },
-              }}
-            />
-          ))}
+          <Box
+            sx={(theme) => ({
+              mt: 1.25,
+              width: '100%',
+              px: 1.25,
+              py: 1.25,
+              borderRadius: 1.5,
+              bgcolor: alpha(theme.palette.primary.main, 0.08),
+              border: '1px solid',
+              borderColor: alpha(theme.palette.primary.main, 0.18),
+            })}
+          >
+            <Stack spacing={0.75} alignItems="center">
+              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
+                Khóa:{' '}
+                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                  {cohortLabel}
+                </Box>
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
+                Program:{' '}
+                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                  {programLabel}
+                </Box>
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
+                Major:{' '}
+                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                  {majorLabel}
+                </Box>
+              </Typography>
+            </Stack>
+          </Box>
         </Box>
       </Stack>
 
-      <Button variant="contained" sx={{ mt: 3 }} fullWidth type="button" onClick={onMessage}>
+      <Button
+        variant="contained"
+        sx={{ mt: 3 }}
+        fullWidth
+        type="button"
+        onClick={onMessage}
+        disabled={!onMessage}
+      >
         Nhắn tin
       </Button>
     </Card>
