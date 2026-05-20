@@ -12,7 +12,9 @@ import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
 import com.service.backend.mentorship.entity.MentorAvailability;
 import com.service.backend.mentorship.entity.MentorProfile;
 import com.service.backend.mentorship.entity.MentorshipSession;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.exception.ApplicationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -68,14 +70,14 @@ public class AdminMentorshipService {
 
     public Mono<AdminMentorshipSessionDTO> getSessionById(Integer sessionId) {
         return adminMentorshipRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Session not found with id: " + sessionId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
                 .flatMap(this::enrichSession);
     }
 
     public Mono<AdminMentorshipSessionDTO> updateSessionStatus(Integer sessionId, String status) {
         log.info("Admin updating session {} -> status {}", sessionId, status);
         return adminMentorshipRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Session not found with id: " + sessionId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
                 .flatMap(s -> sessionRepo.updateStatus(sessionId, status).then(adminMentorshipRepository.findById(sessionId)))
                 .flatMap(this::enrichSession);
     }
@@ -83,7 +85,7 @@ public class AdminMentorshipService {
     public Mono<Void> deleteSession(Integer sessionId) {
         log.info("Admin deleting session {}", sessionId);
         return adminMentorshipRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Session not found with id: " + sessionId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
                 .flatMap(s -> sessionRepo.deleteById(sessionId));
     }
 
@@ -108,7 +110,7 @@ public class AdminMentorshipService {
     public Mono<AdminMentorProfileDTO> approveMentor(Integer memberId) {
         log.info("Admin approving mentor {}", memberId);
         return adminMentorshipRepository.findMentorProfileById(memberId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Mentor profile not found: " + memberId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND))))
                 .flatMap(p -> mentorProfileRepo.approveMentor(memberId).then(adminMentorshipRepository.findMentorProfileById(memberId)))
                 .flatMap(this::enrichMentor);
     }

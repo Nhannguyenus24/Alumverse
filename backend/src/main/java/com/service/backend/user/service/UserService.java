@@ -38,23 +38,21 @@ public class UserService {
 
     public Mono<UserProfileResponse> getMyProfile(Long currentUserId) {
         return userProfileRepository.findProfileByUserId(currentUserId.intValue())
-                .switchIfEmpty(Mono.error(new ApplicationException(
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
-                        "User not found with id: " + currentUserId)));
+                        "User not found with id: " + currentUserId))));
     }
 
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
         Integer userId = currentUserId.intValue();
 
         return authRepository.findById(userId)
-                .switchIfEmpty(Mono.error(new ApplicationException(
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
-                        "User not found with id: " + userId)))
+                        "User not found with id: " + userId))))
                 .flatMap(user -> {
                     if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-                        return Mono.error(new ApplicationException(
-                                ErrorCode.INVALID_OLD_PASSWORD,
-                                ErrorCode.INVALID_OLD_PASSWORD.getMessage()));
+                        return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
                     }
 
                     String hashedPassword = passwordEncoder.encode(newPassword);
@@ -134,9 +132,7 @@ public class UserService {
                         request.getMajor())
                 .flatMap(updatedRows -> {
                     if (updatedRows == null || updatedRows <= 0) {
-                        return Mono.error(new ApplicationException(
-                                ErrorCode.RESOURCES_NOT_FOUND,
-                                "Organization member not found"));
+                        return Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND));
                     }
                     return Mono.just(updatedRows);
                 });
@@ -147,9 +143,7 @@ public class UserService {
     public Mono<UserOrganizationMemberResponse> getMyOrganizationMember(Long currentUserId, Integer organizationId) {
         return userOrganizationMemberRepository
                 .findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.RESOURCES_NOT_FOUND,
-                        "Organization member not found")))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND))))
                 .map(this::toOrganizationMemberResponse);
     }
 
