@@ -15,9 +15,7 @@ public interface ForumPostReportRepository extends R2dbcRepository<ForumPostRepo
     @Query("SELECT * FROM forum_post_reports WHERE status = :status ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<ForumPostReport> findByStatusWithPagination(@Param("status") String status, @Param("limit") int limit, @Param("offset") long offset);
 
-    @Query("SELECT COUNT(*) FROM forum_post_reports WHERE status = :status")
-    Mono<Long> countByStatus(@Param("status") String status);
+    Mono<Long> countByStatus(String status);
 
-    @Query("SELECT COUNT(*) FROM forum_post_reports WHERE post_id = :postId")
-    Mono<Long> countByPostId(@Param("postId") Integer postId);
+    Mono<Long> countByPostId(Integer postId);
 }

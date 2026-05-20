@@ -26,6 +26,7 @@ import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@RequiredArgsConstructor
 public class AdminForumService {
     private static final Logger log = LoggerFactory.getLogger(AdminForumService.class);
 
@@ -43,22 +45,6 @@ public class AdminForumService {
     private final AdminOrganizationRepository adminOrganizationRepository;
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
-
-    public AdminForumService(ForumPostRepository forumPostRepository,
-                            ForumTopicRepository forumTopicRepository,
-                            ForumCategoryRepository forumCategoryRepository,
-                            ForumPostReportRepository forumPostReportRepository,
-                            AdminOrganizationRepository adminOrganizationRepository,
-                            AdminUserRepository adminUserRepository,
-                            AdminAuditLogRepository adminAuditLogRepository) {
-        this.forumPostRepository = forumPostRepository;
-        this.forumTopicRepository = forumTopicRepository;
-        this.forumCategoryRepository = forumCategoryRepository;
-        this.forumPostReportRepository = forumPostReportRepository;
-        this.adminOrganizationRepository = adminOrganizationRepository;
-        this.adminUserRepository = adminUserRepository;
-        this.adminAuditLogRepository = adminAuditLogRepository;
-    }
 
     // ========== VIEW NEW POSTS ==========
 
@@ -99,7 +85,6 @@ public class AdminForumService {
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                         .flatMap(post -> {
                             post.setIsBanned(true);
-                            post.setUpdatedAt(LocalDateTime.now());
                             return forumPostRepository.save(post)
                                     .flatMap(saved -> createAuditLog(adminId.intValue(), post.getAuthorMemberId(),
                                             "BAN_POST", "FORUM_POST", String.valueOf(postId), null, null)
@@ -120,7 +105,6 @@ public class AdminForumService {
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                         .flatMap(post -> {
                             post.setIsBanned(false);
-                            post.setUpdatedAt(LocalDateTime.now());
                             return forumPostRepository.save(post)
                                     .flatMap(saved -> createAuditLog(adminId.intValue(), post.getAuthorMemberId(),
                                             "UNBAN_POST", "FORUM_POST", String.valueOf(postId), null, null)
@@ -153,7 +137,7 @@ public class AdminForumService {
         return forumPostRepository.findAllBannedPostsWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
-                .zipWith(forumPostRepository.countBannedPosts())
+                .zipWith(forumPostRepository.countByIsBannedTrue())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
@@ -168,7 +152,7 @@ public class AdminForumService {
         return forumPostRepository.findAllPostsWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
-                .zipWith(forumPostRepository.countAllPosts())
+                .zipWith(forumPostRepository.count())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnError(error -> log.error("Error fetching all forum posts", error));
     }
@@ -412,7 +396,7 @@ public class AdminForumService {
 
         // 1. Overview & today counts (6 parallel queries)
         Mono<Long> totalPostsMono = forumPostRepository.count();
-        Mono<Long> bannedPostsMono = forumPostRepository.countBannedPosts();
+        Mono<Long> bannedPostsMono = forumPostRepository.countByIsBannedTrue();
         Mono<Long> totalTopicsMono = forumTopicRepository.count();
         Mono<Long> totalCategoriesMono = forumCategoryRepository.count();
         Mono<Long> newTopicsTodayMono = forumTopicRepository.countTopicsCreatedToday();
@@ -433,7 +417,7 @@ public class AdminForumService {
         // 2. Most popular topic
         Mono<ForumStatisticsDTO.TopicSummary> popularTopicMono = forumPostRepository.findTopicIdWithMostPosts()
                 .flatMap(topicId -> forumTopicRepository.findById(topicId)
-                        .zipWith(forumPostRepository.countActivePostsByTopicId(topicId))
+                        .zipWith(forumPostRepository.countByTopicIdAndIsBannedFalse(topicId))
                         .map(tuple -> ForumStatisticsDTO.TopicSummary.builder()
                                 .topicId(tuple.getT1().getId())
                                 .title(tuple.getT1().getTitle())
@@ -677,7 +661,6 @@ public class AdminForumService {
         if (adminUserId == null) {
             return Mono.empty();
         }
-        LocalDateTime now = LocalDateTime.now();
         return adminAuditLogRepository
                 .insertAuditLog(
                         adminUserId,
@@ -687,15 +670,13 @@ public class AdminForumService {
                         resourceId,
                         beforeData,
                         afterData,
-                        null,
-                        now)
+                        null)
                 .onErrorResume(primaryErr -> {
                     log.warn("Primary forum audit-log insert failed, retrying legacy schema for action {}", action, primaryErr);
                     return adminAuditLogRepository.insertAuditLogLegacy(
                             adminUserId,
                             targetUserId,
-                            action,
-                            now);
+                            action);
                 })
                 .onErrorResume(fallbackErr -> {
                     log.warn("All forum audit-log insert attempts failed for action {}", action, fallbackErr);
