@@ -79,7 +79,9 @@ public class OrganizationService {
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
         List<String> urls = intro.getImageUrls() != null
-                ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
+                ? JsonUtils.isJsonArray(intro.getImageUrls())
+                        ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
+                        : List.of()
                 : List.of();
         return OrganizationIntroductionResponse.builder()
                 .orgaId(intro.getOrgaId())

@@ -90,21 +90,21 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
 -- ============= ORGANIZATION MEMBERS DATA =============
 INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
 -- CS Department Members
-(1, 1, 2012, 'Graduated', 'Regular', 'Computer Science', 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
-(1, 2, 2023, 'Graduated', 'Advanced Program', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
-(1, 4, NULL, 'Studying', 'Regular', 'Computer Science', 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
-(1, 6, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
-(1, 11, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
+(1, 1, '[2012, 2016]', '["Graduated", "Graduated"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, '[2023]', '["Graduated"]', '["Advanced Program"]', '["Computer Science"]', 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, '[]', '["Studying"]', '["Regular"]', '["Computer Science"]', 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, '[2022, 2024]', '["Graduated", "Studying"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
+(1, 11, '[2022]', '["Graduated"]', '["Regular"]', '["Computer Science"]', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
 
 -- IT Department Members
-(2, 3, 2023, 'Graduated', 'Advanced Program', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
-(2, 5, 2024, 'Graduated', 'Regular', 'Information Technology', 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
-(2, 8, 2023, 'Graduated', 'Regular', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
-(2, 9, NULL, 'Studying', 'Regular', 'Information Technology', 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
+(2, 3, '[2023]', '["Graduated"]', '["Advanced Program"]', '["Information Technology"]', 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, '[2024, 2026]', '["Graduated", "Studying"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, '[2023]', '["Graduated"]', '["Regular"]', '["Information Technology"]', 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, '[]', '["Studying"]', '["Regular"]', '["Information Technology"]', 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
 
 -- BA Department Members
-(3, 7, 2023, 'Graduated', 'Regular', 'Business Administration', 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, NULL, 'Studying', 'Regular', 'Business Administration', 1, false, 'pending', NOW() - INTERVAL '3 days', NOW());
+(3, 7, '[2023]', '["Graduated"]', '["Regular"]', '["Business Administration"]', 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, '[]', '["Studying"]', '["Regular"]', '["Business Administration"]', 1, false, 'pending', NOW() - INTERVAL '3 days', NOW());
 
 
 

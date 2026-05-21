@@ -28,7 +28,7 @@ public class OrganizationMember {
     private Integer userId;
 
     @Column("graduated_year")
-    private Integer graduatedYear;
+    private String graduatedYear;
 
     @Column("graduation_status")
     private String graduationStatus;

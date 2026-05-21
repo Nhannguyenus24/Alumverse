@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -155,8 +156,8 @@ public class AdminUserService {
      * Create organization member
      */
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId, 
-                               Integer graduatedYear, String graduationStatus,
-                               String program, String major,
+                               List<Integer> graduatedYear, List<String> graduationStatus,
+                               List<String> program, List<String> major,
                                                    Integer verificationLevel, String status) {
         logger.info("Adding user {} to organization {} with verification level {}", 
                 userId, organizationId, verificationLevel);
@@ -164,10 +165,10 @@ public class AdminUserService {
         return adminUserRepository.createOrganizationMember(
                 organizationId,
                 userId,
-                graduatedYear,
-                graduationStatus,
-                program,
-                major,
+            JsonUtils.toJson(graduatedYear),
+            JsonUtils.toJson(graduationStatus),
+            JsonUtils.toJson(program),
+            JsonUtils.toJson(major),
                 verificationLevel,
                 status)
                 .map(count -> count > 0)
