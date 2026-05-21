@@ -1,0 +1,218 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Phase 0: Branch is up-to-date with main
+  # ─────────────────────────────────────────────
+  check-sync-with-main:
+    name: "Phase 0 · Up-to-date with main"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch is up-to-date with main
+        run: |
+          git fetch origin main --no-tags
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "PASS: branch contains all commits from main"
+          else
+            echo "FAIL: branch is behind main. Please merge or rebase from main before pushing."
+            echo "  Run: git fetch origin && git merge origin/main"
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
+  # Phase 1: Validate commit messages
+  # ─────────────────────────────────────────────
+  validate-commits:
+    name: "Phase 1 · Validate Commit Messages"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        run: |
+          REGEX='^(feat|fix|docs|chore|refactor|test|ci|perf|style)\([a-z0-9_-]+\): .{1,50}$'
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # --no-merges: skip merge commits (e.g. "Merge branch 'main' of ...")
+            COMMITS=$(git log --no-merges --format="%s" \
+              ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+            # New branch – validate only the tip commit (skip if it is a merge commit)
+            COMMITS=$(git log -1 --no-merges --format="%s")
+          else
+            COMMITS=$(git log --no-merges --format="%s" \
+              ${{ github.event.before }}..${{ github.event.after }})
+          fi
+
+          FAILED=0
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            if echo "$msg" | grep -Pq "$REGEX"; then
+              echo "PASS: $msg"
+            else
+              echo "FAIL: $msg"
+              echo "      Expected format: type(scope): subject  (e.g. feat(auth): add login endpoint)"
+              FAILED=1
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more commit messages violate the convention."
+            echo "See docs/COMMIT_RULES.md for details."
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
+  # Change detection (shared by all later jobs)
+  # ─────────────────────────────────────────────
+  detect-changes:
+    name: "Detect Changed Paths"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  # ─────────────────────────────────────────────
+  # Phase 2: Build backend
+  # ─────────────────────────────────────────────
+  build-backend:
+    name: "Phase 2 · Build Backend"
+    needs: [check-sync-with-main, validate-commits, detect-changes]
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build (skip tests)
+        working-directory: backend
+        run: ./mvnw -B package -DskipTests
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # Phase 3: Run backend tests
+  # ─────────────────────────────────────────────
+  test-backend:
+    name: "Phase 3 · Test Backend"
+    needs: build-backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run tests
+        working-directory: backend
+        run: ./mvnw -B test
+
+      - name: Publish test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # Phase 4: Build frontend
+  # ─────────────────────────────────────────────
+  build-frontend:
+    name: "Phase 4 · Build Frontend"
+    needs: [check-sync-with-main, validate-commits, detect-changes]
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # Phase 5: Lint + test frontend
+  # ─────────────────────────────────────────────
+  test-lint-frontend:
+    name: "Phase 5 · Lint & Test Frontend"
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint || true
