@@ -27,6 +27,7 @@ import { useParams } from "react-router";
 import Page from "../../components/Page";
 import { fundApi } from "../../api/fundApi";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import Breadcrumb from "../../components/Breadcrumb";
 
 const toSafeNumber = (value, fallback = 0) => {
   const parsed = Number(value);
@@ -332,15 +333,14 @@ export default function EditDonationPage() {
     <Page title="Chỉnh sửa quỹ quyên góp" meta={<meta name="description" content="Chỉnh sửa quỹ quyên góp" />}>
       <Box sx={{ py: 5, backgroundColor: "#f3f5f9", minHeight: "100vh" }}>
         <Container maxWidth={false} sx={{ maxWidth: 1160 }}>
-          <Box sx={{ mb: 1.5 }}>
-            <Button
-              variant="contained"
-              onClick={() => navigate("/donations")}
-              sx={{ borderRadius: 999, px: 2.2, textTransform: "none", fontWeight: 700 }}
-            >
-              Quay lại donation page
-            </Button>
-          </Box>
+            <Breadcrumb
+              items={[
+                { label: "Quyên góp", path: "/donations" },
+                { label: donationDetail.name || `Donation ${id}`, path: `/donations/${id}` },
+                { label: "Chỉnh sửa quỹ" },
+              ]}
+              fontSize="0.9rem"
+            />
 
           <Typography variant="h1" sx={{ mb: 2.5, fontWeight: 800, color: "#123661" }}>
             CHỈNH SỬA QUỸ

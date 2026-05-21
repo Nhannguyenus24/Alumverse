@@ -134,7 +134,6 @@ const NetworkPage = () => {
                 KẾT NỐI
               </Typography>
 
-              <Stack spacing={3}>
                 <Typography color="text.secondary">
                   Tìm và kết nối với các sinh viên và các cựu sinh viên trên nền tảng.
                 </Typography>
@@ -265,7 +264,6 @@ const NetworkPage = () => {
                   />
                 </Stack>
               ) : null}
-            </Stack>
           </Stack>
         </Container>
       </Container>
