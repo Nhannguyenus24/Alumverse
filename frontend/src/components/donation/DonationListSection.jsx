@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
 import { motion } from "framer-motion";
-import { fundApi } from "../../../api/fundApi";
+import { fundApi } from "../../api/fundApi";
 import DonationListItemCard from "./DonationListItemCard";
-import FundraisingListFilters from "./FundraisingListFilters";
+import DonationListFilters from "./DonationListFilters";
 
 export default function FundraisingListSection({ fundId }) {
   const [items, setItems] = useState([]);
@@ -75,7 +75,7 @@ export default function FundraisingListSection({ fundId }) {
         </Typography>
       </Stack>
 
-      <FundraisingListFilters
+      <DonationListFilters
         searchBy={searchBy}
         searchInput={searchInput}
         onSearchByChange={(nextSearchBy) => {
