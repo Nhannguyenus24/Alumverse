@@ -11,6 +11,28 @@ concurrency:
 
 jobs:
   # ─────────────────────────────────────────────
+  # Phase 0: Branch is up-to-date with main
+  # ─────────────────────────────────────────────
+  check-sync-with-main:
+    name: "Phase 0 · Up-to-date with main"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch is up-to-date with main
+        run: |
+          git fetch origin main --no-tags
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "PASS: branch contains all commits from main"
+          else
+            echo "FAIL: branch is behind main. Please merge or rebase from main before pushing."
+            echo "  Run: git fetch origin && git merge origin/main"
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
   # Phase 1: Validate commit messages
   # ─────────────────────────────────────────────
   validate-commits:
@@ -87,7 +109,7 @@ jobs:
   # ─────────────────────────────────────────────
   build-backend:
     name: "Phase 2 · Build Backend"
-    needs: [validate-commits, detect-changes]
+    needs: [check-sync-with-main, validate-commits, detect-changes]
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -143,7 +165,7 @@ jobs:
   # ─────────────────────────────────────────────
   build-frontend:
     name: "Phase 4 · Build Frontend"
-    needs: [validate-commits, detect-changes]
+    needs: [check-sync-with-main, validate-commits, detect-changes]
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
