@@ -8,6 +8,7 @@ import org.springframework.util.StringUtils;
 import com.service.backend.chat.dao.NetworkMemberSearchRepository;
 import com.service.backend.chat.dto.NetworkMemberSearchItemResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -30,8 +31,8 @@ public class NetworkMemberSearchService {
             int size) {
 
         String fullNamePattern = toContainsPattern(fullName);
-        String programPattern = toContainsPattern(program);
-        String majorPattern = toContainsPattern(major);
+        String programJson = toExactJsonArray(program);
+        String majorJson = toExactJsonArray(major);
 
         int offset = page * size;
 
@@ -41,8 +42,8 @@ public class NetworkMemberSearchService {
                             "Searching network members orgId={} fullName={} program={} major={} startYear={} page={} size={}",
                             organizationId,
                             fullNamePattern != null,
-                            programPattern != null,
-                            majorPattern != null,
+                            programJson != null,
+                            majorJson != null,
                             startYear,
                             page,
                             size);
@@ -50,16 +51,16 @@ public class NetworkMemberSearchService {
                     Mono<Long> totalMono = networkMemberSearchRepository.countSearchMembers(
                             organizationId,
                             fullNamePattern,
-                            programPattern,
-                            majorPattern,
+                            programJson,
+                            majorJson,
                             startYear);
 
                     return networkMemberSearchRepository
                             .searchMembers(
                                     organizationId,
                                     fullNamePattern,
-                                    programPattern,
-                                    majorPattern,
+                                    programJson,
+                                    majorJson,
                                     startYear,
                                     size,
                                     offset)
@@ -79,4 +80,14 @@ public class NetworkMemberSearchService {
         String trimmed = raw.trim();
         return "%" + trimmed + "%";
     }
+
+        /**
+         * Convert an exact filter value into a single-element JSON array string for jsonb @>.
+         */
+        private static String toExactJsonArray(String raw) {
+                if (!StringUtils.hasText(raw)) {
+                        return null;
+                }
+                return JsonUtils.toJson(java.util.List.of(raw.trim()));
+        }
 }

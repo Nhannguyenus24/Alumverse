@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Autocomplete,
   Box,
   Card,
   Container,
+  Chip,
   TextField,
   Typography,
   Button,
@@ -90,6 +92,43 @@ export default function SettingPage() {
     [organization?.majors],
   );
 
+  const normalizeAcademicList = (value) => {
+    if (value == null) {
+      return [];
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item ?? '').trim())
+        .filter(Boolean);
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parsed
+            .map((item) => String(item ?? '').trim())
+            .filter(Boolean);
+        }
+      } catch {
+        return [trimmed];
+      }
+    }
+
+    return [String(value).trim()].filter(Boolean);
+  };
+
+  const normalizeIntegerList = (value) =>
+    normalizeAcademicList(value)
+      .map((item) => Number(item))
+      .filter((item) => Number.isInteger(item));
+
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({
     fullName: '',
@@ -99,11 +138,11 @@ export default function SettingPage() {
     studentId: '',
     email: '',
     faculty: '',
-    program: '',
+    programs: [],
     batch: '',
-    graduationYear: '',
-    specialization: '',
-    graduationStatus: '',
+    graduationYears: [],
+    specializations: [],
+    graduationStatuses: [],
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -151,10 +190,10 @@ export default function SettingPage() {
           phone: profile?.phone ?? '',
           studentId: profile?.userName ?? '',
           email: profile?.email ?? '',
-          program: member?.program ?? '',
-          graduationYear: member?.graduatedYear ?? '',
-          specialization: member?.major ?? '',
-          graduationStatus: (member?.graduationStatus ?? '').toLowerCase(),
+          programs: normalizeAcademicList(member?.program),
+          graduationYears: normalizeIntegerList(member?.graduatedYear).map(String),
+          specializations: normalizeAcademicList(member?.major),
+          graduationStatuses: normalizeAcademicList(member?.graduationStatus),
         }));
 
         setNotificationSettings((prev) => ({
@@ -211,10 +250,13 @@ export default function SettingPage() {
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
-        program: formData.program || null,
-        graduatedYear: formData.graduationYear ? Number(formData.graduationYear) : null,
-        graduationStatus: formData.graduationStatus || null,
-        major: formData.specialization || null,
+        program: formData.programs.length > 0 ? formData.programs : null,
+        graduatedYear:
+          normalizeIntegerList(formData.graduationYears).length > 0
+            ? normalizeIntegerList(formData.graduationYears)
+            : null,
+        graduationStatus: formData.graduationStatuses.length > 0 ? formData.graduationStatuses : null,
+        major: formData.specializations.length > 0 ? formData.specializations : null,
       });
       showSuccess('Cập nhật thông tin cá nhân thành công.');
     } catch (error) {
@@ -320,58 +362,90 @@ const renderPersonalSettings = () => (
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin học vấn</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
         <TextField fullWidth label="Khoa/Bộ môn" name="faculty" value={formData.faculty} InputProps={{ readOnly: true }} />
-        {organizationProgramOptions.length > 0 ? (
-          <FormControl fullWidth>
-            <InputLabel>Chương trình đào tạo</InputLabel>
-            <Select
-              name="program"
-              value={formData.program}
-              label="Chương trình đào tạo"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="">Chọn chương trình</MenuItem>
-              {organizationProgramOptions.map((program) => (
-                <MenuItem key={program} value={program}>
-                  {program}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <TextField fullWidth label="Chương trình đào tạo" name="program" value={formData.program} onChange={handleFormChange} />
-        )}
+        <Autocomplete
+          multiple
+          freeSolo
+          options={organizationProgramOptions}
+          value={formData.programs}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              programs: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Chương trình đào tạo" placeholder="Thêm chương trình" />
+          )}
+        />
 
         <TextField fullWidth label="Khoá" name="batch" value={formData.batch} InputProps={{ readOnly: true }} />
-        <TextField fullWidth label="Năm tốt nghiệp" name="graduationYear" type="number"
-          value={formData.graduationYear} onChange={handleFormChange} />
+        <Autocomplete
+          multiple
+          freeSolo
+          options={[]}
+          value={formData.graduationYears}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              graduationYears: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Năm tốt nghiệp" placeholder="Nhập từng năm" />
+          )}
+        />
 
-        {organizationMajorOptions.length > 0 ? (
-          <FormControl fullWidth>
-            <InputLabel>Chuyên ngành</InputLabel>
-            <Select
-              name="specialization"
-              value={formData.specialization}
-              label="Chuyên ngành"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="">Chọn chuyên ngành</MenuItem>
-              {organizationMajorOptions.map((major) => (
-                <MenuItem key={major} value={major}>
-                  {major}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <TextField fullWidth label="Chuyên ngành" name="specialization" value={formData.specialization} onChange={handleFormChange} />
-        )}
-        <FormControl fullWidth>
-          <InputLabel>Trạng thái tốt nghiệp</InputLabel>
-          <Select name="graduationStatus" value={formData.graduationStatus} label="Trạng thái tốt nghiệp" onChange={handleFormChange}>
-            <MenuItem value="graduated">Đã tốt nghiệp</MenuItem>
-            <MenuItem value="studying">Đang học</MenuItem>
-          </Select>
-        </FormControl>
+        <Autocomplete
+          multiple
+          freeSolo
+          options={organizationMajorOptions}
+          value={formData.specializations}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              specializations: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Chuyên ngành" placeholder="Thêm chuyên ngành" />
+          )}
+        />
+
+        <Autocomplete
+          multiple
+          freeSolo
+          options={['graduated', 'studying']}
+          value={formData.graduationStatuses}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              graduationStatuses: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Trạng thái tốt nghiệp" placeholder="Nhập hoặc chọn trạng thái" />
+          )}
+        />
       </Box>
     </Box>
 

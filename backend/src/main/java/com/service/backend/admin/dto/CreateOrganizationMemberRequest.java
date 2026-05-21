@@ -2,6 +2,7 @@ package com.service.backend.admin.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,13 +20,13 @@ public class CreateOrganizationMemberRequest {
     @NotNull(message = "User ID is required")
     private Integer userId;
 
-    private Integer graduatedYear;
+    private List<Integer> graduatedYear;
 
-    private String graduationStatus;
+    private List<String> graduationStatus;
 
-    private String program;
+    private List<String> program;
 
-    private String major;
+    private List<String> major;
     
     @Builder.Default
     @Min(value = 0, message = "Verification level must be at least 0")

@@ -53,6 +53,21 @@ const MyProfileEditPage = () => {
     }
   }, [profileQuery.data]);
 
+  // Keep academic fields - profile page edit does not currently edit org member, but ensure display compatibility
+  useEffect(() => {
+    const p = profileQuery.data;
+    if (p?.program) {
+      try {
+        const parsed = typeof p.program === 'string' ? JSON.parse(p.program) : p.program;
+        if (Array.isArray(parsed)) {
+          // no-op: we only need to ensure rendering components handle arrays
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }, [profileQuery.data]);
+
   // CLEANUP BLOB URL
   useEffect(() => {
     const url = coverPreview;

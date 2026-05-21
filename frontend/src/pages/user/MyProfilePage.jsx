@@ -67,6 +67,10 @@ const MyProfilePage = () => {
                   <ProfileItem label="Email" value={profile?.email} />
                   <ProfileItem label="Khoa" value={profile?.facultyName} />
                   <ProfileItem label="Khoá" value={profile?.batchName} />
+                  <ProfileItem label="Chương trình" value={formatAcademicValue(profile?.program)} />
+                  <ProfileItem label="Chuyên ngành" value={formatAcademicValue(profile?.major)} />
+                  <ProfileItem label="Năm tốt nghiệp" value={formatAcademicValue(profile?.graduatedYear)} />
+                  <ProfileItem label="Trạng thái tốt nghiệp" value={formatAcademicValue(profile?.graduationStatus)} />
                   <ProfileItem label="Công việc hiện tại" value={profile?.currentJobTitle} />
                   <ProfileItem label="Công ty" value={profile?.currentCompany} />
                   <ProfileItem label="Địa điểm" value={profile?.location} />
@@ -114,6 +118,18 @@ const ProfileItem = ({ label, value }) => (
     </Typography>
   </Box>
 );
+
+const formatAcademicValue = (raw) => {
+  if (raw == null) return null;
+  try {
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(parsed)) return parsed.join(', ');
+  } catch {
+    // fallthrough
+  }
+  if (Array.isArray(raw)) return raw.join(', ');
+  return String(raw);
+};
 
 const SECTION_LABELS = {
   educations: 'Học vấn',
