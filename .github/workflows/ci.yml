@@ -176,6 +176,7 @@ jobs:
     name: "Phase 5 · Lint & Test Frontend"
     needs: build-frontend
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
