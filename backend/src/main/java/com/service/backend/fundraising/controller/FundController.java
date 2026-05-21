@@ -38,8 +38,6 @@ public class FundController {
     }
 
     @GetMapping
-    // this request also return a list with warnings fields in result
-    // for frontend to show to user when query param is not valid.
     public Mono<ResponseEntity<ApiResponse<DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
