@@ -72,6 +72,7 @@ const NetworkPage = () => {
   useEffect(() => {
     if (pageCount === 0) return;
     if (page > pageCount) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPage(pageCount);
     }
   }, [pageCount, page]);

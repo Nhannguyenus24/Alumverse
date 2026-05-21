@@ -66,7 +66,7 @@ const MentorshipBookingPage = () => {
       });
       setSubmitSuccess(true);
       setTimeout(() => navigate('/development/mentorship'), 1500);
-    } catch (_err) {
+    } catch {
       // errorMessage from hook will surface in the alert below
     }
   };

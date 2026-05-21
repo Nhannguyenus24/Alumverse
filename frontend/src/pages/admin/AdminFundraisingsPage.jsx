@@ -158,7 +158,7 @@ const AdminFundraisingsPage = () => {
       const res = await fundApi.getFundDonationsByFundId(fundId, params);
       setDonationsList(res?.items ?? []);
       setDonationsTotalPages(res?.totalPage ?? 1);
-    } catch (err) {
+    } catch {
       enqueueSnackbar("Không thể tải danh sách lượt quyên góp.", { variant: "error" });
       setDonationsList([]);
     } finally {
@@ -170,6 +170,7 @@ const AdminFundraisingsPage = () => {
     if (donationsDialogOpen && donationsTarget) {
       loadCampaignDonations(donationsTarget.id, donationsPage, donationsSearchKeyword, donationsSearchBy);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [donationsDialogOpen, donationsTarget, donationsPage, donationsSearchKeyword, donationsSearchBy]);
   const handleOpenCreateDialog = () => {
     setCreateForm({

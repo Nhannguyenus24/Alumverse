@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { NavLink, useMatch, useOutletContext } from 'react-router';
+import { NavLink, useOutletContext } from 'react-router';
 import { Box, Button, Grid, Skeleton, Stack, Typography, alpha, useTheme } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
@@ -19,10 +19,6 @@ import { useAuth } from '../../hooks/useAuth';
 
 const AdminDashboardPage = () => {
   const theme = useTheme();
-  const slugMatchWildcard = useMatch('/:slug/admin/*');
-  const slugMatchExact = useMatch('/:slug/admin');
-  const slugMatch = slugMatchWildcard ?? slugMatchExact;
-  const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const { loading, metrics, timeline, organizations } = useAdminSystemContext();

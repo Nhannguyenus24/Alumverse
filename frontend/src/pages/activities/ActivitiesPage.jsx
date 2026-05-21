@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
 import LocalActivityIcon from '@mui/icons-material/LocalActivity';
@@ -6,7 +6,7 @@ import EventIcon from '@mui/icons-material/Event';
 import ArticleIcon from '@mui/icons-material/Article';
 
 import Page from '../../components/Page';
-import { useAuth } from '../../hooks/useAuth';
+
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
@@ -57,7 +57,7 @@ const FILTERS = [
 
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
-  const { user } = useAuth();
+
   const { news: rawNews } = usePublishedNews(0, 7);
   const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, 3);
 

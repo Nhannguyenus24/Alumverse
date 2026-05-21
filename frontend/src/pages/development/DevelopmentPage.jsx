@@ -7,7 +7,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import Page from '../../components/Page';
-import { useAuth } from '../../hooks/useAuth';
+
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
@@ -127,7 +127,7 @@ const PreviewSection = ({
 
 const DevelopmentPage = () => {
   const navigate = useOrgNavigate();
-  const { user } = useAuth();
+
 
   const {
     resources: academics,

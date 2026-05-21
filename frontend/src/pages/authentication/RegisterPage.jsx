@@ -14,6 +14,19 @@ import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
 
+const PasswordRequirementItem = ({ label, met }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    {met ? (
+      <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+    ) : (
+      <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
+    )}
+    <Typography variant="caption" sx={{ color: met ? 'success.main' : 'error.main' }}>
+      {label}
+    </Typography>
+  </Box>
+);
+
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
   value: String(CURRENT_YEAR - i),
@@ -81,19 +94,6 @@ const RegisterPage = () => {
       enqueueSnackbar(result.error, { variant: 'error' });
     }
   };
-
-  const PasswordRequirementItem = ({ label, met }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      {met ? (
-        <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
-      ) : (
-        <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
-      )}
-      <Typography variant="caption" sx={{ color: met ? 'success.main' : 'error.main' }}>
-        {label}
-      </Typography>
-    </Box>
-  );
 
   return (
     <Page

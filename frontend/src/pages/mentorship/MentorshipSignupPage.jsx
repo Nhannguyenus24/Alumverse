@@ -108,7 +108,7 @@ const MentorshipSignupPage = () => {
       });
       setSuccess(true);
       setTimeout(() => navigate('/development/mentorship/profile'), 1200);
-    } catch (_e) {
+    } catch {
       /* surfaced via submitMutation.errorMessage */
     }
   };
@@ -190,7 +190,7 @@ const MentorshipSignupPage = () => {
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Tabs
             value={tabKey}
-            onChange={(_e, v) => setTabKey(v)}
+            onChange={(_, v) => setTabKey(v)}
             variant="fullWidth"
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >

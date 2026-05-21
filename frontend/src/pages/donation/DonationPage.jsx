@@ -159,6 +159,7 @@ export default function DonationPage() {
       return () => { ignore = true; };
     }, 300);
     return () => clearTimeout(debounce);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken]);
 
   const adminBannerItems = useMemo(() => [
