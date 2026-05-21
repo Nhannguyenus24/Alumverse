@@ -184,12 +184,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      * @return Mono of created member ID
      */
     @Modifying
-       @Query("INSERT INTO organization_members (organization_id, user_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
-                 "VALUES (:organizationId, :userId, :graduatedYear, :graduationStatus, :program, :major, :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+         @Query("INSERT INTO organization_members (organization_id, user_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
+                 "VALUES (:organizationId, :userId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> createOrganizationMember(
         @Param("organizationId") Integer organizationId,
         @Param("userId") Integer userId,
-              @Param("graduatedYear") Integer graduatedYear,
+              @Param("graduatedYear") String graduatedYear,
               @Param("graduationStatus") String graduationStatus,
               @Param("program") String program,
               @Param("major") String major,

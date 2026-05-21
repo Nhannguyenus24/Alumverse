@@ -37,8 +37,8 @@ public interface NetworkMemberSearchRepository
             WHERE om.organization_id = :organizationId
               AND om.status = 'active'
               AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
-              AND (:program IS NULL OR om.program ILIKE :program)
-              AND (:major IS NULL OR om.major ILIKE :major)
+                                                        AND (:programJson IS NULL OR om.program @> CAST(:programJson AS jsonb))
+                                                        AND (:majorJson IS NULL OR om.major @> CAST(:majorJson AS jsonb))
               AND (:startYear IS NULL OR ar.start_year = :startYear)
             """;
 
@@ -56,8 +56,8 @@ public interface NetworkMemberSearchRepository
     Flux<NetworkMemberSearchItemResponse> searchMembers(
             Integer organizationId,
             String fullName,
-            String program,
-            String major,
+            String programJson,
+            String majorJson,
             Integer startYear,
             int limit,
             int offset);
@@ -68,7 +68,7 @@ public interface NetworkMemberSearchRepository
     Mono<Long> countSearchMembers(
             Integer organizationId,
             String fullName,
-            String program,
-            String major,
+            String programJson,
+            String majorJson,
             Integer startYear);
 }

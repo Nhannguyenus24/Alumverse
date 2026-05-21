@@ -173,8 +173,8 @@ chỉ lấy **một** `start_year` (ưu tiên năm vào lớn nhất) mỗi memb
 | Query param | DB / logic |
 |-------------|------------|
 | `fullName` | `global_profiles.full_name` — LIKE `%value%` |
-| `program` | `organization_members.program` — ILIKE |
-| `major` | `organization_members.major` — ILIKE |
+| `program` | `organization_members.program` — JSON array text search |
+| `major` | `organization_members.major` — JSON array text search |
 | `startYear` | `academic_records.start_year` — so khớp chính xác |
 | `page`, `size` | Phân trang; `page` **0-based** trên backend |
 | (ẩn) `organizationId` | Từ JWT (`SecurityUtils.getCurrentOrganizationId()`) |

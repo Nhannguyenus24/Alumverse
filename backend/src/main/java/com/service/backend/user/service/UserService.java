@@ -10,6 +10,7 @@ import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.admin.entity.OrganizationMember;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.dao.UserNotificationSettingsRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
@@ -125,10 +126,10 @@ public class UserService {
                 .updateAcademicProfileByOrganizationAndUserId(
                         request.getOrganizationId(),
                         userId,
-                        request.getProgram(),
-                        request.getGraduatedYear(),
-                        request.getGraduationStatus(),
-                        request.getMajor())
+                JsonUtils.toJson(request.getProgram()),
+                JsonUtils.toJson(request.getGraduatedYear()),
+                JsonUtils.toJson(request.getGraduationStatus()),
+                JsonUtils.toJson(request.getMajor()))
                 .flatMap(updatedRows -> {
                     if (updatedRows == null || updatedRows <= 0) {
                         return Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND));
@@ -175,15 +176,41 @@ public class UserService {
                 .id(member.getId())
                 .organizationId(member.getOrganizationId())
                 .userId(member.getUserId())
-                .graduatedYear(member.getGraduatedYear())
-                .graduationStatus(member.getGraduationStatus())
-                .program(member.getProgram())
-                .major(member.getMajor())
+                .graduatedYear(parseIntegerList(member.getGraduatedYear()))
+                .graduationStatus(parseStringList(member.getGraduationStatus()))
+                .program(parseStringList(member.getProgram()))
+                .major(parseStringList(member.getMajor()))
                 .verificationLevel(member.getVerificationLevel())
                 .isTrustedVerifier(member.getIsTrustedVerifier())
                 .status(member.getStatus())
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
                 .build();
+    }
+
+    private List<String> parseStringList(String jsonValue) {
+        if (jsonValue == null || jsonValue.trim().isEmpty()) {
+            return List.of();
+        }
+        if (JsonUtils.isJsonArray(jsonValue)) {
+            List<String> values = JsonUtils.fromJsonToList(jsonValue, String.class);
+            return values == null ? List.of() : values;
+        }
+        return List.of(jsonValue);
+    }
+
+    private List<Integer> parseIntegerList(String jsonValue) {
+        if (jsonValue == null || jsonValue.trim().isEmpty()) {
+            return List.of();
+        }
+        if (JsonUtils.isJsonArray(jsonValue)) {
+            List<Integer> values = JsonUtils.fromJsonToList(jsonValue, Integer.class);
+            return values == null ? List.of() : values;
+        }
+        try {
+            return List.of(Integer.valueOf(jsonValue.trim()));
+        } catch (NumberFormatException ex) {
+            return List.of();
+        }
     }
 }

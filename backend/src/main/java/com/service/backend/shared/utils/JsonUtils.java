@@ -130,10 +130,29 @@ public class JsonUtils {
             return List.of();
         }
         try {
+            JsonNode node = MAPPER.readTree(json);
+            if (node == null || !node.isArray()) {
+                throw new RuntimeException("JSON value is not an array");
+            }
             return MAPPER.readValue(json, 
                 MAPPER.getTypeFactory().constructCollectionType(List.class, clazz));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to deserialize JSON to List", e);
+        }
+    }
+
+    /**
+     * Check if string is valid JSON array.
+     */
+    public static boolean isJsonArray(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+        try {
+            JsonNode node = MAPPER.readTree(json);
+            return node != null && node.isArray();
+        } catch (JsonProcessingException e) {
+            return false;
         }
     }
 

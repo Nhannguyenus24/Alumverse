@@ -34,6 +34,26 @@ function initials(name) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+function formatAcademicValue(value) {
+  if (Array.isArray(value)) {
+    return value.filter(Boolean).join(' · ');
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(Boolean).join(' · ');
+      }
+    } catch {
+      return value;
+    }
+    return value;
+  }
+
+  return '';
+}
+
 function NetworkMessageBubble({ message, isOwn }) {
   return (
     <Box
@@ -130,6 +150,8 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
   const avatarSrc = peer?.avatarUrl || DEFAULT_CHAT_AVATAR_SRC;
   const cohortLabel =
     peer?.startYear != null && peer.startYear !== '' ? peer.startYear : null;
+  const programLabel = formatAcademicValue(peer?.program);
+  const majorLabel = formatAcademicValue(peer?.major);
 
   return (
     <Drawer
@@ -166,9 +188,9 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {peer?.fullName ?? 'Thành viên'}
             </Typography>
-            {(cohortLabel || peer?.program || peer?.major) && (
+            {(cohortLabel || programLabel || majorLabel) && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {[cohortLabel && `Khóa ${cohortLabel}`, peer?.program, peer?.major]
+                {[cohortLabel && `Khóa ${cohortLabel}`, programLabel, majorLabel]
                   .filter(Boolean)
                   .join(' · ')}
               </Typography>
