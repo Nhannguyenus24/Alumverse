@@ -123,8 +123,8 @@ const DonationPage = Loadable(
 const DonationArticlePage = Loadable(
   lazy(() => import("../pages/donation/DonationArticlePage")),
 );
-const DetailDonationPage = Loadable(
-  lazy(() => import("../pages/alumni/DetailDonationPage")),
+const DonationDetailPage = Loadable(
+  lazy(() => import("../pages/donation/DonationDetailPage")),
 );
 
 // Honors pages
@@ -637,7 +637,7 @@ export const router = createBrowserRouter([
           },
           {
             path: ":id/contribute",
-            element: <DetailDonationPage />,
+            element: <DonationDetailPage />,
           },
           {
             path: ":id",

@@ -3,7 +3,7 @@ import {
   DONATION_AVATAR_FALLBACK,
   formatDonationAmount,
   formatDonationTimestamp,
-} from "../../../schemas/detailDonationSchemas";
+} from "../../schemas/detailDonationSchemas";
 
 export default function DonationListItemCard({ item }) {
   return (
