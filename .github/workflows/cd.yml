@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: cd-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # ─────────────────────────────────────────────
@@ -104,3 +104,19 @@ jobs:
           echo "::endgroup::"
           echo "✅ Render deploy triggered."
           echo "$RESPONSE"
+
+      - name: Wait for Render deploy to complete
+        run: |
+          echo "Waiting for service to come up..."
+          MAX_ATTEMPTS=20
+          ATTEMPT=0
+          until curl -sf "${{ secrets.RENDER_SERVICE_URL }}/health" > /dev/null 2>&1; do
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+              echo "::error title=Deploy Timeout::Health check failed after $((MAX_ATTEMPTS * 15)) seconds."
+              exit 1
+            fi
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS — retrying in 15s..."
+            sleep 15
+          done
+          echo "✅ Backend is healthy at ${{ secrets.RENDER_SERVICE_URL }}/health"
