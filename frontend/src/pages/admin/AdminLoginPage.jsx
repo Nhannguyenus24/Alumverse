@@ -48,7 +48,6 @@ const AdminLoginPage = () => {
     defaultValues: { email: '', password: '' },
   });
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/admin', { replace: true });

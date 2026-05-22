@@ -190,7 +190,6 @@ public class AdminEventService {
     }
 
     public Mono<EventStatisticsDTO> getEventStatistics() {
-        log.info("Admin fetching comprehensive event statistics");
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
