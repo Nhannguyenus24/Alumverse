@@ -2,7 +2,9 @@ import axios from 'axios';
 import useAuthStore from '../stores/authStore';
 import { userFromAccessToken } from './jwt';
 
-const BASE_URL = '/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api';
 
 // Exact paths — avoid includes() to prevent substring bypass
 const AUTH_WHITELIST = ['/auth/login', '/auth/google-login', '/auth/refresh'];

@@ -30,7 +30,6 @@ const AdminOrganizationsPage = () => {
     setBreadcrumbs?.([{ label: 'Tổ chức', active: true }]);
   }, [setBreadcrumbs]);
   
-  // Dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [introDialogOpen, setIntroDialogOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
