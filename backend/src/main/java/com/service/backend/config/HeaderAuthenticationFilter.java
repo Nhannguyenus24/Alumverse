@@ -36,7 +36,8 @@ public class HeaderAuthenticationFilter implements WebFilter {
         String path = exchange.getRequest().getPath().value();
 
         // Skip authentication for public endpoints
-        if (path.startsWith("/api/auth/") ||
+        if (path.equals("/health") ||
+                path.startsWith("/api/auth/") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/webjars/") ||
                 path.startsWith("/v3/api-docs") ||
