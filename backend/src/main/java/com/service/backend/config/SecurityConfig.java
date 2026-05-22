@@ -1,8 +1,10 @@
 package com.service.backend.config;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,17 +19,29 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
+    // Comma-separated extra patterns injected from application-prod.properties
+    // e.g. https://*-hcmus-alumni.vercel.app,https://hcmus-alumni.vercel.app
+    @Value("${app.cors.allowed-origin-patterns:}")
+    private String extraOriginPatterns;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        // Dev-friendly origins for local web, Expo web, and LAN devices (phone/WebView).
-        configuration.setAllowedOriginPatterns(List.of(
+        List<String> patterns = new ArrayList<>(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
                 "http://192.168.*.*:*",
                 "http://172.*.*.*:*",
                 "http://10.*.*.*:*"
         ));
+        if (extraOriginPatterns != null && !extraOriginPatterns.isBlank()) {
+            Arrays.stream(extraOriginPatterns.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .forEach(patterns::add);
+        }
+
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(patterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
