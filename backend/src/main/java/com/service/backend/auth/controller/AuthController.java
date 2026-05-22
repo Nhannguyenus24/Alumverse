@@ -55,7 +55,7 @@ public class AuthController {
     }
 
     /**
-     * Login user by email and password
+     * Login user
      * Returns access token in response body and refresh token in HTTP-only cookie
      */
     @PostMapping("/login")
