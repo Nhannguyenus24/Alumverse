@@ -42,46 +42,83 @@ const MENU_ITEMS = [
   { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
 ];
 
-export default function SettingPage() {
-  const { user } = useAuthStore();
-  const { showSuccess, showError, showWarning } = useNotification();
-  const { organization } = useOrganization();
-  const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
+const parseOrganizationOptions = (value) => {
+  if (!value) {
+    return [];
+  }
 
-  const parseOrganizationOptions = (value) => {
-    if (!value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
       return [];
     }
 
-    if (Array.isArray(value)) {
-      return value
-        .map((item) => String(item ?? '').trim())
-        .filter(Boolean);
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return [];
-      }
-
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .map((item) => String(item ?? '').trim())
-            .filter(Boolean);
-        }
-      } catch {
-        return trimmed
-          .split(',')
-          .map((item) => item.trim())
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item ?? '').trim())
           .filter(Boolean);
       }
+    } catch {
+      return trimmed
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
+const normalizeAcademicList = (value) => {
+  if (value == null) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [];
     }
 
-    return [];
-  };
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item ?? '').trim())
+          .filter(Boolean);
+      }
+    } catch {
+      return [trimmed];
+    }
+  }
+
+  return [String(value).trim()].filter(Boolean);
+};
+
+const normalizeIntegerList = (value) =>
+  normalizeAcademicList(value)
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item));
+
+export default function SettingPage() {
+  useAuthStore();
+  const { showSuccess, showError, showWarning } = useNotification();
+  const { organization } = useOrganization();
+  const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
 
   const organizationProgramOptions = useMemo(
     () => parseOrganizationOptions(organization?.programs),
@@ -91,43 +128,6 @@ export default function SettingPage() {
     () => parseOrganizationOptions(organization?.majors),
     [organization?.majors],
   );
-
-  const normalizeAcademicList = (value) => {
-    if (value == null) {
-      return [];
-    }
-
-    if (Array.isArray(value)) {
-      return value
-        .map((item) => String(item ?? '').trim())
-        .filter(Boolean);
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return [];
-      }
-
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .map((item) => String(item ?? '').trim())
-            .filter(Boolean);
-        }
-      } catch {
-        return [trimmed];
-      }
-    }
-
-    return [String(value).trim()].filter(Boolean);
-  };
-
-  const normalizeIntegerList = (value) =>
-    normalizeAcademicList(value)
-      .map((item) => Number(item))
-      .filter((item) => Number.isInteger(item));
 
   const [activeTab, setActiveTab] = useState('personal');
   const [formData, setFormData] = useState({

@@ -19,7 +19,7 @@ export const useVoteOnPoll = () => {
     reset,
   } = useMutation({
     mutationFn: voteOnPoll,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["poll"] });
       queryClient.invalidateQueries({ queryKey: ["pollsByTopic"] });
     },

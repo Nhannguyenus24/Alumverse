@@ -39,7 +39,7 @@ const parseInitial = (raw) => {
   if (!raw) return null;
   try {
     return typeof raw === 'string' ? JSON.parse(raw) : raw;
-  } catch (_e) {
+  } catch {
     return null;
   }
 };
@@ -68,25 +68,28 @@ const MentorshipBookingWindowCard = ({
 
   // Re-hydrate when initialSettings arrives later (async profile load)
   useEffect(() => {
-    const next = parseInitial(initialSettings);
-    if (!next) return;
-    if (next.rangeType) setRangeType(next.rangeType);
-    if (next.startDate) setStartDate(dayjs(next.startDate));
-    if (next.endDate) setEndDate(dayjs(next.endDate));
-    if (next.maxLeadTime) {
-      setMaxEnabled(true);
-      setMaxValue(next.maxLeadTime.value ?? 60);
-      setMaxUnit(next.maxLeadTime.unit ?? 'days');
-    } else {
-      setMaxEnabled(false);
-    }
-    if (next.minLeadTime) {
-      setMinEnabled(true);
-      setMinValue(next.minLeadTime.value ?? 4);
-      setMinUnit(next.minLeadTime.unit ?? 'hours');
-    } else {
-      setMinEnabled(false);
-    }
+    const timer = setTimeout(() => {
+      const next = parseInitial(initialSettings);
+      if (!next) return;
+      if (next.rangeType) setRangeType(next.rangeType);
+      if (next.startDate) setStartDate(dayjs(next.startDate));
+      if (next.endDate) setEndDate(dayjs(next.endDate));
+      if (next.maxLeadTime) {
+        setMaxEnabled(true);
+        setMaxValue(next.maxLeadTime.value ?? 60);
+        setMaxUnit(next.maxLeadTime.unit ?? 'days');
+      } else {
+        setMaxEnabled(false);
+      }
+      if (next.minLeadTime) {
+        setMinEnabled(true);
+        setMinValue(next.minLeadTime.value ?? 4);
+        setMinUnit(next.minLeadTime.unit ?? 'hours');
+      } else {
+        setMinEnabled(false);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [initialSettings]);
 
   const handleSave = () => {

@@ -1,5 +1,4 @@
 import { Box, Stack, Typography } from "@mui/material";
-import styled from "@emotion/styled";
 
 export default function DonationHeader({ isAdmin, adminBannerItems }) {
   return (

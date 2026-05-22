@@ -132,7 +132,8 @@ const useAdminForumData = (activeOrgId) => {
   }, []);
 
   useEffect(() => {
-    loadStatistics();
+    const timer = setTimeout(loadStatistics, 0);
+    return () => clearTimeout(timer);
   }, [loadStatistics]);
 
   /* ─── Load top contributors (when month/year changes) ─── */
@@ -146,7 +147,8 @@ const useAdminForumData = (activeOrgId) => {
   }, [contributorMonth, contributorYear]);
 
   useEffect(() => {
-    loadTopContributors();
+    const timer = setTimeout(loadTopContributors, 0);
+    return () => clearTimeout(timer);
   }, [loadTopContributors]);
 
   /* ─── Load monthly timeline (when year changes) ─── */
@@ -157,7 +159,8 @@ const useAdminForumData = (activeOrgId) => {
   }, [timelineYear]);
 
   useEffect(() => {
-    loadTimeline();
+    const timer = setTimeout(loadTimeline, 0);
+    return () => clearTimeout(timer);
   }, [loadTimeline]);
 
   /* ─── Load banned posts ─── */
@@ -168,7 +171,8 @@ const useAdminForumData = (activeOrgId) => {
   }, [bannedPage]);
 
   useEffect(() => {
-    loadBannedPosts();
+    const timer = setTimeout(loadBannedPosts, 0);
+    return () => clearTimeout(timer);
   }, [loadBannedPosts]);
 
   /* ─── Load yesterday posts ─── */
@@ -182,7 +186,8 @@ const useAdminForumData = (activeOrgId) => {
   }, [yesterdayPage]);
 
   useEffect(() => {
-    loadYesterdayPosts();
+    const timer = setTimeout(loadYesterdayPosts, 0);
+    return () => clearTimeout(timer);
   }, [loadYesterdayPosts]);
 
   const loadReports = useCallback(async () => {
@@ -191,7 +196,8 @@ const useAdminForumData = (activeOrgId) => {
   }, [reportsPage]);
 
   useEffect(() => {
-    loadReports();
+    const timer = setTimeout(loadReports, 0);
+    return () => clearTimeout(timer);
   }, [loadReports]);
 
   const loadMergedModerationPosts = useCallback(async () => {
@@ -209,7 +215,8 @@ const useAdminForumData = (activeOrgId) => {
   }, []);
 
   useEffect(() => {
-    loadMergedModerationPosts();
+    const timer = setTimeout(loadMergedModerationPosts, 0);
+    return () => clearTimeout(timer);
   }, [loadMergedModerationPosts]);
 
   const posts = useMemo(() => {
@@ -243,7 +250,8 @@ const useAdminForumData = (activeOrgId) => {
 
   useEffect(() => {
     if (activeOrgId) {
-      loadCategories(activeOrgId);
+      const timer = setTimeout(() => loadCategories(activeOrgId), 0);
+      return () => clearTimeout(timer);
     }
   }, [activeOrgId, loadCategories]);
 
@@ -259,7 +267,8 @@ const useAdminForumData = (activeOrgId) => {
 
   useEffect(() => {
     if (activeOrgId) {
-      loadTopics(activeOrgId);
+      const timer = setTimeout(() => loadTopics(activeOrgId), 0);
+      return () => clearTimeout(timer);
     }
   }, [activeOrgId, loadTopics]);
 

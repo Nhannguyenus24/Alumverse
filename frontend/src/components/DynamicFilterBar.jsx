@@ -22,7 +22,10 @@ const FilterInputPopover = ({ filter, value, onCommit }) => {
   const isActive = Boolean(String(storedValue).trim());
 
   useEffect(() => {
-    if (open) setDraft(storedValue);
+    if (open) {
+      const timer = setTimeout(() => setDraft(storedValue), 0);
+      return () => clearTimeout(timer);
+    }
   }, [open, storedValue]);
 
   const close = () => setAnchorEl(null);

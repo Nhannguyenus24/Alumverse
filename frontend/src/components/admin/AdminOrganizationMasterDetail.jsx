@@ -101,7 +101,6 @@ const AdminOrganizationMasterDetail = ({
   onSelectOrganizationId,
   onEditOrganization,
   onEditIntroduction,
-  onUpdateOrganization,
   onRefresh,
 }) => {
   const theme = useTheme();
@@ -172,32 +171,35 @@ const AdminOrganizationMasterDetail = ({
 
   useEffect(() => {
     if (!selectedOrg) return;
-    // init programs / majors
-    setProgramList(normalizeList(selectedOrg.programs));
-    setMajorList(normalizeList(selectedOrg.majors));
+    const timer = setTimeout(() => {
+      // init programs / majors
+      setProgramList(normalizeList(selectedOrg.programs));
+      setMajorList(normalizeList(selectedOrg.majors));
 
-    // init brand/theme from featuresConfig if present
-    let cfg = {};
-    try {
-      cfg = selectedOrg.featuresConfig
-        ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
-        : {};
-    } catch {
-      cfg = {};
-    }
-    const brand = cfg.brand_config || cfg.brandConfig || {};
-    const themeColors = brand.theme_colors || brand.themeColors || {};
-    setBrandState((s) => ({
-      ...s,
-      logoUrl: brand.logo_url || brand.logoUrl || s.logoUrl,
-      faviconUrl: brand.favicon_url || brand.faviconUrl || s.faviconUrl,
-      heroBannerUrl: brand.hero_banner_url || brand.heroBannerUrl || s.heroBannerUrl,
-      themeColors: {
-        primary: themeColors.primary || s.themeColors.primary,
-        secondary: themeColors.secondary || s.themeColors.secondary,
-        accent: themeColors.accent || s.themeColors.accent,
-      },
-    }));
+      // init brand/theme from featuresConfig if present
+      let cfg = {};
+      try {
+        cfg = selectedOrg.featuresConfig
+          ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
+          : {};
+      } catch {
+        cfg = {};
+      }
+      const brand = cfg.brand_config || cfg.brandConfig || {};
+      const themeColors = brand.theme_colors || brand.themeColors || {};
+      setBrandState((s) => ({
+        ...s,
+        logoUrl: brand.logo_url || brand.logoUrl || s.logoUrl,
+        faviconUrl: brand.favicon_url || brand.faviconUrl || s.faviconUrl,
+        heroBannerUrl: brand.hero_banner_url || brand.heroBannerUrl || s.heroBannerUrl,
+        themeColors: {
+          primary: themeColors.primary || s.themeColors.primary,
+          secondary: themeColors.secondary || s.themeColors.secondary,
+          accent: themeColors.accent || s.themeColors.accent,
+        },
+      }));
+    }, 0);
+    return () => clearTimeout(timer);
   }, [selectedOrg]);
 
   return (

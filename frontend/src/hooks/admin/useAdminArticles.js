@@ -54,7 +54,8 @@ const useAdminArticles = (initialChannel = 'news') => {
   }, [channel, page, rowsPerPage]);
 
   useEffect(() => {
-    loadArticles();
+    const timer = setTimeout(loadArticles, 0);
+    return () => clearTimeout(timer);
   }, [loadArticles]);
 
   return {

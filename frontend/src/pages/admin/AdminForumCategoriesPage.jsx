@@ -142,7 +142,6 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
 };
 
 const AdminForumCategoriesPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { activeOrgId, activeOrganization } = useAdminSystemContext();
   const {
@@ -151,7 +150,6 @@ const AdminForumCategoriesPage = () => {
     createCategory,
     updateCategory,
     deleteCategory,
-    refreshCategories,
   } = useAdminForumContext();
 
   const { setBreadcrumbs } = useOutletContext();

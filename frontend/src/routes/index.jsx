@@ -7,25 +7,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import PublicRoute from "./PublicRoute";
 import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
-
-const Loadable = (Component) => (props) => (
-  <Suspense fallback={<LoadingScreen />}>
-    <Component {...props} />
-  </Suspense>
-);
-
-/** Inline Suspense fallback in AuthLayout — avoids fullscreen LoadingScreen on logout → /auth/login */
-const AuthRouteSuspenseFallback = () => (
-  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
-    <CircularProgress size={36} thickness={4} aria-label="Loading" />
-  </Box>
-);
-
-const AuthLoadable = (Component) => (props) => (
-  <Suspense fallback={<AuthRouteSuspenseFallback />}>
-    <Component {...props} />
-  </Suspense>
-);
+import { Loadable, AuthLoadable } from "./loadable";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {

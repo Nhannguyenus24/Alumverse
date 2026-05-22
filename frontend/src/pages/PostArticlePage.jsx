@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 
 import {
   Box,
@@ -20,7 +20,7 @@ const TOPIC_OPTIONS = ['Education', 'Jobs', 'Chances'];
 
 const PostArticlePage = () => {
   const navigate = useOrgNavigate();
-  const fileInputRef = useRef(null);
+
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

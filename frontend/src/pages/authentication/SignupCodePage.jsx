@@ -32,7 +32,6 @@ const SignupCodePage = () => {
     handleSubmit,
     getValues,
     setValue,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(verifyOtpSchema),
     defaultValues: { email: emailFromState, otp: '' },

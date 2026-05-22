@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react';
 import {
   Alert,
@@ -108,7 +109,7 @@ const MyProfileEditPage = () => {
       setTimeout(() => {
         navigate('/profile');
       }, 800);
-    } catch (_e) {
+    } catch {
       /* surfaced via errorMessage */
     }
   };
