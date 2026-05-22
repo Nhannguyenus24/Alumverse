@@ -47,7 +47,7 @@ jobs:
     if: needs.detect-changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     environment:
-      name: production-frontend
+      name: Vercel
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
@@ -95,7 +95,7 @@ jobs:
     if: needs.detect-changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     environment:
-      name: production-backend
+      name: Render
     steps:
       - name: Trigger Render deploy hook
         run: |
