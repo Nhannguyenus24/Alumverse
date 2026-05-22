@@ -24,7 +24,7 @@ export const useClosePoll = () => {
     reset,
   } = useMutation({
     mutationFn: closePoll,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["poll"] });
       queryClient.invalidateQueries({ queryKey: ["pollsByTopic"] });
     },
@@ -59,7 +59,7 @@ export const useDeletePoll = () => {
     reset,
   } = useMutation({
     mutationFn: deletePoll,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["poll"] });
       queryClient.invalidateQueries({ queryKey: ["pollsByTopic"] });
     },

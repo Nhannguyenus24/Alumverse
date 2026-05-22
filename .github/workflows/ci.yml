@@ -108,6 +108,8 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      mobile_flutter: ${{ steps.filter.outputs.mobile_flutter }}
+      docker: ${{ steps.filter.outputs.docker }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -121,6 +123,11 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+            mobile_flutter:
+              - 'mobile_flutter/**'
+            docker:
+              - 'docker-compose.yml'
+              - 'nginx.conf'
 
   # ─────────────────────────────────────────────
   # Phase 2: Build backend
@@ -302,3 +309,51 @@ jobs:
             fi
             # Job continues even if ERRORS > 0
           fi
+
+  # ─────────────────────────────────────────────
+  # Phase 6: Mobile (Flutter) Analyze & Test
+  # ─────────────────────────────────────────────
+  # test-mobile-flutter:
+  #   name: "Phase 6 · Analyze & Test Mobile (Flutter)"
+  #   needs: [check-sync-with-main, validate-commits, detect-changes]
+  #   if: needs.detect-changes.outputs.mobile_flutter == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.x'
+  #         channel: 'stable'
+  #         cache: true
+
+  #     - name: Install Dependencies
+  #       working-directory: mobile_flutter
+  #       run: flutter pub get
+
+  #     - name: Analyze Code
+  #       working-directory: mobile_flutter
+  #       run: flutter analyze
+
+  #     - name: Run Tests
+  #       working-directory: mobile_flutter
+  #       run: flutter test
+
+  # ─────────────────────────────────────────────
+  # Phase 7: Docker Validation
+  # ─────────────────────────────────────────────
+  validate-docker:
+    name: "Phase 7 · Validate Docker Config"
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: |
+          echo "::group::Docker Compose Config Check"
+          docker compose config -q
+          echo "::endgroup::"
+          echo "✅ Docker Compose configuration is valid."
+

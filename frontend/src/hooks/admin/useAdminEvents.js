@@ -40,7 +40,8 @@ const useAdminEvents = () => {
   }, []);
 
   useEffect(() => {
-    loadOrganizations();
+    const timer = setTimeout(loadOrganizations, 0);
+    return () => clearTimeout(timer);
   }, [loadOrganizations]);
 
   const loadEvents = useCallback(async () => {
@@ -77,7 +78,8 @@ const useAdminEvents = () => {
   }, [page, rowsPerPage, search, statusFilter, organizationFilter]);
 
   useEffect(() => {
-    loadEvents();
+    const timer = setTimeout(loadEvents, 0);
+    return () => clearTimeout(timer);
   }, [loadEvents]);
 
   const loadStatistics = useCallback(async () => {
@@ -86,7 +88,8 @@ const useAdminEvents = () => {
   }, []);
 
   useEffect(() => {
-    loadStatistics();
+    const timer = setTimeout(loadStatistics, 0);
+    return () => clearTimeout(timer);
   }, [loadStatistics]);
 
   const sortedRows = useMemo(() => {

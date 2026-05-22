@@ -168,7 +168,7 @@ const useAdminEventsData = () => {
     } catch {
       return false;
     }
-  }, [loadEvents, loadStatistics]);
+  }, [loadStatistics]);
 
   const createEvent = useCallback(async (payload) => {
     try {

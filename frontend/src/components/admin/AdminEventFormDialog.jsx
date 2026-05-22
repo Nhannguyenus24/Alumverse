@@ -43,22 +43,24 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
 
   useEffect(() => {
     if (!open) return;
-    if (event) {
-      setForm({
-        title: event.title || '',
-        description: event.description || '',
-        bannerUrl: event.bannerUrl || '',
-        location: event.location || '',
-        startTime: toLocalInput(event.startTime),
-        endTime: toLocalInput(event.endTime),
-        registrationStartAt: toLocalInput(event.registrationStartAt),
-        registrationEndAt: toLocalInput(event.registrationEndAt),
-        maxCapacity: event.maxCapacity != null ? String(event.maxCapacity) : '',
-      });
-    } else {
-      setForm(emptyForm);
-    }
-    setErrors({});
+    const timer = setTimeout(() => {
+      if (event) {
+        setForm({
+          title: event.title || '',
+          description: event.description || '',
+          bannerUrl: event.bannerUrl || '',
+          location: event.location || '',
+          startTime: toLocalInput(event.startTime),
+          endTime: toLocalInput(event.endTime),
+          registrationStartAt: toLocalInput(event.registrationStartAt),
+          registrationEndAt: toLocalInput(event.registrationEndAt),
+          maxCapacity: event.maxCapacity != null ? String(event.maxCapacity) : '',
+        });
+      } else {
+        setForm(emptyForm);
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open, event]);
 
   const handleChange = (field) => (e) => {

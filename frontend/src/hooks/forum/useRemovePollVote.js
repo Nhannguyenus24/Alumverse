@@ -21,7 +21,7 @@ export const useRemovePollVote = () => {
     reset,
   } = useMutation({
     mutationFn: removePollVote,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["poll"] });
       queryClient.invalidateQueries({ queryKey: ["pollsByTopic"] });
     },

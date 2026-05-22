@@ -15,15 +15,6 @@ const normalizeList = (payload) => {
   return [];
 };
 
-/** UserResponse has no fullName; overlay may set it. Fall back so "Sort by name" matches visible identity. */
-const sortableDisplayName = (user) => {
-  const name = user?.fullName?.trim();
-  if (name) return name;
-  const login = user?.userName?.trim();
-  if (login) return login;
-  return String(user?.email ?? '').trim();
-};
-
 const useAdminUsersLocal = () => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
@@ -76,7 +67,6 @@ const useAdminUsersLocal = () => {
 
   // Since we are doing server-side filtering, users are already the paged ones
   const pagedUsers = allUsers;
-  const filteredUsers = allUsers; // for export or other uses, but server-side it's only current page
   const sortedUsers = allUsers;
 
   // ── Helpers ───────────────────────────────────────────────────────────────

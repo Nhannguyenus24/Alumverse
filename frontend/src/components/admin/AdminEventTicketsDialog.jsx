@@ -87,17 +87,26 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
 
   useEffect(() => {
     if (!open) return;
-    setTab('tickets');
-    setTicketsPage(0);
-    setInterestsPage(0);
+    const timer = setTimeout(() => {
+      setTab('tickets');
+      setTicketsPage(0);
+      setInterestsPage(0);
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open, eventId]);
 
   useEffect(() => {
-    if (open && tab === 'tickets') loadTickets();
+    if (open && tab === 'tickets') {
+      const timer = setTimeout(loadTickets, 0);
+      return () => clearTimeout(timer);
+    }
   }, [open, tab, loadTickets]);
 
   useEffect(() => {
-    if (open && tab === 'interests') loadInterests();
+    if (open && tab === 'interests') {
+      const timer = setTimeout(loadInterests, 0);
+      return () => clearTimeout(timer);
+    }
   }, [open, tab, loadInterests]);
 
   const handleCancel = async (ticket) => {

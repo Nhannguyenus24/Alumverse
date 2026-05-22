@@ -10,7 +10,6 @@ import { alpha } from '@mui/material/styles';
 const NetworkSearchMemberCard = ({
   avatar,
   fullName,
-  userName,
   startYear,
   program,
   major,

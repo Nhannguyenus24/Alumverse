@@ -28,7 +28,6 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 const AdminDataTable = ({
   columns,
   rows,
-  loading,
   totalCount,
   page,
   rowsPerPage,

@@ -126,7 +126,7 @@ const AvatarWrapper = styled(Box)(({ theme }) => ({
 
 const AnimatedAvatar = styled(Avatar, {
   shouldForwardProp: (prop) => prop !== 'isAnimating',
-})(({ theme, isAnimating }) => ({
+})(({ isAnimating, theme }) => ({
   width: 60,
   height: 60,
   backgroundColor: theme.palette.primary.main,
@@ -208,7 +208,7 @@ const MessageContainer = styled(Box)(({ theme }) => ({
 
 const Message = styled(Box, {
   shouldForwardProp: (prop) => prop !== 'isBot',
-})(({ theme, isBot }) => ({
+})(({ isBot }) => ({
   display: 'flex',
   justifyContent: isBot ? 'flex-start' : 'flex-end',
   animation: `${slideUp} 0.3s ease-out`,
@@ -321,12 +321,12 @@ const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
 
 export default function FitBot() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const isAnimating = !isChatOpen;
   const [messages, setMessages] = useState(() => loadMessagesFromStorage());
   const [inputValue, setInputValue] = useState('');
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(true);
   const messageEndRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
   const suggestionHideTimeoutRef = useRef(null);
@@ -386,11 +386,6 @@ export default function FitBot() {
         clearTimeout(suggestionHideTimeoutRef.current);
       };
     }
-  }, [isChatOpen]);
-
-  // Stop animation when chat opens
-  useEffect(() => {
-    setIsAnimating(!isChatOpen);
   }, [isChatOpen]);
 
   const handleSuggestionClick = (suggestion) => {
