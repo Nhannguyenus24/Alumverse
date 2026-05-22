@@ -20,7 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+<<<<<<< HEAD
       pull-requests: read
+=======
+>>>>>>> 092d4381f14abd463b0e8cce78eab138c51378f3
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
