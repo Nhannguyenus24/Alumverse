@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore:
       - main
+  pull_request:
+    branches:
+      - main
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -23,12 +26,15 @@ jobs:
 
       - name: Check branch is up-to-date with main
         run: |
+          echo "::group::Fetching main branch..."
           git fetch origin main --no-tags
+          echo "::endgroup::"
+          
           if git merge-base --is-ancestor origin/main HEAD; then
-            echo "PASS: branch contains all commits from main"
+            echo "✅ PASS: Branch is up-to-date with main."
           else
-            echo "FAIL: branch is behind main. Please merge or rebase from main before pushing."
-            echo "  Run: git fetch origin && git merge origin/main"
+            echo "::error title=Sync Error::Branch is behind main. Please merge or rebase from main before pushing."
+            echo "❌ FAIL: Please run: git fetch origin && git merge origin/main"
             exit 1
           fi
 
@@ -48,11 +54,11 @@ jobs:
           REGEX='^(feat|fix|docs|chore|refactor|test|ci|perf|style)\([a-z0-9_-]+\): .{1,50}$'
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            # --no-merges: skip merge commits (e.g. "Merge branch 'main' of ...")
+            # --no-merges: skip merge commits
             COMMITS=$(git log --no-merges --format="%s" \
               ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
           elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            # New branch – validate only the tip commit (skip if it is a merge commit)
+            # New branch – validate only the tip commit
             COMMITS=$(git log -1 --no-merges --format="%s")
           else
             COMMITS=$(git log --no-merges --format="%s" \
@@ -63,10 +69,23 @@ jobs:
           while IFS= read -r msg; do
             [ -z "$msg" ] && continue
             if echo "$msg" | grep -Pq "$REGEX"; then
-              echo "PASS: $msg"
+              echo "✅ PASS: $msg"
             else
-              echo "FAIL: $msg"
-              echo "      Expected format: type(scope): subject  (e.g. feat(auth): add login endpoint)"
+              echo "::error title=Invalid Commit Message::\"$msg\" does not match the required format 'type(scope): subject'"
+              echo "❌ FAIL: $msg"
+              
+              # Detailed Hints
+              if [[ ! "$msg" =~ :[[:space:]] ]]; then
+                echo "   💡 Hint: Missing space after colon (e.g., fix(ui): message)"
+              fi
+              if [[ "$msg" =~ [A-Z] && "$msg" =~ ^[^\(]*\( ]]; then
+                echo "   💡 Hint: Type and Scope must be lowercase"
+              fi
+              subject=$(echo "$msg" | cut -d':' -f2- | xargs)
+              if [ ${#subject} -gt 50 ]; then
+                echo "   💡 Hint: Subject is too long (${#subject} > 50 chars)"
+              fi
+
               FAILED=1
             fi
           done <<< "$COMMITS"
@@ -79,7 +98,7 @@ jobs:
           fi
 
   # ─────────────────────────────────────────────
-  # Change detection (shared by all later jobs)
+  # Change detection
   # ─────────────────────────────────────────────
   detect-changes:
     name: "Detect Changed Paths"
@@ -121,9 +140,18 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build (skip tests)
+      - name: Build Backend
         working-directory: backend
-        run: ./mvnw -B package -DskipTests
+        run: |
+          echo "::group::Maven Package (skipping tests)..."
+          if ./mvnw -B package -DskipTests; then
+            echo "::endgroup::"
+            echo "✅ Backend build successful."
+          else
+            echo "::endgroup::"
+            echo "::error title=Build Failed::Maven package command failed."
+            exit 1
+          fi
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -148,9 +176,18 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run tests
+      - name: Run Backend Tests
         working-directory: backend
-        run: ./mvnw -B test
+        run: |
+          echo "::group::Running Maven Tests..."
+          if ./mvnw -B test; then
+            echo "::endgroup::"
+            echo "✅ All backend tests passed."
+          else
+            echo "::endgroup::"
+            echo "::error title=Test Failed::One or more backend tests failed."
+            exit 1
+          fi
 
       - name: Publish test report
         if: always()
@@ -177,13 +214,22 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install & Build Frontend
         working-directory: frontend
-        run: npm ci --legacy-peer-deps
-
-      - name: Build
-        working-directory: frontend
-        run: npm run build
+        run: |
+          echo "::group::npm ci"
+          npm ci --legacy-peer-deps
+          echo "::endgroup::"
+          
+          echo "::group::npm run build"
+          if npm run build; then
+            echo "::endgroup::"
+            echo "✅ Frontend build successful."
+          else
+            echo "::endgroup::"
+            echo "::error title=Build Failed::Frontend production build failed."
+            exit 1
+          fi
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -199,7 +245,6 @@ jobs:
     name: "Phase 5 · Lint & Test Frontend"
     needs: build-frontend
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -209,10 +254,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Lint Frontend
         working-directory: frontend
-        run: npm ci --legacy-peer-deps
-
-      - name: Lint
-        working-directory: frontend
-        run: npm run lint || true
+        run: |
+          npm ci --legacy-peer-deps > /dev/null
+          echo "::group::ESLint Check"
+          if npm run lint; then
+            echo "::endgroup::"
+            echo "✅ Lint check passed."
+          else
+            echo "::endgroup::"
+            echo "::warning title=Lint Warning::Frontend has linting issues. Please fix them."
+          fi
