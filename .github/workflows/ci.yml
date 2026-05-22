@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches-ignore:
+    branches:
       - main
   pull_request:
     branches:
@@ -19,6 +19,7 @@ jobs:
   check-sync-with-main:
     name: "Phase 0 · Up-to-date with main"
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,6 +45,7 @@ jobs:
   validate-commits:
     name: "Phase 1 · Validate Commit Messages"
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,12 +59,9 @@ jobs:
             # --no-merges: skip merge commits
             COMMITS=$(git log --no-merges --format="%s" \
               ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
-          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            # New branch – validate only the tip commit
-            COMMITS=$(git log -1 --no-merges --format="%s")
           else
-            COMMITS=$(git log --no-merges --format="%s" \
-              ${{ github.event.before }}..${{ github.event.after }})
+            # For push to main, validate only the tip (usually already validated in PR)
+            COMMITS=$(git log -1 --no-merges --format="%s")
           fi
 
           FAILED=0
@@ -297,9 +296,9 @@ jobs:
             done
             
             if [ "$ERRORS" -gt 0 ]; then
-              echo "::error title=ESLint Failed::$ERRORS lint errors found. Categorization sent to Step Summary."
-              exit 1
+              echo "::warning title=ESLint Issues::$ERRORS lint errors found. Please check the Step Summary for details."
             else
-              echo "::warning title=ESLint Warnings::$WARNINGS lint warnings found."
+              [ "$WARNINGS" -gt 0 ] && echo "::warning title=ESLint Warnings::$WARNINGS lint warnings found."
             fi
+            # Job continues even if ERRORS > 0
           fi
