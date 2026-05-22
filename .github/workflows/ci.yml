@@ -258,11 +258,48 @@ jobs:
         working-directory: frontend
         run: |
           npm ci --legacy-peer-deps > /dev/null
-          echo "::group::ESLint Check"
-          if npm run lint; then
-            echo "::endgroup::"
-            echo "✅ Lint check passed."
+          
+          # Generate JSON report to count errors/warnings
+          echo "Running ESLint..."
+          npx eslint . --format json -o lint-results.json || true
+          
+          # Parse results using jq
+          ERRORS=$(jq '[.[].errorCount] | add // 0' lint-results.json)
+          WARNINGS=$(jq '[.[].warningCount] | add // 0' lint-results.json)
+          
+          if [ "$ERRORS" -eq 0 ] && [ "$WARNINGS" -eq 0 ]; then
+            echo "✅ No lint issues found."
+            echo "✅ Lint check passed." >> $GITHUB_STEP_SUMMARY
           else
+            echo "::group::Detailed Lint Report (Stylish)"
+            npx eslint . --format stylish || true
             echo "::endgroup::"
-            echo "::warning title=Lint Warning::Frontend has linting issues. Please fix them."
+            
+            echo "🔍 ESLint Summary: $ERRORS Errors, $WARNINGS Warnings"
+            
+            # Create a nice summary table in GitHub Actions
+            echo "### 🔍 ESLint Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ **Errors:** $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "- ⚠️ **Warnings:** $WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Rule | Count | Severity |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+            
+            # Categorize by Rule ID
+            jq -r '.[].messages[] | "\(.ruleId // "unknown")|\(.severity)"' lint-results.json | \
+            sort | uniq -c | sort -nr | \
+            while read -r count data; do
+              rule=$(echo $data | cut -d'|' -f1)
+              sev_code=$(echo $data | cut -d'|' -f2)
+              severity="⚠️ Warning"
+              [ "$sev_code" == "2" ] && severity="❌ Error"
+              echo "| \`$rule\` | $count | $severity |" >> $GITHUB_STEP_SUMMARY
+            done
+            
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "::error title=ESLint Failed::$ERRORS lint errors found. Categorization sent to Step Summary."
+              exit 1
+            else
+              echo "::warning title=ESLint Warnings::$WARNINGS lint warnings found."
+            fi
           fi
