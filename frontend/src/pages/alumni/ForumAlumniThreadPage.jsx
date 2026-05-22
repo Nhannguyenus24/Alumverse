@@ -360,12 +360,14 @@ const ForumAlumniThreadPage = () => {
   const hasShownOpeningErrorRef = useRef(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(0);
   }, [topicId]);
 
   useEffect(() => {
     if (!pageInfo?.totalPage || pageInfo.totalPage <= 0) return;
     if (currentPage >= pageInfo.totalPage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(pageInfo.totalPage - 1);
     }
   }, [currentPage, pageInfo?.totalPage]);
@@ -447,8 +449,7 @@ const ForumAlumniThreadPage = () => {
     setIsConfirmDeleteOpen(true);
   }, []);
 
-  const handleConfirmDeletePost = useCallback(
-    async () => {
+  const handleConfirmDeletePost = async () => {
       if (!postToDelete?.id) return;
       try {
         await deletePost(postToDelete.id);
@@ -466,9 +467,7 @@ const ForumAlumniThreadPage = () => {
           'Không thể xóa bài viết.';
         showError(message);
       }
-    },
-    [deletePost, deleteErrorMessage, postToDelete?.id, replyTo?.postId, showError, showSuccess]
-  );
+    };
 
   const handleCloseConfirmDelete = useCallback(() => {
     if (deletePending) return;
@@ -488,8 +487,7 @@ const ForumAlumniThreadPage = () => {
     setEditingPost(null);
   }, [updatePostPending]);
 
-  const handleSaveEditPost = useCallback(
-    async (newContent) => {
+  const handleSaveEditPost = async (newContent) => {
       if (!editingPost?.id || !stripHtml(newContent)) return;
       try {
         await updatePost({
@@ -509,9 +507,7 @@ const ForumAlumniThreadPage = () => {
           'Không thể cập nhật bài viết.';
         showError(message);
       }
-    },
-    [editingPost?.id, showError, showSuccess, stripHtml, updatePost, updatePostErrorMessage]
-  );
+    };
 
   const handleDeleteTopic = useCallback(async () => {
     if (!topicId) return;

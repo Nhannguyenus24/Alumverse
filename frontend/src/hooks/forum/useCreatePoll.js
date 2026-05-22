@@ -19,7 +19,7 @@ export const useCreatePoll = () => {
     reset,
   } = useMutation({
     mutationFn: createPoll,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pollsByTopic"] });
       queryClient.invalidateQueries({ queryKey: ["forumTopics"] });
     },

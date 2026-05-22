@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -20,15 +20,21 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
   const [isPermanent, setIsPermanent] = useState(true);
   const [durationDays, setDurationDays] = useState(7);
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevUserId, setPrevUserId] = useState(user?.id);
+
+  if (open && (!prevOpen || user?.id !== prevUserId)) {
+    setPrevOpen(open);
+    setPrevUserId(user?.id);
     setReason('SPAM');
     setCustomReason('');
     setIsPermanent(true);
     setDurationDays(7);
-  }, [open, user?.id]);
+  }
+  
+  if (!open && prevOpen) {
+    setPrevOpen(false);
+  }
 
   const handleConfirm = () => {
     if (reason === 'OTHER' && !customReason.trim()) {

@@ -43,12 +43,6 @@ const DEFAULT_ENTITY_TYPES = [
 
 const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE', 'REJECT'];
 
-const formatIsoDateInput = (date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
 
 const AdminAuditLogsPage = () => {
   const theme = useTheme();
@@ -61,10 +55,7 @@ const AdminAuditLogsPage = () => {
   const { loading, auditLogs } = useAdminSystemContext();
 
   const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
   const [entityFilter, setEntityFilter] = useState([]);
-  const [actionFilter, setActionFilter] = useState([]);
-  const [userFilter, setUserFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
@@ -76,18 +67,11 @@ const AdminAuditLogsPage = () => {
     return Array.from(fromData).sort();
   }, [auditLogs]);
 
-  const actionOptions = useMemo(() => {
-    const fromData = new Set(auditLogs.map((log) => String(log.action || '')).filter(Boolean));
-    DEFAULT_ACTIONS.forEach((e) => fromData.add(e));
-    return Array.from(fromData).sort();
-  }, [auditLogs]);
 
   const filteredLogs = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = auditLogs.filter((log) => {
       if (entityFilter.length > 0 && !entityFilter.includes(String(log.entityType || ''))) return false;
-      if (actionFilter.length > 0 && !actionFilter.includes(String(log.action || ''))) return false;
-      if (userFilter !== 'ALL' && Number(log.userId) !== Number(userFilter)) return false;
       
       const t = new Date(log.timestamp).getTime();
       if (!Number.isNaN(t)) {
@@ -95,10 +79,6 @@ const AdminAuditLogsPage = () => {
         if (rollingCutoffMs == null && dateFrom) {
           const from = new Date(`${dateFrom}T00:00:00`).getTime();
           if (t < from) return false;
-        }
-        if (rollingCutoffMs == null && dateTo) {
-          const to = new Date(`${dateTo}T23:59:59.999`).getTime();
-          if (t > to) return false;
         }
       }
 
@@ -110,7 +90,7 @@ const AdminAuditLogsPage = () => {
       return true;
     });
     return [...list].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [auditLogs, entityFilter, actionFilter, userFilter, dateFrom, dateTo, search, rollingCutoffMs]);
+  }, [auditLogs, entityFilter, dateFrom, search, rollingCutoffMs]);
 
   const handleExportCsv = () => {
     if (filteredLogs.length === 0) {
@@ -236,11 +216,12 @@ const AdminAuditLogsPage = () => {
     </Stack>
   );
 
+  const [now] = useState(() => Date.now());
   const stats = {
     totalLogs: auditLogs.length,
     failedLogs: auditLogs.filter(l => l.status === 'FAILED').length,
     distinctUsers: new Set(auditLogs.map(l => l.userId)).size,
-    last24h: auditLogs.filter(l => new Date(l.timestamp) > new Date(Date.now() - 24*60*60*1000)).length
+    last24h: auditLogs.filter(l => new Date(l.timestamp) > new Date(now - 24*60*60*1000)).length
   };
 
   return (

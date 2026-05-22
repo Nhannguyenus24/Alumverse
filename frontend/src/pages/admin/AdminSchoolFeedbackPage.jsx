@@ -7,7 +7,6 @@ import {
   Tooltip,
   Typography,
   Stack,
-  useTheme,
   Grid,
 } from '@mui/material';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -25,7 +24,6 @@ import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminSchoolFeedbackPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 

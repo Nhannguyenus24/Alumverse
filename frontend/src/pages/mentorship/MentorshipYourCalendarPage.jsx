@@ -200,7 +200,7 @@ const MentorshipYourCalendarPage = () => {
             endTime: slot.endTime.format('YYYY-MM-DDTHH:mm:ss'),
           });
           success += 1;
-        } catch (_e) {
+        } catch {
           // Continue with remaining slots; surface count at the end.
         }
       }
@@ -208,7 +208,7 @@ const MentorshipYourCalendarPage = () => {
         severity: success === slots.length ? 'success' : 'warning',
         text: `Đã thêm ${success}/${slots.length} slot.`,
       });
-    } catch (_e) {
+    } catch {
       setSubmitMessage({ severity: 'error', text: addMutation.errorMessage ?? 'Không thể thêm lịch.' });
     }
   };
@@ -217,7 +217,7 @@ const MentorshipYourCalendarPage = () => {
     if (!window.confirm('Xóa slot này khỏi lịch?')) return;
     try {
       await deleteMutation.deleteAvailability(id);
-    } catch (_e) {
+    } catch {
       /* surfaced via deleteMutation.errorMessage */
     }
   };

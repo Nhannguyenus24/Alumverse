@@ -1,6 +1,6 @@
 import { Box, Paper, Typography, alpha, useTheme } from '@mui/material';
 
-const AdminDashboardMetricTile = ({ label, value, caption, icon, valueColor = 'primary.main', trend }) => {
+const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
   const theme = useTheme();
 
   return (

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
-import { Box, Button, Grid, Paper, Stack, Typography, useTheme, Skeleton } from '@mui/material';
+import { Box, Button, Grid, Paper, Stack, Typography, Skeleton } from '@mui/material';
 import { useOutletContext } from 'react-router';
 import AddIcon from '@mui/icons-material/Add';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -19,7 +19,6 @@ const withDefaults = (organization) => ({
 });
 
 const AdminOrganizationsPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
@@ -79,7 +78,7 @@ const AdminOrganizationsPage = () => {
     const parseIfNeeded = (val) => {
       if (Array.isArray(val)) return val;
       if (typeof val === 'string' && val.trim().startsWith('[')) {
-        try { return JSON.parse(val); } catch (e) { return []; }
+        try { return JSON.parse(val); } catch { return []; }
       }
       return Array.isArray(val) ? val : [];
     };

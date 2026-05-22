@@ -28,12 +28,13 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
   });
 
 
-
-  useEffect(() => {
-    if (organization) {
+useEffect(() => {
+  if (organization && open) {
+    const timer = setTimeout(() => {
       const parseJsonArray = (val) => {
+        if (!val) return [];
         if (Array.isArray(val)) return val;
-        if (typeof val === 'string' && val.trim().startsWith('[')) {
+        if (typeof val === 'string') {
           try {
             return JSON.parse(val);
           } catch (e) {
@@ -60,8 +61,10 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
         majors: Array.isArray(majorsArr) ? majorsArr.join(', ') : (majorsArr || ''),
         featuresConfig: config,
       });
-    }
-  }, [organization, open]);
+    }, 0);
+    return () => clearTimeout(timer);
+  }
+}, [organization, open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

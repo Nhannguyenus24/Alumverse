@@ -69,6 +69,8 @@ export function useChatWebSocket({ token, onEvent }) {
     [],
   );
 
+  const connectRef = useRef();
+
   const connect = useCallback(() => {
     if (!wsUrl) return;
     const existing = wsRef.current;
@@ -111,21 +113,31 @@ export function useChatWebSocket({ token, onEvent }) {
       reconnectAttemptRef.current = attempt;
       const delayMs = Math.min(1000 * 2 ** (attempt - 1), 15000);
       reconnectTimerRef.current = setTimeout(() => {
-        connect();
+        connectRef.current();
       }, delayMs);
     };
   }, [flushOutbox, wsUrl]);
+
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     cleanup();
     outboxRef.current = [];
     reconnectAttemptRef.current = 0;
     if (!wsUrl) {
-      setStatus("closed");
-      return;
+      const timer = setTimeout(() => setStatus("closed"), 0);
+      return () => {
+        cleanup();
+        clearTimeout(timer);
+      };
     }
-    connect();
-    return cleanup;
+    const timer = setTimeout(connect, 0);
+    return () => {
+      cleanup();
+      clearTimeout(timer);
+    };
   }, [cleanup, connect, wsUrl]);
 
   const joinGroup = useCallback(

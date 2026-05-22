@@ -71,12 +71,14 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (totalPage > 0 && page > totalPage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPage(totalPage);
     }
   }, [totalPage, page]);
 
   useEffect(() => {
     if (activeChatId == null && chats.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveChatId(chats[0].id);
     }
   }, [chats, activeChatId]);

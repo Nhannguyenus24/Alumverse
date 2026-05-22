@@ -50,21 +50,24 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     if (!open) {
       return;
     }
-    setShowPassword(false);
-    if (mode === 'edit' && user) {
-      setForm({
-        email: user.email || '',
-        userName: user.userName || '',
-        fullName: resolvedFullNameForEdit(user),
-        password: '',
-        role: user.role || 'STUDENT',
-        status: user.status || 'ACTIVE',
-        organizationId: user.organizationId ?? firstOrganizationId,
-      });
-    } else {
-      setForm({ ...defaultEmptyForm, role: 'ADMIN', organizationId: firstOrganizationId });
-    }
-    setErrors({});
+    const timer = setTimeout(() => {
+      setShowPassword(false);
+      if (mode === 'edit' && user) {
+        setForm({
+          email: user.email || '',
+          userName: user.userName || '',
+          fullName: resolvedFullNameForEdit(user),
+          password: '',
+          role: user.role || 'STUDENT',
+          status: user.status || 'ACTIVE',
+          organizationId: user.organizationId ?? firstOrganizationId,
+        });
+      } else {
+        setForm({ ...defaultEmptyForm, role: 'ADMIN', organizationId: firstOrganizationId });
+      }
+      setErrors({});
+    }, 0);
+    return () => clearTimeout(timer);
   }, [open, mode, user, firstOrganizationId]);
 
   const handleChange = (field) => (event) => {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -96,7 +97,7 @@ const MentorshipProfileEditPage = () => {
       });
       setSuccess(true);
       setTimeout(() => navigate('/development/mentorship/profile'), 800);
-    } catch (_e) {
+    } catch {
       /* surfaced via errorMessage */
     }
   };

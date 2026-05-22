@@ -71,7 +71,7 @@ const MentorshipDashboardPage = () => {
     setUpdatingId(sessionId);
     try {
       await updateMutation.updateStatus({ sessionId, status });
-    } catch (_e) {
+    } catch {
       /* surfaced via errorMessage */
     } finally {
       setUpdatingId(null);

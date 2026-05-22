@@ -11,7 +11,7 @@ function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
 }
 
-const z = ({ campaign, onNavigate, onEdit, onClose, isAdmin }) => {
+const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin }) => {
   const now = dayjs();
   const startTime = campaign.timeStarted ? dayjs(campaign.timeStarted) : null;
   const endTime = campaign.timeEnded ? dayjs(campaign.timeEnded) : null;

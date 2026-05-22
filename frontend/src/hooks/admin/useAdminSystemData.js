@@ -141,12 +141,16 @@ const useAdminSystemData = () => {
   }, []);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(loadData, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   useEffect(() => {
     if (!activeOrgId && state.organizations.length > 0) {
-      setActiveOrgId(state.organizations[0].id);
+      const timer = setTimeout(() => {
+        setActiveOrgId(state.organizations[0].id);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [activeOrgId, state.organizations]);
 

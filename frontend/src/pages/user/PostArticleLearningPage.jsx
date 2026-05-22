@@ -17,7 +17,7 @@ const PostLearningPage = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
-  const [coverFile, setCoverFile] = useState(null);
+  const [, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
 
   const handleCoverUpload = (event) => {

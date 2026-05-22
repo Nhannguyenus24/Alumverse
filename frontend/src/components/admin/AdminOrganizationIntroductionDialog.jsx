@@ -29,23 +29,27 @@ const AdminOrganizationIntroductionDialog = ({
   });
 
   useEffect(() => {
-    if (introduction) {
-      setFormData({
-        content: introduction.content || "",
-        vision: introduction.vision || "",
-        mission: introduction.mission || "",
-        coreValues: introduction.coreValues || "",
-        bannerUrl: introduction.bannerUrl || "",
-      });
-    } else {
-      setFormData({
-        content: "",
-        vision: "",
-        mission: "",
-        coreValues: "",
-        bannerUrl: "",
-      });
-    }
+    if (!open) return;
+    const timer = setTimeout(() => {
+      if (introduction) {
+        setFormData({
+          content: introduction.content || "",
+          vision: introduction.vision || "",
+          mission: introduction.mission || "",
+          coreValues: introduction.coreValues || "",
+          bannerUrl: introduction.bannerUrl || "",
+        });
+      } else {
+        setFormData({
+          content: "",
+          vision: "",
+          mission: "",
+          coreValues: "",
+          bannerUrl: "",
+        });
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [introduction, open]);
 
   const handleChange = (e) => {

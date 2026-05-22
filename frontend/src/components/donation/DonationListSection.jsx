@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
-import { motion } from "framer-motion";
 import { fundApi } from "../../api/fundApi";
 import DonationListItemCard from "./DonationListItemCard";
 import DonationListFilters from "./DonationListFilters";
@@ -94,17 +93,15 @@ export default function FundraisingListSection({ fundId }) {
         <Typography sx={{ color: "#9f2f2f", fontWeight: 700, mb: 2 }}>{errorMessage}</Typography>
       ) : null}
 
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
-        <Stack spacing={1.5} sx={{ minHeight: { xs: 430, md: 470 } }}>
-          {isLoading ? <LinearProgress sx={{ height: 8, borderRadius: 999 }} /> : null}
+      <Stack spacing={1.5} sx={{ minHeight: { xs: 430, md: 470 } }}>
+        {isLoading ? <LinearProgress sx={{ height: 8, borderRadius: 999 }} /> : null}
 
-          {!isLoading && items.length === 0 ? <Typography sx={{ color: "#617491", fontWeight: 600 }}> Không tìm thấy.</Typography> : null}
+        {!isLoading && items.length === 0 ? <Typography sx={{ color: "#617491", fontWeight: 600 }}> Không tìm thấy.</Typography> : null}
 
-          {items.map((item) => (
-            <DonationListItemCard key={item.id} item={item} />
-          ))}
-        </Stack>
-      </motion.div>
+        {items.map((item) => (
+          <DonationListItemCard key={item.id} item={item} />
+        ))}
+      </Stack>
 
       <Stack direction="row" justifyContent="center" sx={{ mt: 2.3 }}>
         <Pagination

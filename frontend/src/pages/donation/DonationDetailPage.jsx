@@ -9,7 +9,7 @@ import { useParams } from "react-router";
 import Page from "../../components/Page";
 import { fundApi } from "../../api/fundApi";
 import { useAuth } from "../../hooks/useAuth";
-import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+
 import DonationListSection from "../../components/donation/DonationListSection";
 import Breadcrumb from "../../components/Breadcrumb";
 
@@ -373,7 +373,7 @@ function DonationContributionForm({ fundDetail }) {
 }
 
 export default function DetailDonationPage() {
-  const navigate = useOrgNavigate();
+
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === "ADMIN";

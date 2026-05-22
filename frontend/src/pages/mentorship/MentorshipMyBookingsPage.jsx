@@ -36,7 +36,7 @@ const MentorshipMyBookingsPage = () => {
   const cancelMutation = useCancelMenteeSession();
 
   const paginated = sessionsQuery.data;
-  const items = paginated?.items ?? [];
+  const items = useMemo(() => paginated?.items ?? [], [paginated?.items]);
 
   const visibleItems = useMemo(() => {
     const matcher = TAB_FILTERS.find((t) => t.key === tabKey)?.match ?? (() => true);
@@ -44,12 +44,12 @@ const MentorshipMyBookingsPage = () => {
   }, [items, tabKey]);
 
   const handleCancel = async (session) => {
-    // eslint-disable-next-line no-alert
+     
     const ok = window.confirm('Bạn chắc chắn muốn hủy lịch hẹn này?');
     if (!ok) return;
     try {
       await cancelMutation.cancelSession(session.id);
-    } catch (_e) {
+    } catch {
       /* error surfaced via cancelMutation.errorMessage */
     }
   };
@@ -81,7 +81,7 @@ const MentorshipMyBookingsPage = () => {
 
         <Tabs
           value={tabKey}
-          onChange={(_e, v) => setTabKey(v)}
+          onChange={(_, v) => setTabKey(v)}
           sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}
           variant="scrollable"
           scrollButtons="auto"

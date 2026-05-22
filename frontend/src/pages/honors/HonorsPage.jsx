@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
@@ -6,7 +6,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 import Page from '../../components/Page';
-import { useAuth } from '../../hooks/useAuth';
+
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
@@ -47,7 +47,7 @@ const FILTERS = [
 
 const HonorsPage = () => {
   const navigate = useOrgNavigate();
-  const { user } = useAuth();
+
   const { achievements } = usePublishedAchievements(0, 7);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
 

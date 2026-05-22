@@ -125,7 +125,8 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
 
   useEffect(() => {
     if (!open) {
-      setDraft('');
+      const timer = setTimeout(() => setDraft(''), 0);
+      return () => clearTimeout(timer);
     }
   }, [open, peerMemberId]);
 

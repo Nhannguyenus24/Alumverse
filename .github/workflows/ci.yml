@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches-ignore:
+    branches:
       - main
   pull_request:
     branches:
@@ -19,6 +19,7 @@ jobs:
   check-sync-with-main:
     name: "Phase 0 · Up-to-date with main"
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,6 +45,7 @@ jobs:
   validate-commits:
     name: "Phase 1 · Validate Commit Messages"
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,12 +59,9 @@ jobs:
             # --no-merges: skip merge commits
             COMMITS=$(git log --no-merges --format="%s" \
               ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
-          elif [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
-            # New branch – validate only the tip commit
-            COMMITS=$(git log -1 --no-merges --format="%s")
           else
-            COMMITS=$(git log --no-merges --format="%s" \
-              ${{ github.event.before }}..${{ github.event.after }})
+            # For push to main, validate only the tip (usually already validated in PR)
+            COMMITS=$(git log -1 --no-merges --format="%s")
           fi
 
           FAILED=0
@@ -109,6 +108,8 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      mobile_flutter: ${{ steps.filter.outputs.mobile_flutter }}
+      docker: ${{ steps.filter.outputs.docker }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -122,6 +123,11 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+            mobile_flutter:
+              - 'mobile_flutter/**'
+            docker:
+              - 'docker-compose.yml'
+              - 'nginx.conf'
 
   # ─────────────────────────────────────────────
   # Phase 2: Build backend
@@ -210,7 +216,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -250,7 +256,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
@@ -258,11 +264,96 @@ jobs:
         working-directory: frontend
         run: |
           npm ci --legacy-peer-deps > /dev/null
-          echo "::group::ESLint Check"
-          if npm run lint; then
-            echo "::endgroup::"
-            echo "✅ Lint check passed."
+          
+          # Generate JSON report to count errors/warnings
+          echo "Running ESLint..."
+          npx eslint . --format json -o lint-results.json || true
+          
+          # Parse results using jq
+          ERRORS=$(jq '[.[].errorCount] | add // 0' lint-results.json)
+          WARNINGS=$(jq '[.[].warningCount] | add // 0' lint-results.json)
+          
+          if [ "$ERRORS" -eq 0 ] && [ "$WARNINGS" -eq 0 ]; then
+            echo "✅ No lint issues found."
+            echo "✅ Lint check passed." >> $GITHUB_STEP_SUMMARY
           else
+            echo "::group::Detailed Lint Report (Stylish)"
+            npx eslint . --format stylish || true
             echo "::endgroup::"
-            echo "::warning title=Lint Warning::Frontend has linting issues. Please fix them."
+            
+            echo "🔍 ESLint Summary: $ERRORS Errors, $WARNINGS Warnings"
+            
+            # Create a nice summary table in GitHub Actions
+            echo "### 🔍 ESLint Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ **Errors:** $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "- ⚠️ **Warnings:** $WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Rule | Count | Severity |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+            
+            # Categorize by Rule ID
+            jq -r '.[].messages[] | "\(.ruleId // "unknown")|\(.severity)"' lint-results.json | \
+            sort | uniq -c | sort -nr | \
+            while read -r count data; do
+              rule=$(echo $data | cut -d'|' -f1)
+              sev_code=$(echo $data | cut -d'|' -f2)
+              severity="⚠️ Warning"
+              [ "$sev_code" == "2" ] && severity="❌ Error"
+              echo "| \`$rule\` | $count | $severity |" >> $GITHUB_STEP_SUMMARY
+            done
+            
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "::warning title=ESLint Issues::$ERRORS lint errors found. Please check the Step Summary for details."
+            else
+              [ "$WARNINGS" -gt 0 ] && echo "::warning title=ESLint Warnings::$WARNINGS lint warnings found."
+            fi
+            # Job continues even if ERRORS > 0
           fi
+
+  # ─────────────────────────────────────────────
+  # Phase 6: Mobile (Flutter) Analyze & Test
+  # ─────────────────────────────────────────────
+  # test-mobile-flutter:
+  #   name: "Phase 6 · Analyze & Test Mobile (Flutter)"
+  #   needs: [check-sync-with-main, validate-commits, detect-changes]
+  #   if: needs.detect-changes.outputs.mobile_flutter == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.x'
+  #         channel: 'stable'
+  #         cache: true
+
+  #     - name: Install Dependencies
+  #       working-directory: mobile_flutter
+  #       run: flutter pub get
+
+  #     - name: Analyze Code
+  #       working-directory: mobile_flutter
+  #       run: flutter analyze
+
+  #     - name: Run Tests
+  #       working-directory: mobile_flutter
+  #       run: flutter test
+
+  # ─────────────────────────────────────────────
+  # Phase 7: Docker Validation
+  # ─────────────────────────────────────────────
+  validate-docker:
+    name: "Phase 7 · Validate Docker Config"
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: |
+          echo "::group::Docker Compose Config Check"
+          docker compose config -q
+          echo "::endgroup::"
+          echo "✅ Docker Compose configuration is valid."
+
