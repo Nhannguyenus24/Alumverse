@@ -15,6 +15,7 @@ import com.service.backend.mentorship.entity.MentorshipSession;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -51,72 +52,72 @@ public class AdminMentorshipService {
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(int page, int size) {
-        log.info("Admin fetching all sessions - page {} size {}", page, size);
         int offset = page * size;
         return enrichSessions(adminMentorshipRepository.findAllSessions(size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countAllSessions())
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllSessions result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(String status, int page, int size) {
-        log.info("Admin fetching sessions by status {} - page {} size {}", status, page, size);
         int offset = page * size;
         return enrichSessions(adminMentorshipRepository.findSessionsByStatus(status, size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countSessionsByStatus(status))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getSessionsByStatus result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorshipSessionDTO> getSessionById(Integer sessionId) {
         return adminMentorshipRepository.findById(sessionId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
-                .flatMap(this::enrichSession);
+                .flatMap(this::enrichSession)
+                .doOnSuccess(r -> log.info("getSessionById result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorshipSessionDTO> updateSessionStatus(Integer sessionId, String status) {
-        log.info("Admin updating session {} -> status {}", sessionId, status);
         return adminMentorshipRepository.findById(sessionId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
                 .flatMap(s -> sessionRepo.updateStatus(sessionId, status).then(adminMentorshipRepository.findById(sessionId)))
-                .flatMap(this::enrichSession);
+                .flatMap(this::enrichSession)
+                .doOnSuccess(r -> log.info("updateSessionStatus result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> deleteSession(Integer sessionId) {
-        log.info("Admin deleting session {}", sessionId);
         return adminMentorshipRepository.findById(sessionId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
-                .flatMap(s -> sessionRepo.deleteById(sessionId));
+                .flatMap(s -> sessionRepo.deleteById(sessionId))
+                .doOnSuccess(v -> log.info("deleteSession: sessionId={} deleted", sessionId));
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(int page, int size) {
-        log.info("Admin fetching all mentor profiles - page {} size {}", page, size);
         int offset = page * size;
         return enrichMentors(adminMentorshipRepository.findAllMentorProfiles(size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countAllMentorProfiles())
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllMentorProfiles result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByApproval(Boolean isApproved, int page, int size) {
-        log.info("Admin fetching mentor profiles by approval {} - page {} size {}", isApproved, page, size);
         int offset = page * size;
         return enrichMentors(adminMentorshipRepository.findMentorProfilesByApproval(isApproved, size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countMentorProfilesByApproval(isApproved))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getMentorProfilesByApproval result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorProfileDTO> approveMentor(Integer memberId) {
-        log.info("Admin approving mentor {}", memberId);
         return adminMentorshipRepository.findMentorProfileById(memberId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND))))
                 .flatMap(p -> mentorProfileRepo.approveMentor(memberId).then(adminMentorshipRepository.findMentorProfileById(memberId)))
-                .flatMap(this::enrichMentor);
+                .flatMap(this::enrichMentor)
+                .doOnSuccess(r -> log.info("approveMentor result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<MentorshipStatisticsDTO> getStatistics() {
-        log.info("Admin fetching mentorship statistics");
         return Mono.zip(
                         adminMentorshipRepository.countAllSessions().defaultIfEmpty(0L),
                         adminMentorshipRepository.countSessionsByStatus(STATUS_PENDING).defaultIfEmpty(0L),
@@ -142,7 +143,8 @@ public class AdminMentorshipService {
                                 .pendingMentors(t2.getT1())
                                 .totalAvailabilities(t2.getT2())
                                 .totalFeedbacks(t2.getT3())
-                                .build()));
+                                .build()))
+                .doOnSuccess(r -> log.info("getStatistics result: {}", JsonUtils.toJson(r)));
     }
 
     private Flux<AdminMentorshipSessionDTO> enrichSessions(Flux<MentorshipSession> sessions) {

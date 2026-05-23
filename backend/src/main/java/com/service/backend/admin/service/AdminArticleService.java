@@ -5,6 +5,9 @@ import com.service.backend.article.dto.*;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -12,6 +15,8 @@ import java.util.List;
 
 @Service
 public class AdminArticleService {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminArticleService.class);
 
     private final NewsR2dbcRepository newsRepository;
     private final AlumniPostR2dbcRepository alumniPostRepository;
@@ -40,7 +45,8 @@ public class AdminArticleService {
                 .map(NewsResponse::from)
                 .collectList()
                 .zipWith(newsRepository.count())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                .doOnSuccess(r -> log.info("getAllNews result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(int page, int limit) {
@@ -49,7 +55,8 @@ public class AdminArticleService {
                 .map(AlumniPostResponse::from)
                 .collectList()
                 .zipWith(alumniPostRepository.count())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                .doOnSuccess(r -> log.info("getAllAlumniPosts result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getAllAchievements(int page, int limit) {
@@ -58,7 +65,8 @@ public class AdminArticleService {
                 .map(AchievementResponse::from)
                 .collectList()
                 .zipWith(achievementRepository.count())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                .doOnSuccess(r -> log.info("getAllAchievements result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getAllJobs(int page, int limit) {
@@ -67,7 +75,8 @@ public class AdminArticleService {
                 .map(JobResponse::from)
                 .collectList()
                 .zipWith(jobRepository.count())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                .doOnSuccess(r -> log.info("getAllJobs result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(int page, int limit) {
@@ -76,7 +85,8 @@ public class AdminArticleService {
                 .map(LearningResourceResponse::from)
                 .collectList()
                 .zipWith(learningResourceRepository.count())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                .doOnSuccess(r -> log.info("getAllLearningResources result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(int page, int limit) {
@@ -85,6 +95,7 @@ public class AdminArticleService {
                 .map(FundListItemResponse::from)
                 .collectList()
                 .zipWith(fundRepository.countAll())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                .doOnSuccess(r -> log.info("getAllFunds result: {}", JsonUtils.toJson(r)));
     }
 }

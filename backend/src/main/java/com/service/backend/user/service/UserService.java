@@ -3,6 +3,8 @@ package com.service.backend.user.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,8 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     private final UserProfileRepository userProfileRepository;
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
@@ -41,7 +45,8 @@ public class UserService {
         return userProfileRepository.findProfileByUserId(currentUserId.intValue())
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
                         ErrorCode.USER_NOT_FOUND,
-                        "User not found with id: " + currentUserId))));
+                        "User not found with id: " + currentUserId))))
+                .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
@@ -58,7 +63,8 @@ public class UserService {
 
                     String hashedPassword = passwordEncoder.encode(newPassword);
                     return authRepository.updatePasswordById(userId, hashedPassword);
-                });
+                })
+                .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }
 
     public Mono<List<UserLoginHistoryResponse>> getMyLoginHistory(Long currentUserId, int page, int limit) {
@@ -71,13 +77,15 @@ public class UserService {
                         .loginIp(history.getLoginIp())
                         .userAgent(history.getUserAgent())
                         .build())
-                .collectList();
+                .collectList()
+                .doOnSuccess(r -> logger.info("getMyLoginHistory result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<NotificationSettingsResponse> getMyNotificationSettings(Long currentUserId) {
         return userNotificationSettingsRepository.findById(currentUserId.intValue())
                 .map(this::toNotificationResponse)
-                .defaultIfEmpty(defaultNotificationSettings(currentUserId.intValue()));
+                .defaultIfEmpty(defaultNotificationSettings(currentUserId.intValue()))
+                .doOnSuccess(r -> logger.info("getMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<NotificationSettingsResponse> updateMyNotificationSettings(
@@ -113,7 +121,8 @@ public class UserService {
 
                     return userNotificationSettingsRepository.save(existing);
                 })
-                .map(this::toNotificationResponse);
+                .map(this::toNotificationResponse)
+                .doOnSuccess(r -> logger.info("updateMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> updateMyProfile(Long currentUserId, UpdateMyProfileRequest request) {
@@ -137,14 +146,16 @@ public class UserService {
                     return Mono.just(updatedRows);
                 });
 
-        return updateGlobalProfile.then(updateOrganizationMember).then();
+        return updateGlobalProfile.then(updateOrganizationMember).then()
+                .doOnSuccess(v -> logger.info("updateMyProfile: userId={} updated", userId));
     }
 
     public Mono<UserOrganizationMemberResponse> getMyOrganizationMember(Long currentUserId, Integer organizationId) {
         return userOrganizationMemberRepository
                 .findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND))))
-                .map(this::toOrganizationMemberResponse);
+                .map(this::toOrganizationMemberResponse)
+                .doOnSuccess(r -> logger.info("getMyOrganizationMember result: {}", JsonUtils.toJson(r)));
     }
 
     private NotificationSettingsResponse toNotificationResponse(UserNotificationSettings settings) {

@@ -9,6 +9,7 @@ import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.admin.dto.DashboardMetricsDTO;
 import com.service.backend.admin.dto.ActivityItemDTO;
 import com.service.backend.shared.utils.CacheUtils;
+import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.entity.AdminAuditLog;
 import lombok.RequiredArgsConstructor;
@@ -75,7 +76,8 @@ public class AdminDashboardService {
                     });
         };
 
-        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier);
+        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier)
+                .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(int page, int size) {
@@ -90,7 +92,8 @@ public class AdminDashboardService {
         return items.collectList()
                 .zipWith(total)
                 .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
-                .flatMap(m -> cacheUtils.putWithTtl("admin:activities", "page:" + page, m, Duration.ofMinutes(1)).thenReturn(m));
+                .flatMap(m -> cacheUtils.putWithTtl("admin:activities", "page:" + page, m, Duration.ofMinutes(1)).thenReturn(m))
+                .doOnSuccess(r -> log.info("getActivities result: {}", JsonUtils.toJson(r)));
     }
 
     private ActivityItemDTO toDto(AdminAuditLog log) {
