@@ -30,9 +30,7 @@ public class OrganizationService {
     private final OrganizationIntroductionRepository introductionRepository;
 
     public Mono<Organization> getOrganizationById(Integer id) {
-        logger.debug("Fetching organization with id: {}", id);
         return organizationRepository.findById(id)
-                .doOnNext(org -> logger.debug("Organization found with id: {}, name: {}", id, org.getName()))
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.warn("Organization not found with id: {}", id);
                     return Mono.error(new ApplicationException(
@@ -40,13 +38,12 @@ public class OrganizationService {
                             "Organization not found with id: " + id
                     ));
                 }))
+                .doOnSuccess(org -> logger.info("getOrganizationById result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization with id: {}", id, error));
     }
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
-        logger.debug("Fetching organization with slug: {}", slug);
         return organizationRepository.findBySlug(slug)
-                .doOnNext(org -> logger.debug("Organization found with slug: {}, name: {}", slug, org.getName()))
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.warn("Organization not found with slug: {}", slug);
                     return Mono.error(new ApplicationException(
@@ -54,19 +51,16 @@ public class OrganizationService {
                             "Organization not found with slug: " + slug
                     ));
                 }))
+                .doOnSuccess(org -> logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization with slug: {}", slug, error));
     }
 
     public Flux<Organization> getAllOrganizations() {
-        logger.debug("Fetching all organizations");
         return organizationRepository.findAll()
-                .doOnNext(org -> logger.debug("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
-                .doOnComplete(() -> logger.debug("Successfully retrieved all organizations"))
                 .doOnError(error -> logger.error("Failed to fetch organizations", error));
     }
 
     public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
-        logger.debug("Fetching introduction for organization id: {}", orgaId);
         return introductionRepository.findByOrgaId(orgaId)
                 .map(this::toResponse)
                 .switchIfEmpty(Mono.just(OrganizationIntroductionResponse.builder()
@@ -74,6 +68,7 @@ public class OrganizationService {
                         .content(null)
                         .imageUrls(List.of())
                         .build()))
+                .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
     }
 
@@ -95,7 +90,6 @@ public class OrganizationService {
     }
 
     public Mono<SchoolFeedback> createSchoolFeedback(Integer organizationId, CreateSchoolFeedbackRequest request) {
-        logger.info("Creating school feedback for organization id: {}", organizationId);
         return getOrganizationById(organizationId)
                 .flatMap(organization -> {
                     SchoolFeedback feedback = SchoolFeedback.builder()
@@ -110,7 +104,7 @@ public class OrganizationService {
 
                     return schoolFeedbackRepository.save(feedback);
                 })
-                .doOnSuccess(feedback -> logger.info("Created school feedback with id: {}", feedback.getId()))
+                .doOnSuccess(feedback -> logger.info("createSchoolFeedback result: {}", JsonUtils.toJson(feedback)))
                 .doOnError(error -> logger.error("Failed to create school feedback for organization id: {}", organizationId, error));
     }
 }
