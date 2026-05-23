@@ -25,6 +25,7 @@ import com.service.backend.forum.entity.ForumPostReport;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -48,38 +49,26 @@ public class AdminForumService {
 
     // ========== VIEW NEW POSTS ==========
 
-    /**
-     * Get all forum posts created yesterday
-     */
     public Flux<ForumPostDTO> getNewForumPostsYesterday() {
-        log.info("Fetching all forum posts created yesterday");
         return forumPostRepository.findPostsCreatedYesterday()
                 .concatMap(this::convertToPostDTO)
                 .doOnError(error -> log.error("Error fetching forum posts created yesterday", error));
     }
 
-    /**
-     * Get forum posts created yesterday with pagination
-     */
     public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(int page, int size) {
         long offset = (long) page * size;
-        log.info("Fetching paginated forum posts created yesterday - page: {}, size: {}", page, size);
-        
         return forumPostRepository.findPostsCreatedYesterdayWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
                 .zipWith(forumPostRepository.countPostsCreatedYesterday())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching paginated forum posts created yesterday", error));
     }
 
     // ========== BAN/UNBAN POST ==========
 
-    /**
-     * Ban a forum post
-     */
     public Mono<ForumPostDTO> banForumPost(Integer postId) {
-        log.info("Banning forum post ID: {}", postId);
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> forumPostRepository.findById(postId)
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
@@ -91,15 +80,11 @@ public class AdminForumService {
                                             .thenReturn(saved));
                         }))
                 .flatMap(this::convertToPostDTO)
-                .doOnSuccess(result -> log.info("Successfully banned forum post ID: {}", postId))
+                .doOnSuccess(result -> log.info("banForumPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error banning forum post ID: {}", postId, error));
     }
 
-    /**
-     * Unban a forum post
-     */
     public Mono<ForumPostDTO> unbanForumPost(Integer postId) {
-        log.info("Unbanning forum post ID: {}", postId);
         return SecurityUtils.getCurrentUserId()
                 .flatMap(adminId -> forumPostRepository.findById(postId)
                         .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
@@ -111,49 +96,37 @@ public class AdminForumService {
                                             .thenReturn(saved));
                         }))
                 .flatMap(this::convertToPostDTO)
-                .doOnSuccess(result -> log.info("Successfully unbanned forum post ID: {}", postId))
+                .doOnSuccess(result -> log.info("unbanForumPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error unbanning forum post ID: {}", postId, error));
     }
 
-    /**
-     * Delete a forum post
-     */
     public Mono<Void> deleteForumPost(Integer postId) {
-        log.info("Deleting forum post ID: {}", postId);
         return forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                 .flatMap(post -> forumPostRepository.deleteById(postId))
-                .doOnSuccess(v -> log.info("Successfully deleted forum post ID: {}", postId))
+                .doOnSuccess(v -> log.info("deleteForumPost: postId={} deleted", postId))
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", postId, error));
     }
 
-    /**
-     * Get all banned forum posts with pagination
-     */
     public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(int page, int size) {
-        log.info("Fetching banned forum posts - page: {}, size: {}", page, size);
         long offset = (long) page * size;
-        
         return forumPostRepository.findAllBannedPostsWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
                 .zipWith(forumPostRepository.countByIsBannedTrue())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getBannedPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
 
-    /**
-     * Get all forum posts with pagination (admin moderation).
-     */
     public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(int page, int size) {
-        log.info("Fetching all forum posts - page: {}, size: {}", page, size);
         long offset = (long) page * size;
-
         return forumPostRepository.findAllPostsWithPagination(size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
                 .zipWith(forumPostRepository.count())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all forum posts", error));
     }
 
@@ -163,7 +136,8 @@ public class AdminForumService {
                 .map(this::convertToReportDTO)
                 .collectList()
                 .zipWith(forumPostReportRepository.countByStatus("PENDING"))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getPendingReports result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<ForumPostReportDTO> reviewReport(Long reportId, ReviewForumReportRequest request, Integer adminUserId) {
@@ -177,7 +151,8 @@ public class AdminForumService {
                             report.setUpdatedAt(LocalDateTime.now());
                             return forumPostReportRepository.save(report);
                         })))
-                .map(this::convertToReportDTO);
+                .map(this::convertToReportDTO)
+                .doOnSuccess(r -> log.info("reviewReport result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<ForumPostDTO> updatePostVisibility(Integer postId, Boolean hidden, Integer adminUserId) {
@@ -192,7 +167,8 @@ public class AdminForumService {
                                     "UPDATE_POST_VISIBILITY", "FORUM_POST", String.valueOf(postId),
                                     String.valueOf(before), String.valueOf(hidden)).thenReturn(saved));
                 })
-                .flatMap(this::convertToPostDTO);
+                .flatMap(this::convertToPostDTO)
+                .doOnSuccess(r -> log.info("updatePostVisibility result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> updateTopicLock(Integer topicId, Boolean locked, Integer adminUserId) {
@@ -207,58 +183,41 @@ public class AdminForumService {
                                     "UPDATE_TOPIC_LOCK", "FORUM_TOPIC", String.valueOf(topicId),
                                     String.valueOf(before), String.valueOf(locked)).thenReturn(saved));
                 })
-                .flatMap(this::convertToTopicDTOWithPostCount);
+                .flatMap(this::convertToTopicDTOWithPostCount)
+                .doOnSuccess(r -> log.info("updateTopicLock result: {}", JsonUtils.toJson(r)));
     }
 
     // ========== DELETE TOPIC ==========
 
-    /**
-     * Delete a forum topic and all its posts
-     */
     public Mono<Void> deleteForumTopic(Integer topicId) {
-        log.info("Deleting forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
-                .flatMap(topic -> {
-                    // Delete all posts in this topic first
-                    return forumPostRepository.findByTopicId(topicId)
-                            .flatMap(post -> forumPostRepository.deleteById(post.getId()))
-                            .then(forumTopicRepository.deleteById(topicId));
-                })
-                .doOnSuccess(v -> log.info("Successfully deleted forum topic ID: {}", topicId))
+                .flatMap(topic -> forumPostRepository.findByTopicId(topicId)
+                        .flatMap(post -> forumPostRepository.deleteById(post.getId()))
+                        .then(forumTopicRepository.deleteById(topicId)))
+                .doOnSuccess(v -> log.info("deleteForumTopic: topicId={} deleted", topicId))
                 .doOnError(error -> log.error("Error deleting forum topic ID: {}", topicId, error));
     }
 
     // ========== CATEGORY MANAGEMENT ==========
 
-    /**
-     * Get all forum categories by organization
-     */
     public Flux<com.service.backend.forum.dto.ForumCategoryDTO> getAllCategoriesByOrganization(Integer organizationId) {
-        log.info("Fetching all forum categories for organization ID: {}", organizationId);
         return forumCategoryRepository.findByOrganizationId(organizationId)
                 .map(this::convertToCategoryDTO)
                 .doOnError(error -> log.error("Error fetching categories for organization ID: {}", organizationId, error));
     }
 
-    /**
-     * Get forum category by ID
-     */
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> getCategoryById(Integer categoryId) {
-        log.info("Fetching forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .map(this::convertToCategoryDTO)
+                .doOnSuccess(r -> log.info("getCategoryById result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching category ID: {}", categoryId, error));
     }
 
-    /**
-     * Create a new forum category
-     */
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> createCategory(
             Integer organizationId, String name, String description, Integer parentId) {
-        log.info("Creating forum category: {}", name);
-        com.service.backend.forum.entity.ForumCategory category = 
+        com.service.backend.forum.entity.ForumCategory category =
             com.service.backend.forum.entity.ForumCategory.builder()
                 .parentId(parentId)
                 .organizationId(organizationId)
@@ -267,19 +226,15 @@ public class AdminForumService {
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build();
-        
+
         return forumCategoryRepository.save(category)
                 .map(this::convertToCategoryDTO)
-                .doOnSuccess(result -> log.info("Successfully created forum category: {}", name))
+                .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", name, error));
     }
 
-    /**
-     * Update a forum category
-     */
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> updateCategory(
             Integer categoryId, String name, String description, Integer parentId) {
-        log.info("Updating forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> {
@@ -290,61 +245,46 @@ public class AdminForumService {
                     return forumCategoryRepository.save(category);
                 })
                 .map(this::convertToCategoryDTO)
-                .doOnSuccess(result -> log.info("Successfully updated forum category ID: {}", categoryId))
+                .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating category ID: {}", categoryId, error));
     }
 
-    /**
-     * Delete a forum category
-     */
     public Mono<Void> deleteCategory(Integer categoryId) {
-        log.info("Deleting forum category ID: {}", categoryId);
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> forumCategoryRepository.deleteById(categoryId))
-                .doOnSuccess(v -> log.info("Successfully deleted forum category ID: {}", categoryId))
+                .doOnSuccess(v -> log.info("deleteCategory: categoryId={} deleted", categoryId))
                 .doOnError(error -> log.error("Error deleting category ID: {}", categoryId, error));
     }
 
     // ========== TOPIC MANAGEMENT ==========
 
-    /**
-     * Get all forum topics by organization with pagination
-     */
     public Mono<PaginatedResponse<com.service.backend.forum.dto.ForumTopicDTO>> getAllTopicsByOrganization(
             Integer organizationId, int page, int size) {
-        log.info("Fetching forum topics for organization ID: {}, page: {}, size: {}", organizationId, page, size);
         long offset = (long) page * size;
-        
         return forumTopicRepository.findByOrganizationIdWithPagination(organizationId, size, offset)
                 .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
                 .zipWith(forumTopicRepository.countByOrganizationId(organizationId))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllTopicsByOrganization result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching topics for organization ID: {}", organizationId, error));
     }
 
-    /**
-     * Get forum topic by ID
-     */
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> getTopicById(Integer topicId) {
-        log.info("Fetching forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(this::convertToTopicDTOWithPostCount)
+                .doOnSuccess(r -> log.info("getTopicById result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching topic ID: {}", topicId, error));
     }
 
-    /**
-     * Create a new forum topic
-     */
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> createTopic(
             Integer organizationId, Integer categoryId, String title, Integer createdByMemberId) {
-        log.info("Creating forum topic: {}", title);
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> {
-                    com.service.backend.forum.entity.ForumTopic topic = 
+                    com.service.backend.forum.entity.ForumTopic topic =
                             com.service.backend.forum.entity.ForumTopic.builder()
                                     .organizationId(organizationId)
                                     .categoryId(categoryId)
@@ -358,16 +298,12 @@ public class AdminForumService {
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .doOnSuccess(result -> log.info("Successfully created forum topic: {}", title))
+                .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", title, error));
     }
 
-    /**
-     * Update a forum topic
-     */
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> updateTopic(
             Integer topicId, String title, Integer categoryId) {
-        log.info("Updating forum topic ID: {}", topicId);
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> {
@@ -377,24 +313,13 @@ public class AdminForumService {
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
-                .doOnSuccess(result -> log.info("Successfully updated forum topic ID: {}", topicId))
+                .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating topic ID: {}", topicId, error));
     }
 
     // ========== FORUM STATISTICS ==========
 
-    /**
-     * Get comprehensive forum statistics including:
-     * - Overview counts (total posts, topics, categories, banned posts)
-     * - Today's activity (new topics, new posts)
-     * - Most popular topic (topic with the most posts)
-     * - Most popular category (category with the most post activity)
-     * - Ghost topics (topics > 7 days old with zero replies, up to 20)
-     */
     public Mono<ForumStatisticsDTO> getForumStatistics() {
-        log.info("Fetching comprehensive forum statistics");
-
-        // 1. Overview & today counts (6 parallel queries)
         Mono<Long> totalPostsMono = forumPostRepository.count();
         Mono<Long> bannedPostsMono = forumPostRepository.countByIsBannedTrue();
         Mono<Long> totalTopicsMono = forumTopicRepository.count();
@@ -414,7 +339,6 @@ public class AdminForumService {
                 .newPostsToday(tuple.getT6())
                 .build());
 
-        // 2. Most popular topic
         Mono<ForumStatisticsDTO.TopicSummary> popularTopicMono = forumPostRepository.findTopicIdWithMostPosts()
                 .flatMap(topicId -> forumTopicRepository.findById(topicId)
                         .zipWith(forumPostRepository.countByTopicIdAndIsBannedFalse(topicId))
@@ -428,7 +352,6 @@ public class AdminForumService {
                                 .build()))
                 .defaultIfEmpty(ForumStatisticsDTO.TopicSummary.builder().build());
 
-        // 3. Most popular category
         Mono<ForumStatisticsDTO.CategorySummary> popularCategoryMono = forumTopicRepository.findCategoryIdWithMostPosts()
                 .flatMap(categoryId -> forumCategoryRepository.findById(categoryId)
                         .zipWith(forumTopicRepository.countByCategoryId(categoryId))
@@ -441,10 +364,8 @@ public class AdminForumService {
                                 .build()))
                 .defaultIfEmpty(ForumStatisticsDTO.CategorySummary.builder().build());
 
-        // 4. Ghost topics
         Mono<List<ForumStatisticsDTO.GhostTopicSummary>> ghostTopicsMono = forumTopicRepository.findGhostTopics()
                 .flatMap(topic -> {
-                    // Resolve category name for each ghost topic
                     Mono<String> categoryNameMono = topic.getCategoryId() != null
                             ? forumCategoryRepository.findById(topic.getCategoryId())
                                     .map(ForumCategory::getName)
@@ -462,7 +383,6 @@ public class AdminForumService {
                 .collectList()
                 .defaultIfEmpty(Collections.emptyList());
 
-        // Combine everything
         return Mono.zip(baseMono, popularTopicMono, popularCategoryMono, ghostTopicsMono)
                 .map(tuple -> {
                     ForumStatisticsDTO stats = tuple.getT1();
@@ -471,22 +391,15 @@ public class AdminForumService {
                     stats.setGhostTopics(tuple.getT4());
                     return stats;
                 })
-                .doOnSuccess(result -> log.info("Successfully retrieved comprehensive forum statistics"))
+                .doOnSuccess(result -> log.info("getForumStatistics result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching forum statistics", error));
     }
 
     // ========== TOP CONTRIBUTORS ==========
 
-    /**
-     * Get top 10 contributors for a given month and year.
-     * Returns member ID, user details, and post count.
-     */
     public Mono<List<TopContributorDTO>> getTopContributors(int month, int year) {
-        log.info("Fetching top contributors for month: {}, year: {}", month, year);
-
         return forumPostRepository.findTopContributorMemberIds(month, year)
                 .flatMapSequential(memberId ->
-                    // Look up user info via the user table (author_member_id = user_id in organization_members)
                     adminUserRepository.findById(memberId)
                             .zipWith(forumPostRepository.countPostsByAuthorInMonth(memberId, month, year))
                             .map(tuple -> TopContributorDTO.builder()
@@ -499,19 +412,13 @@ public class AdminForumService {
                 )
                 .collectList()
                 .defaultIfEmpty(Collections.emptyList())
-                .doOnSuccess(result -> log.info("Successfully retrieved {} top contributors for {}/{}", result.size(), month, year))
+                .doOnSuccess(result -> log.info("getTopContributors result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching top contributors for {}/{}", month, year, error));
     }
 
     // ========== ORGANIZATION ENGAGEMENT RATE ==========
 
-    /**
-     * Get forum engagement rate per organization.
-     * Returns: for each organization, total members vs active forum users (who posted at least once).
-     */
     public Mono<List<OrganizationEngagementDTO>> getOrganizationEngagement() {
-        log.info("Fetching organization engagement rates");
-
         return adminOrganizationRepository.findAll()
                 .flatMap(org -> {
                     Mono<Long> totalMembersMono = adminOrganizationRepository
@@ -522,34 +429,22 @@ public class AdminForumService {
                             .defaultIfEmpty(0L);
 
                     return Mono.zip(totalMembersMono, activeForumUsersMono)
-                            .map(tuple -> {
-                                long totalMembers = tuple.getT1();
-                                long activeUsers = tuple.getT2();
-
-                                return OrganizationEngagementDTO.builder()
-                                        .organizationId(org.getId())
-                                        .organizationName(org.getName())
-                                        .totalMembers(totalMembers)
-                                        .activeForumUsers(activeUsers)
-                                        .build();
-                            });
+                            .map(tuple -> OrganizationEngagementDTO.builder()
+                                    .organizationId(org.getId())
+                                    .organizationName(org.getName())
+                                    .totalMembers(tuple.getT1())
+                                    .activeForumUsers(tuple.getT2())
+                                    .build());
                 })
                 .collectList()
                 .defaultIfEmpty(Collections.emptyList())
-                .doOnSuccess(result -> log.info("Successfully retrieved engagement rates for {} organizations", result.size()))
+                .doOnSuccess(result -> log.info("getOrganizationEngagement result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching organization engagement rates", error));
     }
 
     // ========== MONTHLY ACTIVITY TIMELINE ==========
 
-    /**
-     * Get monthly activity timeline for a given year.
-     * Returns 12 months with: distinct active users, post count, topic count.
-     */
     public Mono<MonthlyActivityDTO> getMonthlyActivityTimeline(int year) {
-        log.info("Fetching monthly activity timeline for year: {}", year);
-
-        // Build 12 month data entries in parallel
         List<Mono<MonthlyActivityDTO.MonthData>> monthMonos = new ArrayList<>();
 
         for (int m = 1; m <= 12; m++) {
@@ -574,15 +469,12 @@ public class AdminForumService {
                         .year(year)
                         .months(months)
                         .build())
-                .doOnSuccess(result -> log.info("Successfully retrieved monthly activity timeline for year: {}", year))
+                .doOnSuccess(result -> log.info("getMonthlyActivityTimeline result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching monthly activity timeline for year: {}", year, error));
     }
 
     // ========== HELPER METHODS ==========
 
-    /**
-     * Convert ForumPost entity to ForumPostDTO
-     */
     private Mono<ForumPostDTO> convertToPostDTO(ForumPost post) {
         Mono<Long> flagsCountMono = forumPostReportRepository.countByPostId(post.getId()).defaultIfEmpty(0L);
         Mono<com.service.backend.forum.entity.ForumTopic> topicMono = post.getTopicId() == null
@@ -685,9 +577,6 @@ public class AdminForumService {
                 .then();
     }
 
-    /**
-     * Convert ForumCategory entity to ForumCategoryDTO
-     */
     private com.service.backend.forum.dto.ForumCategoryDTO convertToCategoryDTO(
             com.service.backend.forum.entity.ForumCategory category) {
         return com.service.backend.forum.dto.ForumCategoryDTO.builder()
@@ -701,9 +590,6 @@ public class AdminForumService {
                 .build();
     }
 
-    /**
-     * Convert ForumTopic entity to ForumTopicDTO
-     */
     private Mono<com.service.backend.forum.dto.ForumTopicDTO> convertToTopicDTOWithPostCount(
             com.service.backend.forum.entity.ForumTopic topic) {
         return forumPostRepository.countByTopicId(topic.getId())
@@ -727,4 +613,3 @@ public class AdminForumService {
                 .build();
     }
 }
-

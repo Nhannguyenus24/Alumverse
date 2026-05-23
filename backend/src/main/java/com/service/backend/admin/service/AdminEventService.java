@@ -13,6 +13,7 @@ import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -52,54 +53,53 @@ public class AdminEventService {
     }
 
     public Mono<PaginatedResponse<Event>> getAllEvents(int page, int size) {
-        log.info("Admin fetching all events - page: {}, size: {}", page, size);
         int offset = page * size;
         return adminEventRepository.findAllEventsWithPagination(size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countAllEvents())
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all events", error));
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByOrganization(Long organizationId, int page, int size) {
-        log.info("Admin fetching events for organization {} - page: {}, size: {}", organizationId, page, size);
         int offset = page * size;
         return adminEventRepository.findEventsByOrganization(organizationId, size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countEventsByOrganization(organizationId))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getEventsByOrganization result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching events for organization {}", organizationId, error));
     }
 
     public Mono<PaginatedResponse<Event>> searchAllEvents(String keyword, int page, int size) {
-        log.info("Admin searching all events with keyword '{}' - page: {}, size: {}", keyword, page, size);
         int offset = page * size;
         return adminEventRepository.searchAllEvents(keyword, size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countSearchAllEvents(keyword))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("searchAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error searching events with keyword {}", keyword, error));
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByPublishStatus(Boolean isPublished, int page, int size) {
-        log.info("Admin fetching events by publish status {} - page: {}, size: {}", isPublished, page, size);
         int offset = page * size;
         return adminEventRepository.findEventsByPublishStatus(isPublished, size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countEventsByPublishStatus(isPublished))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getEventsByPublishStatus result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching events by publish status {}", isPublished, error));
     }
 
     public Mono<Event> getEventById(Long eventId) {
-        log.info("Admin fetching event ID: {}", eventId);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
-                        "Event not found with id: " + eventId)));
+                        "Event not found with id: " + eventId)))
+                .doOnSuccess(e -> log.info("getEventById result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
-        log.info("Admin updating event ID: {}", eventId);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
@@ -117,38 +117,36 @@ public class AdminEventService {
                             existing.setMaxCapacity(request.getMaxCapacity());
                             return eventRepo.save(existing);
                         }))
-                .doOnSuccess(e -> log.info("Admin successfully updated event ID: {}", eventId))
+                .doOnSuccess(e -> log.info("updateEvent result: {}", JsonUtils.toJson(e)))
                 .doOnError(error -> log.error("Error updating event ID: {}", eventId, error));
     }
 
     public Mono<Void> deleteEvent(Long eventId) {
-        log.info("Admin deleting event ID: {}", eventId);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
                 .flatMap(event -> eventRepo.deleteById(eventId))
-                .doOnSuccess(v -> log.info("Admin successfully deleted event ID: {}", eventId))
+                .doOnSuccess(v -> log.info("deleteEvent: eventId={} deleted", eventId))
                 .doOnError(error -> log.error("Error deleting event ID: {}", eventId, error));
     }
 
     public Mono<Event> publishEvent(Long eventId) {
-        log.info("Admin publishing event ID: {}", eventId);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId)));
+                .flatMap(event -> eventRepo.publishEvent(eventId).then(eventRepo.findById(eventId)))
+                .doOnSuccess(e -> log.info("publishEvent result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<Event> unpublishEvent(Long eventId) {
-        log.info("Admin unpublishing event ID: {}", eventId);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
-                .flatMap(event -> eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId)));
+                .flatMap(event -> eventRepo.unpublishEvent(eventId).then(eventRepo.findById(eventId)))
+                .doOnSuccess(e -> log.info("unpublishEvent result: {}", JsonUtils.toJson(e)));
     }
 
     public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int size) {
-        log.info("Admin fetching tickets for event {} - page: {}, size: {}", eventId, page, size);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
@@ -158,11 +156,11 @@ public class AdminEventService {
                             .collectList()
                             .zipWith(ticketRepo.countByEventId(eventId))
                             .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
-                });
+                })
+                .doOnSuccess(r -> log.info("getTicketsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<EventTicket> cancelTicket(String ticketCode) {
-        log.info("Admin cancelling ticket with code: {}", ticketCode);
         return ticketRepo.findByTicketCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
@@ -172,11 +170,11 @@ public class AdminEventService {
                                 "Ticket already cancelled"));
                     }
                     return ticketRepo.cancelTicket(ticket.getId()).then(ticketRepo.findById(ticket.getId()));
-                });
+                })
+                .doOnSuccess(t -> log.info("cancelTicket result: {}", JsonUtils.toJson(t)));
     }
 
     public Mono<PaginatedResponse<EventInterest>> getInterestsByEvent(Long eventId, int page, int size) {
-        log.info("Admin fetching interests for event {} - page: {}, size: {}", eventId, page, size);
         return adminEventRepository.findById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND,
                         "Event not found with id: " + eventId)))
@@ -186,7 +184,8 @@ public class AdminEventService {
                             .collectList()
                             .zipWith(interestRepo.countByEventId(eventId))
                             .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
-                });
+                })
+                .doOnSuccess(r -> log.info("getInterestsByEvent result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<EventStatisticsDTO> getEventStatistics() {
@@ -248,7 +247,7 @@ public class AdminEventService {
                     stats.setTopEventsByInterest(tuple.getT4());
                     return stats;
                 })
-                .doOnSuccess(s -> log.info("Successfully retrieved event statistics"))
+                .doOnSuccess(s -> log.info("getEventStatistics result: {}", JsonUtils.toJson(s)))
                 .doOnError(error -> log.error("Error fetching event statistics", error));
     }
 
