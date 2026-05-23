@@ -10,7 +10,7 @@ import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
 function normalizeGroupChat(item) {
   return {
     id: item.id,
-    name: item.title ?? '(Nhóm không tên)',
+    name: item.title ?? '(No name)',
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,
     type: 'GROUP',
@@ -20,7 +20,8 @@ function normalizeGroupChat(item) {
 function normalizePrivateChat(item) {
   return {
     id: item.id,
-    name: item.peerUserName ?? item.title ?? '(Không có tên)',
+    name: item.peerUserName ?? item.title ?? '(No name)',
+    avatarUrl: item.peerAvatarUrl ?? null,
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,
     type: 'PRIVATE',
