@@ -15,12 +15,6 @@ import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
 import IconButtonMenu from '../IconButtonMenu';
 
-function initials(name) {
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
 
 const NetworkChatSidebar = ({
   chats = [],
@@ -147,8 +141,10 @@ const NetworkChatSidebar = ({
                   '&:hover': { bgcolor: 'action.hover' },
                 }}
               >
-                <Avatar sx={{ width: 42, height: 42, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-                  {initials(chat.name)}
+                <Avatar
+                  src={chat.avatarUrl}
+                  sx={{ width: 42, height: 42, bgcolor: 'primary.main', color: 'primary.contrastText' }}
+                >
                 </Avatar>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" fontWeight={600} noWrap>

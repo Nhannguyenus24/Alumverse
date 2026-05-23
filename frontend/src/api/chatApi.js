@@ -20,4 +20,17 @@ export const chatApi = {
     const response = await apiClient.get('/chat/private/list', { params: { text, page, size } });
     return unwrap(response);
   },
+
+  /**
+   * @param {number} groupId
+   * @param {number} page  0-based, page 0 = newest messages (DESC)
+   * @param {number} size
+   * @returns {Promise<Array>}
+   */
+  async getMessages(groupId, page = 0, size = 10) {
+    const response = await apiClient.get(`/chat/groups/${groupId}/messages`, {
+      params: { page, size },
+    });
+    return unwrap(response);
+  },
 };

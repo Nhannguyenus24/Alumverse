@@ -1,18 +1,18 @@
 package com.service.backend.chat.service;
 
 import com.service.backend.auth.dao.AuthRepository;
-import com.service.backend.auth.entity.User;
-import com.service.backend.chat.dto.ChatGroupMetadataResponse;
-import com.service.backend.chat.dto.GroupChatListItemResponse;
-import com.service.backend.chat.dto.PrivateChatListItemResponse;
-import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.chat.entity.ChatGroup;
-import com.service.backend.chat.entity.ChatGroupMember;
-import com.service.backend.chat.entity.ChatMessage;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
+import com.service.backend.chat.dto.ChatGroupMetadataResponse;
+import com.service.backend.chat.dto.ChatMessageResponse;
+import com.service.backend.chat.dto.GroupChatListItemResponse;
+import com.service.backend.chat.dto.PrivateChatListItemResponse;
+import com.service.backend.chat.entity.ChatGroup;
+import com.service.backend.chat.entity.ChatGroupMember;
+import com.service.backend.chat.entity.ChatMessage;
 import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.exception.ApplicationException;
 import org.springframework.stereotype.Service;
@@ -145,16 +145,20 @@ public class ChatService {
                                 null,
                                 "Unknown",
                                 null,
+                                null,
                                 null
                         ));
                     }
 
                     Long finalPeerId = peerId;
-                    Mono<String> userNameMono = authRepository.findById(finalPeerId.intValue())
-                            .map(User::getUserName)
-                            .switchIfEmpty(Mono.just("User " + finalPeerId));
 
-                    return userNameMono.flatMap(peerName ->
+                    record PeerInfo(String userName, String avatarUrl) {}
+
+                    Mono<PeerInfo> peerInfoMono = authRepository.findById(finalPeerId.intValue())
+                            .map(user -> new PeerInfo(user.getUserName(), user.getAvatarUrl()))
+                            .switchIfEmpty(Mono.just(new PeerInfo("User " + finalPeerId, null)));
+
+                    return peerInfoMono.flatMap(peerInfo ->
                             chatMessageRepository.findLastByGroupId(group.getId())
                                     .map(msg -> new PrivateChatListItemResponse(
                                             group.getId(),
@@ -164,7 +168,8 @@ public class ChatService {
                                             group.getCreatedAt(),
                                             group.getUpdatedAt(),
                                             finalPeerId,
-                                            peerName,
+                                            peerInfo.userName(),
+                                            peerInfo.avatarUrl(),
                                             msg.getContent(),
                                             msg.getCreatedAt()
                                     ))
@@ -176,7 +181,8 @@ public class ChatService {
                                             group.getCreatedAt(),
                                             group.getUpdatedAt(),
                                             finalPeerId,
-                                            peerName,
+                                            peerInfo.userName(),
+                                            peerInfo.avatarUrl(),
                                             null,
                                             null
                                     )))
@@ -315,6 +321,12 @@ public class ChatService {
         int limit = Math.max(size, 1);
         int offset = Math.max(page, 0) * limit;
         return chatMessageRepository.findByGroupIdWithPagination(groupId, limit, offset);
+    }
+
+    public Flux<ChatMessageResponse> getMessagesWithSenderInfo(Long groupId, int page, int size) {
+        int limit = Math.max(size, 1);
+        int offset = Math.max(page, 0) * limit;
+        return chatMessageRepository.findByGroupIdWithSenderInfoAndPagination(groupId, limit, offset);
     }
 
 

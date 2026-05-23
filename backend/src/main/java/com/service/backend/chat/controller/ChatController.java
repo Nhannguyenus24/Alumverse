@@ -2,6 +2,7 @@ package com.service.backend.chat.controller;
 
 import com.service.backend.chat.dto.AddMembersRequest;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
+import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatListItemResponse;
@@ -9,7 +10,6 @@ import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.chat.entity.ChatGroup;
 import com.service.backend.chat.entity.ChatGroupMember;
-import com.service.backend.chat.entity.ChatMessage;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -76,7 +76,7 @@ public class ChatController {
 
 
     /*
-        Get all chat 1:1 of memberA and memberB 
+        Get chat information (not message) from member A and member B 
     */
     @GetMapping("/private")
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> getPrivateChat(
@@ -104,11 +104,11 @@ public class ChatController {
         Get messages of a group ID, with pagination 
     */
     @GetMapping("/groups/{groupId}/messages")
-    public Mono<ResponseEntity<ApiResponse<List<ChatMessage>>>> getMessages(
+    public Mono<ResponseEntity<ApiResponse<List<ChatMessageResponse>>>> getMessages(
             @PathVariable("groupId") @Min(1) Long groupId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return this.chatService.getMessages(groupId, page, size)
+        return this.chatService.getMessagesWithSenderInfo(groupId, page, size)
                 .collectList()
                 .map(messages -> ResponseEntity
                         .ok(new ApiResponse<>("Messages retrieved successfully", messages)));

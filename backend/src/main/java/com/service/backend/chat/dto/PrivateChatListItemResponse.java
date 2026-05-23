@@ -11,6 +11,7 @@ public record PrivateChatListItemResponse(
         LocalDateTime updatedAt,
         Long peerMemberId,
         String peerUserName,
+        String peerAvatarUrl,
         String lastMessagePreview,
         LocalDateTime lastMessageAt
 ) {

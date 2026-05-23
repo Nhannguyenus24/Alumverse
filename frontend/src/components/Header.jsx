@@ -20,8 +20,6 @@ import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
 
-const NAV_GUEST_HIDDEN_PATHS = new Set(['/search']);
-
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Giới thiệu', href: '/introduction' },
@@ -60,9 +58,6 @@ const Header = () => {
   const location = useLocation();
   const { slug: routeSlug } = useParams();
   const { isAuthenticated, user } = useAuth();
-  const visibleNavItems = NAV_ITEMS.filter(
-    (item) => !NAV_GUEST_HIDDEN_PATHS.has(item.href) || isAuthenticated,
-  );
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
@@ -158,7 +153,7 @@ const Header = () => {
         {isDesktop && (
           <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
                      display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
-            {visibleNavItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <Box
                 key={item.label}
                 onMouseEnter={() => item.children && setHoveredNav(item.label)}
@@ -271,7 +266,7 @@ const Header = () => {
         <Divider />
 
         <List component="nav" sx={{ py: 1 }}>
-          {visibleNavItems.map((item) =>
+          {NAV_ITEMS.map((item) =>
           item.children ? (
             <Box key={item.label}>
               <ListItemButton sx={{ py: 1.25 }}>
