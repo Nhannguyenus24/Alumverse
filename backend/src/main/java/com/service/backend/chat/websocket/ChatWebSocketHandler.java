@@ -88,7 +88,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         try {
             Integer userId = jwtUtils.getUserIdFromToken(token);
             Long memberId = userId.longValue();
-            log.debug("Extracted memberId {} from WebSocket handshake token", memberId);
+            log.info("Extracted memberId {} from WebSocket handshake token", memberId);
             return Mono.just(memberId);
         } catch (Exception e) {
             log.error("Invalid token in WebSocket handshake", e);
