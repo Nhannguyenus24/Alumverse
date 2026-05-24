@@ -26,6 +26,17 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
     @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId")
     reactor.core.publisher.Mono<Void> deleteByGroupId(Long groupId);
+
+    @Query("""
+            SELECT EXISTS (
+                SELECT 1
+                FROM chat_group_members a
+                INNER JOIN chat_group_members b ON a.group_id = b.group_id
+                WHERE a.member_id = :memberAId
+                  AND b.member_id = :memberBId
+            )
+            """)
+    reactor.core.publisher.Mono<Boolean> existsSharedGroupBetweenMembers(Long memberAId, Long memberBId);
 }
 
 

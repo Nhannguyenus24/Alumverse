@@ -517,6 +517,30 @@ CREATE TABLE "chat_messages" (
   "deleted_at" timestamp
 );
 
+CREATE TABLE "chat_conversation_requests" (
+  "id" BIGSERIAL PRIMARY KEY,
+
+  "member_low_id" integer NOT NULL,
+  "member_high_id" integer NOT NULL,
+
+  "requester_member_id" integer NOT NULL,
+
+  "chat_group_id" integer UNIQUE NOT NULL,
+
+  "last_request_message_at" timestamp,
+
+  "request_message_quota" integer DEFAULT 3,
+
+  "cooldown_until" timestamp,
+
+  "status" varchar NOT NULL DEFAULT 'PENDING', -- PENDING, ACCEPTED, REJECTED
+
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+);
+
+CREATE UNIQUE INDEX ON "chat_conversation_requests" ("member_low_id", "member_high_id");
+
 CREATE UNIQUE INDEX ON "peer_verifications" ("target_member_id", "verifier_member_id");
 
 CREATE UNIQUE INDEX ON "forum_post_reactions" ("post_id", "member_id");
