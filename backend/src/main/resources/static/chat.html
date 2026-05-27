@@ -497,6 +497,8 @@
 
         const API_BASE = 'http://localhost:8080/api';
         const WS_URL = 'ws://localhost:8080/ws/chat';
+        /** Matches backend LoginRequest.organizationId (required for /auth/login). */
+        const CHAT_ORGANIZATION_ID = 1;
 
         // Initialize
         window.onload = function() {
@@ -522,7 +524,11 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({
+                        organizationId: CHAT_ORGANIZATION_ID,
+                        email,
+                        password
+                    })
                 });
 
                 const data = await response.json();
@@ -552,13 +558,18 @@
             const email = localStorage.getItem('user_email');
             currentUserId = localStorage.getItem('user_id');
 
-            if (token && currentUserId) {
-                document.getElementById('loginEmail').value = email || '';
-                showChatInterface();
-                loadConversations();
-                // Khi reload trang mà vẫn còn token, tự động kết nối WebSocket lại
-                connectWebSocket();
+            if (!token || !currentUserId) return;
+
+            if (isAccessTokenExpired(token)) {
+                handleAuthExpired('Stored access token expired (exp claim)');
+                return;
             }
+
+            document.getElementById('loginEmail').value = email || '';
+            showChatInterface();
+            loadConversations();
+            // Khi reload trang mà vẫn còn token, tự động kết nối WebSocket lại
+            connectWebSocket();
         }
 
         function logout() {
@@ -593,6 +604,24 @@
             }
         }
 
+        /** JWT exp is seconds since epoch; avoids spamming API with expired Bearer tokens */
+        function isAccessTokenExpired(jwt) {
+            try {
+                const payload = JSON.parse(atob(jwt.split('.')[1]));
+                if (payload.exp == null) return false;
+                return Date.now() >= payload.exp * 1000;
+            } catch (e) {
+                return true;
+            }
+        }
+
+        function handleAuthExpired(reason) {
+            if (reason) console.warn('[Chat]', reason);
+            const errEl = document.getElementById('loginError');
+            logout();
+            if (errEl) errEl.textContent = 'Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.';
+        }
+
         // ========== REST API Calls ==========
         async function loadConversations() {
             if (!token) return;
@@ -607,6 +636,11 @@
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                 ]);
+
+                if (privateRes.status === 401 || groupRes.status === 401) {
+                    handleAuthExpired('GET /chat/groups returned 401');
+                    return;
+                }
 
                 const [privateData, groupData] = await Promise.all([
                     privateRes.json(),
@@ -839,6 +873,11 @@
         function connectWebSocket() {
             if (!token) {
                 alert('Vui lòng đăng nhập trước');
+                return;
+            }
+
+            if (isAccessTokenExpired(token)) {
+                handleAuthExpired('Cannot open WebSocket: access token expired');
                 return;
             }
 

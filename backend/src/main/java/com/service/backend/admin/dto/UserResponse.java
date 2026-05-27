@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class UserResponse {
     private Integer id;
     private String email;
@@ -23,4 +23,9 @@ public class UserResponse {
     private String avatarUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    /** From global_profiles (admin list/detail enrichment). */
+    private String fullName;
+    /** Primary organization_members row (lowest id) for this user, if any. */
+    private Integer organizationId;
+    private String organizationName;
 }

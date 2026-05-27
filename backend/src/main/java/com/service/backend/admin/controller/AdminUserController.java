@@ -7,18 +7,30 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.BanUserRequest;
+import com.service.backend.admin.dto.AdminResetPasswordRequest;
+import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
+import com.service.backend.admin.dto.ReviewVerificationRequest;
+import com.service.backend.admin.dto.UnbanUserRequest;
+import com.service.backend.admin.dto.UpdateUserRequest;
 import com.service.backend.admin.dto.UserResponse;
-import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.admin.dto.UserActivityResponse;
+import com.service.backend.admin.dto.VerificationRequestResponse;
+import com.service.backend.admin.entity.AdminAuditLog;
 import com.service.backend.admin.service.AdminUserService;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.SecurityUtils;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -38,18 +50,19 @@ public class AdminUserController {
     }
     
     /**
-     * Get all users with pagination
+     * Get all users with pagination and filters
      */
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>>> getAllUsers(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return adminUserService.getAllUsers(page, size)
+            @RequestParam(defaultValue = "10") @Min(1) int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) Integer organizationId) {
+        return adminUserService.getAllUsers(page, size, search, role, status, organizationId)
                 .map(pagedResponse -> ResponseEntity.ok(
-                        new ApiResponse<>("Users fetched successfully", pagedResponse)))
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), null))));
+                        new ApiResponse<>("Users fetched successfully", pagedResponse)));
     }
     
     /**
@@ -62,10 +75,7 @@ public class AdminUserController {
             @RequestParam(defaultValue = "10") @Min(1) int size) {
         return adminUserService.getUsersByOrganization(organizationId, page, size)
                 .map(pagedResponse -> ResponseEntity.ok(
-                        new ApiResponse<>("Users fetched successfully", pagedResponse)))
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), null))));
+                        new ApiResponse<>("Users fetched successfully", pagedResponse)));
     }
     
     /**
@@ -77,12 +87,7 @@ public class AdminUserController {
         return adminUserService.getUserById(userId)
                 .map(user -> ResponseEntity.ok(
                         new ApiResponse<>("User fetched successfully", user)))
-                .switchIfEmpty(Mono.just(
-                        ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ApiResponse<>("User not found", null))))
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), null))));
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found")));
     }
     
     /**
@@ -92,18 +97,14 @@ public class AdminUserController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> banUser(
             @Valid @RequestBody BanUserRequest request) {
         return adminUserService.banUser(request.getUserId())
-                .map(success -> {
+                .flatMap(success -> {
                     if (success) {
-                        return ResponseEntity.ok(
-                                new ApiResponse<>("User banned successfully", true));
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("User banned successfully", true)));
                     } else {
-                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ApiResponse<>("User not found", false));
+                        return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found"));
                     }
-                })
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), false))));
+                });
     }
     
     /**
@@ -113,18 +114,14 @@ public class AdminUserController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> deleteUser(
             @Valid @RequestBody DeleteUserRequest request) {
         return adminUserService.deleteUser(request.getUserId(), request.getHardDelete())
-                .map(success -> {
+                .flatMap(success -> {
                     if (success) {
-                        return ResponseEntity.ok(
-                                new ApiResponse<>("User deleted successfully", true));
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("User deleted successfully", true)));
                     } else {
-                        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                .body(new ApiResponse<>("User not found", false));
+                        return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found"));
                     }
-                })
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), false))));
+                });
     }
     
     /**
@@ -136,10 +133,7 @@ public class AdminUserController {
         return adminUserService.getUserVerificationRequests(userId)
                 .collectList()
                 .map(requests -> ResponseEntity.ok(
-                        new ApiResponse<>("Verification requests fetched successfully", requests)))
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), null))));
+                        new ApiResponse<>("Verification requests fetched successfully", requests)));
     }
     
     /**
@@ -151,12 +145,73 @@ public class AdminUserController {
         return adminUserService.getPeerVerifications(userId)
                 .collectList()
                 .map(verifications -> ResponseEntity.ok(
-                        new ApiResponse<>("Peer verifications fetched successfully", verifications)))
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), null))));
+                        new ApiResponse<>("Peer verifications fetched successfully", verifications)));
     }
     
+    /**
+     * Unban a user
+     */
+    @PostMapping("/unban")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> unbanUser(
+            @Valid @RequestBody UnbanUserRequest request) {
+        return adminUserService.unbanUser(request.getUserId())
+                .flatMap(success -> {
+                    if (success) {
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("User unbanned successfully", true)));
+                    } else {
+                        return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                    }
+                });
+    }
+
+    /**
+     * Update user details (role, status, email, userName)
+     */
+    @PutMapping("/{userId}")
+    public Mono<ResponseEntity<ApiResponse<UserResponse>>> updateUser(
+            @PathVariable Integer userId,
+            @Valid @RequestBody UpdateUserRequest request) {
+        return adminUserService.updateUser(userId, request)
+                .map(user -> ResponseEntity.ok(
+                        new ApiResponse<>("User updated successfully", user)))
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found")));
+    }
+
+    /**
+     * Get all verification requests with optional pending-only filter
+     */
+    @GetMapping("/verification-requests")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getVerificationRequests(
+            @RequestParam(defaultValue = "false") boolean pendingOnly,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
+        Mono<PaginatedResponse<VerificationRequestResponse>> source = pendingOnly
+                ? adminUserService.getPendingVerificationRequests(page, size)
+                : adminUserService.getAllVerificationRequests(page, size);
+        return source
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Verification requests fetched successfully", data)));
+    }
+
+    /**
+     * Approve or reject a verification request
+     */
+    @PutMapping("/verification-requests/{requestId}")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> reviewVerificationRequest(
+            @PathVariable Integer requestId,
+            @Valid @RequestBody ReviewVerificationRequest request) {
+        return adminUserService.reviewVerificationRequest(requestId, request.getStatus(), request.getAdminNote())
+                .flatMap(success -> {
+                    if (success) {
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("Verification request reviewed successfully", true)));
+                    } else {
+                        return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Verification request not found"));
+                    }
+                });
+    }
+
     /**
      * Add user to organization
      */
@@ -172,17 +227,89 @@ public class AdminUserController {
                         request.getMajor(),
                         request.getVerificationLevel(),
                         request.getStatus())
-                .map(success -> {
+                .flatMap(success -> {
                     if (success) {
-                        return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(new ApiResponse<>("User added to organization successfully", true));
+                        return Mono.just(ResponseEntity.status(HttpStatus.CREATED)
+                                .body(new ApiResponse<>("User added to organization successfully", true)));
                     } else {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(new ApiResponse<>("Failed to add user to organization", false));
+                        return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Failed to add user to organization"));
                     }
-                })
-                .onErrorResume(error -> Mono.just(
-                        ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                                .body(new ApiResponse<>(error.getMessage(), false))));
+                });
+    }
+
+    @GetMapping("/{userId}/activity")
+    public Mono<ResponseEntity<ApiResponse<UserActivityResponse>>> getUserActivity(
+            @PathVariable Integer userId) {
+        return adminUserService.getUserActivity(userId)
+                .map(activity -> ResponseEntity.ok(
+                        new ApiResponse<>("User activity fetched successfully", activity)));
+    }
+
+    @PostMapping("/{userId}/reset-password")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> resetPasswordByAdmin(
+            @PathVariable Integer userId,
+            @Valid @RequestBody AdminResetPasswordRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminUserService.resetPasswordByAdmin(userId, request, adminId.intValue()))
+                .flatMap(success -> {
+                    if (success) {
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("Password reset successfully", true)));
+                    }
+                    return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "User not found"));
+                });
+    }
+
+    @PostMapping("/admins")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> createAdminAccount(
+            @Valid @RequestBody CreateAdminRequest request) {
+        return adminUserService.createAdminAccount(request)
+                .map(success -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Admin account created successfully", success)));
+    }
+
+    @GetMapping("/alumni/verification-requests")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getAlumniVerificationRequests(
+            @RequestParam(defaultValue = "true") boolean pendingOnly,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int size) {
+        return getVerificationRequests(pendingOnly, page, size);
+    }
+
+    @PutMapping("/alumni/verification-requests/{requestId}")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> reviewAlumniVerificationRequest(
+            @PathVariable Integer requestId,
+            @Valid @RequestBody ReviewVerificationRequest request) {
+        return reviewVerificationRequest(requestId, request);
+    }
+
+    /**
+     * Get admin action logs with optional filters
+     */
+    @GetMapping("/admin-actions")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminAuditLog>>>> getAdminActionLogs(
+            @RequestParam(required = false) Integer adminUserId,
+            @RequestParam(required = false) Integer targetUserId,
+            @RequestParam(required = false) String action,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+        return adminUserService.getAdminActionLogs(adminUserId, targetUserId, action, page, size)
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Admin action logs fetched successfully", data)));
+    }
+
+    /**
+     * Get action logs performed by a specific admin
+     */
+    @GetMapping("/{adminUserId}/admin-actions")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminAuditLog>>>> getAdminActionLogsByAdmin(
+            @PathVariable Integer adminUserId,
+            @RequestParam(required = false) Integer targetUserId,
+            @RequestParam(required = false) String action,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) int size) {
+        return adminUserService.getAdminActionLogs(adminUserId, targetUserId, action, page, size)
+                .map(data -> ResponseEntity.ok(
+                        new ApiResponse<>("Admin action logs fetched successfully", data)));
     }
 }

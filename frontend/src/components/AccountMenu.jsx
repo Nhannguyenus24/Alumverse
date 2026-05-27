@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
 import {
   Box,
@@ -16,13 +16,16 @@ import { useOrgPath } from '../hooks/useOrgNavigate';
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const [prevAvatarUrl, setPrevAvatarUrl] = useState(avatarUrl);
+
+  if (avatarUrl !== prevAvatarUrl) {
+    setPrevAvatarUrl(avatarUrl);
+    setAvatarLoadFailed(false);
+  }
+
   const open = Boolean(anchorEl);
   const { logout } = useAuth();
   const toOrgPath = useOrgPath();
-
-  useEffect(() => {
-    setAvatarLoadFailed(false);
-  }, [avatarUrl]);
 
   const handleOpen = (event) => {
     event.stopPropagation();

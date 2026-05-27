@@ -19,6 +19,9 @@ public interface JobR2dbcRepository extends ReactiveCrudRepository<Job, Integer>
     @Query("SELECT COUNT(*) FROM jobs WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
 
+    @Query("SELECT * FROM jobs ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<Job> findAllWithPagination(int limit, int offset);
+
     @Query("SELECT * FROM jobs WHERE organization_id = :organizationId AND is_active = true ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Job> findActiveByOrganizationId(Integer organizationId, int limit, int offset);
 

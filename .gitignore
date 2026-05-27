@@ -1,4 +1,4 @@
-images/
+/images/
 
 backend/target/
 backend/.mvn/wrapper/maven-wrapper.jar

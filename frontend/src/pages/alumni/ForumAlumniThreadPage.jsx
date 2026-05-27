@@ -32,6 +32,8 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import EditPostDialog from '../../components/forum/EditPostDialog';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { toPlainText } from '../../utils/stringUtils';
 
 const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
   const { showError } = useNotification();
@@ -288,28 +290,11 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
   );
 };
 
-const formatPostDate = (iso) => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
 const FALLBACK_THREAD = {
   title: 'Chủ đề',
   authorName: '—',
   role: 'Alumni',
   createdAt: '—',
-};
-
-const toPlainText = (value) => {
-  if (value == null) return '';
-  return String(value).replace(/<[^>]*>/g, '').trim();
 };
 
 const ForumAlumniThreadPage = () => {
@@ -375,12 +360,14 @@ const ForumAlumniThreadPage = () => {
   const hasShownOpeningErrorRef = useRef(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(0);
   }, [topicId]);
 
   useEffect(() => {
     if (!pageInfo?.totalPage || pageInfo.totalPage <= 0) return;
     if (currentPage >= pageInfo.totalPage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentPage(pageInfo.totalPage - 1);
     }
   }, [currentPage, pageInfo?.totalPage]);
@@ -408,8 +395,8 @@ const ForumAlumniThreadPage = () => {
         ? `Thành viên #${topicSummary.createdByMemberId}`
         : null;
 
-    const createdFromPost = firstPost?.createdAt ? formatPostDate(firstPost.createdAt) : null;
-    const createdFromTopic = topicSummary?.createdAt ? formatPostDate(topicSummary.createdAt) : null;
+    const createdFromPost = firstPost?.createdAt ? formatDateTime(firstPost.createdAt, '—') : null;
+    const createdFromTopic = topicSummary?.createdAt ? formatDateTime(topicSummary.createdAt, '—') : null;
 
     return {
       title,
@@ -427,7 +414,7 @@ const ForumAlumniThreadPage = () => {
         authorMemberId: post.authorMemberId ?? null,
         authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
         role: 'Alumni',
-        createdAt: formatPostDate(post.createdAt),
+        createdAt: formatDateTime(post.createdAt, '—'),
         content: post.content ?? '',
       })),
     [posts]
@@ -462,8 +449,7 @@ const ForumAlumniThreadPage = () => {
     setIsConfirmDeleteOpen(true);
   }, []);
 
-  const handleConfirmDeletePost = useCallback(
-    async () => {
+  const handleConfirmDeletePost = async () => {
       if (!postToDelete?.id) return;
       try {
         await deletePost(postToDelete.id);
@@ -481,9 +467,7 @@ const ForumAlumniThreadPage = () => {
           'Không thể xóa bài viết.';
         showError(message);
       }
-    },
-    [deletePost, deleteErrorMessage, postToDelete?.id, replyTo?.postId, showError, showSuccess]
-  );
+    };
 
   const handleCloseConfirmDelete = useCallback(() => {
     if (deletePending) return;
@@ -503,8 +487,7 @@ const ForumAlumniThreadPage = () => {
     setEditingPost(null);
   }, [updatePostPending]);
 
-  const handleSaveEditPost = useCallback(
-    async (newContent) => {
+  const handleSaveEditPost = async (newContent) => {
       if (!editingPost?.id || !stripHtml(newContent)) return;
       try {
         await updatePost({
@@ -524,9 +507,7 @@ const ForumAlumniThreadPage = () => {
           'Không thể cập nhật bài viết.';
         showError(message);
       }
-    },
-    [editingPost?.id, showError, showSuccess, stripHtml, updatePost, updatePostErrorMessage]
-  );
+    };
 
   const handleDeleteTopic = useCallback(async () => {
     if (!topicId) return;
@@ -702,7 +683,7 @@ const ForumAlumniThreadPage = () => {
     if (activeCategory) {
       items.push({
         label: activeCategory.name,
-        path: '/forum',
+        path: `/forum/category/${activeCategory.id}`,
         state: { selectedFilterId: activeCategory.parentId ? `parent-${activeCategory.parentId}` : `parent-${activeCategory.id}` },
       });
     }
@@ -720,7 +701,6 @@ const ForumAlumniThreadPage = () => {
         disableGutters
         sx={{
           pb: { xs: 4, md: 6 },
-          backgroundColor: '#F3F6FB',
           overflowX: 'hidden',
         }}
       >
@@ -747,13 +727,16 @@ const ForumAlumniThreadPage = () => {
               />
             </Stack>
 
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Breadcrumb
-                items={breadcrumbItems}
-                uppercase
-                color="primary"
-                fontSize="0.8rem"
-              />
+            <Stack
+              spacing={0}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                width: '100%',
+                px: { xs: 1.5, sm: 2, md: 2.75 },
+              }}
+            >
+              <Breadcrumb items={breadcrumbItems} uppercase color="primary" />
               <Box
                 sx={{
                   backgroundColor: '#fff',
@@ -1123,7 +1106,7 @@ const ForumAlumniThreadPage = () => {
                 </Box>
               </Box>
               </Box>
-            </Box>
+            </Stack>
           </Box>
         </Container>
       </Container>

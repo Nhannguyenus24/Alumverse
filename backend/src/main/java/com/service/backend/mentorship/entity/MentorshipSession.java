@@ -35,6 +35,16 @@ public class MentorshipSession {
     @Column("meeting_link")
     private String meetingLink;
 
+    @Column("session_type")
+    private String sessionType;
+
+    private String introduction;
+
+    private String description;
+
+    @Column("cv_url")
+    private String cvUrl;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

@@ -29,4 +29,6 @@ public class UpdateAlumniPostRequest {
 
     /** Optional base64-encoded image. When present, backend uploads and replaces thumbnailUrl. */
     private String thumbnailBase64;
+
+    private String topic;
 }

@@ -35,8 +35,6 @@ const PostDonationPage = () => {
     organizer: '',
     statusId: '',
     fundReceivingInfoId: '',
-    qrFile: null,
-    qrPreview: null,
     donationGoal: '',
     reasonForDonation: '',
     startDate: '',
@@ -79,10 +77,7 @@ const PostDonationPage = () => {
     }
 
     try {
-      const [logoBase64, qrImageBase64] = await Promise.all([
-        coverFile ? fileToBase64(coverFile) : Promise.resolve(null),
-        donationData.qrFile ? fileToBase64(donationData.qrFile) : Promise.resolve(null),
-      ]);
+      const logoBase64 = coverFile ? await fileToBase64(coverFile) : null;
 
       const payload = {
         name: donationData.donationFundName.trim(),
@@ -96,7 +91,6 @@ const PostDonationPage = () => {
         targetAmount: Number(donationData.donationGoal),
         timeStarted: toIsoDateTime(donationData.startDate),
         timeEnded: toIsoDateTime(donationData.endDate),
-        qrImageBase64,
       };
 
       const result = await createFund(payload);

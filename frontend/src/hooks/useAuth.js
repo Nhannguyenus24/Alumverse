@@ -1,5 +1,6 @@
-import apiClient from '../utils/axios';
-import { userFromAccessToken, isTokenExpired } from '../utils/jwt';
+import { useEffect, useState } from 'react';
+import apiClient, { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from '../utils/axios';
+import { userFromAccessToken, isTokenExpired, getSecondsUntilExpire } from '../utils/jwt';
 import {
   loginSchema,
   registerSchema,
@@ -18,6 +19,88 @@ export const useAuth = () => {
   const store = useAuthStore();
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error, needsOrganizationSetup } = store;
+
+  const [storageHydrated, setStorageHydrated] = useState(() =>
+    typeof useAuthStore.persist?.hasHydrated === 'function'
+      ? useAuthStore.persist.hasHydrated()
+      : true,
+  );
+  /** Session bootstrap (persist + optional refresh token) finished — used by guards only */
+  const [authResolved, setAuthResolved] = useState(false);
+
+  useEffect(() => {
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => {
+      setStorageHydrated(true);
+    });
+    if (typeof useAuthStore.persist?.hasHydrated === 'function' && useAuthStore.persist.hasHydrated()) {
+      setStorageHydrated(true);
+    }
+    return () => {
+      unsub?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!storageHydrated) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const { token: t, user: u } = useAuthStore.getState();
+    if (!t || !u) {
+      setAuthResolved(true);
+      return undefined;
+    }
+    if (!isTokenExpired(t)) {
+      setAuthResolved(true);
+      return undefined;
+    }
+
+    (async () => {
+      try {
+        const newToken = await refreshSessionAccessToken();
+        if (!cancelled) syncAuthStoreFromAccessToken(newToken);
+      } catch {
+        if (!cancelled) {
+          useAuthStore.getState().reset();
+          useOrganizationStore.getState().reset();
+        }
+      } finally {
+        if (!cancelled) setAuthResolved(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [storageHydrated]);
+
+  useEffect(() => {
+    if (!storageHydrated || !token || !user || !authResolved) return undefined;
+
+    const maybeRefresh = () => {
+      const t = useAuthStore.getState().token;
+      if (!t) return;
+      if (getSecondsUntilExpire(t) <= 120) {
+        refreshSessionAccessToken()
+          .then((newToken) => syncAuthStoreFromAccessToken(newToken))
+          .catch(() => {});
+      }
+    };
+
+    const intervalId = setInterval(maybeRefresh, 30_000);
+    maybeRefresh();
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') maybeRefresh();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [storageHydrated, token, user, authResolved]);
 
   const setLoading = (value) => {
     store.setLoading(value);
@@ -52,11 +135,6 @@ export const useAuth = () => {
       return { ok: false, error: msg };
     }
     const organizationId = payload.organizationId ?? organizationIdFromStore;
-    if (!organizationId) {
-      const msg = 'Organization ID is required';
-      store.setError(msg);
-      return { ok: false, error: msg };
-    }
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/login', {
@@ -226,18 +304,27 @@ export const useAuth = () => {
   };
 
   const logout = async () => {
-    store.setLoading(true);
-    store.setError(null);
     try {
       await apiClient.post('/auth/logout');
     } finally {
       store.reset();
+      useOrganizationStore.getState().reset();
     }
   };
 
+  const isBootLoading = !storageHydrated || !authResolved;
+
   return {
-    isAuthenticated: !!token && !isTokenExpired(token),
-    isLoading: loading,
+    isAuthenticated:
+      storageHydrated &&
+      authResolved &&
+      !!token &&
+      !!user &&
+      !isTokenExpired(token),
+    /** Route guard: persist + bootstrap only — not API submit to avoid fullscreen flicker */
+    isLoading: isBootLoading,
+    /** Button/form busy: login, register, OTP, password flows */
+    isSubmitting: loading,
     needsOrganizationSetup,
     user,
     error,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -7,46 +7,68 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  InputAdornment,
   MenuItem,
   TextField,
   Typography,
 } from '@mui/material';
-import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 
-const emptyForm = {
+const defaultEmptyForm = {
   email: '',
   userName: '',
   fullName: '',
   password: '',
-  role: 'USER',
+  role: 'ADMIN',
   status: 'ACTIVE',
-  organizationId: ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
+  organizationId: '',
 };
 
-const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
+/** API list often omits fullName; keep edit form aligned with table column fallback. */
+const resolvedFullNameForEdit = (u) => {
+  if (!u) return '';
+  const found = [u.fullName, u.userName, u.email]
+    .map((x) => (typeof x === 'string' ? x.trim() : x))
+    .find(Boolean);
+  return typeof found === 'string' ? found : '';
+};
+
+const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organizationOptions = [] }) => {
   const { enqueueSnackbar } = useSnackbar();
-  const [form, setForm] = useState(emptyForm);
+  const firstOrganizationId = useMemo(
+    () => (organizationOptions.length > 0 ? Number(organizationOptions[0].id) : ''),
+    [organizationOptions],
+  );
+  const [form, setForm] = useState(() => ({ ...defaultEmptyForm, organizationId: firstOrganizationId }));
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!open) {
       return;
     }
-    if (mode === 'edit' && user) {
-      setForm({
-        email: user.email || '',
-        userName: user.userName || '',
-        fullName: user.fullName || '',
-        password: '',
-        role: user.role || 'USER',
-        status: user.status || 'ACTIVE',
-        organizationId: user.organizationId ?? ADMIN_ORGANIZATION_OPTIONS[0]?.id ?? 1,
-      });
-    } else {
-      setForm(emptyForm);
-    }
-    setErrors({});
-  }, [open, mode, user]);
+    const timer = setTimeout(() => {
+      setShowPassword(false);
+      if (mode === 'edit' && user) {
+        setForm({
+          email: user.email || '',
+          userName: user.userName || '',
+          fullName: resolvedFullNameForEdit(user),
+          password: '',
+          role: user.role || 'STUDENT',
+          status: user.status || 'ACTIVE',
+          organizationId: user.organizationId ?? firstOrganizationId,
+        });
+      } else {
+        setForm({ ...defaultEmptyForm, role: 'ADMIN', organizationId: firstOrganizationId });
+      }
+      setErrors({});
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [open, mode, user, firstOrganizationId]);
 
   const handleChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -58,22 +80,22 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
   const validate = () => {
     const next = {};
     if (!form.email.trim()) {
-      next.email = 'Email is required';
+      next.email = 'Vui lòng nhập email';
     }
     if (!form.userName.trim()) {
-      next.userName = 'Username is required';
+      next.userName = 'Vui lòng nhập tên đăng nhập';
     }
     if (!form.fullName.trim()) {
-      next.fullName = 'Full name is required';
+      next.fullName = 'Vui lòng nhập họ tên';
     }
     if (mode === 'create' && !form.password) {
-      next.password = 'Password is required';
+      next.password = 'Vui lòng nhập mật khẩu';
     }
     if (mode === 'edit' && form.password && form.password.length < 8) {
-      next.password = 'Password must be at least 8 characters';
+      next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     if (mode === 'create' && form.password && form.password.length < 8) {
-      next.password = 'Password must be at least 8 characters';
+      next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     setErrors(next);
     const keys = Object.keys(next);
@@ -83,16 +105,20 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
     return keys.length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) {
       return;
     }
-    const org = ADMIN_ORGANIZATION_OPTIONS.find((o) => o.id === Number(form.organizationId));
+    if (!form.organizationId) {
+      enqueueSnackbar('Vui lòng chọn tổ chức', { variant: 'error' });
+      return;
+    }
+    const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
     const payload = {
       email: form.email,
       userName: form.userName,
       fullName: form.fullName,
-      role: form.role,
+      role: mode === 'create' ? 'ADMIN' : form.role,
       status: form.status,
       organizationId: Number(form.organizationId),
       organizationName: org?.name ?? '',
@@ -100,8 +126,12 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
     if (mode === 'create' || (mode === 'edit' && form.password)) {
       payload.password = form.password;
     }
-    onSubmit(payload);
-    onClose();
+    try {
+      await Promise.resolve(onSubmit(payload));
+      onClose();
+    } catch {
+      // Parent / hook shows errors; keep dialog open
+    }
   };
 
   // Keeps OutlinedInput `notched` in sync with the label inside Dialog (MUI v7).
@@ -110,7 +140,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        {mode === 'create' ? 'Create user' : 'Edit user'}
+        {mode === 'create' ? 'Tạo người dùng' : 'Sửa người dùng'}
       </DialogTitle>
       <DialogContent
         sx={{
@@ -132,7 +162,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Username"
+          label="Tên đăng nhập"
           value={form.userName}
           onChange={handleChange('userName')}
           error={!!errors.userName}
@@ -141,7 +171,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Full name"
+          label="Họ tên"
           value={form.fullName}
           onChange={handleChange('fullName')}
           error={!!errors.fullName}
@@ -150,8 +180,8 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label={mode === 'edit' ? 'New password (optional)' : 'Password'}
-          type="password"
+          label={mode === 'edit' ? 'Mật khẩu mới (tùy chọn)' : 'Mật khẩu'}
+          type={showPassword ? 'text' : 'password'}
           value={form.password}
           onChange={handleChange('password')}
           error={!!errors.password}
@@ -159,22 +189,38 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
             errors.password
               ? undefined
               : mode === 'edit'
-                ? 'Leave blank to keep current password'
+                ? 'Để trống nếu không muốn đổi mật khẩu'
                 : undefined
           }
           fullWidth
           autoComplete="new-password"
-          slotProps={{ inputLabel: inputLabelSlotProps }}
+          slotProps={{
+            inputLabel: inputLabelSlotProps,
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    onClick={() => setShowPassword((v) => !v)}
+                    onMouseDown={(e) => e.preventDefault()}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            },
+          }}
         />
         <TextField
           select
-          label="Organization"
+          label="Tổ chức"
           value={form.organizationId}
           onChange={handleChange('organizationId')}
           fullWidth
           slotProps={{ inputLabel: inputLabelSlotProps }}
         >
-          {ADMIN_ORGANIZATION_OPTIONS.map((org) => (
+          {organizationOptions.map((org) => (
             <MenuItem key={org.id} value={org.id}>
               {org.name}
             </MenuItem>
@@ -183,13 +229,14 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <TextField
             select
-            label="Role"
+            label="Vai trò"
             value={form.role}
             onChange={handleChange('role')}
+            disabled={mode === 'create'}
             fullWidth
             slotProps={{ inputLabel: inputLabelSlotProps }}
           >
-            {USER_ROLES.map((role) => (
+            {(mode === 'create' ? ['ADMIN'] : USER_ROLES).map((role) => (
               <MenuItem key={role} value={role}>
                 {role}
               </MenuItem>
@@ -197,7 +244,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
           </TextField>
           <TextField
             select
-            label="Status"
+            label="Trạng thái"
             value={form.status}
             onChange={handleChange('status')}
             fullWidth
@@ -218,10 +265,10 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit }) => {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} sx={{ textTransform: 'none' }}>
-          Cancel
+          Hủy
         </Button>
         <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          {mode === 'create' ? 'Create' : 'Save'}
+          {mode === 'create' ? 'Tạo' : 'Lưu'}
         </Button>
       </DialogActions>
     </Dialog>

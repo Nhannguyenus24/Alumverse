@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useParams } from 'react-router';
 import {
   AppBar, Toolbar, Box, Typography,
   Button, IconButton, Drawer, List, 
@@ -9,11 +9,11 @@ import {
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
+import MessagesNavDropdown from './MessagesNavDropdown';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
@@ -45,6 +45,7 @@ const NAV_ITEMS = [
       { label: 'Cơ hội việc làm', href: '/development/jobs' },
     ],
   },
+  { label: 'Kết nối', href: '/search' },
   { label: 'Diễn đàn', href: '/forum' },
   { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
@@ -55,6 +56,7 @@ const Header = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const location = useLocation();
+  const { slug: routeSlug } = useParams();
   const { isAuthenticated, user } = useAuth();
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
@@ -64,22 +66,35 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const isHomePage = location.pathname === '/';
+  const normalizedPathname = (() => {
+    if (!routeSlug) return location.pathname;
+    const slugPrefix = `/${routeSlug}`;
+    if (location.pathname === slugPrefix) return '/';
+    if (location.pathname.startsWith(`${slugPrefix}/`)) {
+      return location.pathname.slice(slugPrefix.length) || '/';
+    }
+    return location.pathname;
+  })();
+  const isHomePage = normalizedPathname === '/';
   const isAdmin = user?.role === 'ADMIN';
 
   const isTransparent = isHomePage && !isScrolled;
 
+  const rafRef = useRef(null);
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 150) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      if (rafRef.current) return;
+      rafRef.current = requestAnimationFrame(() => {
+        setIsScrolled(window.scrollY > 150);
+        rafRef.current = null;
+      });
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   const displayName = user?.userName ?? 'User';
@@ -191,9 +206,7 @@ const Header = () => {
               {isAuthenticated ? (
                 <>
                   <Notification headerTextColor={headerTextColor} />
-                  <IconButton size="small" sx={{ color: headerTextColor }}>
-                    <EmailOutlinedIcon fontSize="small" />
-                  </IconButton>
+                  <MessagesNavDropdown headerTextColor={headerTextColor} />
                   <AccountMenu
                     displayName={displayName} displayRole={displayRole}
                     avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin} />
@@ -202,11 +215,13 @@ const Header = () => {
                 <>
                   <Button component={Link} to={toOrgPath('/auth/register')}
                           variant="outlined" size="small"
-                          sx={{ 
-                            fontWeight: 600, 
+                          sx={{
+                            fontWeight: 600,
                             color: isTransparent ? '#FFFFFF' : 'primary.main',
                             borderColor: isTransparent ? '#FFFFFF' : 'primary.main',
-                            '&:hover': { borderColor: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)' }
+                            '&:hover': isTransparent
+                              ? { borderColor: '#FFFFFF', color: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)', }
+                              : { borderColor: 'primary.dark', color: 'primary.main', bgcolor: 'primary.lighter', },
                           }}
                   >
                     Đăng ký

@@ -17,6 +17,8 @@ public class MentorExpertiseResponse {
     private String topic;
     private Integer yearsExperience;
     private String description;
+    private String category;
+    private String tag;
 
     public static MentorExpertiseResponse from(MentorExpertise expertise) {
         return MentorExpertiseResponse.builder()
@@ -25,6 +27,8 @@ public class MentorExpertiseResponse {
                 .topic(expertise.getTopic())
                 .yearsExperience(expertise.getYearsExperience())
                 .description(expertise.getDescription())
+                .category(expertise.getCategory())
+                .tag(expertise.getTag())
                 .build();
     }
 }

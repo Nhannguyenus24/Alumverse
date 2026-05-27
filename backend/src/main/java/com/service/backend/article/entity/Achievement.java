@@ -36,6 +36,9 @@ public class Achievement {
     @Column("awarded_date")
     private LocalDate awardedDate;
 
+    @Column("topic")
+    private String topic;
+
     @Column("status")
     private String status;
 }

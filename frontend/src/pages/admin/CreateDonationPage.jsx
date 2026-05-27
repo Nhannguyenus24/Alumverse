@@ -1,419 +1,438 @@
-import { useState } from 'react';
-
-import { useSnackbar } from 'notistack';
+import { useEffect, useState } from "react";
+import { z } from "zod";
+import dayjs from "dayjs";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { useSnackbar } from "notistack";
 import {
   Box,
-  Container,
-  Typography,
   Button,
-  Paper,
+  Container,
+  FormControl,
+  FormHelperText,
   Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
   TextField,
-} from '@mui/material';
-import Page from '../../components/Page';
-import Input from '../../components/Input';
-import Dropdown from '../../components/Dropdown';
-import WYSIWYG from '../../components/WYSIWYG';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+  Typography,
+} from "@mui/material";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
-const CreateDonationPage = () => {
+import Page from "../../components/Page";
+import CoverUpload from "../../components/CoverUpload";
+
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { fundApi } from "../../api/fundApi";
+import useOrganizationStore from "../../stores/organizationStore";
+
+const createDonationSchema = z
+  .object({
+    fundName: z.string().trim().min(1, "Vui lòng nhập tên quỹ quyên góp"),
+    organizer: z.string().trim().min(1, "Vui lòng nhập người tổ chức"),
+    logoUrl: z
+      .string()
+      .trim()
+      .max(255, "Logo URL tối đa 255 ký tự")
+      .refine((value) => value === "" || z.string().url().safeParse(value).success, "Logo URL không hợp lệ"),
+    statusId: z.coerce.number().int().positive("Vui lòng chọn trạng thái"),
+    fundReceivingInfoId: z.coerce.number().int().positive("Vui lòng chọn tài khoản nhận quỹ"),
+    targetAmount: z.coerce
+      .number({ message: "Mục tiêu quyên góp phải là số" })
+      .positive("Mục tiêu quyên góp phải lớn hơn 0"),
+    descriptionShort: z
+      .string()
+      .trim()
+      .min(1, "Vui lòng nhập mô tả ngắn")
+      .max(120, "Mô tả ngắn tối đa 120 ký tự"),
+    descriptionFull: z.string().trim().min(1, "Vui lòng nhập mô tả"),
+    startDate: z
+      .custom((value) => value === null || dayjs.isDayjs(value), {
+        message: "Vui lòng chọn thời gian bắt đầu",
+      })
+      .refine((value) => value !== null, "Vui lòng chọn thời gian bắt đầu"),
+    endDate: z
+      .custom((value) => value === null || dayjs.isDayjs(value), {
+        message: "Vui lòng chọn thời gian kết thúc",
+      })
+      .refine((value) => value !== null, "Vui lòng chọn thời gian kết thúc"),
+  })
+  .superRefine(({ startDate, endDate }, ctx) => {
+    if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) {
+      return;
+    }
+
+    const nowPlusOneHour = dayjs().add(1, "hour");
+
+    if (startDate.isBefore(nowPlusOneHour)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Thời gian bắt đầu phải từ hiện tại + 1 giờ",
+        path: ["startDate"],
+      });
+    }
+
+    if (endDate.isBefore(startDate.add(1, "hour"))) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 giờ",
+        path: ["endDate"],
+      });
+    }
+  });
+
+const defaultValues = {
+  fundName: "",
+  organizer: "",
+  logoUrl: "",
+  statusId: "",
+  fundReceivingInfoId: "",
+  targetAmount: "",
+  descriptionShort: "",
+  descriptionFull: "",
+  startDate: null,
+  endDate: null,
+};
+
+export default function CreateDonationPage() {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
 
-  // Form state
-  const [formData, setFormData] = useState({
-    donationType: '',
-    postCategory: '',
-    donationFundName: '',
-    organizer: '',
-    status: '',
-    bankName: '',
-    accountNumber: '',
-    branch: '',
-    donationGoal: '',
-    reasonForDonation: '',
-    startDate: '',
-    endDate: '',
-    title: '',
-    content: '',
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [receivingOptions, setReceivingOptions] = useState([]);
+  const [coverPreview, setCoverPreview] = useState(null);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(createDonationSchema),
+    defaultValues,
+    mode: "onSubmit",
   });
 
-  const [errors, setErrors] = useState({});
+  useEffect(() => {
+    let mounted = true;
 
-  // Dropdown options data
-  const donationTypeOptions = [
-    { value: 'medical', label: 'Y tế' },
-    { value: 'education', label: 'Giáo dục' },
-    { value: 'disaster', label: 'Thảm họa' },
-    { value: 'charity', label: 'Từ thiện' },
-    { value: 'other', label: 'Khác' },
-  ];
+    const loadOptions = async () => {
+      try {
+        const [statuses, receivingInfos] = await Promise.all([
+          fundApi.getFundStatuses(),
+          fundApi.getActiveFundReceivingInfos(),
+        ]);
 
-  const postCategoryOptions = [
-    { value: 'campaign', label: 'Chiến dịch quyên góp' },
-    { value: 'news', label: 'Tin tức' },
-    { value: 'update', label: 'Cập nhật' },
-    { value: 'success', label: 'Câu chuyện thành công' },
-  ];
+        if (!mounted) {
+          return;
+        }
 
-  const statusOptions = [
-    { value: 'planning', label: 'Đang lên kế hoạch' },
-    { value: 'ongoing', label: 'Đang diễn ra' },
-    { value: 'completed', label: 'Hoàn thành' },
-    { value: 'closed', label: 'Đóng' },
-  ];
+        setStatusOptions(statuses ?? []);
+        setReceivingOptions(receivingInfos ?? []);
+      } catch (error) {
+        enqueueSnackbar(error?.response?.data?.message || "Không tải được dữ liệu biểu mẫu", {
+          variant: "error",
+        });
+      }
+    };
 
-  // Handle input change
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+    loadOptions();
+
+    return () => {
+      mounted = false;
+    };
+  }, [enqueueSnackbar]);
+
+  const handleCoverUpload = (event) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
     }
+
+    const previewUrl = URL.createObjectURL(file);
+
+    setCoverPreview(previewUrl);
+    setValue("logoUrl", previewUrl);
   };
 
-  // Handle dropdown change
-  const handleDropdownChange = (name) => (event) => {
-    setFormData((prev) => ({ ...prev, [name]: event.target.value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+  const onSubmit = async (values) => {
+    if (!organizationId) {
+      enqueueSnackbar("Không tìm thấy tổ chức để tạo quỹ", { variant: "error" });
+      return;
     }
-  };
 
-  // Handle content editor change
-  const handleContentChange = (value) => {
-    setFormData((prev) => ({ ...prev, content: value }));
-    if (errors.content) {
-      setErrors((prev) => ({ ...prev, content: '' }));
+    try {
+      const payload = {
+        name: values.fundName,
+        managerName: values.organizer,
+        logoUrl: values.logoUrl?.trim() || null,
+        status_id: Number(values.statusId),
+        fundReceivingInfoId: Number(values.fundReceivingInfoId),
+        targetAmount: Number(values.targetAmount),
+        description_short: values.descriptionShort,
+        description_full: values.descriptionFull,
+        organizationId: Number(organizationId),
+        timeStarted: values.startDate ? values.startDate.format("YYYY-MM-DDTHH:mm:ss") : null,
+        timeEnded: values.endDate ? values.endDate.format("YYYY-MM-DDTHH:mm:ss") : null,
+      };
+
+      await fundApi.createFund(payload);
+
+      enqueueSnackbar("Tạo quỹ quyên góp thành công.", { variant: "success" });
+
+      navigate("/donations");
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || "Tạo quỹ thất bại", {
+        variant: "error",
+      });
     }
-  };
-
-  // Validate form
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.donationType) newErrors.donationType = 'Vui lòng chọn loại quyên góp';
-    if (!formData.postCategory) newErrors.postCategory = 'Vui lòng chọn chủ đề bài đăng';
-    if (!formData.donationFundName.trim())
-      newErrors.donationFundName = 'Vui lòng nhập tên quỹ quyên góp';
-    if (!formData.organizer.trim()) newErrors.organizer = 'Vui lòng nhập tên người tổ chức';
-    if (!formData.status) newErrors.status = 'Vui lòng chọn trạng thái';
-    if (!formData.bankName.trim()) newErrors.bankName = 'Vui lòng nhập tên ngân hàng';
-    if (!formData.accountNumber.trim()) newErrors.accountNumber = 'Vui lòng nhập số tài khoản';
-    if (!formData.branch.trim()) newErrors.branch = 'Vui lòng nhập chi nhánh';
-    if (!formData.donationGoal) newErrors.donationGoal = 'Vui lòng nhập mục tiêu quyên góp';
-    if (!formData.reasonForDonation.trim())
-      newErrors.reasonForDonation = 'Vui lòng nhập lý do quyên góp';
-    if (!formData.startDate) newErrors.startDate = 'Vui lòng chọn ngày bắt đầu';
-    if (!formData.endDate) newErrors.endDate = 'Vui lòng chọn ngày kết thúc';
-    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
-      newErrors.dateRange = 'Ngày kết thúc phải sau ngày bắt đầu';
-    }
-    if (!formData.title.trim()) newErrors.title = 'Vui lòng nhập tiêu đề bài đăng';
-    if (!formData.content.trim()) newErrors.content = 'Vui lòng nhập nội dung bài đăng';
-
-    setErrors(newErrors);
-    const keys = Object.keys(newErrors);
-    if (keys.length > 0) {
-      enqueueSnackbar(newErrors[keys[0]], { variant: 'error' });
-    }
-    return keys.length === 0;
-  };
-
-  // Handle submit
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
-      enqueueSnackbar('Dữ liệu biểu mẫu hợp lệ.', { variant: 'success' });
-      // TODO: Submit form data to backend
-      // navigate('/donations');
-    }
-  };
-
-  // Handle cancel
-  const handleCancel = () => {
-    navigate(-1);
   };
 
   return (
-    <Page
-      title="Tạo bài đăng quyên góp"
-      meta={<meta name="description" content="Tạo bài đăng quyên góp" />}
-    >
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: { xs: 3, sm: 4, md: 5 },
-            backgroundColor: '#fff',
-            borderRadius: 2,
-            boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
-          }}
-        >
-          {/* Header Section */}
-          <Typography
-            variant="h4"
-            component="h1"
-            fontWeight={700}
-            textAlign="center"
-            sx={{ mb: 4, color: 'primary.main' }}
+    <Page title="Tạo quỹ quyên góp" meta={<meta name="description" content="Tạo quỹ quyên góp" />}>
+      <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
+        <CoverUpload value={coverPreview} onChange={handleCoverUpload} />
+
+        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 10 }}>
+          <Box
+            sx={{
+              width: { xs: "100%", md: "85%", lg: "75%" },
+              mx: "auto",
+              mt: -10,
+              mb: 6,
+            }}
           >
-            ĐĂNG BÀI
-          </Typography>
-
-          <form onSubmit={handleSubmit}>
-            {/* Filter/Category Selection Section */}
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-              <Grid item xs={12} sm={6}>
-                <Dropdown
-                  label="Loại quyên góp"
-                  placeholder="Chọn loại quyên góp"
-                  options={donationTypeOptions}
-                  value={formData.donationType}
-                  onChange={handleDropdownChange('donationType')}
-                  error={!!errors.donationType}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Dropdown
-                  label="Chủ đề bài đăng"
-                  placeholder="Chọn chủ đề"
-                  options={postCategoryOptions}
-                  value={formData.postCategory}
-                  onChange={handleDropdownChange('postCategory')}
-                  error={!!errors.postCategory}
-                />
-              </Grid>
-            </Grid>
-
-            {/* Donation Information Section */}
-            <Box
+            <Paper
+              elevation={0}
               sx={{
-                backgroundColor: '#e3f2fd',
-                borderRadius: 2,
-                p: { xs: 2, sm: 3, md: 4 },
-                mb: 4,
+                p: { xs: 3, md: 5 },
+                border: "1px solid",
+                borderColor: "divider",
               }}
             >
               <Typography
-                variant="h6"
-                fontWeight={700}
-                sx={{ mb: 3, color: 'primary.main' }}
+                variant="h1"
+                fontWeight={800}
+                color="primary.main"
+                sx={{
+                  fontSize: { xs: "1.8rem", md: "2.3rem" },
+                  textAlign: "center",
+                  mb: 4,
+                }}
               >
-                Thông tin quyên góp
+                TẠO QUỸ QUYÊN GÓP
               </Typography>
 
-              {/* Donation Fund Name */}
-              <Box sx={{ mb: 3 }}>
-                <Input
-                  label="Tên quỹ quyên góp"
-                  placeholder="Nhập tên quỹ quyên góp"
-                  name="donationFundName"
-                  value={formData.donationFundName}
-                  onChange={handleInputChange}
-                  error={!!errors.donationFundName}
-                />
-              </Box>
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+                  <Grid container spacing={2.5}>
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        label="Tên quỹ quyên góp"
+                        placeholder="Nhập tên quỹ quyên góp"
+                        {...register("fundName")}
+                        error={!!errors.fundName}
+                        helperText={errors.fundName?.message}
+                      />
+                    </Grid>
 
-              {/* Organizer & Status */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6}>
-                  <Input
-                    label="Người tổ chức"
-                    placeholder="Nhập tên người tổ chức"
-                    name="organizer"
-                    value={formData.organizer}
-                    onChange={handleInputChange}
-                    error={!!errors.organizer}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Dropdown
-                    label="Trạng thái"
-                    placeholder="Chọn trạng thái"
-                    options={statusOptions}
-                    value={formData.status}
-                    onChange={handleDropdownChange('status')}
-                    error={!!errors.status}
-                  />
-                </Grid>
-              </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Người tổ chức"
+                        placeholder="Nhập tên người tổ chức"
+                        {...register("organizer")}
+                        error={!!errors.organizer}
+                        helperText={errors.organizer?.message}
+                      />
+                    </Grid>
 
-              {/* Bank Information */}
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Input
-                    label="Tên ngân hàng"
-                    placeholder="Nhập tên ngân hàng"
-                    name="bankName"
-                    value={formData.bankName}
-                    onChange={handleInputChange}
-                    error={!!errors.bankName}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6} md={4}>
-                  <Input
-                    label="Số tài khoản"
-                    placeholder="Nhập số tài khoản"
-                    name="accountNumber"
-                    value={formData.accountNumber}
-                    onChange={handleInputChange}
-                    error={!!errors.accountNumber}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={12} md={4}>
-                  <Input
-                    label="Chi nhánh"
-                    placeholder="Nhập chi nhánh ngân hàng"
-                    name="branch"
-                    value={formData.branch}
-                    onChange={handleInputChange}
-                    error={!!errors.branch}
-                  />
-                </Grid>
-              </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <TextField
+                        fullWidth
+                        label="Logo URL"
+                        placeholder="https://example.com/logo.png"
+                        {...register("logoUrl")}
+                        error={!!errors.logoUrl}
+                        helperText={errors.logoUrl?.message}
+                      />
+                    </Grid>
 
-              {/* Donation Goal */}
-              <Box sx={{ mb: 3 }}>
-                <Input
-                  label="Mục tiêu quyên góp (VNĐ)"
-                  placeholder="Nhập mục tiêu quyên góp"
-                  name="donationGoal"
-                  type="number"
-                  value={formData.donationGoal}
-                  onChange={handleInputChange}
-                  error={!!errors.donationGoal}
-                />
-              </Box>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <FormControl fullWidth error={!!errors.statusId}>
+                        <InputLabel id="status-label">Trạng thái</InputLabel>
 
-              {/* Reason for Donation */}
-              <Box sx={{ mb: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Lý do quyên góp"
-                  placeholder="Nhập lý do quyên góp"
-                  name="reasonForDonation"
-                  value={formData.reasonForDonation}
-                  onChange={handleInputChange}
-                  multiline
-                  rows={4}
-                  error={!!errors.reasonForDonation}
-                />
-              </Box>
+                        <Controller
+                          name="statusId"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              onChange={(event) => field.onChange(Number(event.target.value))}
+                              labelId="status-label"
+                              label="Trạng thái"
+                              MenuProps={{ disableScrollLock: true }}
+                            >
+                              {statusOptions.map((option) => (
+                                <MenuItem key={option.id} value={option.id}>
+                                  {option.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          )}
+                        />
 
-              {/* Date Range */}
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Ngày bắt đầu"
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
-                    error={!!errors.startDate}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    label="Ngày kết thúc"
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
-                    error={!!errors.endDate || !!errors.dateRange}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
+                        <FormHelperText>{errors.statusId?.message}</FormHelperText>
+                      </FormControl>
+                    </Grid>
 
-            {/* Content Editor Section */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
+                        <InputLabel id="fund-receiving-info-label">Tài khoản nhận quỹ</InputLabel>
 
-            {/* Title */}
-            <Box sx={{ mb: 3 }}>
-              <Input
-                label="Tiêu đề bài đăng"
-                placeholder="Nhập tiêu đề bài đăng"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                error={!!errors.title}
-              />
-            </Box>
+                        <Controller
+                          name="fundReceivingInfoId"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              onChange={(event) => field.onChange(Number(event.target.value))}
+                              labelId="fund-receiving-info-label"
+                              label="Tài khoản nhận quỹ"
+                              MenuProps={{ disableScrollLock: true }}
+                            >
+                              {receivingOptions.map((option) => (
+                                <MenuItem key={option.id} value={option.id}>
+                                  {`${option.bankName} - ${option.accountName} - ${option.accountNumber}`}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          )}
+                        />
 
-            {/* Content Input */}
-            <Box sx={{ mb: 4 }}>
-              <Typography
-                variant="subtitle2"
-                fontWeight={600}
-                sx={{ mb: 1, color: 'text.primary' }}
-              >
-                Nội dung bài đăng
-              </Typography>
-              <Box
-                sx={{
-                  border: errors.content ? '2px solid' : '1px solid',
-                  borderColor: errors.content ? 'error.main' : '#e0e0e0',
-                  borderRadius: 1,
-                }}
-              >
-                <WYSIWYG
-                  value={formData.content}
-                  onChange={handleContentChange}
-                  placeholder="Nhập nội dung bài đăng..."
-                  height={320}
-                />
-              </Box>
-            </Box>
+                        <FormHelperText>{errors.fundReceivingInfoId?.message}</FormHelperText>
+                      </FormControl>
+                    </Grid>
 
-            {/* Action Buttons */}
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 2,
-                pt: 2,
-              }}
-            >
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleCancel}
-                sx={{
-                  px: 4,
-                  py: 1.2,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                }}
-              >
-                Hủy
-              </Button>
-              <Button
-                variant="contained"
-                color="primary"
-                type="submit"
-                sx={{
-                  px: 4,
-                  py: 1.2,
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  fontSize: '1rem',
-                }}
-              >
-                Đăng
-              </Button>
-            </Box>
-          </form>
-        </Paper>
-      </Container>
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Số tiền mục tiêu để quyên góp (VNĐ)"
+                        placeholder="Nhập số tiền mục tiêu"
+                        {...register("targetAmount")}
+                        error={!!errors.targetAmount}
+                        helperText={errors.targetAmount?.message}
+                      />
+                    </Grid>
+
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        label="Mô tả ngắn (tối đa 120 ký tự)"
+                        placeholder="Nhập mô tả ngắn"
+                        inputProps={{ maxLength: 120 }}
+                        {...register("descriptionShort")}
+                        error={!!errors.descriptionShort}
+                        helperText={errors.descriptionShort?.message}
+                      />
+                    </Grid>
+
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        minRows={6}
+                        label="Mô tả"
+                        placeholder="Nhập mô tả"
+                        {...register("descriptionFull")}
+                        error={!!errors.descriptionFull}
+                        helperText={errors.descriptionFull?.message}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="startDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DateTimePicker
+                            label="Thời gian bắt đầu"
+                            value={field.value}
+                            onChange={field.onChange}
+                            views={["year", "month", "day", "hours", "minutes", "seconds"]}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                error: !!errors.startDate,
+                                helperText: errors.startDate?.message,
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="endDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DateTimePicker
+                            label="Thời gian kết thúc"
+                            value={field.value}
+                            onChange={field.onChange}
+                            views={["year", "month", "day", "hours", "minutes", "seconds"]}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                error: !!errors.endDate,
+                                helperText: errors.endDate?.message,
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 4 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CloseOutlinedIcon />}
+                      onClick={() => navigate("/donations")}
+                      sx={{ textTransform: "none", px: 3 }}
+                    >
+                      Huỷ
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={<PublishOutlinedIcon />}
+                      disabled={isSubmitting}
+                      sx={{ textTransform: "none", px: 3 }}
+                    >
+                      {isSubmitting ? "Đang đăng..." : "Đăng quyên góp"}
+                    </Button>
+                  </Stack>
+                </Box>
+              </LocalizationProvider>
+            </Paper>
+          </Box>
+        </Container>
+      </Box>
     </Page>
   );
-};
-
-export default CreateDonationPage;
+}

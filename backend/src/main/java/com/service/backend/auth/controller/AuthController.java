@@ -51,12 +51,11 @@ public class AuthController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
         return authService.register(request.getEmail(), request.getUserName(), request.getPassword(), request.getFullName(), request.getOrganizationId())
-                .then(Mono.fromCallable(() -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true)));
     }
 
     /**
-     * Login user by email and password
+     * Login user
      * Returns access token in response body and refresh token in HTTP-only cookie
      */
     @PostMapping("/login")
@@ -70,9 +69,7 @@ public class AuthController {
                 .switchIfEmpty(Mono.defer(() ->
                     authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
                 ))
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(error.getMessage(), null))));
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()));
     }
 
     /**
@@ -86,9 +83,7 @@ public class AuthController {
         String loginIp = extractRemoteAddress(exchange);
 
         return authService.loginWithGoogle(request.getIdToken(), request.getOrganizationId(), userAgent, loginIp)
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(error.getMessage(), null))));
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()));
     }
 
     /**
@@ -99,8 +94,7 @@ public class AuthController {
             @Parameter(example = "123")
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
         return authService.activateUser(userId)
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("User activated successfully", true))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("User activated successfully", true)));
     }
 
     /**
@@ -112,8 +106,7 @@ public class AuthController {
             @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
             @Valid @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(userId, request.getOldPassword(), request.getNewPassword())
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Password changed successfully", true)));
     }
 
     /**
@@ -125,6 +118,7 @@ public class AuthController {
         ResponseCookie refreshTokenCookie = ResponseCookie
                 .from("refreshToken", "")
                 .httpOnly(true)
+                .path("/")
                 .maxAge(0)
                 .sameSite("Lax")
                 .build();
@@ -148,9 +142,7 @@ public class AuthController {
                             .build();
 
                     return ResponseEntity.ok(new ApiResponse<>("Access token refreshed successfully", loginResponse));
-                })
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ApiResponse<>(error.getMessage(), null))));
+                });
     }
 
     /**
@@ -160,8 +152,7 @@ public class AuthController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> sendOtp(
             @Valid @RequestBody SendOtpRequest request) {
         return authService.sendOtpVerification(request.getEmail())
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("OTP sent successfully", true))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent successfully", true)));
     }
 
     /**
@@ -171,8 +162,7 @@ public class AuthController {
     public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {
         return authService.verifyOtpAndActivate(request.getEmail(), request.getOtp())
-                .then(Mono.just(ResponseEntity.ok(new ApiResponse<>("OTP verified and account activated successfully", true))))
-                .onErrorResume(error -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse<>(error.getMessage(), false))));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP verified and account activated successfully", true)));
     }
 
     private String extractUserAgent(ServerWebExchange exchange) {
@@ -198,6 +188,37 @@ public class AuthController {
     }
 
     private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId) {
+        if (organizationId == null) {
+            // For admin login without organization, generate token with null orgId
+            String accessToken = jwtUtils.generateAccessToken(
+                    user.getId(),
+                    user.getEmail(),
+                    user.getRole().name(),
+                    user.getUserName(),
+                    user.getAvatarUrl(),
+                    null
+            );
+            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null);
+
+            ResponseCookie refreshTokenCookie = ResponseCookie
+                    .from("refreshToken", refreshToken)
+                    .httpOnly(true)
+                    // .secure(true) // turn on when in https
+                    .path("/")
+                    .maxAge(Duration.ofDays(7))
+                    .sameSite("Lax")
+                    .build();
+
+            LoginResponse loginResponse = LoginResponse.builder()
+                    .accessToken(accessToken)
+                    .needsOrganizationSetup(false)
+                    .build();
+
+            return Mono.just(ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body(new ApiResponse<>("Login successful", loginResponse)));
+        }
+
         return authService.existsOrganizationMembership(user.getId(), organizationId)
                 .map(isMember -> {
                     String accessToken = jwtUtils.generateAccessToken(
@@ -208,12 +229,13 @@ public class AuthController {
                             user.getAvatarUrl(),
                             organizationId
                     );
-                    String refreshToken = jwtUtils.generateRefreshToken(user.getId());
+                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId);
 
                     ResponseCookie refreshTokenCookie = ResponseCookie
                             .from("refreshToken", refreshToken)
                             .httpOnly(true)
                             // .secure(true) // turn on when in https
+                            .path("/")
                             .maxAge(Duration.ofDays(7))
                             .sameSite("Lax")
                             .build();

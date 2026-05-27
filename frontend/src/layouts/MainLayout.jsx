@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useMatches } from "react-router";
+import { Outlet, useLocation, useMatches, useParams } from "react-router";
 import { Box, Toolbar } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -6,14 +6,30 @@ import Footer from "../components/Footer";
 const MainLayout = () => {
   const location = useLocation();
   const matches = useMatches();
-  
+  const { slug } = useParams();
+
   const hideFooter = matches.some((m) => m.handle?.hideFooter);
-  
-  const isHomePage = location.pathname === "/";
+
+  const normalizedPathname = (() => {
+    if (!slug) return location.pathname;
+
+    const slugPrefix = `/${slug}`;
+
+    if (location.pathname === slugPrefix) return "/";
+
+    if (location.pathname.startsWith(`${slugPrefix}/`)) {
+      return location.pathname.slice(slugPrefix.length) || "/";
+    }
+
+    return location.pathname;
+  })();
+
+  const isHomePage = normalizedPathname === "/";
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       <Header />
+
       <Box
         component="main"
         sx={{
@@ -23,11 +39,11 @@ const MainLayout = () => {
           minHeight: 0,
         }}
       >
-        {/* Only render the spacer if we are NOT on the HomePage */}
         {!isHomePage && <Toolbar />}
-        
+
         <Outlet />
       </Box>
+
       {!hideFooter && <Footer />}
     </Box>
   );

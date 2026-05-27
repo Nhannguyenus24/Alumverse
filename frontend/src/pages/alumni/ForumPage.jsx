@@ -121,7 +121,7 @@ const ForumPage = () => {
 
   const handleFilterChange = useCallback(
     (id) => {
-      navigate('.', { replace: true, state: { ...(location.state ?? {}), selectedFilterId: id } });
+      navigate('/forum', { replace: true, state: { ...(location.state ?? {}), selectedFilterId: id } });
     },
     [navigate, location.state]
   );
@@ -221,7 +221,6 @@ const ForumPage = () => {
         disableGutters
         sx={{
           pb: { xs: 4, md: 6 },
-          backgroundColor: '#F3F6FB',
           overflowX: 'hidden',
         }}
       >

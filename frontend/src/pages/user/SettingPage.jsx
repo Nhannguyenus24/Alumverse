@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Autocomplete,
   Box,
   Card,
   Container,
+  Chip,
   TextField,
   Typography,
   Button,
@@ -14,8 +16,12 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Stack
+  Stack,
+  InputAdornment,
+  IconButton,
 } from '@mui/material';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import SecurityIcon from '@mui/icons-material/Security';
 import NotificationsIcon from '@mui/icons-material/Notifications';
@@ -27,6 +33,7 @@ import { userSettingsApi } from '../../api/userSettingsApi';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const MENU_ITEMS = [
   { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
@@ -35,46 +42,83 @@ const MENU_ITEMS = [
   { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
 ];
 
-export default function SettingPage() {
-  const { user } = useAuthStore();
-  const { showSuccess, showError, showWarning } = useNotification();
-  const { organization } = useOrganization();
-  const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
+const parseOrganizationOptions = (value) => {
+  if (!value) {
+    return [];
+  }
 
-  const parseOrganizationOptions = (value) => {
-    if (!value) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
       return [];
     }
 
-    if (Array.isArray(value)) {
-      return value
-        .map((item) => String(item ?? '').trim())
-        .filter(Boolean);
-    }
-
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        return [];
-      }
-
-      try {
-        const parsed = JSON.parse(trimmed);
-        if (Array.isArray(parsed)) {
-          return parsed
-            .map((item) => String(item ?? '').trim())
-            .filter(Boolean);
-        }
-      } catch {
-        return trimmed
-          .split(',')
-          .map((item) => item.trim())
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item ?? '').trim())
           .filter(Boolean);
       }
+    } catch {
+      return trimmed
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+};
+
+const normalizeAcademicList = (value) => {
+  if (value == null) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return [];
     }
 
-    return [];
-  };
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((item) => String(item ?? '').trim())
+          .filter(Boolean);
+      }
+    } catch {
+      return [trimmed];
+    }
+  }
+
+  return [String(value).trim()].filter(Boolean);
+};
+
+const normalizeIntegerList = (value) =>
+  normalizeAcademicList(value)
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item));
+
+export default function SettingPage() {
+  useAuthStore();
+  const { showSuccess, showError, showWarning } = useNotification();
+  const { organization } = useOrganization();
+  const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
 
   const organizationProgramOptions = useMemo(
     () => parseOrganizationOptions(organization?.programs),
@@ -94,11 +138,11 @@ export default function SettingPage() {
     studentId: '',
     email: '',
     faculty: '',
-    program: '',
+    programs: [],
     batch: '',
-    graduationYear: '',
-    specialization: '',
-    graduationStatus: '',
+    graduationYears: [],
+    specializations: [],
+    graduationStatuses: [],
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -114,6 +158,9 @@ export default function SettingPage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loginHistory, setLoginHistory] = useState([]);
 
@@ -143,10 +190,10 @@ export default function SettingPage() {
           phone: profile?.phone ?? '',
           studentId: profile?.userName ?? '',
           email: profile?.email ?? '',
-          program: member?.program ?? '',
-          graduationYear: member?.graduatedYear ?? '',
-          specialization: member?.major ?? '',
-          graduationStatus: (member?.graduationStatus ?? '').toLowerCase(),
+          programs: normalizeAcademicList(member?.program),
+          graduationYears: normalizeIntegerList(member?.graduatedYear).map(String),
+          specializations: normalizeAcademicList(member?.major),
+          graduationStatuses: normalizeAcademicList(member?.graduationStatus),
         }));
 
         setNotificationSettings((prev) => ({
@@ -203,10 +250,13 @@ export default function SettingPage() {
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
-        program: formData.program || null,
-        graduatedYear: formData.graduationYear ? Number(formData.graduationYear) : null,
-        graduationStatus: formData.graduationStatus || null,
-        major: formData.specialization || null,
+        program: formData.programs.length > 0 ? formData.programs : null,
+        graduatedYear:
+          normalizeIntegerList(formData.graduationYears).length > 0
+            ? normalizeIntegerList(formData.graduationYears)
+            : null,
+        graduationStatus: formData.graduationStatuses.length > 0 ? formData.graduationStatuses : null,
+        major: formData.specializations.length > 0 ? formData.specializations : null,
       });
       showSuccess('Cập nhật thông tin cá nhân thành công.');
     } catch (error) {
@@ -267,19 +317,6 @@ export default function SettingPage() {
     return `${browser} - ${os}`;
   };
 
-  const formatLoginAt = (value) => {
-    if (!value) {
-      return 'Không rõ thời gian';
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'Không rõ thời gian';
-    }
-
-    return date.toLocaleString('vi-VN');
-  };
-
 const renderPersonalSettings = () => (
   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
     {/* Avatar Row */}
@@ -325,58 +362,90 @@ const renderPersonalSettings = () => (
       <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin học vấn</Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
         <TextField fullWidth label="Khoa/Bộ môn" name="faculty" value={formData.faculty} InputProps={{ readOnly: true }} />
-        {organizationProgramOptions.length > 0 ? (
-          <FormControl fullWidth>
-            <InputLabel>Chương trình đào tạo</InputLabel>
-            <Select
-              name="program"
-              value={formData.program}
-              label="Chương trình đào tạo"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="">Chọn chương trình</MenuItem>
-              {organizationProgramOptions.map((program) => (
-                <MenuItem key={program} value={program}>
-                  {program}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <TextField fullWidth label="Chương trình đào tạo" name="program" value={formData.program} onChange={handleFormChange} />
-        )}
+        <Autocomplete
+          multiple
+          freeSolo
+          options={organizationProgramOptions}
+          value={formData.programs}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              programs: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Chương trình đào tạo" placeholder="Thêm chương trình" />
+          )}
+        />
 
         <TextField fullWidth label="Khoá" name="batch" value={formData.batch} InputProps={{ readOnly: true }} />
-        <TextField fullWidth label="Năm tốt nghiệp" name="graduationYear" type="number"
-          value={formData.graduationYear} onChange={handleFormChange} />
+        <Autocomplete
+          multiple
+          freeSolo
+          options={[]}
+          value={formData.graduationYears}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              graduationYears: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Năm tốt nghiệp" placeholder="Nhập từng năm" />
+          )}
+        />
 
-        {organizationMajorOptions.length > 0 ? (
-          <FormControl fullWidth>
-            <InputLabel>Chuyên ngành</InputLabel>
-            <Select
-              name="specialization"
-              value={formData.specialization}
-              label="Chuyên ngành"
-              onChange={handleFormChange}
-            >
-              <MenuItem value="">Chọn chuyên ngành</MenuItem>
-              {organizationMajorOptions.map((major) => (
-                <MenuItem key={major} value={major}>
-                  {major}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        ) : (
-          <TextField fullWidth label="Chuyên ngành" name="specialization" value={formData.specialization} onChange={handleFormChange} />
-        )}
-        <FormControl fullWidth>
-          <InputLabel>Trạng thái tốt nghiệp</InputLabel>
-          <Select name="graduationStatus" value={formData.graduationStatus} label="Trạng thái tốt nghiệp" onChange={handleFormChange}>
-            <MenuItem value="graduated">Đã tốt nghiệp</MenuItem>
-            <MenuItem value="studying">Đang học</MenuItem>
-          </Select>
-        </FormControl>
+        <Autocomplete
+          multiple
+          freeSolo
+          options={organizationMajorOptions}
+          value={formData.specializations}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              specializations: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Chuyên ngành" placeholder="Thêm chuyên ngành" />
+          )}
+        />
+
+        <Autocomplete
+          multiple
+          freeSolo
+          options={['graduated', 'studying']}
+          value={formData.graduationStatuses}
+          onChange={(_e, value) =>
+            setFormData((prev) => ({
+              ...prev,
+              graduationStatuses: value.map((item) => String(item ?? '').trim()).filter(Boolean),
+            }))
+          }
+          renderTags={(value, getTagProps) =>
+            value.map((option, index) => (
+              <Chip label={option} {...getTagProps({ index })} key={option} />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField {...params} label="Trạng thái tốt nghiệp" placeholder="Nhập hoặc chọn trạng thái" />
+          )}
+        />
       </Box>
     </Box>
 
@@ -396,9 +465,81 @@ const renderPersonalSettings = () => (
           Đặt lại mật khẩu
         </Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
-          <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label="Mật khẩu hiện tại" type="password" placeholder="Nhập mật khẩu hiện tại" />
-          <TextField fullWidth name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} label="Mật khẩu mới" type="password" placeholder="Nhập mật khẩu mới" />
-          <TextField fullWidth name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} label="Xác nhận mật khẩu" type="password" placeholder="Xác nhận mật khẩu" />
+          <TextField
+            fullWidth
+            name="oldPassword"
+            value={passwordForm.oldPassword}
+            onChange={handlePasswordChange}
+            label="Mật khẩu hiện tại"
+            type={showOldPassword ? 'text' : 'password'}
+            placeholder="Nhập mật khẩu hiện tại"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showOldPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowOldPassword((v) => !v)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showOldPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            fullWidth
+            name="newPassword"
+            value={passwordForm.newPassword}
+            onChange={handlePasswordChange}
+            label="Mật khẩu mới"
+            type={showNewPassword ? 'text' : 'password'}
+            placeholder="Nhập mật khẩu mới"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+          <TextField
+            fullWidth
+            name="confirmPassword"
+            value={passwordForm.confirmPassword}
+            onChange={handlePasswordChange}
+            label="Xác nhận mật khẩu"
+            type={showConfirmPassword ? 'text' : 'password'}
+            placeholder="Xác nhận mật khẩu"
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
         </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="contained" color="primary" onClick={handleChangePassword}>Cập nhật mật khẩu</Button>
@@ -426,7 +567,7 @@ const renderPersonalSettings = () => (
               <Box>
                 <Typography variant="h5">{parseUserAgent(entry?.userAgent)}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Lần cuối: {formatLoginAt(entry?.loginAt)} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
+                  Lần cuối: {formatDateTime(entry?.loginAt, 'Không rõ thời gian')} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
                 </Typography>
               </Box>
               <Button variant="outlined" color="inherit" size="small" disabled>

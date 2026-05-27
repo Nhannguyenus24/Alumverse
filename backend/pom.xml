@@ -119,6 +119,17 @@
 			<artifactId>scrimage-webp</artifactId>
 			<version>4.1.2</version>
 		</dependency>
+		<!-- LangChain4j for Gemini AI -->
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-google-ai-gemini</artifactId>
+			<version>0.35.0</version>
+		</dependency>
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j</artifactId>
+			<version>0.35.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>

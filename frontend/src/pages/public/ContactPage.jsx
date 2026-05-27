@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Box, Container, Typography, Button, Stack, TextField } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
+import { useOrganization } from '../../hooks/useOrganization';
+import { organizationApi } from '../../api/organizationApi';
+import { useNotification } from '../../hooks/useNotification';
 
 const BACKGROUND_IMG = '/home_page/home_page_contact.png';
 
@@ -23,23 +26,67 @@ const SUBJECT_OPTIONS = [
 ];
 
 const ContactPage = () => {
+  const { organization } = useOrganization();
+  const { showError, showSuccess } = useNotification();
   const [form, setForm] = useState({
-    lastName: '',
-    firstName: '',
+    fullName: '',
     email: '',
     phone: '',
     subject: '',
-    title: '',
-    message: '',
+    content: '',
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const canSubmit = useMemo(() => {
+    return (
+      !loading &&
+      form.fullName.trim() &&
+      form.email.trim() &&
+      form.phone.trim() &&
+      form.subject.trim() &&
+      form.content.trim()
+    );
+  }, [form, loading]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Placeholder: would call API to send contact message
+    if (!organization?.id) {
+      showError('Không tìm thấy thông tin trường để gửi góp ý.');
+      return;
+    }
+    if (!canSubmit) {
+      showError('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await organizationApi.createSchoolFeedback(organization.id, {
+        fullName: form.fullName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        content: form.content.trim(),
+      });
+
+      setForm({
+        fullName: '',
+        email: '',
+        phone: '',
+        subject: '',
+        content: '',
+      });
+      showSuccess('Gửi góp ý thành công. Cảm ơn bạn đã liên hệ.');
+    } catch (error) {
+      const message = error?.response?.data?.message ?? 'Không thể gửi góp ý lúc này. Vui lòng thử lại sau.';
+      showError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -56,8 +103,9 @@ const ContactPage = () => {
         <Box
           sx={{
             position: 'relative',
-            height: { xs: 'auto', md: '85vh' },
-            minHeight: { xs: 640, md: 560 },
+            py: { xs: 8, md: 12 },
+            px: { xs: 2, sm: 3 },
+            overflow: 'hidden',
           }}
         >
           {/* Background image */}
@@ -67,6 +115,7 @@ const ContactPage = () => {
               inset: 0,
               backgroundImage: `url(${BACKGROUND_IMG})`,
               backgroundSize: 'cover',
+              backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat',
             }}
           />
@@ -74,14 +123,10 @@ const ContactPage = () => {
           {/* White card overlapping background */}
           <Box
             sx={{
-              position: 'absolute',
-              top: { xs: '16%', sm: '20%', md: '24%' },
-              left: 0,
-              right: 0,
+              position: 'relative',
+              zIndex: 1,
               display: 'flex',
               justifyContent: 'center',
-              px: { xs: 2, sm: 3 },
-              pointerEvents: 'auto',
             }}
           >
             <Box
@@ -94,17 +139,16 @@ const ContactPage = () => {
                 borderRadius: 1,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)',
                 overflow: 'hidden',
-                py: { xs: 3, md: 4 },
-                px: { xs: 2.5, md: 4 },
+                py: { xs: 5, md: 6 },
+                px: { xs: 5, md: 6 },
               }}
             >
               <Typography
                 variant="h1"
-                component="h2"
-                fontWeight={700}
+                fontWeight={800}
                 color="primary.main"
                 textAlign="center"
-                sx={{ mb: 3, fontSize: { xs: '1.75rem', md: '2rem' } }}
+                sx={{ mb: 5, fontSize: { xs: '1.8rem', md: '2.3rem' } }}
               >
                 LIÊN HỆ
               </Typography>
@@ -157,25 +201,10 @@ const ContactPage = () => {
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight={700} color="text.primary">
-                    Thông tin cá nhân
+                    Thông tin người gửi
                   </Typography>
-                  <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, width: '100%', flexWrap: 'wrap' }}>
-                    <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
-                      <Input
-                        label=""
-                        placeholder="Họ"
-                        value={form.lastName}
-                        onChange={handleChange('lastName')}
-                      />
-                    </Box>
-                    <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
-                      <Input
-                        label=""
-                        placeholder="Tên"
-                        value={form.firstName}
-                        onChange={handleChange('firstName')}
-                      />
-                    </Box>
+                  <Box sx={{ width: '100%' }}>
+                    <Input label="" placeholder="Họ và tên" value={form.fullName} onChange={handleChange('fullName')} />
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, width: '100%', flexWrap: 'wrap' }}>
                     <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
@@ -210,28 +239,27 @@ const ContactPage = () => {
                     />
                   </Box>
                   <Box sx={{ width: '100%' }}>
-                    <Input
-                      label=""
-                      placeholder="Tiêu đề"
-                      value={form.title}
-                      onChange={handleChange('title')}
-                    />
-                  </Box>
-                  <Box sx={{ width: '100%' }}>
                     <TextField
-                      placeholder="Viết nội dung..."
+                      placeholder="Viết nội dung góp ý..."
                       multiline
                       rows={4}
-                      value={form.message}
-                      onChange={handleChange('message')}
+                      value={form.content}
+                      onChange={handleChange('content')}
                       fullWidth
                       variant="outlined"
                       sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'grey.50' } }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.5 }}>
-                    <Button type="submit" variant="contained" color="primary" size="large" sx={{ fontWeight: 600, px: 4 }}>
-                      Gửi tin nhắn
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      disabled={!canSubmit}
+                      sx={{ fontWeight: 600, px: 4 }}
+                    >
+                      {loading ? 'Đang gửi...' : 'Gửi góp ý'}
                     </Button>
                   </Box>
                 </Box>
@@ -239,9 +267,6 @@ const ContactPage = () => {
             </Box>
           </Box>
         </Box>
-
-        {/* Spacer so content is not cut off when scrolling */}
-        <Box sx={{ minHeight: { xs: 640, sm: 480, md: 280 } }} />
       </Container>
     </Page>
   );

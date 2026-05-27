@@ -14,7 +14,7 @@ const SignupCodePage = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
-  const { verifySignupCode, forgotPassword, isLoading: loading, setError } = useAuth();
+  const { verifySignupCode, forgotPassword, isSubmitting: loading, setError } = useAuth();
   const emailFromState = location.state?.email ?? '';
   const [countdown, setCountdown] = useState(60);
   const [otpDigits, setOtpDigits] = useState(Array(6).fill(''));
@@ -32,7 +32,6 @@ const SignupCodePage = () => {
     handleSubmit,
     getValues,
     setValue,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(verifyOtpSchema),
     defaultValues: { email: emailFromState, otp: '' },

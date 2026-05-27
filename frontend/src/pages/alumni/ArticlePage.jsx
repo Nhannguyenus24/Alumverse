@@ -6,6 +6,8 @@ import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
+import { formatDate, formatDateRange } from "../../utils/dateFormatter";
+import { formatNumberVi } from "../../utils/numberFormatter";
 
 const ArticleHighlightCard = ({ data, channel }) => {
   const [isInterested, setIsInterested] = useState(false);
@@ -138,14 +140,6 @@ const ArticlePage = () => {
 
   const resolvedChannel = article.channel;
 
-  const formatDateRange = (start, end) => {
-    if (!start) return "";
-    const s = new Date(start).toLocaleDateString("vi-VN");
-    if (!end) return s;
-    const e = new Date(end).toLocaleDateString("vi-VN");
-    return `${s} - ${e}`;
-  };
-
   const highlightData =
     resolvedChannel === "event"
       ? {
@@ -169,7 +163,7 @@ const ArticlePage = () => {
             {
               value:
                 article.targetAmount != null
-                  ? `${Number(article.targetAmount).toLocaleString("vi-VN")} VNĐ`
+                  ? `${formatNumberVi(article.targetAmount)} VNĐ`
                   : "0 VNĐ",
               label: "mục tiêu",
             },
@@ -272,7 +266,7 @@ const ArticlePage = () => {
                     mb: 4,
                   }}
                 >
-                  {new Date(article.publishedAt).toLocaleDateString("vi-VN")}
+                  {formatDate(article.publishedAt)}
                 </Typography>
               )}
 

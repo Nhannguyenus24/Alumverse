@@ -1,4 +1,4 @@
-export default function Paper(theme) {
+export default function Paper() {
 	return {
 		MuiPaper: {
 			styleOverrides: {

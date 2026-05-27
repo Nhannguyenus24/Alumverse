@@ -17,7 +17,7 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Find forum posts by topic id with pagination
      */
-    @Query("SELECT * FROM forum_posts WHERE topic_id = :topicId AND is_banned = false ORDER BY created_at ASC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_posts WHERE topic_id = :topicId AND is_banned = false AND is_hidden = false ORDER BY created_at ASC LIMIT :limit OFFSET :offset")
     Flux<ForumPost> findByTopicIdWithPagination(
             @Param("topicId") Integer topicId,
             @Param("limit") int limit,
@@ -43,28 +43,13 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Count posts by topic id (excluding banned)
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false")
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false AND is_hidden = false")
     Mono<Long> countByTopicId(@Param("topicId") Integer topicId);
 
     /**
      * Count total posts by topic id (including banned)
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId")
-    Mono<Long> countAllByTopicId(@Param("topicId") Integer topicId);
-
-    /**
-     * Update post content
-     */
-    @Modifying
-    @Query("UPDATE forum_posts SET content = :content, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
-    Mono<Integer> updatePostContent(@Param("id") Integer id, @Param("content") String content);
-
-    /**
-     * Set answer to another post
-     */
-    @Modifying
-    @Query("UPDATE forum_posts SET answer_to_post_id = :answerToPostId, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
-    Mono<Integer> setAnswerToPost(@Param("id") Integer id, @Param("answerToPostId") Integer answerToPostId);
+    Mono<Long> countAllByTopicId(Integer topicId);
 
     /**
      * Find forum posts created yesterday
@@ -97,10 +82,18 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     );
 
     /**
+     * Find all forum posts with pagination (admin moderation list).
+     */
+    @Query("SELECT * FROM forum_posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findAllPostsWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
      * Count all banned forum posts
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE is_banned = true")
-    Mono<Long> countBannedPosts();
+    Mono<Long> countByIsBannedTrue();
 
     // ========== STATISTICS QUERIES ==========
 
@@ -119,8 +112,7 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Count posts for a specific topic
      */
-    @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false")
-    Mono<Long> countActivePostsByTopicId(@Param("topicId") Integer topicId);
+    Mono<Long> countByTopicIdAndIsBannedFalse(Integer topicId);
 
     /**
      * Count posts belonging to topics under a specific category

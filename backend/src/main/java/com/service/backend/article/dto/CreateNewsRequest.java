@@ -29,4 +29,6 @@ public class CreateNewsRequest {
 
     /** Optional base64-encoded image (data URL or raw). When present, backend uploads and stores the resulting URL. */
     private String thumbnailBase64;
+
+    private String topic;
 }

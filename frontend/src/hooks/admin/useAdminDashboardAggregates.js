@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const MS_DAY = 24 * 60 * 60 * 1000;
 
@@ -28,8 +28,9 @@ const normalizeCreatedAt = (user, fallbackTs) => {
 };
 
 const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
+  const [now] = useState(() => Date.now());
+
   return useMemo(() => {
-    const now = Date.now();
     const weekAgo = now - 7 * MS_DAY;
     const monthAgo = now - 30 * MS_DAY;
 
@@ -128,7 +129,7 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
     let activeOrganizations = 0;
     let inactiveOrganizations = 0;
     orgs.forEach((o) => {
-      if (String(o.status || '').toUpperCase() === 'ACTIVE') {
+      if (String(o.status || 'ACTIVE').toUpperCase() === 'ACTIVE') {
         activeOrganizations += 1;
       } else {
         inactiveOrganizations += 1;
@@ -140,7 +141,7 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
       .slice(0, 5);
 
     const activeOrganizationsList = orgs
-      .filter((o) => String(o.status || '').toUpperCase() === 'ACTIVE')
+      .filter((o) => String(o.status || 'ACTIVE').toUpperCase() === 'ACTIVE')
       .slice(0, 6);
 
     return {
@@ -172,7 +173,7 @@ const useAdminDashboardAggregates = (allUsers, allPosts, organizations) => {
         activeOrganizationsList,
       },
     };
-  }, [allUsers, allPosts, organizations]);
+  }, [allUsers, allPosts, organizations, now]);
 };
 
 export default useAdminDashboardAggregates;

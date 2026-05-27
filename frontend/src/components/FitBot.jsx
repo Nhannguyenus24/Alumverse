@@ -124,7 +124,9 @@ const AvatarWrapper = styled(Box)(({ theme }) => ({
   gap: theme.spacing(1),
 }));
 
-const AnimatedAvatar = styled(Avatar)(({ theme, isAnimating }) => ({
+const AnimatedAvatar = styled(Avatar, {
+  shouldForwardProp: (prop) => prop !== 'isAnimating',
+})(({ isAnimating, theme }) => ({
   width: 60,
   height: 60,
   backgroundColor: theme.palette.primary.main,
@@ -204,13 +206,17 @@ const MessageContainer = styled(Box)(({ theme }) => ({
   },
 }));
 
-const Message = styled(Box)(({ theme, isBot }) => ({
+const Message = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isBot',
+})(({ isBot }) => ({
   display: 'flex',
   justifyContent: isBot ? 'flex-start' : 'flex-end',
   animation: `${slideUp} 0.3s ease-out`,
 }));
 
-const MessageBubble = styled(Box)(({ theme, isBot }) => ({
+const MessageBubble = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'isBot',
+})(({ theme, isBot }) => ({
   maxWidth: '80%',
   padding: theme.spacing(1.2, 1.6),
   borderRadius: theme.spacing(2),
@@ -315,12 +321,12 @@ const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
 
 export default function FitBot() {
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const isAnimating = !isChatOpen;
   const [messages, setMessages] = useState(() => loadMessagesFromStorage());
   const [inputValue, setInputValue] = useState('');
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(true);
   const messageEndRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
   const suggestionHideTimeoutRef = useRef(null);
@@ -380,11 +386,6 @@ export default function FitBot() {
         clearTimeout(suggestionHideTimeoutRef.current);
       };
     }
-  }, [isChatOpen]);
-
-  // Stop animation when chat opens
-  useEffect(() => {
-    setIsAnimating(!isChatOpen);
   }, [isChatOpen]);
 
   const handleSuggestionClick = (suggestion) => {
@@ -516,7 +517,11 @@ export default function FitBot() {
               justifyContent: 'center',
             }}
           >
-            🤖
+            <img
+              src="/fitbot/FITBOT.svg"
+              alt="FitBot"
+              style={{ width: 36, height: 36 }}
+            />
           </AnimatedAvatar>
         </Tooltip>
 
@@ -535,8 +540,16 @@ export default function FitBot() {
         <ChatWindow>
           {/* Header */}
           <ChatHeader>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              🤖 HCMUS Assistant
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
+              <img
+                src="/fitbot/FITBOT.svg"
+                alt="FitBot"
+                style={{ width: 36, height: 36 }}
+              />
+              HCMUS Assistant
             </Typography>
             <Button
               size="small"

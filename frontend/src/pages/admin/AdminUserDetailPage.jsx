@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Avatar,
@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemText,
   Paper,
+  Skeleton,
   Stack,
   Tab,
   Table,
@@ -34,66 +35,42 @@ import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-';
-  }
-  try {
-    return new Date(value).toLocaleString('vi-VN');
-  } catch {
-    return String(value);
-  }
-};
-
-const demoProfile = (user) => ({
-  phone: user?.phone || '0901 234 567',
-  dob: user?.dob || '1998-05-15',
-  gender: user?.gender || 'MALE',
-  bio: user?.bio || 'Alumni demo profile — connect to API for real data.',
-});
-
-const demoAcademic = () => [
-  {
-    studentCode: 'N1900001',
-    degreeType: 'BACHELOR',
-    className: 'K19',
-    startYear: 2019,
-    graduatedYear: 2023,
-  },
-];
-
-const demoMemberships = (user) => [
-  {
-    organizationName: user?.organizationName || '-',
-    verificationLevel: 2,
-    status: user?.membershipStatus || 'active',
-    createdAt: user?.createdAt,
-  },
-];
-
-const demoActivity = () => ({
-  postsCreated: 12,
-  comments: 48,
-  eventsAttended: 3,
-  pageViewsSample: 120,
-});
+import { useAuth } from '../../hooks/useAuth';
+import { getLoginHistoryByUser } from '../../api/adminAuditApi';
+import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUserDetailPage = () => {
   const { userId } = useParams();
-  const navigate = useOrgNavigate();
+  const navigate = useNavigate();
+  const slugMatchWildcard = useMatch('/:slug/admin/*');
+  const slugMatchExact = useMatch('/:slug/admin');
+  const slugMatch = slugMatchWildcard ?? slugMatchExact;
+  const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
   const { enqueueSnackbar } = useSnackbar();
+  const { user: currentUser } = useAuth();
   const { auditLogs } = useAdminSystemContext();
+  const { setBreadcrumbs } = useOutletContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
-
   const user = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);
+
+  useEffect(() => {
+    if (user) {
+      setBreadcrumbs?.([
+        { label: 'Người dùng', path: `${adminBase}/users` },
+        { label: user.fullName || `@${user.userName}` || `ID: ${user.id}`, active: true },
+      ]);
+    }
+  }, [setBreadcrumbs, user, adminBase]);
 
   const [tab, setTab] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [banOpen, setBanOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
 
+  // Fallback: filter global audit logs from context
   const auditTrail = useMemo(
     () =>
       auditLogs.filter(
@@ -103,16 +80,109 @@ const AdminUserDetailPage = () => {
     [auditLogs, userId],
   );
 
-  const profile = user ? demoProfile(user) : {};
-  const academic = user ? demoAcademic() : [];
-  const memberships = user ? demoMemberships(user) : [];
-  const activity = user ? demoActivity() : null;
+  // Per-user login history fetched lazily when tab 5 is opened
+  const [userLoginHistory, setUserLoginHistory] = useState(null);
+  const [userAdminActions, setUserAdminActions] = useState([]);
+  const [userVerificationLogs, setUserVerificationLogs] = useState([]);
+  const [userActivitySummary, setUserActivitySummary] = useState(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+
+  const fetchUserLoginHistory = useCallback(() => {
+    if (userLoginHistory !== null || !userId) return;
+    setAuditLoading(true);
+    getUserActivity(userId)
+      .then((res) => {
+        const data = res?.data?.data || {};
+        const logins = Array.isArray(data.loginHistories) ? data.loginHistories : [];
+        const verifications = Array.isArray(data.verificationRequests) ? data.verificationRequests : [];
+        const actions = Array.isArray(data.adminActions) ? data.adminActions : [];
+
+        setUserLoginHistory(
+          logins.map((entry) => ({
+            id: entry.id,
+            timestamp: entry.loginAt,
+            action: entry.loginMethod ?? 'ĐĂNG NHẬP',
+            status: 'SUCCESS',
+            description: `Đăng nhập qua ${entry.loginMethod ?? 'mật khẩu'} từ ${entry.loginIp ?? 'không xác định'}`,
+            ipAddress: entry.loginIp,
+            userAgent: entry.userAgent,
+          })),
+        );
+        setUserVerificationLogs(verifications);
+        setUserAdminActions(actions);
+        setUserActivitySummary(data?.summary || null);
+      })
+      .catch(() => {
+        getLoginHistoryByUser(userId, 0, 50)
+          .then((res) => {
+            const items = res?.data?.data?.items ?? [];
+            setUserLoginHistory(
+              items.map((entry) => ({
+                id: entry.id,
+                timestamp: entry.loginAt,
+                action: entry.loginMethod ?? 'ĐĂNG NHẬP',
+                status: 'SUCCESS',
+                description: `Đăng nhập qua ${entry.loginMethod ?? 'mật khẩu'} từ ${entry.loginIp ?? 'không xác định'}`,
+                ipAddress: entry.loginIp,
+                userAgent: entry.userAgent,
+              })),
+            );
+          })
+          .catch(() => setUserLoginHistory(auditTrail));
+      })
+      .finally(() => setAuditLoading(false));
+  }, [userId, userLoginHistory, auditTrail]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (tab === 5) fetchUserLoginHistory();
+  }, [tab, fetchUserLoginHistory]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const profile = user
+    ? {
+        phone: user?.phone || '-',
+        dob: user?.dob || '-',
+        gender: user?.gender || '-',
+        bio: user?.bio || '-',
+      }
+    : {};
+  const academic = Array.isArray(user?.academicRecords) ? user.academicRecords : [];
+  const memberships = user ? [{
+    organizationName: user?.organizationName || '-',
+    verificationLevel: user?.verificationLevel ?? '-',
+    status: user?.membershipStatus || '-',
+    createdAt: user?.createdAt,
+  }] : [];
+  const activity = userActivitySummary || {
+    postsCreated: user?.postsCreated ?? '-',
+    comments: user?.commentsCount ?? '-',
+    eventsAttended: user?.eventsAttended ?? '-',
+    pageViewsSample: user?.pageViews ?? '-',
+  };
 
   if (!user) {
     return (
-      <AdminSectionPanel title="User not found" subtitle="This id is not in the current list (demo data).">
-        <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate('/admin/users')} sx={{ textTransform: 'none' }}>
-          Back to users
+      <AdminSectionPanel title="Không tìm thấy người dùng" subtitle="ID này không có trong danh sách hiện tại.">
+        <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
+          Quay lại danh sách
         </Button>
       </AdminSectionPanel>
     );
@@ -122,13 +192,13 @@ const AdminUserDetailPage = () => {
     <>
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title="Back">
-            <IconButton onClick={() => navigate('/admin/users')} color="primary">
+          <Tooltip title="Quay lại">
+            <IconButton onClick={() => navigate(`${adminBase}/users`)} color="primary">
               <ArrowBackOutlinedIcon />
             </IconButton>
           </Tooltip>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            User #{user.id}
+            Người dùng #{user.id}
           </Typography>
         </Box>
 
@@ -149,12 +219,12 @@ const AdminUserDetailPage = () => {
                 <AdminStatusChip status={user.status} category="account" />
               </Box>
               <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                Created: {formatDate(user.createdAt)} · Updated: {formatDate(user.updatedAt)}
+                Ngày tạo: {formatDateTime(user.createdAt)} · Cập nhật: {formatDateTime(user.updatedAt)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
               <Button variant="outlined" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
-                Edit info
+                Sửa thông tin
               </Button>
               {user.status === 'BANNED' ? (
                 <Button
@@ -162,9 +232,12 @@ const AdminUserDetailPage = () => {
                   color="success"
                   size="small"
                   startIcon={<LockOpenOutlinedIcon />}
-                  onClick={() => {
-                    unbanUser(user.id);
-                    enqueueSnackbar('User unbanned.', { variant: 'success' });
+                  onClick={async () => {
+                    try {
+                      await unbanUser(user.id);
+                    } catch {
+                      /* snackbar in hook */
+                    }
                   }}
                   sx={{ textTransform: 'none' }}
                 >
@@ -182,11 +255,35 @@ const AdminUserDetailPage = () => {
                   Ban
                 </Button>
               )}
-              <Button variant="outlined" size="small" disabled sx={{ textTransform: 'none' }}>
-                Reset password
+              <Button
+                variant="outlined"
+                size="small"
+                sx={{ textTransform: 'none' }}
+                onClick={async () => {
+                  const nextPassword = window.prompt('Nhập mật khẩu tạm thời mới (tối thiểu 8 ký tự):', '');
+                  if (!nextPassword) return;
+                  if (nextPassword.length < 8) {
+                    enqueueSnackbar('Mật khẩu phải có ít nhất 8 ký tự.', { variant: 'warning' });
+                    return;
+                  }
+                  try {
+                    await resetPasswordByAdmin(user.id, {
+                      newPassword: nextPassword,
+                      adminUserId: Number(currentUser?.id),
+                      reason: 'Hỗ trợ đặt lại mật khẩu từ trang chi tiết quản trị',
+                    });
+                    enqueueSnackbar('Đặt lại mật khẩu thành công.', { variant: 'success' });
+                  } catch (error) {
+                    enqueueSnackbar(error?.response?.data?.message || 'Lỗi khi đặt lại mật khẩu.', {
+                      variant: 'error',
+                    });
+                  }
+                }}
+              >
+                Đặt lại mật khẩu
               </Button>
               <Button variant="outlined" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
-                Delete account
+                Xóa tài khoản
               </Button>
             </Box>
           </Box>
@@ -194,31 +291,31 @@ const AdminUserDetailPage = () => {
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
-            <Tab label="General" sx={{ textTransform: 'none' }} />
-            <Tab label="Academic records" sx={{ textTransform: 'none' }} />
-            <Tab label="Memberships" sx={{ textTransform: 'none' }} />
-            <Tab label="Activity" sx={{ textTransform: 'none' }} />
-            <Tab label="Moderation" sx={{ textTransform: 'none' }} />
-            <Tab label="Actions / Audit" sx={{ textTransform: 'none' }} />
+            <Tab label="Thông tin chung" sx={{ textTransform: 'none' }} />
+            <Tab label="Học vấn" sx={{ textTransform: 'none' }} />
+            <Tab label="Thành viên" sx={{ textTransform: 'none' }} />
+            <Tab label="Hoạt động" sx={{ textTransform: 'none' }} />
+            <Tab label="Kiểm duyệt" sx={{ textTransform: 'none' }} />
+            <Tab label="Hành động / Nhật ký" sx={{ textTransform: 'none' }} />
           </Tabs>
           <Divider />
           <Box sx={{ p: 2 }}>
             {tab === 0 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>Full name:</strong> {user.fullName || '-'}
+                  <strong>Họ tên:</strong> {user.fullName || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Phone:</strong> {profile.phone}
+                  <strong>Số điện thoại:</strong> {profile.phone}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Date of birth:</strong> {profile.dob}
+                  <strong>Ngày sinh:</strong> {profile.dob}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Gender:</strong> {profile.gender}
+                  <strong>Giới tính:</strong> {profile.gender}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Bio:</strong> {profile.bio}
+                  <strong>Tiểu sử:</strong> {profile.bio}
                 </Typography>
               </Stack>
             ) : null}
@@ -226,23 +323,30 @@ const AdminUserDetailPage = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Student code</TableCell>
-                    <TableCell>Degree</TableCell>
-                    <TableCell>Class</TableCell>
-                    <TableCell>Start</TableCell>
-                    <TableCell>Graduated</TableCell>
+                    <TableCell>MSSV</TableCell>
+                    <TableCell>Bằng cấp</TableCell>
+                    <TableCell>Lớp</TableCell>
+                    <TableCell>Bắt đầu</TableCell>
+                    <TableCell>Tốt nghiệp</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {academic.map((row) => (
-                    <TableRow key={row.studentCode}>
-                      <TableCell>{row.studentCode}</TableCell>
-                      <TableCell>{row.degreeType}</TableCell>
-                      <TableCell>{row.className}</TableCell>
-                      <TableCell>{row.startYear}</TableCell>
-                      <TableCell>{row.graduatedYear}</TableCell>
+                  {academic.map((row, idx) => (
+                    <TableRow key={`${row.studentCode || row.id || `row-${idx}`}`}>
+                      <TableCell>{row.studentCode || '-'}</TableCell>
+                      <TableCell>{row.degreeType || '-'}</TableCell>
+                      <TableCell>{row.className || '-'}</TableCell>
+                      <TableCell>{row.startYear || '-'}</TableCell>
+                      <TableCell>{row.graduatedYear || '-'}</TableCell>
                     </TableRow>
                   ))}
+                  {academic.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5}>
+                        <Typography variant="body2" color="text.secondary">Chưa có thông tin học vấn từ API.</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : null}
                 </TableBody>
               </Table>
             ) : null}
@@ -252,7 +356,7 @@ const AdminUserDetailPage = () => {
                   <ListItem key={m.organizationName} disablePadding sx={{ py: 0.5 }}>
                     <ListItemText
                       primary={m.organizationName}
-                      secondary={`Verification: ${m.verificationLevel} · Status: ${m.status}`}
+                      secondary={`Xác thực: ${m.verificationLevel} · Trạng thái: ${m.status}`}
                     />
                   </ListItem>
                 ))}
@@ -260,40 +364,40 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 3 ? (
               <Stack spacing={0.5}>
-                <Typography variant="body2">Posts created: {activity?.postsCreated}</Typography>
-                <Typography variant="body2">Comments: {activity?.comments}</Typography>
-                <Typography variant="body2">Events attended: {activity?.eventsAttended}</Typography>
-                <Typography variant="body2">Page views (sample): {activity?.pageViewsSample}</Typography>
+                <Typography variant="body2">Bài viết đã tạo: {activity?.postsCreated ?? '-'}</Typography>
+                <Typography variant="body2">Bình luận: {activity?.comments ?? '-'}</Typography>
+                <Typography variant="body2">Sự kiện đã tham gia: {activity?.eventsAttended ?? '-'}</Typography>
+                <Typography variant="body2">Lượt xem trang: {activity?.pageViewsSample ?? '-'}</Typography>
               </Stack>
             ) : null}
             {tab === 4 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>Account status:</strong> {formatAccountStatusLabel(user.status)}
+                  <strong>Trạng thái tài khoản:</strong> {formatAccountStatusLabel(user.status)}
                 </Typography>
                 {user.banReason ? (
                   <Typography variant="body2">
-                    <strong>Ban reason:</strong> {user.banReason}
+                    <strong>Lý do chặn:</strong> {user.banReason}
                   </Typography>
                 ) : null}
                 {user.bannedUntil ? (
                   <Typography variant="body2">
-                    <strong>Banned until:</strong> {formatDate(user.bannedUntil)}
+                    <strong>Bị chặn đến:</strong> {formatDateTime(user.bannedUntil)}
                   </Typography>
                 ) : user.status === 'BANNED' ? (
                   <Typography variant="body2">
-                    <strong>Banned until:</strong> Permanent
+                    <strong>Bị chặn đến:</strong> Vĩnh viễn
                   </Typography>
                 ) : null}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 1 }}>
-                  Ban history
+                  Lịch sử chặn
                 </Typography>
                 {(user.banHistory && user.banHistory.length > 0
                   ? user.banHistory
                   : [{ at: user.updatedAt, reason: user.banReason || '—' }]
                 ).map((entry, idx) => (
                   <Typography key={`${entry.at}-${idx}`} variant="caption" display="block" color="text.secondary">
-                    {formatDate(entry.at)} — {entry.reason}
+                    {formatDateTime(entry.at)} — {entry.reason}
                   </Typography>
                 ))}
               </Stack>
@@ -301,47 +405,101 @@ const AdminUserDetailPage = () => {
             {tab === 5 ? (
               <Stack spacing={2}>
                 <Typography variant="body2" color="text.secondary">
-                  View consolidated audit entries where the entity is this user account.
+                  Lịch sử đăng nhập cho tài khoản này được lấy từ dịch vụ nhật ký.
                 </Typography>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Time</TableCell>
-                      <TableCell>Action</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Description</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {auditTrail.length === 0 ? (
+                {auditLoading ? (
+                  <Stack spacing={1}>
+                    <Skeleton variant="rounded" height={36} />
+                    <Skeleton variant="rounded" height={36} />
+                    <Skeleton variant="rounded" height={36} />
+                  </Stack>
+                ) : (
+                  <Table size="small">
+                    <TableHead>
                       <TableRow>
-                        <TableCell colSpan={4}>
-                          <Typography variant="body2" color="text.secondary">
-                            No audit entries for this user in the current log set.
-                          </Typography>
-                        </TableCell>
+                        <TableCell>Thời gian</TableCell>
+                        <TableCell>Hành động</TableCell>
+                        <TableCell>Kết quả</TableCell>
+                        <TableCell>Mô tả</TableCell>
                       </TableRow>
-                    ) : (
-                      auditTrail.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatDate(log.timestamp)}</TableCell>
-                          <TableCell>{log.action}</TableCell>
-                          <TableCell>
-                            <AdminStatusChip status={log.status} category="audit" />
+                    </TableHead>
+                    <TableBody>
+                      {(userLoginHistory ?? auditTrail).length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4}>
+                            <Typography variant="body2" color="text.secondary">
+                              Không tìm thấy lịch sử đăng nhập cho người dùng này.
+                            </Typography>
                           </TableCell>
-                          <TableCell>{log.description || '-'}</TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        (userLoginHistory ?? auditTrail).map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>{formatDateTime(log.timestamp)}</TableCell>
+                            <TableCell>{log.action}</TableCell>
+                            <TableCell>
+                              <AdminStatusChip status={log.status} category="audit" />
+                            </TableCell>
+                            <TableCell>{log.description || '-'}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
                 <Button
                   variant="text"
-                  onClick={() => navigate('/admin/audit-logs')}
+                  onClick={() => navigate(`${adminBase}/audit-logs`)}
                   sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
                 >
-                  Open full audit log page
+                  Mở trang nhật ký đầy đủ
                 </Button>
+                {userVerificationLogs.length > 0 ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Yêu cầu xác thực
+                    </Typography>
+                    <List dense>
+                      {userVerificationLogs.map((item, idx) => (
+                        <ListItem key={`${item.id || idx}`} disablePadding sx={{ py: 0.5 }}>
+                          <ListItemText
+                            primary={`#${item.id || '-'} · ${item.status || 'không xác định'}`}
+                            secondary={`Loại: ${item.documentType || '-'} · Ngày tạo: ${formatDateTime(item.createdAt)}`}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  </>
+                ) : null}
+                {userAdminActions.length > 0 ? (
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      Hành động quản trị
+                    </Typography>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Thời gian</TableCell>
+                          <TableCell>Hành động</TableCell>
+                          <TableCell>Đối tượng</TableCell>
+                          <TableCell>Trước</TableCell>
+                          <TableCell>Sau</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {userAdminActions.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>{formatDateTime(item.createdAt)}</TableCell>
+                            <TableCell>{item.action || '-'}</TableCell>
+                            <TableCell>{`${item.resourceType || '-'} #${item.resourceId || '-'}`}</TableCell>
+                            <TableCell>{item.beforeData || '-'}</TableCell>
+                            <TableCell>{item.afterData || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : null}
               </Stack>
             ) : null}
           </Box>
@@ -352,11 +510,14 @@ const AdminUserDetailPage = () => {
         open={editOpen}
         mode="edit"
         user={user}
+        organizationOptions={organizationOptions}
         onClose={() => setEditOpen(false)}
-        onSubmit={(payload) => {
-          updateUser(user.id, payload);
-          enqueueSnackbar('User updated.', { variant: 'success' });
-          setEditOpen(false);
+        onSubmit={async (payload) => {
+          try {
+            await updateUser(user.id, payload);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
@@ -364,23 +525,29 @@ const AdminUserDetailPage = () => {
         open={banOpen}
         user={user}
         onClose={() => setBanOpen(false)}
-        onConfirm={(payload) => {
-          banUser(user.id, payload);
-          enqueueSnackbar('User banned.', { variant: 'success' });
-          setBanOpen(false);
+        onConfirm={async (payload) => {
+          try {
+            await banUser(user.id, payload);
+            setBanOpen(false);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
 
       <AdminConfirmDeleteDialog
         open={deleteOpen}
-        title="Delete account"
-        description={`Remove ${user.fullName} (#${user.id})? Demo: local state only.`}
+        title="Xóa tài khoản"
+        description={`Xóa người dùng ${user.fullName} (#${user.id})?`}
         onClose={() => setDeleteOpen(false)}
-        onConfirm={() => {
-          deleteUser(user.id);
-          enqueueSnackbar('User deleted.', { variant: 'success' });
-          setDeleteOpen(false);
-          navigate('/admin/users');
+        onConfirm={async () => {
+          try {
+            await deleteUser(user.id);
+            setDeleteOpen(false);
+            navigate(`${adminBase}/users`);
+          } catch {
+            /* snackbar in hook */
+          }
         }}
       />
     </>

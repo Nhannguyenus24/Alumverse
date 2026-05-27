@@ -31,7 +31,8 @@ const EditPostDialog = ({
 
   useEffect(() => {
     if (open && post?.content) {
-      setEditContent(post.content);
+      const timer = setTimeout(() => setEditContent(post.content), 0);
+      return () => clearTimeout(timer);
     }
   }, [open, post?.content]);
 

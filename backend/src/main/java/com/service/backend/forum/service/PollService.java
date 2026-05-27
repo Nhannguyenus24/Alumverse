@@ -20,24 +20,18 @@ import com.service.backend.forum.dao.PollRepository;
 import com.service.backend.forum.dao.PollOptionRepository;
 import com.service.backend.forum.dao.PollVoteRepository;
 
+import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@RequiredArgsConstructor
 public class PollService {
     private static final Logger log = LoggerFactory.getLogger(PollService.class);
 
     private final PollRepository pollRepository;
     private final PollOptionRepository pollOptionRepository;
     private final PollVoteRepository pollVoteRepository;
-
-    public PollService(PollRepository pollRepository,
-                       PollOptionRepository pollOptionRepository,
-                       PollVoteRepository pollVoteRepository) {
-        this.pollRepository = pollRepository;
-        this.pollOptionRepository = pollOptionRepository;
-        this.pollVoteRepository = pollVoteRepository;
-    }
 
     // Create new poll
     public Mono<PollDTO> createPoll(CreatePollRequest request) {
@@ -51,8 +45,6 @@ public class PollService {
                 .description(request.getDescription())
                 .allowMultipleVotes(request.getAllowMultipleVotes() != null ? request.getAllowMultipleVotes() : false)
                 .isActive(true)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         return pollRepository.save(poll)
@@ -65,8 +57,6 @@ public class PollService {
                                     .pollId(savedPoll.getId())
                                     .optionText(optionText)
                                     .voteCount(0)
-                                    .createdAt(LocalDateTime.now())
-                                    .updatedAt(LocalDateTime.now())
                                     .build();
                             options.add(option);
                         }
@@ -160,17 +150,13 @@ public class PollService {
                 .pollId(request.getPollId())
                 .pollOptionId(request.getPollOptionId())
                 .memberId(request.getMemberId())
-                .createdAt(LocalDateTime.now())
                 .build();
 
         return pollVoteRepository.save(vote)
-                .flatMap(savedVote -> {
-                    // Update vote count
-                    option.setVoteCount(option.getVoteCount() != null ? option.getVoteCount() + 1 : 1);
-                    option.setUpdatedAt(LocalDateTime.now());
-                    return pollOptionRepository.save(option)
-                            .map(updatedOption -> convertToVoteDTO(savedVote));
-                });
+                .flatMap(savedVote ->
+                    pollOptionRepository.incrementVoteCount(option.getId())
+                            .thenReturn(convertToVoteDTO(savedVote))
+                );
     }
 
     // Remove vote (allow member to change their vote)
@@ -184,12 +170,7 @@ public class PollService {
                 }))
                 .flatMap(vote -> {
                     // Decrease vote count
-                    return pollOptionRepository.findById(vote.getPollOptionId())
-                            .flatMap(option -> {
-                                option.setVoteCount(option.getVoteCount() != null ? Math.max(0, option.getVoteCount() - 1) : 0);
-                                option.setUpdatedAt(LocalDateTime.now());
-                                return pollOptionRepository.save(option);
-                            })
+                    return pollOptionRepository.decrementVoteCount(vote.getPollOptionId())
                             .then(pollVoteRepository.deleteById(vote.getId()));
                 })
                 .doOnSuccess(result -> log.info("Successfully removed vote from member {} on poll {}", memberId, pollId))
@@ -206,7 +187,6 @@ public class PollService {
                 }))
                 .flatMap(poll -> {
                     poll.setIsActive(false);
-                    poll.setUpdatedAt(LocalDateTime.now());
                     return pollRepository.save(poll)
                             .flatMap(updatedPoll -> 
                                 pollOptionRepository.findByPollId(updatedPoll.getId())

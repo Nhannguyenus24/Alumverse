@@ -56,9 +56,9 @@ public class Funds {
     @Column("status_id")
     private Integer statusId;
 
+    @Column("topic")
+    private String topic;
+
     @Column("time_ended")
     private LocalDateTime timeEnded;
-
-    @Column("qr_image_url")
-    private String qrImageUrl;
 }

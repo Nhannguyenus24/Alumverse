@@ -1,5 +1,5 @@
-import { useState } from 'react';
-
+import { useEffect, useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -7,52 +7,48 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
+  Stack,
+  alpha,
+  useTheme,
+  Avatar,
+  Grid,
 } from '@mui/material';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import { useDebounce } from '../../hooks/useDebounce';
+import { exportToCSV } from '../../utils/exportUtils';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import PasswordOutlinedIcon from '@mui/icons-material/PasswordOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import GppBadOutlinedIcon from '@mui/icons-material/GppBadOutlined';
+
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { ADMIN_ORGANIZATION_OPTIONS, USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
+import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-
-const formatDate = (value) => {
-  if (!value) {
-    return '-';
-  }
-  try {
-    return new Date(value).toLocaleString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return String(value);
-  }
-};
+import { useAuth } from '../../hooks/useAuth';
+import { resetPasswordByAdmin } from '../../api/adminUserApi';
+import { formatDateTime } from '../../utils/dateFormatter';
+import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 
 const AdminUsersListPage = () => {
-  const navigate = useOrgNavigate();
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const {
     users,
@@ -63,12 +59,6 @@ const AdminUsersListPage = () => {
     setRoleFilter,
     statusFilter,
     setStatusFilter,
-    organizationFilter,
-    setOrganizationFilter,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
     page,
     setPage,
     rowsPerPage,
@@ -79,7 +69,33 @@ const AdminUsersListPage = () => {
     deleteUser,
     banUser,
     unbanUser,
+    sortedUsers,
   } = useAdminUsersContext();
+
+  const { setBreadcrumbs } = useOutletContext();
+  const [searchTerm, setSearchTerm] = useState(search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Người dùng', active: true }]);
+  }, [setBreadcrumbs]);
+
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch, setSearch]);
+
+  const handleExport = () => {
+    const exportData = sortedUsers.map(u => ({
+      ID: u.id,
+      'Họ tên': u.fullName || u.userName,
+      Email: u.email,
+      'Vai trò': u.role,
+      'Trạng thái': formatAccountStatusLabel(u.status),
+      'Tổ chức': u.organizationName || '-',
+      'Ngày tham gia': formatDateTime(u.createdAt)
+    }));
+    exportToCSV(exportData, `users_export_${new Date().getTime()}.csv`);
+  };
 
   const [userFormOpen, setUserFormOpen] = useState(false);
   const [userFormMode, setUserFormMode] = useState('create');
@@ -87,310 +103,291 @@ const AdminUsersListPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [userStatusMenu, setUserStatusMenu] = useState(null);
   const [banTarget, setBanTarget] = useState(null);
+  const [organizationOptions, setOrganizationOptions] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    const loadOrganizations = async () => {
+      try {
+        const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
+        if (!active) return;
+        setOrganizationOptions(Array.isArray(rows) ? rows : []);
+      } catch {
+        if (!active) return;
+        setOrganizationOptions([]);
+      }
+    };
+    void loadOrganizations();
+    return () => { active = false; };
+  }, []);
+
+  const columns = [
+    {
+      id: 'user',
+      label: 'Người dùng',
+      render: (_, u) => (
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar 
+            src={u.avatarUrl} 
+            sx={{ width: 32, height: 32, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontSize: 13, fontWeight: 700 }}
+          >
+            {(u.fullName || u.userName || '?')[0].toUpperCase()}
+          </Avatar>
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              {u.fullName || u.userName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              {u.email}
+            </Typography>
+          </Box>
+        </Stack>
+      )
+    },
+    { id: 'role', label: 'Vai trò' },
+    {
+      id: 'status',
+      label: 'Trạng thái',
+      render: (status, u) => (
+        <AdminStatusChip
+          status={status}
+          category="account"
+          label={formatAccountStatusLabel(status)}
+          onClick={(e) => {
+            e.stopPropagation();
+            setUserStatusMenu({ anchorEl: e.currentTarget, user: u });
+          }}
+          sx={{ cursor: 'pointer' }}
+        />
+      )
+    },
+    { id: 'organizationName', label: 'Tổ chức' },
+    { id: 'createdAt', label: 'Ngày tham gia', render: (val) => formatDateTime(val) },
+    {
+      id: 'actions',
+      label: '',
+      align: 'right',
+      render: (_, u) => (
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Xem chi tiết">
+            <IconButton size="small" onClick={() => navigate(`/admin/users/${u.id}`)}>
+              <VisibilityOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Chỉnh sửa">
+            <IconButton
+              size="small"
+              onClick={() => {
+                setUserFormMode('edit');
+                setEditingUser(u);
+                setUserFormOpen(true);
+              }}
+            >
+              <EditOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          
+          {u.status === 'BANNED' ? (
+            <Tooltip title="Bỏ chặn">
+              <IconButton size="small" color="success" onClick={() => unbanUser(u.id)}>
+                <LockOpenOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Chặn">
+              <IconButton size="small" color="warning" onClick={() => setBanTarget(u)}>
+                <BlockOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+
+          <Tooltip title="Xóa">
+            <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Đặt lại mật khẩu">
+            <IconButton
+              size="small"
+              onClick={() => {
+                const nextPass = window.prompt(`Mật khẩu mới cho người dùng #${u.id}:`, '');
+                if (!nextPass || nextPass.length < 8) {
+                  if (nextPass) enqueueSnackbar('Mật khẩu phải từ 8 ký tự.', { variant: 'warning' });
+                  return;
+                }
+                resetPasswordByAdmin(u.id, {
+                  newPassword: nextPass,
+                  adminUserId: Number(currentUser?.id),
+                  reason: 'Admin reset from list',
+                }).then(() => enqueueSnackbar('Đã đặt lại mật khẩu.', { variant: 'success' }))
+                  .catch(err => enqueueSnackbar(err?.response?.data?.message || 'Lỗi đặt lại mật khẩu.', { variant: 'error' }));
+              }}
+            >
+              <PasswordOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )
+    }
+  ];
+
+  const Filters = (
+    <Stack direction="row" spacing={1}>
+      <TextField
+        select
+        size="small"
+        label="Vai trò"
+        value={roleFilter}
+        onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
+        sx={{ minWidth: 120 }}
+      >
+        <MenuItem value="ALL">Tất cả</MenuItem>
+        {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+      </TextField>
+      <TextField
+        select
+        size="small"
+        label="Trạng thái"
+        value={statusFilter}
+        onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+        sx={{ minWidth: 140 }}
+      >
+        <MenuItem value="ALL">Tất cả</MenuItem>
+        {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s)}</MenuItem>)}
+      </TextField>
+    </Stack>
+  );
+
+  const [now] = useState(() => Date.now());
+  const stats = {
+    total: filteredCount,
+    active: users.filter(u => u.status === 'ACTIVE').length,
+    banned: users.filter(u => u.status === 'BANNED').length,
+    newToday: users.filter(u => new Date(u.createdAt) > new Date(now - 24*60*60*1000)).length,
+  };
 
   return (
-    <>
-      <AdminSectionPanel
-        title="User management"
-        subtitle="Search, filter by organization, sort, paginate. Open a user for the full detail tabs (§2.2)."
-        action={
+    <Box>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: "space-between",
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2
+        }}
+      >
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+            Quản lý người dùng
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
+          >
+            Tìm kiếm, phân quyền và giám sát trạng thái tài khoản toàn hệ thống.
+          </Typography>
+        </Box>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng người dùng"
+          value={stats.total}
+          icon={<PeopleAltOutlinedIcon />}
+        />
+        <AdminDashboardMetricTile
+          label="Thành viên mới (24h)"
+          value={stats.newToday}
+          icon={<PersonAddOutlinedIcon />}
+          valueColor="info.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tài khoản hoạt động"
+          value={stats.active}
+          icon={<VerifiedUserOutlinedIcon />}
+          valueColor="success.main"
+        />
+        <AdminDashboardMetricTile
+          label="Tài khoản bị chặn"
+          value={stats.banned}
+          icon={<GppBadOutlinedIcon />}
+          valueColor="error.main"
+        />
+      </Box>
+
+      <AdminDataTable
+        columns={columns}
+        rows={users}
+        totalCount={filteredCount}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={(_, next) => setPage(next)}
+        onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
+        onSearchChange={(val) => { setSearchTerm(val); setPage(0); }}
+        searchValue={searchTerm}
+        searchPlaceholder="Tìm theo tên, email, username..."
+        filters={Filters}
+        onExport={handleExport}
+        addButton={
           <Button
             variant="contained"
             size="small"
             startIcon={<AddOutlinedIcon />}
-            onClick={() => {
-              setUserFormMode('create');
-              setEditingUser(null);
-              setUserFormOpen(true);
-            }}
-            sx={{ textTransform: 'none', fontWeight: 700 }}
+            onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
+            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', ml: 1 }}
           >
-            Add user
+            Thêm
           </Button>
         }
-      >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            flexWrap: 'wrap',
-            gap: 2,
-            mb: 2,
-            alignItems: { xs: 'stretch', md: 'center' },
-          }}
-        >
-          <TextField
-            size="small"
-            label="Search"
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(0);
-            }}
-            placeholder="Email, username, full name…"
-            sx={{ flex: '1 1 220px', minWidth: 200 }}
-          />
-          <TextField
-            select
-            size="small"
-            label="Role"
-            value={roleFilter}
-            onChange={(event) => {
-              setRoleFilter(event.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="ALL">All roles</MenuItem>
-            {USER_ROLES.map((role) => (
-              <MenuItem key={role} value={role}>
-                {role}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Status"
-            value={statusFilter}
-            onChange={(event) => {
-              setStatusFilter(event.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="ALL">All statuses</MenuItem>
-            {USER_STATUSES.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Organization"
-            value={organizationFilter}
-            onChange={(event) => {
-              setOrganizationFilter(event.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 220 }}
-          >
-            <MenuItem value="ALL">All organizations</MenuItem>
-            {ADMIN_ORGANIZATION_OPTIONS.map((org) => (
-              <MenuItem key={org.id} value={String(org.id)}>
-                {org.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Sort by"
-            value={sortBy}
-            onChange={(event) => {
-              setSortBy(event.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="createdAt">Created date</MenuItem>
-            <MenuItem value="updatedAt">Last updated</MenuItem>
-            <MenuItem value="fullName">Name</MenuItem>
-            <MenuItem value="email">Email</MenuItem>
-          </TextField>
-          <TextField
-            select
-            size="small"
-            label="Order"
-            value={sortOrder}
-            onChange={(event) => {
-              setSortOrder(event.target.value);
-              setPage(0);
-            }}
-            sx={{ minWidth: 120 }}
-          >
-            <MenuItem value="DESC">Descending</MenuItem>
-            <MenuItem value="ASC">Ascending</MenuItem>
-          </TextField>
-        </Box>
+        onRowClick={(u) => navigate(`/admin/users/${u.id}`)}
+      />
 
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Username</TableCell>
-              <TableCell>Full name</TableCell>
-              <TableCell>Role</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Organization</TableCell>
-              <TableCell>Created at</TableCell>
-              <TableCell align="right">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9}>
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    No users match your filters.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((u) => (
-                <TableRow key={u.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/admin/users/${u.id}`)}>
-                  <TableCell>{u.id}</TableCell>
-                  <TableCell>{u.email || '-'}</TableCell>
-                  <TableCell>{u.userName || '-'}</TableCell>
-                  <TableCell>{u.fullName || '-'}</TableCell>
-                  <TableCell>{u.role || '-'}</TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <AdminStatusChip
-                      status={u.status}
-                      category="account"
-                      label={
-                        <Box
-                          component="span"
-                          sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 0.25,
-                            pr: 0.25,
-                          }}
-                        >
-                          {formatAccountStatusLabel(u.status)}
-                          <ArrowDropDownIcon sx={{ fontSize: 18, opacity: 0.9 }} />
-                        </Box>
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setUserStatusMenu({ anchorEl: e.currentTarget, user: u });
-                      }}
-                      sx={{
-                        cursor: 'pointer',
-                        maxWidth: '100%',
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ maxWidth: 180 }}>
-                    <Typography variant="body2" noWrap>
-                      {u.organizationName || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{formatDate(u.createdAt)}</TableCell>
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                      <Tooltip title="View">
-                        <IconButton size="small" color="primary" onClick={() => navigate(`/admin/users/${u.id}`)}>
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => {
-                            setUserFormMode('edit');
-                            setEditingUser(u);
-                            setUserFormOpen(true);
-                          }}
-                        >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      {u.status === 'BANNED' ? (
-                        <Tooltip title="Unban">
-                          <IconButton
-                            size="small"
-                            color="success"
-                            onClick={() => {
-                              unbanUser(u.id);
-                              enqueueSnackbar('User unbanned.', { variant: 'success' });
-                            }}
-                          >
-                            <LockOpenOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title="Ban">
-                          <IconButton size="small" color="warning" onClick={() => setBanTarget(u)}>
-                            <BlockOutlinedIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                      <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-
-        <TablePagination
-          component="div"
-          count={filteredCount}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_, next) => setPage(next)}
-          onRowsPerPageChange={(event) => {
-            setRowsPerPage(Number(event.target.value));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[10, 20, 50]}
-          labelRowsPerPage="Rows per page"
-        />
-      </AdminSectionPanel>
-
+      {/* Status Menu */}
       <Menu
         anchorEl={userStatusMenu?.anchorEl}
         open={Boolean(userStatusMenu)}
         onClose={() => setUserStatusMenu(null)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        disableScrollLock
-        slotProps={{ paper: { sx: { minWidth: 200 } } }}
+        PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 160, boxShadow: theme.shadows[10] } }}
       >
-        {userStatusMenu
-          ? USER_STATUSES.map((st) => {
-              const active = (userStatusMenu.user.status || 'ACTIVE') === st;
-              return (
-                <MenuItem
-                  key={st}
-                  selected={active}
-                  onClick={() => {
-                    updateUserStatus(userStatusMenu.user.id, st);
-                    enqueueSnackbar(`User status set to ${formatAccountStatusLabel(st)}.`, { variant: 'success' });
-                    setUserStatusMenu(null);
-                  }}
-                >
-                  {formatAccountStatusLabel(st)}
-                </MenuItem>
-              );
-            })
-          : null}
+        {USER_STATUSES.map((st) => (
+          <MenuItem
+            key={st}
+            selected={userStatusMenu?.user.status === st}
+            onClick={async () => {
+              try { await updateUserStatus(userStatusMenu.user.id, st); } catch (e) { console.error(e); }
+              setUserStatusMenu(null);
+            }}
+            sx={{ fontSize: 14, fontWeight: 500 }}
+          >
+            {formatAccountStatusLabel(st)}
+          </MenuItem>
+        ))}
       </Menu>
 
+      {/* Dialogs */}
       <AdminUserFormDialog
         open={userFormOpen}
         mode={userFormMode}
         user={editingUser}
+        organizationOptions={organizationOptions}
         onClose={() => setUserFormOpen(false)}
-        onSubmit={(payload) => {
-          if (userFormMode === 'create') {
-            createUser(payload);
-            enqueueSnackbar('User created successfully.', { variant: 'success' });
-          } else if (editingUser) {
-            updateUser(editingUser.id, payload);
-            enqueueSnackbar('User updated successfully.', { variant: 'success' });
-          }
+        onSubmit={async (payload) => {
+          if (userFormMode === 'create') await createUser(payload);
+          else if (editingUser) await updateUser(editingUser.id, payload);
         }}
       />
 
@@ -398,33 +395,23 @@ const AdminUsersListPage = () => {
         open={Boolean(banTarget)}
         user={banTarget}
         onClose={() => setBanTarget(null)}
-        onConfirm={(banPayload) => {
-          if (banTarget) {
-            banUser(banTarget.id, banPayload);
-            enqueueSnackbar('User banned.', { variant: 'success' });
-          }
+        onConfirm={async (p) => {
+          if (banTarget) await banUser(banTarget.id, p);
           setBanTarget(null);
         }}
       />
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Delete user"
-        description={
-          deleteTarget
-            ? `This will remove ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id}). Demo: local state only.`
-            : ''
-        }
+        title="Xóa người dùng"
+        description={deleteTarget ? `Bạn có chắc chắn muốn xóa tạm thời người dùng ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id})?` : ''}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (deleteTarget) {
-            deleteUser(deleteTarget.id);
-            enqueueSnackbar('User removed from list.', { variant: 'success' });
-          }
+        onConfirm={async () => {
+          if (deleteTarget) await deleteUser(deleteTarget.id);
           setDeleteTarget(null);
         }}
       />
-    </>
+    </Box>
   );
 };
 

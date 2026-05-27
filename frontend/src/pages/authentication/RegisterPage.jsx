@@ -14,6 +14,19 @@ import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
 
+const PasswordRequirementItem = ({ label, met }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    {met ? (
+      <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
+    ) : (
+      <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
+    )}
+    <Typography variant="caption" sx={{ color: met ? 'success.main' : 'error.main' }}>
+      {label}
+    </Typography>
+  </Box>
+);
+
 const CURRENT_YEAR = new Date().getFullYear();
 const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
   value: String(CURRENT_YEAR - i),
@@ -24,7 +37,7 @@ const RegisterPage = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
-  const { register: registerUser, forgotPassword, isLoading: loading, setError } = useAuth();
+  const { register: registerUser, forgotPassword, isSubmitting: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 
@@ -55,6 +68,10 @@ const RegisterPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
+    if (!organizationId) {
+      enqueueSnackbar('Đang tải thông tin tổ chức, vui lòng đợi vài giây rồi thử lại.', { variant: 'warning' });
+      return;
+    }
     const result = await registerUser({
       email: data.email,
       fullName: data.fullName,
@@ -77,19 +94,6 @@ const RegisterPage = () => {
       enqueueSnackbar(result.error, { variant: 'error' });
     }
   };
-
-  const PasswordRequirementItem = ({ label, met }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      {met ? (
-        <CheckCircleIcon sx={{ fontSize: 18, color: 'success.main' }} />
-      ) : (
-        <CancelIcon sx={{ fontSize: 18, color: 'error.main' }} />
-      )}
-      <Typography variant="caption" sx={{ color: met ? 'success.main' : 'error.main' }}>
-        {label}
-      </Typography>
-    </Box>
-  );
 
   return (
     <Page

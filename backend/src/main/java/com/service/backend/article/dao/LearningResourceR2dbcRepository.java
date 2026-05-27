@@ -16,6 +16,9 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
 
+    @Query("SELECT * FROM learning_resources ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<LearningResource> findAllWithPagination(int limit, int offset);
+
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND type = :type ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findByType(Integer organizationId, String type, int limit, int offset);
 

@@ -73,13 +73,9 @@ public class CreateFundRequest {
     @Schema(example = "2026-12-31T23:59:59")
     private LocalDateTime timeEnded;
 
-    @Size(max = 500)
-    @Schema(example = "http://localhost/images/qr.webp")
-    private String qrImageUrl;
-
     /** Optional base64-encoded fund logo. When present, backend uploads and stores the resulting URL. */
     private String logoBase64;
 
-    /** Optional base64-encoded QR image. When present, backend uploads and stores the resulting URL. */
-    private String qrImageBase64;
+    @Schema(example = "Học bổng sinh viên")
+    private String topic;
 }

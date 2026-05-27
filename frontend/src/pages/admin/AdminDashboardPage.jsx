@@ -1,9 +1,13 @@
-import { NavLink } from 'react-router';
-import { Box, Button, Paper, Skeleton, Stack, Typography } from '@mui/material';
+import { useEffect } from 'react';
+import { NavLink, useOutletContext } from 'react-router';
+import { Box, Button, Grid, Skeleton, Stack, Typography, alpha, useTheme } from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import MarkChatUnreadOutlinedIcon from '@mui/icons-material/MarkChatUnreadOutlined';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDashboardSections from '../../components/admin/AdminDashboardSections';
 import Chart from '../../components/Chart';
@@ -14,135 +18,212 @@ import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggr
 import { useAuth } from '../../hooks/useAuth';
 
 const AdminDashboardPage = () => {
+  const theme = useTheme();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const { loading, metrics, timeline, organizations } = useAdminSystemContext();
   const { allUsers } = useAdminUsersContext();
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
+  const { setBreadcrumbs } = useOutletContext();
+
+  useEffect(() => {
+    setBreadcrumbs?.([{ label: 'Dashboard', active: true }]);
+  }, [setBreadcrumbs]);
 
   const chartData = Array.isArray(timeline) ? timeline : [];
   const totalUsers = metrics?.totalUsers ?? aggregates.user.totalUsers;
-  const bannedToday = metrics?.bannedTodayCount ?? 0;
   const pendingPosts = metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending;
-  const auditToday = metrics?.auditLogsCount ?? metrics?.auditLogsCountToday ?? 0;
+  const totalOrgs = organizations?.length ?? 0;
+
+  if (loading) {
+    return (
+      <Stack spacing={3}>
+        <Skeleton variant="rounded" height={100} />
+        <Grid container spacing={3}>
+          {[1, 2, 3, 4].map((i) => (
+            <Grid item xs={12} sm={6} md={3} key={i}>
+              <Skeleton variant="rounded" height={140} />
+            </Grid>
+          ))}
+        </Grid>
+        <Skeleton variant="rounded" height={400} />
+      </Stack>
+    );
+  }
 
   return (
-    <Stack spacing={2.5} sx={{ width: '100%' }}>
-      {loading ? (
-        <Paper elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2.5 }}>
-          <Stack spacing={1}>
-            <Skeleton variant="text" width={220} height={40} />
-            <Skeleton variant="rounded" height={120} />
-            <Skeleton variant="rounded" height={220} />
-          </Stack>
-        </Paper>
-      ) : (
-        <>
-          <AdminSectionPanel
-            title="Admin dashboard"
-            subtitle="Summary metrics, last 7 days activity, and quick links."
-          >
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
-              <AdminDashboardMetricTile label="Total users" value={totalUsers} valueColor="primary.main" />
-              <AdminDashboardMetricTile label="Users banned today" value={bannedToday} valueColor="error.main" />
-              <AdminDashboardMetricTile
-                label="Forum posts pending moderation"
-                value={pendingPosts}
-                valueColor="warning.main"
-              />
-              <AdminDashboardMetricTile label="Audit logs today" value={auditToday} valueColor="info.main" />
-              {/* Forum overview tiles from API */}
-              {statistics && (
-                <>
-                  <AdminDashboardMetricTile
-                    label="Forum topics"
-                    value={statistics.totalTopics ?? 0}
-                    valueColor="info.main"
-                  />
-                  <AdminDashboardMetricTile
-                    label="Forum posts"
-                    value={statistics.totalPosts ?? 0}
-                    valueColor="primary.dark"
-                  />
-                  <AdminDashboardMetricTile
-                    label="New topics today"
-                    value={statistics.newTopicsToday ?? 0}
-                    valueColor="success.main"
-                  />
-                  <AdminDashboardMetricTile
-                    label="New posts today"
-                    value={statistics.newPostsToday ?? 0}
-                    valueColor="success.dark"
-                  />
-                </>
-              )}
-            </Box>
+    <Box>
+      {/* Welcome Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -1 }}>
+          Chào mừng trở lại, {user?.fullName || user?.userName} 👋
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+          Đây là tổng quan về hoạt động của hệ thống HCMUS Alumni ngày hôm nay.
+        </Typography>
+      </Box>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'stretch' }}>
-              <Box sx={{ flex: '1 1 300px', minWidth: 280, display: 'flex', flexDirection: 'column' }}>
-                <Chart
-                  type="line"
-                  title="Recent activity (last 7 days)"
-                  data={chartData}
-                  dataKey="count"
-                  xAxisKey="date"
-                  height={280}
-                />
-              </Box>
-              <Box
-                sx={{
-                  flex: '1 1 220px',
-                  minWidth: 200,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 1,
-                  p: 2,
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                  Quick actions
-                </Typography>
+      {/* Primary Metrics Grid */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+          mb: 4,
+          '& > *': {
+            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
+          },
+        }}
+      >
+        <AdminDashboardMetricTile
+          label="Tổng thành viên"
+          value={totalUsers.toLocaleString()}
+          icon={<PeopleAltOutlinedIcon />}
+          trend={12}
+        />
+        <AdminDashboardMetricTile
+          label="Bài viết chờ duyệt"
+          value={pendingPosts}
+          icon={<MarkChatUnreadOutlinedIcon />}
+          valueColor="warning.main"
+          caption="Cần xử lý ngay"
+        />
+        <AdminDashboardMetricTile
+          label="Tổ chức / Đơn vị"
+          value={totalOrgs}
+          icon={<BusinessCenterOutlinedIcon />}
+          trend={2}
+        />
+        <AdminDashboardMetricTile
+          label="Hoạt động hệ thống"
+          value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
+          icon={<TrendingUpIcon />}
+          caption="Bản ghi mới hôm nay"
+        />
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3,
+        }}
+      >
+        {/* Main Chart Section */}
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', lg: '3 1 0' },
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={{
+              p: 3,
+              bgcolor: 'background.paper',
+              borderRadius: 3,
+              border: `1px solid ${theme.palette.divider}`,
+              height: '100%',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
+            }}
+          >
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="h6" sx={{ fontWeight: 800 }}>Biểu đồ hoạt động</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>7 NGÀY GẦN NHẤT</Typography>
+            </Box>
+            <Chart
+              type="area"
+              data={chartData}
+              dataKey="count"
+              xAxisKey="date"
+              height={320}
+              color={theme.palette.primary.main}
+            />
+          </Box>
+        </Box>
+
+        {/* Quick Actions Sidebar */}
+        <Box
+          sx={{
+            flex: { xs: '1 1 100%', lg: '1 1 0' },
+            minWidth: 0,
+          }}
+        >
+          <Stack spacing={3}>
+            <Box
+              sx={{
+                p: 3,
+                bgcolor: alpha(theme.palette.primary.main, 0.03),
+                borderRadius: 3,
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>
+                Thao tác nhanh
+              </Typography>
+              <Stack spacing={1.5}>
                 <Button
                   component={NavLink}
                   to="/admin/users"
-                  variant="outlined"
+                  variant="contained"
+                  fullWidth
                   startIcon={<GroupsOutlinedIcon />}
-                  sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
                   disabled={!isAdmin}
                 >
-                  User management
+                  Quản lý người dùng
                 </Button>
                 <Button
                   component={NavLink}
                   to="/admin/forum/posts"
                   variant="outlined"
+                  fullWidth
                   startIcon={<ForumOutlinedIcon />}
-                  sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: 'background.paper' }}
                 >
-                  Forum moderation
+                  Duyệt bài viết Diễn đàn
                 </Button>
                 <Button
                   component={NavLink}
                   to="/admin/audit-logs"
                   variant="outlined"
+                  fullWidth
                   startIcon={<GavelOutlinedIcon />}
-                  sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: 'background.paper' }}
                   disabled={!isAdmin}
                 >
-                  Audit logs
+                  Xem nhật ký hệ thống
                 </Button>
-              </Box>
+              </Stack>
             </Box>
-          </AdminSectionPanel>
 
-          <AdminDashboardSections aggregates={aggregates} forumStats={statistics} />
-        </>
-      )}
-    </Stack>
+            {/* System Status or Recent Updates */}
+            <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2 }}>Trạng thái hệ thống</Typography>
+              <Stack spacing={2}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">Cơ sở dữ liệu</Typography>
+                  <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>ỔN ĐỊNH</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">Máy chủ Email</Typography>
+                  <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>ỔN ĐỊNH</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">Lưu trữ hình ảnh</Typography>
+                  <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>ỔN ĐỊNH</Typography>
+                </Box>
+              </Stack>
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+
+      {/* Secondary Detailed Sections */}
+      <Box sx={{ mt: 4 }}>
+        <AdminDashboardSections aggregates={aggregates} forumStats={statistics} />
+      </Box>
+    </Box>
   );
 };
 

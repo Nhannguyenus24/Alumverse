@@ -28,4 +28,6 @@ public class UpdateNewsRequest {
     private String thumbnailUrl;
 
     private String thumbnailBase64;
+
+    private String topic;
 }

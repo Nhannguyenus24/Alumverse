@@ -1,19 +1,23 @@
-import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useEffect, useMemo, useState } from 'react';
 import {
-  Box, Button, Stack, Typography, TextField
-} from "@mui/material";
-
-import StarBorderIcon from '@mui/icons-material/StarBorder';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
-import CheckBoxOutlinedIcon from '@mui/icons-material/CheckBoxOutlined';
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 
 import Page from '../../components/Page';
-import MentorshipProfileLayout from '../../layouts/MentorshipProfileLayout';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipTag from '../../components/mentorship/MentorshipTag';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-
-/* ================= DATA ================= */
+import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
+import { useMyExpertise } from '../../hooks/mentorship/useMyExpertise';
+import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
+import { useUploadImage } from '../../hooks/images/useUploadImage';
 
 const TOP_TABS = [
   { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
@@ -21,109 +25,179 @@ const TOP_TABS = [
   { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
 ];
 
-const USER = {
-  name: 'Nguyễn Lê Hoàng Dũng',
-  role: 'Senior Software Engineer @ Google',
-  avatar: 'https://i.pravatar.cc/150?img=3',
-  cover: 'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619',
-};
-
-const STATS = [
-  { value: '8', label: 'năm kinh nghiệm' },
-  { value: '120+', label: 'mentee' },
-  { value: '4.9', label: 'đánh giá' },
-  { value: '129', label: 'buổi họp' },
-];
-
-/* ================= COMPONENT ================= */
+const DEFAULT_COVER =
+  'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 
 const MentorshipProfileEditPage = () => {
   const navigate = useOrgNavigate();
+
+  const profileQuery = useMyMentorProfile();
+  const expertiseQuery = useMyExpertise();
+  const { updateProfile, isPending: saving, errorMessage } = useUpdateMentorProfile();
+
+  const [coverPreview, setCoverPreview] = useState(DEFAULT_COVER);
   const [coverFile, setCoverFile] = useState(null);
-  const [coverPreview, setCoverPreview] = useState(USER.cover); // default
+  const [currentJobTitle, setCurrentJobTitle] = useState('');
+  const [currentCompany, setCurrentCompany] = useState('');
+  const [bio, setBio] = useState('');
+  const [defaultMeetingLink, setDefaultMeetingLink] = useState('');
+  const [success, setSuccess] = useState(false);
+  const { uploadFile, isPending: uploadingCover } = useUploadImage();
 
-  const handleCoverUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    setCoverFile(file);
-    setCoverPreview(URL.createObjectURL(file));
-    }
-  };
-
+  // Hydrate form when profile loads
   useEffect(() => {
+    const p = profileQuery.data;
+    if (p) {
+      setCurrentJobTitle(p.currentJobTitle ?? '');
+      setCurrentCompany(p.currentCompany ?? '');
+      setBio(p.bio ?? '');
+      setDefaultMeetingLink(p.defaultMeetingLink ?? '');
+      if (p.coverUrl) setCoverPreview(p.coverUrl);
+    }
+  }, [profileQuery.data]);
+
+  // Cleanup blob preview
+  useEffect(() => {
+    const url = coverPreview;
     return () => {
-      if (coverPreview && coverPreview.startsWith('blob:')) {
-        URL.revokeObjectURL(coverPreview);
-      }
+      if (url && url.startsWith('blob:')) URL.revokeObjectURL(url);
     };
   }, [coverPreview]);
 
-  const [bio, setBio] = useState(
-    "This is a simple bio written in simple words..."
+  const expertise = useMemo(
+    () => expertiseQuery.data ?? [],
+    [expertiseQuery.data],
+  );
+  const tags = useMemo(
+    () => expertise.map((e) => e.tag || e.topic).filter(Boolean),
+    [expertise],
   );
 
-  const [skills, setSkills] = useState([
-    'Frontend', 'React', 'System Design'
-  ]);
-
-  const [newSkill, setNewSkill] = useState('');
-
-  const handleAddSkill = () => {
-    if (!newSkill.trim()) return;
-    if (skills.includes(newSkill)) return;
-    setSkills([...skills, newSkill]);
-    setNewSkill('');
+  const handleCoverUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setCoverFile(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
   };
 
-  const handleDeleteSkill = (skill) => {
-    setSkills(skills.filter((s) => s !== skill));
+  const handleSave = async () => {
+    setSuccess(false);
+    try {
+      let uploadedCoverUrl;
+      if (coverFile) {
+        uploadedCoverUrl = await uploadFile(coverFile);
+      }
+      await updateProfile({
+        currentJobTitle: currentJobTitle.trim(),
+        currentCompany: currentCompany.trim(),
+        bio: bio.trim(),
+        coverUrl: uploadedCoverUrl ?? undefined,
+        defaultMeetingLink: defaultMeetingLink.trim() || undefined,
+      });
+      setSuccess(true);
+      setTimeout(() => navigate('/development/mentorship/profile'), 800);
+    } catch {
+      /* surfaced via errorMessage */
+    }
+  };
+
+  if (profileQuery.isLoading) {
+    return (
+      <Page title="Chỉnh sửa hồ sơ">
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      </Page>
+    );
+  }
+
+  if (profileQuery.isError || !profileQuery.data) {
+    return (
+      <Page title="Chỉnh sửa hồ sơ">
+        <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2 }}>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Bạn chưa có hồ sơ cố vấn. Hãy đăng ký trước khi chỉnh sửa.
+          </Alert>
+          <Stack direction="row" spacing={1.5}>
+            <Button variant="outlined" onClick={() => navigate('/development/mentorship')}>
+              Về trang Cố vấn
+            </Button>
+            <Button variant="contained" onClick={() => navigate('/development/mentorship/signup')}>
+              Trở thành cố vấn
+            </Button>
+          </Stack>
+        </Box>
+      </Page>
+    );
+  }
+
+  const profile = profileQuery.data;
+  const user = {
+    name: profile.fullName ?? `Mentor #${profile.memberId}`,
+    role: [profile.currentJobTitle, profile.currentCompany]
+      .filter(Boolean)
+      .join(' @ ') || 'Cố vấn',
+    avatar: profile.avatarUrl ?? '',
+    cover: coverPreview,
   };
 
   return (
     <Page title="Chỉnh sửa hồ sơ">
       <MentorshipProfileLayout
-        user={USER}
+        user={user}
         cover={coverPreview}
         onCoverChange={handleCoverUpload}
         tabs={TOP_TABS}
         onNavigate={navigate}
-        mode="edit"
+        mode="mentorEdit"
       >
         <Stack spacing={4}>
-          {/* HEADER */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
               CHỈNH SỬA TRANG CÁ NHÂN
             </Typography>
+            <Stack direction="row" spacing={1.5}>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => navigate('/development/mentorship/profile')}
+                disabled={saving}
+              >
+                Huỷ
+              </Button>
+              <Button variant="contained" onClick={handleSave} disabled={saving || uploadingCover}>
+                {saving || uploadingCover ? 'Đang lưu...' : 'Lưu thay đổi'}
+              </Button>
+            </Stack>
           </Box>
 
-          {/* STATS (KEEP SAME) */}
-          <Box
-            sx={{
-              backgroundColor: 'primary.main',
-              borderRadius: 2,
-              px: { xs: 3, md: 6 },
-              py: { xs: 3, md: 4 },
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                sm: '1fr 1fr',
-                md: '1fr 1fr 1fr 1fr',
-              },
-              gap: 3,
-              textAlign: 'center',
-            }}
-          >
-            {STATS.map((item, i) => (
-              <Box key={i}>
-                <Typography variant="h2" fontWeight={700} color="common.white">
-                  {item.value}
-                </Typography>
-                <Typography variant="body2" color="common.white">
-                  {item.label}
-                </Typography>
-              </Box>
-            ))}
+          {success && (
+            <Alert severity="success">Đã lưu hồ sơ. Đang chuyển về trang cá nhân...</Alert>
+          )}
+          {errorMessage && !success && <Alert severity="error">{errorMessage}</Alert>}
+
+          {/* CURRENT POSITION */}
+          <Box>
+            <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
+              Vị trí hiện tại
+            </Typography>
+            <Stack spacing={1.5}>
+              <TextField
+                label="Chức danh"
+                value={currentJobTitle}
+                onChange={(e) => setCurrentJobTitle(e.target.value)}
+                fullWidth
+                size="small"
+              />
+              <TextField
+                label="Công ty"
+                value={currentCompany}
+                onChange={(e) => setCurrentCompany(e.target.value)}
+                fullWidth
+                size="small"
+              />
+            </Stack>
           </Box>
 
           {/* BIO EDIT */}
@@ -131,84 +205,54 @@ const MentorshipProfileEditPage = () => {
             <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
               Giới thiệu
             </Typography>
-
             <TextField
               fullWidth
               multiline
               minRows={4}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Nhập mô tả của bạn..."
+              placeholder="Nhập mô tả về bạn..."
             />
           </Box>
 
-          {/* INFO & SKILLS */}
-          <Box
-            sx={{
-              display: 'flex',
-              gap: { xs: 6, md: 8 },
-              flexDirection: { xs: 'column', md: 'row' },
-            }}
-          >
-            {/* LEFT */}
-            <Box sx={{ width: { md: 375 } }}>
-              <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
-                Cá nhân
-              </Typography>
-
-              <Box sx={{ display: 'grid', gap: 2 }}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <StarBorderIcon />
-                  <Typography>Chất lượng cao</Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <DescriptionOutlinedIcon />
-                  <Typography>Hệ thống thông tin</Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <MenuBookOutlinedIcon />
-                  <Typography>Enrolled 2022</Typography>
-                </Stack>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <CheckBoxOutlinedIcon />
-                  <Typography>Graduated 2026</Typography>
-                </Stack>
-              </Box>
-            </Box>
-
-            {/* RIGHT: SKILLS EDIT */}
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
-                Kỹ năng
-              </Typography>
-
-              {/* ADD SKILL */}
-              <Stack direction="row" spacing={1} mb={2}>
-                <TextField
-                  size="small"
-                  placeholder="Thêm kỹ năng..."
-                  value={newSkill}
-                  onChange={(e) => setNewSkill(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddSkill()}
-                />
-                <Button variant="contained" onClick={handleAddSkill}>
-                  Thêm
-                </Button>
-              </Stack>
-
-              {/* SKILL LIST */}
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {skills.map((tag, idx) => (
-                  <MentorshipTag
-                    key={idx}
-                    label={tag}
-                    onDelete={() => handleDeleteSkill(tag)} // 👈 you may need to support this prop
-                  />
-                ))}
-              </Box>
-            </Box>
+          {/* DEFAULT MEETING LINK */}
+          <Box>
+            <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
+              Link cuộc họp mặc định
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="VD: https://meet.google.com/abc-defg-hij"
+              value={defaultMeetingLink}
+              onChange={(e) => setDefaultMeetingLink(e.target.value)}
+            />
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              Mentee sẽ nhận link này khi bạn duyệt yêu cầu.
+            </Typography>
           </Box>
 
+          {/* EXPERTISE (read-only here — managed in signup flow) */}
+          <Box>
+            <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
+              Nội dung có thể chia sẻ
+            </Typography>
+            {tags.length === 0 ? (
+              <Typography variant="body2" color="text.secondary">
+                Chưa có nội dung nào.
+              </Typography>
+            ) : (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {tags.map((tag, idx) => (
+                  <MentorshipTag key={idx} label={tag} />
+                ))}
+              </Box>
+            )}
+            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+              {/* TODO: build a dedicated expertise CRUD section once BE supports inline edit */}
+              Hiện chỉ có thể quản lý nội dung từ luồng đăng ký lại. Tính năng chỉnh sửa sẽ sớm có.
+            </Typography>
+          </Box>
         </Stack>
       </MentorshipProfileLayout>
     </Page>

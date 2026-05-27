@@ -6,7 +6,6 @@ import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.entity.Funds;
-import com.service.backend.fundraising.entity.FundDonations;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -39,12 +38,11 @@ public class FundController {
     }
 
     @GetMapping
-    // this request also return a list with warnings fields in result
-    // for frontend to show to user when query param is not valid.
     public Mono<ResponseEntity<ApiResponse<DataWithWarnings<PaginatedResponse<FundListItemResponse>>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit,
             @RequestParam(required = false) String q,
+            @RequestParam(required = false) String organizationId,
             @RequestParam(required = false) String statusId,
             @RequestParam(required = false) String timeStartedFrom,
             @RequestParam(required = false) String timeStartedTo,
@@ -58,6 +56,7 @@ public class FundController {
                         .page(page)
                         .size(limit)
                         .q(q)
+                        .organizationId(organizationId)
                         .statusId(statusId)
                         .timeStartedFrom(timeStartedFrom)
                         .timeStartedTo(timeStartedTo)
