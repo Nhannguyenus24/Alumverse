@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
 public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGroupMember, Long> {
@@ -17,26 +18,15 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
     Flux<ChatGroupMember> findByGroupId(Long groupId);
 
     @Query("SELECT * FROM chat_group_members WHERE group_id = :groupId AND member_id = :memberId LIMIT 1")
-    reactor.core.publisher.Mono<ChatGroupMember> findByGroupIdAndMemberId(Long groupId, Long memberId);
+    Mono<ChatGroupMember> findByGroupIdAndMemberId(Long groupId, Long memberId);
 
     @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId AND member_id = :memberId")
-    reactor.core.publisher.Mono<Void> deleteByGroupIdAndMemberId(Long groupId, Long memberId);
+    Mono<Void> deleteByGroupIdAndMemberId(Long groupId, Long memberId);
 
     @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId")
-    reactor.core.publisher.Mono<Void> deleteByGroupId(Long groupId);
-
-    @Query("""
-            SELECT EXISTS (
-                SELECT 1
-                FROM chat_group_members a
-                INNER JOIN chat_group_members b ON a.group_id = b.group_id
-                WHERE a.member_id = :memberAId
-                  AND b.member_id = :memberBId
-            )
-            """)
-    reactor.core.publisher.Mono<Boolean> existsSharedGroupBetweenMembers(Long memberAId, Long memberBId);
+    Mono<Void> deleteByGroupId(Long groupId);
 }
 
 

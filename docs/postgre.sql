@@ -536,7 +536,7 @@ CREATE TABLE "chat_conversation_requests" (
   "status" varchar NOT NULL DEFAULT 'PENDING', -- PENDING, ACCEPTED, REJECTED
 
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX ON "chat_conversation_requests" ("member_low_id", "member_high_id");
