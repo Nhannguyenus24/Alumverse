@@ -17,7 +17,7 @@ public class ChatConversationRequestService {
 
     /**
      * Looks up a conversation request by the canonical member pair (low id, high id).
-     * Returns the request status, or null when no record exists.
+     * Returns empty when no record exists for the pair.
      */
     public Mono<ConversationRequestStatus> getConversationRequestStatus(
             Long currentMemberId,
@@ -37,7 +37,6 @@ public class ChatConversationRequestService {
 
         return chatConversationRequestRepository
                 .findByMemberPair(memberLowId, memberHighId)
-                .map(ChatConversationRequest::getStatus)
-                .switchIfEmpty(Mono.just((ConversationRequestStatus) null));
+                .map(ChatConversationRequest::getStatus);
     }
 }

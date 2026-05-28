@@ -32,8 +32,10 @@ public class ChatConversationRequestController {
 
         return SecurityUtils.getCurrentUserId()
                 .flatMap(currentMemberId -> chatConversationRequestService
-                        .getConversationRequestStatus(currentMemberId, targetMemberId))
-                .map(status -> ResponseEntity.ok(
-                        new ApiResponse<>("Conversation request status retrieved successfully", status)));
+                        .getConversationRequestStatus(currentMemberId, targetMemberId)
+                        .map(status -> ResponseEntity.ok(
+                                new ApiResponse<>("Conversation request status retrieved successfully", status)))
+                        .switchIfEmpty(Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("Conversation request status retrieved successfully", null)))));
     }
 }

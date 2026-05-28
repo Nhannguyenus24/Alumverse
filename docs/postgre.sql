@@ -529,7 +529,7 @@ CREATE TABLE "chat_conversation_requests" (
 
   "last_request_message_at" timestamp,
 
-  "request_message_quota" integer DEFAULT 3,
+  "request_message_quota" integer DEFAULT 1,
 
   "cooldown_until" timestamp,
 
