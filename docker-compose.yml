@@ -23,46 +23,10 @@ services:
       timeout: 5s
       retries: 5
 
-    networks:
-      - backend
-
-  backend:
-    build:
-      context: backend
-      dockerfile: Dockerfile
-    container_name: backend
-    restart: unless-stopped
-
-    depends_on:
-      db:
-        condition: service_healthy
-
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/db
-      SPRING_DATASOURCE_USERNAME: user
-      SPRING_DATASOURCE_PASSWORD: 123
-
-    expose:
-      - "8080"
-
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-
-    networks:
-      - backend
-
   nginx:
     image: nginx:alpine
     container_name: nginx
     restart: unless-stopped
-
-    depends_on:
-      backend:
-        condition: service_healthy
 
     ports:
       - "80:80"
@@ -72,13 +36,6 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./images:/images:ro
       - ./ssl:/etc/nginx/ssl:ro
-
-    networks:
-      - backend
-
-networks:
-  backend:
-    driver: bridge
 
 volumes:
   db_data:
