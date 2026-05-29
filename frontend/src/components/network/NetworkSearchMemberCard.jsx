@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Card, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
 /**
@@ -15,6 +15,7 @@ const NetworkSearchMemberCard = ({
   major,
   onMessage,
   isDemo = false,
+  isMessageLoading = false,
 }) => {
   const displayName = fullName || 'N/A';
   const cohortLabel = startYear != null && startYear !== '' ? startYear : 'N/A';
@@ -86,9 +87,13 @@ const NetworkSearchMemberCard = ({
         fullWidth
         type="button"
         onClick={onMessage}
-        disabled={!onMessage}
+        disabled={!onMessage || isMessageLoading}
       >
-        Nhắn tin
+        {isMessageLoading ? (
+          <CircularProgress size={22} color="inherit" />
+        ) : (
+          'Nhắn tin'
+        )}
       </Button>
     </Card>
   );

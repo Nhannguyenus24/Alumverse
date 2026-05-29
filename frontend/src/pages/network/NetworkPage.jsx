@@ -16,7 +16,12 @@ import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer'
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
-import { MOCK_NETWORK_DEMO_MEMBERS } from '../../mocks/networkConversationMock';
+import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckConversationRequestStatus';
+import { useNotification } from '../../hooks/useNotification';
+import {
+  CONVERSATION_REQUEST_STATUS,
+  CONVERSATION_REQUEST_STATUS_MESSAGES,
+} from '../../constants/conversationRequestStatus';
 
 const FILTERS = [
   {
@@ -58,6 +63,10 @@ const NetworkPage = () => {
   });
   const [messagePeer, setMessagePeer] = useState(null);
   const [isMessageDrawerOpen, setIsMessageDrawerOpen] = useState(false);
+  const [checkingMemberId, setCheckingMemberId] = useState(null);
+
+  const { showInfo, showWarning, showError } = useNotification();
+  const { checkStatus } = useCheckConversationRequestStatus();
 
   const { items, totalPage, isPending, isFetching, isError, errorMessage } = useNetworkMembers({
     appliedFullName,
@@ -87,21 +96,45 @@ const NetworkPage = () => {
   };
 
   const hasActiveCriteria = Boolean(appliedFullName) || !filters.all;
-  const showDemoSection = safePage === 1 && MOCK_NETWORK_DEMO_MEMBERS.length > 0;
-  const showEmptyState =
-    !isPending && !isFetching && items.length === 0 && !showDemoSection;
+  const showEmptyState = !isPending && !isFetching && items.length === 0;
 
-  const handleOpenMessage = useCallback((member) => {
-    setMessagePeer({
-      memberId: member.memberId,
-      fullName: member.fullName,
-      avatarUrl: member.avatarUrl,
-      startYear: member.startYear,
-      program: member.program,
-      major: member.major,
-    });
-    setIsMessageDrawerOpen(true);
-  }, []);
+  const handleOpenMessage = useCallback(
+    async (member) => {
+      setCheckingMemberId(member.memberId);
+
+      try {
+        const status = await checkStatus(member.memberId);
+
+        if (status == null) {
+          setMessagePeer({
+            memberId: member.memberId,
+            fullName: member.fullName,
+            avatarUrl: member.avatarUrl,
+            startYear: member.startYear,
+            program: member.program,
+            major: member.major,
+          });
+          setIsMessageDrawerOpen(true);
+          return;
+        }
+
+        const message =
+          CONVERSATION_REQUEST_STATUS_MESSAGES[status] ??
+          'Đã có yêu cầu kết nối với người này.';
+
+        if (status === CONVERSATION_REQUEST_STATUS.REJECTED) {
+          showWarning(message);
+        } else {
+          showInfo(message);
+        }
+      } catch {
+        showError('Không thể kiểm tra trạng thái kết nối. Vui lòng thử lại.');
+      } finally {
+        setCheckingMemberId(null);
+      }
+    },
+    [checkStatus, showInfo, showWarning, showError],
+  );
 
   const handleCloseMessage = useCallback(() => {
     setIsMessageDrawerOpen(false);
@@ -159,42 +192,6 @@ const NetworkPage = () => {
                 <Alert severity="error">{errorMessage}</Alert>
               ) : null}
 
-              {showDemoSection ? (
-                <Stack spacing={2}>
-                  <Alert severity="info" sx={{ borderRadius: 1.5 }}>
-                    <Typography variant="body2" component="span">
-                      <strong>Demo mock (không tính phân trang):</strong> 5 card bên dưới (ID
-                      9001–9005) để test nhắn tin. Danh sách phân trang phía dưới lấy từ API, mỗi
-                      trang tối đa {PAGE_SIZE} người.
-                    </Typography>
-                  </Alert>
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: '1fr 1fr',
-                        md: '1fr 1fr 1fr',
-                      },
-                      gap: 3,
-                    }}
-                  >
-                    {MOCK_NETWORK_DEMO_MEMBERS.map((member) => (
-                      <NetworkSearchMemberCard
-                        key={member.memberId}
-                        avatar={member.avatarUrl}
-                        fullName={member.fullName}
-                        startYear={member.startYear}
-                        program={member.program}
-                        major={member.major}
-                        isDemo
-                        onMessage={() => handleOpenMessage(member)}
-                      />
-                    ))}
-                  </Box>
-                </Stack>
-              ) : null}
-
               {isPending ? (
                 <Stack alignItems="center" py={6}>
                   <CircularProgress color="primary" />
@@ -207,11 +204,6 @@ const NetworkPage = () => {
                 </Alert>
               ) : items.length > 0 ? (
                 <Stack spacing={2}>
-                  {showDemoSection ? (
-                    <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
-                      Kết quả tìm kiếm
-                    </Typography>
-                  ) : null}
                   <Box
                     sx={{
                       display: 'grid',
@@ -234,6 +226,7 @@ const NetworkPage = () => {
                         program={member.program}
                         major={member.major}
                         onMessage={() => handleOpenMessage(member)}
+                        isMessageLoading={checkingMemberId === member.memberId}
                       />
                     ))}
                   </Box>

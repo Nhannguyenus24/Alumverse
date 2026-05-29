@@ -33,4 +33,15 @@ export const chatApi = {
     });
     return unwrap(response);
   },
+
+  /**
+   * @param {number} targetMemberId
+   * @returns {Promise<'PENDING' | 'ACCEPTED' | 'REJECTED' | null>}
+   */
+  async getConversationRequestStatus(targetMemberId) {
+    const response = await apiClient.get('/chat/conversation-requests/connection-status', {
+      params: { targetMemberId },
+    });
+    return unwrap(response) ?? null;
+  },
 };

@@ -1,0 +1,23 @@
+import { useMutation } from '@tanstack/react-query';
+
+import { chatApi } from '../../api/chatApi';
+
+export function useCheckConversationRequestStatus() {
+  const mutation = useMutation({
+    mutationFn: (targetMemberId) => chatApi.getConversationRequestStatus(targetMemberId),
+  });
+
+  const errorMessage =
+    mutation.isError && mutation.error
+      ? mutation.error.response?.data?.message ??
+        mutation.error.message ??
+        'Không thể kiểm tra trạng thái kết nối.'
+      : null;
+
+  return {
+    checkStatus: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    errorMessage,
+  };
+}

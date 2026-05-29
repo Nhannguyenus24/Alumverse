@@ -6,7 +6,7 @@ export const CONVERSATION_STATUS = {
   DECLINED: 'DECLINED',
 };
 
-export const GREETING_MESSAGE_LIMIT = 3;
+export const GREETING_MESSAGE_LIMIT = 1;
 
 /** Fallback khi chưa đăng nhập (chỉ dev/mock) */
 export const MOCK_CURRENT_MEMBER_ID_FALLBACK = 100;
