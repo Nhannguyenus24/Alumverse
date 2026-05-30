@@ -342,8 +342,8 @@ public class ForumService {
     public Mono<ForumPostReactionDTO> getUserReaction(Integer postId, Integer memberId) {
         return forumPostReactionRepository.findByPostIdAndMemberId(postId, memberId)
                 .map(this::convertToReactionDTO)
-                .doOnSuccess(result -> log.info("getUserReaction result: {}", JsonUtils.toJson(result)))
-                .doOnError(error -> log.debug("No reaction found for post ID: {} by member: {}", postId, memberId));
+                .doOnSuccess(result -> log.info("Found user reaction for post ID: {}", postId))
+                .doOnError(error -> log.info("No reaction found for post ID: {} by member: {}", postId, memberId));
     }
 
     // Helper methods to convert entities to DTOs

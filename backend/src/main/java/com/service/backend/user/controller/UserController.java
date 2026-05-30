@@ -2,11 +2,14 @@ package com.service.backend.user.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,8 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.dto.ChangeMyPasswordRequest;
+import com.service.backend.user.dto.CreateVerificationRequest;
+import com.service.backend.user.dto.DirectVerifyRequest;
 import com.service.backend.user.dto.NotificationResponse;
 import com.service.backend.user.dto.NotificationSettingsResponse;
+import com.service.backend.user.dto.RequestPeerVerificationRequest;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
 import com.service.backend.user.dto.UserLoginHistoryResponse;
@@ -121,5 +127,38 @@ public class UserController {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(notificationService::deleteAllNotifications)
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("All notifications deleted successfully", true)));
+    }
+
+    @PostMapping("/verification-requests")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> createVerificationRequest(
+            @Valid @RequestBody CreateVerificationRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.createVerificationRequest(userId, request))
+                .thenReturn(ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Verification request submitted successfully", true)));
+    }
+
+    @PostMapping("/peer-verifications/request")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> requestPeerVerification(
+            @Valid @RequestBody RequestPeerVerificationRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.requestPeerVerification(userId, request.getOrganizationId(), request.getVerifierUserId()))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Peer verification requested successfully", true)));
+    }
+
+    @PatchMapping("/peer-verifications/{requestId}/accept")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> acceptPeerVerification(
+            @PathVariable @Min(1) Integer requestId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.acceptPeerVerification(userId, requestId))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Peer verification accepted successfully", true)));
+    }
+
+    @PostMapping("/peer-verifications/direct")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> directVerify(
+            @Valid @RequestBody DirectVerifyRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.directVerify(userId, request.getOrganizationId(), request.getTargetUserId()))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("User verified directly successfully", true)));
     }
 }
