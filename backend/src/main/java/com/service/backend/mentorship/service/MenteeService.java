@@ -163,6 +163,14 @@ public class MenteeService {
                         .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
     }
 
+    public Mono<List<String>> getDistinctExpertiseTopics() {
+        return expertiseRepository.findDistinctTopics().collectList();
+    }
+
+    public Mono<List<String>> getDistinctExpertiseCategories() {
+        return expertiseRepository.findDistinctCategories().collectList();
+    }
+
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
         return expertiseRepository.findByMentorMemberId(mentorMemberId)
                 .map(MentorExpertiseResponse::from)

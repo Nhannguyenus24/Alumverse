@@ -67,6 +67,20 @@ public class MenteeController {
                         .ok(new ApiResponse<>("Filtered mentors retrieved successfully", response)));
     }
 
+    @GetMapping("/expertise-topics")
+    public Mono<ResponseEntity<ApiResponse<List<String>>>> getExpertiseTopics() {
+        return menteeService.getDistinctExpertiseTopics()
+                .map(topics -> ResponseEntity
+                        .ok(new ApiResponse<>("Expertise topics retrieved successfully", topics)));
+    }
+
+    @GetMapping("/expertise-categories")
+    public Mono<ResponseEntity<ApiResponse<List<String>>>> getExpertiseCategories() {
+        return menteeService.getDistinctExpertiseCategories()
+                .map(categories -> ResponseEntity
+                        .ok(new ApiResponse<>("Expertise categories retrieved successfully", categories)));
+    }
+
     @GetMapping("/mentors/{mentorMemberId}/expertise")
     public Mono<ResponseEntity<ApiResponse<List<MentorExpertiseResponse>>>> getMentorExpertise(
             @PathVariable @Min(1) Integer mentorMemberId) {
