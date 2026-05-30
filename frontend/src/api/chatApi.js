@@ -36,12 +36,29 @@ export const chatApi = {
 
   /**
    * @param {number} targetMemberId
-   * @returns {Promise<'PENDING' | 'ACCEPTED' | 'REJECTED' | null>}
+   * @returns {Promise<{
+   *   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+   *   cooldownUntil: string | null;
+   *   latestMessage: object | null;
+   * } | null>}
    */
   async getConversationRequestStatus(targetMemberId) {
     const response = await apiClient.get('/chat/conversation-requests/connection-status', {
       params: { targetMemberId },
     });
     return unwrap(response) ?? null;
+  },
+
+  /**
+   * @param {number} targetMemberId
+   * @param {string} message
+   * @returns {Promise<number>} id of the created conversation request
+   */
+  async createConversationRequest(targetMemberId, message) {
+    const response = await apiClient.post('/chat/conversation-requests', {
+      targetMemberId,
+      message,
+    });
+    return unwrap(response);
   },
 };

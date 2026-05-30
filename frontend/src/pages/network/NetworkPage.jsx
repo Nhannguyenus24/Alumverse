@@ -3,13 +3,12 @@ import {
   Alert,
   Box,
   CircularProgress,
-  Container,
   Pagination,
   Stack,
   Typography,
 } from '@mui/material';
 
-import Page from '../../components/Page';
+import NetworkSectionLayout from '../../components/network/NetworkSectionLayout';
 import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
@@ -18,10 +17,6 @@ import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
 import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckConversationRequestStatus';
 import { useNotification } from '../../hooks/useNotification';
-import {
-  CONVERSATION_REQUEST_STATUS,
-  CONVERSATION_REQUEST_STATUS_MESSAGES,
-} from '../../constants/conversationRequestStatus';
 
 const FILTERS = [
   {
@@ -62,10 +57,11 @@ const NetworkPage = () => {
     startYear: '',
   });
   const [messagePeer, setMessagePeer] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState(null);
   const [isMessageDrawerOpen, setIsMessageDrawerOpen] = useState(false);
   const [checkingMemberId, setCheckingMemberId] = useState(null);
 
-  const { showInfo, showWarning, showError } = useNotification();
+  const { showError } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
 
   const { items, totalPage, isPending, isFetching, isError, errorMessage } = useNetworkMembers({
@@ -103,171 +99,134 @@ const NetworkPage = () => {
       setCheckingMemberId(member.memberId);
 
       try {
-        const status = await checkStatus(member.memberId);
+        const result = await checkStatus(member.memberId);
 
-        if (status == null) {
-          setMessagePeer({
-            memberId: member.memberId,
-            fullName: member.fullName,
-            avatarUrl: member.avatarUrl,
-            startYear: member.startYear,
-            program: member.program,
-            major: member.major,
-          });
-          setIsMessageDrawerOpen(true);
-          return;
-        }
-
-        const message =
-          CONVERSATION_REQUEST_STATUS_MESSAGES[status] ??
-          'Đã có yêu cầu kết nối với người này.';
-
-        if (status === CONVERSATION_REQUEST_STATUS.REJECTED) {
-          showWarning(message);
-        } else {
-          showInfo(message);
-        }
+        setMessagePeer({
+          memberId: member.memberId,
+          fullName: member.fullName,
+          avatarUrl: member.avatarUrl,
+          startYear: member.startYear,
+          program: member.program,
+          major: member.major,
+        });
+        setConnectionStatus(result);
+        setIsMessageDrawerOpen(true);
       } catch {
         showError('Không thể kiểm tra trạng thái kết nối. Vui lòng thử lại.');
       } finally {
         setCheckingMemberId(null);
       }
     },
-    [checkStatus, showInfo, showWarning, showError],
+    [checkStatus, showError],
   );
 
   const handleCloseMessage = useCallback(() => {
     setIsMessageDrawerOpen(false);
+    setConnectionStatus(null);
   }, []);
 
   return (
-    <Page title="Network">
-      <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
-        <Container
-          maxWidth="lg"
+    <NetworkSectionLayout title="Network">
+      <Stack spacing={2}>
+        <Typography
+          variant="h1"
+          fontWeight={800}
+          color="primary.main"
+          sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+        >
+          KẾT NỐI
+        </Typography>
+
+        <Typography color="text.secondary">
+          Tìm và kết nối với các sinh viên và các cựu sinh viên trên nền tảng.
+        </Typography>
+
+        <DynamicFilterBar
+          config={FILTERS}
+          value={filters}
+          onChange={(next) => {
+            setFilters(next);
+            setPage(1);
+          }}
+        />
+
+        <SearchBar
+          value={searchInput}
+          onChange={setSearchInput}
+          onKeyDown={handleSearchKeyDown}
+          placeholder="Tìm theo họ tên… (Enter để tìm)"
+        />
+      </Stack>
+
+      {isError ? <Alert severity="error">{errorMessage}</Alert> : null}
+
+      {isPending ? (
+        <Stack alignItems="center" py={6}>
+          <CircularProgress color="primary" />
+        </Stack>
+      ) : showEmptyState ? (
+        <Alert severity="info">
+          {hasActiveCriteria
+            ? 'Không có kết quả phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
+            : 'Chưa có người để hiển thị.'}
+        </Alert>
+      ) : items.length > 0 ? (
+        <Box
           sx={{
-            pt: { xs: 2, sm: 3, md: 4 },
-            px: { xs: 2, sm: 3, lg: 6 },
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: '1fr',
+              sm: '1fr 1fr',
+              md: '1fr 1fr 1fr',
+            },
+            gap: 3,
+            opacity: isFetching ? 0.6 : 1,
+            transition: 'opacity 0.2s',
           }}
         >
-          <Stack
-            spacing={5}
+          {items.map((member) => (
+            <NetworkSearchMemberCard
+              key={member.memberId}
+              avatar={member.avatarUrl}
+              fullName={member.fullName}
+              startYear={member.startYear}
+              program={member.program}
+              major={member.major}
+              onMessage={() => handleOpenMessage(member)}
+              isMessageLoading={checkingMemberId === member.memberId}
+            />
+          ))}
+        </Box>
+      ) : null}
+
+      {pageCount > 0 ? (
+        <Stack direction="row" justifyContent="center" alignItems="center">
+          <Pagination
+            count={pageCount}
+            page={safePage}
+            onChange={handlePageChange}
+            color="primary"
+            shape="rounded"
+            size="large"
+            disabled={isFetching}
             sx={{
-              width: '100%',
-              mx: 'auto',
-              px: { xs: 1.5, sm: 2, md: 2.75 },
+              '& .MuiPaginationItem-root': {
+                fontWeight: 700,
+                minWidth: 38,
+                height: 38,
+              },
             }}
-          >
-            <Stack gap={2}>
-              <Typography
-                variant="h1"
-                fontWeight={800}
-                color="primary.main"
-                sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-              >
-                KẾT NỐI
-              </Typography>
-
-                <Typography color="text.secondary">
-                  Tìm và kết nối với các sinh viên và các cựu sinh viên trên nền tảng.
-                </Typography>
-                <DynamicFilterBar
-                  config={FILTERS}
-                  value={filters}
-                  onChange={(next) => {
-                    setFilters(next);
-                    setPage(1);
-                  }}
-                />
-
-                <SearchBar
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="Tìm theo họ tên… (Enter để tìm)"
-                />
-              </Stack>
-
-              {isError ? (
-                <Alert severity="error">{errorMessage}</Alert>
-              ) : null}
-
-              {isPending ? (
-                <Stack alignItems="center" py={6}>
-                  <CircularProgress color="primary" />
-                </Stack>
-              ) : showEmptyState ? (
-                <Alert severity="info">
-                  {hasActiveCriteria
-                    ? 'Không có kết quả phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
-                    : 'Chưa có người để hiển thị.'}
-                </Alert>
-              ) : items.length > 0 ? (
-                <Stack spacing={2}>
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: '1fr 1fr',
-                        md: '1fr 1fr 1fr',
-                      },
-                      gap: 3,
-                      opacity: isFetching ? 0.6 : 1,
-                      transition: 'opacity 0.2s',
-                    }}
-                  >
-                    {items.map((member) => (
-                      <NetworkSearchMemberCard
-                        key={member.memberId}
-                        avatar={member.avatarUrl}
-                        fullName={member.fullName}
-                        startYear={member.startYear}
-                        program={member.program}
-                        major={member.major}
-                        onMessage={() => handleOpenMessage(member)}
-                        isMessageLoading={checkingMemberId === member.memberId}
-                      />
-                    ))}
-                  </Box>
-                </Stack>
-              ) : null}
-
-              {pageCount > 0 ? (
-                <Stack
-                  direction="row"
-                  justifyContent="center"
-                  alignItems="center"
-                  sx={{ mt: 3.5 }}
-                >
-                  <Pagination
-                    count={pageCount}
-                    page={safePage}
-                    onChange={handlePageChange}
-                    color="primary"
-                    shape="rounded"
-                    size="large"
-                    disabled={isFetching}
-                    sx={{
-                      '& .MuiPaginationItem-root': {
-                        fontWeight: 700,
-                        minWidth: 38,
-                        height: 38,
-                      },
-                    }}
-                  />
-                </Stack>
-              ) : null}
-          </Stack>
-        </Container>
-      </Container>
+          />
+        </Stack>
+      ) : null}
 
       <NetworkMessageDrawer
         open={isMessageDrawerOpen}
         onClose={handleCloseMessage}
         peer={messagePeer}
+        connectionStatus={connectionStatus}
       />
-    </Page>
+    </NetworkSectionLayout>
   );
 };
 

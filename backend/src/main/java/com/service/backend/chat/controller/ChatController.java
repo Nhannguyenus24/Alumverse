@@ -94,7 +94,7 @@ public class ChatController {
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createPrivateChat(
             @Valid @RequestBody PrivateChatRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberAId -> this.chatService.createNewPrivateChat(memberAId, request.targetMemberId()))
+                .flatMap(memberAId -> this.chatService.createNewPrivateChat(memberAId, request.getTargetMemberId()))
                 .map(group -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Private chat created successfully", group)));
@@ -122,7 +122,7 @@ public class ChatController {
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createGroupChat(
             @Valid @RequestBody CreateGroupRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.createGroupChat(currentMemberId, request.memberIds()))
+                .flatMap(currentMemberId -> this.chatService.createGroupChat(currentMemberId, request.getMemberIds()))
                 .map(group -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Group chat created successfully", group)));
@@ -137,7 +137,7 @@ public class ChatController {
             @PathVariable("groupId") @Min(1) Long groupId,
             @Valid @RequestBody AddMembersRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.addMembersToGroup(groupId, currentMemberId, request.memberIds()))
+                .flatMap(currentMemberId -> this.chatService.addMembersToGroup(groupId, currentMemberId, request.getMemberIds()))
                 .thenReturn(ResponseEntity
                         .ok(new ApiResponse<>("Members added successfully", null)));
     }
@@ -189,7 +189,7 @@ public class ChatController {
             @PathVariable("groupId") @Min(1) Long groupId,
             @Valid @RequestBody UpdateGroupRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.updateGroupInfo(groupId, currentMemberId, request.title()))
+                .flatMap(currentMemberId -> this.chatService.updateGroupInfo(groupId, currentMemberId, request.getTitle()))
                 .map(updatedGroup -> ResponseEntity
                         .ok(new ApiResponse<>("Group updated successfully", updatedGroup)));
     }
