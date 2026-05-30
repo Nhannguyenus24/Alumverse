@@ -9,17 +9,12 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChatMessageResponse {
+public class ConversationRequestLatestMessageResponse {
 
     private Long id;
     private Long groupId;
     private Long senderMemberId;
-    private String senderFullName;
-    private String senderAvatarUrl;
     private String content;
-    private String messageType;
-    private String metadata;
     private LocalDateTime createdAt;
     private LocalDateTime editedAt;
-    private LocalDateTime deletedAt;
 }

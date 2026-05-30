@@ -52,6 +52,17 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
             """)
     Mono<ChatMessage> findLastByGroupId(Long groupId);
 
+    @Query("""
+            SELECT id, group_id, sender_member_id, content, created_at, edited_at, deleted_at
+            FROM chat_messages
+            WHERE group_id = :groupId
+              AND sender_member_id = :senderMemberId
+              AND deleted_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+            """)
+    Mono<ChatMessage> findLatestByGroupIdAndSenderMemberId(Long groupId, Long senderMemberId);
+
     @Query("SELECT COUNT(*) FROM chat_messages WHERE group_id = :groupId")
     Mono<Long> countByGroupId(Long groupId);
 
