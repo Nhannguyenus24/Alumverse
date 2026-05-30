@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Alert, Box, Button, CircularProgress, Container, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
@@ -14,6 +15,10 @@ import MentorshipCard from "../../components/mentorship/MentorshipCard";
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
+import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
+import { useExpertiseTopics } from '../../hooks/mentorship/useExpertiseTopics';
+import { useExpertiseCategories } from '../../hooks/mentorship/useExpertiseCategories';
+import useAuthStore from '../../stores/authStore';
 import { formatRating } from '../../utils/numberFormatter';
 
 
@@ -24,84 +29,117 @@ const SIDEBAR = [
   { id: '/development/jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
 ];
 
-const TOP_TABS = [
-  { label: 'Giới thiệu', path: '/development/mentorship' },
-  { label: 'Tìm kiếm', path: '/development/mentorship/search' },
-  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
-  { label: 'Profile', path: '/development/mentorship/profile' },
-  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
-  { label: 'Đăng ký', path: '/development/mentorship/appointment' },
-];
-
 const STATS = [
   { value: '500+', label: 'cố vấn' },
   { value: '2,000+', label: 'buổi họp' },
   { value: '100%', label: 'alumni đã xác nhận' },
 ];
 
-// Configuration for the Dynamic Filter Bar
-const MENTORSHIP_FILTERS = [
-  {
-    type: 'dropdown',
-    key: 'topics',
-    label: 'Chủ đề',
-    multiple: true,
-    options: ['Frontend', 'Backend', 'Career', 'Interview', 'Startup'],
-  },
-  {
-    type: 'dropdown',
-    key: 'expertise',
-    label: 'Chuyên môn',
-    multiple: true,
-    options: ['Web', 'Mobile', 'AI', 'Data', 'DevOps'],
-  },
-  {
-    type: 'topics', // Using the button-style toggle for "Trending"
-    key: 'status',
-    options: ['Thịnh hành'],
-  },
-];
-
-/* ================= COMPONENT ================= */
-
 const PAGE_SIZE = 9;
+
+const startOfDayIso = (dateStr) => (dateStr ? `${dateStr}T00:00:00` : '');
+const endOfDayIso = (dateStr) => (dateStr ? `${dateStr}T23:59:59` : '');
 
 const MentorshipPage = () => {
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
 
   const [filters, setFilters] = useState({
     all: true,
+    categories: [],
     topics: [],
-    expertise: [],
     status: [],
-    search: '',
+    availableOn: '',
   });
 
-  const expertiseFilter = useMemo(() => {
-    const all = [...(filters.topics ?? []), ...(filters.expertise ?? [])];
-    return all[0] ?? '';
-  }, [filters.topics, filters.expertise]);
+  const authUser = useAuthStore((state) => state.user);
+  const isLoggedIn = Boolean(authUser?.id);
+
+  const mentorProfileQuery = useMyMentorProfile();
+  const isMentor = Boolean(mentorProfileQuery.data && !mentorProfileQuery.isError);
+  const ownMentorMemberId = mentorProfileQuery.data?.memberId ?? null;
+
+  const categoriesQuery = useExpertiseCategories();
+  const categoryOptions = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
+
+  const topicsQuery = useExpertiseTopics();
+  const topicOptions = useMemo(() => topicsQuery.data ?? [], [topicsQuery.data]);
+
+  const MENTORSHIP_FILTERS = useMemo(
+    () => [
+      {
+        type: 'dropdown',
+        key: 'categories',
+        label: 'Lĩnh vực',
+        multiple: true,
+        options: categoryOptions,
+      },
+      {
+        type: 'dropdown',
+        key: 'topics',
+        label: 'Chủ đề',
+        multiple: true,
+        options: topicOptions,
+      },
+      {
+        type: 'date',
+        key: 'availableOn',
+        label: 'Ngày rảnh',
+      },
+      {
+        type: 'topics',
+        key: 'status',
+        options: ['Thịnh hành'],
+      },
+    ],
+    [categoryOptions, topicOptions],
+  );
+
+  const categoryFilter = useMemo(() => (filters.categories ?? [])[0] ?? '', [filters.categories]);
+  const expertiseFilter = useMemo(() => (filters.topics ?? [])[0] ?? '', [filters.topics]);
 
   const hasAvailability = (filters.status ?? []).includes('Thịnh hành');
+  const availableFrom = startOfDayIso(filters.availableOn);
+  const availableTo = endOfDayIso(filters.availableOn);
 
   const browseQuery = useBrowseMentors({
     keyword: searchQuery,
+    category: categoryFilter,
     expertise: expertiseFilter,
     hasAvailability,
+    availableFrom,
+    availableTo,
     page,
     limit: PAGE_SIZE,
   });
   const paginated = browseQuery.data;
   const mentors = useMemo(() => paginated?.items ?? [], [paginated]);
 
-  // Ví dụ: đã là Alumni và đã là Mentor
-  const user = { isAlumni: true, isMentor: true };
-  const { isAlumni, isMentor } = user;
+  const goToLogin = () => navigate('/auth/login');
 
-  // Hàm render nút bấm dựa trên điều kiện
+  const handleViewProfile = (mentorMemberId) =>
+    navigate(`/development/mentorship/mentors/${mentorMemberId}`);
+
+  const handleBook = (mentorMemberId) => {
+    if (!isLoggedIn) {
+      enqueueSnackbar('Vui lòng đăng nhập để đặt lịch với cố vấn.', { variant: 'info' });
+      goToLogin();
+      return;
+    }
+    navigate(`/development/mentorship/mentors/${mentorMemberId}/book`);
+  };
+
   const renderActionButtons = () => {
+    if (!isLoggedIn) {
+      return (
+        <Button variant="contained" onClick={goToLogin}>
+          Đăng nhập để bắt đầu
+        </Button>
+      );
+    }
+
     const myBookingsBtn = (
       <Button
         variant="outlined"
@@ -111,13 +149,13 @@ const MentorshipPage = () => {
       </Button>
     );
 
-    // Trường hợp 3: Không phải Alumni -> chỉ hiện "Lịch hẹn của tôi"
-    if (!isAlumni) return myBookingsBtn;
+    if (mentorProfileQuery.isLoading) {
+      return myBookingsBtn;
+    }
 
-    // Trường hợp 2: Là Alumni + Đã là Mentor -> "Trang cá nhân" + "Lịch hẹn của tôi"
     if (isMentor) {
       return (
-        <Stack direction="row" spacing={1.5}>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
           {myBookingsBtn}
           <Button
             variant="outlined"
@@ -125,11 +163,16 @@ const MentorshipPage = () => {
           >
             Trang cá nhân
           </Button>
+          <Button
+            variant="contained"
+            onClick={() => navigate('/development/mentorship/dashboard')}
+          >
+            Duyệt yêu cầu
+          </Button>
         </Stack>
       );
     }
 
-    // Trường hợp 1: Là Alumni + Chưa là Mentor -> "Lịch hẹn của tôi" + "Trở thành cố vấn"
     return (
       <Stack direction="row" spacing={1.5}>
         {myBookingsBtn}
@@ -154,7 +197,6 @@ const MentorshipPage = () => {
               gap: { xs: 2, md: 3 },
             }}
           >
-            {/* SIDEBAR - Matches Development UI */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
               <Sidebar items={SIDEBAR} />
               <ForumSponsoredCard
@@ -165,12 +207,9 @@ const MentorshipPage = () => {
               />
             </Stack>
 
-            {/* MAIN CONTENT */}
             <Stack spacing={4} sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 } }}>
-              
               <Stack spacing={2}>
-                {/* HEADER */}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
                   <Typography
                     variant="h1"
                     fontWeight={800}
@@ -180,7 +219,6 @@ const MentorshipPage = () => {
                     CỐ VẤN
                   </Typography>
 
-                  {/* GỌI HÀM RENDER NÚT TẠI ĐÂY */}
                   {renderActionButtons()}
                 </Box>
 
@@ -190,7 +228,6 @@ const MentorshipPage = () => {
                 </Typography>
               </Stack>
 
-              {/* STATS BANNER */}
               <Box
                 sx={{
                   backgroundColor: 'primary.main',
@@ -215,7 +252,6 @@ const MentorshipPage = () => {
                 ))}
               </Box>
 
-              {/* SEARCH - Using SearchBar from UI kit */}
               <Box>
                 <Typography variant="h4" fontWeight={700} mb={2}>
                   Tìm kiếm cố vấn
@@ -226,7 +262,7 @@ const MentorshipPage = () => {
                     setSearchQuery(v);
                     setPage(0);
                   }}
-                  placeholder="Tìm kiếm cố vấn theo công ty, chức danh hoặc bio..."
+                  placeholder="Tìm theo tên, chức danh, công ty hoặc bio..."
                 />
               </Box>
 
@@ -239,7 +275,6 @@ const MentorshipPage = () => {
                 }}
               />
 
-              {/* MENTOR CARDS GRID */}
               {browseQuery.isLoading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                   <CircularProgress />
@@ -264,28 +299,37 @@ const MentorshipPage = () => {
                     gap: 3,
                   }}
                 >
-                  {mentors.map((mentor) => (
-                    <MentorshipCard
-                      key={mentor.memberId}
-                      avatar={mentor.avatarUrl}
-                      name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
-                      role={
-                        [mentor.currentJobTitle, mentor.currentCompany]
-                          .filter(Boolean)
-                          .join(' @ ') || 'Cố vấn'
-                      }
-                      rating={formatRating(mentor.ratingAvg)}
-                      reviews={mentor.totalSessions ?? 0}
-                      tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
-                      onViewProfile={() =>
-                        navigate(`/development/mentorship/mentors/${mentor.memberId}/book`)
-                      }
-                    />
-                  ))}
+                  {mentors.map((mentor) => {
+                    const isOwnCard = ownMentorMemberId === mentor.memberId;
+                    const bookDisabledReason = !isLoggedIn
+                      ? 'Đăng nhập để đặt lịch'
+                      : isOwnCard
+                        ? 'Đây là hồ sơ của bạn'
+                        : undefined;
+
+                    return (
+                      <MentorshipCard
+                        key={mentor.memberId}
+                        avatar={mentor.avatarUrl}
+                        name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
+                        role={
+                          [mentor.currentJobTitle, mentor.currentCompany]
+                            .filter(Boolean)
+                            .join(' @ ') || 'Cố vấn'
+                        }
+                        rating={formatRating(mentor.ratingAvg)}
+                        reviews={mentor.totalSessions ?? 0}
+                        tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
+                        onViewProfile={() => handleViewProfile(mentor.memberId)}
+                        onBook={() => handleBook(mentor.memberId)}
+                        canBook={isLoggedIn && !isOwnCard}
+                        bookDisabledReason={bookDisabledReason}
+                      />
+                    );
+                  })}
                 </Box>
               )}
 
-              {/* PAGINATION CONTROLS */}
               {paginated && paginated.totalPage > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
                   <Button
