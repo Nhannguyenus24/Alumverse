@@ -93,7 +93,7 @@ public class MenteeService {
         }
         if (ids.isEmpty()) return Mono.just(list);
 
-        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByUserIds(ids);
+        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByMemberIds(ids);
         Mono<Map<Integer, java.util.List<String>>> topicsMono = expertiseRepository
                 .findByMentorMemberIds(ids)
                 .collectMultimap(com.service.backend.mentorship.entity.MentorExpertise::getMentorMemberId,
