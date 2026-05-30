@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -57,12 +58,15 @@ public class MenteeController {
     @GetMapping("/mentors/filter")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> filterMentors(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) String expertise,
             @RequestParam(required = false) BigDecimal minRating,
             @RequestParam(defaultValue = "false") boolean hasAvailability,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime availableFrom,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime availableTo,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return menteeService.filterMentors(search, expertise, minRating, hasAvailability, page, limit)
+        return menteeService.filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Filtered mentors retrieved successfully", response)));
     }
