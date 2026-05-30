@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
@@ -135,6 +135,9 @@ const ActivitiesNewsPage = Loadable(
 );
 const NetworkPage = Loadable(
   lazy(() => import("../pages/network/NetworkPage")),
+);
+const NetworkIncomingRequestsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkIncomingRequestsPage")),
 );
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
@@ -326,9 +329,19 @@ export const router = createBrowserRouter([
         path: "search",
         element: (
           <ProtectedRoute>
-            <NetworkPage />
+            <Outlet />
           </ProtectedRoute>
         ),
+        children: [
+          {
+            index: true,
+            element: <NetworkPage />,
+          },
+          {
+            path: "requests",
+            element: <NetworkIncomingRequestsPage />,
+          },
+        ],
       },
       {
         path: "chat",

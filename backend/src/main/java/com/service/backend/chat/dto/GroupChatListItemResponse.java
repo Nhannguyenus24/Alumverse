@@ -1,16 +1,23 @@
 package com.service.backend.chat.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
-public record GroupChatListItemResponse(
-        Long id,
-        String type,
-        String title,
-        Long createdBy,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        Long memberCount,
-        String lastMessagePreview,
-        LocalDateTime lastMessageAt
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class GroupChatListItemResponse {
+
+    private Long id;
+    private String type;
+    private String title;
+    private Long createdBy;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private Long memberCount;
+    private String lastMessagePreview;
+    private LocalDateTime lastMessageAt;
 }

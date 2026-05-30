@@ -107,14 +107,14 @@ public class ChatService {
                 .map(list -> {
                     list.sort(Comparator.comparing(
                             (PrivateChatListItemResponse item) ->
-                                    item.lastMessageAt() != null ? item.lastMessageAt() : item.updatedAt()
+                                    item.getLastMessageAt() != null ? item.getLastMessageAt() : item.getUpdatedAt()
                     ).reversed());
 
                     List<PrivateChatListItemResponse> filtered = (text == null || text.isBlank())
                             ? list
                             : list.stream()
-                                  .filter(item -> item.peerUserName() != null &&
-                                                  item.peerUserName().toLowerCase().contains(text.toLowerCase()))
+                                  .filter(item -> item.getPeerUserName() != null &&
+                                                  item.getPeerUserName().toLowerCase().contains(text.toLowerCase()))
                                   .toList();
 
                     long total = filtered.size();
@@ -203,14 +203,14 @@ public class ChatService {
                 .map(list -> {
                     list.sort(Comparator.comparing(
                             (GroupChatListItemResponse item) ->
-                                    item.lastMessageAt() != null ? item.lastMessageAt() : item.updatedAt()
+                                    item.getLastMessageAt() != null ? item.getLastMessageAt() : item.getUpdatedAt()
                     ).reversed());
 
                     List<GroupChatListItemResponse> filtered = (text == null || text.isBlank())
                             ? list
                             : list.stream()
-                                  .filter(item -> item.title() != null &&
-                                                  item.title().toLowerCase().contains(text.toLowerCase()))
+                                  .filter(item -> item.getTitle() != null &&
+                                                  item.getTitle().toLowerCase().contains(text.toLowerCase()))
                                   .toList();
 
                     long total = filtered.size();

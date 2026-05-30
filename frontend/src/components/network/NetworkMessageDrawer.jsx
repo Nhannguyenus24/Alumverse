@@ -3,11 +3,9 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
   CircularProgress,
   Drawer,
   IconButton,
-  InputAdornment,
   Stack,
   TextField,
   Typography,
@@ -18,15 +16,12 @@ import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import Scrollbar from '../Scrollbar';
 import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
-import { useNetworkConversation } from '../../hooks/network/useNetworkConversation';
 import { useNetworkConversationActions } from '../../hooks/network/useNetworkConversationActions';
+import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import {
-  getConversationBanner,
-  getConversationUiMode,
-  getComposerPlaceholder,
   isComposerEnabled,
-} from '../../mocks/networkConversationUi';
-
+  resolveConnectionDrawerState,
+} from '../../utils/networkConnectionDrawerUi';
 
 function formatAcademicValue(value) {
   if (Array.isArray(value)) {
@@ -89,37 +84,33 @@ function NetworkMessageBubble({ message, isOwn }) {
   );
 }
 
-const NetworkMessageDrawer = ({ open, onClose, peer }) => {
+const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const messagesEndRef = useRef(null);
   const [draft, setDraft] = useState('');
+  const [sentInSession, setSentInSession] = useState(false);
+  const [localMessages, setLocalMessages] = useState([]);
 
   const peerMemberId = peer?.memberId ?? null;
-  const { conversation, currentMemberId, isPending } = useNetworkConversation(
-    peerMemberId,
-    open,
-  );
-  const {
-    sendMessage,
-    isSending,
-    acceptConversation,
-    isAccepting,
-    declineConversation,
-    isDeclining,
-  } = useNetworkConversationActions(peerMemberId);
+  const currentMemberId = useNetworkCurrentMemberId();
+  const { sendMessage, isSending } = useNetworkConversationActions(peerMemberId);
 
-  const mode = conversation ? getConversationUiMode(conversation, currentMemberId) : 'new';
-  const banner = conversation
-    ? getConversationBanner(mode, conversation, currentMemberId, peer?.fullName)
-    : null;
-  const composerEnabled =
-    conversation && isComposerEnabled(mode, conversation, currentMemberId);
-  const messages = conversation?.messages ?? [];
+  const drawerState = resolveConnectionDrawerState(connectionStatus);
+  const composerEnabled = isComposerEnabled({
+    canCompose: drawerState.canCompose,
+    singleMessageOnly: drawerState.singleMessageOnly,
+    sentInSession,
+  });
+  const messages = [...drawerState.messages, ...localMessages];
 
   useEffect(() => {
     if (!open) {
-      const timer = setTimeout(() => setDraft(''), 0);
+      const timer = setTimeout(() => {
+        setDraft('');
+        setSentInSession(false);
+        setLocalMessages([]);
+      }, 0);
       return () => clearTimeout(timer);
     }
   }, [open, peerMemberId]);
@@ -131,8 +122,22 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
   const handleSend = () => {
     const text = draft.trim();
     if (!text || !composerEnabled) return;
+
     sendMessage(text, {
-      onSuccess: () => setDraft(''),
+      onSuccess: () => {
+        setLocalMessages((prev) => [
+          ...prev,
+          {
+            id: `local-${Date.now()}`,
+            body: text,
+            senderMemberId: currentMemberId,
+          },
+        ]);
+        setDraft('');
+        if (drawerState.singleMessageOnly) {
+          setSentInSession(true);
+        }
+      },
     });
   };
 
@@ -176,8 +181,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          <Avatar src={avatarSrc} sx={{ width: 48, height: 48 }}>
-          </Avatar>
+          <Avatar src={avatarSrc} sx={{ width: 48, height: 48 }} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {peer?.fullName ?? 'Thành viên'}
@@ -196,32 +200,10 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
         </IconButton>
       </Box>
 
-      {banner ? (
-        <Alert severity={banner.severity} sx={{ mx: 2, mt: 1.5, borderRadius: 1.5 }}>
-          {banner.text}
+      {drawerState.banner ? (
+        <Alert severity={drawerState.banner.severity} sx={{ mx: 2, mt: 1.5, borderRadius: 1.5 }}>
+          {drawerState.banner.text}
         </Alert>
-      ) : null}
-
-      {mode === 'pending_recipient' ? (
-        <Stack direction="row" spacing={1} sx={{ px: 2, pt: 1.5 }}>
-          <Button
-            variant="contained"
-            fullWidth
-            disabled={isAccepting || isDeclining}
-            onClick={() => acceptConversation()}
-          >
-            {isAccepting ? <CircularProgress size={22} color="inherit" /> : 'Chấp nhận'}
-          </Button>
-          <Button
-            variant="outlined"
-            color="inherit"
-            fullWidth
-            disabled={isAccepting || isDeclining}
-            onClick={() => declineConversation()}
-          >
-            {isDeclining ? <CircularProgress size={22} /> : 'Từ chối'}
-          </Button>
-        </Stack>
       ) : null}
 
       <Scrollbar
@@ -235,15 +217,9 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
           gap: 1.5,
         }}
       >
-        {isPending ? (
-          <Stack alignItems="center" py={4}>
-            <CircularProgress size={32} />
-          </Stack>
-        ) : messages.length === 0 ? (
+        {messages.length === 0 ? (
           <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            {mode === 'new'
-              ? 'Chưa có tin nhắn. Hãy gửi lời chào đầu tiên.'
-              : 'Chưa có tin nhắn.'}
+            {drawerState.emptyHint}
           </Typography>
         ) : (
           messages.map((msg) => (
@@ -275,7 +251,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer }) => {
           fullWidth
           multiline
           maxRows={4}
-          placeholder={getComposerPlaceholder(mode)}
+          placeholder={drawerState.composerPlaceholder}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={handleKeyDown}
