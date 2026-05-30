@@ -5,6 +5,7 @@ import java.util.List;
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.TrustedVerifierResponse;
 import com.service.backend.organization.entity.OrganizationIntroduction;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.entity.Organization;
@@ -30,7 +31,9 @@ public class OrganizationService {
     private final OrganizationIntroductionRepository introductionRepository;
 
     public Mono<Organization> getOrganizationById(Integer id) {
+        logger.info("Fetching organization with id: {}", id);
         return organizationRepository.findById(id)
+                .doOnNext(org -> logger.info("Organization found with id: {}, name: {}", id, org.getName()))
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.warn("Organization not found with id: {}", id);
                     return Mono.error(new ApplicationException(
@@ -43,7 +46,9 @@ public class OrganizationService {
     }
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
+        logger.info("Fetching organization with slug: {}", slug);
         return organizationRepository.findBySlug(slug)
+                .doOnNext(org -> logger.info("Organization found with slug: {}, name: {}", slug, org.getName()))
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.warn("Organization not found with slug: {}", slug);
                     return Mono.error(new ApplicationException(
@@ -56,11 +61,15 @@ public class OrganizationService {
     }
 
     public Flux<Organization> getAllOrganizations() {
+        logger.info("Fetching all organizations");
         return organizationRepository.findAll()
+                .doOnNext(org -> logger.info("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
+                .doOnComplete(() -> logger.info("Successfully retrieved all organizations"))
                 .doOnError(error -> logger.error("Failed to fetch organizations", error));
     }
 
     public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
+        logger.info("Fetching introduction for organization id: {}", orgaId);
         return introductionRepository.findByOrgaId(orgaId)
                 .map(this::toResponse)
                 .switchIfEmpty(Mono.just(OrganizationIntroductionResponse.builder()
@@ -106,5 +115,12 @@ public class OrganizationService {
                 })
                 .doOnSuccess(feedback -> logger.info("createSchoolFeedback result: {}", JsonUtils.toJson(feedback)))
                 .doOnError(error -> logger.error("Failed to create school feedback for organization id: {}", organizationId, error));
+    }
+
+    public Flux<TrustedVerifierResponse> getTrustedVerifiers(Integer organizationId) {
+        logger.info("Fetching trusted verifiers for organization id: {}", organizationId);
+        return organizationRepository.findTrustedVerifiersByOrganizationId(organizationId)
+                .doOnComplete(() -> logger.info("Successfully fetched trusted verifiers for organization id: {}", organizationId))
+                .doOnError(error -> logger.error("Failed to fetch trusted verifiers for organization id: {}", organizationId, error));
     }
 }

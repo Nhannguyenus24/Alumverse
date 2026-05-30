@@ -326,6 +326,23 @@ public class AdminUserService {
                 .doOnError(e -> logger.error("Error creating admin account for email={}", request.getEmail(), e));
     }
 
+    public Mono<Boolean> updateIsTrustedVerifier(Integer userId, Integer organizationId, boolean isTrusted) {
+        logger.info("Updating is_trusted_verifier for user {} in organization {} to {}", userId, organizationId, isTrusted);
+        return adminUserRepository.updateIsTrustedVerifier(userId, organizationId, isTrusted)
+                .map(count -> count > 0)
+                .doOnSuccess(success -> {
+                    if (success) {
+                        logger.info("Successfully updated is_trusted_verifier for user {} in organization {}", userId, organizationId);
+                    } else {
+                        logger.warn("Failed to update is_trusted_verifier: Member record not found for user {} and organization {}", userId, organizationId);
+                    }
+                })
+                .doOnError(error -> logger.error("Error updating is_trusted_verifier for user {} and organization {}", userId, organizationId, error));
+    }
+
+    /**
+     * Map User entity to UserResponse DTO
+     */
     private UserResponse mapToUserResponse(User user) {
         return UserResponse.builder()
                 .id(user.getId())

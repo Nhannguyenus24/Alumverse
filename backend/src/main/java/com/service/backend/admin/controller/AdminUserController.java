@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -233,6 +234,22 @@ public class AdminUserController {
                                 .body(new ApiResponse<>("User added to organization successfully", true)));
                     } else {
                         return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Failed to add user to organization"));
+                    }
+                });
+    }
+
+    @PatchMapping("/{userId}/organizations/{organizationId}/trusted-verifier")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> updateIsTrustedVerifier(
+            @PathVariable Integer userId,
+            @PathVariable Integer organizationId,
+            @RequestParam boolean isTrusted) {
+        return adminUserService.updateIsTrustedVerifier(userId, organizationId, isTrusted)
+                .flatMap(success -> {
+                    if (success) {
+                        return Mono.just(ResponseEntity.ok(
+                                new ApiResponse<>("User trusted verifier status updated successfully", true)));
+                    } else {
+                        return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Member record not found"));
                     }
                 });
     }

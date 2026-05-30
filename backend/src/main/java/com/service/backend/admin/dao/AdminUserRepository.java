@@ -255,6 +255,14 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("organizationId") Integer organizationId,
             @Param("userId") Integer userId);
 
+    @Modifying
+    @Query("UPDATE organization_members SET is_trusted_verifier = :isTrusted, updated_at = CURRENT_TIMESTAMP " +
+           "WHERE user_id = :userId AND organization_id = :organizationId")
+    Mono<Integer> updateIsTrustedVerifier(
+            @Param("userId") Integer userId,
+            @Param("organizationId") Integer organizationId,
+            @Param("isTrusted") boolean isTrusted);
+
     /**
      * Search users with multiple filters (search term, role, status, organization)
      */

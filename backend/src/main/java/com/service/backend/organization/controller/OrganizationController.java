@@ -2,6 +2,7 @@ package com.service.backend.organization.controller;
 
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.TrustedVerifierResponse;
 import com.service.backend.organization.entity.Organization;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.service.OrganizationService;
@@ -77,5 +78,19 @@ public class OrganizationController {
         return organizationService.createSchoolFeedback(organizationId, request)
                 .map(feedback -> ResponseEntity.status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("School feedback created successfully", feedback)));
+    }
+
+    @GetMapping("/{organizationId}/trusted-verifiers")
+    @Operation(
+            summary = "Get trusted verifiers",
+            description = "Retrieve a list of trusted verifiers for an organization"
+    )
+    public Mono<ResponseEntity<ApiResponse<List<TrustedVerifierResponse>>>> getTrustedVerifiers(
+            @Parameter(description = "Organization ID", example = "1")
+            @PathVariable Integer organizationId) {
+        return organizationService.getTrustedVerifiers(organizationId)
+                .collectList()
+                .map(verifiers -> ResponseEntity.ok(
+                        new ApiResponse<>("Trusted verifiers retrieved successfully", verifiers)));
     }
 }

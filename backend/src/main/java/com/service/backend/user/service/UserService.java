@@ -17,6 +17,10 @@ import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.user.dao.UserNotificationSettingsRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.dao.UserProfileRepository;
+import com.service.backend.user.dao.PeerVerificationRepository;
+import com.service.backend.user.entity.PeerVerification;
+import com.service.backend.user.dto.CreateVerificationRequest;
+import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -40,6 +44,98 @@ public class UserService {
     private final UserLoginHistoryRepository userLoginHistoryRepository;
     private final UserNotificationSettingsRepository userNotificationSettingsRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
+    private final PeerVerificationRepository peerVerificationRepository;
+    private final FileUploadService fileUploadService;
+
+    public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
+        return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
+                .flatMap(fileUrl -> {
+                    // member_id in verification_requests corresponds to user_id in users table according to AdminUserRepository.findAllVerificationRequests join
+                    // where "JOIN users u ON vr.member_id = u.id"
+                    return authRepository.insertVerificationRequest(
+                            currentUserId.intValue(),
+                            fileUrl,
+                            request.getDocumentType()
+                    );
+                });
+    }
+
+    public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {
+        return Mono.zip(
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, verifierUserId))
+                .flatMap(tuple -> {
+                    OrganizationMember targetMember = tuple.getT1();
+                    OrganizationMember verifierMember = tuple.getT2();
+
+                    return peerVerificationRepository.findPendingRequest(targetMember.getId(), verifierMember.getId())
+                            .hasElement()
+                            .flatMap(exists -> {
+                                if (exists) {
+                                    return Mono.error(new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Pending verification request already exists"));
+                                }
+                                return peerVerificationRepository.save(PeerVerification.builder()
+                                        .targetMemberId(targetMember.getId())
+                                        .verifierMemberId(verifierMember.getId())
+                                        .status("pending")
+                                        .build());
+                            });
+                })
+                .then();
+    }
+
+    public Mono<Void> acceptPeerVerification(Long currentUserId, Integer requestId) {
+        return peerVerificationRepository.findById(requestId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Verification request not found")))
+                .flatMap(request -> {
+                    if (!"pending".equals(request.getStatus())) {
+                        return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Request is not in pending status"));
+                    }
+
+                    return userOrganizationMemberRepository.findById(request.getVerifierMemberId())
+                            .flatMap(verifier -> {
+                                if (!verifier.getUserId().equals(currentUserId.intValue())) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You are not the assigned verifier for this request"));
+                                }
+                                if (Boolean.FALSE.equals(verifier.getIsTrustedVerifier())) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can accept verification requests"));
+                                }
+
+                                return peerVerificationRepository.updateStatus(requestId, "accepted")
+                                        .then(userOrganizationMemberRepository.findById(request.getTargetMemberId()))
+                                        .flatMap(target -> {
+                                            target.setVerificationLevel(target.getVerificationLevel() + 1);
+                                            return userOrganizationMemberRepository.save(target);
+                                        });
+                            });
+                })
+                .then();
+    }
+
+    public Mono<Void> directVerify(Long currentUserId, Integer organizationId, Integer targetUserId) {
+        return Mono.zip(
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
+                userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, targetUserId))
+                .flatMap(tuple -> {
+                    OrganizationMember verifierMember = tuple.getT1();
+                    OrganizationMember targetMember = tuple.getT2();
+
+                    if (Boolean.FALSE.equals(verifierMember.getIsTrustedVerifier())) {
+                        return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can perform direct verification"));
+                    }
+
+                    return peerVerificationRepository.save(PeerVerification.builder()
+                                    .targetMemberId(targetMember.getId())
+                                    .verifierMemberId(verifierMember.getId())
+                                    .status("accepted")
+                                    .build())
+                            .then(Mono.defer(() -> {
+                                targetMember.setVerificationLevel(targetMember.getVerificationLevel() + 1);
+                                return userOrganizationMemberRepository.save(targetMember);
+                            }));
+                })
+                .then();
+    }
 
     public Mono<UserProfileResponse> getMyProfile(Long currentUserId) {
         return userProfileRepository.findProfileByUserId(currentUserId.intValue())
