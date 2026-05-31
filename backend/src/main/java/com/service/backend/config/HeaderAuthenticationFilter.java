@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,9 +32,25 @@ public class HeaderAuthenticationFilter implements WebFilter {
         this.jwtUtils = jU;
     }
 
+    private static boolean isPublicMentorshipBrowse(String path) {
+        if (path.equals("/api/mentorship/mentee/expertise-topics")
+                || path.equals("/api/mentorship/mentee/expertise-categories")) {
+            return true;
+        }
+        if (!path.startsWith("/api/mentorship/mentee/mentors")) {
+            return false;
+        }
+        return !path.startsWith("/api/mentorship/mentee/sessions");
+    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
+        HttpMethod method = exchange.getRequest().getMethod();
+
+        if (HttpMethod.OPTIONS.equals(method)) {
+            return chain.filter(exchange);
+        }
 
         // Skip authentication for public endpoints
         if (path.equals("/health") ||
@@ -55,6 +72,10 @@ public class HeaderAuthenticationFilter implements WebFilter {
                 path.endsWith(".ico") ||
                 path.startsWith("/static/") ||
                 path.startsWith("/ws/chat")) {
+            return chain.filter(exchange);
+        }
+
+        if (HttpMethod.GET.equals(method) && isPublicMentorshipBrowse(path)) {
             return chain.filter(exchange);
         }
 

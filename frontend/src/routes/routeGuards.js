@@ -4,5 +4,3 @@ export const isBlockedOrgFetchPath = (pathname) =>
   BLOCKED_ORG_FETCH_PATHS.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
-
-export const isAuthRoutePath = (pathname) => pathname.includes('/auth/');

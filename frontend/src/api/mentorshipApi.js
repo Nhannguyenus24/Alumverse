@@ -17,6 +17,12 @@ export const searchMentors = (keyword, page = 0, limit = 12) =>
 export const filterMentors = (params = {}) =>
   apiClient.get(`${MENTEE}/mentors/filter`, { params });
 
+export const getExpertiseTopics = () =>
+  apiClient.get(`${MENTEE}/expertise-topics`);
+
+export const getExpertiseCategories = () =>
+  apiClient.get(`${MENTEE}/expertise-categories`);
+
 export const getMentorExpertise = (mentorMemberId) =>
   apiClient.get(`${MENTEE}/mentors/${mentorMemberId}/expertise`);
 
