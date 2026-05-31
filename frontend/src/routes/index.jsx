@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react";
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { Box, CircularProgress } from "@mui/material";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
@@ -136,6 +136,9 @@ const ActivitiesNewsPage = Loadable(
 const NetworkPage = Loadable(
   lazy(() => import("../pages/network/NetworkPage")),
 );
+const NetworkIncomingRequestsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkIncomingRequestsPage")),
+);
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
 );
@@ -176,6 +179,9 @@ const MentorshipMyBookingsPage = Loadable(
 );
 const MentorshipSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipSignupPage")),
+);
+const MentorshipPublicProfilePage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipPublicProfilePage")),
 );
 
 // User pages
@@ -326,9 +332,19 @@ export const router = createBrowserRouter([
         path: "search",
         element: (
           <ProtectedRoute>
-            <NetworkPage />
+            <Outlet />
           </ProtectedRoute>
         ),
+        children: [
+          {
+            index: true,
+            element: <NetworkPage />,
+          },
+          {
+            path: "requests",
+            element: <NetworkIncomingRequestsPage />,
+          },
+        ],
       },
       {
         path: "chat",
@@ -459,6 +475,10 @@ export const router = createBrowserRouter([
               {
                 path: "calendar",
                 element: <MentorshipYourCalendarPage />,
+              },
+              {
+                path: "mentors/:mentorId",
+                element: <MentorshipPublicProfilePage />,
               },
               {
                 path: "mentors/:mentorId/book",

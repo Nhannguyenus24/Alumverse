@@ -1,12 +1,15 @@
 package com.service.backend.chat.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateGroupRequest {
 
-public record UpdateGroupRequest(
-
-        @NotBlank(message = "Title must not be blank")
-        String title
-) {
+    @NotBlank(message = "Title must not be blank")
+    private String title;
 }
-

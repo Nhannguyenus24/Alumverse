@@ -32,9 +32,25 @@ public class HeaderAuthenticationFilter implements WebFilter {
         this.jwtUtils = jU;
     }
 
+    private static boolean isPublicMentorshipBrowse(String path) {
+        if (path.equals("/api/mentorship/mentee/expertise-topics")
+                || path.equals("/api/mentorship/mentee/expertise-categories")) {
+            return true;
+        }
+        if (!path.startsWith("/api/mentorship/mentee/mentors")) {
+            return false;
+        }
+        return !path.startsWith("/api/mentorship/mentee/sessions");
+    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
+        HttpMethod method = exchange.getRequest().getMethod();
+
+        if (HttpMethod.OPTIONS.equals(method)) {
+            return chain.filter(exchange);
+        }
 
         // Skip authentication for OPTIONS requests (CORS preflight)
         if (HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
@@ -61,6 +77,10 @@ public class HeaderAuthenticationFilter implements WebFilter {
                 path.endsWith(".ico") ||
                 path.startsWith("/static/") ||
                 path.startsWith("/ws/chat")) {
+            return chain.filter(exchange);
+        }
+
+        if (HttpMethod.GET.equals(method) && isPublicMentorshipBrowse(path)) {
             return chain.filter(exchange);
         }
 

@@ -41,16 +41,25 @@ const getSlotAvailabilityId = (date, hour, availabilityMap) => {
   return dayMap[hour] ?? null;
 };
 
+const DEFAULT_HOURS = Array.from({ length: 24 }, (_, i) => i);
+
 const MentorshipSlotPicker = ({
   availabilityMap = {},
   selectedSlot,
   onSelectSlot,
-  hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+  hours = DEFAULT_HOURS,
   timezoneLabel = '(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh',
 }) => {
   const today = useMemo(() => dayjs().startOf('day'), []);
-  const [anchorDate, setAnchorDate] = useState(today);
-  const [weekStart, setWeekStart] = useState(today);
+  const initialAnchor = useMemo(() => {
+    const keys = Object.keys(availabilityMap)
+      .filter((k) => Object.keys(availabilityMap[k] ?? {}).length > 0)
+      .sort();
+    const firstFuture = keys.find((k) => !dayjs(k).isBefore(today));
+    return firstFuture ? dayjs(firstFuture) : today;
+  }, [availabilityMap, today]);
+  const [anchorDate, setAnchorDate] = useState(initialAnchor);
+  const [weekStart, setWeekStart] = useState(initialAnchor);
 
   const calendarCells = useMemo(() => buildMiniCalendar(anchorDate), [anchorDate]);
 
@@ -169,54 +178,54 @@ const MentorshipSlotPicker = ({
 
         {/* WEEK SLOT GRID */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" alignItems="center" mb={1}>
+          <Stack direction="row" alignItems="center" gap={1} mb={1}>
             <IconButton size="small" onClick={() => setWeekStart((d) => d.subtract(1, 'day'))}>
               <ChevronLeftIcon fontSize="small" />
             </IconButton>
-
-            <Box
-              sx={{
-                flex: 1,
-                display: 'grid',
-                gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-                gap: 1,
-                textAlign: 'center',
-              }}
-            >
-              {weekDates.map((date) => {
-                const isToday = date.isSame(today, 'day');
-                return (
-                  <Box key={date.toString()}>
-                    <Typography variant="caption" color="text.secondary" display="block">
-                      {WEEK_DAY_FULL_VI[date.day()]}
-                    </Typography>
-                    <Box
-                      sx={{
-                        mx: 'auto',
-                        mt: 0.5,
-                        width: 32,
-                        height: 32,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '50%',
-                        bgcolor: isToday ? 'primary.main' : 'transparent',
-                        color: isToday ? 'common.white' : 'text.primary',
-                        fontWeight: 700,
-                        fontSize: 14,
-                      }}
-                    >
-                      {date.date()}
-                    </Box>
-                  </Box>
-                );
-              })}
-            </Box>
-
+            <Box sx={{ flex: 1 }} />
             <IconButton size="small" onClick={() => setWeekStart((d) => d.add(1, 'day'))}>
               <ChevronRightIcon fontSize="small" />
             </IconButton>
           </Stack>
+
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+              gap: 1,
+              textAlign: 'center',
+              mb: 1,
+            }}
+          >
+            {weekDates.map((date) => {
+              const isToday = date.isSame(today, 'day');
+              return (
+                <Box key={date.toString()}>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {WEEK_DAY_FULL_VI[date.day()]}
+                  </Typography>
+                  <Box
+                    sx={{
+                      mx: 'auto',
+                      mt: 0.5,
+                      width: 32,
+                      height: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '50%',
+                      bgcolor: isToday ? 'primary.main' : 'transparent',
+                      color: isToday ? 'common.white' : 'text.primary',
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    {date.date()}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
 
           <Box
             sx={{
