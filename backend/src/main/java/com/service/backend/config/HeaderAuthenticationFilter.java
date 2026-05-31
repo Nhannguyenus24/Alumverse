@@ -52,6 +52,11 @@ public class HeaderAuthenticationFilter implements WebFilter {
             return chain.filter(exchange);
         }
 
+        // Skip authentication for OPTIONS requests (CORS preflight)
+        if (HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
+            return chain.filter(exchange);
+        }
+
         // Skip authentication for public endpoints
         if (path.equals("/health") ||
                 path.startsWith("/api/auth/") ||
@@ -82,7 +87,7 @@ public class HeaderAuthenticationFilter implements WebFilter {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.warn("No valid Bearer token found for {}", path);
+            logger.warn("No valid Bearer token found for {} {}", exchange.getRequest().getMethod(), path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
             String errorResponse = "{\"message\":\"Request is not authenticated\",\"error\":\"UNAUTHORIZED\"}";

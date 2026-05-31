@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 const initialState = {
   user: null,
   token: null,
-  needsOrganizationSetup: false,
+  verificationLevel: null,
   loading: false,
   error: null,
 };
@@ -16,7 +16,7 @@ const useAuthStore = create(
 
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
-      setNeedsOrganizationSetup: (needsOrganizationSetup) => set({ needsOrganizationSetup }),
+      setVerificationLevel: (verificationLevel) => set({ verificationLevel }),
       setLoading: (loading) => set({ loading }),
       setError: (error) => set({ error }),
       reset: () => set(initialState),
@@ -26,6 +26,7 @@ const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        verificationLevel: state.verificationLevel,
       }),
     }
   )

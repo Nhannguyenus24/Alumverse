@@ -45,12 +45,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUsersByOrganization(@Param("organizationId") Integer organizationId);
 
     /**
-     * Ban a user by setting status to {@code UserStatus.BANNED}
+     * Ban a user by setting "status" to {@code UserStatus.BANNED}
      * @param userId The user ID to ban
      * @return Mono of updated rows count
      */
     @Modifying
-    @Query("UPDATE users SET status = 'BANNED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET \"status\" = 'BANNED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> banUserById(@Param("userId") Integer userId);
 
     /**
@@ -60,7 +60,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      */
     @Query("SELECT vr.*, om.user_id " +
            "FROM verification_requests vr " +
-           "INNER JOIN organization_members om ON vr.member_id = om.id " +
+           "INNER JOIN organization_members om ON vr.member_id = om.user_id " +
            "WHERE om.user_id = :userId " +
            "ORDER BY vr.created_at DESC")
     Flux<Object> findVerificationRequestsByUserId(@Param("userId") Integer userId);
@@ -95,8 +95,8 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      */
     @Query("SELECT u.*, pv.created_at as verification_date " +
            "FROM peer_verifications pv " +
-           "INNER JOIN organization_members om_target ON pv.target_member_id = om_target.id " +
-           "INNER JOIN organization_members om_verifier ON pv.verifier_member_id = om_verifier.id " +
+           "INNER JOIN organization_members om_target ON pv.target_member_id = om_target.user_id " +
+           "INNER JOIN organization_members om_verifier ON pv.verifier_member_id = om_verifier.user_id " +
            "INNER JOIN users u ON om_verifier.user_id = u.id " +
            "WHERE om_target.user_id = :userId " +
            "ORDER BY pv.created_at DESC")
@@ -109,7 +109,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      * @return Mono of updated rows count
      */
     @Modifying
-    @Query("UPDATE users SET status = 'DELETED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET \"status\" = 'DELETED', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> softDeleteUserById(@Param("userId") Integer userId);
     
     /**
@@ -123,16 +123,16 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Void> hardDeleteUserById(@Param("userId") Integer userId);
 
     /**
-     * Unban a user by setting status back to ACTIVE
+     * Unban a user by setting "status" back to ACTIVE
      */
     @Modifying
-    @Query("UPDATE users SET status = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
+    @Query("UPDATE users SET \"status\" = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> unbanUserById(@Param("userId") Integer userId);
 
     /**
      * Fetch all verification requests joined with user info, paginated
      */
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.status, vr.admin_note, " +
+    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.\"status\", vr.admin_note, " +
            "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
@@ -146,24 +146,24 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     /**
      * Fetch only pending verification requests, paginated
      */
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.status, vr.admin_note, " +
+    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.\"status\", vr.admin_note, " +
            "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
-           "WHERE vr.status = 'pending' " +
+           "WHERE vr.\"status\" = 'pending' " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("limit") int limit, @Param("offset") int offset);
 
-    @Query("SELECT COUNT(*) FROM verification_requests WHERE status = 'pending'")
+    @Query("SELECT COUNT(*) FROM verification_requests WHERE \"status\" = 'pending'")
     Mono<Long> countPendingVerificationRequests();
 
     /**
-     * Update verification request status and admin note
+     * Update verification request "status" and admin note
      */
     @Modifying
     @Query("UPDATE verification_requests " +
-           "SET status = :status, admin_note = :adminNote, updated_at = CURRENT_TIMESTAMP " +
+           "SET \"status\" = :status, admin_note = :adminNote, updated_at = CURRENT_TIMESTAMP " +
            "WHERE id = :requestId")
     Mono<Integer> reviewVerificationRequest(
             @Param("requestId") Integer requestId,
@@ -176,26 +176,43 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
      * @param organizationId The organization ID
      * @param userId The user ID to add to organization
         * @param graduatedYear Graduated year
-        * @param graduationStatus Graduation status
+        * @param graduationStatus Graduation "status"
         * @param program Training program
         * @param major Major
      * @param verificationLevel The verification level (default 0)
-     * @param status The member status (default 'active')
+     * @param status The member "status" (default 'active')
      * @return Mono of created member ID
      */
+    @Query("SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = :userId)")
+    Mono<Boolean> existsOrganizationMemberByUserId(@Param("userId") Integer userId);
+
     @Modifying
-         @Query("INSERT INTO organization_members (organization_id, user_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
-                 "VALUES (:organizationId, :userId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    @Query("INSERT INTO organization_members (organization_id, user_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> createOrganizationMember(
-        @Param("organizationId") Integer organizationId,
-        @Param("userId") Integer userId,
-              @Param("graduatedYear") String graduatedYear,
-              @Param("graduationStatus") String graduationStatus,
-              @Param("program") String program,
-              @Param("major") String major,
-        @Param("verificationLevel") Integer verificationLevel,
-        @Param("status") String status
-    );
+           @Param("organizationId") Integer organizationId,
+           @Param("userId") Integer userId,
+           @Param("graduatedYear") String graduatedYear,
+           @Param("graduationStatus") String graduationStatus,
+           @Param("program") String program,
+           @Param("major") String major,
+           @Param("verificationLevel") Integer verificationLevel,
+           @Param("status") String status);
+
+    @Modifying
+    @Query("UPDATE organization_members SET organization_id = :organizationId, graduated_year = CAST(:graduatedYear AS jsonb), " +
+           "graduation_status = CAST(:graduationStatus AS jsonb), program = CAST(:program AS jsonb), major = CAST(:major AS jsonb), " +
+           "verification_level = :verificationLevel, is_trusted_verifier = false, \"status\" = :status, updated_at = CURRENT_TIMESTAMP " +
+           "WHERE user_id = :userId")
+    Mono<Integer> updateOrganizationMemberByUserId(
+           @Param("organizationId") Integer organizationId,
+           @Param("userId") Integer userId,
+           @Param("graduatedYear") String graduatedYear,
+           @Param("graduationStatus") String graduationStatus,
+           @Param("program") String program,
+           @Param("major") String major,
+           @Param("verificationLevel") Integer verificationLevel,
+           @Param("status") String status);
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
            "u.email, u.user_name " +
@@ -206,7 +223,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "LIMIT :limit")
     Flux<LoginHistoryResponse> findRecentLoginHistories(@Param("userId") Integer userId, @Param("limit") int limit);
 
-    @Query("SELECT id, member_id, document_url, document_type, status, admin_note, reviewed_by_member_id, created_at, updated_at " +
+    @Query("SELECT id, member_id, document_url, document_type, \"status\", admin_note, reviewed_by_member_id, created_at, updated_at " +
            "FROM verification_requests WHERE member_id = :userId ORDER BY created_at DESC LIMIT :limit")
     Flux<Object> findRecentVerificationRequests(@Param("userId") Integer userId, @Param("limit") int limit);
 
@@ -217,7 +234,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email OR user_name = :userName)")
     Mono<Boolean> existsByEmailOrUserName(@Param("email") String email, @Param("userName") String userName);
 
-    @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
+    @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", created_at, updated_at) " +
            "VALUES (:email, :userName, :passwordHash, 'ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> createAdminUser(
@@ -243,7 +260,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("""
             INSERT INTO organization_members (
                 organization_id, user_id, graduated_year, graduation_status, program, major,
-                verification_level, is_trusted_verifier, status, created_at, updated_at)
+                verification_level, is_trusted_verifier, \"status\", created_at, updated_at)
             VALUES (
                 :organizationId, :userId, NULL, NULL, NULL, NULL, 0, false, 'active',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -264,7 +281,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("isTrusted") boolean isTrusted);
 
     /**
-     * Search users with multiple filters (search term, role, status, organization)
+     * Search users with multiple filters (search term, role, "status", organization)
      */
     @Query("""
         SELECT DISTINCT u.* FROM users u
@@ -272,7 +289,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (:search IS NULL OR u.email ILIKE :search OR u.user_name ILIKE :search OR gp.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)
-          AND (:status IS NULL OR u.status = :status)
+          AND (:status IS NULL OR u.\"status\" = :status)
           AND (:organizationId IS NULL OR om.organization_id = :organizationId)
         ORDER BY u.created_at DESC
         LIMIT :limit OFFSET :offset
@@ -292,7 +309,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         LEFT JOIN organization_members om ON u.id = om.user_id
         WHERE (:search IS NULL OR u.email ILIKE :search OR u.user_name ILIKE :search OR gp.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)
-          AND (:status IS NULL OR u.status = :status)
+          AND (:status IS NULL OR u.\"status\" = :status)
           AND (:organizationId IS NULL OR om.organization_id = :organizationId)
         """)
     Mono<Long> countUsersWithFilters(

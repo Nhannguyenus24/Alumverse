@@ -44,7 +44,13 @@ const processQueue = (error, token = null) => {
  */
 const isAuthWhitelistedURL = (url = '') => {
   // Strip baseURL prefix if present; compare paths only
-  const path = url.replace(BASE_URL, '');
+  let path = url.replace(BASE_URL, '');
+  
+  // Normalize path: ensure it starts with / and remove trailing ? if any
+  if (path && !path.startsWith('/')) {
+    path = '/' + path;
+  }
+  
   return AUTH_WHITELIST.some(
     (whitelisted) =>
       path === whitelisted || path.startsWith(whitelisted + '?')
@@ -56,31 +62,54 @@ const isAuthWhitelistedURL = (url = '') => {
  */
 const forceLogout = () => {
   useAuthStore.getState().reset();
-  const currentPath = window.location.pathname;
-  if (currentPath !== '/login') {
-    window.location.href = '/login';
+  
+  // Try to find a slug from the current URL to redirect back to the correct auth page
+  const pathParts = window.location.pathname.split('/').filter(Boolean);
+  const slug = pathParts.length > 0 ? pathParts[0] : 'alumni';
+  
+  const loginPath = `/${slug}/auth/login`;
+  
+  // Don't redirect if we are already on a login page to avoid loops
+  if (window.location.pathname !== loginPath && !window.location.pathname.includes('/auth/login')) {
+    console.warn('Session expired or invalid. Redirecting to login...');
+    window.location.href = loginPath;
   }
 };
 
 /**
- * Calls refresh-token API and returns the new access token (throws if it fails)
+ * Calls refresh-token API and returns the new session data (throws if it fails)
  */
 export async function refreshSessionAccessToken() {
-  const res = await refreshClient.post('/auth/refresh');
-  const newToken = res?.data?.data?.accessToken;
+  try {
+    const res = await refreshClient.post('/auth/refresh');
+    const data = res?.data?.data; // { accessToken, verificationLevel }
 
-  if (typeof newToken !== 'string' || newToken.length === 0) {
-    throw new Error('Invalid access token received from refresh API');
+    if (!data?.accessToken || typeof data.accessToken !== 'string') {
+      throw new Error('Invalid access token received from refresh API');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Failed to refresh session access token:', error.response?.data || error.message);
+    throw error;
   }
-
-  return newToken;
 }
 
-/** Updates token and user in the store from the access JWT (interceptor + useAuth). */
-export function syncAuthStoreFromAccessToken(accessToken) {
-  useAuthStore.getState().setToken(accessToken);
-  const authUser = userFromAccessToken(accessToken);
-  if (authUser) useAuthStore.getState().setUser(authUser);
+/** Updates token, user and verification level in the store from response data. */
+export function syncAuthStoreFromAccessToken(data) {
+  // Support both object { accessToken, verificationLevel } and legacy string (just in case)
+  const accessToken = typeof data === 'string' ? data : data?.accessToken;
+  const verificationLevel = typeof data === 'string' ? undefined : data?.verificationLevel;
+
+  if (accessToken) {
+    useAuthStore.getState().setToken(accessToken);
+    const authUser = userFromAccessToken(accessToken);
+    if (authUser) useAuthStore.getState().setUser(authUser);
+  }
+  
+  if (verificationLevel !== undefined && verificationLevel !== null) {
+    useAuthStore.getState().setVerificationLevel(verificationLevel);
+  }
 }
 
 // --- Request interceptor: attach Bearer token ---
@@ -108,7 +137,7 @@ apiClient.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       originalRequest._retried ||
-      isAuthWhitelistedURL(originalRequest.url)
+      isAuthWhitelistedURL(originalRequest.url || '')
     ) {
       return Promise.reject(error);
     }
@@ -121,8 +150,11 @@ apiClient.interceptors.response.use(
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       }).then((token) => {
+        // Apply new token to the retried request
         originalRequest.headers.Authorization = `Bearer ${token}`;
         return apiClient(originalRequest);
+      }).catch((err) => {
+        return Promise.reject(err);
       });
     }
 
@@ -130,14 +162,16 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      const newToken = await refreshSessionAccessToken();
+      console.log('Access token expired. Attempting silent refresh...');
+      const refreshData = await refreshSessionAccessToken();
+      const newToken = refreshData.accessToken;
 
-      syncAuthStoreFromAccessToken(newToken);
+      syncAuthStoreFromAccessToken(refreshData);
 
-      // Drain the queue
+      // Drain the queue with the raw token string
       processQueue(null, newToken);
 
-      // Retry original request with new token
+      // Retry original request with new token string
       originalRequest.headers.Authorization = `Bearer ${newToken}`;
       return apiClient(originalRequest);
     } catch (refreshError) {

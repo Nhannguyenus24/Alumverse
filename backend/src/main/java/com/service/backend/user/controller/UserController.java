@@ -23,6 +23,7 @@ import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.user.dto.DirectVerifyRequest;
 import com.service.backend.user.dto.NotificationResponse;
 import com.service.backend.user.dto.NotificationSettingsResponse;
+import com.service.backend.user.dto.PendingPeerVerificationResponse;
 import com.service.backend.user.dto.RequestPeerVerificationRequest;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -160,5 +161,13 @@ public class UserController {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.directVerify(userId, request.getOrganizationId(), request.getTargetUserId()))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("User verified directly successfully", true)));
+    }
+
+    @GetMapping("/peer-verifications/pending")
+    public Mono<ResponseEntity<ApiResponse<List<PendingPeerVerificationResponse>>>> getPendingPeerVerifications(
+            @RequestParam @Min(1) Integer organizationId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.getPendingPeerVerifications(userId, organizationId))
+                .map(requests -> ResponseEntity.ok(new ApiResponse<>("Pending peer verifications retrieved successfully", requests)));
     }
 }

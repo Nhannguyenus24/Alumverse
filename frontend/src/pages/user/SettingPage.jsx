@@ -19,6 +19,10 @@ import {
   Stack,
   InputAdornment,
   IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  CircularProgress,
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -27,6 +31,8 @@ import SecurityIcon from '@mui/icons-material/Security';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Page from '../../components/Page';
 import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../api/userSettingsApi';
@@ -34,13 +40,6 @@ import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
 import { formatDateTime } from '../../utils/dateFormatter';
-
-const MENU_ITEMS = [
-  { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
-  { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
-  { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
-  { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
-];
 
 const parseOrganizationOptions = (value) => {
   if (!value) {
@@ -130,6 +129,25 @@ export default function SettingPage() {
   );
 
   const [activeTab, setActiveTab] = useState('personal');
+  const [isTrustedVerifier, setIsTrustedVerifier] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+
+  const menuItems = useMemo(() => {
+    const items = [
+      { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
+      { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
+      { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
+      { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
+    ];
+
+    if (isTrustedVerifier) {
+      items.push({ id: 'verification', label: 'Xác thực đồng nghiệp', icon: <GroupAddIcon /> });
+    }
+
+    return items;
+  }, [isTrustedVerifier]);
+
   const [formData, setFormData] = useState({
     fullName: '',
     gender: '',
@@ -172,6 +190,19 @@ export default function SettingPage() {
     );
   };
 
+  const loadPendingRequests = async () => {
+    if (!organizationId || !isTrustedVerifier) return;
+    setLoadingRequests(true);
+    try {
+      const requests = await userSettingsApi.getPendingPeerVerifications(organizationId);
+      setPendingRequests(requests);
+    } catch (error) {
+      console.error('Failed to load pending requests', error);
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -181,6 +212,8 @@ export default function SettingPage() {
           userSettingsApi.getNotificationSettings(),
           userSettingsApi.getLoginHistory({ page: 0, limit: 10 }),
         ]);
+
+        setIsTrustedVerifier(member?.isTrustedVerifier ?? false);
 
         setFormData((prev) => ({
           ...prev,
@@ -214,6 +247,12 @@ export default function SettingPage() {
 
     loadSettings();
   }, [organizationId, showError]);
+
+  useEffect(() => {
+    if (activeTab === 'verification') {
+      loadPendingRequests();
+    }
+  }, [activeTab, organizationId, isTrustedVerifier]);
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -295,6 +334,17 @@ export default function SettingPage() {
     } catch (error) {
       console.error('Failed to change password', error);
       showError(getErrorMessage(error, 'Đổi mật khẩu thất bại.'));
+    }
+  };
+
+  const handleAcceptVerification = async (requestId) => {
+    try {
+      await userSettingsApi.acceptPeerVerification(requestId);
+      showSuccess('Xác thực đồng nghiệp thành công.');
+      setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
+    } catch (error) {
+      console.error('Failed to accept verification', error);
+      showError(getErrorMessage(error, 'Xác thực đồng nghiệp thất bại.'));
     }
   };
 
@@ -676,6 +726,57 @@ const renderPersonalSettings = () => (
     </Box>
   );
 
+  const renderVerificationManagement = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Typography variant="h4">Quản lý xác thực đồng nghiệp</Typography>
+      <Typography variant="body1" color="textSecondary">
+        Đây là danh sách các yêu cầu xác thực đồng nghiệp đang chờ bạn xử lý.
+      </Typography>
+
+      {loadingRequests ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : pendingRequests.length === 0 ? (
+        <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }}>
+          <Typography color="textSecondary">Không có yêu cầu xác thực nào đang chờ.</Typography>
+        </Paper>
+      ) : (
+        <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+          {pendingRequests.map((request) => (
+            <Paper
+              key={request.requestId}
+              variant="outlined"
+              sx={{ mb: 2, p: 2, '&:hover': { bgcolor: 'action.hover' } }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                <Stack spacing={0.5}>
+                  <Typography variant="h5" fontWeight="bold">
+                    {request.requesterName}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    ID người dùng: {request.requesterUserId}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    Ngày gửi: {formatDateTime(request.createdAt)}
+                  </Typography>
+                </Stack>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<CheckCircleIcon />}
+                  onClick={() => handleAcceptVerification(request.requestId)}
+                >
+                  Xác nhận
+                </Button>
+              </Stack>
+            </Paper>
+          ))}
+        </List>
+      )}
+    </Box>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'personal':
@@ -686,6 +787,8 @@ const renderPersonalSettings = () => (
         return renderNotificationSettings();
       case 'advisor':
         return renderAdvisorSettings();
+      case 'verification':
+        return renderVerificationManagement();
       default:
         return null;
     }
@@ -707,7 +810,7 @@ const renderPersonalSettings = () => (
         <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
           <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
             <Sidebar
-              items={MENU_ITEMS}
+              items={menuItems}
               value={activeTab}
               onChange={setActiveTab}
               useRouting={false}
