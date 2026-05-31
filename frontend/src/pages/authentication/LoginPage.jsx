@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { GoogleLogin } from '@react-oauth/google';
 import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@mui/material';
@@ -15,6 +15,7 @@ import useOrganizationStore from '../../stores/organizationStore';
 const LoginPage = () => {
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
+  const { slug } = useParams();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { login, loginWithGoogle, isSubmitting: loading, setError, forgotPassword } = useAuth();
@@ -38,8 +39,8 @@ const LoginPage = () => {
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
 
-      if (result?.data?.needsOrganizationSetup) {
-        navigate('/organization-registration', {
+      if (result?.data?.verificationLevel === 0) {
+        navigate(`/${slug}/organization-registration`, {
           replace: true,
           state: { redirectTo },
         });
@@ -72,8 +73,8 @@ const LoginPage = () => {
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
 
-      if (result?.data?.needsOrganizationSetup) {
-        navigate('/organization-registration', {
+      if (result?.data?.verificationLevel === 0) {
+        navigate(`/${slug}/organization-registration`, {
           replace: true,
           state: { redirectTo },
         });

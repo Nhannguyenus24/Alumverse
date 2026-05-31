@@ -15,3 +15,18 @@ export const joinOrganization = (payload) => {
   };
   return apiClient.post('/admin/users/organization-member', body);
 };
+
+export const getTrustedVerifiers = (organizationId) => {
+  return apiClient.get(`/organizations/${Number(organizationId)}/trusted-verifiers`);
+};
+
+export const requestPeerVerification = ({ organizationId, verifierUserId }) => {
+  return apiClient.post('/users/me/peer-verifications/request', {
+    organizationId: Number(organizationId),
+    verifierUserId: Number(verifierUserId),
+  });
+};
+
+export const createVerificationRequest = (payload) => {
+  return apiClient.post('/users/me/verification-requests', payload);
+};

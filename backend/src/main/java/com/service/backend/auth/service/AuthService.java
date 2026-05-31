@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.service.backend.auth.dto.LoginResponse;
 import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.auth.entity.User;
 import com.service.backend.auth.dao.AuthRepository;
@@ -212,6 +213,10 @@ public class AuthService {
         return authRepository.existsOrganizationMemberByUserIdAndOrgId(userId, organizationId);
     }
 
+    public Mono<Integer> getVerificationLevel(Integer userId, Integer organizationId) {
+        return authRepository.getVerificationLevelByUserIdAndOrgId(userId, organizationId);
+    }
+
     public Mono<Void> sendOtpVerification(String email) {
         return authRepository.findByEmail(email)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
@@ -264,7 +269,7 @@ public class AuthService {
                 .doOnError(error -> logger.error("OTP verification failed for email: {}", email, error));
     }
 
-    public Mono<String> refreshAccessToken(String refreshToken) {
+    public Mono<LoginResponse> refreshAccessToken(String refreshToken) {
         if (!StringUtils.hasText(refreshToken)) {
             return Mono.error(new ApplicationException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
         }
@@ -277,22 +282,41 @@ public class AuthService {
                     Integer userId = entry.getKey();
                     Integer organizationIdFromRefresh = entry.getValue();
 
-                    Mono<Integer> resolvedOrgMono = organizationIdFromRefresh != null
-                            ? Mono.just(organizationIdFromRefresh)
-                            : authRepository.getOrganizationIdByUserId(userId).next();
+                    return authRepository.findById(userId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+                            .flatMap(user -> {
+                                Mono<Integer> orgMono = organizationIdFromRefresh != null
+                                        ? Mono.just(organizationIdFromRefresh)
+                                        : authRepository.getOrganizationIdByUserId(userId).next();
 
-                    return resolvedOrgMono.switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                            .flatMap(organizationId -> authRepository.findById(userId)
-                                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                                    .map(user -> jwtUtils.generateAccessToken(
-                                                user.getId(),
-                                                user.getEmail(),
-                                                user.getRole().name(),
-                                                user.getUserName(),
-                                                user.getAvatarUrl(),
-                                                organizationId
-                                    )))
-                            .doOnSuccess(token -> logger.info("refreshAccessToken: userId={} token refreshed", userId));
+                                return orgMono.defaultIfEmpty(-1)
+                                        .flatMap(orgId -> {
+                                            Integer finalOrgId = (orgId == -1) ? null : orgId;
+                                            String newAccessToken = jwtUtils.generateAccessToken(
+                                                    user.getId(),
+                                                    user.getEmail(),
+                                                    user.getRole().name(),
+                                                    user.getUserName(),
+                                                    user.getAvatarUrl(),
+                                                    finalOrgId
+                                            );
+
+                                            if (finalOrgId == null) {
+                                                return Mono.just(LoginResponse.builder()
+                                                        .accessToken(newAccessToken)
+                                                        .verificationLevel(1) // Admin level
+                                                        .build());
+                                            }
+
+                                            return getVerificationLevel(user.getId(), finalOrgId)
+                                                    .defaultIfEmpty(0)
+                                                    .map(level -> LoginResponse.builder()
+                                                            .accessToken(newAccessToken)
+                                                            .verificationLevel(level)
+                                                            .build());
+                                        });
+                            })
+                            .doOnSuccess(res -> logger.info("refreshAccessToken: userId={} token refreshed", userId));
                 });
     }
 

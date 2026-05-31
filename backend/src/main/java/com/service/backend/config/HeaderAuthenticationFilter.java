@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -35,6 +36,11 @@ public class HeaderAuthenticationFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
 
+        // Skip authentication for OPTIONS requests (CORS preflight)
+        if (HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
+            return chain.filter(exchange);
+        }
+
         // Skip authentication for public endpoints
         if (path.equals("/health") ||
                 path.startsWith("/api/auth/") ||
@@ -61,7 +67,7 @@ public class HeaderAuthenticationFilter implements WebFilter {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.warn("No valid Bearer token found for {}", path);
+            logger.warn("No valid Bearer token found for {} {}", exchange.getRequest().getMethod(), path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
             String errorResponse = "{\"message\":\"Request is not authenticated\",\"error\":\"UNAUTHORIZED\"}";
