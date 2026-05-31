@@ -1,9 +1,10 @@
-package com.service.backend.forum.entity;
+package com.service.backend.shared.entity;
 
 import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -16,19 +17,26 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("forum_post_reactions")
-public class ForumPostReaction {
+@Table("forum_poll_options")
+public class PollOption {
     
     @Id
     private Integer id;
     
-    @Column("post_id")
-    private Integer postId;
+    @Column("poll_id")
+    private Integer pollId;
     
-    @Column("member_id")
-    private Integer memberId;
+    @Column("option_text")
+    private String optionText;
+    
+    @Column("vote_count")
+    private Integer voteCount;
     
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
+    
+    @LastModifiedDate
+    @Column("updated_at")
+    private LocalDateTime updatedAt;
 }

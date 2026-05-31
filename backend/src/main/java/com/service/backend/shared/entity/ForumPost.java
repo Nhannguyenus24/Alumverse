@@ -1,4 +1,4 @@
-package com.service.backend.forum.entity;
+package com.service.backend.shared.entity;
 
 import java.time.LocalDateTime;
 
@@ -17,23 +17,29 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("forum_categories")
-public class ForumCategory {
+@Table("forum_posts")
+public class ForumPost {
     
     @Id
     private Integer id;
+    
+    @Column("topic_id")
+    private Integer topicId;
+    
+    @Column("author_member_id")
+    private Integer authorMemberId;
+    
+    @Column("content")
+    private String content;
+    
+    @Column("answer_to_post_id")
+    private Integer answerToPostId;
+    
+    @Column("is_banned")
+    private Boolean isBanned;
 
-    @Column("parent_id")
-    private Integer parentId;
-    
-    @Column("organization_id")
-    private Integer organizationId;
-    
-    @Column("name")
-    private String name;
-    
-    @Column("description")
-    private String description;
+    @Column("is_hidden")
+    private Boolean isHidden;
     
     @CreatedDate
     @Column("created_at")

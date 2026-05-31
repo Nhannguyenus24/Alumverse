@@ -1,4 +1,4 @@
-package com.service.backend.forum.entity;
+package com.service.backend.shared.entity;
 
 import java.time.LocalDateTime;
 

@@ -27,7 +27,6 @@ import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
 
 import com.service.backend.shared.utils.JwtUtils;
 
@@ -115,7 +114,7 @@ public class SecurityConfig {
                         Integer organizationId = jwtUtils.getOrganizationIdFromToken(token);
 
                         if (userId == null || userRole == null) {
-                            throw new RuntimeException("Invalid token: missing user ID or role");
+                            return Mono.error(new RuntimeException("Invalid token: missing user ID or role"));
                         }
 
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
@@ -173,21 +172,18 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
 
-        return new CorsConfigurationSource() {
-            @Override
-            public CorsConfiguration getCorsConfiguration(ServerWebExchange exchange) {
-                ServerHttpRequest request = exchange.getRequest();
-                String origin = request.getHeaders().getOrigin();
-                if (origin == null) {
-                    return source.getCorsConfiguration(exchange);
-                }
-                CorsConfiguration resolved = source.getCorsConfiguration(exchange);
-                boolean allowed = patterns.stream().anyMatch(p -> matchesOriginPattern(p, origin));
-                if (!allowed) {
-                    log.warn("CORS blocked: origin='{}' path='{}'", origin, request.getPath());
-                }
-                return resolved;
+        return exchange -> {
+            ServerHttpRequest request = exchange.getRequest();
+            String origin = request.getHeaders().getOrigin();
+            if (origin == null) {
+                return source.getCorsConfiguration(exchange);
             }
+            CorsConfiguration resolved = source.getCorsConfiguration(exchange);
+            boolean allowed = patterns.stream().anyMatch(p -> matchesOriginPattern(p, origin));
+            if (!allowed) {
+                log.warn("CORS blocked: origin='{}' path='{}'", origin, request.getPath());
+            }
+            return resolved;
         };
     }
 

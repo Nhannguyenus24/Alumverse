@@ -1,4 +1,4 @@
-package com.service.backend.forum.entity;
+package com.service.backend.shared.entity;
 
 import java.time.LocalDateTime;
 
@@ -16,17 +16,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("forum_poll_votes")
-public class PollVote {
+@Table("forum_post_reactions")
+public class ForumPostReaction {
     
     @Id
     private Integer id;
     
-    @Column("poll_id")
-    private Integer pollId;
-    
-    @Column("poll_option_id")
-    private Integer pollOptionId;
+    @Column("post_id")
+    private Integer postId;
     
     @Column("member_id")
     private Integer memberId;

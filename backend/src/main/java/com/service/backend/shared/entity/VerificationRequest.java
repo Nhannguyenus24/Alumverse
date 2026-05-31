@@ -4,45 +4,41 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import com.service.backend.shared.enums.UserRole;
-import com.service.backend.shared.enums.UserStatus;
-
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Table("users")
-public class User {
-        
+@Table("verification_requests")
+public class VerificationRequest {
+
     @Id
     private Integer id;
 
-    @Column("email")
-    private String email;
+    @Column("member_id")
+    private Integer memberId;
 
-    @Column("password_hash")
-    private String passwordHash;
+    @Column("document_url")
+    private String documentUrl;
 
-    @Column("user_name")
-    private String userName;
+    @Column("document_type")
+    private String documentType;
 
     @Column("status")
-    private UserStatus status;
+    private String status;
 
-    @Column("role")
-    private UserRole role;
+    @Column("admin_note")
+    private String adminNote;
 
-    @Column("avatar_url")
-    private String avatarUrl;
+    @Column("reviewed_by_member_id")
+    private Integer reviewedByMemberId;
 
     @CreatedDate
     @Column("created_at")
