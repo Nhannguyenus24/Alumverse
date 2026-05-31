@@ -91,6 +91,9 @@ export const getMyAvailabilities = () => apiClient.get(`${MENTOR}/availability`)
 export const deleteMyAvailability = (availabilityId) =>
   apiClient.delete(`${MENTOR}/availability/${availabilityId}`);
 
+export const updateMyAvailability = (availabilityId, payload) =>
+  apiClient.put(`${MENTOR}/availability/${availabilityId}`, payload);
+
 export const getMyMentorSessions = (params = {}) =>
   apiClient.get(`${MENTOR}/sessions`, { params });
 

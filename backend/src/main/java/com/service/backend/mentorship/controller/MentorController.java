@@ -105,6 +105,15 @@ public class MentorController {
                         .ok(new ApiResponse<>("Availabilities retrieved successfully", response)));
     }
 
+    @PutMapping("/availability/{id}")
+    public Mono<ResponseEntity<ApiResponse<MentorAvailabilityResponse>>> updateAvailability(
+            @PathVariable @Min(1) Integer id,
+            @Valid @RequestBody CreateAvailabilityRequest request) {
+        return mentorService.updateAvailability(id, request)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Availability updated successfully", response)));
+    }
+
     @DeleteMapping("/availability/{id}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteAvailability(@PathVariable @Min(1) Integer id) {
         return mentorService.deleteAvailability(id)
