@@ -5,6 +5,7 @@ import com.service.backend.mentorship.dto.*;
 import com.service.backend.mentorship.entity.MentorAvailability;
 import com.service.backend.mentorship.entity.MentorExpertise;
 import com.service.backend.mentorship.entity.MentorProfile;
+import com.service.backend.mentorship.entity.MentorProfileStatus;
 import com.service.backend.mentorship.entity.MentorshipSession;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
@@ -105,10 +106,42 @@ public class MentorService {
     // ===================== PROFILE =====================
 
     public Mono<MentorProfileResponse> createProfile(CreateMentorProfileRequest request) {
+        return saveProfile(request, MentorProfileStatus.PENDING);
+    }
+
+    public Mono<MentorProfileResponse> saveDraft(CreateMentorProfileRequest request) {
+        return saveProfile(request, MentorProfileStatus.DRAFT);
+    }
+
+    private Mono<MentorProfileResponse> saveProfile(CreateMentorProfileRequest request, String targetStatus) {
         return currentMemberId().flatMap(memberId ->
                 profileRepository.findById(memberId)
-                        .flatMap(existing -> Mono.<MentorProfile>error(
-                                new ApplicationException(ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS, "Mentor profile already exists")))
+                        .flatMap(existing -> {
+                            String current = existing.getStatus();
+                            if (MentorProfileStatus.APPROVED.equals(current)
+                                    || MentorProfileStatus.PENDING.equals(current)) {
+                                return Mono.<MentorProfile>error(new ApplicationException(
+                                        ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS,
+                                        "Mentor profile already exists"));
+                            }
+                            if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
+                            if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
+                            if (request.getBio() != null) existing.setBio(request.getBio());
+                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
+                            if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
+                            if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
+                            if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
+                            existing.setStatus(targetStatus);
+                            if (MentorProfileStatus.PENDING.equals(targetStatus)) {
+                                existing.setReviewNote(null);
+                                existing.setReviewedAt(null);
+                                existing.setReviewedBy(null);
+                            }
+                            existing.setUpdatedAt(LocalDateTime.now());
+                            existing.setNew(false);
+                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                                    .then(profileRepository.save(existing));
+                        })
                         .switchIfEmpty(Mono.defer(() -> {
                             MentorProfile profile = MentorProfile.builder()
                                     .memberId(memberId)
@@ -117,12 +150,13 @@ public class MentorService {
                                     .bio(request.getBio())
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
-                                    .isApproved(false)
+                                    .status(targetStatus)
                                     .coverUrl(request.getCoverUrl())
                                     .defaultMeetingLink(request.getDefaultMeetingLink())
                                     .bookingWindowSettings(request.getBookingWindowSettings())
                                     .extendedProfile(request.getExtendedProfile())
                                     .createdAt(LocalDateTime.now())
+                                    .updatedAt(LocalDateTime.now())
                                     .build();
                             return updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(profile));
@@ -185,25 +219,88 @@ public class MentorService {
     }
 
     public Mono<Boolean> deleteExpertise(Integer expertiseId) {
-        return expertiseRepository.findById(expertiseId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
-                .flatMap(existing -> expertiseRepository.deleteById(expertiseId).thenReturn(true));
+        return currentMemberId().flatMap(memberId ->
+                expertiseRepository.findById(expertiseId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
+                        .flatMap(existing -> {
+                            if (!memberId.equals(existing.getMentorMemberId())) {
+                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                            }
+                            return expertiseRepository.deleteById(expertiseId).thenReturn(true);
+                        }));
+    }
+
+    public Mono<MentorExpertiseResponse> updateExpertise(Integer expertiseId, UpdateExpertiseRequest request) {
+        return currentMemberId().flatMap(memberId ->
+                expertiseRepository.findById(expertiseId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
+                        .flatMap(existing -> {
+                            if (!memberId.equals(existing.getMentorMemberId())) {
+                                return Mono.<MentorExpertise>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                            }
+                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getYearsExperience() != null) existing.setYearsExperience(request.getYearsExperience());
+                            if (request.getDescription() != null) existing.setDescription(request.getDescription());
+                            if (request.getCategory() != null) existing.setCategory(request.getCategory());
+                            if (request.getTag() != null) existing.setTag(request.getTag());
+                            return expertiseRepository.save(existing);
+                        })
+                        .map(MentorExpertiseResponse::from));
     }
 
     // ===================== AVAILABILITY =====================
 
     public Mono<MentorAvailabilityResponse> addAvailability(CreateAvailabilityRequest request) {
-        return currentMemberId().flatMap(memberId -> {
-            MentorAvailability availability = MentorAvailability.builder()
-                    .mentorMemberId(memberId)
-                    .startTime(request.getStartTime())
-                    .endTime(request.getEndTime())
-                    .status("Available")
-                    .build();
+        return currentMemberId().flatMap(memberId ->
+                validateSlot(memberId, request.getStartTime(), request.getEndTime(), null)
+                        .then(Mono.defer(() -> {
+                            MentorAvailability availability = MentorAvailability.builder()
+                                    .mentorMemberId(memberId)
+                                    .startTime(request.getStartTime())
+                                    .endTime(request.getEndTime())
+                                    .status("Available")
+                                    .build();
+                            return availabilityRepository.save(availability)
+                                    .map(MentorAvailabilityResponse::from);
+                        })));
+    }
 
-            return availabilityRepository.save(availability)
-                    .map(MentorAvailabilityResponse::from);
-        });
+    public Mono<MentorAvailabilityResponse> updateAvailability(Integer availabilityId,
+                                                               CreateAvailabilityRequest request) {
+        return currentMemberId().flatMap(memberId ->
+                availabilityRepository.findById(availabilityId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found")))
+                        .flatMap(existing -> {
+                            if (!memberId.equals(existing.getMentorMemberId())) {
+                                return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
+                            }
+                            if (!"Available".equals(existing.getStatus())) {
+                                return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể chỉnh sửa"));
+                            }
+                            return validateSlot(memberId, request.getStartTime(), request.getEndTime(), availabilityId)
+                                    .then(Mono.defer(() -> {
+                                        existing.setStartTime(request.getStartTime());
+                                        existing.setEndTime(request.getEndTime());
+                                        return availabilityRepository.save(existing);
+                                    }));
+                        })
+                        .map(MentorAvailabilityResponse::from));
+    }
+
+    private Mono<Void> validateSlot(Integer memberId, LocalDateTime startTime, LocalDateTime endTime, Integer excludeId) {
+        if (startTime == null || endTime == null) {
+            return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_INVALID_RANGE, "Slot phải có giờ bắt đầu và kết thúc"));
+        }
+        if (!endTime.isAfter(startTime)) {
+            return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_INVALID_RANGE, "Giờ kết thúc phải sau giờ bắt đầu"));
+        }
+        if (!startTime.isAfter(LocalDateTime.now())) {
+            return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_IN_PAST, "Slot phải nằm trong tương lai"));
+        }
+        return availabilityRepository.countOverlapping(memberId, startTime, endTime, excludeId)
+                .flatMap(count -> count > 0
+                        ? Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_OVERLAP, "Slot trùng với một slot đã tồn tại"))
+                        : Mono.empty());
     }
 
     public Mono<java.util.List<MentorAvailabilityResponse>> getMyAvailabilities() {
@@ -218,7 +315,12 @@ public class MentorService {
                 availabilityRepository.findById(availabilityId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found with id: " + availabilityId)))
                         .flatMap(existing -> {
-                            availabilityRepository.deleteByMentorMemberIdAndId(memberId, availabilityId);
+                            if (!memberId.equals(existing.getMentorMemberId())) {
+                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
+                            }
+                            if (!"Available".equals(existing.getStatus())) {
+                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
+                            }
                             return availabilityRepository.deleteById(availabilityId).thenReturn(true);
                         }));
     }
