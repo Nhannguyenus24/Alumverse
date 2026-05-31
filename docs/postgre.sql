@@ -167,12 +167,27 @@ CREATE TABLE "mentor_profiles" (
   "bio" text,
   "rating_avg" decimal DEFAULT 0,
   "total_sessions" integer DEFAULT 0,
-  "is_approved" boolean DEFAULT false,
+  "status" varchar(20) NOT NULL DEFAULT 'DRAFT' CHECK ("status" IN ('DRAFT','PENDING','APPROVED','REJECTED','NEED_UPDATE')),
+  "review_note" text,
+  "reviewed_at" timestamp,
+  "reviewed_by" integer,
   "cover_url" varchar,
   "default_meeting_link" varchar,
   "booking_window_settings" text,
   "extended_profile" text,
-  "created_at" timestamp
+  "created_at" timestamp,
+  "updated_at" timestamp
+);
+
+CREATE TABLE "mentee_profiles" (
+  "member_id" integer PRIMARY KEY,
+  "mentoring_goal" text,
+  "major" varchar(255),
+  "academic_year" varchar(50),
+  "interests" text,
+  "is_active" boolean NOT NULL DEFAULT true,
+  "created_at" timestamp,
+  "updated_at" timestamp
 );
 
 CREATE TABLE "mentor_expertise" (
@@ -579,6 +594,8 @@ ALTER TABLE "event_tickets" ADD FOREIGN KEY ("event_id") REFERENCES "events" ("i
 ALTER TABLE "event_tickets" ADD FOREIGN KEY ("member_id") REFERENCES "organization_members" ("user_id");
 
 ALTER TABLE "mentor_profiles" ADD FOREIGN KEY ("member_id") REFERENCES "organization_members" ("user_id");
+
+ALTER TABLE "mentee_profiles" ADD FOREIGN KEY ("member_id") REFERENCES "organization_members" ("user_id");
 
 ALTER TABLE "mentor_expertise" ADD FOREIGN KEY ("mentor_member_id") REFERENCES "mentor_profiles" ("member_id");
 

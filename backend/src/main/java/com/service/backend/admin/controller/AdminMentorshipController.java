@@ -2,10 +2,12 @@ package com.service.backend.admin.controller;
 
 import com.service.backend.admin.dto.AdminMentorProfileDTO;
 import com.service.backend.admin.dto.AdminMentorshipSessionDTO;
+import com.service.backend.admin.dto.MentorApplicationReviewRequest;
 import com.service.backend.admin.dto.MentorshipStatisticsDTO;
 import com.service.backend.admin.service.AdminMentorshipService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -97,17 +100,17 @@ public class AdminMentorshipController {
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentor profiles", p)));
     }
 
-    @Operation(summary = "Filter mentor profiles by approval status")
-    @GetMapping("/mentors/by-approval")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorProfileDTO>>>> getMentorProfilesByApproval(
-            @Parameter(example = "false")
-            @RequestParam Boolean isApproved,
+    @Operation(summary = "Filter mentor profiles by status (DRAFT, PENDING, APPROVED, REJECTED, NEED_UPDATE)")
+    @GetMapping("/mentors/by-status")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorProfileDTO>>>> getMentorProfilesByStatus(
+            @Parameter(example = "PENDING")
+            @RequestParam String status,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getMentorProfilesByApproval(isApproved, page, size)
-                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentor profiles by approval", p)));
+        return adminMentorshipService.getMentorProfilesByStatus(status, page, size)
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentor profiles by status", p)));
     }
 
     @Operation(summary = "Approve a mentor profile")
@@ -116,6 +119,24 @@ public class AdminMentorshipController {
             @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId) {
         return adminMentorshipService.approveMentor(memberId)
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor approved", p)));
+    }
+
+    @Operation(summary = "Reject a mentor profile with a reason")
+    @PostMapping("/mentors/{memberId}/reject")
+    public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> rejectMentor(
+            @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
+            @Valid @RequestBody MentorApplicationReviewRequest request) {
+        return adminMentorshipService.rejectMentor(memberId, request.getReason())
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor application rejected", p)));
+    }
+
+    @Operation(summary = "Ask the applicant to update the mentor profile, with a reason")
+    @PostMapping("/mentors/{memberId}/request-update")
+    public Mono<ResponseEntity<ApiResponse<AdminMentorProfileDTO>>> requestMentorUpdate(
+            @PathVariable @Min(value = 1, message = "Member ID must be greater than 0") Integer memberId,
+            @Valid @RequestBody MentorApplicationReviewRequest request) {
+        return adminMentorshipService.requestMentorUpdate(memberId, request.getReason())
+                .map(p -> ResponseEntity.ok(new ApiResponse<>("Mentor application needs update", p)));
     }
 
     @Operation(summary = "Get comprehensive mentorship statistics")

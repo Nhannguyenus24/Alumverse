@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
@@ -41,9 +42,18 @@ public class MentorProfile implements Persistable<Integer> {
     @Builder.Default
     private Integer totalSessions = 0;
 
-    @Column("is_approved")
+    @Column("status")
     @Builder.Default
-    private Boolean isApproved = false;
+    private String status = MentorProfileStatus.DRAFT;
+
+    @Column("review_note")
+    private String reviewNote;
+
+    @Column("reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column("reviewed_by")
+    private Integer reviewedBy;
 
     @Column("cover_url")
     private String coverUrl;
@@ -60,6 +70,10 @@ public class MentorProfile implements Persistable<Integer> {
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column("updated_at")
+    private LocalDateTime updatedAt;
 
     @Transient
     @Builder.Default

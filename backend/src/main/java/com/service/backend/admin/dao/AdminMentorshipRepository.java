@@ -32,21 +32,21 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
     @Query("SELECT COUNT(*) FROM mentor_profiles")
     Mono<Long> countAllMentorProfiles();
 
-    @Query("SELECT * FROM mentor_profiles WHERE is_approved = :isApproved ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<MentorProfile> findMentorProfilesByApproval(@Param("isApproved") Boolean isApproved,
-                                                     @Param("limit") int limit,
-                                                     @Param("offset") int offset);
+    @Query("SELECT * FROM mentor_profiles WHERE status = :status ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<MentorProfile> findMentorProfilesByStatus(@Param("status") String status,
+                                                   @Param("limit") int limit,
+                                                   @Param("offset") int offset);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE is_approved = :isApproved")
-    Mono<Long> countMentorProfilesByApproval(@Param("isApproved") Boolean isApproved);
+    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = :status")
+    Mono<Long> countMentorProfilesByStatus(@Param("status") String status);
 
     @Query("SELECT * FROM mentor_profiles WHERE member_id = :memberId")
     Mono<MentorProfile> findMentorProfileById(@Param("memberId") Integer memberId);
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE is_approved = true")
+    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'APPROVED'")
     Mono<Long> countApprovedMentors();
 
-    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE is_approved = false")
+    @Query("SELECT COUNT(*) FROM mentor_profiles WHERE status = 'PENDING'")
     Mono<Long> countPendingMentors();
 
     @Query("SELECT COUNT(*) FROM mentor_availabilities")

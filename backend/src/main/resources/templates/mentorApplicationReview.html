@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Cập nhật hồ sơ Mentor - AlumVerse</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background-color: #ffffff;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .header {
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            color: #1976d2;
+            margin: 0;
+            font-size: 22px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 999px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 8px 0;
+        }
+        .status-APPROVED { background-color: #2e7d32; }
+        .status-REJECTED { background-color: #c62828; }
+        .status-NEED_UPDATE { background-color: #ef6c00; }
+        .reason-box {
+            background-color: #fafafa;
+            border-left: 4px solid #1976d2;
+            padding: 14px 18px;
+            margin: 18px 0;
+            color: #333;
+            white-space: pre-line;
+        }
+        .footer {
+            color: #888;
+            font-size: 13px;
+            margin-top: 28px;
+            border-top: 1px solid #eee;
+            padding-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AlumVerse Mentorship</h1>
+        </div>
+
+        <p>Xin chào <strong th:text="${recipientName}">bạn</strong>,</p>
+
+        <p>Quản trị viên vừa cập nhật trạng thái hồ sơ Mentor của bạn:</p>
+
+        <p>
+            <span th:class="'status-badge status-' + ${status}" th:text="${statusLabel}">Status</span>
+        </p>
+
+        <div th:if="${reason != null and !reason.isEmpty()}" class="reason-box">
+            <strong>Lý do / Yêu cầu từ quản trị viên:</strong><br>
+            <span th:text="${reason}">reason</span>
+        </div>
+
+        <p th:if="${status == 'APPROVED'}">
+            Chúc mừng bạn! Hồ sơ Mentor đã được duyệt. Bạn có thể bắt đầu thiết lập lịch rảnh và
+            nhận yêu cầu mentoring từ mentee.
+        </p>
+
+        <p th:if="${status == 'NEED_UPDATE'}">
+            Vui lòng đăng nhập vào AlumVerse, chỉnh sửa hồ sơ theo yêu cầu ở trên và gửi lại để
+            được xét duyệt.
+        </p>
+
+        <p th:if="${status == 'REJECTED'}">
+            Bạn vẫn có thể chỉnh sửa hồ sơ và đăng ký lại sau khi đáp ứng các yêu cầu cộng đồng.
+        </p>
+
+        <div class="footer">
+            Email được gửi tự động từ hệ thống AlumVerse. Vui lòng không trả lời email này.
+        </div>
+    </div>
+</body>
+</html>

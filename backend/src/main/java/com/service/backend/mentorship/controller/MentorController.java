@@ -34,6 +34,14 @@ public class MentorController {
                         .body(new ApiResponse<>("Mentor profile created successfully", response)));
     }
 
+    @PostMapping("/profile/draft")
+    public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> saveDraft(
+            @Valid @RequestBody CreateMentorProfileRequest request) {
+        return mentorService.saveDraft(request)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Mentor profile draft saved", response)));
+    }
+
     @PutMapping("/profile")
     public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> updateProfile(
             @Valid @RequestBody UpdateMentorProfileRequest request) {

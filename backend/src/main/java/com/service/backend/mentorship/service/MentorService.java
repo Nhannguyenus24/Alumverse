@@ -5,6 +5,7 @@ import com.service.backend.mentorship.dto.*;
 import com.service.backend.mentorship.entity.MentorAvailability;
 import com.service.backend.mentorship.entity.MentorExpertise;
 import com.service.backend.mentorship.entity.MentorProfile;
+import com.service.backend.mentorship.entity.MentorProfileStatus;
 import com.service.backend.mentorship.entity.MentorshipSession;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
@@ -105,10 +106,42 @@ public class MentorService {
     // ===================== PROFILE =====================
 
     public Mono<MentorProfileResponse> createProfile(CreateMentorProfileRequest request) {
+        return saveProfile(request, MentorProfileStatus.PENDING);
+    }
+
+    public Mono<MentorProfileResponse> saveDraft(CreateMentorProfileRequest request) {
+        return saveProfile(request, MentorProfileStatus.DRAFT);
+    }
+
+    private Mono<MentorProfileResponse> saveProfile(CreateMentorProfileRequest request, String targetStatus) {
         return currentMemberId().flatMap(memberId ->
                 profileRepository.findById(memberId)
-                        .flatMap(existing -> Mono.<MentorProfile>error(
-                                new ApplicationException(ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS, "Mentor profile already exists")))
+                        .flatMap(existing -> {
+                            String current = existing.getStatus();
+                            if (MentorProfileStatus.APPROVED.equals(current)
+                                    || MentorProfileStatus.PENDING.equals(current)) {
+                                return Mono.<MentorProfile>error(new ApplicationException(
+                                        ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS,
+                                        "Mentor profile already exists"));
+                            }
+                            if (request.getCurrentJobTitle() != null) existing.setCurrentJobTitle(request.getCurrentJobTitle());
+                            if (request.getCurrentCompany() != null) existing.setCurrentCompany(request.getCurrentCompany());
+                            if (request.getBio() != null) existing.setBio(request.getBio());
+                            if (request.getCoverUrl() != null) existing.setCoverUrl(request.getCoverUrl());
+                            if (request.getDefaultMeetingLink() != null) existing.setDefaultMeetingLink(request.getDefaultMeetingLink());
+                            if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
+                            if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
+                            existing.setStatus(targetStatus);
+                            if (MentorProfileStatus.PENDING.equals(targetStatus)) {
+                                existing.setReviewNote(null);
+                                existing.setReviewedAt(null);
+                                existing.setReviewedBy(null);
+                            }
+                            existing.setUpdatedAt(LocalDateTime.now());
+                            existing.setNew(false);
+                            return updateUserAvatar(memberId, request.getAvatarUrl())
+                                    .then(profileRepository.save(existing));
+                        })
                         .switchIfEmpty(Mono.defer(() -> {
                             MentorProfile profile = MentorProfile.builder()
                                     .memberId(memberId)
@@ -117,12 +150,13 @@ public class MentorService {
                                     .bio(request.getBio())
                                     .ratingAvg(java.math.BigDecimal.ZERO)
                                     .totalSessions(0)
-                                    .isApproved(false)
+                                    .status(targetStatus)
                                     .coverUrl(request.getCoverUrl())
                                     .defaultMeetingLink(request.getDefaultMeetingLink())
                                     .bookingWindowSettings(request.getBookingWindowSettings())
                                     .extendedProfile(request.getExtendedProfile())
                                     .createdAt(LocalDateTime.now())
+                                    .updatedAt(LocalDateTime.now())
                                     .build();
                             return updateUserAvatar(memberId, request.getAvatarUrl())
                                     .then(profileRepository.save(profile));
