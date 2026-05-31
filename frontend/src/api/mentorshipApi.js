@@ -3,6 +3,14 @@ import apiClient from '../utils/axios';
 const MENTOR = '/mentorship/mentor';
 const MENTEE = '/mentorship/mentee';
 
+// ========== MENTEE: PROFILE ==========
+
+export const saveMenteeProfile = (payload) =>
+  apiClient.post(`${MENTEE}/profile`, payload);
+
+export const getMyMenteeProfile = () =>
+  apiClient.get(`${MENTEE}/profile`);
+
 // ========== MENTEE: BROWSE ==========
 
 export const getApprovedMentors = (page = 0, limit = 12) =>

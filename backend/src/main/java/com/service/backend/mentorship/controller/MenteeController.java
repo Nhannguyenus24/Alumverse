@@ -101,6 +101,21 @@ public class MenteeController {
                         .ok(new ApiResponse<>("Available slots retrieved successfully", response)));
     }
 
+    @PostMapping("/profile")
+    public Mono<ResponseEntity<ApiResponse<MenteeProfileResponse>>> createOrUpdateMenteeProfile(
+            @Valid @RequestBody CreateMenteeProfileRequest request) {
+        return menteeService.createOrUpdateMyMenteeProfile(request)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Mentee profile saved", response)));
+    }
+
+    @GetMapping("/profile")
+    public Mono<ResponseEntity<ApiResponse<MenteeProfileResponse>>> getMyMenteeProfile() {
+        return menteeService.getMyMenteeProfile()
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Mentee profile retrieved", response)));
+    }
+
     @PostMapping("/sessions/book")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> bookSession(
             @Valid @RequestBody BookSessionRequest request) {
