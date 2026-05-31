@@ -54,6 +54,9 @@ export const createSessionFeedback = (sessionId, payload) =>
 export const createMentorProfile = (payload) =>
   apiClient.post(`${MENTOR}/profile`, payload);
 
+export const saveMentorProfileDraft = (payload) =>
+  apiClient.post(`${MENTOR}/profile/draft`, payload);
+
 export const updateMentorProfile = (payload) =>
   apiClient.put(`${MENTOR}/profile`, payload);
 
