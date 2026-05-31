@@ -1,5 +1,8 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum UserRole {
     ADMIN("ADMIN"),
     STUDENT("STUDENT"),
@@ -13,7 +16,4 @@ public enum UserRole {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

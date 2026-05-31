@@ -1,12 +1,12 @@
 package com.service.backend.article.usecase;
 
 import com.service.backend.article.dao.AchievementR2dbcRepository;
-import com.service.backend.article.entity.Achievement;
+import com.service.backend.shared.entity.Achievement;
 import com.service.backend.article.dto.CreateAchievementRequest;
 import com.service.backend.article.dto.UpdateAchievementRequest;
 import com.service.backend.article.dto.AchievementResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.SecurityUtils;

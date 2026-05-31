@@ -1,5 +1,8 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum UserStatus {
     ACTIVE("ACTIVE"),
     INACTIVE("INACTIVE"),
@@ -16,7 +19,4 @@ public enum UserStatus {
         this.status = status;
     }
 
-    public String getStatus() {
-        return status;
-    }
 }

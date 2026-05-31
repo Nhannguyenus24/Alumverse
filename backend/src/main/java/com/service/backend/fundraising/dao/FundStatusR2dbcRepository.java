@@ -1,6 +1,6 @@
 package com.service.backend.fundraising.dao;
 
-import com.service.backend.fundraising.entity.FundStatus;
+import com.service.backend.shared.entity.FundStatus;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 

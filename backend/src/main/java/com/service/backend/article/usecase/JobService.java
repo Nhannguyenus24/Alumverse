@@ -1,12 +1,12 @@
 package com.service.backend.article.usecase;
 
 import com.service.backend.article.dao.JobR2dbcRepository;
-import com.service.backend.article.entity.Job;
+import com.service.backend.shared.entity.Job;
 import com.service.backend.article.dto.CreateJobRequest;
 import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.article.dto.JobResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;

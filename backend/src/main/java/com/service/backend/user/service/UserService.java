@@ -9,8 +9,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.service.backend.auth.dao.AuthRepository;
-import com.service.backend.admin.entity.OrganizationMember;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.entity.OrganizationMember;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
@@ -18,7 +18,7 @@ import com.service.backend.user.dao.UserNotificationSettingsRepository;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import com.service.backend.user.dao.UserProfileRepository;
 import com.service.backend.user.dao.PeerVerificationRepository;
-import com.service.backend.user.entity.PeerVerification;
+import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.user.dto.NotificationSettingsResponse;
@@ -27,7 +27,7 @@ import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
 import com.service.backend.user.dto.UserLoginHistoryResponse;
 import com.service.backend.user.dto.UserOrganizationMemberResponse;
 import com.service.backend.user.dto.UserProfileResponse;
-import com.service.backend.user.entity.UserNotificationSettings;
+import com.service.backend.shared.entity.UserNotificationSettings;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;

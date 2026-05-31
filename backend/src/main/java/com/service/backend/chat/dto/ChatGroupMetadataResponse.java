@@ -1,6 +1,6 @@
 package com.service.backend.chat.dto;
 
-import com.service.backend.chat.entity.ChatGroupMember;
+import com.service.backend.shared.entity.ChatGroupMember;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

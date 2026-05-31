@@ -1,6 +1,6 @@
 package com.service.backend.article.dto;
 
-import com.service.backend.article.entity.Achievement;
+import com.service.backend.shared.entity.Achievement;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

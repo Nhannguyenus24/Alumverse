@@ -1,12 +1,12 @@
 package com.service.backend.article.usecase;
 
 import com.service.backend.article.dao.SavedItemR2dbcRepository;
-import com.service.backend.article.entity.SavedItem;
+import com.service.backend.shared.entity.SavedItem;
 import com.service.backend.article.dto.SaveItemRequest;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.dto.SavedCheckResponse;
 import com.service.backend.article.dto.SavedItemResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;

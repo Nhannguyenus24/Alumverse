@@ -1,7 +1,7 @@
 package com.service.backend.fundraising.service;
 
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.FundDonationStatus;
 import com.service.backend.shared.exception.ApplicationException;
 import java.util.Map;

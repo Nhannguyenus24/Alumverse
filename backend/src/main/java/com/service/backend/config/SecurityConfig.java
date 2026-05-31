@@ -9,15 +9,29 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+
+import com.service.backend.shared.utils.JwtUtils;
+
+import reactor.core.publisher.Mono;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -25,10 +39,113 @@ public class SecurityConfig {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
-    // Comma-separated extra patterns injected from application-prod.properties
-    // e.g. https://*-hcmus-alumni.vercel.app,https://hcmus-alumni.vercel.app
+    private static final String[] PUBLIC_URLS = {
+            "/health",
+            "/api/auth/**",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/webjars/**",
+            "/api/guest/**",
+            "/api/organizations/**",
+            "/websocket-test.html",
+            "/ws/chat",
+            "/ws/chat/**",
+            "/*.html",
+            "/*.css",
+            "/*.js",
+            "/*.png",
+            "/*.ico",
+            "/static/**",
+            "/api/funds/**",
+            "/api/fund-statuses",
+            "/api/fund-donations/**",
+            "/api/payment/**"
+    };
+
+    private static final String[] PUBLIC_GET_URLS = {
+            "/api/mentorship/mentee/mentors",
+            "/api/mentorship/mentee/mentors/**",
+            "/api/mentorship/mentee/expertise-topics",
+            "/api/mentorship/mentee/expertise-categories"
+    };
+
     @Value("${app.cors.allowed-origin-patterns:}")
     private String extraOriginPatterns;
+
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, JwtUtils jwtUtils) {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .addFilterAt(headerAuthenticationFilter(jwtUtils), SecurityWebFiltersOrder.AUTHENTICATION)
+                .authorizeExchange(auth -> auth
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
+                        .pathMatchers(PUBLIC_URLS).permitAll()
+                        .anyExchange().authenticated());
+
+        return http.build();
+    }
+
+    private WebFilter headerAuthenticationFilter(JwtUtils jwtUtils) {
+        ServerWebExchangeMatcher publicMatcher = ServerWebExchangeMatchers.matchers(
+                ServerWebExchangeMatchers.pathMatchers(HttpMethod.OPTIONS, "/**"),
+                ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, PUBLIC_GET_URLS),
+                ServerWebExchangeMatchers.pathMatchers(PUBLIC_URLS)
+        );
+
+        return (exchange, chain) -> publicMatcher.matches(exchange)
+                .flatMap(matchResult -> {
+                    if (matchResult.isMatch()) {
+                        return chain.filter(exchange);
+                    }
+
+                    String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+                    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        return unauthenticatedResponse(exchange, "Request is not authenticated", "UNAUTHORIZED");
+                    }
+
+                    String token = authHeader.substring(7);
+
+                    try {
+                        Integer userId = jwtUtils.getUserIdFromToken(token);
+                        String userRole = jwtUtils.getRoleFromToken(token);
+                        Integer organizationId = jwtUtils.getOrganizationIdFromToken(token);
+
+                        if (userId == null || userRole == null) {
+                            throw new RuntimeException("Invalid token: missing user ID or role");
+                        }
+
+                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                String.valueOf(userId),
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_" + userRole)));
+                        auth.setDetails(organizationId);
+
+                        return chain.filter(exchange)
+                                .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
+
+                    } catch (RuntimeException e) {
+                        String message = e.getMessage();
+                        String errorCode = "INVALID_TOKEN";
+
+                        if (message != null && message.contains("expired")) {
+                            errorCode = "TOKEN_EXPIRED";
+                        }
+                        return unauthenticatedResponse(exchange, message != null ? message : "Token validation failed", errorCode);
+                    }
+                });
+    }
+
+    private Mono<Void> unauthenticatedResponse(ServerWebExchange exchange, String message, String errorCode) {
+        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+        exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
+        String errorResponse = String.format("{\"message\":\"%s\",\"error\":\"%s\"}", message, errorCode);
+        return exchange.getResponse().writeWith(
+                Mono.just(exchange.getResponse().bufferFactory().wrap(errorResponse.getBytes())));
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -65,8 +182,6 @@ public class SecurityConfig {
                     return source.getCorsConfiguration(exchange);
                 }
                 CorsConfiguration resolved = source.getCorsConfiguration(exchange);
-                // If the origin pattern matches, allowedOrigins will be populated after validation.
-                // We detect a block by checking if the origin passes the pattern check ourselves.
                 boolean allowed = patterns.stream().anyMatch(p -> matchesOriginPattern(p, origin));
                 if (!allowed) {
                     log.warn("CORS blocked: origin='{}' path='{}'", origin, request.getPath());
@@ -77,59 +192,9 @@ public class SecurityConfig {
     }
 
     private boolean matchesOriginPattern(String pattern, String origin) {
-        // Convert glob-style pattern to regex: * matches any chars except ://
         String regex = pattern
                 .replace(".", "\\.")
                 .replace("*", "[^/]*");
         return origin.matches(regex);
-    }
-
-    @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        http
-                // Enable CORS
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // Disable CSRF for stateless REST API
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-
-                // Authorization rules
-                .authorizeExchange(auth -> auth
-                        // Public endpoints - no authentication required
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers(HttpMethod.GET,
-                                "/api/mentorship/mentee/mentors",
-                                "/api/mentorship/mentee/mentors/**",
-                                "/api/mentorship/mentee/expertise-topics",
-                                "/api/mentorship/mentee/expertise-categories"
-                        ).permitAll()
-                        .pathMatchers(
-                                "/health",
-                                "/api/auth/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/webjars/**",
-                                "/api/guest/**",
-                                "/api/organizations/**",
-                                "/websocket-test.html",
-                                "/ws/chat",
-                                "/ws/chat/**",
-                                "/*.html",
-                                "/*.css",
-                                "/*.js",
-                                "/*.png",
-                                "/*.ico",
-                                "/static/**",
-                                "/api/funds/**",
-                                "/api/fund-statuses",
-                                "/api/fund-donations/**",
-                                "/api/payment/**"
-                        ).permitAll()
-
-                        // All other requests require authentication
-                        .anyExchange().authenticated());
-
-        return http.build();
     }
 }

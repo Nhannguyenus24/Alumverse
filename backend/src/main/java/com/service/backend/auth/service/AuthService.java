@@ -21,15 +21,15 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.service.backend.auth.dto.LoginResponse;
-import com.service.backend.shared.constants.ErrorCode;
-import com.service.backend.auth.entity.User;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.entity.User;
 import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
-import com.service.backend.user.entity.UserLoginHistory;
+import com.service.backend.shared.entity.UserLoginHistory;
 import com.service.backend.shared.enums.UserStatus;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;

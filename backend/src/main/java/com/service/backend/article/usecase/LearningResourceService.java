@@ -1,12 +1,12 @@
 package com.service.backend.article.usecase;
 
 import com.service.backend.article.dao.LearningResourceR2dbcRepository;
-import com.service.backend.article.entity.LearningResource;
+import com.service.backend.shared.entity.LearningResource;
 import com.service.backend.article.dto.CreateLearningResourceRequest;
 import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;

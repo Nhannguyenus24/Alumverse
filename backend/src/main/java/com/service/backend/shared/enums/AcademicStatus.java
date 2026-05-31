@@ -1,5 +1,8 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum AcademicStatus {
     GRADUATED("GRADUATED"),
     STUDYING("STUDYING"),
@@ -11,7 +14,4 @@ public enum AcademicStatus {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

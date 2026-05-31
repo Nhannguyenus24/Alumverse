@@ -1,12 +1,12 @@
 package com.service.backend.article.usecase;
 
 import com.service.backend.article.dao.AlumniPostR2dbcRepository;
-import com.service.backend.article.entity.AlumniPost;
+import com.service.backend.shared.entity.AlumniPost;
 import com.service.backend.article.dto.CreateAlumniPostRequest;
 import com.service.backend.article.dto.UpdateAlumniPostRequest;
 import com.service.backend.article.dto.AlumniPostResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.SecurityUtils;

@@ -2,7 +2,7 @@ package com.service.backend.admin.service;
 
 import java.util.List;
 
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -21,8 +21,8 @@ import com.service.backend.admin.dto.UserResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.dao.AdminUserRepository;
-import com.service.backend.auth.entity.User;
-import com.service.backend.admin.entity.AdminAuditLog;
+import com.service.backend.shared.entity.User;
+import com.service.backend.shared.entity.AdminAuditLog;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 

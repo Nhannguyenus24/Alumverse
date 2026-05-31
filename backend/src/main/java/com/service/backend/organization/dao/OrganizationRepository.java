@@ -1,7 +1,7 @@
 package com.service.backend.organization.dao;
 
 import com.service.backend.organization.dto.TrustedVerifierResponse;
-import com.service.backend.organization.entity.Organization;
+import com.service.backend.shared.entity.Organization;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;

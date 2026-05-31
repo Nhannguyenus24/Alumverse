@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.admin.dto.LoginHistoryResponse;
-import com.service.backend.auth.entity.User;
+import com.service.backend.shared.entity.User;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

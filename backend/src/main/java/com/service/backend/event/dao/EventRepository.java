@@ -1,8 +1,8 @@
 package com.service.backend.event.dao;
 
-import com.service.backend.event.entity.Event;
-import com.service.backend.event.entity.EventInterest;
-import com.service.backend.event.entity.EventTicket;
+import com.service.backend.shared.entity.Event;
+import com.service.backend.shared.entity.EventInterest;
+import com.service.backend.shared.entity.EventTicket;
 import com.service.backend.event.dto.EventStatisticsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import lombok.RequiredArgsConstructor;

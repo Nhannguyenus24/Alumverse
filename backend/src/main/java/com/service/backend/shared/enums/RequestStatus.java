@@ -1,5 +1,8 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum RequestStatus {
     PENDING("PENDING"),
     APPROVED("APPROVED"),
@@ -11,7 +14,4 @@ public enum RequestStatus {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

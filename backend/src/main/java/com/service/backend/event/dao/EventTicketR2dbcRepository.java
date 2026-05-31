@@ -1,6 +1,6 @@
 package com.service.backend.event.dao;
 
-import com.service.backend.event.entity.EventTicket;
+import com.service.backend.shared.entity.EventTicket;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

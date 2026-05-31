@@ -1,7 +1,7 @@
 package com.service.backend.mentorship.dto;
 
-import com.service.backend.mentorship.entity.MentorAvailability;
-import com.service.backend.mentorship.entity.MentorshipSession;
+import com.service.backend.shared.entity.MentorAvailability;
+import com.service.backend.shared.entity.MentorshipSession;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

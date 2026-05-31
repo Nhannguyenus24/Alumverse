@@ -2,13 +2,14 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
-import com.service.backend.mentorship.entity.MenteeProfile;
-import com.service.backend.mentorship.entity.MentorshipSession;
-import com.service.backend.mentorship.entity.SessionFeedback;
+import com.service.backend.shared.entity.MenteeProfile;
+import com.service.backend.shared.entity.MentorshipSession;
+import com.service.backend.shared.entity.SessionFeedback;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.entity.MentorExpertise;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -98,8 +99,8 @@ public class MenteeService {
         Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByMemberIds(ids);
         Mono<Map<Integer, java.util.List<String>>> topicsMono = expertiseRepository
                 .findByMentorMemberIds(ids)
-                .collectMultimap(com.service.backend.mentorship.entity.MentorExpertise::getMentorMemberId,
-                        com.service.backend.mentorship.entity.MentorExpertise::getTopic)
+                .collectMultimap(MentorExpertise::getMentorMemberId,
+                        MentorExpertise::getTopic)
                 .map(mm -> {
                     java.util.HashMap<Integer, java.util.List<String>> out = new java.util.HashMap<>();
                     mm.forEach((k, v) -> out.put(k, new java.util.ArrayList<>(v)));
