@@ -180,6 +180,9 @@ const MentorshipMyBookingsPage = Loadable(
 const MentorshipSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipSignupPage")),
 );
+const MentorshipPublicProfilePage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipPublicProfilePage")),
+);
 
 // User pages
 const PostArticlePage = Loadable(
@@ -472,6 +475,10 @@ export const router = createBrowserRouter([
               {
                 path: "calendar",
                 element: <MentorshipYourCalendarPage />,
+              },
+              {
+                path: "mentors/:mentorId",
+                element: <MentorshipPublicProfilePage />,
               },
               {
                 path: "mentors/:mentorId/book",

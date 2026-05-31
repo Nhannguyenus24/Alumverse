@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, Card, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Button, Card, Stack, Tooltip, Typography } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
 import MentorshipTag from "./MentorshipTag";
 
@@ -10,7 +10,22 @@ const MentorshipCard = ({
   reviews,
   tags = [],
   onViewProfile,
+  onBook,
+  canBook = true,
+  bookDisabledReason,
 }) => {
+  const bookButton = (
+    <Button
+      variant="contained"
+      fullWidth
+      disabled={!canBook}
+      onClick={canBook ? onBook : undefined}
+      sx={{ whiteSpace: 'nowrap' }}
+    >
+      Đặt lịch
+    </Button>
+  );
+
   return (
     <Card
       sx={{
@@ -39,7 +54,6 @@ const MentorshipCard = ({
           </Typography>
         </Box>
 
-        {/* Rating */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <StarIcon sx={{ color: "warning.main", fontSize: 18 }} />
           <Typography fontWeight={700} color="primary.main">
@@ -50,7 +64,6 @@ const MentorshipCard = ({
           </Typography>
         </Box>
 
-        {/* Tags */}
         <Box
           sx={{
             display: "flex",
@@ -65,9 +78,23 @@ const MentorshipCard = ({
         </Box>
       </Stack>
 
-      <Button variant="contained" sx={{ mt: 3 }} fullWidth onClick={onViewProfile}>
-        Xem Profile
-      </Button>
+      <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
+        <Button
+          variant="outlined"
+          fullWidth
+          onClick={onViewProfile}
+          sx={{ flex: 3, whiteSpace: 'nowrap' }}
+        >
+          Xem Profile
+        </Button>
+        {!canBook && bookDisabledReason ? (
+          <Tooltip title={bookDisabledReason}>
+            <Box sx={{ flex: 2, display: 'flex' }}>{bookButton}</Box>
+          </Tooltip>
+        ) : (
+          <Box sx={{ flex: 2, display: 'flex' }}>{bookButton}</Box>
+        )}
+      </Stack>
     </Card>
   );
 };

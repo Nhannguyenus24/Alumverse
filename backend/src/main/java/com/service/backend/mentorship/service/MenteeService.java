@@ -93,7 +93,7 @@ public class MenteeService {
         }
         if (ids.isEmpty()) return Mono.just(list);
 
-        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByUserIds(ids);
+        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByMemberIds(ids);
         Mono<Map<Integer, java.util.List<String>>> topicsMono = expertiseRepository
                 .findByMentorMemberIds(ids)
                 .collectMultimap(com.service.backend.mentorship.entity.MentorExpertise::getMentorMemberId,
@@ -146,21 +146,32 @@ public class MenteeService {
 
     public Mono<PaginatedResponse<MentorProfileResponse>> searchMentors(String keyword, int page, int limit) {
         int offset = page * limit;
-        return profileRepository.searchMentors(keyword, limit, offset)
+        return profileRepository.searchMentorsWithName(keyword, limit, offset)
                 .collectList()
                 .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countSearchMentors(keyword))
+                        .zipWith(profileRepository.countSearchMentorsWithName(keyword))
                         .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> filterMentors(
-            String search, String expertise, BigDecimal minRating, boolean hasAvailability, int page, int limit) {
+            String search, String category, String expertise, BigDecimal minRating, boolean hasAvailability,
+            LocalDateTime availableFrom, LocalDateTime availableTo,
+            int page, int limit) {
         int offset = page * limit;
-        return profileRepository.filterMentors(search, expertise, minRating, hasAvailability, limit, offset)
+        return profileRepository
+                .filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset)
                 .collectList()
                 .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countFilterMentors(search, expertise, minRating, hasAvailability))
+                        .zipWith(profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo))
                         .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+    }
+
+    public Mono<List<String>> getDistinctExpertiseTopics() {
+        return expertiseRepository.findDistinctTopics().collectList();
+    }
+
+    public Mono<List<String>> getDistinctExpertiseCategories() {
+        return expertiseRepository.findDistinctCategories().collectList();
     }
 
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
