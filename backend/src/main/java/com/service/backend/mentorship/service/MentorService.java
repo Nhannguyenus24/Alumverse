@@ -219,9 +219,33 @@ public class MentorService {
     }
 
     public Mono<Boolean> deleteExpertise(Integer expertiseId) {
-        return expertiseRepository.findById(expertiseId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
-                .flatMap(existing -> expertiseRepository.deleteById(expertiseId).thenReturn(true));
+        return currentMemberId().flatMap(memberId ->
+                expertiseRepository.findById(expertiseId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
+                        .flatMap(existing -> {
+                            if (!memberId.equals(existing.getMentorMemberId())) {
+                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                            }
+                            return expertiseRepository.deleteById(expertiseId).thenReturn(true);
+                        }));
+    }
+
+    public Mono<MentorExpertiseResponse> updateExpertise(Integer expertiseId, UpdateExpertiseRequest request) {
+        return currentMemberId().flatMap(memberId ->
+                expertiseRepository.findById(expertiseId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
+                        .flatMap(existing -> {
+                            if (!memberId.equals(existing.getMentorMemberId())) {
+                                return Mono.<MentorExpertise>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                            }
+                            if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getYearsExperience() != null) existing.setYearsExperience(request.getYearsExperience());
+                            if (request.getDescription() != null) existing.setDescription(request.getDescription());
+                            if (request.getCategory() != null) existing.setCategory(request.getCategory());
+                            if (request.getTag() != null) existing.setTag(request.getTag());
+                            return expertiseRepository.save(existing);
+                        })
+                        .map(MentorExpertiseResponse::from));
     }
 
     // ===================== AVAILABILITY =====================

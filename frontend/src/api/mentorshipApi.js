@@ -78,6 +78,9 @@ export const getMyExpertise = () => apiClient.get(`${MENTOR}/expertise`);
 export const deleteMyExpertise = (expertiseId) =>
   apiClient.delete(`${MENTOR}/expertise/${expertiseId}`);
 
+export const updateMyExpertise = (expertiseId, payload) =>
+  apiClient.put(`${MENTOR}/expertise/${expertiseId}`, payload);
+
 // ========== MENTOR: AVAILABILITY / SESSIONS ==========
 
 export const addMyAvailability = (payload) =>

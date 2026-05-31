@@ -73,6 +73,15 @@ public class MentorController {
                         .ok(new ApiResponse<>("Expertise retrieved successfully", response)));
     }
 
+    @PutMapping("/expertise/{id}")
+    public Mono<ResponseEntity<ApiResponse<MentorExpertiseResponse>>> updateExpertise(
+            @PathVariable @Min(1) Integer id,
+            @Valid @RequestBody UpdateExpertiseRequest request) {
+        return mentorService.updateExpertise(id, request)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Expertise updated successfully", response)));
+    }
+
     @DeleteMapping("/expertise/{id}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteExpertise(@PathVariable @Min(1) Integer id) {
         return mentorService.deleteExpertise(id)
