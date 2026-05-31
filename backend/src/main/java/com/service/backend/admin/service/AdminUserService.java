@@ -109,15 +109,31 @@ public class AdminUserService {
                                List<Integer> graduatedYear, List<String> graduationStatus,
                                List<String> program, List<String> major,
                                                    Integer verificationLevel, String status) {
-        return adminUserRepository.createOrganizationMember(
-                organizationId,
-                userId,
-            JsonUtils.toJson(graduatedYear),
-            JsonUtils.toJson(graduationStatus),
-            JsonUtils.toJson(program),
-            JsonUtils.toJson(major),
-                verificationLevel,
-                status)
+        String graduatedYearJson = JsonUtils.toJson(graduatedYear);
+        String graduationStatusJson = JsonUtils.toJson(graduationStatus);
+        String programJson = JsonUtils.toJson(program);
+        String majorJson = JsonUtils.toJson(major);
+
+        return adminUserRepository.existsOrganizationMemberByUserId(userId)
+            .flatMap(exists -> exists
+                ? adminUserRepository.updateOrganizationMemberByUserId(
+                    organizationId,
+                    userId,
+                    graduatedYearJson,
+                    graduationStatusJson,
+                    programJson,
+                    majorJson,
+                    verificationLevel,
+                    status)
+                : adminUserRepository.createOrganizationMember(
+                    organizationId,
+                    userId,
+                    graduatedYearJson,
+                    graduationStatusJson,
+                    programJson,
+                    majorJson,
+                    verificationLevel,
+                    status))
                 .map(count -> count > 0)
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", userId, organizationId, success))
                 .doOnError(error -> logger.error("Error adding user {} to organization {}", userId, organizationId, error));

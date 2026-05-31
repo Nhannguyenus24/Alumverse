@@ -22,6 +22,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import { 
   getTrustedVerifiers, 
   joinOrganization, 
@@ -67,7 +68,6 @@ const organizationRegistrationSchema = z.object({
  */
 const OrganizationRegistrationPage = () => {
   const navigate = useOrgNavigate();
-  const routerNavigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { organization, loading: organizationLoading } = useOrganization();
   const [searchParams] = useSearchParams();
@@ -77,6 +77,10 @@ const OrganizationRegistrationPage = () => {
   const [trustedVerifiers, setTrustedVerifiers] = useState([]);
   const [trustedVerifiersLoading, setTrustedVerifiersLoading] = useState(false);
   const [selectedVerifierUserId, setSelectedVerifierUserId] = useState('');
+  
+  // State for confirmation dialog
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingVerifier, setPendingVerifier] = useState(null);
 
   // Prefer organization ID from context (resolved by slug), keep query param as fallback.
   const queryOrgId = searchParams.get('orgId');
@@ -131,6 +135,7 @@ const OrganizationRegistrationPage = () => {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(organizationRegistrationSchema),
@@ -210,31 +215,39 @@ const OrganizationRegistrationPage = () => {
     setProofFile(file);
   };
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data, verifierIdOverride) => {
     setError(null);
     setLoading(true);
-    enqueueSnackbar('Đang xử lý yêu cầu đăng ký...', { variant: 'info' });
+    enqueueSnackbar('Đăng ký đang được xử lý...', { variant: 'info' });
+
+    // When called via handleSubmit(onSubmit), the second argument is the event object.
+    // We only want to use it if it's explicitly a verifier ID (string or number).
+    const verifierId = (typeof verifierIdOverride === 'string' || typeof verifierIdOverride === 'number')
+      ? verifierIdOverride
+      : selectedVerifierUserId;
 
     try {
-      // Convert empty strings to undefined for optional fields
+      // Map form fields to the naming expected by joinOrganization API
+      // className -> program, degreeType -> major
       const payload = {
         organizationId: data.organizationId,
+        program: data.className ? [data.className] : null,
+        major: data.degreeType ? [data.degreeType] : null,
+        graduatedYear: data.graduatedYear ? [data.graduatedYear] : null,
+        // Keep original fields just in case they are used elsewhere
         ...(data.studentCode && { studentCode: data.studentCode }),
-        ...(data.className && { className: data.className }),
         ...(data.startYear && { startYear: data.startYear }),
-        ...(data.graduatedYear && { graduatedYear: data.graduatedYear }),
-        ...(data.degreeType && { degreeType: data.degreeType }),
       };
 
       const response = await joinOrganization(payload);
 
       if (response?.data) {
         // Handle Peer Verification Request
-        if (selectedVerifierUserId) {
+        if (verifierId) {
           try {
             await requestPeerVerification({
               organizationId: data.organizationId,
-              verifierUserId: Number(selectedVerifierUserId),
+              verifierUserId: Number(verifierId),
             });
             enqueueSnackbar('Yêu cầu xác thực đồng nghiệp đã được gửi.', { variant: 'success' });
           } catch (peerError) {
@@ -255,17 +268,14 @@ const OrganizationRegistrationPage = () => {
             enqueueSnackbar('Yêu cầu xác thực minh chứng đã được gửi.', { variant: 'success' });
           } catch (proofError) {
             console.error('Failed to submit verification request', proofError);
-            enqueueSnackbar('Gửi minh chứng thất bại, nhưng đăng ký tổ chức đã thành công.', { variant: 'warning' });
+            enqueueSnackbar('Gửi yêu cầu xác thực minh chứng thất bại.', { variant: 'error' });
           }
         }
 
         enqueueSnackbar('Đăng ký tham gia tổ chức thành công!', { variant: 'success' });
         
-        // Successfully joined organization
-        const orgSlug = response.data?.data?.organizationSlug || 'alumni';
-        
         // Redirect to organization home page
-        routerNavigate(`/${orgSlug}`, { replace: true });
+        navigate("/");
       }
     } catch (err) {
       const errorMessage = err?.response?.data?.message 
@@ -275,6 +285,20 @@ const OrganizationRegistrationPage = () => {
       enqueueSnackbar(errorMessage, { variant: 'error' });
     } finally {
       setLoading(false);
+      setConfirmOpen(false);
+    }
+  };
+
+  const handleVerifierClick = (verifier) => {
+    setSelectedVerifierUserId(String(verifier.userId));
+    setPendingVerifier(verifier);
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmVerification = () => {
+    if (pendingVerifier) {
+      const currentData = getValues();
+      onSubmit(currentData, String(pendingVerifier.userId));
     }
   };
 
@@ -567,7 +591,7 @@ const OrganizationRegistrationPage = () => {
                       <ListItem
                         button
                         selected={isSelected}
-                        onClick={() => setSelectedVerifierUserId(String(verifier.userId))}
+                        onClick={() => handleVerifierClick(verifier)}
                         sx={{ 
                           py: 1.5,
                           '&.Mui-selected': {
@@ -625,6 +649,17 @@ const OrganizationRegistrationPage = () => {
           </Paper>
         </Box>
       </Stack>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Xác nhận người xác thực"
+        message={`Bạn có chắc chắn muốn chọn ${pendingVerifier?.fullName || 'người này'} làm người xác thực cho bạn? Sau khi xác nhận, yêu cầu đăng ký của bạn sẽ được gửi đi ngay lập tức.`}
+        confirmText="Xác nhận & Gửi"
+        cancelText="Hủy bỏ"
+        onConfirm={handleConfirmVerification}
+        onCancel={() => setConfirmOpen(false)}
+        loading={loading}
+      />
     </Page>
   );
 };
