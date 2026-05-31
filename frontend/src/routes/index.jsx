@@ -184,6 +184,9 @@ const MentorshipSignupPage = Loadable(
 const MentorshipPublicProfilePage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipPublicProfilePage")),
 );
+const MenteeSignupPage = Loadable(
+  lazy(() => import("../pages/mentorship/MenteeSignupPage")),
+);
 
 // User pages
 const PostArticlePage = Loadable(
@@ -492,6 +495,10 @@ export const router = createBrowserRouter([
               {
                 path: "signup",
                 element: <MentorshipSignupPage />,
+              },
+              {
+                path: "mentee-signup",
+                element: <MenteeSignupPage />,
               },
             ],
           },

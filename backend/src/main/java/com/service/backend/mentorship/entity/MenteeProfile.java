@@ -12,60 +12,34 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("mentor_profiles")
-public class MentorProfile implements Persistable<Integer> {
+@Table("mentee_profiles")
+public class MenteeProfile implements Persistable<Integer> {
 
     @Id
     @Column("member_id")
     private Integer memberId;
 
-    @Column("current_job_title")
-    private String currentJobTitle;
+    @Column("mentoring_goal")
+    private String mentoringGoal;
 
-    @Column("current_company")
-    private String currentCompany;
+    @Column("major")
+    private String major;
 
-    private String bio;
+    @Column("academic_year")
+    private String academicYear;
 
-    @Column("rating_avg")
+    @Column("interests")
+    private String interests;
+
+    @Column("is_active")
     @Builder.Default
-    private BigDecimal ratingAvg = BigDecimal.ZERO;
-
-    @Column("total_sessions")
-    @Builder.Default
-    private Integer totalSessions = 0;
-
-    @Column("status")
-    @Builder.Default
-    private String status = MentorProfileStatus.DRAFT;
-
-    @Column("review_note")
-    private String reviewNote;
-
-    @Column("reviewed_at")
-    private LocalDateTime reviewedAt;
-
-    @Column("reviewed_by")
-    private Integer reviewedBy;
-
-    @Column("cover_url")
-    private String coverUrl;
-
-    @Column("default_meeting_link")
-    private String defaultMeetingLink;
-
-    @Column("booking_window_settings")
-    private String bookingWindowSettings;
-
-    @Column("extended_profile")
-    private String extendedProfile;
+    private Boolean isActive = true;
 
     @CreatedDate
     @Column("created_at")

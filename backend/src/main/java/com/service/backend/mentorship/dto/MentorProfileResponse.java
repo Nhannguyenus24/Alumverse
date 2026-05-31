@@ -22,12 +22,15 @@ public class MentorProfileResponse {
     private String bio;
     private BigDecimal ratingAvg;
     private Integer totalSessions;
-    private Boolean isApproved;
+    private String status;
+    private String reviewNote;
+    private LocalDateTime reviewedAt;
     private String coverUrl;
     private String defaultMeetingLink;
     private String bookingWindowSettings;
     private String extendedProfile;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     private String fullName;
     private String avatarUrl;
@@ -42,12 +45,15 @@ public class MentorProfileResponse {
                 .bio(profile.getBio())
                 .ratingAvg(profile.getRatingAvg())
                 .totalSessions(profile.getTotalSessions())
-                .isApproved(profile.getIsApproved())
+                .status(profile.getStatus())
+                .reviewNote(profile.getReviewNote())
+                .reviewedAt(profile.getReviewedAt())
                 .coverUrl(profile.getCoverUrl())
                 .defaultMeetingLink(profile.getDefaultMeetingLink())
                 .bookingWindowSettings(profile.getBookingWindowSettings())
                 .extendedProfile(profile.getExtendedProfile())
                 .createdAt(profile.getCreatedAt())
+                .updatedAt(profile.getUpdatedAt())
                 .build();
     }
 

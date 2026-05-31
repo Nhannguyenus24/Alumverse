@@ -164,13 +164,21 @@ INSERT INTO "event_tickets" ("event_id", "member_id", "guest_name", "guest_email
 (6, 7, NULL, NULL, NULL, 'EVT006-2026-001', 'Registered', NOW() - INTERVAL '4 days', NULL);
 
 -- ============= MENTOR PROFILES DATA =============
-INSERT INTO "mentor_profiles" ("member_id", "current_job_title", "current_company", "bio", "rating_avg", "total_sessions", "is_approved", "created_at") VALUES
-(2, 'Senior Software Engineer', 'Tech Solutions Inc', 'Experienced in full-stack development', 4.8, 25, true, NOW() - INTERVAL '85 days'),
-(3, 'Product Manager', 'Innovation Hub', 'Passionate about product strategy', 4.6, 18, true, NOW() - INTERVAL '55 days'),
-(6, 'Tech Lead', 'Digital Transformation Co', 'Expert in system design', 4.9, 32, true, NOW() - INTERVAL '195 days'),
-(7, 'Business Consultant', 'Global Consulting Group', 'Strategy and operations specialist', 4.7, 22, true, NOW() - INTERVAL '95 days'),
-(8, 'Startup Founder & CTO', 'TechStart Ventures', 'Entrepreneurship and innovation mentor', 4.5, 15, true, NOW() - INTERVAL '175 days'),
-(5, 'Senior AI Engineer', 'AI Research Lab', 'Deep learning and NLP expert', 4.7, 12, true, NOW() - INTERVAL '120 days');
+INSERT INTO "mentor_profiles" ("member_id", "current_job_title", "current_company", "bio", "rating_avg", "total_sessions", "status", "created_at") VALUES
+(2, 'Senior Software Engineer', 'Tech Solutions Inc', 'Experienced in full-stack development', 4.8, 25, 'APPROVED', NOW() - INTERVAL '85 days'),
+(3, 'Product Manager', 'Innovation Hub', 'Passionate about product strategy', 4.6, 18, 'APPROVED', NOW() - INTERVAL '55 days'),
+(6, 'Tech Lead', 'Digital Transformation Co', 'Expert in system design', 4.9, 32, 'APPROVED', NOW() - INTERVAL '195 days'),
+(7, 'Business Consultant', 'Global Consulting Group', 'Strategy and operations specialist', 4.7, 22, 'APPROVED', NOW() - INTERVAL '95 days'),
+(8, 'Startup Founder & CTO', 'TechStart Ventures', 'Entrepreneurship and innovation mentor', 4.5, 15, 'APPROVED', NOW() - INTERVAL '175 days'),
+(5, 'Senior AI Engineer', 'AI Research Lab', 'Deep learning and NLP expert', 4.7, 12, 'APPROVED', NOW() - INTERVAL '120 days');
+
+-- ============= MENTEE PROFILES DATA =============
+INSERT INTO "mentee_profiles" ("member_id", "mentoring_goal", "major", "academic_year", "interests", "is_active", "created_at", "updated_at") VALUES
+(4, 'Tìm hiểu định hướng nghề nghiệp sau khi tốt nghiệp.', 'Computer Science', 'Year 3', 'Backend, System Design, Career', true, NOW() - INTERVAL '40 days', NOW()),
+(9, 'Học cách viết CV và phỏng vấn intern.', 'Information Technology', 'Year 2', 'Internship, Soft Skills, Career', true, NOW() - INTERVAL '20 days', NOW()),
+(10, 'Tìm mentor để định hướng startup mảng giáo dục.', 'Business Administration', 'Year 4', 'Entrepreneurship, Product Strategy', true, NOW() - INTERVAL '5 days', NOW()),
+(12, 'Học sâu hơn về AI/ML và lộ trình nghiên cứu.', 'Computer Science', 'Year 1', 'AI, Research, Career', true, NOW() - INTERVAL '1 days', NOW()),
+(13, 'Trao đổi về data engineering thực tế trong doanh nghiệp.', 'Information Technology', 'Year 2', 'Data Engineering, Cloud, Career', true, NOW() - INTERVAL '1 days', NOW());
 
 -- ============= MENTOR EXPERTISE DATA =============
 INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience", "description", "category", "tag") VALUES

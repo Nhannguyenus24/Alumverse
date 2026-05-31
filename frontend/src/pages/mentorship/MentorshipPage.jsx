@@ -16,6 +16,7 @@ import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
+import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
 import { useExpertiseTopics } from '../../hooks/mentorship/useExpertiseTopics';
 import { useExpertiseCategories } from '../../hooks/mentorship/useExpertiseCategories';
 import useAuthStore from '../../stores/authStore';
@@ -58,7 +59,9 @@ const MentorshipPage = () => {
   const isLoggedIn = Boolean(authUser?.id);
 
   const mentorProfileQuery = useMyMentorProfile();
+  const menteeProfileQuery = useMyMenteeProfile();
   const isMentor = Boolean(mentorProfileQuery.data && !mentorProfileQuery.isError);
+  const hasMenteeProfile = Boolean(menteeProfileQuery.data && !menteeProfileQuery.isError);
   const ownMentorMemberId = mentorProfileQuery.data?.memberId ?? null;
 
   const categoriesQuery = useExpertiseCategories();
@@ -153,6 +156,15 @@ const MentorshipPage = () => {
       return myBookingsBtn;
     }
 
+    const menteeBtn = (
+      <Button
+        variant={hasMenteeProfile ? 'outlined' : 'contained'}
+        onClick={() => navigate('/development/mentorship/mentee-signup')}
+      >
+        {hasMenteeProfile ? 'Cập nhật Mentee Profile' : 'Trở thành Mentee'}
+      </Button>
+    );
+
     if (isMentor) {
       return (
         <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
@@ -174,8 +186,9 @@ const MentorshipPage = () => {
     }
 
     return (
-      <Stack direction="row" spacing={1.5}>
+      <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
         {myBookingsBtn}
+        {menteeBtn}
         <Button
           variant="contained"
           onClick={() => navigate('/development/mentorship/signup')}

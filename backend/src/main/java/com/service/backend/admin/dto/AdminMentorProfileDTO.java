@@ -22,7 +22,10 @@ public class AdminMentorProfileDTO {
     private String bio;
     private BigDecimal ratingAvg;
     private Integer totalSessions;
-    private Boolean isApproved;
+    private String status;
+    private String reviewNote;
+    private LocalDateTime reviewedAt;
     private String coverUrl;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

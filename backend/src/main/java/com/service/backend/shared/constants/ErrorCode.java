@@ -58,9 +58,13 @@ public enum ErrorCode {
     // Mentorship module
     MENTOR_PROFILE_NOT_FOUND("Không tìm thấy hồ sơ mentor", 404),
     MENTOR_PROFILE_ALREADY_EXISTS("Hồ sơ mentor đã tồn tại", 409),
+    MENTEE_PROFILE_NOT_FOUND("Không tìm thấy hồ sơ mentee", 404),
     EXPERTISE_NOT_FOUND("Không tìm thấy chuyên môn", 404),
     AVAILABILITY_NOT_FOUND("Không tìm thấy lịch trống", 404),
     AVAILABILITY_NOT_AVAILABLE("Lịch trống không khả dụng", 400),
+    AVAILABILITY_IN_PAST("Slot phải nằm trong tương lai", 400),
+    AVAILABILITY_INVALID_RANGE("Giờ kết thúc phải sau giờ bắt đầu", 400),
+    AVAILABILITY_OVERLAP("Slot trùng với một slot đã tồn tại", 409),
     SESSION_NOT_FOUND("Không tìm thấy buổi mentoring", 404),
     SESSION_ALREADY_CANCELLED("Buổi mentoring đã được hủy trước đó", 400),
     SESSION_NOT_COMPLETED("Buổi mentoring chưa hoàn thành", 400),
