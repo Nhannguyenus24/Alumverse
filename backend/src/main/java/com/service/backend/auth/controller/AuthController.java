@@ -136,13 +136,8 @@ public class AuthController {
             @CookieValue(value = "refreshToken", required = false) String refreshToken) {
         
         return authService.refreshAccessToken(refreshToken)
-                .map(accessToken -> {
-                    LoginResponse loginResponse = LoginResponse.builder()
-                            .accessToken(accessToken)
-                            .build();
-
-                    return ResponseEntity.ok(new ApiResponse<>("Access token refreshed successfully", loginResponse));
-                });
+                .map(loginResponse -> ResponseEntity.ok(
+                        new ApiResponse<>("Access token refreshed successfully", loginResponse)));
     }
 
     /**
@@ -211,7 +206,7 @@ public class AuthController {
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
-                    .needsOrganizationSetup(false)
+                    .verificationLevel(1) // Default for system admin (non-zero)
                     .build();
 
             return Mono.just(ResponseEntity.ok()
@@ -219,8 +214,9 @@ public class AuthController {
                     .body(new ApiResponse<>("Login successful", loginResponse)));
         }
 
-        return authService.existsOrganizationMembership(user.getId(), organizationId)
-                .map(isMember -> {
+        return authService.getVerificationLevel(user.getId(), organizationId)
+                .defaultIfEmpty(0) // If user is not a member, level is 0
+                .map(level -> {
                     String accessToken = jwtUtils.generateAccessToken(
                             user.getId(),
                             user.getEmail(),
@@ -240,12 +236,9 @@ public class AuthController {
                             .sameSite("Lax")
                             .build();
 
-                    // If user is not a member, set flag to true
-                    Boolean needsSetup = !isMember;
-
                     LoginResponse loginResponse = LoginResponse.builder()
                             .accessToken(accessToken)
-                            .needsOrganizationSetup(needsSetup)
+                            .verificationLevel(level)
                             .build();
 
                     return ResponseEntity.ok()

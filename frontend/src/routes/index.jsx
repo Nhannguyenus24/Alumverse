@@ -85,6 +85,7 @@ const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/Admi
 const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
 const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
 const AdminSchoolFeedbackPage = Loadable(lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")));
+const AdminVerificationsPage = Loadable(lazy(() => import("../pages/admin/AdminVerificationsPage")));
 const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
 const AdminArticlesPage = Loadable(lazy(() => import("../pages/admin/AdminArticlesPage")));
 const AdminEditArticlePage = Loadable(lazy(() => import("../pages/admin/AdminEditArticlePage")));
@@ -179,6 +180,9 @@ const MentorshipMyBookingsPage = Loadable(
 );
 const MentorshipSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipSignupPage")),
+);
+const MentorshipPublicProfilePage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipPublicProfilePage")),
 );
 
 // User pages
@@ -474,6 +478,10 @@ export const router = createBrowserRouter([
                 element: <MentorshipYourCalendarPage />,
               },
               {
+                path: "mentors/:mentorId",
+                element: <MentorshipPublicProfilePage />,
+              },
+              {
                 path: "mentors/:mentorId/book",
                 element: <MentorshipBookingPage />,
               },
@@ -562,6 +570,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminSchoolFeedbackPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "verifications",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminVerificationsPage />
               </ProtectedRoute>
             ),
           },
@@ -769,6 +785,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminSchoolFeedbackPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "verifications",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminVerificationsPage />
           </ProtectedRoute>
         ),
       },

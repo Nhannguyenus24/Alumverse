@@ -37,13 +37,13 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     /**
      * Find active user by email
      */
-    @Query("SELECT * FROM users WHERE email = :email AND status = 'ACTIVE'")
+    @Query("SELECT * FROM users WHERE email = :email AND \"status\" = 'ACTIVE'")
     Mono<User> findActiveByEmail(@Param("email") String email);
     
     /**
      * Find active user by username
      */
-    @Query("SELECT * FROM users WHERE user_name = :userName AND status = 'ACTIVE'")
+    @Query("SELECT * FROM users WHERE user_name = :userName AND \"status\" = 'ACTIVE'")
     Mono<User> findActiveByUserName(@Param("userName") String userName);
     
     /**
@@ -76,34 +76,34 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Update user status to active after successful verification
      */
     @Modifying
-    @Query("UPDATE users SET status = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE users SET \"status\" = 'ACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> activateUserById(@Param("id") Integer id);
     
     /**
      * Update user status to pending (for new registrations)
      */
     @Modifying
-    @Query("UPDATE users SET status = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE users SET \"status\" = 'PENDING', updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updateStatusToPendingById(@Param("id") Integer id);
     
     /**
      * Update user status by id
      */
     @Modifying
-    @Query("UPDATE users SET status = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    @Query("UPDATE users SET \"status\" = :status, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updateStatusById(@Param("id") Integer id, @Param("status") String status);
     
     /**
      * Find user by email (pending or active) for registration check
      */
-    @Query("SELECT * FROM users WHERE email = :email AND (status = 'PENDING' OR status = 'ACTIVE')")
+    @Query("SELECT * FROM users WHERE email = :email AND (\"status\" = 'PENDING' OR \"status\" = 'ACTIVE')")
     Mono<User> findPendingOrActiveByEmail(@Param("email") String email);
     
     /**
      * Register new user with unverified status and alumni role
      * Returns the created user ID
      */
-    @Query("INSERT INTO users (email, user_name, password_hash, role, status, created_at, updated_at) " +
+    @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", created_at, updated_at) " +
            "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
@@ -112,7 +112,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Register new user from Google login with active status
      * Returns the created user ID
      */
-    @Query("INSERT INTO users (email, user_name, password_hash, role, status, avatar_url, created_at, updated_at) " +
+    @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", avatar_url, created_at, updated_at) " +
            "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerGoogleUser(
@@ -140,7 +140,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Create a default organization_members record when a user registers under an organization
      */
     @Modifying
-    @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, status, created_at, updated_at) " +
+    @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
            "VALUES (:organizationId, :userId, 0, false, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
 
@@ -150,10 +150,16 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT COUNT(*) > 0 FROM organization_members WHERE user_id = :userId AND organization_id = :organizationId")
     Mono<Boolean> existsOrganizationMemberByUserIdAndOrgId(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
 
+    /**
+     * Get verification level for a given user and organization
+     */
+    @Query("SELECT verification_level FROM organization_members WHERE user_id = :userId AND organization_id = :organizationId")
+    Mono<Integer> getVerificationLevelByUserIdAndOrgId(@Param("userId") Integer userId, @Param("organizationId") Integer organizationId);
+
     @Modifying
-    @Query("INSERT INTO verification_requests (member_id, document_url, document_type, status, created_at, updated_at) " +
+    @Query("INSERT INTO verification_requests (member_id, document_url, document_type, \"status\", created_at, updated_at) " +
            "VALUES (:userId, :documentUrl, :documentType, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-    Mono<Void> insertVerificationRequest(
+    Mono<Integer> insertVerificationRequest(
             @Param("userId") Integer userId,
             @Param("documentUrl") String documentUrl,
             @Param("documentType") String documentType);

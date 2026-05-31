@@ -97,6 +97,12 @@ public class SecurityConfig {
                 .authorizeExchange(auth -> auth
                         // Public endpoints - no authentication required
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(HttpMethod.GET,
+                                "/api/mentorship/mentee/mentors",
+                                "/api/mentorship/mentee/mentors/**",
+                                "/api/mentorship/mentee/expertise-topics",
+                                "/api/mentorship/mentee/expertise-categories"
+                        ).permitAll()
                         .pathMatchers(
                                 "/health",
                                 "/api/auth/**",

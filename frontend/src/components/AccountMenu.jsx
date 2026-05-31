@@ -24,9 +24,10 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   }
 
   const open = Boolean(anchorEl);
-  const { logout } = useAuth();
+  const { logout, verificationLevel } = useAuth();
   const toOrgPath = useOrgPath();
-
+  const isGuestVerificationLevel = verificationLevel === 0;
+  console.log(verificationLevel);
   const handleOpen = (event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
@@ -189,6 +190,23 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           <PersonIcon fontSize="small" />
           <Typography variant="body2">Hồ sơ của tôi</Typography>
         </MenuItem>
+
+        {isGuestVerificationLevel && (
+          <MenuItem
+            component={Link}
+            to={toOrgPath('/organization-registration')}
+            onClick={handleClose}
+            sx={{
+              borderTop: "none",
+              display: "flex",
+              alignItems: "center",
+              color: "warning.dark",
+            }}
+          >
+            <PersonIcon fontSize="small" />
+            <Typography variant="body2">Xác thực tài khoản</Typography>
+          </MenuItem>
+        )}
 
         <Divider sx={{ borderColor: "divider", mx: 1.5, my: 0.5 }} />
 

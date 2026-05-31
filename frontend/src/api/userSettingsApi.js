@@ -39,4 +39,16 @@ export const userSettingsApi = {
     const response = await apiClient.get('/users/me/login-history', { params });
     return unwrap(response) ?? [];
   },
+
+  async getPendingPeerVerifications(organizationId) {
+    const response = await apiClient.get('/users/me/peer-verifications/pending', {
+      params: { organizationId },
+    });
+    return unwrap(response) ?? [];
+  },
+
+  async acceptPeerVerification(requestId) {
+    const response = await apiClient.patch(`/users/me/peer-verifications/${requestId}/accept`);
+    return unwrap(response);
+  },
 };
