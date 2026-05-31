@@ -46,6 +46,7 @@ public class UserService {
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
     private final PeerVerificationRepository peerVerificationRepository;
     private final FileUploadService fileUploadService;
+    private final NotificationService notificationService;
 
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
@@ -56,7 +57,7 @@ public class UserService {
                             currentUserId.intValue(),
                             fileUrl,
                             request.getDocumentType()
-                    );
+                    ).then();
                 });
     }
 
@@ -68,17 +69,27 @@ public class UserService {
                     OrganizationMember targetMember = tuple.getT1();
                     OrganizationMember verifierMember = tuple.getT2();
 
-                    return peerVerificationRepository.findPendingRequest(targetMember.getId(), verifierMember.getId())
+                    return peerVerificationRepository.findPendingRequest(targetMember.getUserId(), verifierMember.getUserId())
                             .hasElement()
                             .flatMap(exists -> {
                                 if (exists) {
                                     return Mono.error(new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Pending verification request already exists"));
                                 }
                                 return peerVerificationRepository.save(PeerVerification.builder()
-                                        .targetMemberId(targetMember.getId())
-                                        .verifierMemberId(verifierMember.getId())
+                                        .targetMemberId(targetMember.getUserId())
+                                        .verifierMemberId(verifierMember.getUserId())
                                         .status("pending")
-                                        .build());
+                                        .createdAt(LocalDateTime.now())
+                                        .build())
+                                        .doOnSuccess(saved -> {
+                                            if (Boolean.TRUE.equals(verifierMember.getIsTrustedVerifier())) {
+                                                notificationService.createNotificationAsync(
+                                                        verifierUserId,
+                                                        "Yêu cầu xác thực đồng nghiệp",
+                                                        String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId())
+                                                );
+                                            }
+                                        });
                             });
                 })
                 .then();
@@ -92,7 +103,7 @@ public class UserService {
                         return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Request is not in pending status"));
                     }
 
-                    return userOrganizationMemberRepository.findById(request.getVerifierMemberId())
+                    return userOrganizationMemberRepository.findByUserId(request.getVerifierMemberId())
                             .flatMap(verifier -> {
                                 if (!verifier.getUserId().equals(currentUserId.intValue())) {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "You are not the assigned verifier for this request"));
@@ -102,11 +113,7 @@ public class UserService {
                                 }
 
                                 return peerVerificationRepository.updateStatus(requestId, "accepted")
-                                        .then(userOrganizationMemberRepository.findById(request.getTargetMemberId()))
-                                        .flatMap(target -> {
-                                            target.setVerificationLevel(target.getVerificationLevel() + 1);
-                                            return userOrganizationMemberRepository.save(target);
-                                        });
+                                        .then(userOrganizationMemberRepository.incrementVerificationLevelByUserId(request.getTargetMemberId()));
                             });
                 })
                 .then();
@@ -125,8 +132,8 @@ public class UserService {
                     }
 
                     return peerVerificationRepository.save(PeerVerification.builder()
-                                    .targetMemberId(targetMember.getId())
-                                    .verifierMemberId(verifierMember.getId())
+                                    .targetMemberId(targetMember.getUserId())
+                                    .verifierMemberId(verifierMember.getUserId())
                                     .status("accepted")
                                     .build())
                             .then(Mono.defer(() -> {
@@ -135,6 +142,17 @@ public class UserService {
                             }));
                 })
                 .then();
+    }
+
+    public Mono<List<com.service.backend.user.dto.PendingPeerVerificationResponse>> getPendingPeerVerifications(Long currentUserId, Integer organizationId) {
+        return userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue())
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND)))
+                .flatMap(member -> {
+                    if (Boolean.FALSE.equals(member.getIsTrustedVerifier())) {
+                        return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can view pending verification requests"));
+                    }
+                    return peerVerificationRepository.findPendingRequestsByVerifierMemberId(member.getUserId()).collectList();
+                });
     }
 
     public Mono<UserProfileResponse> getMyProfile(Long currentUserId) {

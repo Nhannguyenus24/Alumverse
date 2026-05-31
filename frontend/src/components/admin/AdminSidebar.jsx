@@ -27,6 +27,7 @@ import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
@@ -43,6 +44,7 @@ const NAV_GROUPS = (adminBase) => [
     items: [
       { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: 'Người dùng', role: 'ADMIN' },
       { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: 'Tổ chức', role: 'ADMIN' },
+      { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: 'Xác thực người dùng', role: 'ADMIN' },
       { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: 'Cố vấn (Mentorship)', role: 'ADMIN' },
     ],
   },
