@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMyMentorSessions } from '../../api/mentorshipApi';
+import { getMyMentorSessions } from '../../utils/api';
 
 const fetchMentorSessions = async (params) => {
   const res = await getMyMentorSessions(params);

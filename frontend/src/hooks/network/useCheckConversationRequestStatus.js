@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { chatApi } from '../../api/chatApi';
+import { chatApi } from '../../utils/api';
 
 export function useCheckConversationRequestStatus() {
   const mutation = useMutation({

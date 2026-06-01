@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import * as api from '../../api/adminForumApi';
+import * as api from '../../utils/api';
 import { useAuth } from '../useAuth';
 
 /* ─── Fallback data (used when API is unavailable) ─── */

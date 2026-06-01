@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { chatApi } from '../../api/chatApi';
+import { chatApi } from '../../utils/api';
 
 const BACKEND_PAGE_SIZE = 5;
 

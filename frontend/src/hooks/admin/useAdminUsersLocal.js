@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
-import * as adminUserApi from '../../api/adminUserApi';
+import * as adminUserApi from '../../utils/api';
 
 const addDaysIso = (days) => {
   const d = new Date();
