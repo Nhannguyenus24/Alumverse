@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.shared.entity.OrganizationMember;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
@@ -53,11 +54,11 @@ public class UserService {
                 .flatMap(fileUrl -> {
                     // member_id in verification_requests corresponds to user_id in users table according to AdminUserRepository.findAllVerificationRequests join
                     // where "JOIN users u ON vr.member_id = u.id"
-                    return authRepository.insertVerificationRequest(
+                        return authRepository.insertVerificationRequest(
                             currentUserId.intValue(),
                             fileUrl,
-                            request.getDocumentType()
-                    ).then();
+                            request.getDocumentType() != null ? request.getDocumentType().getValue() : null
+                        ).then();
                 });
     }
 
@@ -78,7 +79,7 @@ public class UserService {
                                 return peerVerificationRepository.save(PeerVerification.builder()
                                         .targetMemberId(targetMember.getUserId())
                                         .verifierMemberId(verifierMember.getUserId())
-                                        .status("pending")
+                                        .status(Status.PENDING)
                                         .createdAt(LocalDateTime.now())
                                         .build())
                                         .doOnSuccess(saved -> {
@@ -99,7 +100,7 @@ public class UserService {
         return peerVerificationRepository.findById(requestId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Verification request not found")))
                 .flatMap(request -> {
-                    if (!"pending".equals(request.getStatus())) {
+                    if (Status.PENDING != request.getStatus()) {
                         return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST, "Request is not in pending status"));
                     }
 
@@ -112,7 +113,7 @@ public class UserService {
                                     return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Only trusted verifiers can accept verification requests"));
                                 }
 
-                                return peerVerificationRepository.updateStatus(requestId, "accepted")
+                                return peerVerificationRepository.updateStatus(requestId, Status.APPROVED)
                                         .then(userOrganizationMemberRepository.incrementVerificationLevelByUserId(request.getTargetMemberId()));
                             });
                 })
@@ -134,7 +135,7 @@ public class UserService {
                     return peerVerificationRepository.save(PeerVerification.builder()
                                     .targetMemberId(targetMember.getUserId())
                                     .verifierMemberId(verifierMember.getUserId())
-                                    .status("accepted")
+                                    .status(Status.ACCEPTED)
                                     .build())
                             .then(Mono.defer(() -> {
                                 targetMember.setVerificationLevel(targetMember.getVerificationLevel() + 1);
@@ -302,12 +303,12 @@ public class UserService {
                 .organizationId(member.getOrganizationId())
                 .userId(member.getUserId())
                 .graduatedYear(parseIntegerList(member.getGraduatedYear()))
-                .graduationStatus(parseStringList(member.getGraduationStatus()))
+                .graduationStatus(parseStringList(member.getGraduationStatus() != null ? member.getGraduationStatus().getValue() : null))
                 .program(parseStringList(member.getProgram()))
                 .major(parseStringList(member.getMajor()))
                 .verificationLevel(member.getVerificationLevel())
                 .isTrustedVerifier(member.getIsTrustedVerifier())
-                .status(member.getStatus())
+                .status(member.getStatus() != null ? member.getStatus().getValue() : null)
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
                 .build();

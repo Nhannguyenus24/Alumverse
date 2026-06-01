@@ -1,6 +1,6 @@
 package com.service.backend.fundraising.projection;
 
-import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.enums.Status;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -24,7 +24,7 @@ public interface FundDonationListProjection {
 
     String getMessage();
 
-    FundDonationStatus getStatus();
+    Status getStatus();
 
     LocalDateTime getCreatedAt();
 

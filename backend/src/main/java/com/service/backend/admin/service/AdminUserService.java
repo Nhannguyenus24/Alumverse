@@ -3,6 +3,7 @@ package com.service.backend.admin.service;
 import java.util.List;
 
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class AdminUserService {
         int offset = page * size;
         String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim() + "%" : null;
         String roleParam = (role != null && !role.equals("ALL")) ? role : null;
-        String statusParam = (status != null && !status.equals("ALL")) ? status : null;
+        String statusParam = (status != null && !status.equals("ALL")) ? status.toUpperCase() : null;
 
         Mono<Long> totalCount = adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId);
 
@@ -109,6 +110,7 @@ public class AdminUserService {
                                List<Integer> graduatedYear, List<String> graduationStatus,
                                List<String> program, List<String> major,
                                                    Integer verificationLevel, String status) {
+        String upperStatus = status == null ? null : status.toUpperCase();
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
         String graduationStatusJson = JsonUtils.toJson(graduationStatus);
         String programJson = JsonUtils.toJson(program);
@@ -124,7 +126,7 @@ public class AdminUserService {
                     programJson,
                     majorJson,
                     verificationLevel,
-                    status)
+                    upperStatus)
                 : adminUserRepository.createOrganizationMember(
                     organizationId,
                     userId,
@@ -133,7 +135,7 @@ public class AdminUserService {
                     programJson,
                     majorJson,
                     verificationLevel,
-                    status))
+                    upperStatus))
                 .map(count -> count > 0)
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", userId, organizationId, success))
                 .doOnError(error -> logger.error("Error adding user {} to organization {}", userId, organizationId, error));
@@ -253,9 +255,10 @@ public class AdminUserService {
     }
 
     public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
-        return adminUserRepository.reviewVerificationRequest(requestId, status, adminNote)
+        String upperStatus = status == null ? null : status.toUpperCase();
+        return adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
                 .map(count -> count > 0)
-                .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, status, ok))
+                .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, upperStatus, ok))
                 .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e));
     }
 

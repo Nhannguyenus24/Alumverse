@@ -12,6 +12,7 @@ import org.springframework.data.domain.Persistable;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.Status;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -44,7 +45,7 @@ public class MentorProfile implements Persistable<Integer> {
 
     @Column("status")
     @Builder.Default
-    private String status = MentorProfileStatus.DRAFT;
+    private Status status = Status.DRAFT;
 
     @Column("review_note")
     private String reviewNote;

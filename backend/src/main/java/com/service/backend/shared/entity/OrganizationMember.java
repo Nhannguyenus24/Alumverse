@@ -9,21 +9,23 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Data;
+import com.service.backend.shared.enums.Status;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Table("organization_members")
 public class OrganizationMember {
-    
+
     @Id
     private Integer id;
-    
+
     @Column("organization_id")
     private Integer organizationId;
-    
+
     @Column("user_id")
     private Integer userId;
 
@@ -31,21 +33,21 @@ public class OrganizationMember {
     private String graduatedYear;
 
     @Column("graduation_status")
-    private String graduationStatus;
+    private Status graduationStatus;
 
     @Column("program")
     private String program;
 
     @Column("major")
     private String major;
-    
+
     @Column("verification_level")
     private Integer verificationLevel;
-    
+
     @Column("is_trusted_verifier")
     private Boolean isTrustedVerifier;
-    
-    private String status;
+
+    private Status status;
     
     @CreatedDate
     @Column("created_at")

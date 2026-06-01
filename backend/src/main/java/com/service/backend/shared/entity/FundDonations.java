@@ -10,7 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
-import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.enums.Status;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -48,7 +48,7 @@ public class FundDonations {
     private String message;
 
     @Column("status")
-    private FundDonationStatus status;
+    private Status status;
 
     @CreatedDate
     @Column("created_at")

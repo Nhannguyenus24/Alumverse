@@ -9,6 +9,8 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.MentorshipSessionType;
 import java.time.LocalDateTime;
 
 @Data
@@ -27,7 +29,7 @@ public class MentorshipSession {
     @Column("mentee_member_id")
     private Integer menteeMemberId;
 
-    private String status;
+    private Status status;
 
     @Column("booking_note")
     private String bookingNote;
@@ -36,7 +38,7 @@ public class MentorshipSession {
     private String meetingLink;
 
     @Column("session_type")
-    private String sessionType;
+    private MentorshipSessionType sessionType;
 
     private String introduction;
 

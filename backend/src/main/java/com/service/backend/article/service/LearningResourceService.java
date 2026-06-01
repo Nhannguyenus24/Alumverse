@@ -7,6 +7,7 @@ import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +31,7 @@ public class LearningResourceService {
                             .organizationId(orgId)
                             .uploaderMemberId(userId.intValue())
                             .title(request.getTitle())
-                            .type(request.getType())
+                            .type(LearningResourceType.valueOf(request.getType().toUpperCase()))
                             .linkUrl(request.getLinkUrl())
                             .description(request.getDescription())
                             .createdAt(LocalDateTime.now())
@@ -45,7 +46,7 @@ public class LearningResourceService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
                 .flatMap(existing -> {
                     existing.setTitle(request.getTitle());
-                    existing.setType(request.getType());
+                    existing.setType(LearningResourceType.valueOf(request.getType().toUpperCase()));
                     existing.setLinkUrl(request.getLinkUrl());
                     existing.setDescription(request.getDescription());
                     return learningResourceRepository.save(existing);
@@ -79,10 +80,11 @@ public class LearningResourceService {
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
         int offset = page * limit;
+        LearningResourceType resourceType = LearningResourceType.valueOf(type.toUpperCase());
         return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                learningResourceRepository.findByType(orgId, type, limit, offset)
+                learningResourceRepository.findByType(orgId, resourceType, limit, offset)
                         .collectList()
-                        .zipWith(learningResourceRepository.countByType(orgId, type))
+                        .zipWith(learningResourceRepository.countByType(orgId, resourceType))
                         .map(tuple -> PaginatedResponse.of(
                                 tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
                                 tuple.getT2(), page, limit

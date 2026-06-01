@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
 @Data
@@ -30,5 +31,6 @@ public class MentorAvailability {
     private LocalDateTime endTime;
 
     @Builder.Default
-    private String status = "Available";
+    private Status status = Status.AVAILABLE;
 }
+

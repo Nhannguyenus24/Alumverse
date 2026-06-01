@@ -11,6 +11,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.service.backend.shared.enums.JobType;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -34,7 +35,7 @@ public class JobService {
                             .description(request.getDescription())
                             .companyName(request.getCompanyName())
                             .location(request.getLocation())
-                            .type(request.getType())
+                            .type(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")))
                             .salaryRange(request.getSalaryRange())
                             .howToApply(request.getHowToApply())
                             .deadline(request.getDeadline())
@@ -55,7 +56,7 @@ public class JobService {
                     existing.setDescription(request.getDescription());
                     existing.setCompanyName(request.getCompanyName());
                     existing.setLocation(request.getLocation());
-                    existing.setType(request.getType());
+                    existing.setType(JobType.valueOf(request.getType().toUpperCase().replace("-", "_")));
                     existing.setSalaryRange(request.getSalaryRange());
                     existing.setHowToApply(request.getHowToApply());
                     existing.setDeadline(request.getDeadline());

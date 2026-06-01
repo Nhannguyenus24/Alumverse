@@ -10,6 +10,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.ChatType;
 import java.time.LocalDateTime;
 
 @Data
@@ -23,7 +24,7 @@ public class ChatGroup {
     private Long id;
 
 
-    private String type;
+    private ChatType type;
 
     private String title;
 

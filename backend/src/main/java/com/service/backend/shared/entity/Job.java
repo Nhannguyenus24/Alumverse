@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.JobType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -32,7 +33,7 @@ public class Job {
     @Builder.Default
     private Boolean isReferral = false;
 
-    private String type;
+    private JobType type;
 
     private String title;
 

@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.service.backend.shared.entity.PeerVerification;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.user.dto.PendingPeerVerificationResponse;
 
 import reactor.core.publisher.Flux;
@@ -17,9 +18,9 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
     
     @Modifying
     @Query("UPDATE peer_verifications SET \"status\" = :status WHERE id = :id")
-    Mono<Integer> updateStatus(@Param("id") Integer id, @Param("status") String status);
+    Mono<Integer> updateStatus(@Param("id") Integer id, @Param("status") Status status);
 
-    @Query("SELECT * FROM peer_verifications WHERE \"target_member_id\" = :targetMemberId AND \"verifier_member_id\" = :verifierMemberId AND \"status\" = 'pending'")
+    @Query("SELECT * FROM peer_verifications WHERE \"target_member_id\" = :targetMemberId AND \"verifier_member_id\" = :verifierMemberId AND \"status\" = 'PENDING'")
     Mono<PeerVerification> findPendingRequest(@Param("targetMemberId") Integer targetMemberId, @Param("verifierMemberId") Integer verifierMemberId);
 
     @Query("""
@@ -31,7 +32,7 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
         FROM peer_verifications pv
         JOIN organization_members om_target ON pv.target_member_id = om_target.user_id
         JOIN global_profiles gp ON om_target.user_id = gp.user_id
-        WHERE pv.verifier_member_id = :verifierUserId AND pv."status" = 'pending'
+        WHERE pv.verifier_member_id = :verifierUserId AND pv."status" = 'PENDING'
         ORDER BY pv.created_at DESC
     """)
     Flux<PendingPeerVerificationResponse> findPendingRequestsByVerifierMemberId(@Param("verifierUserId") Integer verifierUserId);

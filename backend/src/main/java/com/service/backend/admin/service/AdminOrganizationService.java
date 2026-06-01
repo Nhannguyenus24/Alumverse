@@ -22,6 +22,7 @@ import com.service.backend.shared.entity.OrganizationIntroduction;
 import com.service.backend.shared.entity.SchoolFeedback;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
@@ -102,7 +103,7 @@ public class AdminOrganizationService {
                 .name(request.getName())
                 .slug(request.getSlug())
                 .logoUrl(request.getLogoUrl())
-                .status(request.getStatus() != null ? request.getStatus() : "ACTIVE")
+                .status(request.getStatus() != null ? request.getStatus() : Status.ACTIVE)
                 .featuresConfig(request.getFeaturesConfig())
                 .programs(JsonUtils.toJson(request.getPrograms()))
                 .majors(JsonUtils.toJson(request.getMajors()))
@@ -120,7 +121,7 @@ public class AdminOrganizationService {
                     String name = organizationUpdate.getName() != null ? organizationUpdate.getName() : existing.getName();
                     String slug = organizationUpdate.getSlug() != null ? organizationUpdate.getSlug() : existing.getSlug();
                     String logoUrl = organizationUpdate.getLogoUrl() != null ? organizationUpdate.getLogoUrl() : existing.getLogoUrl();
-                    String status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
+                    Status status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
                     String brandConfig = existing.getBrandConfig();
                     String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
                     String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();

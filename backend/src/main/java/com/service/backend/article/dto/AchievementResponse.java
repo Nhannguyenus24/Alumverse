@@ -1,6 +1,7 @@
 package com.service.backend.article.dto;
 
 import com.service.backend.shared.entity.Achievement;
+import com.service.backend.shared.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ public class AchievementResponse {
     private String imageUrl;
     private LocalDate awardedDate;
     private String topic;
-    private String status;
+    private Status status;
 
     public static AchievementResponse from(Achievement achievement) {
         return AchievementResponse.builder()

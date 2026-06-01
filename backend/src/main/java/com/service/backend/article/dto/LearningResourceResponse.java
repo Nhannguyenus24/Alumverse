@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.service.backend.shared.enums.LearningResourceType;
 import java.time.LocalDateTime;
 
 @Data
@@ -18,7 +19,7 @@ public class LearningResourceResponse {
     private Integer organizationId;
     private Integer uploaderMemberId;
     private String title;
-    private String type;
+    private LearningResourceType type;
     private String linkUrl;
     private String description;
     private LocalDateTime createdAt;

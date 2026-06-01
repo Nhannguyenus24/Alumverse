@@ -10,6 +10,7 @@ import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
 @Data
@@ -42,7 +43,7 @@ public class Organization {
     private String majors;
 
     @Column("status")
-    private String status;
+    private Status status;
 
     @Column("created_at")
     @CreatedDate

@@ -35,7 +35,7 @@ public interface NetworkMemberSearchRepository
 
     String SEARCH_WHERE = """
             WHERE om.organization_id = :organizationId
-              AND om.status = 'active'
+              AND om.status = 'ACTIVE'
               AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
                                                         AND (:programJson IS NULL OR om.program @> CAST(:programJson AS jsonb))
                                                         AND (:majorJson IS NULL OR om.major @> CAST(:majorJson AS jsonb))

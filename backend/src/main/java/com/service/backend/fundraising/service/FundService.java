@@ -22,7 +22,7 @@ import com.service.backend.shared.entity.Funds;
 import com.service.backend.shared.entity.FundReceivingInfos;
 import com.service.backend.shared.entity.FundDonations;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
@@ -472,7 +472,7 @@ public class FundService {
                     .phone(request.getPhone())
                     .email(request.getEmail())
                     .message(request.getMessage())
-                    .status(FundDonationStatus.PENDING)
+                    .status(Status.PENDING)
                     .createdAt(LocalDateTime.now())
                     .build();
             return fundDonationsRepository.save(donation);
@@ -494,7 +494,7 @@ public class FundService {
                             .phone(request.getPhone())
                             .email(request.getEmail())
                             .message(request.getMessage())
-                            .status(FundDonationStatus.PENDING)
+                            .status(Status.PENDING)
                             .createdAt(LocalDateTime.now())
                             .build();
                     return fundDonationsRepository.save(donation);

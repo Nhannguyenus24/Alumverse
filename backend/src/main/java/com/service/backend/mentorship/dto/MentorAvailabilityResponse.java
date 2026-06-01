@@ -26,7 +26,7 @@ public class MentorAvailabilityResponse {
                 .mentorMemberId(availability.getMentorMemberId())
                 .startTime(availability.getStartTime())
                 .endTime(availability.getEndTime())
-                .status(availability.getStatus())
+                .status(availability.getStatus() != null ? availability.getStatus().getValue() : null)
                 .build();
     }
 }

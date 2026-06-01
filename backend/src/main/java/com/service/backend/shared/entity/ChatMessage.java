@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.ChatMessageType;
 import java.time.LocalDateTime;
 
 @Data
@@ -31,7 +32,7 @@ public class ChatMessage {
     private String content;
 
     @Column("message_type")
-    private String messageType;
+    private ChatMessageType messageType;
 
     /**
      * Raw JSON string mapped to PostgreSQL JSONB column.

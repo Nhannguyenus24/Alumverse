@@ -30,7 +30,7 @@ import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import com.service.backend.user.dao.UserLoginHistoryRepository;
 import com.service.backend.shared.entity.UserLoginHistory;
-import com.service.backend.shared.enums.UserStatus;
+import com.service.backend.shared.enums.Status;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -102,7 +102,7 @@ public class AuthService {
                         return Mono.error(new ApplicationException(ErrorCode.INVALID_CREDENTIALS));
                     }
 
-                    if (user.getStatus() != UserStatus.ACTIVE) {
+                    if (user.getStatus() != Status.ACTIVE) {
                         logger.warn("Login failed - account not active for email: {}. Status: {}", email, user.getStatus());
                         return Mono.error(new ApplicationException(ErrorCode.ACCOUNT_NOT_VERIFIED));
                     }
@@ -135,7 +135,7 @@ public class AuthService {
                         return Mono.error(new ApplicationException(ErrorCode.INVALID_USERNAME_CREDENTIALS));
                     }
 
-                    if (user.getStatus() != UserStatus.ACTIVE) {
+                    if (user.getStatus() != Status.ACTIVE) {
                         logger.warn("Login failed - account not active for username: {}. Status: {}", userName, user.getStatus());
                         return Mono.error(new ApplicationException(ErrorCode.ACCOUNT_NOT_VERIFIED));
                     }
@@ -356,14 +356,14 @@ public class AuthService {
     }
 
     private Mono<User> loginExistingGoogleUser(User user, String pictureUrl, Integer organizationId, String userAgent, String loginIp) {
-        if (user.getStatus() == UserStatus.BANNED
-                || user.getStatus() == UserStatus.SUSPENDED
-                || user.getStatus() == UserStatus.DELETED
-                || user.getStatus() == UserStatus.DISABLED) {
+        if (user.getStatus() == Status.BANNED
+            || user.getStatus() == Status.SUSPENDED
+            || user.getStatus() == Status.DELETED
+            || user.getStatus() == Status.DISABLED) {
             return Mono.error(new ApplicationException(ErrorCode.GOOGLE_LOGIN_NOT_ALLOWED));
         }
 
-        Mono<Void> activateIfNeeded = user.getStatus() == UserStatus.ACTIVE
+        Mono<Void> activateIfNeeded = user.getStatus() == Status.ACTIVE
                 ? Mono.empty()
                 : authRepository.activateUserById(user.getId());
 

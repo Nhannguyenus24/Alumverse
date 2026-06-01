@@ -12,6 +12,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.service.backend.shared.enums.Status;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -32,7 +34,7 @@ public class ForumPostReport {
 
     private String description;
 
-    private String status;
+    private Status status;
 
     @Column("reviewed_by_user_id")
     private Integer reviewedByUserId;

@@ -2,7 +2,7 @@ package com.service.backend.fundraising.service;
 
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.shared.enums.ErrorCode;
-import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -42,11 +42,11 @@ public class SepayWebhookService {
                         "Fund donation not found with id: " + donationId
                 )))
                 .flatMap(existing -> {
-                    if (existing.getStatus() == FundDonationStatus.SUCCESS) {
+                    if (existing.getStatus() == Status.SUCCESS) {
                         log.info("Donation already SUCCESS, skip update. donationId={}", donationId);
                         return Mono.just(existing);
                     }
-                    existing.setStatus(FundDonationStatus.SUCCESS);
+                    existing.setStatus(Status.SUCCESS);
                     return fundDonationsRepository.save(existing);
                 })
                 .thenReturn(Map.of("success", true));

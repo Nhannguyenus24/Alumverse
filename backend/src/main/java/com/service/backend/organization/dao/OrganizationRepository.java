@@ -21,6 +21,6 @@ public interface OrganizationRepository extends R2dbcRepository<Organization, In
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "WHERE om.organization_id = :organizationId " +
            "AND om.is_trusted_verifier = true " +
-           "AND om.status = 'active'")
+           "AND om.status = 'ACTIVE'")
     Flux<TrustedVerifierResponse> findTrustedVerifiersByOrganizationId(Integer organizationId);
 }

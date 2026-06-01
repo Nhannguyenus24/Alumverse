@@ -1,6 +1,6 @@
 package com.service.backend.shared.entity;
 
-import com.service.backend.shared.enums.ConversationRequestStatus;
+import com.service.backend.shared.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,7 +44,7 @@ public class ChatConversationRequest {
     @Column("cooldown_until")
     private LocalDateTime cooldownUntil;
 
-    private ConversationRequestStatus status;
+    private Status status;
 
     @CreatedDate
     @Column("created_at")

@@ -1,7 +1,7 @@
 package com.service.backend.fundraising.dto;
 
 import com.service.backend.fundraising.projection.FundDonationListProjection;
-import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,7 +24,7 @@ public class FundDonationListItemResponse {
     private String phone;
     private String email;
     private String message;
-    private FundDonationStatus status;
+    private Status status;
     private LocalDateTime createdAt;
     private String avatarUrl;
 
