@@ -2,8 +2,8 @@ package com.service.backend.admin.dto;
 
 import java.time.LocalDateTime;
 
-import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
+import com.service.backend.shared.enums.UserStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +18,7 @@ public class UserResponse {
     private Integer id;
     private String email;
     private String userName;
-    private Status status;
+    private UserStatus status;
     private UserRole role;
     private String avatarUrl;
     private LocalDateTime createdAt;

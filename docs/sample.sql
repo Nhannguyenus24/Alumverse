@@ -35,6 +35,13 @@ INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "g
 (12, 'Bùi Văn H', '0901111111', 'Student - Computer Science', '2001-06-20', 'Male', '{"language":"vi","theme":"light"}'),
 (13, 'Lý Thị I', '0902222222', 'Student - Information Technology', '2002-09-12', 'Female', '{"language":"vi","theme":"dark"}');
 
+-- ============= GLOBAL IDENTITY VERIFICATIONS DATA =============
+INSERT INTO "global_identity_verifications" ("user_id", "citizen_id", "extracted_data", "verified_at", "provider") VALUES
+(2, '123456789012', '{"name":"John Doe","dob":"1995-05-20","address":"123 Main St"}', NOW() - INTERVAL '80 days', 'eKYC'),
+(3, '223456789013', '{"name":"Jane Smith","dob":"1996-08-10","address":"456 Oak Ave"}', NOW() - INTERVAL '50 days', 'eKYC'),
+(4, '323456789014', '{"name":"Nguyễn Văn A","dob":"2002-03-15","address":"789 Pine Rd"}', NOW() - INTERVAL '40 days', 'eKYC'),
+(5, '423456789015', '{"name":"Trần Thị B","dob":"2001-07-22","address":"321 Elm St"}', NOW() - INTERVAL '25 days', 'eKYC');
+
 -- ============= ORGANIZATIONS DATA =============
 INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "features_config", "programs", "majors", "created_at") VALUES
 ('HCMUS - Computer Science', 'cs-hcmus', 'https://api.example.com/logos/cs.png', '{"primary":"#1976d2","secondary":"#dc004e"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","Advanced Program"]', '["Computer Science","Data Science","Artificial Intelligence"]', NOW() - INTERVAL '365 days'),
@@ -100,6 +107,19 @@ INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_yea
 (3, 10, '[]', '["Studying"]', '["Regular"]', '["Business Administration"]', 1, false, 'pending', NOW() - INTERVAL '3 days', NOW()),
 (1, 12, '[]', '["Studying"]', '["Regular"]', '["Computer Science"]', 1, false, 'active', NOW(), NOW()),
 (2, 13, '[]', '["Studying"]', '["Regular"]', '["Information Technology"]', 1, false, 'active', NOW(), NOW());
+
+
+
+-- ============= ACADEMIC RECORDS DATA =============
+INSERT INTO "academic_records" ("member_id", "student_code", "degree_type", "class_name", "start_year", "graduated_year", "status") VALUES
+(2, '19127001', 'Bachelor', 'K60', 2019, 2023, 'Graduated'),
+(3, '19127002', 'Bachelor', 'K60', 2019, 2023, 'Graduated'),
+(4, '21127045', 'Bachelor', 'K63', 2021, NULL, 'Studying'),
+(5, '20127078', 'Bachelor', 'K62', 2020, 2024, 'Graduated'),
+(6, '18127010', 'Bachelor', 'K59', 2018, 2022, 'Graduated'),
+(7, '19227015', 'Bachelor', 'K60', 2019, 2023, 'Graduated'),
+(8, '19127088', 'Bachelor', 'K60', 2019, 2023, 'Graduated'),
+(9, '22127156', 'Bachelor', 'K64', 2022, NULL, 'Studying');
 
 -- ============= EVENTS DATA =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "is_published", "created_at") VALUES

@@ -25,7 +25,7 @@ public class ImageService {
 
     /**
      * Domain or base URL for accessing images from browser.
-     * Example: https://yourdomain.com/images/ or <a href="http://localhost:8080/images/">...</a>
+     * Example: https://yourdomain.com/images/ or http://localhost:8080/images/
      */
     @Value("${image.domain:http://localhost/images/}")
     private String domain;
@@ -46,7 +46,7 @@ public class ImageService {
             byte[] imageBytes = Base64.getDecoder().decode(pureBase64);
 
             // 3. Generate unique filename using UUID to prevent overwriting
-            String fileName = UUID.randomUUID() + ".webp";
+            String fileName = UUID.randomUUID().toString() + ".webp";
             var targetPath = Paths.get(uploadDir + fileName);
             Files.createDirectories(targetPath.getParent());
 
@@ -58,7 +58,8 @@ public class ImageService {
                     .fromBytes(imageBytes)
                     .output(WebpWriter.DEFAULT, targetPath);
 
-            return domain + fileName;
+            String imageUrl = domain + fileName;
+            return imageUrl;
 
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid Base64 string", e);

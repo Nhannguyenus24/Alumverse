@@ -1,6 +1,6 @@
 package com.service.backend.fundraising.dao;
 
-import com.service.backend.shared.entity.FundReceivingInfos;
+import com.service.backend.fundraising.entity.FundReceivingInfos;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;

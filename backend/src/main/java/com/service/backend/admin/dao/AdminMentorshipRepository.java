@@ -1,7 +1,7 @@
 package com.service.backend.admin.dao;
 
-import com.service.backend.shared.entity.MentorProfile;
-import com.service.backend.shared.entity.MentorshipSession;
+import com.service.backend.mentorship.entity.MentorProfile;
+import com.service.backend.mentorship.entity.MentorshipSession;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;

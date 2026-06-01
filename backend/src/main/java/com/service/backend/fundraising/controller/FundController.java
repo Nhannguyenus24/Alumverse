@@ -5,7 +5,7 @@ import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
-import com.service.backend.shared.entity.Funds;
+import com.service.backend.fundraising.entity.Funds;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;

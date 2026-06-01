@@ -6,7 +6,7 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.User;
+import com.service.backend.auth.entity.User;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -141,7 +141,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      */
     @Modifying
     @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, 0, false, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+           "VALUES (:organizationId, :userId, 0, false, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
 
     /**

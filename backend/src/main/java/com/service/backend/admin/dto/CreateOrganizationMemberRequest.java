@@ -33,5 +33,5 @@ public class CreateOrganizationMemberRequest {
     private Integer verificationLevel = 0;
     
     @Builder.Default
-    private String status = "ACTIVE";
+    private String status = "active";
 }

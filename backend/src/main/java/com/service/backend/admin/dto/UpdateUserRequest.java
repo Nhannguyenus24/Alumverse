@@ -1,7 +1,7 @@
 package com.service.backend.admin.dto;
 
-import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.UserRole;
+import com.service.backend.shared.enums.UserStatus;
 import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +15,7 @@ public class UpdateUserRequest {
     private String email;
     private String userName;
     private UserRole role;
-    private Status status;
+    private UserStatus status;
     /** Display name stored in global_profiles (upserted when non-blank). */
     private String fullName;
     /** Moves the user's primary membership (lowest organization_members.id) or creates one. */

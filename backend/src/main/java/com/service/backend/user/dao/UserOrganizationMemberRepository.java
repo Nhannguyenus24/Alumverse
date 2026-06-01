@@ -6,7 +6,7 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.OrganizationMember;
+import com.service.backend.admin.entity.OrganizationMember;
 
 import reactor.core.publisher.Mono;
 

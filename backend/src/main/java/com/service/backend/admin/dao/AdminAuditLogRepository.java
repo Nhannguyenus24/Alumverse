@@ -6,7 +6,7 @@ import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.AdminAuditLog;
+import com.service.backend.admin.entity.AdminAuditLog;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dto;
 
-import com.service.backend.shared.entity.MentorExpertise;
+import com.service.backend.mentorship.entity.MentorExpertise;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
