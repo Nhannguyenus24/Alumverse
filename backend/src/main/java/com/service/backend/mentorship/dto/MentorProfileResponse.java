@@ -45,7 +45,7 @@ public class MentorProfileResponse {
                 .bio(profile.getBio())
                 .ratingAvg(profile.getRatingAvg())
                 .totalSessions(profile.getTotalSessions())
-                .status(profile.getStatus())
+                .status(profile.getStatus() != null ? profile.getStatus().getValue() : null)
                 .reviewNote(profile.getReviewNote())
                 .reviewedAt(profile.getReviewedAt())
                 .coverUrl(profile.getCoverUrl())

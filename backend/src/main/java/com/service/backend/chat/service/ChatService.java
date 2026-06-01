@@ -14,6 +14,7 @@ import com.service.backend.shared.entity.ChatMessage;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ChatType;
+import com.service.backend.shared.enums.ChatRole;
 import com.service.backend.shared.exception.ApplicationException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -90,7 +91,7 @@ public class ChatService {
                 .map(ChatGroupMember::getGroupId)
                 .distinct()
                 .flatMap(chatGroupRepository::findById)
-                .filter(group -> type == null || type.equalsIgnoreCase(group.getType()))
+                .filter(group -> type == null || (group.getType() != null && type.equalsIgnoreCase(group.getType().getValue())))
                 .collectList();
     }
 
@@ -255,7 +256,7 @@ public class ChatService {
 
     private Mono<ChatGroup> createPrivateChat(Long memberAId, Long memberBId) {
         ChatGroup newGroup = ChatGroup.builder()
-                .type(ChatType.PRIVATE.getValue())
+                .type(ChatType.PRIVATE)
                 .title(null)
                 .createdBy(memberAId)
                 .createdAt(LocalDateTime.now())
@@ -264,17 +265,17 @@ public class ChatService {
 
         return chatGroupRepository.save(newGroup)
                 .flatMap(savedGroup -> {
-                    ChatGroupMember memberA = ChatGroupMember.builder()
+                        ChatGroupMember memberA = ChatGroupMember.builder()
                             .groupId(savedGroup.getId())
                             .memberId(memberAId)
-                            .role("member")
+                            .role(ChatRole.MEMBER)
                             .joinedAt(LocalDateTime.now())
                             .build();
 
-                    ChatGroupMember memberB = ChatGroupMember.builder()
+                        ChatGroupMember memberB = ChatGroupMember.builder()
                             .groupId(savedGroup.getId())
                             .memberId(memberBId)
-                            .role("member")
+                            .role(ChatRole.MEMBER)
                             .joinedAt(LocalDateTime.now())
                             .build();
 
@@ -358,7 +359,7 @@ public class ChatService {
         LocalDateTime now = LocalDateTime.now();
 
         ChatGroup group = ChatGroup.builder()
-                .type(ChatType.GROUP.getValue())
+                .type(ChatType.GROUP)
                 .title(null)
                 .createdBy(creatorMemberId)
                 .createdAt(now)
@@ -370,17 +371,17 @@ public class ChatService {
                     ChatGroupMember owner = ChatGroupMember.builder()
                             .groupId(savedGroup.getId())
                             .memberId(creatorMemberId)
-                            .role("owner")
+                            .role(ChatRole.OWNER)
                             .joinedAt(now)
                             .build();
 
                     List<ChatGroupMember> others = memberIds.stream()
                             .filter(id -> !creatorMemberId.equals(id))
                             .distinct()
-                            .map(id -> ChatGroupMember.builder()
+                                .map(id -> ChatGroupMember.builder()
                                     .groupId(savedGroup.getId())
                                     .memberId(id)
-                                    .role("member")
+                                .role(ChatRole.MEMBER)
                                     .joinedAt(now)
                                     .build())
                             .toList();
@@ -420,11 +421,11 @@ public class ChatService {
                                         .filter(id -> !existingMembers.contains(id))
                                         .distinct()
                                         .map(id -> ChatGroupMember.builder()
-                                                .groupId(groupId)
-                                                .memberId(id)
-                                                .role("member")
-                                                .joinedAt(now)
-                                                .build())
+                                            .groupId(groupId)
+                                            .memberId(id)
+                                            .role(ChatRole.MEMBER)
+                                            .joinedAt(now)
+                                            .build())
                                         .toList();
 
                                 if (newMembers.isEmpty()) {
@@ -583,4 +584,5 @@ public class ChatService {
                 });
     }
 }
+    
 

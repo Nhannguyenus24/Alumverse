@@ -25,6 +25,7 @@ import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
@@ -283,12 +284,12 @@ public class ForumService {
         return forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND)))
                 .flatMap(post -> {
-                    ForumPostReport report = ForumPostReport.builder()
+                        ForumPostReport report = ForumPostReport.builder()
                             .postId(postId)
                             .reporterMemberId(request.getReporterMemberId())
                             .reason(request.getReason())
                             .description(request.getDescription())
-                            .status("PENDING")
+                            .status(Status.PENDING)
                             .build();
                     return forumPostReportRepository.save(report);
                 })

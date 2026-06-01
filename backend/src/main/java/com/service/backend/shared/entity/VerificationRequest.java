@@ -10,6 +10,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.DocumentType;
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,10 +31,10 @@ public class VerificationRequest {
     private String documentUrl;
 
     @Column("document_type")
-    private String documentType;
+    private DocumentType documentType;
 
     @Column("status")
-    private String status;
+    private Status status;
 
     @Column("admin_note")
     private String adminNote;

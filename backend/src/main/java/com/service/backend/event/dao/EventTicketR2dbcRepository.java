@@ -9,6 +9,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import com.service.backend.shared.enums.Status;
 
 @Repository
 public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<EventTicket, Long> {
@@ -26,6 +27,10 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     Mono<Long> countByMemberId(Long memberId);
 
     Mono<Long> countByEventIdAndStatus(Long eventId, String status);
+
+    @Modifying
+    @Query("UPDATE event_tickets SET status = :status WHERE id = :ticketId")
+    Mono<Integer> updateStatus(Long ticketId, Status status);
 
     @Modifying
     @Query("UPDATE event_tickets SET status = 'CANCELLED' WHERE id = :ticketId")

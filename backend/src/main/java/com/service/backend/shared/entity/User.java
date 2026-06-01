@@ -12,7 +12,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
 import com.service.backend.shared.enums.UserRole;
-import com.service.backend.shared.enums.UserStatus;
+import com.service.backend.shared.enums.Status;
 
 import java.time.LocalDateTime;
 
@@ -36,7 +36,7 @@ public class User {
     private String userName;
 
     @Column("status")
-    private UserStatus status;
+    private Status status;
 
     @Column("role")
     private UserRole role;

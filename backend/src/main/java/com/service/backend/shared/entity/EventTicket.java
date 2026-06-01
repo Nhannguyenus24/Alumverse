@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDateTime;
 
 @Data
@@ -39,7 +40,7 @@ public class EventTicket {
     @Column("ticket_code")
     private String ticketCode;
 
-    private String status;
+    private Status status;
 
     @CreatedDate
     @Column("registered_at")

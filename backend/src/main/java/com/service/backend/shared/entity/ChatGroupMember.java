@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.ChatRole;
 import java.time.LocalDateTime;
 
 @Data
@@ -28,7 +29,7 @@ public class ChatGroupMember {
     private Long memberId;
 
 
-    private String role;
+    private ChatRole role;
 
     @CreatedDate
     @Column("joined_at")

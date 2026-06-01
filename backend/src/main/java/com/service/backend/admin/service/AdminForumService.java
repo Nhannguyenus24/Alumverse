@@ -22,6 +22,7 @@ import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.shared.entity.ForumCategory;
 import com.service.backend.shared.entity.ForumPost;
 import com.service.backend.shared.entity.ForumPostReport;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.entity.ForumTopic;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -133,10 +134,10 @@ public class AdminForumService {
 
     public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(int page, int size) {
         long offset = (long) page * size;
-        return forumPostReportRepository.findByStatusWithPagination("PENDING", size, offset)
+        return forumPostReportRepository.findByStatusWithPagination(Status.PENDING, size, offset)
                 .map(this::convertToReportDTO)
                 .collectList()
-                .zipWith(forumPostReportRepository.countByStatus("PENDING"))
+                .zipWith(forumPostReportRepository.countByStatus(Status.PENDING))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(r -> log.info("getPendingReports result: {}", JsonUtils.toJson(r)));
     }
@@ -146,7 +147,8 @@ public class AdminForumService {
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_REPORT_NOT_FOUND))))
                 .flatMap(report -> applyModerationAction(report, request, adminUserId)
                         .then(Mono.defer(() -> {
-                            report.setStatus(request.getDecision().toUpperCase());
+                                                        String upperDecision = request.getDecision() == null ? null : request.getDecision().toUpperCase();
+                                                        report.setStatus(Status.valueOf(upperDecision));
                             report.setReviewedByUserId(adminUserId);
                             report.setReviewNote(request.getReviewNote());
                             report.setUpdatedAt(LocalDateTime.now());

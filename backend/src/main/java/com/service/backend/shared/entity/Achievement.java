@@ -8,6 +8,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
+import com.service.backend.shared.enums.Status;
 import java.time.LocalDate;
 
 @Data
@@ -40,5 +41,5 @@ public class Achievement {
     private String topic;
 
     @Column("status")
-    private String status;
+    private Status status;
 }

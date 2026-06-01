@@ -7,6 +7,7 @@ import com.service.backend.article.dto.UpdateAchievementRequest;
 import com.service.backend.article.dto.AchievementResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -96,7 +97,7 @@ public class AchievementService {
                 .flatMap(userId -> getByMemberId(userId.intValue(), page, limit));
     }
 
-    public Mono<PaginatedResponse<AchievementResponse>> getByStatus(String status, int page, int limit) {
+        public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
         int offset = page * limit;
         return achievementRepository.findByStatus(status, limit, offset)
                 .collectList()
@@ -116,5 +117,5 @@ public class AchievementService {
                         tuple.getT1().stream().map(AchievementResponse::from).toList(),
                         tuple.getT2(), page, limit
                 ));
-    }
+        }
 }
