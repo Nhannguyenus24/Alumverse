@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,12 +32,34 @@ public class HeaderAuthenticationFilter implements WebFilter {
         this.jwtUtils = jU;
     }
 
+    private static boolean isPublicMentorshipBrowse(String path) {
+        if (path.equals("/api/mentorship/mentee/expertise-topics")
+                || path.equals("/api/mentorship/mentee/expertise-categories")) {
+            return true;
+        }
+        if (!path.startsWith("/api/mentorship/mentee/mentors")) {
+            return false;
+        }
+        return !path.startsWith("/api/mentorship/mentee/sessions");
+    }
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
+        HttpMethod method = exchange.getRequest().getMethod();
+
+        if (HttpMethod.OPTIONS.equals(method)) {
+            return chain.filter(exchange);
+        }
+
+        // Skip authentication for OPTIONS requests (CORS preflight)
+        if (HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
+            return chain.filter(exchange);
+        }
 
         // Skip authentication for public endpoints
-        if (path.startsWith("/api/auth/") ||
+        if (path.equals("/health") ||
+                path.startsWith("/api/auth/") ||
                 path.startsWith("/swagger-ui") ||
                 path.startsWith("/webjars/") ||
                 path.startsWith("/v3/api-docs") ||
@@ -57,10 +80,14 @@ public class HeaderAuthenticationFilter implements WebFilter {
             return chain.filter(exchange);
         }
 
+        if (HttpMethod.GET.equals(method) && isPublicMentorshipBrowse(path)) {
+            return chain.filter(exchange);
+        }
+
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            logger.warn("No valid Bearer token found for {}", path);
+            logger.warn("No valid Bearer token found for {} {}", exchange.getRequest().getMethod(), path);
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             exchange.getResponse().getHeaders().add(HttpHeaders.CONTENT_TYPE, "application/json");
             String errorResponse = "{\"message\":\"Request is not authenticated\",\"error\":\"UNAUTHORIZED\"}";

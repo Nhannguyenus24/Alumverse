@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from 'react';
 
 const AdminForumContext = createContext(null);
@@ -14,4 +15,3 @@ export const useAdminForumContext = () => {
   return ctx;
 };
 
-export default AdminForumContext;

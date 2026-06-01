@@ -1,6 +1,10 @@
 package com.service.backend.shared.exception;
 
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
+
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,6 +19,7 @@ import java.util.Map;
  * Shared Global Exception Handler used across all modules
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(WebExchangeBindException.class)
@@ -34,16 +39,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ApplicationException.class)
     public Mono<ResponseEntity<?>> handleApplicationException(ApplicationException ex) {
-        int status = ex.getMessage() != null && ex.getMessage().toLowerCase().contains("not found") ? 404 : 400;
-        return Mono.just(
-                ResponseEntity
-                        .status(status)
-                        .body(ApiResponse.error(ex.getErrorCode()))
-        );
+        ErrorCode errorCode = ex.getErrorCode();
+        
+        ApiResponse<?> response = ApiResponse.error(errorCode);
+        // Override default ErrorCode message if a custom message was provided to the exception
+        if (ex.getMessage() != null && !ex.getMessage().isEmpty()) {
+            response.setMessage(ex.getMessage());
+        }
+        
+        return Mono.just(ResponseEntity.status(errorCode.getStatus()).body(response));
     }
 
     @ExceptionHandler(Exception.class)
     public Mono<ResponseEntity<?>> handleGenericException(Exception ex) {
+        log.error("Unhandled exception occurred: {}", ex.getMessage(), ex);
         return Mono.just(
                 ResponseEntity
                         .status(500)

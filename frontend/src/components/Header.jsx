@@ -9,6 +9,7 @@ import {
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import Notification from './Notification';
 import Logo from './Logo';
@@ -20,7 +21,11 @@ import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
 
-const NAV_GUEST_HIDDEN_PATHS = new Set(['/search']);
+const VERIFICATION_LABELS = {
+  0: 'Guest',
+  1: 'Student',
+  2: 'Alumni',
+};
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
@@ -59,15 +64,13 @@ const Header = () => {
   const toOrgPath = useOrgPath();
   const location = useLocation();
   const { slug: routeSlug } = useParams();
-  const { isAuthenticated, user } = useAuth();
-  const visibleNavItems = NAV_ITEMS.filter(
-    (item) => !NAV_GUEST_HIDDEN_PATHS.has(item.href) || isAuthenticated,
-  );
+  const { isAuthenticated, user, verificationLevel } = useAuth();
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [expandedNav, setExpandedNav] = useState({});
+  const [showVerificationBanner, setShowVerificationBanner] = useState(true);
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
@@ -82,6 +85,7 @@ const Header = () => {
   })();
   const isHomePage = normalizedPathname === '/';
   const isAdmin = user?.role === 'ADMIN';
+  const isGuestVerificationLevel = isAuthenticated && verificationLevel === 0;
 
   const isTransparent = isHomePage && !isScrolled;
 
@@ -104,7 +108,10 @@ const Header = () => {
 
   const displayName = user?.userName ?? 'User';
   const rawRole = user?.role ?? 'Student';
-  const displayRole = rawRole ? rawRole.charAt(0) + rawRole.slice(1).toLowerCase() : 'Student';
+  const verificationLabel = verificationLevel != null
+    ? VERIFICATION_LABELS[verificationLevel] ?? rawRole.charAt(0) + rawRole.slice(1).toLowerCase()
+    : rawRole.charAt(0) + rawRole.slice(1).toLowerCase();
+  const displayRole = isAdmin ? 'Admin' : verificationLabel;
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
   const closeDrawer = () => setMobileOpen(false);
@@ -129,36 +136,39 @@ const Header = () => {
     },
   };
 
+  const appBarMinHeight = { xs: 56, md: 64 };
+
   return (
-    <AppBar
-      position="fixed"
-      elevation={0}
-      sx={{
-        backgroundColor: isTransparent ? 'transparent' : (isAdmin ? 'primary.main' : 'background.paper'),
-        color: headerTextColor,
-        borderBottom: isTransparent ? 'none' : (isAdmin ? 'transparent' : 1),
-        borderColor: 'divider',
-        transition: 'all 0.4s ease-in-out',
-      }}
-    >
-      <Toolbar sx={{ minHeight: { xs: 56, md: 64 },
-                     px: { xs: 1.5, sm: 2 },
-                     justifyContent: 'space-between', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-          <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
-            <Logo 
-              variant="image" 
-              src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC} 
-              alt="AlumVerse" 
-              size="medium" 
-            />
-          </Link>
-        </Box>
+    <>
+      <AppBar
+        position="fixed"
+        elevation={0}
+        sx={{
+          backgroundColor: isTransparent ? 'transparent' : (isAdmin ? 'primary.main' : 'background.paper'),
+          color: headerTextColor,
+          borderBottom: isTransparent ? 'none' : (isAdmin ? 'transparent' : 1),
+          borderColor: 'divider',
+          transition: 'all 0.4s ease-in-out',
+        }}
+      >
+        <Toolbar sx={{ minHeight: appBarMinHeight,
+                       px: { xs: 1.5, sm: 2 },
+                       justifyContent: 'space-between', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
+              <Logo 
+                variant="image" 
+                src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC} 
+                alt="AlumVerse" 
+                size="medium" 
+              />
+            </Link>
+          </Box>
 
         {isDesktop && (
           <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
                      display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
-            {visibleNavItems.map((item) => (
+            {NAV_ITEMS.map((item) => (
               <Box
                 key={item.label}
                 onMouseEnter={() => item.children && setHoveredNav(item.label)}
@@ -251,7 +261,85 @@ const Header = () => {
             </IconButton>
           )}
         </Box>
-      </Toolbar>
+        </Toolbar>
+      </AppBar>
+
+      {isGuestVerificationLevel && showVerificationBanner && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: appBarMinHeight,
+            left: 0,
+            right: 0,
+            px: { xs: 1.5, sm: 2, md: 3 },
+            pt: 1,
+            zIndex: theme.zIndex.appBar + 2,
+            pointerEvents: 'none',
+          }}
+        >
+          <Box
+            sx={{
+              pointerEvents: 'auto',
+              position: 'relative',
+              borderRadius: 2,
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 1.25, sm: 1.5, md: 1.75 },
+              display: 'flex',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 1.5,
+              bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : 'warning.light',
+              color: isAdmin ? 'primary.contrastText' : 'warning.contrastText',
+              border: '1px solid',
+              borderColor: isAdmin ? 'rgba(255,255,255,0.18)' : 'warning.main',
+              boxShadow: 3,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.35 }}>
+                Tài khoản đang ở chế độ Guest
+              </Typography>
+              <Typography variant="caption" sx={{ display: 'block', mt: 0.25, lineHeight: 1.35 }}>
+                Hoàn tất xác thực để mở khóa đầy đủ tính năng và nhận vai trò phù hợp.
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => navigate('/organization-registration')}
+                sx={{
+                  position: 'relative',
+                  zIndex: theme.zIndex.appBar + 3,
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                  bgcolor: isAdmin ? '#FFFFFF' : 'warning.dark',
+                  color: isAdmin ? 'primary.main' : '#FFFFFF',
+                  '&:hover': {
+                    bgcolor: isAdmin ? '#f5f5f5' : 'warning.dark',
+                  },
+                }}
+              >
+                Xác thực ngay
+              </Button>
+
+              <IconButton
+                size="small"
+                aria-label="Ẩn banner xác thực"
+                onClick={() => setShowVerificationBanner(false)}
+                sx={{
+                  color: isAdmin ? 'primary.contrastText' : 'warning.contrastText',
+                  bgcolor: 'transparent',
+                  alignSelf: 'flex-start',
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Box>
+        </Box>
+      )}
 
       <Drawer
         variant="temporary" anchor="right" open={mobileOpen} onClose={closeDrawer}
@@ -271,7 +359,7 @@ const Header = () => {
         <Divider />
 
         <List component="nav" sx={{ py: 1 }}>
-          {visibleNavItems.map((item) =>
+          {NAV_ITEMS.map((item) =>
           item.children ? (
             <Box key={item.label}>
               <ListItemButton sx={{ py: 1.25 }}>
@@ -340,7 +428,7 @@ const Header = () => {
           )}
         </Box>
       </Drawer>
-    </AppBar>
+    </>
   );
 };
 

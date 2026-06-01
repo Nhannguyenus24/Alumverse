@@ -2,6 +2,7 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
+import com.service.backend.mentorship.entity.MenteeProfile;
 import com.service.backend.mentorship.entity.MentorshipSession;
 import com.service.backend.mentorship.entity.SessionFeedback;
 import com.service.backend.shared.dao.UserDisplayInfo;
@@ -33,6 +34,7 @@ public class MenteeService {
     private final MentorshipSessionR2dbcRepository sessionRepository;
     private final SessionFeedbackR2dbcRepository feedbackRepository;
     private final UserDisplayInfoRepository userDisplayInfoRepository;
+    private final MenteeProfileR2dbcRepository menteeProfileRepository;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -93,7 +95,7 @@ public class MenteeService {
         }
         if (ids.isEmpty()) return Mono.just(list);
 
-        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByUserIds(ids);
+        Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByMemberIds(ids);
         Mono<Map<Integer, java.util.List<String>>> topicsMono = expertiseRepository
                 .findByMentorMemberIds(ids)
                 .collectMultimap(com.service.backend.mentorship.entity.MentorExpertise::getMentorMemberId,
@@ -146,21 +148,32 @@ public class MenteeService {
 
     public Mono<PaginatedResponse<MentorProfileResponse>> searchMentors(String keyword, int page, int limit) {
         int offset = page * limit;
-        return profileRepository.searchMentors(keyword, limit, offset)
+        return profileRepository.searchMentorsWithName(keyword, limit, offset)
                 .collectList()
                 .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countSearchMentors(keyword))
+                        .zipWith(profileRepository.countSearchMentorsWithName(keyword))
                         .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> filterMentors(
-            String search, String expertise, BigDecimal minRating, boolean hasAvailability, int page, int limit) {
+            String search, String category, String expertise, BigDecimal minRating, boolean hasAvailability,
+            LocalDateTime availableFrom, LocalDateTime availableTo,
+            int page, int limit) {
         int offset = page * limit;
-        return profileRepository.filterMentors(search, expertise, minRating, hasAvailability, limit, offset)
+        return profileRepository
+                .filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset)
                 .collectList()
                 .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countFilterMentors(search, expertise, minRating, hasAvailability))
+                        .zipWith(profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo))
                         .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+    }
+
+    public Mono<List<String>> getDistinctExpertiseTopics() {
+        return expertiseRepository.findDistinctTopics().collectList();
+    }
+
+    public Mono<List<String>> getDistinctExpertiseCategories() {
+        return expertiseRepository.findDistinctCategories().collectList();
     }
 
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
@@ -175,31 +188,73 @@ public class MenteeService {
                 .collectList();
     }
 
+    // ===================== MENTEE PROFILE =====================
+
+    public Mono<MenteeProfileResponse> createOrUpdateMyMenteeProfile(CreateMenteeProfileRequest request) {
+        return currentMemberId().flatMap(memberId ->
+                menteeProfileRepository.findById(memberId)
+                        .flatMap(existing -> {
+                            existing.setMentoringGoal(request.getMentoringGoal());
+                            existing.setMajor(request.getMajor());
+                            existing.setAcademicYear(request.getAcademicYear());
+                            existing.setInterests(request.getInterests());
+                            existing.setIsActive(true);
+                            existing.setUpdatedAt(LocalDateTime.now());
+                            existing.setNew(false);
+                            return menteeProfileRepository.save(existing);
+                        })
+                        .switchIfEmpty(Mono.defer(() -> menteeProfileRepository.save(MenteeProfile.builder()
+                                .memberId(memberId)
+                                .mentoringGoal(request.getMentoringGoal())
+                                .major(request.getMajor())
+                                .academicYear(request.getAcademicYear())
+                                .interests(request.getInterests())
+                                .isActive(true)
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build())))
+                        .map(MenteeProfileResponse::from));
+    }
+
+    public Mono<MenteeProfileResponse> getMyMenteeProfile() {
+        return currentMemberId().flatMap(memberId ->
+                menteeProfileRepository.findById(memberId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Mentee profile not found")))
+                        .map(MenteeProfileResponse::from));
+    }
+
     // ===================== BOOK SESSION =====================
 
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
         return currentMemberId().flatMap(memberId ->
-                availabilityRepository.findById(request.getAvailabilityId())
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability slot not found")))
-                        .flatMap(availability -> {
-                            if (!"Available".equals(availability.getStatus())) {
-                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "This time slot is no longer available"));
+                menteeProfileRepository.findById(memberId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Bạn cần hoàn thiện hồ sơ Mentee trước khi đặt lịch")))
+                        .flatMap(menteeProfile -> {
+                            if (!Boolean.TRUE.equals(menteeProfile.getIsActive())) {
+                                return Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Hồ sơ Mentee chưa được kích hoạt"));
                             }
+                            return availabilityRepository.findById(request.getAvailabilityId())
+                                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability slot not found")))
+                                    .flatMap(availability -> {
+                                        if (!"Available".equals(availability.getStatus())) {
+                                            return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "This time slot is no longer available"));
+                                        }
 
-                            MentorshipSession session = MentorshipSession.builder()
-                                    .availabilityId(request.getAvailabilityId())
-                                    .menteeMemberId(memberId)
-                                    .status("Pending")
-                                    .bookingNote(request.getBookingNote())
-                                    .sessionType(request.getSessionType())
-                                    .introduction(request.getIntroduction())
-                                    .description(request.getDescription())
-                                    .cvUrl(request.getCvUrl())
-                                    .createdAt(LocalDateTime.now())
-                                    .build();
+                                        MentorshipSession session = MentorshipSession.builder()
+                                                .availabilityId(request.getAvailabilityId())
+                                                .menteeMemberId(memberId)
+                                                .status("Pending")
+                                                .bookingNote(request.getBookingNote())
+                                                .sessionType(request.getSessionType())
+                                                .introduction(request.getIntroduction())
+                                                .description(request.getDescription())
+                                                .cvUrl(request.getCvUrl())
+                                                .createdAt(LocalDateTime.now())
+                                                .build();
 
-                            return availabilityRepository.updateStatus(availability.getId(), "Booked")
-                                    .then(sessionRepository.save(session));
+                                        return availabilityRepository.updateStatus(availability.getId(), "Booked")
+                                                .then(sessionRepository.save(session));
+                                    });
                         })
                         .flatMap(this::enrich));
     }

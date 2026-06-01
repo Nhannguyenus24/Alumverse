@@ -28,7 +28,6 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 const AdminDataTable = ({
   columns,
   rows,
-  loading,
   totalCount,
   page,
   rowsPerPage,
@@ -131,13 +130,13 @@ const AdminDataTable = ({
         <Table stickyHeader size="medium">
           <TableHead>
             <TableRow>
-              {renderExpandableRow && <TableCell sx={{ width: 48, bgcolor: alpha(theme.palette.action.hover, 0.5) }} />}
+              {renderExpandableRow && <TableCell sx={{ width: 48, bgcolor: (t) => t.palette.mode === 'light' ? '#F4F6F8' : t.palette.background.default }} />}
               {columns.map((column) => (
                 <TableCell
                   key={column.id}
                   align={column.align || 'left'}
                   sx={{
-                    bgcolor: alpha(theme.palette.action.hover, 0.5),
+                    bgcolor: (t) => t.palette.mode === 'light' ? '#F4F6F8' : t.palette.background.default,
                     fontWeight: 700,
                     color: 'text.secondary',
                     fontSize: 13,

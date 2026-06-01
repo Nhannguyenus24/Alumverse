@@ -27,12 +27,6 @@ const mapSession = (session) => ({
   updatedAt: session.updatedAt || session.createdAt || new Date().toISOString(),
 });
 
-const dedupeById = (rows) => {
-  const map = new Map();
-  rows.forEach((row) => map.set(row.id, row));
-  return Array.from(map.values());
-};
-
 const useAdminMentorshipData = () => {
   const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(false);

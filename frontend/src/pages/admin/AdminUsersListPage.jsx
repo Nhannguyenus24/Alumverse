@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useMatch, useNavigate, useOutletContext } from 'react-router';
+import { useEffect, useState } from 'react';
+import { useNavigate, useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -49,14 +49,6 @@ const AdminUsersListPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const slugMatchWildcard = useMatch('/:slug/admin/*');
-  const slugMatchExact = useMatch('/:slug/admin');
-  const slugMatch = slugMatchWildcard ?? slugMatchExact;
-  const adminBase = useMemo(
-    () => (slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin'),
-    [slugMatch?.params?.slug],
-  );
-  const { user } = useAuth();
   const { enqueueSnackbar } = useSnackbar();
   const {
     users,
@@ -67,8 +59,6 @@ const AdminUsersListPage = () => {
     setRoleFilter,
     statusFilter,
     setStatusFilter,
-    organizationFilter,
-    setOrganizationFilter,
     page,
     setPage,
     rowsPerPage,
@@ -269,11 +259,12 @@ const AdminUsersListPage = () => {
     </Stack>
   );
 
+  const [now] = useState(() => Date.now());
   const stats = {
     total: filteredCount,
     active: users.filter(u => u.status === 'ACTIVE').length,
     banned: users.filter(u => u.status === 'BANNED').length,
-    newToday: users.filter(u => new Date(u.createdAt) > new Date(Date.now() - 24*60*60*1000)).length,
+    newToday: users.filter(u => new Date(u.createdAt) > new Date(now - 24*60*60*1000)).length,
   };
 
   return (
@@ -377,7 +368,7 @@ const AdminUsersListPage = () => {
             key={st}
             selected={userStatusMenu?.user.status === st}
             onClick={async () => {
-              try { await updateUserStatus(userStatusMenu.user.id, st); } catch {}
+              try { await updateUserStatus(userStatusMenu.user.id, st); } catch (e) { console.error(e); }
               setUserStatusMenu(null);
             }}
             sx={{ fontSize: 14, fontWeight: 500 }}

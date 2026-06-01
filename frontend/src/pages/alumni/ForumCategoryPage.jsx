@@ -6,7 +6,7 @@ import Page from '../../components/Page';
 import Breadcrumb from '../../components/Breadcrumb';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
-import { useAuth } from '../../hooks/useAuth';
+
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';

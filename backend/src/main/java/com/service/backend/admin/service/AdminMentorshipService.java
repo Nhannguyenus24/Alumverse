@@ -11,13 +11,22 @@ import com.service.backend.mentorship.dao.MentorProfileR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
 import com.service.backend.mentorship.entity.MentorAvailability;
 import com.service.backend.mentorship.entity.MentorProfile;
+import com.service.backend.mentorship.entity.MentorProfileStatus;
 import com.service.backend.mentorship.entity.MentorshipSession;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.service.EmailService;
+import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class AdminMentorshipService {
@@ -35,86 +44,144 @@ public class AdminMentorshipService {
     private final MentorProfileR2dbcRepository mentorProfileRepo;
     private final MentorAvailabilityR2dbcRepository availabilityRepo;
     private final AdminUserRepository adminUserRepository;
+    private final EmailService emailService;
 
     public AdminMentorshipService(AdminMentorshipRepository adminMentorshipRepository,
                                   MentorshipSessionR2dbcRepository sessionRepo,
                                   MentorProfileR2dbcRepository mentorProfileRepo,
                                   MentorAvailabilityR2dbcRepository availabilityRepo,
-                                  AdminUserRepository adminUserRepository) {
+                                  AdminUserRepository adminUserRepository,
+                                  EmailService emailService) {
         this.adminMentorshipRepository = adminMentorshipRepository;
         this.sessionRepo = sessionRepo;
         this.mentorProfileRepo = mentorProfileRepo;
         this.availabilityRepo = availabilityRepo;
         this.adminUserRepository = adminUserRepository;
+        this.emailService = emailService;
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(int page, int size) {
-        log.info("Admin fetching all sessions - page {} size {}", page, size);
         int offset = page * size;
         return enrichSessions(adminMentorshipRepository.findAllSessions(size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countAllSessions())
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllSessions result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(String status, int page, int size) {
-        log.info("Admin fetching sessions by status {} - page {} size {}", status, page, size);
         int offset = page * size;
         return enrichSessions(adminMentorshipRepository.findSessionsByStatus(status, size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countSessionsByStatus(status))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getSessionsByStatus result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorshipSessionDTO> getSessionById(Integer sessionId) {
         return adminMentorshipRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Session not found with id: " + sessionId)))
-                .flatMap(this::enrichSession);
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
+                .flatMap(this::enrichSession)
+                .doOnSuccess(r -> log.info("getSessionById result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorshipSessionDTO> updateSessionStatus(Integer sessionId, String status) {
-        log.info("Admin updating session {} -> status {}", sessionId, status);
         return adminMentorshipRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Session not found with id: " + sessionId)))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
                 .flatMap(s -> sessionRepo.updateStatus(sessionId, status).then(adminMentorshipRepository.findById(sessionId)))
-                .flatMap(this::enrichSession);
+                .flatMap(this::enrichSession)
+                .doOnSuccess(r -> log.info("updateSessionStatus result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> deleteSession(Integer sessionId) {
-        log.info("Admin deleting session {}", sessionId);
         return adminMentorshipRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Session not found with id: " + sessionId)))
-                .flatMap(s -> sessionRepo.deleteById(sessionId));
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
+                .flatMap(s -> sessionRepo.deleteById(sessionId))
+                .doOnSuccess(v -> log.info("deleteSession: sessionId={} deleted", sessionId));
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(int page, int size) {
-        log.info("Admin fetching all mentor profiles - page {} size {}", page, size);
         int offset = page * size;
         return enrichMentors(adminMentorshipRepository.findAllMentorProfiles(size, offset))
                 .collectList()
                 .zipWith(adminMentorshipRepository.countAllMentorProfiles())
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getAllMentorProfiles result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByApproval(Boolean isApproved, int page, int size) {
-        log.info("Admin fetching mentor profiles by approval {} - page {} size {}", isApproved, page, size);
+    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(String status, int page, int size) {
         int offset = page * size;
-        return enrichMentors(adminMentorshipRepository.findMentorProfilesByApproval(isApproved, size, offset))
+        return enrichMentors(adminMentorshipRepository.findMentorProfilesByStatus(status, size, offset))
                 .collectList()
-                .zipWith(adminMentorshipRepository.countMentorProfilesByApproval(isApproved))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size));
+                .zipWith(adminMentorshipRepository.countMentorProfilesByStatus(status))
+                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                .doOnSuccess(r -> log.info("getMentorProfilesByStatus result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorProfileDTO> approveMentor(Integer memberId) {
-        log.info("Admin approving mentor {}", memberId);
-        return adminMentorshipRepository.findMentorProfileById(memberId)
-                .switchIfEmpty(Mono.error(new RuntimeException("Mentor profile not found: " + memberId)))
-                .flatMap(p -> mentorProfileRepo.approveMentor(memberId).then(adminMentorshipRepository.findMentorProfileById(memberId)))
-                .flatMap(this::enrichMentor);
+        return applyReview(memberId, MentorProfileStatus.APPROVED, null);
+    }
+
+    public Mono<AdminMentorProfileDTO> rejectMentor(Integer memberId, String reason) {
+        return applyReview(memberId, MentorProfileStatus.REJECTED, reason);
+    }
+
+    public Mono<AdminMentorProfileDTO> requestMentorUpdate(Integer memberId, String reason) {
+        return applyReview(memberId, MentorProfileStatus.NEED_UPDATE, reason);
+    }
+
+    private Mono<AdminMentorProfileDTO> applyReview(Integer memberId, String targetStatus, String reason) {
+        return SecurityUtils.getCurrentUserId()
+                .map(Long::intValue)
+                .defaultIfEmpty(0)
+                .flatMap(reviewerId ->
+                        adminMentorshipRepository.findMentorProfileById(memberId)
+                                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND))))
+                                .flatMap(p -> {
+                                    Mono<Integer> writeMono;
+                                    if (MentorProfileStatus.APPROVED.equals(targetStatus)) {
+                                        writeMono = mentorProfileRepo.approveMentorByReviewer(memberId, reviewerId);
+                                    } else {
+                                        writeMono = mentorProfileRepo.applyReview(memberId, targetStatus, reason, reviewerId);
+                                    }
+                                    return writeMono
+                                            .then(adminMentorshipRepository.findMentorProfileById(memberId))
+                                            .flatMap(updated -> sendReviewEmail(updated, targetStatus, reason).thenReturn(updated));
+                                })
+                                .flatMap(this::enrichMentor)
+                                .doOnSuccess(r -> log.info("applyReview {} result: {}", targetStatus, JsonUtils.toJson(r))));
+    }
+
+    private Mono<Void> sendReviewEmail(MentorProfile profile, String status, String reason) {
+        if (profile.getMemberId() == null) return Mono.empty();
+        return adminUserRepository.findById(profile.getMemberId())
+                .flatMap(user -> {
+                    if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.<Void>empty();
+                    Map<String, Object> vars = new HashMap<>();
+                    vars.put("recipientName", user.getUserName() != null ? user.getUserName() : "bạn");
+                    vars.put("status", status);
+                    vars.put("statusLabel", statusLabel(status));
+                    vars.put("reason", reason != null ? reason : "");
+                    String subject = "[AlumVerse] Cập nhật hồ sơ Mentor: " + statusLabel(status);
+                    return emailService.sendHtmlEmail(user.getEmail(), subject, "mentorApplicationReview", vars)
+                            .onErrorResume(e -> {
+                                log.warn("Failed to send mentor review email to {}: {}", user.getEmail(), e.getMessage());
+                                return Mono.empty();
+                            });
+                })
+                .switchIfEmpty(Mono.empty());
+    }
+
+    private String statusLabel(String status) {
+        return switch (status) {
+            case MentorProfileStatus.APPROVED -> "Đã duyệt";
+            case MentorProfileStatus.REJECTED -> "Bị từ chối";
+            case MentorProfileStatus.NEED_UPDATE -> "Cần cập nhật";
+            default -> status;
+        };
     }
 
     public Mono<MentorshipStatisticsDTO> getStatistics() {
-        log.info("Admin fetching mentorship statistics");
         return Mono.zip(
                         adminMentorshipRepository.countAllSessions().defaultIfEmpty(0L),
                         adminMentorshipRepository.countSessionsByStatus(STATUS_PENDING).defaultIfEmpty(0L),
@@ -140,7 +207,8 @@ public class AdminMentorshipService {
                                 .pendingMentors(t2.getT1())
                                 .totalAvailabilities(t2.getT2())
                                 .totalFeedbacks(t2.getT3())
-                                .build()));
+                                .build()))
+                .doOnSuccess(r -> log.info("getStatistics result: {}", JsonUtils.toJson(r)));
     }
 
     private Flux<AdminMentorshipSessionDTO> enrichSessions(Flux<MentorshipSession> sessions) {
@@ -202,9 +270,12 @@ public class AdminMentorshipService {
                 .bio(p.getBio())
                 .ratingAvg(p.getRatingAvg())
                 .totalSessions(p.getTotalSessions())
-                .isApproved(p.getIsApproved())
+                .status(p.getStatus())
+                .reviewNote(p.getReviewNote())
+                .reviewedAt(p.getReviewedAt())
                 .coverUrl(p.getCoverUrl())
                 .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt())
                 .build());
     }
 }

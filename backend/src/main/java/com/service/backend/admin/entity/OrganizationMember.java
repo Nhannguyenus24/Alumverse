@@ -2,7 +2,9 @@ package com.service.backend.admin.entity;
 
 import java.time.LocalDateTime;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -26,7 +28,7 @@ public class OrganizationMember {
     private Integer userId;
 
     @Column("graduated_year")
-    private Integer graduatedYear;
+    private String graduatedYear;
 
     @Column("graduation_status")
     private String graduationStatus;
@@ -45,9 +47,11 @@ public class OrganizationMember {
     
     private String status;
     
+    @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
     
+    @LastModifiedDate
     @Column("updated_at")
     private LocalDateTime updatedAt;
 }

@@ -11,15 +11,11 @@ import {
   Grid,
   Typography,
   Divider,
-  IconButton,
   Avatar,
-  CircularProgress
+  Switch,
+  FormControlLabel
 } from '@mui/material';
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import BusinessIcon from '@mui/icons-material/Business';
-import { useUploadImage } from '../../hooks/images/useUploadImage';
-import { useRef } from 'react';
-
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -31,22 +27,44 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
     featuresConfig: '',
   });
 
-  const { uploadFile, isPending: uploading } = useUploadImage();
-  const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    if (organization) {
+useEffect(() => {
+  if (organization && open) {
+    const timer = setTimeout(() => {
+      const parseJsonArray = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        if (typeof val === 'string') {
+          try {
+            return JSON.parse(val);
+          } catch (e) {
+            console.error("Failed to parse JSON array", e);
+            return val;
+          }
+        }
+        return val;
+      };
+
+      const programsArr = parseJsonArray(organization.programs);
+      const majorsArr = parseJsonArray(organization.majors);
+
+      const config = organization.featuresConfig
+        ? (typeof organization.featuresConfig === 'string' ? JSON.parse(organization.featuresConfig) : organization.featuresConfig)
+        : { mentorship: true, job: true, fund: true, events: true, forum: true };
+
       setFormData({
         name: organization.name || '',
         slug: organization.slug || '',
         logoUrl: organization.logoUrl || '',
         status: organization.status || 'ACTIVE',
-        programs: Array.isArray(organization.programs) ? organization.programs.join(', ') : (organization.programs || ''),
-        majors: Array.isArray(organization.majors) ? organization.majors.join(', ') : (organization.majors || ''),
-        featuresConfig: organization.featuresConfig || '',
+        programs: Array.isArray(programsArr) ? programsArr.join(', ') : (programsArr || ''),
+        majors: Array.isArray(majorsArr) ? majorsArr.join(', ') : (majorsArr || ''),
+        featuresConfig: config,
       });
-    }
-  }, [organization, open]);
+    }, 0);
+    return () => clearTimeout(timer);
+  }
+}, [organization, open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -58,6 +76,7 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
       ...formData,
       programs: formData.programs.split(',').map(s => s.trim()).filter(Boolean),
       majors: formData.majors.split(',').map(s => s.trim()).filter(Boolean),
+      featuresConfig: JSON.stringify(formData.featuresConfig),
     });
   };
 
@@ -74,56 +93,31 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
       <DialogContent sx={{ p: 3, pt: 1 }}>
         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
-            <Box sx={{ position: 'relative' }}>
-              <Avatar
-                src={formData.logoUrl}
-                sx={{ 
-                  width: 100, 
-                  height: 100, 
-                  border: `2px solid ${theme => theme.palette.divider}`,
-                  bgcolor: 'background.paper'
-                }}
-              >
-                {!formData.logoUrl && <BusinessIcon sx={{ fontSize: 40, color: 'text.disabled' }} />}
-              </Avatar>
-              <IconButton
-                size="small"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                sx={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': { bgcolor: 'primary.dark' },
-                  boxShadow: 2
-                }}
-              >
-                {uploading ? <CircularProgress size={20} color="inherit" /> : <PhotoCameraIcon fontSize="small" />}
-              </IconButton>
-              <input
-                type="file"
-                hidden
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    try {
-                      const url = await uploadFile(file);
-                      setFormData(prev => ({ ...prev, logoUrl: url }));
-                    } catch (err) {
-                      console.error("Logo upload failed", err);
-                    }
-                  }
-                }}
-              />
-            </Box>
+            <Avatar
+              src={formData.logoUrl}
+              sx={{ 
+                width: 100, 
+                height: 100, 
+                border: `2px solid ${theme => theme.palette.divider}`,
+                bgcolor: 'background.paper'
+              }}
+            >
+              {!formData.logoUrl && <BusinessIcon sx={{ fontSize: 40, color: 'text.disabled' }} />}
+            </Avatar>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              Logo tổ chức (nên dùng định dạng PNG/SVG)
+              Xem trước logo tổ chức
             </Typography>
           </Box>
+
+          <TextField
+            fullWidth
+            label="Logo URL"
+            name="logoUrl"
+            value={formData.logoUrl}
+            onChange={handleChange}
+            placeholder="https://example.com/logo.png"
+            helperText="Nhập URL logo tổ chức (định dạng PNG, SVG, JPG)"
+          />
 
           <TextField
             fullWidth
@@ -185,19 +179,37 @@ const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm })
             helperText="Các chuyên ngành phân tách bằng dấu phẩy"
           />
           <Divider sx={{ my: 1 }}>
-            <Typography variant="caption" color="text.disabled" fontWeight={700}>CẤU HÌNH HỆ THỐNG</Typography>
+            <Typography variant="caption" color="text.disabled" fontWeight={700}>CẤU HÌNH TÍNH NĂNG</Typography>
           </Divider>
-          <TextField
-            fullWidth
-            label="Features Configuration (JSON)"
-            name="featuresConfig"
-            value={formData.featuresConfig}
-            onChange={handleChange}
-            multiline
-            rows={4}
-            sx={{ '& .MuiInputBase-input': { fontFamily: 'monospace', fontSize: 13 } }}
-            placeholder='{ "mentorship": true, "fundraising": true }'
-          />
+          
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+            {[
+              { key: 'mentorship', label: 'Cố vấn' },
+              { key: 'job', label: 'Việc làm' },
+              { key: 'fund', label: 'Gây quỹ' },
+              { key: 'events', label: 'Sự kiện' },
+              { key: 'forum', label: 'Diễn đàn' },
+            ].map((f) => (
+              <FormControlLabel
+                key={f.key}
+                control={
+                  <Switch
+                    checked={formData.featuresConfig[f.key] ?? true}
+                    onChange={(e) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        featuresConfig: {
+                          ...prev.featuresConfig,
+                          [f.key]: e.target.checked
+                        }
+                      }));
+                    }}
+                  />
+                }
+                label={<Typography variant="body2">{f.label}</Typography>}
+              />
+            ))}
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>

@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dto.UpdateOrganizationRequest;
 import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
@@ -34,37 +35,27 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AdminOrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(AdminOrganizationService.class);
-    
+
     private final AdminOrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
     private final ImageService imageService;
-    
-    /**
-     * Get all organizations with pagination and search
-     */
+
     public Mono<PaginatedResponse<Organization>> getAllOrganizations(int page, int size, String search) {
-        logger.info("Fetching organizations - search: {}, page: {}, size: {}", search, page, size);
         int offset = page * size;
         String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim() + "%" : null;
 
         return Mono.zip(
                 organizationRepository.findAllWithFilters(searchParam, offset, size).collectList(),
                 organizationRepository.countWithFilters(searchParam)
-        ).map(tuple -> {
-            logger.info("Organizations fetched successfully - total: {}", tuple.getT2());
-            return PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size);
-        })
+        ).map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+        .doOnSuccess(r -> logger.info("getAllOrganizations result: {}", JsonUtils.toJson(r)))
         .doOnError(error -> logger.error("Failed to fetch organizations - search: {}, page: {}, size: {}", search, page, size, error));
     }
-    
-    /**
-     * Get organization by ID
-     */
+
     public Mono<Organization> getOrganizationById(Integer organizationId) {
-        logger.info("Fetching organization by ID: {}", organizationId);
         return organizationRepository.findById(organizationId)
-                .doOnSuccess(org -> logger.info("Organization fetched successfully - ID: {}", organizationId))
+                .doOnSuccess(org -> logger.info("getOrganizationById result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization - ID: {}", organizationId, error));
     }
 
@@ -99,70 +90,54 @@ public class AdminOrganizationService {
     public Mono<List<String>> removeMajor(Integer organizationId, String value) {
         return deleteOption(organizationId, value, false);
     }
-    
-    /**
-     * Get organization by slug
-     */
+
     public Mono<Organization> getOrganizationBySlug(String slug) {
-        logger.info("Fetching organization by slug: {}", slug);
         return organizationRepository.findBySlug(slug)
-                .doOnSuccess(org -> logger.info("Organization fetched successfully - slug: {}", slug))
+                .doOnSuccess(org -> logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization - slug: {}", slug, error));
     }
-    
-    /**
-     * Create new organization
-     */
-    public Mono<Organization> createOrganization(Organization organization) {
-        logger.info("Creating new organization: {}", organization.getName());
-        organization.setCreatedAt(LocalDateTime.now());
+
+    public Mono<Organization> createOrganization(UpdateOrganizationRequest request) {
+        Organization organization = Organization.builder()
+                .name(request.getName())
+                .slug(request.getSlug())
+                .logoUrl(request.getLogoUrl())
+                .status(request.getStatus() != null ? request.getStatus() : "ACTIVE")
+                .featuresConfig(request.getFeaturesConfig())
+                .programs(JsonUtils.toJson(request.getPrograms()))
+                .majors(JsonUtils.toJson(request.getMajors()))
+                .createdAt(LocalDateTime.now())
+                .build();
+
         return organizationRepository.save(organization)
-                .doOnSuccess(saved -> logger.info("Organization created successfully - ID: {}, Name: {}", saved.getId(), saved.getName()))
-                .doOnError(error -> logger.error("Failed to create organization: {}", organization.getName(), error));
+                .doOnSuccess(saved -> logger.info("createOrganization result: {}", JsonUtils.toJson(saved)))
+                .doOnError(error -> logger.error("Failed to create organization: {}", request.getName(), error));
     }
-    
-    /**
-     * Update organization
-     */
-    public Mono<Organization> updateOrganization(Integer organizationId, Organization organizationUpdate) {
-        logger.info("Updating organization with ID: {}", organizationId);
+
+    public Mono<Organization> updateOrganization(Integer organizationId, UpdateOrganizationRequest organizationUpdate) {
         return organizationRepository.findById(organizationId)
                 .flatMap(existing -> {
-                    if (organizationUpdate.getName() != null) {
-                        existing.setName(organizationUpdate.getName());
-                    }
-                    if (organizationUpdate.getSlug() != null) {
-                        existing.setSlug(organizationUpdate.getSlug());
-                    }
-                    if (organizationUpdate.getLogoUrl() != null) {
-                        existing.setLogoUrl(organizationUpdate.getLogoUrl());
-                    }
-                    if (organizationUpdate.getBrandConfig() != null) {
-                        existing.setBrandConfig(organizationUpdate.getBrandConfig());
-                    }
-                    if (organizationUpdate.getFeaturesConfig() != null) {
-                        existing.setFeaturesConfig(organizationUpdate.getFeaturesConfig());
-                    }
-                    if (organizationUpdate.getPrograms() != null) {
-                        existing.setPrograms(organizationUpdate.getPrograms());
-                    }
-                    if (organizationUpdate.getMajors() != null) {
-                        existing.setMajors(organizationUpdate.getMajors());
-                    }
-                    return organizationRepository.save(existing)
-                            .doOnSuccess(saved -> logger.info("Organization updated successfully - ID: {}", organizationId));
+                    String name = organizationUpdate.getName() != null ? organizationUpdate.getName() : existing.getName();
+                    String slug = organizationUpdate.getSlug() != null ? organizationUpdate.getSlug() : existing.getSlug();
+                    String logoUrl = organizationUpdate.getLogoUrl() != null ? organizationUpdate.getLogoUrl() : existing.getLogoUrl();
+                    String status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
+                    String brandConfig = existing.getBrandConfig();
+                    String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
+                    String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();
+                    String majors = organizationUpdate.getMajors() != null ? JsonUtils.toJson(organizationUpdate.getMajors()) : existing.getMajors();
+
+                    return organizationRepository.updateOrganizationFields(
+                            organizationId, name, slug, logoUrl, status, brandConfig, featuresConfig, programs, majors
+                    ).flatMap(rows -> organizationRepository.findById(organizationId));
                 })
+                .doOnSuccess(saved -> logger.info("updateOrganization result: {}", JsonUtils.toJson(saved)))
                 .doOnError(error -> logger.error("Failed to update organization - ID: {}", organizationId, error));
     }
-    
-    /**
-     * Delete organization
-     */
+
     public Mono<Boolean> deleteOrganization(Integer organizationId) {
-        logger.info("Deleting organization with ID: {}", organizationId);
         return organizationRepository.deleteById(organizationId)
                 .then(Mono.just(true))
-                .doOnSuccess(success -> logger.info("Organization deleted successfully - ID: {}", organizationId))
+                .doOnSuccess(success -> logger.info("deleteOrganization: organizationId={} deleted", organizationId))
                 .onErrorResume(error -> {
                     logger.error("Failed to delete organization - ID: {}", organizationId, error);
                     return Mono.just(false);
@@ -170,17 +145,16 @@ public class AdminOrganizationService {
     }
 
     public Mono<PaginatedResponse<SchoolFeedback>> getSchoolFeedbacks(Integer organizationId, int page, int size) {
-        logger.info("Fetching school feedbacks - organizationId: {}, page: {}, size: {}", organizationId, page, size);
         int offset = page * size;
         return Mono.zip(
                 schoolFeedbackRepository.findByOrganizationIdWithPagination(organizationId, offset, size).collectList(),
                 schoolFeedbackRepository.countByOrganizationId(organizationId)
         ).map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                .doOnSuccess(r -> logger.info("getSchoolFeedbacks result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch school feedbacks", error));
     }
 
     public Mono<Void> markSchoolFeedbackAsRead(Integer feedbackId) {
-        logger.info("Marking school feedback as read - feedbackId: {}", feedbackId);
         return schoolFeedbackRepository.markAsRead(feedbackId)
                 .flatMap(updatedRows -> {
                     if (updatedRows == null || updatedRows <= 0) {
@@ -194,23 +168,45 @@ public class AdminOrganizationService {
 
     public Mono<OrganizationIntroductionResponse> upsertIntroduction(
             Integer orgaId, UpsertOrganizationIntroductionRequest request) {
-        logger.info("Upserting introduction for organization id: {}", orgaId);
         Mono<List<String>> uploadedUrls = uploadImages(request.getImages());
         return requireOrganization(orgaId)
                 .flatMap(org -> uploadedUrls)
                 .flatMap(urls -> introductionRepository.findByOrgaId(orgaId)
                         .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
                         .flatMap(intro -> {
-                            intro.setContent(request.getContent());
-                            intro.setImageUrls(JsonUtils.toJson(urls));
-                            intro.setUpdatedAt(LocalDateTime.now());
-                            return introductionRepository.save(intro).thenReturn(urls);
+                            String imageUrlsJson = JsonUtils.toJson(urls);
+                            if (intro.getId() != null) {
+                                return introductionRepository.updateFields(
+                                        orgaId,
+                                        request.getContent(),
+                                        request.getVision(),
+                                        request.getMission(),
+                                        request.getCoreValues(),
+                                        request.getBannerUrl(),
+                                        imageUrlsJson
+                                )
+                                .then(introductionRepository.findByOrgaId(orgaId))
+                                .thenReturn(urls);
+                            } else {
+                                intro.setContent(request.getContent());
+                                intro.setVision(request.getVision());
+                                intro.setMission(request.getMission());
+                                intro.setCoreValues(request.getCoreValues());
+                                intro.setImageUrls(imageUrlsJson);
+                                intro.setBannerUrl(request.getBannerUrl());
+                                return introductionRepository.save(intro).thenReturn(urls);
+                            }
                         }))
                 .map(urls -> OrganizationIntroductionResponse.builder()
                         .orgaId(orgaId)
                         .content(request.getContent())
+                        .vision(request.getVision())
+                        .mission(request.getMission())
+                        .coreValues(request.getCoreValues())
                         .imageUrls(urls)
+                        .bannerUrl(request.getBannerUrl())
                         .build())
+                .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
     }
 
@@ -233,7 +229,8 @@ public class AdminOrganizationService {
                 .flatMap(org -> {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("updateConfig result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig.SiteIdentity> getSiteIdentity(Integer organizationId) {
@@ -248,7 +245,8 @@ public class AdminOrganizationService {
                     config.setSiteIdentity(siteIdentity);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("updateSiteIdentity result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig.BrandConfig> getBrandConfig(Integer organizationId) {
@@ -263,7 +261,8 @@ public class AdminOrganizationService {
                     config.setBrandConfig(brandConfig);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("updateBrandConfig result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Map<String, FeatureConfig.Feature>> getFeatures(Integer organizationId) {
@@ -283,7 +282,8 @@ public class AdminOrganizationService {
                     config.setFeaturesConfig(featuresConfig);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("updateFeatures result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig.Feature> getFeature(Integer organizationId, String featureName) {
@@ -302,7 +302,8 @@ public class AdminOrganizationService {
                     config.getFeaturesConfig().put(featureName, feature);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("updateFeature result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig> toggleFeature(Integer organizationId, String featureName) {
@@ -314,7 +315,8 @@ public class AdminOrganizationService {
                     config.getFeaturesConfig().put(featureName, feature);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("toggleFeature result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<FeatureConfig.PrivacySettings> getPrivacySettings(Integer organizationId) {
@@ -330,7 +332,8 @@ public class AdminOrganizationService {
                     config.setPrivacySettings(privacySettings);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
-                });
+                })
+                .doOnSuccess(r -> logger.info("updatePrivacySettings result: {}", JsonUtils.toJson(r)));
     }
 
     private Mono<Organization> requireOrganization(Integer organizationId) {

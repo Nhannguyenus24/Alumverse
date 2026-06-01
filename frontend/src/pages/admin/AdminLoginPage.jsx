@@ -35,7 +35,6 @@ const AdminLoginPage = () => {
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
   const { login, loginWithGoogle, isSubmitting: loading, setError, forgotPassword, isAuthenticated } = useAuth();
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 
   const redirectTo = location.state?.from?.pathname || '/admin';
@@ -49,7 +48,6 @@ const AdminLoginPage = () => {
     defaultValues: { email: '', password: '' },
   });
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/admin', { replace: true });

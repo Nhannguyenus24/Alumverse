@@ -49,24 +49,64 @@ INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "featur
 ('HCMUS - Business Administration', 'ba-hcmus', 'https://api.example.com/logos/ba.png', '{"primary":"#f57c00","secondary":"#512da8"}', '{"mentorship":true,"job":true,"fund":false,"events":true,"forum":true}', '["Regular"]', '["Business Administration","Marketing","Finance"]', NOW() - INTERVAL '350 days'),
 ('HCMUS - Engineering', 'eng-hcmus', 'https://api.example.com/logos/eng.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Mechanical Engineering","Electrical Engineering","Mechatronics"]', NOW() - INTERVAL '340 days');
 
+-- ============= ORGANIZATION INTRODUCTIONS DATA =============
+INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "mission", "core_values", "image_urls", "banner_url", "updated_at") VALUES
+(1, 
+ 'The Computer Science Department at HCMUS is a leading institution dedicated to advancing computer science education, research, and innovation. We prepare students to become proficient software engineers, researchers, and technology leaders.',
+ 'To be a world-class computer science program recognized for excellence in education and research',
+ 'To provide comprehensive education in computer science and cultivate innovative problem-solvers',
+ 'Excellence, Innovation, Integrity, Collaboration, Continuous Learning',
+ '["https://api.example.com/intro/cs_1.jpg","https://api.example.com/intro/cs_2.jpg","https://api.example.com/intro/cs_3.jpg"]',
+ 'https://api.example.com/banners/cs_banner.jpg',
+ NOW() - INTERVAL '30 days'),
+
+(2,
+ 'The Information Technology Department provides comprehensive IT education focused on practical skills and real-world applications. Our programs equip graduates with the expertise needed to thrive in the rapidly evolving technology industry.',
+ 'To become the leading IT program transforming lives through technology education',
+ 'To deliver quality IT education that prepares students for successful careers and innovation',
+ 'Quality, Relevance, Teamwork, Accountability, Customer-focused',
+ '["https://api.example.com/intro/it_1.jpg","https://api.example.com/intro/it_2.jpg"]',
+ 'https://api.example.com/banners/it_banner.jpg',
+ NOW() - INTERVAL '28 days'),
+
+(3,
+ 'The Business Administration Department develops future business leaders with strong analytical, strategic, and managerial skills. We combine theoretical knowledge with practical experience to prepare students for diverse business careers.',
+ 'To produce ethical and innovative business leaders who drive organizational and societal growth',
+ 'To provide business education that develops strategic thinkers and ethical leaders',
+ 'Integrity, Innovation, Responsibility, Excellence, Inclusivity',
+ '["https://api.example.com/intro/ba_1.jpg","https://api.example.com/intro/ba_2.jpg"]',
+ 'https://api.example.com/banners/ba_banner.jpg',
+ NOW() - INTERVAL '26 days'),
+
+(4,
+ 'The Engineering Department is committed to producing skilled engineers who can design and build solutions to real-world problems. Our programs emphasize practical engineering skills, research capabilities, and professional ethics.',
+ 'To be recognized as a premier engineering program developing innovative solutions',
+ 'To educate and mentor engineers who contribute to technological advancement',
+ 'Precision, Innovation, Sustainability, Professionalism, Teamwork',
+ '["https://api.example.com/intro/eng_1.jpg","https://api.example.com/intro/eng_2.jpg","https://api.example.com/intro/eng_3.jpg"]',
+ 'https://api.example.com/banners/eng_banner.jpg',
+ NOW() - INTERVAL '25 days');
+
 -- ============= ORGANIZATION MEMBERS DATA =============
 INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
 -- CS Department Members
-(1, 1, 2012, 'Graduated', 'Regular', 'Computer Science', 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
-(1, 2, 2023, 'Graduated', 'Advanced Program', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
-(1, 4, NULL, 'Studying', 'Regular', 'Computer Science', 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
-(1, 6, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
-(1, 11, 2022, 'Graduated', 'Regular', 'Computer Science', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
+(1, 1, '[2012, 2016]', '["Graduated", "Graduated"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', 3, true, 'active', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, '[2023]', '["Graduated"]', '["Advanced Program"]', '["Computer Science"]', 2, true, 'active', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, '[]', '["Studying"]', '["Regular"]', '["Computer Science"]', 1, false, 'active', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, '[2022, 2024]', '["Graduated", "Studying"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
+(1, 11, '[2022]', '["Graduated"]', '["Regular"]', '["Computer Science"]', 2, true, 'active', NOW() - INTERVAL '200 days', NOW()),
 
 -- IT Department Members
-(2, 3, 2023, 'Graduated', 'Advanced Program', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
-(2, 5, 2024, 'Graduated', 'Regular', 'Information Technology', 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
-(2, 8, 2023, 'Graduated', 'Regular', 'Information Technology', 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
-(2, 9, NULL, 'Studying', 'Regular', 'Information Technology', 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
+(2, 3, '[2023]', '["Graduated"]', '["Advanced Program"]', '["Information Technology"]', 2, true, 'active', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, '[2024, 2026]', '["Graduated", "Studying"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', 1, false, 'active', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, '[2023]', '["Graduated"]', '["Regular"]', '["Information Technology"]', 2, true, 'active', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, '[]', '["Studying"]', '["Regular"]', '["Information Technology"]', 1, false, 'active', NOW() - INTERVAL '15 days', NOW()),
 
 -- BA Department Members
-(3, 7, 2023, 'Graduated', 'Regular', 'Business Administration', 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, NULL, 'Studying', 'Regular', 'Business Administration', 1, false, 'pending', NOW() - INTERVAL '3 days', NOW());
+(3, 7, '[2023]', '["Graduated"]', '["Regular"]', '["Business Administration"]', 2, true, 'active', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, '[]', '["Studying"]', '["Regular"]', '["Business Administration"]', 1, false, 'pending', NOW() - INTERVAL '3 days', NOW()),
+(1, 12, '[]', '["Studying"]', '["Regular"]', '["Computer Science"]', 1, false, 'active', NOW(), NOW()),
+(2, 13, '[]', '["Studying"]', '["Regular"]', '["Information Technology"]', 1, false, 'active', NOW(), NOW());
 
 
 
@@ -124,43 +164,62 @@ INSERT INTO "event_tickets" ("event_id", "member_id", "guest_name", "guest_email
 (6, 7, NULL, NULL, NULL, 'EVT006-2026-001', 'Registered', NOW() - INTERVAL '4 days', NULL);
 
 -- ============= MENTOR PROFILES DATA =============
-INSERT INTO "mentor_profiles" ("member_id", "current_job_title", "current_company", "bio", "rating_avg", "total_sessions", "is_approved", "created_at") VALUES
-(2, 'Senior Software Engineer', 'Tech Solutions Inc', 'Experienced in full-stack development', 4.8, 25, true, NOW() - INTERVAL '85 days'),
-(3, 'Product Manager', 'Innovation Hub', 'Passionate about product strategy', 4.6, 18, true, NOW() - INTERVAL '55 days'),
-(6, 'Tech Lead', 'Digital Transformation Co', 'Expert in system design', 4.9, 32, true, NOW() - INTERVAL '195 days'),
-(7, 'Business Consultant', 'Global Consulting Group', 'Strategy and operations specialist', 4.7, 22, true, NOW() - INTERVAL '95 days'),
-(8, 'Startup Founder & CTO', 'TechStart Ventures', 'Entrepreneurship and innovation mentor', 4.5, 15, true, NOW() - INTERVAL '175 days');
+INSERT INTO "mentor_profiles" ("member_id", "current_job_title", "current_company", "bio", "rating_avg", "total_sessions", "status", "created_at") VALUES
+(2, 'Senior Software Engineer', 'Tech Solutions Inc', 'Experienced in full-stack development', 4.8, 25, 'APPROVED', NOW() - INTERVAL '85 days'),
+(3, 'Product Manager', 'Innovation Hub', 'Passionate about product strategy', 4.6, 18, 'APPROVED', NOW() - INTERVAL '55 days'),
+(6, 'Tech Lead', 'Digital Transformation Co', 'Expert in system design', 4.9, 32, 'APPROVED', NOW() - INTERVAL '195 days'),
+(7, 'Business Consultant', 'Global Consulting Group', 'Strategy and operations specialist', 4.7, 22, 'APPROVED', NOW() - INTERVAL '95 days'),
+(8, 'Startup Founder & CTO', 'TechStart Ventures', 'Entrepreneurship and innovation mentor', 4.5, 15, 'APPROVED', NOW() - INTERVAL '175 days'),
+(5, 'Senior AI Engineer', 'AI Research Lab', 'Deep learning and NLP expert', 4.7, 12, 'APPROVED', NOW() - INTERVAL '120 days');
+
+-- ============= MENTEE PROFILES DATA =============
+INSERT INTO "mentee_profiles" ("member_id", "mentoring_goal", "major", "academic_year", "interests", "is_active", "created_at", "updated_at") VALUES
+(4, 'Tìm hiểu định hướng nghề nghiệp sau khi tốt nghiệp.', 'Computer Science', 'Year 3', 'Backend, System Design, Career', true, NOW() - INTERVAL '40 days', NOW()),
+(9, 'Học cách viết CV và phỏng vấn intern.', 'Information Technology', 'Year 2', 'Internship, Soft Skills, Career', true, NOW() - INTERVAL '20 days', NOW()),
+(10, 'Tìm mentor để định hướng startup mảng giáo dục.', 'Business Administration', 'Year 4', 'Entrepreneurship, Product Strategy', true, NOW() - INTERVAL '5 days', NOW()),
+(12, 'Học sâu hơn về AI/ML và lộ trình nghiên cứu.', 'Computer Science', 'Year 1', 'AI, Research, Career', true, NOW() - INTERVAL '1 days', NOW()),
+(13, 'Trao đổi về data engineering thực tế trong doanh nghiệp.', 'Information Technology', 'Year 2', 'Data Engineering, Cloud, Career', true, NOW() - INTERVAL '1 days', NOW());
 
 -- ============= MENTOR EXPERTISE DATA =============
-INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience", "description") VALUES
-(2, 'Full Stack Development', 6, 'React, Node.js, PostgreSQL, MongoDB'),
-(2, 'System Design', 5, 'Microservices, scalability, architecture'),
-(3, 'Product Management', 7, 'Product strategy, roadmapping, analytics'),
-(3, 'User Research', 4, 'UX research, customer interviews'),
-(6, 'Database Design', 8, 'SQL, NoSQL, query optimization'),
-(6, 'Cloud Architecture', 5, 'AWS, Docker, Kubernetes'),
-(7, 'Business Strategy', 10, 'Market analysis, financial planning'),
-(7, 'Leadership', 8, 'Team management, organizational development'),
-(8, 'Startup Development', 6, 'Lean methodology, MVP, fundraising'),
-(8, 'Technical Entrepreneurship', 5, 'Product-market fit, scaling');
+INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience", "description", "category", "tag") VALUES
+(2, 'Full Stack Development', 6, 'React, Node.js, PostgreSQL, MongoDB', 'Technical', 'Fullstack'),
+(2, 'System Design', 5, 'Microservices, scalability, architecture', 'Technical', 'Architecture'),
+(2, 'Software Architecture', 5, 'Hướng dẫn thiết kế hệ thống có khả năng mở rộng cao.', 'Technical', 'Backend'),
+(2, 'Career Path', 6, 'Định hướng lộ trình phát triển sự nghiệp trong ngành Big Tech.', 'Soft Skills', 'Career'),
+(3, 'Product Management', 7, 'Product strategy, roadmapping, analytics', 'Management', 'Product'),
+(3, 'User Research', 4, 'UX research, customer interviews', 'Research', 'UX'),
+(3, 'Product Strategy', 4, 'Lên kế hoạch phát triển sản phẩm từ ý tưởng đến thực thi.', 'Management', 'Product'),
+(6, 'Database Design', 8, 'SQL, NoSQL, query optimization', 'Technical', 'Database'),
+(6, 'Cloud Architecture', 5, 'AWS, Docker, Kubernetes', 'Technical', 'Cloud'),
+(7, 'Business Strategy', 10, 'Market analysis, financial planning', 'Management', 'Strategy'),
+(7, 'Leadership', 8, 'Team management, organizational development', 'Soft Skills', 'Leadership'),
+(8, 'Startup Development', 6, 'Lean methodology, MVP, fundraising', 'Entrepreneurship', 'Startup'),
+(8, 'Technical Entrepreneurship', 5, 'Product-market fit, scaling', 'Entrepreneurship', 'Tech'),
+(5, 'Deep Learning', 3, 'Các kỹ thuật xây dựng và tối ưu mô hình mạng nơ-ron.', 'Technical', 'AI');
 
 -- ============= MENTOR AVAILABILITIES DATA =============
 INSERT INTO "mentor_availabilities" ("mentor_member_id", "start_time", "end_time", "status") VALUES
 (2, NOW() + INTERVAL '5 days 10:00', NOW() + INTERVAL '5 days 11:00', 'Available'),
 (2, NOW() + INTERVAL '7 days 14:00', NOW() + INTERVAL '7 days 15:00', 'Available'),
 (2, NOW() + INTERVAL '10 days 16:00', NOW() + INTERVAL '10 days 17:00', 'Booked'),
+(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 11 hours', 'Available'),
+(2, NOW() + INTERVAL '2 days 14 hours', NOW() + INTERVAL '2 days 15 hours', 'Available'),
 (3, NOW() + INTERVAL '4 days 09:00', NOW() + INTERVAL '4 days 10:00', 'Available'),
 (3, NOW() + INTERVAL '6 days 13:00', NOW() + INTERVAL '6 days 14:00', 'Available'),
+(3, NOW() + INTERVAL '1 day 9 hours', NOW() + INTERVAL '1 day 10 hours', 'Available'),
 (6, NOW() + INTERVAL '3 days 11:00', NOW() + INTERVAL '3 days 12:00', 'Booked'),
 (6, NOW() + INTERVAL '8 days 15:00', NOW() + INTERVAL '8 days 16:00', 'Available'),
 (7, NOW() + INTERVAL '5 days 13:00', NOW() + INTERVAL '5 days 14:00', 'Available'),
-(8, NOW() + INTERVAL '6 days 10:00', NOW() + INTERVAL '6 days 11:00', 'Available');
+(8, NOW() + INTERVAL '6 days 10:00', NOW() + INTERVAL '6 days 11:00', 'Available'),
+(5, NOW() + INTERVAL '3 days 19 hours', NOW() + INTERVAL '3 days 20 hours', 'Available');
 
 -- ============= MENTORSHIP SESSIONS DATA =============
-INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "created_at") VALUES
-(3, 4, 'Completed', 'Discussed web development best practices', 'https://zoom.us/j/123456789', NOW() - INTERVAL '5 days'),
-(3, 9, 'Scheduled', 'First mentoring session', 'https://zoom.us/j/987654321', NOW() - INTERVAL '2 days'),
-(6, 5, 'Completed', 'Career guidance and job search strategy', 'https://meet.google.com/abc-defg-hij', NOW() - INTERVAL '10 days');
+INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "created_at") VALUES
+(3, 4, 'Completed', 'Discussed web development best practices', 'https://zoom.us/j/123456789', 'Technical', NOW() - INTERVAL '5 days'),
+(3, 9, 'Scheduled', 'First mentoring session', 'https://zoom.us/j/987654321', 'Technical', NOW() - INTERVAL '2 days'),
+(6, 5, 'Completed', 'Career guidance and job search strategy', 'https://meet.google.com/abc-defg-hij', 'Career', NOW() - INTERVAL '10 days'),
+(1, 4, 'Confirmed', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'Career Advice', NOW() - INTERVAL '1 day'),
+(13, 12, 'Pending', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'General Info', NOW());
 
 -- ============= SESSION FEEDBACKS DATA =============
 INSERT INTO "session_feedbacks" ("session_id", "mentee_member_id", "rating", "comment", "is_public", "created_at") VALUES
@@ -213,12 +272,15 @@ INSERT INTO "learning_resources" ("organization_id", "uploader_member_id", "titl
 (1, 2, 'Web Development Best Practices 2026', 'Video', 'https://youtube.com/webdev-2026', 'Latest trends and best practices in web development', NOW() - INTERVAL '10 days'),
 (2, 9, 'Data Science with Python', 'Course', 'https://datacamp.com/python-data-science', 'Learn data science fundamentals using Python', NOW() - INTERVAL '5 days');
 
--- ============= FUNDS DATA =============
 -- ============= FUND STATUSES DATA =============
 INSERT INTO "fund_statuses" ("name") VALUES
 ('IMPORTANT'),
 ('POOR'),
-('RURAL_AREAS');
+('RURAL_AREAS'),
+('Active'),
+('Completed'),
+('Urgent'),
+('Emergency');
 
 -- ============= FUND RECEIVING INFOS DATA =============
 INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name", "is_active") VALUES
@@ -227,27 +289,35 @@ INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name
 ('0917669258', 'HCMUS Lab Equipment Fund', 'MB', true),
 ('1122334455', 'Alumni Mentorship Fund', 'MB', true),
 ('5544332211', 'Business Incubation Fund', 'MB', true),
-('9988776655', 'Engineering Excellence Fund', 'MB', true);
+('9988776655', 'Engineering Excellence Fund', 'MB', true),
+('123456789', 'HCMUS ALUMNI FUND', 'VCB', true),
+('987654321', 'HCMUS CHARITY', 'ICB', true);
 
 -- ============= FUNDS DATA =============
-INSERT INTO "funds" ("organization_id", "manager_name", "name", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "time_ended") VALUES
-(1, 'John Doe', 'Student Scholarship Fund 2026', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 2, '2026-08-15 17:00:00'),
-(1, 'Phạm Văn C', 'Lab Equipment Fund', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 2, '2026-10-20 18:00:00'),
-(1, 'Jane Smith', 'Alumni Mentorship Fund', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 2, '2026-09-25 16:30:00'),
-(1, 'Hoàng Thị D', 'Business Incubation Fund', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 1, '2026-11-10 20:00:00'),
-(1, 'Admin User', 'Engineering Excellence Fund', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 1, '2026-10-05 19:15:00');
+INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "time_ended") VALUES
+(1, 'John Doe', 'Student Scholarship Fund 2026', NULL, 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 2, '2026-08-15 17:00:00'),
+(1, 'Phạm Văn C', 'Lab Equipment Fund', NULL, 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 2, '2026-10-20 18:00:00'),
+(1, 'Jane Smith', 'Alumni Mentorship Fund', NULL, 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 2, '2026-09-25 16:30:00'),
+(1, 'Hoàng Thị D', 'Business Incubation Fund', NULL, 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 1, '2026-11-10 20:00:00'),
+(1, 'Admin User', 'Engineering Excellence Fund', NULL, 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 1, '2026-10-05 19:15:00'),
+(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d', 7, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 4, NOW() + INTERVAL '5 months'),
+(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://images.unsplash.com/photo-1531482615713-2afd69097998', 8, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 6, NOW() + INTERVAL '3 months');
 
 -- ============= FUND DONATIONS DATA =============
 INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
-(1, 2, NULL, 5000.00, 'District 1, Ho Chi Minh City', '0911111111', 'john.doe@hcmus.edu.vn', 'Supporting our students', 'SUCCESS', NOW() - INTERVAL '30 days'),
-(1, 6, NULL, 3500.00, 'Binh Thanh, Ho Chi Minh City', '0922222222', 'pham.van.c@hcmus.edu.vn', 'Happy to help talented students', 'SUCCESS', NOW() - INTERVAL '25 days'),
+(1, 2, 'John Doe', 5000.00, 'District 1, Ho Chi Minh City', '0911111111', 'john.doe@hcmus.edu.vn', 'Supporting our students', 'SUCCESS', NOW() - INTERVAL '30 days'),
+(1, 6, 'Phạm Văn C', 3500.00, 'Binh Thanh, Ho Chi Minh City', '0922222222', 'pham.van.c@hcmus.edu.vn', 'Happy to help talented students', 'SUCCESS', NOW() - INTERVAL '25 days'),
 (1, NULL, 'Anonymous Donor', 10000.00, 'District 3, Ho Chi Minh City', '0933333333', 'anonymous@example.com', 'Belief in future generation', 'SUCCESS', NOW() - INTERVAL '20 days'),
-(2, 3, NULL, 2000.00, 'Thu Duc, Ho Chi Minh City', '0944444444', 'jane.smith@hcmus.edu.vn', 'Upgrading our research capabilities', 'SUCCESS', NOW() - INTERVAL '15 days'),
-(2, 8, NULL, 15000.00, 'Go Vap, Ho Chi Minh City', '0955555555', 'le.van.e@hcmus.edu.vn', 'Investing in research excellence', 'SUCCESS', NOW() - INTERVAL '10 days'),
-(3, 7, NULL, 8000.00, 'District 7, Ho Chi Minh City', '0966666666', 'hoang.thi.d@hcmus.edu.vn', 'Supporting mentorship initiatives', 'SUCCESS', NOW() - INTERVAL '8 days'),
+(2, 3, 'Jane Smith', 2000.00, 'Thu Duc, Ho Chi Minh City', '0944444444', 'jane.smith@hcmus.edu.vn', 'Upgrading our research capabilities', 'SUCCESS', NOW() - INTERVAL '15 days'),
+(2, 8, 'Lê Văn E', 15000.00, 'Go Vap, Ho Chi Minh City', '0955555555', 'le.van.e@hcmus.edu.vn', 'Investing in research excellence', 'SUCCESS', NOW() - INTERVAL '10 days'),
+(3, 7, 'Hoàng Thị D', 8000.00, 'District 7, Ho Chi Minh City', '0966666666', 'hoang.thi.d@hcmus.edu.vn', 'Supporting mentorship initiatives', 'SUCCESS', NOW() - INTERVAL '8 days'),
 (3, NULL, 'Company Partnership', 4000.00, 'Tan Binh, Ho Chi Minh City', '0977777777', 'partnership@company.com', 'Corporate social responsibility', 'PENDING', NOW() - INTERVAL '2 days'),
-(4, 5, NULL, 6000.00, 'District 5, Ho Chi Minh City', '0988888888', 'tran.thi.b@hcmus.edu.vn', 'Supporting entrepreneurs', 'PENDING', NOW() - INTERVAL '5 days'),
-(5, 1, NULL, 5500.00, 'District 10, Ho Chi Minh City', '0999999999', 'admin@hcmus.edu.vn', 'Excellence in engineering', 'SUCCESS', NOW() - INTERVAL '3 days');
+(4, 5, 'Trần Thị B', 6000.00, 'District 5, Ho Chi Minh City', '0988888888', 'tran.thi.b@hcmus.edu.vn', 'Supporting entrepreneurs', 'PENDING', NOW() - INTERVAL '5 days'),
+(5, 1, 'Admin User', 5500.00, 'District 10, Ho Chi Minh City', '0999999999', 'admin@hcmus.edu.vn', 'Excellence in engineering', 'SUCCESS', NOW() - INTERVAL '3 days'),
+(6, 2, 'John Doe', 1000000, 'District 5, HCM', '0901234567', 'john.doe@example.com', 'Chúc các em học tốt!', 'SUCCESS', NOW() - INTERVAL '10 days'),
+(6, 3, 'Jane Smith', 500000, 'District 1, HCM', '0911223344', 'jane.smith@example.com', 'Hy vọng giúp ích được phần nào.', 'SUCCESS', NOW() - INTERVAL '5 days'),
+(7, 5, 'Trần Thị B', 2000000, 'Thu Duc, HCM', '0933445566', 'tranthib@example.com', 'Ủng hộ phòng Lab phát triển.', 'SUCCESS', NOW() - INTERVAL '2 days'),
+(6, NULL, 'Mạnh thường quân', 10000000, NULL, NULL, NULL, 'Gửi tặng các em sinh viên.', 'SUCCESS', NOW() - INTERVAL '1 day');
 
 -- ============= NOTIFICATIONS DATA =============
 INSERT INTO "notifications" ("member_id", "title", "message", "is_read", "created_at") VALUES
@@ -277,7 +347,12 @@ INSERT INTO "user_notification_settings" ("user_id", "email_enabled", "push_enab
 INSERT INTO "chat_groups" ("type", "title", "created_by", "created_at", "updated_at") VALUES
 ('PRIVATE', NULL, 2, NOW() - INTERVAL '12 days', NOW() - INTERVAL '2 days'),
 ('GROUP', 'CS K60 Mentoring', 6, NOW() - INTERVAL '8 days', NOW() - INTERVAL '1 day'),
-('GROUP', 'IT Internship Sharing', 3, NOW() - INTERVAL '6 days', NOW() - INTERVAL '8 hours');
+('GROUP', 'IT Internship Sharing', 3, NOW() - INTERVAL '6 days', NOW() - INTERVAL '8 hours'),
+('PRIVATE', NULL, 11, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 hour'),
+('GROUP', 'CS K59 Alumni Connect', 11, NOW() - INTERVAL '4 days', NOW() - INTERVAL '30 minutes'),
+('PRIVATE', NULL, 11, NOW() - INTERVAL '3 days', NOW() - INTERVAL '2 hours'),
+('PRIVATE', NULL, 4, NOW() - INTERVAL '2 days', NOW() - INTERVAL '45 minutes'),
+('GROUP', 'CS Backend Study Circle', 11, NOW() - INTERVAL '1 day', NOW() - INTERVAL '15 minutes');
 
 -- ============= CHAT GROUP MEMBERS DATA =============
 INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") VALUES
@@ -289,7 +364,20 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (2, 9, 'member', NOW() - INTERVAL '6 days'),
 (3, 3, 'owner', NOW() - INTERVAL '6 days'),
 (3, 5, 'member', NOW() - INTERVAL '6 days'),
-(3, 8, 'member', NOW() - INTERVAL '5 days');
+(3, 8, 'member', NOW() - INTERVAL '5 days'),
+(4, 11, 'owner', NOW() - INTERVAL '5 days'),
+(4, 2, 'member', NOW() - INTERVAL '5 days'),
+(5, 11, 'owner', NOW() - INTERVAL '4 days'),
+(5, 2, 'admin', NOW() - INTERVAL '4 days'),
+(5, 6, 'member', NOW() - INTERVAL '3 days'),
+(5, 4, 'member', NOW() - INTERVAL '3 days'),
+(6, 11, 'owner', NOW() - INTERVAL '3 days'),
+(6, 6, 'member', NOW() - INTERVAL '3 days'),
+(7, 11, 'member', NOW() - INTERVAL '2 days'),
+(7, 4, 'owner', NOW() - INTERVAL '2 days'),
+(8, 11, 'owner', NOW() - INTERVAL '1 day'),
+(8, 6, 'admin', NOW() - INTERVAL '1 day'),
+(8, 4, 'member', NOW() - INTERVAL '20 hours');
 
 -- ============= CHAT MESSAGES DATA =============
 INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message_type", "metadata", "created_at", "edited_at", "deleted_at") VALUES
@@ -297,7 +385,28 @@ INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message
 (1, 4, 'Dạ em cảm ơn anh. Em muốn hỏi về roadmap backend ạ.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '11 days', NULL, NULL),
 (2, 6, 'Mọi người nhớ chuẩn bị CV trước buổi review tối mai.', 'TEXT', '{"priority":"high"}', NOW() - INTERVAL '2 days', NULL, NULL),
 (2, 2, 'Mình đã pin tài liệu mock interview ở đầu nhóm nhé.', 'TEXT', '{"pinned":true}', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours', NULL),
-(3, 8, 'Có ai muốn referral vị trí intern frontend không?', 'TEXT', '{"tags":["internship","frontend"]}', NOW() - INTERVAL '10 hours', NULL, NULL);
+(3, 8, 'Có ai muốn referral vị trí intern frontend không?', 'TEXT', '{"tags":["internship","frontend"]}', NOW() - INTERVAL '10 hours', NULL, NULL),
+(4, 11, 'Chào anh John, em là Test User — cựu sinh viên CS K59.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '5 days', NULL, NULL),
+(4, 2, 'Chào em! Anh có thể hỗ trợ em về định hướng nghề nghiệp backend.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '4 days 22 hours', NULL, NULL),
+(4, 11, 'Dạ cảm ơn anh. Em đang học Spring Boot, muốn hỏi roadmap ạ.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '4 days 20 hours', NULL, NULL),
+(4, 2, 'Em nên làm REST + JPA trước, sau đó security và testing.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '4 days 18 hours', NULL, NULL),
+(4, 11, 'Vâng em ghi nhận ạ. Anh có tài liệu recommend không?', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 hour', NULL, NULL),
+(5, 11, 'Mọi người ơi, nhóm kết nối cựu sinh viên CS K59 nhé!', 'TEXT', '{"pinned":true}', NOW() - INTERVAL '3 days', NULL, NULL),
+(5, 2, 'Hay quá! Mình sẽ share tài liệu phỏng vấn backend.', 'TEXT', NULL, NOW() - INTERVAL '2 days', NULL, NULL),
+(5, 6, 'Ai cần review CV thì comment ở đây nhé.', 'TEXT', NULL, NOW() - INTERVAL '30 minutes', NULL, NULL),
+(6, 11, 'Anh Phạm ơi, em muốn hỏi về system design cho bài tập cuối kỳ ạ.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '3 days', NULL, NULL),
+(6, 6, 'Em gửi diagram hiện tại, anh review giúp nhé.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 days 22 hours', NULL, NULL),
+(6, 11, 'Dạ em vừa gửi link Figma trong metadata.', 'TEXT', '{"hasAttachment":true}', NOW() - INTERVAL '2 days 20 hours', NULL, NULL),
+(6, 6, 'Nhìn chung ổn, nhưng nên tách service auth ra riêng.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 days', NULL, NULL),
+(6, 11, 'Cảm ơn anh, em sửa lại và báo anh sau nhé!', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 hours', NULL, NULL),
+(7, 4, 'Chào bạn, mình thấy bạn cũng học CS, mình xin lời khuyên về internship được không?', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '2 days', NULL, NULL),
+(7, 11, 'Chào bạn! Mình tốt nghiệp rồi, cứ hỏi thoải mái nhé.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 day 22 hours', NULL, NULL),
+(7, 4, 'Mình nên ưu tiên thực tập startup hay công ty lớn ạ?', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 day 20 hours', NULL, NULL),
+(7, 11, 'Tùy mục tiêu: startup học nhanh, big corp CV đẹp hơn.', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '1 day', NULL, NULL),
+(7, 4, 'Dạ cảm ơn bạn, mình sẽ apply cả hai loại luôn!', 'TEXT', '{"lang":"vi"}', NOW() - INTERVAL '45 minutes', NULL, NULL),
+(8, 11, 'Nhóm học backend — tuần này ôn PostgreSQL và indexing nhé.', 'TEXT', '{"topic":"postgresql"}', NOW() - INTERVAL '1 day', NULL, NULL),
+(8, 6, 'Mình có slide về EXPLAIN ANALYZE, share vào nhóm nha.', 'TEXT', NULL, NOW() - INTERVAL '18 hours', NULL, NULL),
+(8, 4, 'Em đang làm bài lab, mai hỏi thêm ạ!', 'TEXT', NULL, NOW() - INTERVAL '15 minutes', NULL, NULL);
 
 -- ============= FORUM CATEGORIES DATA =============
 INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES
@@ -355,29 +464,22 @@ INSERT INTO "admin_audit_logs" ("admin_user_id", "target_user_id", "action", "re
 
 -- ============= FORUM POST REACTIONS DATA (LIKES/DISLIKES) =============
 INSERT INTO "forum_post_reactions" ("post_id", "member_id", "created_at") VALUES
--- Post 1 (John's welcome post) - Positive reception
 (1, 3, NOW() - INTERVAL '354 days'),
 (1, 4, NOW() - INTERVAL '353 days'),
 (1, 5, NOW() - INTERVAL '352 days'),
 (1, 7, NOW() - INTERVAL '351 days'),
 (1, 8, NOW() - INTERVAL '350 days'),
 (1, 9, NOW() - INTERVAL '349 days'),
-
--- Post 2 (Jane's response) - Very positive
 (2, 2, NOW() - INTERVAL '353 days'),
 (2, 4, NOW() - INTERVAL '352 days'),
 (2, 5, NOW() - INTERVAL '351 days'),
 (2, 6, NOW() - INTERVAL '350 days'),
 (2, 8, NOW() - INTERVAL '349 days'),
-
--- Post 3 (React Hooks question) - Good discussion
 (3, 2, NOW() - INTERVAL '43 days'),
 (3, 5, NOW() - INTERVAL '42 days'),
 (3, 7, NOW() - INTERVAL '41 days'),
 (3, 9, NOW() - INTERVAL '40 days'),
 (3, 10, NOW() - INTERVAL '39 days'),
-
--- Post 4 (React Hooks answer) - Very helpful
 (4, 2, NOW() - INTERVAL '42 days'),
 (4, 3, NOW() - INTERVAL '41 days'),
 (4, 4, NOW() - INTERVAL '40 days'),
@@ -386,20 +488,14 @@ INSERT INTO "forum_post_reactions" ("post_id", "member_id", "created_at") VALUES
 (4, 8, NOW() - INTERVAL '37 days'),
 (4, 9, NOW() - INTERVAL '36 days'),
 (4, 10, NOW() - INTERVAL '35 days'),
-
--- Post 5 (Job search tips) - Useful content
 (5, 2, NOW() - INTERVAL '28 days'),
 (5, 4, NOW() - INTERVAL '27 days'),
 (5, 5, NOW() - INTERVAL '26 days'),
 (5, 7, NOW() - INTERVAL '25 days'),
 (5, 9, NOW() - INTERVAL '24 days'),
-
--- Post 6 (Job search thanks) - Grateful response
 (6, 2, NOW() - INTERVAL '26 days'),
 (6, 3, NOW() - INTERVAL '25 days'),
 (6, 6, NOW() - INTERVAL '24 days'),
-
--- Post 7 (Database indexing) - Technical excellence
 (7, 2, NOW() - INTERVAL '23 days'),
 (7, 3, NOW() - INTERVAL '22 days'),
 (7, 4, NOW() - INTERVAL '21 days'),
@@ -408,53 +504,37 @@ INSERT INTO "forum_post_reactions" ("post_id", "member_id", "created_at") VALUES
 (7, 8, NOW() - INTERVAL '18 days'),
 (7, 9, NOW() - INTERVAL '17 days'),
 (7, 10, NOW() - INTERVAL '16 days'),
-
--- Post 8 (Database partitioning) - Valuable addition
 (8, 2, NOW() - INTERVAL '22 days'),
 (8, 4, NOW() - INTERVAL '21 days'),
 (8, 5, NOW() - INTERVAL '20 days'),
 (8, 7, NOW() - INTERVAL '19 days'),
-
--- Post 9 (Node.js benefits) - Great insights
 (9, 2, NOW() - INTERVAL '18 days'),
 (9, 3, NOW() - INTERVAL '17 days'),
 (9, 4, NOW() - INTERVAL '16 days'),
 (9, 6, NOW() - INTERVAL '15 days'),
 (9, 7, NOW() - INTERVAL '14 days'),
 (9, 8, NOW() - INTERVAL '13 days'),
-
--- Post 10 (Node.js beginner question)
 (10, 2, NOW() - INTERVAL '17 days'),
 (10, 5, NOW() - INTERVAL '16 days'),
 (10, 6, NOW() - INTERVAL '15 days'),
-
--- Post 11 (Startup journey story) - Inspiring
 (11, 2, NOW() - INTERVAL '13 days'),
 (11, 4, NOW() - INTERVAL '12 days'),
 (11, 5, NOW() - INTERVAL '11 days'),
 (11, 6, NOW() - INTERVAL '10 days'),
 (11, 7, NOW() - INTERVAL '9 days'),
 (11, 9, NOW() - INTERVAL '8 days'),
-
--- Post 12 (Follow-up question on startup)
 (12, 2, NOW() - INTERVAL '12 days'),
 (12, 3, NOW() - INTERVAL '11 days'),
 (12, 6, NOW() - INTERVAL '10 days'),
-
--- Post 13 (Startup challenges answer) - Valuable insights
 (13, 2, NOW() - INTERVAL '11 days'),
 (13, 3, NOW() - INTERVAL '10 days'),
 (13, 4, NOW() - INTERVAL '9 days'),
 (13, 5, NOW() - INTERVAL '8 days'),
 (13, 7, NOW() - INTERVAL '7 days'),
-
--- Post 14 (Microservices architecture) - Technical discussion
 (14, 2, NOW() - INTERVAL '10 days'),
 (14, 3, NOW() - INTERVAL '9 days'),
 (14, 5, NOW() - INTERVAL '8 days'),
 (14, 6, NOW() - INTERVAL '7 days'),
-
--- Post 15 (Leadership wisdom) - Inspiring
 (15, 2, NOW() - INTERVAL '8 days'),
 (15, 3, NOW() - INTERVAL '7 days'),
 (15, 5, NOW() - INTERVAL '6 days'),
@@ -468,7 +548,12 @@ INSERT INTO "peer_verifications" ("target_member_id", "verifier_member_id", "cre
 (3, 5, NOW() - INTERVAL '55 days'),
 (3, 8, NOW() - INTERVAL '52 days'),
 (5, 4, NOW() - INTERVAL '25 days'),
-(6, 2, NOW() - INTERVAL '190 days');
+(6, 2, NOW() - INTERVAL '190 days'),
+(4, 6, NOW() - INTERVAL '35 days'),
+(5, 9, NOW() - INTERVAL '20 days'),
+(8, 3, NOW() - INTERVAL '175 days'),
+(8, 6, NOW() - INTERVAL '170 days'),
+(10, 7, NOW() - INTERVAL '2 days');
 
 -- ============= VERIFICATION REQUESTS DATA =============
 INSERT INTO "verification_requests" ("member_id", "document_url", "document_type", "status", "admin_note", "reviewed_by_member_id", "created_at") VALUES
@@ -477,41 +562,18 @@ INSERT INTO "verification_requests" ("member_id", "document_url", "document_type
 (9, 'https://api.example.com/documents/student_id_9.pdf', 'Student ID', 'Pending', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
 (10, 'https://api.example.com/documents/diploma_10.pdf', 'Diploma', 'Rejected', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
 
--- ============= PEER VERIFICATIONS - Additional DATA =============
-INSERT INTO "peer_verifications" ("target_member_id", "verifier_member_id", "created_at") VALUES
-(4, 6, NOW() - INTERVAL '35 days'),
-(5, 9, NOW() - INTERVAL '20 days'),
-(8, 3, NOW() - INTERVAL '175 days'),
-(8, 6, NOW() - INTERVAL '170 days'),
-(10, 7, NOW() - INTERVAL '2 days');
-
 -- ============= POLL DATA =============
--- Sample Poll 1: Topic selection poll
 INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
-(1, 1, 2, 'Best Programming Language for 2026?', 'Vote for your favorite programming language for upcoming projects', false, true, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days');
+(1, 1, 2, 'Best Programming Language for 2026?', 'Vote for your favorite programming language for upcoming projects', false, true, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+(2, 1, 3, 'When is the best time for next meetup?', 'Help us schedule the next alumni meetup', false, true, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
 
--- Add options for poll 1
+-- Add options for polls
 INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "created_at", "updated_at") VALUES
 (1, 'Python', 5, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
 (1, 'JavaScript/TypeScript', 8, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
 (1, 'Java', 4, NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days'),
 (1, 'Go', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days'),
-(1, 'Rust', 6, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 day');
-
--- Sample poll votes (member 4, 6, 9, 2, 5 voting)
-INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "created_at") VALUES
-(1, 2, 4, NOW() - INTERVAL '4 days'),
-(1, 2, 6, NOW() - INTERVAL '3 days'),
-(1, 1, 9, NOW() - INTERVAL '2 days'),
-(1, 5, 2, NOW() - INTERVAL '1 day'),
-(1, 1, 5, NOW());
-
--- Sample Poll 2: When should we have the next meetup?
-INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
-(2, 1, 3, 'When is the best time for next meetup?', 'Help us schedule the next alumni meetup', false, true, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
-
--- Add options for poll 2
-INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "created_at", "updated_at") VALUES
+(1, 'Rust', 6, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 day'),
 (2, 'Weekend (Saturday or Sunday)', 12, NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
 (2, 'Weekday Evening (after work)', 8, NOW() - INTERVAL '2 days', NOW()),
 (2, 'Weekday Lunch (12-2pm)', 3, NOW() - INTERVAL '2 days', NOW()),
@@ -519,6 +581,11 @@ INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "creat
 
 -- Sample poll votes
 INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "created_at") VALUES
+(1, 2, 4, NOW() - INTERVAL '4 days'),
+(1, 2, 6, NOW() - INTERVAL '3 days'),
+(1, 1, 9, NOW() - INTERVAL '2 days'),
+(1, 5, 2, NOW() - INTERVAL '1 day'),
+(1, 1, 5, NOW()),
 (2, 1, 2, NOW() - INTERVAL '2 days'),
 (2, 1, 4, NOW() - INTERVAL '1 day'),
 (2, 2, 6, NOW() - INTERVAL '1 day'),
@@ -531,50 +598,3 @@ INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email"
 (2, 'Lê Quốc Bảo', '0988776655', 'bao.le@example.com', 'Hỗ trợ thông tin học bổng', 'Mình mong có chuyên mục riêng cập nhật học bổng theo từng học kỳ.', NOW() - INTERVAL '1 day', false),
 (1, 'Phạm Tuấn Anh', '0933445566', 'tuananh.pham@example.com', 'Hỏi về quy trình cấp lại bằng', 'Mình làm mất bằng tốt nghiệp, trường cho mình hỏi quy trình cấp lại như thế nào ạ?', NOW() - INTERVAL '3 days', false),
 (2, 'Đỗ Thị Lan', '0944556677', 'lan.do@example.com', 'Góp ý về mentor', 'Chất lượng mentor rất tốt, mong có thêm nhiều buổi offline hơn.', NOW() - INTERVAL '5 days', true);
-
--- ============= ORGANIZATION INTRODUCTIONS DATA =============
-INSERT INTO "organization_introductions" ("orga_id", "content", "image_urls", "updated_at") VALUES
-(1, 'Chào mừng bạn đến với Khoa Khoa học Máy tính - Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM. Khoa là đơn vị đào tạo và nghiên cứu hàng đầu về Công nghệ Thông tin tại Việt Nam, đặc biệt là trong các lĩnh vực Trí tuệ Nhân tạo, Khoa học Dữ liệu và Khoa học Máy tính.', '["https://images.unsplash.com/photo-1517694712202-14dd9538aa97", "https://images.unsplash.com/photo-1550751827-4bd374c3f58b"]', NOW()),
-(2, 'Khoa Công nghệ Thông tin là một trong những khoa nòng cốt của HCMUS, với đội ngũ giảng viên giàu kinh nghiệm và cơ sở vật chất hiện đại. Chúng tôi cung cấp các chương trình đào tạo đa dạng từ Cử nhân đến Tiến sĩ, giúp sinh viên sẵn sàng cho thị trường lao động toàn cầu.', '["https://images.unsplash.com/photo-1518770660439-4636190af475", "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5"]', NOW()),
-(3, 'Khoa Quản trị Kinh doanh tập trung vào việc đào tạo những nhà lãnh đạo tương lai với tư duy sáng tạo và khả năng thích nghi cao. Các chương trình của chúng tôi kết hợp giữa lý thuyết và thực tiễn, giúp sinh viên nắm vững các kỹ năng quản trị hiện đại.', '["https://images.unsplash.com/photo-1507679799987-c73779587ccf", "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab"]', NOW()),
-(4, 'Khoa Kỹ thuật là nơi ươm mầm cho những kỹ sư sáng tạo và đầy nhiệt huyết. Chúng tôi chú trọng vào việc đào tạo kỹ năng thực hành và nghiên cứu ứng dụng, giúp giải quyết các vấn đề thực tế trong ngành công nghiệp.', '["https://images.unsplash.com/photo-1581091226825-a6a2a5aee158", "https://images.unsplash.com/photo-1504384308090-c89eec2488bc"]', NOW());
-
--- ============= FUNDRAISING DATA =============
-INSERT INTO "fund_statuses" ("name") VALUES
-('Active'), ('Completed'), ('Urgent'), ('Emergency');
-
-INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name", "is_active") VALUES
-('123456789', 'HCMUS ALUMNI FUND', 'VCB', true),
-('987654321', 'HCMUS CHARITY', 'ICB', true);
-
-INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "time_ended") VALUES
-(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d', 1, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 1, NOW() + INTERVAL '5 months'),
-(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://images.unsplash.com/photo-1531482615713-2afd69097998', 2, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 3, NOW() + INTERVAL '3 months');
-
-INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
-(1, 2, 'John Doe', 1000000, 'District 5, HCM', '0901234567', 'john.doe@example.com', 'Chúc các em học tốt!', 'SUCCESS', NOW() - INTERVAL '10 days'),
-(1, 3, 'Jane Smith', 500000, 'District 1, HCM', '0911223344', 'jane.smith@example.com', 'Hy vọng giúp ích được phần nào.', 'SUCCESS', NOW() - INTERVAL '5 days'),
-(2, 5, 'Trần Thị B', 2000000, 'Thu Duc, HCM', '0933445566', 'tranthib@example.com', 'Ủng hộ phòng Lab phát triển.', 'SUCCESS', NOW() - INTERVAL '2 days'),
-(1, NULL, 'Mạnh thường quân', 10000000, NULL, NULL, NULL, 'Gửi tặng các em sinh viên.', 'SUCCESS', NOW() - INTERVAL '1 day');
-
--- ============= MENTORSHIP DATA =============
-INSERT INTO "mentor_profiles" ("member_id", "current_job_title", "current_company", "bio", "rating_avg", "total_sessions", "is_approved", "cover_url", "default_meeting_link", "created_at") VALUES
-(2, 'Senior Software Engineer', 'Google', 'Cựu sinh viên K2019, đam mê chia sẻ kiến thức về kiến trúc phần mềm và lộ trình nghề nghiệp.', 4.8, 15, true, 'https://images.unsplash.com/photo-1522071823991-b9671f903f79', 'https://meet.google.com/abc-defg-hij', NOW() - INTERVAL '6 months'),
-(3, 'Product Manager', 'VNG Corporation', 'Tốt nghiệp loại giỏi ngành Hệ thống thông tin. Sẵn sàng hỗ trợ các bạn về tư duy sản phẩm.', 4.9, 8, true, 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2', 'https://meet.google.com/xyz-uvwx-yz', NOW() - INTERVAL '4 months'),
-(5, 'Data Scientist', 'Momo', 'Chuyên gia về Machine Learning và Phân tích dữ liệu. Mình sẽ giúp các bạn định hướng ngành Data.', 4.7, 12, true, 'https://images.unsplash.com/photo-1580489944761-15a19d654956', 'https://meet.google.com/mmm-nnnn-ooo', NOW() - INTERVAL '5 months');
-
-INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience", "description", "category", "tag") VALUES
-(2, 'Software Architecture', 5, 'Hướng dẫn thiết kế hệ thống có khả năng mở rộng cao.', 'Technical', 'Backend'),
-(2, 'Career Path', 6, 'Định hướng lộ trình phát triển sự nghiệp trong ngành Big Tech.', 'Soft Skills', 'Career'),
-(3, 'Product Strategy', 4, 'Lên kế hoạch phát triển sản phẩm từ ý tưởng đến thực thi.', 'Management', 'Product'),
-(5, 'Deep Learning', 3, 'Các kỹ thuật xây dựng và tối ưu mô hình mạng nơ-ron.', 'Technical', 'AI');
-
-INSERT INTO "mentor_availabilities" ("mentor_member_id", "start_time", "end_time", "status") VALUES
-(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 11 hours', 'Available'),
-(2, NOW() + INTERVAL '2 days 14 hours', NOW() + INTERVAL '2 days 15 hours', 'Available'),
-(3, NOW() + INTERVAL '1 day 9 hours', NOW() + INTERVAL '1 day 10 hours', 'Available'),
-(5, NOW() + INTERVAL '3 days 19 hours', NOW() + INTERVAL '3 days 20 hours', 'Available');
-
-INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "created_at") VALUES
-(1, 4, 'Confirmed', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'Career Advice', NOW() - INTERVAL '1 day'),
-(3, 12, 'Pending', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'General Info', NOW());

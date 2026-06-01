@@ -1,0 +1,359 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Phase 0: Branch is up-to-date with main
+  # ─────────────────────────────────────────────
+  check-sync-with-main:
+    name: "Phase 0 · Up-to-date with main"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch is up-to-date with main
+        run: |
+          echo "::group::Fetching main branch..."
+          git fetch origin main --no-tags
+          echo "::endgroup::"
+          
+          if git merge-base --is-ancestor origin/main HEAD; then
+            echo "✅ PASS: Branch is up-to-date with main."
+          else
+            echo "::error title=Sync Error::Branch is behind main. Please merge or rebase from main before pushing."
+            echo "❌ FAIL: Please run: git fetch origin && git merge origin/main"
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
+  # Phase 1: Validate commit messages
+  # ─────────────────────────────────────────────
+  validate-commits:
+    name: "Phase 1 · Validate Commit Messages"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        run: |
+          REGEX='^(feat|fix|docs|chore|refactor|test|ci|perf|style)\([a-z0-9_-]+\): .{1,50}$'
+
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            # --no-merges: skip merge commits
+            COMMITS=$(git log --no-merges --format="%s" \
+              ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }})
+          else
+            # For push to main, validate only the tip (usually already validated in PR)
+            COMMITS=$(git log -1 --no-merges --format="%s")
+          fi
+
+          FAILED=0
+          while IFS= read -r msg; do
+            [ -z "$msg" ] && continue
+            if echo "$msg" | grep -Pq "$REGEX"; then
+              echo "✅ PASS: $msg"
+            else
+              echo "::error title=Invalid Commit Message::\"$msg\" does not match the required format 'type(scope): subject'"
+              echo "❌ FAIL: $msg"
+              
+              # Detailed Hints
+              if [[ ! "$msg" =~ :[[:space:]] ]]; then
+                echo "   💡 Hint: Missing space after colon (e.g., fix(ui): message)"
+              fi
+              if [[ "$msg" =~ [A-Z] && "$msg" =~ ^[^\(]*\( ]]; then
+                echo "   💡 Hint: Type and Scope must be lowercase"
+              fi
+              subject=$(echo "$msg" | cut -d':' -f2- | xargs)
+              if [ ${#subject} -gt 50 ]; then
+                echo "   💡 Hint: Subject is too long (${#subject} > 50 chars)"
+              fi
+
+              FAILED=1
+            fi
+          done <<< "$COMMITS"
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more commit messages violate the convention."
+            echo "See docs/COMMIT_RULES.md for details."
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
+  # Change detection
+  # ─────────────────────────────────────────────
+  detect-changes:
+    name: "Detect Changed Paths"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile_flutter: ${{ steps.filter.outputs.mobile_flutter }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            mobile_flutter:
+              - 'mobile_flutter/**'
+            docker:
+              - 'docker-compose.yml'
+              - 'nginx.conf'
+
+  # ─────────────────────────────────────────────
+  # Phase 2: Build backend
+  # ─────────────────────────────────────────────
+  build-backend:
+    name: "Phase 2 · Build Backend"
+    needs: [check-sync-with-main, validate-commits, detect-changes]
+    if: needs.detect-changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build Backend
+        working-directory: backend
+        run: |
+          echo "::group::Maven Package (skipping tests)..."
+          if ./mvnw -B package -DskipTests; then
+            echo "::endgroup::"
+            echo "✅ Backend build successful."
+          else
+            echo "::endgroup::"
+            echo "::error title=Build Failed::Maven package command failed."
+            exit 1
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # Phase 3: Run backend tests
+  # ─────────────────────────────────────────────
+  test-backend:
+    name: "Phase 3 · Test Backend"
+    needs: build-backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Backend Tests
+        working-directory: backend
+        run: |
+          echo "::group::Running Maven Tests..."
+          if ./mvnw -B test; then
+            echo "::endgroup::"
+            echo "✅ All backend tests passed."
+          else
+            echo "::endgroup::"
+            echo "::error title=Test Failed::One or more backend tests failed."
+            exit 1
+          fi
+
+      - name: Publish test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # Phase 4: Build frontend
+  # ─────────────────────────────────────────────
+  build-frontend:
+    name: "Phase 4 · Build Frontend"
+    needs: [check-sync-with-main, validate-commits, detect-changes]
+    if: needs.detect-changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & Build Frontend
+        working-directory: frontend
+        run: |
+          echo "::group::npm ci"
+          npm ci --legacy-peer-deps
+          echo "::endgroup::"
+          
+          echo "::group::npm run build"
+          if npm run build; then
+            echo "::endgroup::"
+            echo "✅ Frontend build successful."
+          else
+            echo "::endgroup::"
+            echo "::error title=Build Failed::Frontend production build failed."
+            exit 1
+          fi
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  # ─────────────────────────────────────────────
+  # Phase 5: Lint + test frontend
+  # ─────────────────────────────────────────────
+  test-lint-frontend:
+    name: "Phase 5 · Lint & Test Frontend"
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Lint Frontend
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps > /dev/null
+          
+          # Generate JSON report to count errors/warnings
+          echo "Running ESLint..."
+          npx eslint . --format json -o lint-results.json || true
+          
+          # Parse results using jq
+          ERRORS=$(jq '[.[].errorCount] | add // 0' lint-results.json)
+          WARNINGS=$(jq '[.[].warningCount] | add // 0' lint-results.json)
+          
+          if [ "$ERRORS" -eq 0 ] && [ "$WARNINGS" -eq 0 ]; then
+            echo "✅ No lint issues found."
+            echo "✅ Lint check passed." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "::group::Detailed Lint Report (Stylish)"
+            npx eslint . --format stylish || true
+            echo "::endgroup::"
+            
+            echo "🔍 ESLint Summary: $ERRORS Errors, $WARNINGS Warnings"
+            
+            # Create a nice summary table in GitHub Actions
+            echo "### 🔍 ESLint Summary" >> $GITHUB_STEP_SUMMARY
+            echo "- ❌ **Errors:** $ERRORS" >> $GITHUB_STEP_SUMMARY
+            echo "- ⚠️ **Warnings:** $WARNINGS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Rule | Count | Severity |" >> $GITHUB_STEP_SUMMARY
+            echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+            
+            # Categorize by Rule ID
+            jq -r '.[].messages[] | "\(.ruleId // "unknown")|\(.severity)"' lint-results.json | \
+            sort | uniq -c | sort -nr | \
+            while read -r count data; do
+              rule=$(echo $data | cut -d'|' -f1)
+              sev_code=$(echo $data | cut -d'|' -f2)
+              severity="⚠️ Warning"
+              [ "$sev_code" == "2" ] && severity="❌ Error"
+              echo "| \`$rule\` | $count | $severity |" >> $GITHUB_STEP_SUMMARY
+            done
+            
+            if [ "$ERRORS" -gt 0 ]; then
+              echo "::warning title=ESLint Issues::$ERRORS lint errors found. Please check the Step Summary for details."
+            else
+              [ "$WARNINGS" -gt 0 ] && echo "::warning title=ESLint Warnings::$WARNINGS lint warnings found."
+            fi
+            # Job continues even if ERRORS > 0
+          fi
+
+  # ─────────────────────────────────────────────
+  # Phase 6: Mobile (Flutter) Analyze & Test
+  # ─────────────────────────────────────────────
+  # test-mobile-flutter:
+  #   name: "Phase 6 · Analyze & Test Mobile (Flutter)"
+  #   needs: [check-sync-with-main, validate-commits, detect-changes]
+  #   if: needs.detect-changes.outputs.mobile_flutter == 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: subosito/flutter-action@v2
+  #       with:
+  #         flutter-version: '3.x'
+  #         channel: 'stable'
+  #         cache: true
+
+  #     - name: Install Dependencies
+  #       working-directory: mobile_flutter
+  #       run: flutter pub get
+
+  #     - name: Analyze Code
+  #       working-directory: mobile_flutter
+  #       run: flutter analyze
+
+  #     - name: Run Tests
+  #       working-directory: mobile_flutter
+  #       run: flutter test
+
+  # ─────────────────────────────────────────────
+  # Phase 7: Docker Validation
+  # ─────────────────────────────────────────────
+  validate-docker:
+    name: "Phase 7 · Validate Docker Config"
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.docker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose
+        run: |
+          echo "::group::Docker Compose Config Check"
+          docker compose config -q
+          echo "::endgroup::"
+          echo "✅ Docker Compose configuration is valid."
+

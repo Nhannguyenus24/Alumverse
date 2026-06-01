@@ -23,7 +23,7 @@ public class FileUploadService {
     private String domain;
 
     private static final long MAX_BYTES = 10L * 1024 * 1024;
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx", "png", "jpg", "jpeg");
 
     public Mono<String> uploadBase64File(String base64String, String originalFileName) {
         return Mono.fromCallable(() -> doUpload(base64String, originalFileName))

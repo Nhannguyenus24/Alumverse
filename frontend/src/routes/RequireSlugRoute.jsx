@@ -1,11 +1,14 @@
-import { Navigate, useParams } from 'react-router';
+import { Navigate, useLocation, useParams } from 'react-router';
 import { useOrganization } from '../hooks/useOrganization';
+import { isBlockedOrgFetchPath } from './routeGuards';
 
 const RequireSlugRoute = ({ children }) => {
   const { slug } = useParams();
+  const { pathname } = useLocation();
 
-  // Route-level organization bootstrap for all slug-based paths.
-  const { loading, isOrganizationNotFound } = useOrganization();
+  const isBlockedErrorPath = isBlockedOrgFetchPath(pathname);
+
+  const { loading, isOrganizationNotFound } = useOrganization({ enabled: !isBlockedErrorPath });
 
   if (!slug) {
     return <Navigate to="/404" replace />;

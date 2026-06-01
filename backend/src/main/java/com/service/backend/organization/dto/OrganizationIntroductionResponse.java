@@ -16,4 +16,8 @@ public class OrganizationIntroductionResponse {
     private Integer orgaId;
     private String content;
     private List<String> imageUrls;
+    private String vision;
+    private String mission;
+    private String coreValues;
+    private String bannerUrl;
 }

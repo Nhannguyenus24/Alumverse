@@ -37,7 +37,7 @@ const extractFunds = (payload) => {
   return [];
 };
 
-const useAdminFundraisingsData = () => {
+const useAdminFundraisingsData = (organizationId) => {
   const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -52,7 +52,11 @@ const useAdminFundraisingsData = () => {
     setLoading(true);
     setLoadError(false);
     try {
-      const data = await fundApi.getFunds({ page: 0, limit: 200 });
+      const params = { page: 0, limit: 200 };
+      if (organizationId) {
+        params.organizationId = organizationId;
+      }
+      const data = await fundApi.getFunds(params);
       const rows = extractFunds(data).map(mapFundRow);
       setAllRows(rows);
     } catch {
@@ -61,11 +65,14 @@ const useAdminFundraisingsData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [organizationId]);
+
+  const [reloadTrigger, setReloadTrigger] = useState(0);
+  const reload = useCallback(() => setReloadTrigger((prev) => prev + 1), []);
 
   useEffect(() => {
     loadFunds();
-  }, [loadFunds]);
+  }, [loadFunds, reloadTrigger]);
 
   const filteredRows = useMemo(() => {
     return allRows.filter((item) => {
@@ -120,6 +127,7 @@ const useAdminFundraisingsData = () => {
     setRowsPerPage,
     updateStatus,
     deleteItem,
+    reload,
   };
 };
 

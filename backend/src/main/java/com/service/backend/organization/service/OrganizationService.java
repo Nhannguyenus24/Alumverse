@@ -1,11 +1,11 @@
 package com.service.backend.organization.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
+import com.service.backend.organization.dto.TrustedVerifierResponse;
 import com.service.backend.organization.entity.OrganizationIntroduction;
 import com.service.backend.organization.entity.SchoolFeedback;
 import com.service.backend.organization.entity.Organization;
@@ -30,14 +30,18 @@ public class OrganizationService {
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
 
-    public Mono<Organization> getOrganizationById(Long id) {
+    public Mono<Organization> getOrganizationById(Integer id) {
         logger.info("Fetching organization with id: {}", id);
         return organizationRepository.findById(id)
                 .doOnNext(org -> logger.info("Organization found with id: {}, name: {}", id, org.getName()))
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.ORGANIZATION_NOT_FOUND,
-                        "Organization not found with id: " + id
-                )))
+                .switchIfEmpty(Mono.defer(() -> {
+                    logger.warn("Organization not found with id: {}", id);
+                    return Mono.error(new ApplicationException(
+                            ErrorCode.ORGANIZATION_NOT_FOUND,
+                            "Organization not found with id: " + id
+                    ));
+                }))
+                .doOnSuccess(org -> logger.info("getOrganizationById result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization with id: {}", id, error));
     }
 
@@ -45,17 +49,21 @@ public class OrganizationService {
         logger.info("Fetching organization with slug: {}", slug);
         return organizationRepository.findBySlug(slug)
                 .doOnNext(org -> logger.info("Organization found with slug: {}, name: {}", slug, org.getName()))
-                .switchIfEmpty(Mono.error(new ApplicationException(
-                        ErrorCode.ORGANIZATION_NOT_FOUND,
-                        "Organization not found with slug: " + slug
-                )))
+                .switchIfEmpty(Mono.defer(() -> {
+                    logger.warn("Organization not found with slug: {}", slug);
+                    return Mono.error(new ApplicationException(
+                            ErrorCode.ORGANIZATION_NOT_FOUND,
+                            "Organization not found with slug: " + slug
+                    ));
+                }))
+                .doOnSuccess(org -> logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
                 .doOnError(error -> logger.error("Failed to fetch organization with slug: {}", slug, error));
     }
 
     public Flux<Organization> getAllOrganizations() {
         logger.info("Fetching all organizations");
         return organizationRepository.findAll()
-                .doOnNext(org -> logger.debug("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
+                .doOnNext(org -> logger.info("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
                 .doOnComplete(() -> logger.info("Successfully retrieved all organizations"))
                 .doOnError(error -> logger.error("Failed to fetch organizations", error));
     }
@@ -69,38 +77,50 @@ public class OrganizationService {
                         .content(null)
                         .imageUrls(List.of())
                         .build()))
+                .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
         List<String> urls = intro.getImageUrls() != null
-                ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
+                ? JsonUtils.isJsonArray(intro.getImageUrls())
+                        ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
+                        : List.of()
                 : List.of();
         return OrganizationIntroductionResponse.builder()
                 .orgaId(intro.getOrgaId())
                 .content(intro.getContent())
+                .vision(intro.getVision())
+                .mission(intro.getMission())
+                .coreValues(intro.getCoreValues())
+                .bannerUrl(intro.getBannerUrl())
                 .imageUrls(urls)
                 .build();
     }
 
-    public Mono<SchoolFeedback> createSchoolFeedback(Long organizationId, CreateSchoolFeedbackRequest request) {
-        logger.info("Creating school feedback for organization id: {}", organizationId);
+    public Mono<SchoolFeedback> createSchoolFeedback(Integer organizationId, CreateSchoolFeedbackRequest request) {
         return getOrganizationById(organizationId)
                 .flatMap(organization -> {
                     SchoolFeedback feedback = SchoolFeedback.builder()
-                            .organizationId(Math.toIntExact(organization.getId()))
+                            .organizationId(organization.getId())
                             .fullName(request.getFullName())
                             .phone(request.getPhone())
                             .email(request.getEmail())
                             .subject(request.getSubject())
                             .content(request.getContent())
-                            .createdAt(LocalDateTime.now())
                             .isRead(false)
                             .build();
 
                     return schoolFeedbackRepository.save(feedback);
                 })
-                .doOnSuccess(feedback -> logger.info("Created school feedback with id: {}", feedback.getId()))
+                .doOnSuccess(feedback -> logger.info("createSchoolFeedback result: {}", JsonUtils.toJson(feedback)))
                 .doOnError(error -> logger.error("Failed to create school feedback for organization id: {}", organizationId, error));
+    }
+
+    public Flux<TrustedVerifierResponse> getTrustedVerifiers(Integer organizationId) {
+        logger.info("Fetching trusted verifiers for organization id: {}", organizationId);
+        return organizationRepository.findTrustedVerifiersByOrganizationId(organizationId)
+                .doOnComplete(() -> logger.info("Successfully fetched trusted verifiers for organization id: {}", organizationId))
+                .doOnError(error -> logger.error("Failed to fetch trusted verifiers for organization id: {}", organizationId, error));
     }
 }

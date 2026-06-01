@@ -8,27 +8,26 @@ const ProgressBar = ({
   variant = "determinate" 
 }) => {
   const [progress, setProgress] = useState(0);
+  const displayProgress = variant === "determinate" && value !== undefined 
+    ? Math.min(100, Math.max(0, value)) 
+    : progress;
 
   useEffect(() => {
-    if (variant === "indeterminate") {
+    if (variant === "indeterminate" || value !== undefined) {
       return;
     }
 
-    if (value !== undefined) {
-      setProgress(Math.min(100, Math.max(0, value)));
-    } else {
-      // Auto progress simulation
-      const timer = setInterval(() => {
-        setProgress((oldProgress) => {
-          if (oldProgress === 100) {
-            return 0;
-          }
-          const diff = Math.random() * 10;
-          return Math.min(100, oldProgress + diff);
-        });
-      }, 200);
-      return () => clearInterval(timer);
-    }
+    // Auto progress simulation
+    const timer = setInterval(() => {
+      setProgress((oldProgress) => {
+        if (oldProgress === 100) {
+          return 0;
+        }
+        const diff = Math.random() * 10;
+        return Math.min(100, oldProgress + diff);
+      });
+    }, 200);
+    return () => clearInterval(timer);
   }, [value, variant]);
 
   return (
@@ -39,13 +38,13 @@ const ProgressBar = ({
             Progress
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {Math.round(progress)}%
+            {Math.round(displayProgress)}%
           </Typography>
         </Box>
       )}
       <LinearProgress
         variant={variant}
-        value={progress}
+        value={displayProgress}
         color={color}
         sx={{
           height: 8,

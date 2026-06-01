@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import apiClient from '../../utils/axios';
 
 const ENDPOINT_BY_CHANNEL = {
-  news: '/articles/news',
-  alumni: '/articles/alumni-posts',
-  achievement: '/articles/achievements',
-  job: '/articles/jobs',
-  learning: '/articles/learning-resources',
-  event: '/events',
-  donation: '/funds',
+  news: '/admin/articles/news',
+  alumni: '/admin/articles/alumni-posts',
+  achievement: '/admin/articles/achievements',
+  job: '/admin/articles/jobs',
+  learning: '/admin/articles/learning-resources',
+  event: '/admin/articles/events',
+  donation: '/admin/articles/funds',
 };
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };
@@ -54,7 +54,8 @@ const useAdminArticles = (initialChannel = 'news') => {
   }, [channel, page, rowsPerPage]);
 
   useEffect(() => {
-    loadArticles();
+    const timer = setTimeout(loadArticles, 0);
+    return () => clearTimeout(timer);
   }, [loadArticles]);
 
   return {

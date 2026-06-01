@@ -13,9 +13,6 @@ import {
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Grid from "@mui/material/Grid";
-import CoverUpload from "../CoverUpload";
-import { useUploadImage } from "../../hooks/images/useUploadImage";
-import CircularProgress from "@mui/material/CircularProgress";
 
 const AdminOrganizationIntroductionDialog = ({
   open,
@@ -31,26 +28,28 @@ const AdminOrganizationIntroductionDialog = ({
     bannerUrl: "",
   });
 
-  const { uploadFile, isPending: uploading } = useUploadImage();
-
   useEffect(() => {
-    if (introduction) {
-      setFormData({
-        content: introduction.content || "",
-        vision: introduction.vision || "",
-        mission: introduction.mission || "",
-        coreValues: introduction.coreValues || "",
-        bannerUrl: introduction.bannerUrl || "",
-      });
-    } else {
-      setFormData({
-        content: "",
-        vision: "",
-        mission: "",
-        coreValues: "",
-        bannerUrl: "",
-      });
-    }
+    if (!open) return;
+    const timer = setTimeout(() => {
+      if (introduction) {
+        setFormData({
+          content: introduction.content || "",
+          vision: introduction.vision || "",
+          mission: introduction.mission || "",
+          coreValues: introduction.coreValues || "",
+          bannerUrl: introduction.bannerUrl || "",
+        });
+      } else {
+        setFormData({
+          content: "",
+          vision: "",
+          mission: "",
+          coreValues: "",
+          bannerUrl: "",
+        });
+      }
+    }, 0);
+    return () => clearTimeout(timer);
   }, [introduction, open]);
 
   const handleChange = (e) => {
@@ -124,45 +123,30 @@ const AdminOrganizationIntroductionDialog = ({
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
               Ảnh bìa tổ chức
             </Typography>
-            <Box
-              sx={{
-                borderRadius: 3,
-                overflow: "hidden",
-                border: "1px dashed",
-                borderColor: "divider",
-                position: "relative",
-              }}
-            >
-              {uploading && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    zIndex: 10,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    bgcolor: "rgba(255,255,255,0.7)",
-                  }}
-                >
-                  <CircularProgress size={32} />
-                </Box>
-              )}
-              <CoverUpload
-                value={formData.bannerUrl}
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    try {
-                      const url = await uploadFile(file);
-                      setFormData((prev) => ({ ...prev, bannerUrl: url }));
-                    } catch (err) {
-                      console.error("Upload failed", err);
-                    }
-                  }
+            {formData.bannerUrl && (
+              <Box 
+                component="img"
+                src={formData.bannerUrl}
+                sx={{ 
+                  width: '100%', 
+                  height: 200, 
+                  objectFit: 'cover', 
+                  borderRadius: 2,
+                  mb: 2,
+                  border: '1px solid',
+                  borderColor: 'divider'
                 }}
               />
-            </Box>
+            )}
+            <TextField
+              fullWidth
+              label="Banner URL"
+              name="bannerUrl"
+              value={formData.bannerUrl}
+              onChange={handleChange}
+              placeholder="https://example.com/banner.png"
+              helperText="Nhập URL ảnh bìa cho tổ chức (định dạng rộng, ví dụ 1200x400)"
+            />
           </Box>
 
           <Divider sx={{ my: 1 }}>

@@ -2,15 +2,17 @@ package com.service.backend.chat.controller;
 
 import com.service.backend.chat.dto.AddMembersRequest;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
+import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
+import com.service.backend.chat.dto.GroupChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.chat.entity.ChatGroup;
 import com.service.backend.chat.entity.ChatGroupMember;
-import com.service.backend.chat.entity.ChatMessage;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -41,30 +43,40 @@ public class ChatController {
     private final ChatService chatService;
 
     /*
-        Get all the chat groups (group not private) that the current user join in.
+        Search group chats of the current user.
+        text: filter by group title (case-insensitive, optional)
+        page/size: pagination, default page=0, size=5
     */
     @GetMapping("/groups")
-    public Mono<ResponseEntity<ApiResponse<List<ChatGroup>>>> listChatGroups() {
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<GroupChatListItemResponse>>>> listChatGroups(
+            @RequestParam(required = false, defaultValue = "") String text,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberId -> this.chatService.getListGroupChats(memberId))
-                .map(groups -> ResponseEntity
-                        .ok(new ApiResponse<>("Chat groups retrieved successfully", groups)));
+                .flatMap(memberId -> this.chatService.getListGroupChatsWithSummary(memberId, text, page, size))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Chat groups retrieved successfully", result)));
     }
 
     /*
-        Get all private chat of the member ID
+        Search private chats of the current user.
+        text: filter by peer username (case-insensitive, optional)
+        page/size: pagination, default page=0, size=5
     */
     @GetMapping("/private/list")
-    public Mono<ResponseEntity<ApiResponse<List<PrivateChatListItemResponse>>>> listPrivateChats() {
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<PrivateChatListItemResponse>>>> listPrivateChats(
+            @RequestParam(required = false, defaultValue = "") String text,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(this.chatService::getListPrivateChatsWithSummary)
-                .map(groups -> ResponseEntity
-                        .ok(new ApiResponse<>("Private chats retrieved successfully", groups)));
+                .flatMap(memberId -> this.chatService.getListPrivateChatsWithSummary(memberId, text, page, size))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Private chats retrieved successfully", result)));
     }
 
 
     /*
-        Get all chat 1:1 of memberA and memberB 
+        Get chat information (not message) from member A and member B 
     */
     @GetMapping("/private")
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> getPrivateChat(
@@ -82,7 +94,7 @@ public class ChatController {
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createPrivateChat(
             @Valid @RequestBody PrivateChatRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(memberAId -> this.chatService.createNewPrivateChat(memberAId, request.targetMemberId()))
+                .flatMap(memberAId -> this.chatService.createNewPrivateChat(memberAId, request.getTargetMemberId()))
                 .map(group -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Private chat created successfully", group)));
@@ -92,11 +104,11 @@ public class ChatController {
         Get messages of a group ID, with pagination 
     */
     @GetMapping("/groups/{groupId}/messages")
-    public Mono<ResponseEntity<ApiResponse<List<ChatMessage>>>> getMessages(
+    public Mono<ResponseEntity<ApiResponse<List<ChatMessageResponse>>>> getMessages(
             @PathVariable("groupId") @Min(1) Long groupId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return this.chatService.getMessages(groupId, page, size)
+        return this.chatService.getMessagesWithSenderInfo(groupId, page, size)
                 .collectList()
                 .map(messages -> ResponseEntity
                         .ok(new ApiResponse<>("Messages retrieved successfully", messages)));
@@ -110,7 +122,7 @@ public class ChatController {
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createGroupChat(
             @Valid @RequestBody CreateGroupRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.createGroupChat(currentMemberId, request.memberIds()))
+                .flatMap(currentMemberId -> this.chatService.createGroupChat(currentMemberId, request.getMemberIds()))
                 .map(group -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Group chat created successfully", group)));
@@ -125,7 +137,7 @@ public class ChatController {
             @PathVariable("groupId") @Min(1) Long groupId,
             @Valid @RequestBody AddMembersRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.addMembersToGroup(groupId, currentMemberId, request.memberIds()))
+                .flatMap(currentMemberId -> this.chatService.addMembersToGroup(groupId, currentMemberId, request.getMemberIds()))
                 .thenReturn(ResponseEntity
                         .ok(new ApiResponse<>("Members added successfully", null)));
     }
@@ -177,7 +189,7 @@ public class ChatController {
             @PathVariable("groupId") @Min(1) Long groupId,
             @Valid @RequestBody UpdateGroupRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.updateGroupInfo(groupId, currentMemberId, request.title()))
+                .flatMap(currentMemberId -> this.chatService.updateGroupInfo(groupId, currentMemberId, request.getTitle()))
                 .map(updatedGroup -> ResponseEntity
                         .ok(new ApiResponse<>("Group updated successfully", updatedGroup)));
     }

@@ -12,8 +12,13 @@ import {
   Typography,
 } from '@mui/material';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 
 import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -22,7 +27,7 @@ import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import Page from '../../components/Page';
-import MentorshipProfileLayout from '../../layouts/MentorshipProfileLayout';
+import MentorshipProfileLayout from '../../layouts/ProfileLayout';
 import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
 import MentorshipBookingWindowCard from '../../components/mentorship/MentorshipBookingWindowCard';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -31,6 +36,7 @@ import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions'
 import { useMyAvailabilities } from '../../hooks/mentorship/useMyAvailabilities';
 import { useAddAvailability } from '../../hooks/mentorship/useAddAvailability';
 import { useDeleteAvailability } from '../../hooks/mentorship/useDeleteAvailability';
+import { useUpdateAvailability } from '../../hooks/mentorship/useUpdateAvailability';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
 import { formatFixed } from '../../utils/numberFormatter';
 
@@ -88,6 +94,7 @@ const MentorshipYourCalendarPage = () => {
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: 100 });
   const availabilityQuery = useMyAvailabilities();
   const addMutation = useAddAvailability();
+  const updateAvailabilityMutation = useUpdateAvailability();
   const deleteMutation = useDeleteAvailability();
   const updateProfileMutation = useUpdateMentorProfile();
 
@@ -110,6 +117,49 @@ const MentorshipYourCalendarPage = () => {
   const [startDate, setStartDate] = useState(dayjs());
   const [endDate, setEndDate] = useState(dayjs().add(1, 'month'));
   const [selectedDays, setSelectedDays] = useState([]);
+
+  const [editingSlot, setEditingSlot] = useState(null);
+  const [editStartTime, setEditStartTime] = useState(null);
+  const [editEndTime, setEditEndTime] = useState(null);
+  const [editError, setEditError] = useState(null);
+
+  const openEditSlot = (slot) => {
+    setEditingSlot(slot);
+    setEditStartTime(dayjs(slot.startTime));
+    setEditEndTime(dayjs(slot.endTime));
+    setEditError(null);
+  };
+
+  const closeEditSlot = () => {
+    setEditingSlot(null);
+    setEditStartTime(null);
+    setEditEndTime(null);
+    setEditError(null);
+  };
+
+  const submitEditSlot = async () => {
+    if (!editingSlot || !editStartTime || !editEndTime) return;
+    if (!editEndTime.isAfter(editStartTime)) {
+      setEditError('Giờ kết thúc phải sau giờ bắt đầu.');
+      return;
+    }
+    if (!editStartTime.isAfter(dayjs())) {
+      setEditError('Slot phải nằm trong tương lai.');
+      return;
+    }
+    try {
+      await updateAvailabilityMutation.updateAvailability({
+        id: editingSlot.id,
+        startTime: editStartTime.format('YYYY-MM-DDTHH:mm:ss'),
+        endTime: editEndTime.format('YYYY-MM-DDTHH:mm:ss'),
+      });
+      closeEditSlot();
+    } catch (err) {
+      const message =
+        err?.response?.data?.message ?? updateAvailabilityMutation.errorMessage ?? 'Không cập nhật được slot.';
+      setEditError(message);
+    }
+  };
 
   const toggleDay = (index) =>
     setSelectedDays((prev) => (prev.includes(index) ? prev.filter((d) => d !== index) : [...prev, index]));
@@ -193,6 +243,7 @@ const MentorshipYourCalendarPage = () => {
       }
 
       let success = 0;
+      const failures = [];
       for (const slot of slots) {
         try {
           await addMutation.addAvailability({
@@ -200,15 +251,17 @@ const MentorshipYourCalendarPage = () => {
             endTime: slot.endTime.format('YYYY-MM-DDTHH:mm:ss'),
           });
           success += 1;
-        } catch (_e) {
-          // Continue with remaining slots; surface count at the end.
+        } catch (err) {
+          const message = err?.response?.data?.message ?? 'lỗi không xác định';
+          failures.push(`${slot.startTime.format('DD/MM HH:mm')}: ${message}`);
         }
       }
+      const baseText = `Đã thêm ${success}/${slots.length} slot.`;
       setSubmitMessage({
-        severity: success === slots.length ? 'success' : 'warning',
-        text: `Đã thêm ${success}/${slots.length} slot.`,
+        severity: success === slots.length ? 'success' : failures.length === slots.length ? 'error' : 'warning',
+        text: failures.length ? `${baseText} Lỗi: ${failures.slice(0, 3).join('; ')}` : baseText,
       });
-    } catch (_e) {
+    } catch {
       setSubmitMessage({ severity: 'error', text: addMutation.errorMessage ?? 'Không thể thêm lịch.' });
     }
   };
@@ -217,7 +270,7 @@ const MentorshipYourCalendarPage = () => {
     if (!window.confirm('Xóa slot này khỏi lịch?')) return;
     try {
       await deleteMutation.deleteAvailability(id);
-    } catch (_e) {
+    } catch {
       /* surfaced via deleteMutation.errorMessage */
     }
   };
@@ -332,14 +385,25 @@ const MentorshipYourCalendarPage = () => {
                                   {dayjs(slot.endTime).format('HH:mm')}
                                 </Box>
                                 {!booked && (
-                                  <IconButton
-                                    size="small"
-                                    sx={{ color: '#fff', p: 0 }}
-                                    onClick={() => handleDeleteSlot(slot.id)}
-                                    disabled={deleteMutation.isPending}
-                                  >
-                                    <DeleteOutlineIcon sx={{ fontSize: 14 }} />
-                                  </IconButton>
+                                  <>
+                                    <IconButton
+                                      size="small"
+                                      sx={{ color: '#fff', p: 0, mr: 0.25 }}
+                                      onClick={() => openEditSlot(slot)}
+                                      aria-label="edit slot"
+                                    >
+                                      <EditOutlinedIcon sx={{ fontSize: 14 }} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      sx={{ color: '#fff', p: 0 }}
+                                      onClick={() => handleDeleteSlot(slot.id)}
+                                      disabled={deleteMutation.isPending}
+                                      aria-label="delete slot"
+                                    >
+                                      <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+                                    </IconButton>
+                                  </>
                                 )}
                               </Stack>
                             );
@@ -405,8 +469,11 @@ const MentorshipYourCalendarPage = () => {
 
                   {showAddTime && (
                     <Box sx={{ px: 3, pb: 3 }}>
-                      <Typography variant="body2" color="text.secondary" mb={2}>
+                      <Typography variant="body2" color="text.secondary" mb={1}>
                         Chọn khung giờ và ngày để mentee có thể đặt lịch.
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" display="block" mb={2}>
+                        Múi giờ: (GMT+07:00) Giờ Đông Dương — TP Hồ Chí Minh
                       </Typography>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Stack spacing={2}>
@@ -529,6 +596,63 @@ const MentorshipYourCalendarPage = () => {
             </Box>
           </Box>
         </Stack>
+
+        <Dialog open={Boolean(editingSlot)} onClose={closeEditSlot} fullWidth maxWidth="xs">
+          <DialogTitle>Chỉnh sửa slot</DialogTitle>
+          <DialogContent>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Stack spacing={2} mt={1}>
+                <Typography variant="caption" color="text.secondary">
+                  Múi giờ: (GMT+07:00) Giờ Đông Dương — TP Hồ Chí Minh
+                </Typography>
+                <DatePicker
+                  label="Ngày"
+                  value={editStartTime}
+                  onChange={(value) => {
+                    if (!value) return;
+                    const next = editStartTime
+                      ? editStartTime.year(value.year()).month(value.month()).date(value.date())
+                      : value;
+                    const nextEnd = editEndTime
+                      ? editEndTime.year(value.year()).month(value.month()).date(value.date())
+                      : value.add(1, 'hour');
+                    setEditStartTime(next);
+                    setEditEndTime(nextEnd);
+                  }}
+                  minDate={dayjs()}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+                <Stack direction="row" spacing={1}>
+                  <TimePicker
+                    label="Bắt đầu"
+                    value={editStartTime}
+                    onChange={setEditStartTime}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                  />
+                  <TimePicker
+                    label="Kết thúc"
+                    value={editEndTime}
+                    onChange={setEditEndTime}
+                    slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                  />
+                </Stack>
+                {editError && <Alert severity="error">{editError}</Alert>}
+              </Stack>
+            </LocalizationProvider>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeEditSlot} disabled={updateAvailabilityMutation.isPending}>
+              Huỷ
+            </Button>
+            <Button
+              variant="contained"
+              onClick={submitEditSlot}
+              disabled={updateAvailabilityMutation.isPending}
+            >
+              {updateAvailabilityMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </MentorshipProfileLayout>
     </Page>
   );

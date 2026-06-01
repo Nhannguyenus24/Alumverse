@@ -3,6 +3,14 @@ import apiClient from '../utils/axios';
 const MENTOR = '/mentorship/mentor';
 const MENTEE = '/mentorship/mentee';
 
+// ========== MENTEE: PROFILE ==========
+
+export const saveMenteeProfile = (payload) =>
+  apiClient.post(`${MENTEE}/profile`, payload);
+
+export const getMyMenteeProfile = () =>
+  apiClient.get(`${MENTEE}/profile`);
+
 // ========== MENTEE: BROWSE ==========
 
 export const getApprovedMentors = (page = 0, limit = 12) =>
@@ -16,6 +24,12 @@ export const searchMentors = (keyword, page = 0, limit = 12) =>
 
 export const filterMentors = (params = {}) =>
   apiClient.get(`${MENTEE}/mentors/filter`, { params });
+
+export const getExpertiseTopics = () =>
+  apiClient.get(`${MENTEE}/expertise-topics`);
+
+export const getExpertiseCategories = () =>
+  apiClient.get(`${MENTEE}/expertise-categories`);
 
 export const getMentorExpertise = (mentorMemberId) =>
   apiClient.get(`${MENTEE}/mentors/${mentorMemberId}/expertise`);
@@ -48,6 +62,9 @@ export const createSessionFeedback = (sessionId, payload) =>
 export const createMentorProfile = (payload) =>
   apiClient.post(`${MENTOR}/profile`, payload);
 
+export const saveMentorProfileDraft = (payload) =>
+  apiClient.post(`${MENTOR}/profile/draft`, payload);
+
 export const updateMentorProfile = (payload) =>
   apiClient.put(`${MENTOR}/profile`, payload);
 
@@ -61,6 +78,9 @@ export const getMyExpertise = () => apiClient.get(`${MENTOR}/expertise`);
 export const deleteMyExpertise = (expertiseId) =>
   apiClient.delete(`${MENTOR}/expertise/${expertiseId}`);
 
+export const updateMyExpertise = (expertiseId, payload) =>
+  apiClient.put(`${MENTOR}/expertise/${expertiseId}`, payload);
+
 // ========== MENTOR: AVAILABILITY / SESSIONS ==========
 
 export const addMyAvailability = (payload) =>
@@ -70,6 +90,9 @@ export const getMyAvailabilities = () => apiClient.get(`${MENTOR}/availability`)
 
 export const deleteMyAvailability = (availabilityId) =>
   apiClient.delete(`${MENTOR}/availability/${availabilityId}`);
+
+export const updateMyAvailability = (availabilityId, payload) =>
+  apiClient.put(`${MENTOR}/availability/${availabilityId}`, payload);
 
 export const getMyMentorSessions = (params = {}) =>
   apiClient.get(`${MENTOR}/sessions`, { params });

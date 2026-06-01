@@ -14,7 +14,6 @@ import {
   Typography,
   Grid,
   Stack,
-  useTheme,
 } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { adminOrganizationApi } from "../../api/adminOrganizationApi";
@@ -37,7 +36,6 @@ import { useAuth } from "../../hooks/useAuth";
 import { formatDate } from "../../utils/dateFormatter";
 
 const AdminForumTopicsPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { activeOrgId } = useAdminSystemContext();
   const {

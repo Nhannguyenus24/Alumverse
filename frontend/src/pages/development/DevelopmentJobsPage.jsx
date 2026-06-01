@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -7,7 +7,7 @@ import MenuBookIcon from '@mui/icons-material/MenuBook';
 import WorkIcon from '@mui/icons-material/Work';
 
 import Page from '../../components/Page';
-import { useAuth } from '../../hooks/useAuth';
+
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
@@ -68,7 +68,7 @@ const FILTERS = [
 
 const DevelopmentJobsPage = () => {
   const navigate = useOrgNavigate();
-  const { user } = useAuth();
+
   const { jobs } = usePublishedJobs(0, 12);
 
   const [filters, setFilters] = useState({

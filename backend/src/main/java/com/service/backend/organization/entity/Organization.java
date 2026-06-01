@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -40,7 +41,11 @@ public class Organization {
     @Column("majors")
     private String majors;
 
+    @Column("status")
+    private String status;
+
     @Column("created_at")
     @CreatedDate
+    @ReadOnlyProperty
     private LocalDateTime createdAt;
 }

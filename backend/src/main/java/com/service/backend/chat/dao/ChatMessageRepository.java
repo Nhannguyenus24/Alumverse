@@ -1,5 +1,6 @@
 package com.service.backend.chat.dao;
 
+import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.entity.ChatMessage;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
@@ -21,6 +22,27 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
     Flux<ChatMessage> findByGroupIdWithPagination(Long groupId, int limit, int offset);
 
     @Query("""
+            SELECT cm.id,
+                   cm.group_id,
+                   cm.sender_member_id,
+                   cm.content,
+                   cm.message_type,
+                   cm.metadata::text AS metadata,
+                   cm.created_at,
+                   cm.edited_at,
+                   cm.deleted_at,
+                   gp.full_name   AS sender_full_name,
+                   u.avatar_url   AS sender_avatar_url
+            FROM chat_messages cm
+            LEFT JOIN users u ON u.id = cm.sender_member_id
+            LEFT JOIN global_profiles gp ON gp.user_id = cm.sender_member_id
+            WHERE cm.group_id = :groupId
+            ORDER BY cm.created_at DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<ChatMessageResponse> findByGroupIdWithSenderInfoAndPagination(Long groupId, int limit, int offset);
+
+    @Query("""
             SELECT *
             FROM chat_messages
             WHERE group_id = :groupId
@@ -29,6 +51,17 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
             LIMIT 1
             """)
     Mono<ChatMessage> findLastByGroupId(Long groupId);
+
+    @Query("""
+            SELECT id, group_id, sender_member_id, content, created_at, edited_at, deleted_at
+            FROM chat_messages
+            WHERE group_id = :groupId
+              AND sender_member_id = :senderMemberId
+              AND deleted_at IS NULL
+            ORDER BY created_at DESC
+            LIMIT 1
+            """)
+    Mono<ChatMessage> findLatestByGroupIdAndSenderMemberId(Long groupId, Long senderMemberId);
 
     @Query("SELECT COUNT(*) FROM chat_messages WHERE group_id = :groupId")
     Mono<Long> countByGroupId(Long groupId);
