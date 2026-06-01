@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMyMentorProfile } from '../../api/mentorshipApi';
+import { getMyMentorProfile } from '../../utils/api';
 import useAuthStore from '../../stores/authStore';
 
 const fetchMyProfile = async () => {

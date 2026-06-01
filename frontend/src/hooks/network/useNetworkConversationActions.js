@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 
-import { chatApi } from '../../api/chatApi';
+import { chatApi } from '../../utils/api';
 
 export function useNetworkConversationActions(peerMemberId) {
   const { enqueueSnackbar } = useSnackbar();

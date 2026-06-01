@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { cancelSession } from '../../api/mentorshipApi';
+import { cancelSession } from '../../utils/api';
 
 const callCancel = async (sessionId) => {
   const res = await cancelSession(sessionId);

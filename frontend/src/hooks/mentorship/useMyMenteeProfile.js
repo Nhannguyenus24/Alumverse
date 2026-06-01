@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getMyMenteeProfile, saveMenteeProfile } from '../../api/mentorshipApi';
+import { getMyMenteeProfile, saveMenteeProfile } from '../../utils/api';
 
 const MENTEE_PROFILE_KEY = ['mentorship', 'mentee', 'me', 'profile'];
 

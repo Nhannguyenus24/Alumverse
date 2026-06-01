@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-import { chatApi } from '../../api/chatApi';
+import { chatApi } from '../../utils/api';
 
 const PAGE_SIZE = 10;
 

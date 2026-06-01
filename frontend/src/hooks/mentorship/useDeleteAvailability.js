@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteMyAvailability } from '../../api/mentorshipApi';
+import { deleteMyAvailability } from '../../utils/api';
 
 const callDelete = async (id) => {
   const res = await deleteMyAvailability(id);

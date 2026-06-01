@@ -1,5 +1,27 @@
 import { create } from 'zustand';
-import { organizationApi } from '../api/organizationApi';
+import { organizationApi } from '../utils/api';
+
+const organizationDefaults = {
+  id: null,
+  name: '',
+  slug: '',
+  logoUrl: null,
+  brandConfig: '{}',
+  featuresConfig: '{}',
+  programs: '[]',
+  majors: '[]',
+  status: null,
+  createdAt: null,
+};
+
+const normalizeOrganization = (organization) => {
+  if (!organization) return null;
+
+  return {
+    ...organizationDefaults,
+    ...organization,
+  };
+};
 
 const initialState = {
   currentSlug: null,
@@ -12,7 +34,7 @@ const initialState = {
 const useOrganizationStore = create((set) => ({
   ...initialState,
 
-  setOrganization: (organization) => set({ organization }),
+  setOrganization: (organization) => set({ organization: normalizeOrganization(organization) }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
   setStatusCode: (statusCode) => set({ statusCode }),
@@ -51,7 +73,7 @@ const useOrganizationStore = create((set) => ({
       }
 
       set({
-        organization,
+        organization: normalizeOrganization(organization),
         loading: false,
         error: null,
         statusCode: 200,

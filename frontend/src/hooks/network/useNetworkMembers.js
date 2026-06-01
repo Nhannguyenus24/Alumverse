@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { networkApi } from '../../api/networkApi';
+import { networkApi } from '../../utils/api';
 
 function buildSearchParams({ appliedFullName, filters, page, pageSize }) {
   const params = {

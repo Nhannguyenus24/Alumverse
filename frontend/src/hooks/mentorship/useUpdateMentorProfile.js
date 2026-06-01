@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateMentorProfile } from '../../api/mentorshipApi';
+import { updateMentorProfile } from '../../utils/api';
 
 const submitUpdate = async (payload) => {
   const res = await updateMentorProfile(payload);
