@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { includesQuery, paginateRows, sortByField } from '../../utils/adminTableState';
-import { fundApi } from '../../api/fundApi';
+import { fundApi } from '../../utils/api';
 
 const SEARCH_KEYS = ['title', 'ownerName', 'status'];
 

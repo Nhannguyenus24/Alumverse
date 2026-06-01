@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getExpertiseCategories } from '../../api/mentorshipApi';
+import { getExpertiseCategories } from '../../utils/api';
 
 const fetchCategories = async () => {
   const res = await getExpertiseCategories();
