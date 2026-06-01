@@ -11,7 +11,7 @@ import com.service.backend.admin.dto.ActivityItemDTO;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.admin.entity.AdminAuditLog;
+import com.service.backend.shared.entity.AdminAuditLog;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

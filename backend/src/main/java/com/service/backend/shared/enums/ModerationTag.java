@@ -1,8 +1,11 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+@Getter
 public enum ModerationTag {
     NORMAL("Safe and acceptable content"),
     SENSITIVE("Politics, violence, hate speech, or adult topics"),
@@ -12,10 +15,6 @@ public enum ModerationTag {
 
     ModerationTag(String description) {
         this.description = description;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     public static String getAllTagsAsString() {

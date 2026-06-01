@@ -1,5 +1,6 @@
 package com.service.backend.admin.dto;
 
+import com.service.backend.shared.enums.DocumentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +18,7 @@ public class VerificationRequestResponse {
     private String email;
     private String userName;
     private String documentUrl;
-    private String documentType;
+    private DocumentType documentType;
     private String status;
     private String adminNote;
     private Integer reviewedByMemberId;

@@ -1,6 +1,5 @@
 package com.service.backend.forum.service;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,16 +24,17 @@ import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.dto.UpdateForumPostRequest;
-import com.service.backend.forum.entity.ForumCategory;
-import com.service.backend.forum.entity.ForumPost;
-import com.service.backend.forum.entity.ForumPostReaction;
-import com.service.backend.forum.entity.ForumPostReport;
-import com.service.backend.forum.entity.ForumTopic;
+import com.service.backend.shared.entity.ForumCategory;
+import com.service.backend.shared.entity.ForumPost;
+import com.service.backend.shared.entity.ForumPostReaction;
+import com.service.backend.shared.entity.ForumPostReport;
+import com.service.backend.shared.entity.ForumTopic;
 import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
@@ -284,12 +284,12 @@ public class ForumService {
         return forumPostRepository.findById(postId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND)))
                 .flatMap(post -> {
-                    ForumPostReport report = ForumPostReport.builder()
+                        ForumPostReport report = ForumPostReport.builder()
                             .postId(postId)
                             .reporterMemberId(request.getReporterMemberId())
                             .reason(request.getReason())
                             .description(request.getDescription())
-                            .status("PENDING")
+                            .status(Status.PENDING)
                             .build();
                     return forumPostReportRepository.save(report);
                 })

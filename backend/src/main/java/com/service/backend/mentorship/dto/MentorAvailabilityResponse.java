@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dto;
 
-import com.service.backend.mentorship.entity.MentorAvailability;
+import com.service.backend.shared.entity.MentorAvailability;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +26,7 @@ public class MentorAvailabilityResponse {
                 .mentorMemberId(availability.getMentorMemberId())
                 .startTime(availability.getStartTime())
                 .endTime(availability.getEndTime())
-                .status(availability.getStatus())
+                .status(availability.getStatus() != null ? availability.getStatus().getValue() : null)
                 .build();
     }
 }

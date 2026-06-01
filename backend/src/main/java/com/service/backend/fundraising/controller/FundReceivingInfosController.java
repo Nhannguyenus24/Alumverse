@@ -1,7 +1,7 @@
 package com.service.backend.fundraising.controller;
 
 import com.service.backend.fundraising.dto.CreateFundReceivingInfosRequest;
-import com.service.backend.fundraising.entity.FundReceivingInfos;
+import com.service.backend.shared.entity.FundReceivingInfos;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;

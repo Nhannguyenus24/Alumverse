@@ -5,7 +5,7 @@ import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.auth.entity.User;
+import com.service.backend.shared.entity.User;
 import com.service.backend.user.dto.UserProfileResponse;
 
 import reactor.core.publisher.Mono;

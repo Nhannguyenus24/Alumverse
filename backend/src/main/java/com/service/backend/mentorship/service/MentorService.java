@@ -2,16 +2,16 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
-import com.service.backend.mentorship.entity.MentorAvailability;
-import com.service.backend.mentorship.entity.MentorExpertise;
-import com.service.backend.mentorship.entity.MentorProfile;
-import com.service.backend.mentorship.entity.MentorProfileStatus;
-import com.service.backend.mentorship.entity.MentorshipSession;
+import com.service.backend.shared.entity.MentorAvailability;
+import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.entity.MentorExpertise;
+import com.service.backend.shared.entity.MentorProfile;
+import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 import org.springframework.r2dbc.core.DatabaseClient;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -106,20 +106,20 @@ public class MentorService {
     // ===================== PROFILE =====================
 
     public Mono<MentorProfileResponse> createProfile(CreateMentorProfileRequest request) {
-        return saveProfile(request, MentorProfileStatus.PENDING);
+        return saveProfile(request, Status.PENDING);
     }
 
     public Mono<MentorProfileResponse> saveDraft(CreateMentorProfileRequest request) {
-        return saveProfile(request, MentorProfileStatus.DRAFT);
+        return saveProfile(request, Status.DRAFT);
     }
 
-    private Mono<MentorProfileResponse> saveProfile(CreateMentorProfileRequest request, String targetStatus) {
+    private Mono<MentorProfileResponse> saveProfile(CreateMentorProfileRequest request, Status targetStatus) {
         return currentMemberId().flatMap(memberId ->
                 profileRepository.findById(memberId)
                         .flatMap(existing -> {
-                            String current = existing.getStatus();
-                            if (MentorProfileStatus.APPROVED.equals(current)
-                                    || MentorProfileStatus.PENDING.equals(current)) {
+                                Status current = existing.getStatus();
+                                if (Status.APPROVED.equals(current)
+                                    || Status.PENDING.equals(current)) {
                                 return Mono.<MentorProfile>error(new ApplicationException(
                                         ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS,
                                         "Mentor profile already exists"));
@@ -132,7 +132,7 @@ public class MentorService {
                             if (request.getBookingWindowSettings() != null) existing.setBookingWindowSettings(request.getBookingWindowSettings());
                             if (request.getExtendedProfile() != null) existing.setExtendedProfile(request.getExtendedProfile());
                             existing.setStatus(targetStatus);
-                            if (MentorProfileStatus.PENDING.equals(targetStatus)) {
+                            if (Status.PENDING.equals(targetStatus)) {
                                 existing.setReviewNote(null);
                                 existing.setReviewedAt(null);
                                 existing.setReviewedBy(null);
@@ -258,7 +258,7 @@ public class MentorService {
                                     .mentorMemberId(memberId)
                                     .startTime(request.getStartTime())
                                     .endTime(request.getEndTime())
-                                    .status("Available")
+                                    .status(Status.AVAILABLE)
                                     .build();
                             return availabilityRepository.save(availability)
                                     .map(MentorAvailabilityResponse::from);
@@ -274,7 +274,7 @@ public class MentorService {
                             if (!memberId.equals(existing.getMentorMemberId())) {
                                 return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
                             }
-                            if (!"Available".equals(existing.getStatus())) {
+                            if (Status.AVAILABLE != existing.getStatus()) {
                                 return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể chỉnh sửa"));
                             }
                             return validateSlot(memberId, request.getStartTime(), request.getEndTime(), availabilityId)
@@ -318,7 +318,7 @@ public class MentorService {
                             if (!memberId.equals(existing.getMentorMemberId())) {
                                 return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
                             }
-                            if (!"Available".equals(existing.getStatus())) {
+                            if (Status.AVAILABLE != existing.getStatus()) {
                                 return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
                             }
                             return availabilityRepository.deleteById(availabilityId).thenReturn(true);

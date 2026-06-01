@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dao;
 
-import com.service.backend.mentorship.entity.MenteeProfile;
+import com.service.backend.shared.entity.MenteeProfile;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 

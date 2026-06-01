@@ -1,6 +1,5 @@
 package com.service.backend.forum.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,9 +12,9 @@ import com.service.backend.forum.dto.CreatePollVoteRequest;
 import com.service.backend.forum.dto.PollDTO;
 import com.service.backend.forum.dto.PollOptionDTO;
 import com.service.backend.forum.dto.PollVoteDTO;
-import com.service.backend.forum.entity.Poll;
-import com.service.backend.forum.entity.PollOption;
-import com.service.backend.forum.entity.PollVote;
+import com.service.backend.shared.entity.Poll;
+import com.service.backend.shared.entity.PollOption;
+import com.service.backend.shared.entity.PollVote;
 import com.service.backend.forum.dao.PollRepository;
 import com.service.backend.forum.dao.PollOptionRepository;
 import com.service.backend.forum.dao.PollVoteRepository;
