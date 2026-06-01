@@ -1,9 +1,8 @@
 package com.service.backend.event.dao;
 
-import com.service.backend.shared.entity.Event;
-import com.service.backend.shared.entity.EventInterest;
-import com.service.backend.shared.entity.EventTicket;
-import com.service.backend.shared.enums.Status;
+import com.service.backend.event.entity.Event;
+import com.service.backend.event.entity.EventInterest;
+import com.service.backend.event.entity.EventTicket;
 import com.service.backend.event.dto.EventStatisticsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +19,9 @@ public class EventRepository implements IEventRepository {
     private final EventR2dbcRepository eventRepo;
     private final EventInterestR2dbcRepository interestRepo;
     private final EventTicketR2dbcRepository ticketRepo;
+
+    private static final String STATUS_REGISTERED = "REGISTERED";
+    private static final String STATUS_CHECKED_IN = "CHECKED_IN";
 
     @Override
     public Mono<Event> createEvent(Event eventData) {
@@ -150,7 +152,7 @@ public class EventRepository implements IEventRepository {
     @Override
     public Mono<EventTicket> registerTicket(EventTicket ticketData) {
         ticketData.setTicketCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        ticketData.setStatus(Status.REGISTERED);
+        ticketData.setStatus(STATUS_REGISTERED);
         ticketData.setRegisteredAt(LocalDateTime.now());
         return ticketRepo.save(ticketData);
     }
@@ -192,14 +194,14 @@ public class EventRepository implements IEventRepository {
 
     @Override
     public Mono<Long> countRegisteredTickets(Long eventId) {
-        return ticketRepo.countByEventIdAndStatus(eventId, Status.REGISTERED.getValue());
+        return ticketRepo.countByEventIdAndStatus(eventId, STATUS_REGISTERED);
     }
 
     @Override
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return eventRepo.findById(eventId)
-                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.REGISTERED.getValue()))
-                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.CHECKED_IN.getValue()))
+                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, STATUS_REGISTERED))
+                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, STATUS_CHECKED_IN))
                 .map(tuple -> {
                     Event event = tuple.getT1().getT1();
                     Long registeredCount = tuple.getT1().getT2();
@@ -216,4 +218,3 @@ public class EventRepository implements IEventRepository {
                 });
     }
 }
-    

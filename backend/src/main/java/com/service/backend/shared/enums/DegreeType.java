@@ -1,8 +1,5 @@
 package com.service.backend.shared.enums;
 
-import lombok.Getter;
-
-@Getter
 public enum DegreeType {
     HIGH_SCHOOL("HIGH SCHOOL"),
     ASSOCIATE("ASSOCIATE"),
@@ -16,4 +13,7 @@ public enum DegreeType {
         this.value = value;
     }
 
+    public String getValue() {
+        return value;
+    }
 }

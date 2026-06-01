@@ -1,11 +1,12 @@
 package com.service.backend.forum.dao;
 
+import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.ForumPost;
+import com.service.backend.forum.entity.ForumPost;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

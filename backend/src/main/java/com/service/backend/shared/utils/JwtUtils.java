@@ -13,7 +13,7 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import com.service.backend.shared.exception.ApplicationException;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.constants.ErrorCode;
 
 import java.text.ParseException;
 

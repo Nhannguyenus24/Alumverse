@@ -1,7 +1,7 @@
 package com.service.backend.shared.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.constants.ErrorCode;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

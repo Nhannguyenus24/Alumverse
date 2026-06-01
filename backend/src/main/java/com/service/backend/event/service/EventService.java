@@ -1,15 +1,15 @@
 package com.service.backend.event.service;
 
-import com.service.backend.shared.entity.Event;
-import com.service.backend.shared.entity.EventInterest;
-import com.service.backend.shared.entity.EventTicket;
+import com.service.backend.event.entity.Event;
+import com.service.backend.event.entity.EventInterest;
+import com.service.backend.event.entity.EventTicket;
 import com.service.backend.event.dao.IEventRepository;
 import com.service.backend.event.dto.CreateEventRequest;
 import com.service.backend.event.dto.RegisterTicketRequest;
 import com.service.backend.event.dto.UpdateEventRequest;
 import com.service.backend.event.dto.EventStatisticsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.SecurityUtils;

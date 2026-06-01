@@ -1,7 +1,7 @@
 package com.service.backend.admin.dao;
 
 import com.service.backend.admin.dto.LoginHistoryResponse;
-import com.service.backend.shared.entity.UserLoginHistory;
+import com.service.backend.user.entity.UserLoginHistory;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;

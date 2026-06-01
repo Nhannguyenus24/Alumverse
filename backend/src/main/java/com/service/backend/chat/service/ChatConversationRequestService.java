@@ -6,14 +6,13 @@ import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
 import com.service.backend.chat.dto.ConversationRequestConnectionStatusResponse;
 import com.service.backend.chat.dto.ConversationRequestLatestMessageResponse;
-import com.service.backend.shared.entity.ChatConversationRequest;
-import com.service.backend.shared.entity.ChatGroup;
-import com.service.backend.shared.entity.ChatGroupMember;
-import com.service.backend.shared.entity.ChatMessage;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.chat.entity.ChatConversationRequest;
+import com.service.backend.chat.entity.ChatGroup;
+import com.service.backend.chat.entity.ChatGroupMember;
+import com.service.backend.chat.entity.ChatMessage;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.enums.ChatType;
-import com.service.backend.shared.enums.ChatRole;
-import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.ConversationRequestStatus;
 import com.service.backend.shared.exception.ApplicationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -127,7 +126,7 @@ public class ChatConversationRequestService {
 
     private Mono<ChatGroup> createPrivateChatGroup(Long createdByMemberId) {
         ChatGroup newGroup = ChatGroup.builder()
-                .type(ChatType.PRIVATE)
+                .type(ChatType.PRIVATE.getValue())
                 .title(null)
                 .createdBy(createdByMemberId)
                 .createdAt(LocalDateTime.now())
@@ -141,13 +140,13 @@ public class ChatConversationRequestService {
         ChatGroupMember currentMember = ChatGroupMember.builder()
                 .groupId(group.getId())
                 .memberId(currentMemberId)
-                .role(ChatRole.MEMBER)
+                .role("member")
                 .joinedAt(now)
                 .build();
         ChatGroupMember targetMember = ChatGroupMember.builder()
                 .groupId(group.getId())
                 .memberId(targetMemberId)
-                .role(ChatRole.MEMBER)
+                .role("member")
                 .joinedAt(now)
                 .build();
         return chatGroupMemberRepository.saveAll(Flux.just(currentMember, targetMember)).then();
@@ -177,9 +176,8 @@ public class ChatConversationRequestService {
                 .chatGroupId(chatGroupId)
                 .lastRequestMessageAt(messageCreatedAt)
                 .cooldownUntil(messageCreatedAt.plusDays(7))
-                .status(Status.PENDING)
+                .status(ConversationRequestStatus.PENDING)
                 .build();
         return chatConversationRequestRepository.save(request);
     }
 }
-    

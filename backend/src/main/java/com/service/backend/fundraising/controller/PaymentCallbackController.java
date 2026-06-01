@@ -1,7 +1,7 @@
 package com.service.backend.fundraising.controller;
 
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
-import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.FundDonationStatus;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,12 +30,12 @@ public class PaymentCallbackController {
     ) {
         return fundDonationsRepository.findById(orderCode.intValue())
                 .flatMap(existing -> {
-                    if (existing.getStatus() == Status.SUCCESS) {
+                    if (existing.getStatus() == FundDonationStatus.SUCCESS) {
                         return Mono.just(existing);
                     }
-                    Status newStatus;
+                    FundDonationStatus newStatus;
                     try {
-                        newStatus = Status.valueOf(status);
+                        newStatus = FundDonationStatus.valueOf(status);
                     } catch (IllegalArgumentException ex) {
                         // status ko map duoc, giu nguyen ko doi
                         log.warn("Unknown status from PayOS cancel callback: '{}', keep existing status {} for donation id={}",

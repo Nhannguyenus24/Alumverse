@@ -1,6 +1,5 @@
 package com.service.backend.admin.dto;
 
-import com.service.backend.shared.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +15,7 @@ public class UpdateOrganizationRequest {
     private String name;
     private String slug;
     private String logoUrl;
-    private Status status;
+    private String status;
     private List<String> programs;
     private List<String> majors;
     private String featuresConfig;

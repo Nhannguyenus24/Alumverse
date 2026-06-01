@@ -23,7 +23,7 @@ import com.service.backend.auth.dto.LoginResponse;
 import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.SendOtpRequest;
 import com.service.backend.auth.dto.VerifyOtpRequest;
-import com.service.backend.shared.entity.User;
+import com.service.backend.auth.entity.User;
 import com.service.backend.auth.service.AuthService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.utils.JwtUtils;

@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dao;
 
-import com.service.backend.shared.entity.MentorAvailability;
+import com.service.backend.mentorship.entity.MentorAvailability;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

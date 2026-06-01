@@ -1,12 +1,11 @@
 package com.service.backend.article.dto;
 
-import com.service.backend.shared.entity.LearningResource;
+import com.service.backend.article.entity.LearningResource;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import com.service.backend.shared.enums.LearningResourceType;
 import java.time.LocalDateTime;
 
 @Data
@@ -19,7 +18,7 @@ public class LearningResourceResponse {
     private Integer organizationId;
     private Integer uploaderMemberId;
     private String title;
-    private LearningResourceType type;
+    private String type;
     private String linkUrl;
     private String description;
     private LocalDateTime createdAt;

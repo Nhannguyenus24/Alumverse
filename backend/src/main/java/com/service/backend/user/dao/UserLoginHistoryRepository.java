@@ -4,7 +4,7 @@ import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.UserLoginHistory;
+import com.service.backend.user.entity.UserLoginHistory;
 
 import reactor.core.publisher.Flux;
 

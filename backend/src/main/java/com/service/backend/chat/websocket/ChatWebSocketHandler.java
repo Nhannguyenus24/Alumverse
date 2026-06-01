@@ -1,7 +1,7 @@
 package com.service.backend.chat.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.service.backend.shared.entity.ChatMessage;
+import com.service.backend.chat.entity.ChatMessage;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.utils.JsonUtils;
@@ -13,7 +13,7 @@ import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.exception.ApplicationException;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.constants.ErrorCode;
 
 import java.util.HashMap;
 import java.util.Map;

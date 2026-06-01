@@ -1,6 +1,6 @@
 package com.service.backend.fundraising.dao;
 
-import com.service.backend.shared.entity.FundDonations;
+import com.service.backend.fundraising.entity.FundDonations;
 import com.service.backend.fundraising.projection.FundDonationListProjection;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

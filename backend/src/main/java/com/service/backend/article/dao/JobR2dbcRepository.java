@@ -1,6 +1,6 @@
 package com.service.backend.article.dao;
 
-import com.service.backend.shared.entity.Job;
+import com.service.backend.article.entity.Job;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

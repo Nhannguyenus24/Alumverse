@@ -1,6 +1,6 @@
 package com.service.backend.shared.exception;
 
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.constants.ErrorCode;
 import lombok.Getter;
 
 @Getter

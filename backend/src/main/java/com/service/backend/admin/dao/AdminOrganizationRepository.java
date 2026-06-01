@@ -6,8 +6,7 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.Organization;
-import com.service.backend.shared.enums.Status;
+import com.service.backend.organization.entity.Organization;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -42,7 +41,7 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
             @Param("name") String name,
             @Param("slug") String slug,
             @Param("logoUrl") String logoUrl,
-            @Param("status") Status status,
+            @Param("status") String status,
             @Param("brandConfig") String brandConfig,
             @Param("featuresConfig") String featuresConfig,
             @Param("programs") String programs,
@@ -52,7 +51,7 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
     /**
      * Count active members in a specific organization
      */
-    @Query("SELECT COUNT(*) FROM organization_members WHERE organization_id = :organizationId AND status = 'ACTIVE'")
+    @Query("SELECT COUNT(*) FROM organization_members WHERE organization_id = :organizationId AND status = 'active'")
     Mono<Long> countActiveMembersByOrganization(@Param("organizationId") Integer organizationId);
 }
 

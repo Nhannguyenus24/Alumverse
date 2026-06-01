@@ -8,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.validator.constraints.URL;
 
-import com.service.backend.shared.enums.Status;
 import java.time.LocalDate;
 
 @Data
@@ -31,7 +30,8 @@ public class CreateAchievementRequest {
 
     private LocalDate awardedDate;
 
-    private Status status;
+    @Size(max = 50)
+    private String status;
 
     private String topic;
 }

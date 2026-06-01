@@ -31,12 +31,15 @@ import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.service.ForumService;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.exception.ApplicationException;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Mono;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/forum")

@@ -1,7 +1,6 @@
 package com.service.backend.chat.dto;
 
-import com.service.backend.shared.entity.ChatGroupMember;
-import com.service.backend.shared.enums.ChatType;
+import com.service.backend.chat.entity.ChatGroupMember;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,7 +15,7 @@ import java.util.List;
 @Builder
 public class ChatGroupMetadataResponse {
     private Long id;
-    private ChatType type;
+    private String type;
     private String title;
     private Long createdBy;
     private LocalDateTime createdAt;

@@ -2,7 +2,7 @@ package com.service.backend.admin.dto;
 
 import java.util.List;
 
-import com.service.backend.shared.entity.AdminAuditLog;
+import com.service.backend.admin.entity.AdminAuditLog;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

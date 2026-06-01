@@ -1,7 +1,7 @@
 package com.service.backend.chat.dao;
 
 import com.service.backend.chat.dto.ChatMessageResponse;
-import com.service.backend.shared.entity.ChatMessage;
+import com.service.backend.chat.entity.ChatMessage;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

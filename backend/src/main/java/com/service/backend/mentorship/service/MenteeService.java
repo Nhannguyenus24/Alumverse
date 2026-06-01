@@ -2,16 +2,13 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
-import com.service.backend.shared.entity.MenteeProfile;
-import com.service.backend.shared.entity.MentorshipSession;
-import com.service.backend.shared.enums.MentorshipSessionType;
-import com.service.backend.shared.enums.Status;
-import com.service.backend.shared.entity.SessionFeedback;
+import com.service.backend.mentorship.entity.MenteeProfile;
+import com.service.backend.mentorship.entity.MentorshipSession;
+import com.service.backend.mentorship.entity.SessionFeedback;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.entity.MentorExpertise;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -101,8 +98,8 @@ public class MenteeService {
         Mono<Map<Integer, UserDisplayInfo>> displayMono = userDisplayInfoRepository.findByMemberIds(ids);
         Mono<Map<Integer, java.util.List<String>>> topicsMono = expertiseRepository
                 .findByMentorMemberIds(ids)
-                .collectMultimap(MentorExpertise::getMentorMemberId,
-                        MentorExpertise::getTopic)
+                .collectMultimap(com.service.backend.mentorship.entity.MentorExpertise::getMentorMemberId,
+                        com.service.backend.mentorship.entity.MentorExpertise::getTopic)
                 .map(mm -> {
                     java.util.HashMap<Integer, java.util.List<String>> out = new java.util.HashMap<>();
                     mm.forEach((k, v) -> out.put(k, new java.util.ArrayList<>(v)));
@@ -239,23 +236,23 @@ public class MenteeService {
                             return availabilityRepository.findById(request.getAvailabilityId())
                                     .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability slot not found")))
                                     .flatMap(availability -> {
-                                        if (Status.AVAILABLE != availability.getStatus()) {
+                                        if (!"Available".equals(availability.getStatus())) {
                                             return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "This time slot is no longer available"));
                                         }
 
                                         MentorshipSession session = MentorshipSession.builder()
                                                 .availabilityId(request.getAvailabilityId())
                                                 .menteeMemberId(memberId)
-                                                .status(Status.PENDING)
+                                                .status("Pending")
                                                 .bookingNote(request.getBookingNote())
-                                                .sessionType(MentorshipSessionType.valueOf(request.getSessionType().toUpperCase()))
+                                                .sessionType(request.getSessionType())
                                                 .introduction(request.getIntroduction())
                                                 .description(request.getDescription())
                                                 .cvUrl(request.getCvUrl())
                                                 .createdAt(LocalDateTime.now())
                                                 .build();
 
-                                        return availabilityRepository.updateStatus(availability.getId(), Status.BOOKED.getValue())
+                                        return availabilityRepository.updateStatus(availability.getId(), "Booked")
                                                 .then(sessionRepository.save(session));
                                     });
                         })
@@ -297,11 +294,11 @@ public class MenteeService {
         return sessionRepository.findById(sessionId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
                 .flatMap(session -> {
-                        if (Status.CANCELLED.equals(session.getStatus())) {
+                    if ("Cancelled".equals(session.getStatus())) {
                         return Mono.error(new ApplicationException(ErrorCode.SESSION_ALREADY_CANCELLED, "Session is already cancelled"));
                     }
-                        return availabilityRepository.updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
-                            .then(sessionRepository.updateStatus(sessionId, Status.CANCELLED.getValue()))
+                    return availabilityRepository.updateStatus(session.getAvailabilityId(), "Available")
+                            .then(sessionRepository.updateStatus(sessionId, "Cancelled"))
                             .then(sessionRepository.findById(sessionId));
                 })
                 .flatMap(this::enrich);
@@ -314,7 +311,7 @@ public class MenteeService {
                 sessionRepository.findById(sessionId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found")))
                         .flatMap(session -> {
-                            if (!Status.COMPLETED.equals(session.getStatus())) {
+                            if (!"Completed".equals(session.getStatus())) {
                                 return Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_COMPLETED, "Can only provide feedback for completed sessions"));
                             }
                             return feedbackRepository.existsBySessionId(sessionId)

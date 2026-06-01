@@ -3,7 +3,7 @@ package com.service.backend.forum.dao;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.shared.entity.Poll;
+import com.service.backend.forum.entity.Poll;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;

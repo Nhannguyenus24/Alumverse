@@ -19,12 +19,10 @@ import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
-import com.service.backend.shared.entity.ForumCategory;
-import com.service.backend.shared.entity.ForumPost;
-import com.service.backend.shared.entity.ForumPostReport;
-import com.service.backend.shared.enums.Status;
-import com.service.backend.shared.entity.ForumTopic;
-import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.forum.entity.ForumCategory;
+import com.service.backend.forum.entity.ForumPost;
+import com.service.backend.forum.entity.ForumPostReport;
+import com.service.backend.shared.constants.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
@@ -134,10 +132,10 @@ public class AdminForumService {
 
     public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(int page, int size) {
         long offset = (long) page * size;
-        return forumPostReportRepository.findByStatusWithPagination(Status.PENDING, size, offset)
+        return forumPostReportRepository.findByStatusWithPagination("PENDING", size, offset)
                 .map(this::convertToReportDTO)
                 .collectList()
-                .zipWith(forumPostReportRepository.countByStatus(Status.PENDING))
+                .zipWith(forumPostReportRepository.countByStatus("PENDING"))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(r -> log.info("getPendingReports result: {}", JsonUtils.toJson(r)));
     }
@@ -147,8 +145,7 @@ public class AdminForumService {
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_REPORT_NOT_FOUND))))
                 .flatMap(report -> applyModerationAction(report, request, adminUserId)
                         .then(Mono.defer(() -> {
-                                                        String upperDecision = request.getDecision() == null ? null : request.getDecision().toUpperCase();
-                                                        report.setStatus(Status.valueOf(upperDecision));
+                            report.setStatus(request.getDecision().toUpperCase());
                             report.setReviewedByUserId(adminUserId);
                             report.setReviewNote(request.getReviewNote());
                             report.setUpdatedAt(LocalDateTime.now());
@@ -220,8 +217,8 @@ public class AdminForumService {
 
     public Mono<com.service.backend.forum.dto.ForumCategoryDTO> createCategory(
             Integer organizationId, String name, String description, Integer parentId) {
-        ForumCategory category =
-            ForumCategory.builder()
+        com.service.backend.forum.entity.ForumCategory category =
+            com.service.backend.forum.entity.ForumCategory.builder()
                 .parentId(parentId)
                 .organizationId(organizationId)
                 .name(name)
@@ -287,8 +284,8 @@ public class AdminForumService {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> {
-                    ForumTopic topic =
-                            ForumTopic.builder()
+                    com.service.backend.forum.entity.ForumTopic topic =
+                            com.service.backend.forum.entity.ForumTopic.builder()
                                     .organizationId(organizationId)
                                     .categoryId(categoryId)
                                     .title(title)
@@ -480,18 +477,18 @@ public class AdminForumService {
 
     private Mono<ForumPostDTO> convertToPostDTO(ForumPost post) {
         Mono<Long> flagsCountMono = forumPostReportRepository.countByPostId(post.getId()).defaultIfEmpty(0L);
-        Mono<ForumTopic> topicMono = post.getTopicId() == null
+        Mono<com.service.backend.forum.entity.ForumTopic> topicMono = post.getTopicId() == null
                 ? Mono.empty()
                 : forumTopicRepository.findById(post.getTopicId());
-        Mono<ForumCategory> categoryMono = topicMono
+        Mono<com.service.backend.forum.entity.ForumCategory> categoryMono = topicMono
                 .flatMap(topic -> topic.getCategoryId() == null
                         ? Mono.empty()
                         : forumCategoryRepository.findById(topic.getCategoryId()));
 
         return Mono.zip(
                         flagsCountMono,
-                        topicMono.defaultIfEmpty(ForumTopic.builder().build()),
-                        categoryMono.defaultIfEmpty(ForumCategory.builder().build()))
+                        topicMono.defaultIfEmpty(com.service.backend.forum.entity.ForumTopic.builder().build()),
+                        categoryMono.defaultIfEmpty(com.service.backend.forum.entity.ForumCategory.builder().build()))
                 .map(tuple -> ForumPostDTO.builder()
                         .id(post.getId())
                         .topicId(post.getTopicId())
@@ -581,7 +578,7 @@ public class AdminForumService {
     }
 
     private com.service.backend.forum.dto.ForumCategoryDTO convertToCategoryDTO(
-            ForumCategory category) {
+            com.service.backend.forum.entity.ForumCategory category) {
         return com.service.backend.forum.dto.ForumCategoryDTO.builder()
                 .id(category.getId())
                 .parentId(category.getParentId())
@@ -594,14 +591,14 @@ public class AdminForumService {
     }
 
     private Mono<com.service.backend.forum.dto.ForumTopicDTO> convertToTopicDTOWithPostCount(
-            ForumTopic topic) {
+            com.service.backend.forum.entity.ForumTopic topic) {
         return forumPostRepository.countByTopicId(topic.getId())
                 .defaultIfEmpty(0L)
                 .map(postCount -> convertToTopicDTO(topic, postCount));
     }
 
     private com.service.backend.forum.dto.ForumTopicDTO convertToTopicDTO(
-            ForumTopic topic,
+            com.service.backend.forum.entity.ForumTopic topic,
             Long postCount) {
         return com.service.backend.forum.dto.ForumTopicDTO.builder()
                 .id(topic.getId())
