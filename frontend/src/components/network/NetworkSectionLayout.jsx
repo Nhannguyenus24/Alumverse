@@ -8,7 +8,7 @@ const NetworkSectionLayout = ({ title, children }) => (
   <Page title={title}>
     <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
       <Container
-        maxWidth="lg"
+        maxWidth="xl"
         sx={{
           pt: { xs: 2, sm: 3, md: 4 },
           px: { xs: 2, sm: 3, lg: 6 },
