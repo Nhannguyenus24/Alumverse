@@ -1,6 +1,6 @@
 package com.service.backend.admin.dao;
 
-import com.service.backend.event.entity.Event;
+import com.service.backend.shared.entity.Event;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;

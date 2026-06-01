@@ -3,7 +3,7 @@ package com.service.backend.admin.controller;
 import com.service.backend.admin.service.AdminArticleService;
 import com.service.backend.admin.service.AdminEventService;
 import com.service.backend.article.dto.*;
-import com.service.backend.event.entity.Event;
+import com.service.backend.shared.entity.Event;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
