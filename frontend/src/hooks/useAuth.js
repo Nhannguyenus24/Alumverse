@@ -101,10 +101,7 @@ export const useAuth = () => {
     };
   }, [storageHydrated, token, user, authResolved]);
 
-  const setLoading = (value) => {
-    store.setLoading(value);
-    if (value) store.setError(null);
-  };
+  const setLoading = (value) => store.setLoading(value);
   const setError = (message) => store.setError(message);
   const clearError = () => store.setError(null);
 
@@ -114,15 +111,15 @@ export const useAuth = () => {
     const authUser = userFromAccessToken(accessToken);
     if (!accessToken || !authUser) {
       const msg = responseData?.message ?? fallbackMessage;
-      store.setError(msg);
       store.reset();
+      store.setError(msg);
       return { ok: false, error: msg };
     }
-    store.setUser(authUser);
-    store.setToken(accessToken);
-    store.setVerificationLevel(verificationLevel);
-    store.setLoading(false);
-    store.setError(null);
+    store.setAuth({
+      user: authUser,
+      token: accessToken,
+      verificationLevel,
+    });
     return { ok: true, data: { token: accessToken, user: authUser, verificationLevel } };
   };
 
@@ -201,8 +198,8 @@ export const useAuth = () => {
       });
       if (!data?.data) {
         const msg = data?.message ?? 'Đăng ký thất bại';
-        store.setError(msg);
         store.reset();
+        store.setError(msg);
         return { ok: false, error: msg };
       }
       store.setLoading(false);
@@ -226,17 +223,16 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/send-otp', parsed.data);
-      store.setLoading(false);
       if (!data?.data) {
         const msg = data?.message ?? 'Gửi mã thất bại';
         store.setError(msg);
         return { ok: false, error: msg };
       }
+      store.setLoading(false);
       store.setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Gửi mã thất bại';
-      store.setLoading(false);
       store.setError(message);
       return { ok: false, error: message };
     }
@@ -252,17 +248,16 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/verify-otp', parsed.data);
-      store.setLoading(false);
       if (!data?.data) {
         const msg = data?.message ?? 'Xác thực mã thất bại';
         store.setError(msg);
         return { ok: false, error: msg };
       }
+      store.setLoading(false);
       store.setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Xác thực mã thất bại';
-      store.setLoading(false);
       store.setError(message);
       return { ok: false, error: message };
     }
@@ -286,17 +281,16 @@ export const useAuth = () => {
         oldPassword: parsed.data.oldPassword,
         newPassword: parsed.data.newPassword,
       });
-      store.setLoading(false);
       if (!data?.data) {
         const msg = data?.message ?? 'Đổi mật khẩu thất bại';
         store.setError(msg);
         return { ok: false, error: msg };
       }
+      store.setLoading(false);
       store.setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
       const message = err.response?.data?.message ?? err.message ?? 'Đổi mật khẩu thất bại';
-      store.setLoading(false);
       store.setError(message);
       return { ok: false, error: message };
     }

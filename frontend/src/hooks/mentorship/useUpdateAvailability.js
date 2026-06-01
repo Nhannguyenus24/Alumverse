@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateMyAvailability } from '../../api/mentorshipApi';
+import { updateMyAvailability } from '../../utils/api';
 
 const callUpdate = async ({ id, startTime, endTime }) => {
   const res = await updateMyAvailability(id, { startTime, endTime });
