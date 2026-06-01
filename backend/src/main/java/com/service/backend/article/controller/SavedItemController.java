@@ -4,7 +4,7 @@ import com.service.backend.article.dto.SaveItemRequest;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.dto.SavedCheckResponse;
 import com.service.backend.article.dto.SavedItemResponse;
-import com.service.backend.article.usecase.SavedItemService;
+import com.service.backend.article.service.SavedItemService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

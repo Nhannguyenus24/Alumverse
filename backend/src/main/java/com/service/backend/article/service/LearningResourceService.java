@@ -1,4 +1,4 @@
-package com.service.backend.article.usecase;
+package com.service.backend.article.service;
 
 import com.service.backend.article.dao.LearningResourceR2dbcRepository;
 import com.service.backend.shared.entity.LearningResource;

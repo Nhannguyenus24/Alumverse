@@ -4,7 +4,7 @@ import com.service.backend.article.dto.CreateAchievementRequest;
 import com.service.backend.article.dto.UpdateAchievementRequest;
 import com.service.backend.article.dto.AchievementResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.article.usecase.AchievementService;
+import com.service.backend.article.service.AchievementService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

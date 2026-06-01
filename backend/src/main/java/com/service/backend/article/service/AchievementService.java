@@ -1,4 +1,4 @@
-package com.service.backend.article.usecase;
+package com.service.backend.article.service;
 
 import com.service.backend.article.dao.AchievementR2dbcRepository;
 import com.service.backend.shared.entity.Achievement;

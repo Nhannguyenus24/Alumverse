@@ -4,7 +4,7 @@ import com.service.backend.article.dto.CreateLearningResourceRequest;
 import com.service.backend.article.dto.UpdateLearningResourceRequest;
 import com.service.backend.article.dto.LearningResourceResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.article.usecase.LearningResourceService;
+import com.service.backend.article.service.LearningResourceService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
