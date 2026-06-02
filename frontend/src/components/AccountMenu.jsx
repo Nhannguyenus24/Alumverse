@@ -27,7 +27,6 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const { logout, verificationLevel } = useAuth();
   const toOrgPath = useOrgPath();
   const isGuestVerificationLevel = verificationLevel === 0;
-  console.log(verificationLevel);
   const handleOpen = (event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);

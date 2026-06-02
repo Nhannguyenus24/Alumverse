@@ -3,13 +3,11 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import dayjs from "dayjs";
 import { truncateText } from "../../utils/text";
+import { formatCurrency } from "../../utils/numberFormatter";
+import { formatDate } from "../../utils/dateFormatter";
 
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 120;
 const LOGO_FALLBACK_URL = "https://placehold.co/800x450/eef3ff/0f3a7a?text=Fund";
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
-}
 
 const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin }) => {
   const now = dayjs();
@@ -25,8 +23,8 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
     campaign.statusName === "Đã đóng";
 
   const progressValue = Math.min(100, Math.round(((campaign.currentAmount ?? 0) / Math.max(campaign.targetAmount ?? 1, 1)) * 100));
-  const startedAt = campaign.timeStarted ? dayjs(campaign.timeStarted).format("DD/MM/YYYY") : "--";
-  const endedAt = campaign.timeEnded ? dayjs(campaign.timeEnded).format("DD/MM/YYYY") : "--";
+  const startedAt = formatDate(campaign.timeStarted);
+  const endedAt = formatDate(campaign.timeEnded);
 
   return (
     <Box onClick={onNavigate} sx={{ display: "flex", flexDirection: "column", gap: 2, cursor: "pointer", width: "100%" }}>

@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 const DEFAULT_LOCALE = 'vi-VN';
 
 const toValidDate = (value) => {
@@ -6,7 +8,10 @@ const toValidDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-export const formatDate = (value, fallback = '-') => {
+/**
+ * Native implementation of formatDate.
+ */
+export const formatDateNative = (value, fallback = '-') => {
   const date = toValidDate(value);
   if (!date) return fallback;
   return date.toLocaleDateString(DEFAULT_LOCALE, {
@@ -16,7 +21,22 @@ export const formatDate = (value, fallback = '-') => {
   });
 };
 
-export const formatDateTime = (value, fallback = '-') => {
+/**
+ * Formats a date string or object into a human-readable format using dayjs.
+ * @param {string|Date|dayjs.Dayjs} value - The date to format.
+ * @param {string} formatStr - The dayjs format string.
+ * @returns {string} The formatted date string.
+ */
+export const formatDate = (value, formatStr = "DD/MM/YYYY") => {
+  if (!value) return "--";
+  const d = dayjs(value);
+  return d.isValid() ? d.format(formatStr) : "--";
+};
+
+/**
+ * Native implementation of formatDateTime.
+ */
+export const formatDateTimeNative = (value, fallback = '-') => {
   const date = toValidDate(value);
   if (!date) return fallback;
   return date.toLocaleString(DEFAULT_LOCALE, {
@@ -27,6 +47,13 @@ export const formatDateTime = (value, fallback = '-') => {
     minute: '2-digit',
   });
 };
+
+/**
+ * Formats a date with time using dayjs.
+ * @param {string|Date} value 
+ * @returns {string}
+ */
+export const formatDateTime = (value) => formatDate(value, "DD/MM/YYYY HH:mm");
 
 export const formatDateTimeWithSeconds = (value, fallback = '-') => {
   const date = toValidDate(value);
@@ -54,7 +81,7 @@ export const formatRelativeTimeVi = (value, fallback = '—') => {
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours} giờ trước`;
 
-  return formatDate(date, fallback);
+  return formatDate(date);
 };
 
 export const formatTimeAgoVi = (value, fallback = '—') => {
@@ -70,8 +97,10 @@ export const formatTimeAgoVi = (value, fallback = '—') => {
 };
 
 export const formatDateRange = (start, end, fallback = '') => {
-  const from = formatDate(start, fallback);
-  if (!from) return fallback;
+  const from = formatDate(start);
+  if (!from || from === "--") return fallback;
   if (!end) return from;
-  return `${from} - ${formatDate(end, fallback)}`;
+  const to = formatDate(end);
+  if (to === "--") return from;
+  return `${from} - ${to}`;
 };
