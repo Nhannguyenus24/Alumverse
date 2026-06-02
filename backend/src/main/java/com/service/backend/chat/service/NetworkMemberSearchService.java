@@ -36,20 +36,16 @@ public class NetworkMemberSearchService {
 
         int offset = page * size;
 
-        return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(organizationId -> {
-                    log.info(
-                            "Searching network members orgId={} fullName={} program={} major={} startYear={} page={} size={}",
-                            organizationId,
-                            fullNamePattern != null,
-                            programJson != null,
-                            majorJson != null,
-                            startYear,
-                            page,
-                            size);
+        return Mono.zip(
+                        SecurityUtils.getCurrentOrganizationId(),
+                        SecurityUtils.getCurrentUserId())
+                .flatMap(tuple -> {
+                    Integer organizationId = tuple.getT1();
+                    Long currentUserId = tuple.getT2();
 
                     Mono<Long> totalMono = networkMemberSearchRepository.countSearchMembers(
                             organizationId,
+                            currentUserId,
                             fullNamePattern,
                             programJson,
                             majorJson,
@@ -58,6 +54,7 @@ public class NetworkMemberSearchService {
                     return networkMemberSearchRepository
                             .searchMembers(
                                     organizationId,
+                                    currentUserId,
                                     fullNamePattern,
                                     programJson,
                                     majorJson,
@@ -66,7 +63,7 @@ public class NetworkMemberSearchService {
                                     offset)
                             .collectList()
                             .zipWith(totalMono)
-                            .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+                            .map(result -> PaginatedResponse.of(result.getT1(), result.getT2(), page, size));
                 });
     }
 

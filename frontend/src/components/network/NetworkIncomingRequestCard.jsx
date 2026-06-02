@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   Chip,
+  CircularProgress,
   Stack,
   Typography,
 } from '@mui/material';
@@ -50,35 +51,14 @@ function getStatusChipSx(status) {
   };
 }
 
-function formatAcademicValue(value) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean).join(' · ');
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean).join(' · ');
-      }
-    } catch {
-      return value;
-    }
-    return value;
-  }
-
-  return '';
-}
-
 const NetworkIncomingRequestCard = ({
   request,
   onViewDetail,
   onAccept,
   onReject,
+  isResponding = false,
 }) => {
-  const previewMessage = request.messages?.[0]?.body ?? '';
-  const programLabel = formatAcademicValue(request.program) || '—';
-  const majorLabel = formatAcademicValue(request.major) || 'N/A';
+  const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
   const avatarSrc = request.avatarUrl?.trim() || DEFAULT_CHAT_AVATAR_SRC;
 
@@ -155,18 +135,6 @@ const NetworkIncomingRequestCard = ({
               />
             </Stack>
 
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
-              Program:{' '}
-              <Box component="span" fontWeight={600} color="primary.main">
-                {programLabel}
-              </Box>
-              {' · '}
-              Major:{' '}
-              <Box component="span" fontWeight={600} color="primary.main">
-                {majorLabel}
-              </Box>
-            </Typography>
-
             <Typography
               variant="body2"
               color="text.secondary"
@@ -182,7 +150,7 @@ const NetworkIncomingRequestCard = ({
             </Typography>
 
             <Typography variant="caption" color="text.secondary">
-              Gửi lúc {formatDateTime(request.sentAt)}
+              Gửi lúc {formatDateTime(request.messageCreatedAt)}
             </Typography>
           </Box>
         </Stack>
@@ -198,15 +166,17 @@ const NetworkIncomingRequestCard = ({
               color="primary"
               size="small"
               onClick={handleAccept}
+              disabled={isResponding}
               sx={{ minWidth: 100 }}
             >
-              Chấp nhận
+              {isResponding ? <CircularProgress size={16} color="inherit" /> : 'Chấp nhận'}
             </Button>
             <Button
               variant="outlined"
               color="inherit"
               size="small"
               onClick={handleReject}
+              disabled={isResponding}
               sx={(theme) => ({
                 minWidth: 100,
                 borderColor: alpha(theme.palette.text.primary, 0.23),

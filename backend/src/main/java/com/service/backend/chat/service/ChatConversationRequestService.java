@@ -6,11 +6,18 @@ import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
 import com.service.backend.chat.dto.ConversationRequestConnectionStatusResponse;
 import com.service.backend.chat.dto.ConversationRequestLatestMessageResponse;
+import com.service.backend.chat.dto.ConversationRequestSearchItemResponse;
+import com.service.backend.chat.dto.RespondConversationRequestResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
+
 import com.service.backend.shared.entity.ChatConversationRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.shared.entity.ChatGroupMember;
 import com.service.backend.shared.entity.ChatMessage;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.ConversationRequestStatus;
+
+
 import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.enums.ChatRole;
 import com.service.backend.shared.enums.Status;
@@ -19,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -88,9 +96,101 @@ public class ChatConversationRequestService {
     }
 
     /**
+     * Accepts or rejects an incoming conversation request on behalf of the target member.
+     * On ACCEPTED, both members are added to the private chat group after the status update.
+     * On REJECTED, {@code cooldown_until} is set to now + 7 days.
+     */
+    @Transactional
+    public Mono<RespondConversationRequestResponse> respondToConversationRequest(
+            Long currentMemberId,
+            Long requestId,
+            ConversationRequestStatus requestedStatus) {
+
+        return chatConversationRequestRepository.findById(requestId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.CONVERSATION_REQUEST_NOT_FOUND,
+                        "Conversation request not found: " + requestId)))
+                .flatMap(request -> validateRespondAuthorization(currentMemberId, request)
+                        .then(applyConversationRequestResponse(request, requestedStatus))
+                        .flatMap(this::buildRespondResponse));
+    }
+
+    private Mono<Void> validateRespondAuthorization(Long currentMemberId, ChatConversationRequest request) {
+        if (!currentMemberId.equals(request.getTargetMemberId())) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.CONVERSATION_REQUEST_NOT_RECIPIENT,
+                    "Only the request recipient can respond to this conversation request"));
+        }
+        return Mono.empty();
+    }
+
+    private Mono<ChatConversationRequest> applyConversationRequestResponse(
+            ChatConversationRequest request,
+            ConversationRequestStatus requestedStatus) {
+
+        ConversationRequestStatus currentStatus = request.getStatus();
+
+        if (currentStatus == ConversationRequestStatus.ACCEPTED && requestedStatus == ConversationRequestStatus.ACCEPTED) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.CONVERSATION_REQUEST_ALREADY_ACCEPTED,
+                    "These two members are already connected"));
+        }
+
+        if (currentStatus != ConversationRequestStatus.PENDING) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.CONVERSATION_REQUEST_NOT_PENDING,
+                    "Conversation request is no longer pending"));
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        request.setStatus(requestedStatus);
+        request.setUpdatedAt(now);
+
+        if (requestedStatus == ConversationRequestStatus.REJECTED) {
+            request.setCooldownUntil(now.plusDays(7));
+        } else { // Cái này là ACCEPTED
+            request.setCooldownUntil(null);
+        }
+
+        return chatConversationRequestRepository.save(request)
+                .flatMap(saved -> {
+                    if (requestedStatus == ConversationRequestStatus.REJECTED) {
+                        log.info("Conversation request rejected: id={}, target={}",
+                                saved.getId(), saved.getTargetMemberId());
+                        return Mono.just(saved);
+                    }
+
+                    return chatGroupRepository.findById(saved.getChatGroupId())
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.RESOURCES_NOT_FOUND,
+                                    "Chat group not found for conversation request: " + saved.getChatGroupId())))
+                            .flatMap(group -> addBothMembersToGroup(
+                                    group,
+                                    saved.getRequesterMemberId(),
+                                    saved.getTargetMemberId())
+                                    .thenReturn(saved))
+                            .doOnSuccess(updated -> log.info(
+                                    "Conversation request accepted: id={}, requester={}, target={}",
+                                    updated.getId(),
+                                    updated.getRequesterMemberId(),
+                                    updated.getTargetMemberId()));
+                });
+    }
+
+    private Mono<RespondConversationRequestResponse> buildRespondResponse(ChatConversationRequest request) {
+        return chatMessageRepository.findById(request.getLastRequestMessageId())
+                .map(message -> new RespondConversationRequestResponse(
+                        request.getStatus(),
+                        message.getContent()))
+                .defaultIfEmpty(new RespondConversationRequestResponse(
+                        request.getStatus(),
+                        null));
+    }
+
+    /**
      * Creates a new conversation request between the current member and a target member.
      * Allocates a dedicated private chat group, inserts the initial message, and records
-     * the request with a 7-day cooldown window starting from message creation time.
+     * the request with status PENDING. Cooldown is only set when the request is rejected.
      */
     @Transactional
     public Mono<Long> createConversationRequest(
@@ -108,21 +208,83 @@ public class ChatConversationRequestService {
         long memberHighId = Math.max(currentMemberId, targetMemberId);
 
         return chatConversationRequestRepository.findByMemberPair(memberLowId, memberHighId)
-                .flatMap(existing -> Mono.<Long>error(new ApplicationException(
-                        ErrorCode.RESOURCES_DUPLICATE,
-                        "A conversation request already exists between these two members")))
+                .flatMap(existing -> handleExistingRequest(existing, currentMemberId, targetMemberId, message))
                 .switchIfEmpty(
                         createPrivateChatGroup(currentMemberId)
-                                .flatMap(savedGroup -> addBothMembersToGroup(savedGroup, currentMemberId, targetMemberId)
-                                        .then(insertInitialMessage(savedGroup.getId(), currentMemberId, message))
+                                .flatMap(savedGroup -> insertInitialMessage(savedGroup.getId(), currentMemberId, message)
                                         .flatMap(savedMessage -> saveConversationRequest(
-                                                memberLowId, memberHighId, currentMemberId,
-                                                savedGroup.getId(), savedMessage.getCreatedAt()))
+                                                memberLowId, memberHighId, currentMemberId, targetMemberId,
+                                                savedGroup.getId(), savedMessage.getId()))
                                         .map(savedRequest -> {
                                             log.info("Conversation request created: id={}, requester={}, target={}",
                                                     savedRequest.getId(), currentMemberId, targetMemberId);
                                             return savedRequest.getId();
                                         })));
+    }
+
+    /**
+     * Handles the case where a conversation request already exists between the two members.
+     *
+     * <ul>
+     *   <li>PENDING  → reject: the previous request has not been answered yet.</li>
+     *   <li>ACCEPTED → reject: the two members are already connected.</li>
+     *   <li>REJECTED + cooldown still active → reject: too early to retry.</li>
+     *   <li>REJECTED + cooldown expired → allow re-request: insert a new message into the
+     *       existing chat group and update the request record.
+     *       {@code requester_member_id} and {@code target_member_id} are refreshed to reflect
+     *       the current sender/receiver, because the direction may have reversed (e.g., the
+     *       original target now initiates). See docs/CONVERSATION_REQUEST_DESIGN.md for rationale.
+     *   </li>
+     * </ul>
+     */
+    private Mono<Long> handleExistingRequest(
+            ChatConversationRequest existing,
+            Long currentMemberId,
+            Long targetMemberId,
+            String message) {
+
+        ConversationRequestStatus status = existing.getStatus();
+
+        if (status == ConversationRequestStatus.PENDING) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.CONVERSATION_REQUEST_ALREADY_PENDING,
+                    "A conversation request is already pending between these two members"));
+        }
+
+        if (status == ConversationRequestStatus.ACCEPTED) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.CONVERSATION_REQUEST_ALREADY_ACCEPTED,
+                    "These two members are already connected"));
+        }
+
+        if (status == ConversationRequestStatus.REJECTED) {
+            LocalDateTime cooldownUntil = existing.getCooldownUntil();
+            boolean cooldownStillActive = cooldownUntil != null && LocalDateTime.now().isBefore(cooldownUntil);
+            if (cooldownStillActive) {
+                return Mono.error(new ApplicationException(
+                        ErrorCode.CONVERSATION_REQUEST_COOLDOWN_ACTIVE,
+                        "Conversation request cooldown is still active until " + cooldownUntil));
+            }
+
+            return insertInitialMessage(existing.getChatGroupId(), currentMemberId, message)
+                    .flatMap(savedMessage -> {
+                        existing.setRequesterMemberId(currentMemberId);
+                        existing.setTargetMemberId(targetMemberId);
+                        existing.setLastRequestMessageId(savedMessage.getId());
+                        existing.setStatus(ConversationRequestStatus.PENDING);
+                        existing.setCooldownUntil(null);
+                        return chatConversationRequestRepository.save(existing);
+                    })
+                    .map(updated -> {
+                        log.info("Conversation request re-sent: id={}, requester={}, target={}",
+                                updated.getId(), currentMemberId, targetMemberId);
+                        return updated.getId();
+                    });
+        }
+
+        return Mono.error(new ApplicationException(
+                ErrorCode.BAD_REQUEST,
+                "Unexpected conversation request status: " + status));
     }
 
     private Mono<ChatGroup> createPrivateChatGroup(Long createdByMemberId) {
@@ -167,19 +329,52 @@ public class ChatConversationRequestService {
             long memberLowId,
             long memberHighId,
             Long requesterMemberId,
+            Long targetMemberId,
             Long chatGroupId,
-            LocalDateTime messageCreatedAt) {
+            Long messageId) {
 
         ChatConversationRequest request = ChatConversationRequest.builder()
                 .memberLowId(memberLowId)
                 .memberHighId(memberHighId)
                 .requesterMemberId(requesterMemberId)
+                .targetMemberId(targetMemberId)
                 .chatGroupId(chatGroupId)
-                .lastRequestMessageAt(messageCreatedAt)
-                .cooldownUntil(messageCreatedAt.plusDays(7))
-                .status(Status.PENDING)
+                .lastRequestMessageId(messageId)
+                .cooldownUntil(null)
+                .status(ConversationRequestStatus.PENDING)
                 .build();
         return chatConversationRequestRepository.save(request);
+    }
+
+    public Mono<PaginatedResponse<ConversationRequestSearchItemResponse>> searchIncomingRequests(
+            Long currentUserId,
+            String fullName,
+            String status,
+            int page,
+            int size) {
+
+        String fullNamePattern = toFullNameContainsPattern(fullName);
+        String statusFilter = StringUtils.hasText(status) ? status.trim().toUpperCase() : null;
+        int offset = page * size;
+
+        log.info("Searching incoming conversation requests userId={} fullName={} status={} page={} size={}",
+                currentUserId, fullNamePattern != null, statusFilter, page, size);
+
+        Mono<Long> totalMono = chatConversationRequestRepository.countIncomingRequests(
+                currentUserId, fullNamePattern, statusFilter);
+
+        return chatConversationRequestRepository
+                .searchIncomingRequests(currentUserId, fullNamePattern, statusFilter, size, offset)
+                .collectList()
+                .zipWith(totalMono)
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+    }
+
+    private static String toFullNameContainsPattern(String raw) {
+        if (!StringUtils.hasText(raw)) {
+            return null;
+        }
+        return "%" + raw.trim() + "%";
     }
 }
     

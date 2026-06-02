@@ -357,6 +357,11 @@ export const chatApi = {
 		});
 		return unwrap(response);
 	},
+
+	async getRecentPreviews() {
+		const response = await apiClient.get('/chat/recent-previews');
+		return unwrap(response) ?? [];
+	},
 };
 
 export const {
@@ -365,6 +370,7 @@ export const {
 	getMessages,
 	getConversationRequestStatus,
 	createConversationRequest,
+	getRecentPreviews,
 } = chatApi;
 
 export const eventApi = {
