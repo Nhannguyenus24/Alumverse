@@ -188,7 +188,7 @@ export const adminAuditApi = {
 };
 
 export const {
-	getLoginHistory,
+	getLoginHistory: getAdminLoginHistory,
 	getLoginHistoryByUser,
 	getLoginStats,
 	getSuspiciousLogins,
@@ -340,6 +340,11 @@ export const chatApi = {
 		const response = await apiClient.get(`/chat/groups/${groupId}/messages`, {
 			params: { page, size },
 		});
+		return unwrap(response);
+	},
+
+	async createGroupChat({ title, memberIds }) {
+		const response = await apiClient.post('/chat/groups', { title: title || null, memberIds });
 		return unwrap(response);
 	},
 

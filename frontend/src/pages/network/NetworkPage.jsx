@@ -59,7 +59,7 @@ const NetworkPage = () => {
   const [messagePeer, setMessagePeer] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [isMessageDrawerOpen, setIsMessageDrawerOpen] = useState(false);
-  const [checkingMemberId, setCheckingMemberId] = useState(null);
+  const [checkingUserId, setCheckingUserId] = useState(null);
 
   const { showError } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
@@ -96,13 +96,13 @@ const NetworkPage = () => {
 
   const handleOpenMessage = useCallback(
     async (member) => {
-      setCheckingMemberId(member.memberId);
+      setCheckingUserId(member.userId);
 
       try {
-        const result = await checkStatus(member.memberId);
+        const result = await checkStatus(member.userId);
 
         setMessagePeer({
-          memberId: member.memberId,
+          userId: member.userId,
           fullName: member.fullName,
           avatarUrl: member.avatarUrl,
           startYear: member.startYear,
@@ -114,7 +114,7 @@ const NetworkPage = () => {
       } catch {
         showError('Không thể kiểm tra trạng thái kết nối. Vui lòng thử lại.');
       } finally {
-        setCheckingMemberId(null);
+        setCheckingUserId(null);
       }
     },
     [checkStatus, showError],
@@ -186,14 +186,14 @@ const NetworkPage = () => {
         >
           {items.map((member) => (
             <NetworkSearchMemberCard
-              key={member.memberId}
+              key={member.userId}
               avatar={member.avatarUrl}
               fullName={member.fullName}
               startYear={member.startYear}
               program={member.program}
               major={member.major}
               onMessage={() => handleOpenMessage(member)}
-              isMessageLoading={checkingMemberId === member.memberId}
+              isMessageLoading={checkingUserId === member.userId}
             />
           ))}
         </Box>

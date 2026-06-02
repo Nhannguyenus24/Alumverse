@@ -11,6 +11,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Scrollbar from '../Scrollbar';
 import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../../utils/dateFormatter';
+import ChatAvatar from '../ChatAvatar';
 
 function MessageBubble({ body, createdAt }) {
   return (
@@ -71,12 +72,7 @@ const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          <Avatar
-            src={avatarSrc}
-            alt={request.fullName}
-            slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
-            sx={{ width: 48, height: 48 }}
-          />
+          <ChatAvatar avatarUrl={request.avatarUrl} name={request.fullName} size={48} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {request.fullName}

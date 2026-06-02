@@ -23,6 +23,8 @@ import {
   resolveConnectionDrawerState,
 } from '../../utils/networkConnectionDrawerUi';
 
+import ChatAvatar from '../ChatAvatar';
+
 function formatAcademicValue(value) {
   if (Array.isArray(value)) {
     return value.filter(Boolean).join(' · ');
@@ -92,9 +94,9 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
   const [sentInSession, setSentInSession] = useState(false);
   const [localMessages, setLocalMessages] = useState([]);
 
-  const peerMemberId = peer?.memberId ?? null;
+  const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
-  const { sendMessage, isSending } = useNetworkConversationActions(peerMemberId);
+  const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
   const drawerState = resolveConnectionDrawerState(connectionStatus);
   const composerEnabled = isComposerEnabled({
@@ -113,7 +115,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [open, peerMemberId]);
+  }, [open, peerUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -181,7 +183,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          <Avatar src={avatarSrc} sx={{ width: 48, height: 48 }} />
+          <ChatAvatar avatarUrl={peer?.avatarUrl} name={peer?.fullName} size={48} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {peer?.fullName ?? 'Thành viên'}
