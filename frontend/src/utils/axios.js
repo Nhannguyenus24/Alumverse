@@ -164,7 +164,6 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      console.log('Access token expired. Attempting silent refresh...');
       const refreshData = await refreshSessionAccessToken();
       const newToken = refreshData.accessToken;
 

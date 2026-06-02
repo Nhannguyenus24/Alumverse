@@ -9,21 +9,14 @@ import {
 } from '@mui/material';
 import { useLocation, useParams } from 'react-router';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
+import { getNormalizedPathname } from '../utils/pathUtils';
 
 const Sidebar = ({ items, value, onChange, useRouting = true }) => {
   const navigate = useOrgNavigate();
   const location = useLocation();
   const { slug } = useParams();
 
-  const normalizedPathname = (() => {
-    if (!slug) return location.pathname;
-    const slugPrefix = `/${slug}`;
-    if (location.pathname === slugPrefix) return '/';
-    if (location.pathname.startsWith(`${slugPrefix}/`)) {
-      return location.pathname.slice(slugPrefix.length) || '/';
-    }
-    return location.pathname;
-})();
+  const normalizedPathname = getNormalizedPathname(location.pathname, slug);
 
   return (
     <Paper

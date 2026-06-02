@@ -2,18 +2,12 @@ import { Box, Typography, Button, LinearProgress, Stack } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import dayjs from "dayjs";
+import { truncateText } from "../../utils/text";
+import { formatCurrency } from "../../utils/numberFormatter";
+import { formatDate } from "../../utils/dateFormatter";
 
 const LOGO_FALLBACK_URL = "https://placehold.co/1200x700/eef3ff/0f3a7a?text=Fund";
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
-}
-
-function truncateText(text = "", max = 120) {
-  if (text.length <= max) return text;
-  return `${text.slice(0, max).trim()}...`;
-}
 
 const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, onClose, isAdmin }) => {
   const data = campaign || article;
@@ -32,8 +26,8 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
     data?.statusName === "Đã đóng";
 
   const progressValue = Math.min(100, Math.round(((data?.currentAmount ?? 0) / Math.max(data?.targetAmount ?? 1, 1)) * 100));
-  const startedAt = data?.timeStarted ? dayjs(data.timeStarted).format("DD/MM/YYYY") : "--";
-  const endedAt = data?.timeEnded ? dayjs(data.timeEnded).format("DD/MM/YYYY") : "--";
+  const startedAt = formatDate(data?.timeStarted);
+  const endedAt = formatDate(data?.timeEnded);
 
   return (
     <Box onClick={onNavigate} sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: { xs: "stretch", md: "center" }, width: "100%", gap: 3, cursor: "pointer" }}>

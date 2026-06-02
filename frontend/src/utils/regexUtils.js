@@ -91,7 +91,3 @@ export const DONATION_SEARCH_OPTIONS = [
 ];
 
 export const DONATION_AVATAR_FALLBACK = "/school_logo/HCMUS_Logo_Main.svg";
-
-export const formatDonationTimestamp = (value) => (value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "--");
-
-export const formatDonationAmount = (value) => `${Number(value ?? 0).toLocaleString("vi-VN")} VND`;
