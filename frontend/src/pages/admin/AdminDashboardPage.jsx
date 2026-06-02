@@ -11,9 +11,7 @@ import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlin
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDashboardSections from '../../components/admin/AdminDashboardSections';
 import Chart from '../../components/Chart';
-import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
-import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
-import { useAdminForumContext } from '../../contexts/AdminForumContext';
+import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } from '../../stores/AdminStore';
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
 import { useAuth } from '../../hooks/useAuth';
 

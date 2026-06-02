@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { Box, Typography, Button, TextField } from '@mui/material';
 import Page from '../../components/Page';
-import { verifyOtpSchema } from '../../schemas/authSchemas';
+import { verifyOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 

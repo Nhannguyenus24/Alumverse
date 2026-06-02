@@ -9,7 +9,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
-import { registerSchema } from '../../schemas/authSchemas';
+import { registerSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';

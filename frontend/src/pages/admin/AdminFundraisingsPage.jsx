@@ -38,7 +38,7 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
-import { useAdminSystemContext } from "../../contexts/AdminSystemContext";
+import { useAdminSystemContext } from "../../stores/AdminStore";
 import { adminOrganizationApi, fundApi } from "../../utils/api";
 import dayjs from "dayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
