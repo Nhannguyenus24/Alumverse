@@ -188,7 +188,7 @@ export const adminAuditApi = {
 };
 
 export const {
-	getLoginHistory,
+	getLoginHistory: getAdminLoginHistory,
 	getLoginHistoryByUser,
 	getLoginStats,
 	getSuspiciousLogins,
