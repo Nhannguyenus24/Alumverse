@@ -29,7 +29,7 @@ import {
   useUpdateExpertise,
   useDeleteExpertise,
 } from '../../hooks/mentorship/useExpertiseMutations';
-import { useUploadImage } from '../../hooks/images/useUploadImage';
+import { useUploadImage } from '../../utils/imageUtils';
 
 const TOP_TABS = [
   { label: 'Trang cá nhân', path: '/development/mentorship/profile' },

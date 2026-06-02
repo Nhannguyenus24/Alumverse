@@ -4,7 +4,7 @@ import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
 import { useOrganization } from '../../hooks/useOrganization';
-import { organizationApi } from '../../api/organizationApi';
+import { organizationApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
 
 const BACKGROUND_IMG = '/home_page/home_page_contact.png';

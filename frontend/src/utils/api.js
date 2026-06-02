@@ -187,6 +187,13 @@ export const adminAuditApi = {
 	},
 };
 
+export const {
+	getLoginHistory,
+	getLoginHistoryByUser,
+	getLoginStats,
+	getSuspiciousLogins,
+} = adminAuditApi;
+
 export const adminUserApi = {
 	getUsers(page = 0, size = 20, search = '', role = 'ALL', status = 'ALL', organizationId = null) {
 		const params = { page, size };
@@ -976,6 +983,35 @@ export const {
 	uploadCvFile,
 } = mentorshipApi;
 
+export const notificationApi = {
+	async getNotifications() {
+		const response = await apiClient.get('/users/me/notifications');
+		return unwrap(response) ?? [];
+	},
+
+	async markAsRead(notificationId) {
+		const response = await apiClient.put(`/users/me/notifications/${notificationId}/read`);
+		return unwrap(response);
+	},
+
+	async deleteNotification(notificationId) {
+		const response = await apiClient.delete(`/users/me/notifications/${notificationId}`);
+		return unwrap(response);
+	},
+
+	async deleteAllNotifications() {
+		const response = await apiClient.delete('/users/me/notifications');
+		return unwrap(response);
+	},
+};
+
+export const {
+	getNotifications,
+	markAsRead,
+	deleteNotification,
+	deleteAllNotifications,
+} = notificationApi;
+
 export const api = {
 	organizationApi,
 	adminOrganizationApi,
@@ -991,6 +1027,7 @@ export const api = {
 	userApi,
 	userSettingsApi,
 	mentorshipApi,
+	notificationApi,
 };
 
 export default api;

@@ -10,8 +10,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminOrganizationMasterDetail from '../../components/admin/AdminOrganizationMasterDetail';
 import AdminOrganizationEditDialog from '../../components/admin/AdminOrganizationEditDialog';
 import AdminOrganizationIntroductionDialog from '../../components/admin/AdminOrganizationIntroductionDialog';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
-import { organizationApi } from '../../api/organizationApi';
+import { adminOrganizationApi, organizationApi } from '../../utils/api';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 const withDefaults = (organization) => ({
   ...organization,

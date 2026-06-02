@@ -9,7 +9,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import usePaginationScrollToTop from "../../hooks/usePaginationScrollToTop";
 import useOrganizationStore from "../../stores/organizationStore";
-import { fundApi } from "../../api/fundApi";
+import { fundApi } from "../../utils/api";
 import SearchBar from "../../components/SearchBar";
 import Sidebar from "../../components/Sidebar";
 import DynamicFilterBar from "../../components/DynamicFilterBar";

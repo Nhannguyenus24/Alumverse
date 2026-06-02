@@ -29,7 +29,7 @@ import Page from "../../components/Page";
 import CoverUpload from "../../components/CoverUpload";
 
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-import { fundApi } from "../../api/fundApi";
+import { fundApi } from "../../utils/api";
 import useOrganizationStore from "../../stores/organizationStore";
 
 const createDonationSchema = z

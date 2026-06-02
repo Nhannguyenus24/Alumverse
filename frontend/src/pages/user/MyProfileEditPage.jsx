@@ -17,7 +17,7 @@ import ProfileLayout from '../../layouts/ProfileLayout';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { useUpdateProfile } from '../../hooks/profile/useUpdateProfile';
-import { useUploadImage } from '../../hooks/images/useUploadImage';
+import { useUploadImage } from '../../utils/imageUtils';
 
 const TOP_TABS = [
   { label: 'Trang cá nhân', path: '/profile' },
