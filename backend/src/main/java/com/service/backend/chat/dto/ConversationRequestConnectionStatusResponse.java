@@ -1,6 +1,6 @@
 package com.service.backend.chat.dto;
 
-import com.service.backend.shared.enums.ConversationRequestStatus;
+import com.service.backend.shared.enums.Status;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ConversationRequestConnectionStatusResponse {
 
-    private ConversationRequestStatus status;
+    private Status status;
     private LocalDateTime cooldownUntil;
     private ConversationRequestLatestMessageResponse latestMessage;
 }

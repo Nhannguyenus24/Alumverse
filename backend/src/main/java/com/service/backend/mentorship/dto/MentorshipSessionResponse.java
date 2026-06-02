@@ -1,7 +1,7 @@
 package com.service.backend.mentorship.dto;
 
-import com.service.backend.mentorship.entity.MentorAvailability;
-import com.service.backend.mentorship.entity.MentorshipSession;
+import com.service.backend.shared.entity.MentorAvailability;
+import com.service.backend.shared.entity.MentorshipSession;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,10 +43,10 @@ public class MentorshipSessionResponse {
                 .id(session.getId())
                 .availabilityId(session.getAvailabilityId())
                 .menteeMemberId(session.getMenteeMemberId())
-                .status(session.getStatus())
+                .status(session.getStatus() != null ? session.getStatus().getValue() : null)
                 .bookingNote(session.getBookingNote())
                 .meetingLink(session.getMeetingLink())
-                .sessionType(session.getSessionType())
+                .sessionType(session.getSessionType() != null ? session.getSessionType().getValue() : null)
                 .introduction(session.getIntroduction())
                 .description(session.getDescription())
                 .cvUrl(session.getCvUrl())

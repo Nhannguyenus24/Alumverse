@@ -1,8 +1,8 @@
 package com.service.backend.fundraising.controller;
 
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
-import com.service.backend.fundraising.entity.FundDonations;
-import com.service.backend.shared.enums.FundDonationStatus;
+import com.service.backend.shared.entity.FundDonations;
+import com.service.backend.shared.enums.Status;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -58,13 +58,12 @@ public class PayOSWebhookController {
 
         return fundDonationsRepository.findById(donationId)
                 .flatMap(existing -> {
-                    if (existing.getStatus() == FundDonationStatus.SUCCESS) {
+                    if (existing.getStatus() == Status.SUCCESS) {
                         // da success roi thi ko process nua
                         return Mono.just(existing);
                     }
 
-                    FundDonationStatus newStatus =
-                            "00".equals(code) ? FundDonationStatus.SUCCESS : FundDonationStatus.CANCELLED;
+                    Status newStatus = "00".equals(code) ? Status.SUCCESS : Status.CANCELLED;
                     existing.setStatus(newStatus);
                     return fundDonationsRepository.save(existing);
                 });

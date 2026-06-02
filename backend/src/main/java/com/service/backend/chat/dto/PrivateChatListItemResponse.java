@@ -1,5 +1,6 @@
 package com.service.backend.chat.dto;
 
+import com.service.backend.shared.enums.ChatType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import java.time.LocalDateTime;
 public class PrivateChatListItemResponse {
 
     private Long id;
-    private String type;
+    private ChatType type;
     private String title;
     private Long createdBy;
     private LocalDateTime createdAt;

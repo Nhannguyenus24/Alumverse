@@ -5,15 +5,15 @@ import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.admin.dto.AdminMentorProfileDTO;
 import com.service.backend.admin.dto.AdminMentorshipSessionDTO;
 import com.service.backend.admin.dto.MentorshipStatisticsDTO;
-import com.service.backend.auth.entity.User;
+import com.service.backend.shared.entity.User;
 import com.service.backend.mentorship.dao.MentorAvailabilityR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorProfileR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
-import com.service.backend.mentorship.entity.MentorAvailability;
-import com.service.backend.mentorship.entity.MentorProfile;
-import com.service.backend.mentorship.entity.MentorProfileStatus;
-import com.service.backend.mentorship.entity.MentorshipSession;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.entity.MentorAvailability;
+import com.service.backend.shared.entity.MentorProfile;
+import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.entity.MentorshipSession;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
@@ -32,12 +32,6 @@ import java.util.Map;
 public class AdminMentorshipService {
 
     private static final Logger log = LoggerFactory.getLogger(AdminMentorshipService.class);
-
-    private static final String STATUS_PENDING = "Pending";
-    private static final String STATUS_CONFIRMED = "Confirmed";
-    private static final String STATUS_COMPLETED = "Completed";
-    private static final String STATUS_CANCELLED = "Cancelled";
-    private static final String STATUS_REJECTED = "Rejected";
 
     private final AdminMentorshipRepository adminMentorshipRepository;
     private final MentorshipSessionR2dbcRepository sessionRepo;
@@ -71,9 +65,10 @@ public class AdminMentorshipService {
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(String status, int page, int size) {
         int offset = page * size;
-        return enrichSessions(adminMentorshipRepository.findSessionsByStatus(status, size, offset))
+        String upperStatus = status == null ? null : status.toUpperCase();
+        return enrichSessions(adminMentorshipRepository.findSessionsByStatus(upperStatus, size, offset))
                 .collectList()
-                .zipWith(adminMentorshipRepository.countSessionsByStatus(status))
+            .zipWith(adminMentorshipRepository.countSessionsByStatus(upperStatus))
                 .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
                 .doOnSuccess(r -> log.info("getSessionsByStatus result: {}", JsonUtils.toJson(r)));
     }
@@ -86,9 +81,10 @@ public class AdminMentorshipService {
     }
 
     public Mono<AdminMentorshipSessionDTO> updateSessionStatus(Integer sessionId, String status) {
+        String upperStatus = status == null ? null : status.toUpperCase();
         return adminMentorshipRepository.findById(sessionId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND))))
-                .flatMap(s -> sessionRepo.updateStatus(sessionId, status).then(adminMentorshipRepository.findById(sessionId)))
+            .flatMap(s -> sessionRepo.updateStatus(sessionId, upperStatus).then(adminMentorshipRepository.findById(sessionId)))
                 .flatMap(this::enrichSession)
                 .doOnSuccess(r -> log.info("updateSessionStatus result: {}", JsonUtils.toJson(r)));
     }
@@ -111,26 +107,27 @@ public class AdminMentorshipService {
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(String status, int page, int size) {
         int offset = page * size;
-        return enrichMentors(adminMentorshipRepository.findMentorProfilesByStatus(status, size, offset))
+        String upperStatus = status == null ? null : status.toUpperCase();
+        return enrichMentors(adminMentorshipRepository.findMentorProfilesByStatus(upperStatus, size, offset))
                 .collectList()
-                .zipWith(adminMentorshipRepository.countMentorProfilesByStatus(status))
+            .zipWith(adminMentorshipRepository.countMentorProfilesByStatus(upperStatus))
                 .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
                 .doOnSuccess(r -> log.info("getMentorProfilesByStatus result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<AdminMentorProfileDTO> approveMentor(Integer memberId) {
-        return applyReview(memberId, MentorProfileStatus.APPROVED, null);
+        return applyReview(memberId, Status.APPROVED, null);
     }
 
     public Mono<AdminMentorProfileDTO> rejectMentor(Integer memberId, String reason) {
-        return applyReview(memberId, MentorProfileStatus.REJECTED, reason);
+        return applyReview(memberId, Status.REJECTED, reason);
     }
 
     public Mono<AdminMentorProfileDTO> requestMentorUpdate(Integer memberId, String reason) {
-        return applyReview(memberId, MentorProfileStatus.NEED_UPDATE, reason);
+        return applyReview(memberId, Status.NEED_UPDATE, reason);
     }
 
-    private Mono<AdminMentorProfileDTO> applyReview(Integer memberId, String targetStatus, String reason) {
+    private Mono<AdminMentorProfileDTO> applyReview(Integer memberId, Status targetStatus, String reason) {
         return SecurityUtils.getCurrentUserId()
                 .map(Long::intValue)
                 .defaultIfEmpty(0)
@@ -139,10 +136,10 @@ public class AdminMentorshipService {
                                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND))))
                                 .flatMap(p -> {
                                     Mono<Integer> writeMono;
-                                    if (MentorProfileStatus.APPROVED.equals(targetStatus)) {
+                                    if (Status.APPROVED.equals(targetStatus)) {
                                         writeMono = mentorProfileRepo.approveMentorByReviewer(memberId, reviewerId);
                                     } else {
-                                        writeMono = mentorProfileRepo.applyReview(memberId, targetStatus, reason, reviewerId);
+                                        writeMono = mentorProfileRepo.applyReview(memberId, targetStatus.getValue(), reason, reviewerId);
                                     }
                                     return writeMono
                                             .then(adminMentorshipRepository.findMentorProfileById(memberId))
@@ -152,14 +149,14 @@ public class AdminMentorshipService {
                                 .doOnSuccess(r -> log.info("applyReview {} result: {}", targetStatus, JsonUtils.toJson(r))));
     }
 
-    private Mono<Void> sendReviewEmail(MentorProfile profile, String status, String reason) {
+    private Mono<Void> sendReviewEmail(MentorProfile profile, Status status, String reason) {
         if (profile.getMemberId() == null) return Mono.empty();
         return adminUserRepository.findById(profile.getMemberId())
                 .flatMap(user -> {
                     if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.<Void>empty();
                     Map<String, Object> vars = new HashMap<>();
                     vars.put("recipientName", user.getUserName() != null ? user.getUserName() : "bạn");
-                    vars.put("status", status);
+                    vars.put("status", status.getValue());
                     vars.put("statusLabel", statusLabel(status));
                     vars.put("reason", reason != null ? reason : "");
                     String subject = "[AlumVerse] Cập nhật hồ sơ Mentor: " + statusLabel(status);
@@ -173,22 +170,37 @@ public class AdminMentorshipService {
     }
 
     private String statusLabel(String status) {
-        return switch (status) {
-            case MentorProfileStatus.APPROVED -> "Đã duyệt";
-            case MentorProfileStatus.REJECTED -> "Bị từ chối";
-            case MentorProfileStatus.NEED_UPDATE -> "Cần cập nhật";
+        if (status == null) return "";
+        return switch (status.toUpperCase()) {
+            case "PENDING" -> "Đang chờ";
+            case "CONFIRMED" -> "Đã xác nhận";
+            case "COMPLETED" -> "Đã hoàn thành";
+            case "CANCELLED" -> "Đã huỷ";
+            case "REJECTED" -> "Bị từ chối";
             default -> status;
+        };
+    }
+
+    private String statusLabel(Status status) {
+        if (status == null) return "";
+        return switch (status) {
+            case APPROVED -> "Đã duyệt";
+            case REJECTED -> "Bị từ chối";
+            case NEED_UPDATE -> "Cần cập nhật";
+            case PENDING -> "Đang chờ duyệt";
+            case DRAFT -> "Bản nháp";
+            default -> status.getValue();
         };
     }
 
     public Mono<MentorshipStatisticsDTO> getStatistics() {
         return Mono.zip(
                         adminMentorshipRepository.countAllSessions().defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(STATUS_PENDING).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(STATUS_CONFIRMED).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(STATUS_COMPLETED).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(STATUS_CANCELLED).defaultIfEmpty(0L),
-                        adminMentorshipRepository.countSessionsByStatus(STATUS_REJECTED).defaultIfEmpty(0L),
+                        adminMentorshipRepository.countSessionsByStatus(Status.PENDING.getValue()).defaultIfEmpty(0L),
+                        adminMentorshipRepository.countSessionsByStatus(Status.CONFIRMED.getValue()).defaultIfEmpty(0L),
+                        adminMentorshipRepository.countSessionsByStatus(Status.COMPLETED.getValue()).defaultIfEmpty(0L),
+                        adminMentorshipRepository.countSessionsByStatus(Status.CANCELLED.getValue()).defaultIfEmpty(0L),
+                        adminMentorshipRepository.countSessionsByStatus(Status.REJECTED.getValue()).defaultIfEmpty(0L),
                         adminMentorshipRepository.countAllMentorProfiles().defaultIfEmpty(0L),
                         adminMentorshipRepository.countApprovedMentors().defaultIfEmpty(0L))
                 .flatMap(t -> Mono.zip(
@@ -238,8 +250,8 @@ public class AdminMentorshipService {
                             .mentorMemberId(avail.getMentorMemberId())
                             .mentorName(mentor.getUserName())
                             .mentorEmail(mentor.getEmail())
-                            .status(s.getStatus())
-                            .sessionType(s.getSessionType())
+                            .status(s.getStatus() != null ? s.getStatus().getValue() : null)
+                            .sessionType(s.getSessionType() != null ? s.getSessionType().getValue() : null)
                             .bookingNote(s.getBookingNote())
                             .introduction(s.getIntroduction())
                             .description(s.getDescription())
@@ -270,7 +282,7 @@ public class AdminMentorshipService {
                 .bio(p.getBio())
                 .ratingAvg(p.getRatingAvg())
                 .totalSessions(p.getTotalSessions())
-                .status(p.getStatus())
+                .status(p.getStatus() != null ? p.getStatus().getValue() : null)
                 .reviewNote(p.getReviewNote())
                 .reviewedAt(p.getReviewedAt())
                 .coverUrl(p.getCoverUrl())

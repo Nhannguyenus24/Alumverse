@@ -4,7 +4,7 @@ import com.service.backend.article.dto.CreateAlumniPostRequest;
 import com.service.backend.article.dto.UpdateAlumniPostRequest;
 import com.service.backend.article.dto.AlumniPostResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.article.usecase.AlumniPostService;
+import com.service.backend.article.service.AlumniPostService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

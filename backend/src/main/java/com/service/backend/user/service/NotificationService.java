@@ -1,17 +1,16 @@
 package com.service.backend.user.service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.user.dao.NotificationRepository;
 import com.service.backend.user.dto.NotificationResponse;
-import com.service.backend.user.entity.Notification;
+import com.service.backend.shared.entity.Notification;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;

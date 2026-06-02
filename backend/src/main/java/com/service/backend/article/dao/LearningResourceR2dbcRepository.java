@@ -1,6 +1,7 @@
 package com.service.backend.article.dao;
 
-import com.service.backend.article.entity.LearningResource;
+import com.service.backend.shared.entity.LearningResource;
+import com.service.backend.shared.enums.LearningResourceType;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
@@ -20,10 +21,10 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
     Flux<LearningResource> findAllWithPagination(int limit, int offset);
 
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND type = :type ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
-    Flux<LearningResource> findByType(Integer organizationId, String type, int limit, int offset);
+    Flux<LearningResource> findByType(Integer organizationId, LearningResourceType type, int limit, int offset);
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId AND type = :type")
-    Mono<Long> countByType(Integer organizationId, String type);
+    Mono<Long> countByType(Integer organizationId, LearningResourceType type);
 
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> searchResources(Integer organizationId, String keyword, int limit, int offset);

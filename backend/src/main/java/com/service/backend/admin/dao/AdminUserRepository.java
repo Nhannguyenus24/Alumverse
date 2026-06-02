@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.admin.dto.LoginHistoryResponse;
-import com.service.backend.auth.entity.User;
+import com.service.backend.shared.entity.User;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -45,7 +45,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Long> countUsersByOrganization(@Param("organizationId") Integer organizationId);
 
     /**
-     * Ban a user by setting "status" to {@code UserStatus.BANNED}
+     * Ban a user by setting "status" to {@code Status.BANNED}
      * @param userId The user ID to ban
      * @return Mono of updated rows count
      */
@@ -103,7 +103,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Flux<Object> findPeerVerificationsByUserId(@Param("userId") Integer userId);
     
     /**
-     * Delete a user by user id (soft delete: {@code UserStatus.DELETED})
+     * Delete a user by user id (soft delete: {@code Status.DELETED})
      * Note: Hard delete should be avoided due to foreign key constraints
      * @param userId The user ID to delete
      * @return Mono of updated rows count
@@ -150,12 +150,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
-           "WHERE vr.\"status\" = 'pending' " +
+           "WHERE vr.\"status\" = 'PENDING' " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("limit") int limit, @Param("offset") int offset);
 
-    @Query("SELECT COUNT(*) FROM verification_requests WHERE \"status\" = 'pending'")
+    @Query("SELECT COUNT(*) FROM verification_requests WHERE \"status\" = 'PENDING'")
     Mono<Long> countPendingVerificationRequests();
 
     /**
@@ -180,7 +180,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         * @param program Training program
         * @param major Major
      * @param verificationLevel The verification level (default 0)
-     * @param status The member "status" (default 'active')
+     * @param status The member "status" (default 'ACTIVE')
      * @return Mono of created member ID
      */
     @Query("SELECT EXISTS(SELECT 1 FROM organization_members WHERE user_id = :userId)")
@@ -262,7 +262,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
                 organization_id, user_id, graduated_year, graduation_status, program, major,
                 verification_level, is_trusted_verifier, \"status\", created_at, updated_at)
             VALUES (
-                :organizationId, :userId, NULL, NULL, NULL, NULL, 0, false, 'active',
+                :organizationId, :userId, NULL, NULL, NULL, NULL, 0, false, 'ACTIVE',
                 CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (user_id) DO UPDATE SET
                 organization_id = EXCLUDED.organization_id,

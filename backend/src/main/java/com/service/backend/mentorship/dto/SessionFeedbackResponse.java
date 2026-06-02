@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dto;
 
-import com.service.backend.mentorship.entity.SessionFeedback;
+import com.service.backend.shared.entity.SessionFeedback;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

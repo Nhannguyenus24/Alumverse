@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * Utility class for security-related operations in reactive WebFlux context.
- * Principal is set as String.valueOf(userId) in HeaderAuthenticationFilter.
+ * Principal is set as String.valueOf(userId) in SecurityConfig's authentication filter.
  * Authorities are set as "ROLE_{role}".
  */
 public final class SecurityUtils {
