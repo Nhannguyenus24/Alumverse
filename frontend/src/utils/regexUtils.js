@@ -1,13 +1,18 @@
 import { z } from 'zod';
+import dayjs from "dayjs";
+
+// --- Regex Patterns ---
 
 /** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
 /** Username: 3–50 chars, letters, numbers, dots, underscores, hyphens */
-const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
+export const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
 
 /** OTP: exactly 6 digits */
-const OTP_REGEX = /^[0-9]{6}$/;
+export const OTP_REGEX = /^[0-9]{6}$/;
+
+// --- Auth Schemas ---
 
 const passwordSchema = z
   .string()
@@ -74,3 +79,19 @@ export const changePasswordSchema = z.object({
   message: 'Mật khẩu mới không trùng khớp',
   path: ['confirmNewPassword'],
 });
+
+// --- Donation Schemas & Utils ---
+
+export const DONATION_SEARCH_OPTIONS = [
+  { value: "name", label: "Tên" },
+  { value: "phone", label: "Số điện thoại" },
+  { value: "address", label: "Địa chỉ" },
+  { value: "message", label: "Thông điệp" },
+  { value: "email", label: "Email" },
+];
+
+export const DONATION_AVATAR_FALLBACK = "/school_logo/HCMUS_Logo_Main.svg";
+
+export const formatDonationTimestamp = (value) => (value ? dayjs(value).format("DD/MM/YYYY HH:mm") : "--");
+
+export const formatDonationAmount = (value) => `${Number(value ?? 0).toLocaleString("vi-VN")} VND`;

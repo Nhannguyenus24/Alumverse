@@ -7,7 +7,7 @@ import {
   sendOtpSchema,
   verifyOtpSchema,
   changePasswordSchema,
-} from '../schemas/authSchemas';
+} from '../utils/regexUtils';
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 

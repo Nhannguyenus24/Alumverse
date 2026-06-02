@@ -37,8 +37,7 @@ import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
 
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
-import { useAdminForumContext } from '../../contexts/AdminForumContext';
-import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDate } from '../../utils/dateFormatter';
 
 /* ─── Build tree from flat list ─── */

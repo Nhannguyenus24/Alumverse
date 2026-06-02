@@ -1,6 +1,6 @@
 import { InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { DONATION_SEARCH_OPTIONS } from "../../schemas/detailDonationSchemas";
+import { DONATION_SEARCH_OPTIONS } from "../../utils/regexUtils";
 
 export default function DonationListFilters({
   searchBy,
