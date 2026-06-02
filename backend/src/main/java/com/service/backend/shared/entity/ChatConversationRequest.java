@@ -1,6 +1,6 @@
 package com.service.backend.shared.entity;
 
-import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.ConversationRequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,19 +32,19 @@ public class ChatConversationRequest {
     @Column("requester_member_id")
     private Long requesterMemberId;
 
+    @Column("target_member_id")
+    private Long targetMemberId;
+
     @Column("chat_group_id")
     private Long chatGroupId;
 
-    @Column("last_request_message_at")
-    private LocalDateTime lastRequestMessageAt;
-
-    @Column("request_message_quota")
-    private Integer requestMessageQuota;
+    @Column("last_request_message_Id")
+    private Long lastRequestMessageId;
 
     @Column("cooldown_until")
     private LocalDateTime cooldownUntil;
 
-    private Status status;
+    private ConversationRequestStatus status;
 
     @CreatedDate
     @Column("created_at")

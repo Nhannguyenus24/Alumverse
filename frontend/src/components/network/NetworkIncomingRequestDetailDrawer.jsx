@@ -12,70 +12,37 @@ import Scrollbar from '../Scrollbar';
 import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../../utils/dateFormatter';
 
-function formatAcademicValue(value) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean).join(' · ');
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean).join(' · ');
-      }
-    } catch {
-      return value;
-    }
-    return value;
-  }
-
-  return '';
-}
-
-function MessageBubble({ message, isOwn }) {
+function MessageBubble({ body, createdAt }) {
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: isOwn ? 'flex-end' : 'flex-start',
-      }}
-    >
+    <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
       <Box
         sx={{
           maxWidth: '85%',
           px: 1.5,
           py: 1.25,
           borderRadius: 2,
-          bgcolor: isOwn ? 'primary.main' : 'grey.200',
-          color: isOwn ? 'primary.contrastText' : 'text.primary',
+          bgcolor: 'grey.200',
+          color: 'text.primary',
         }}
       >
         <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
-          {message.body}
+          {body}
         </Typography>
         <Typography
           variant="caption"
-          sx={{
-            display: 'block',
-            mt: 0.5,
-            opacity: 0.75,
-            textAlign: 'right',
-          }}
+          sx={{ display: 'block', mt: 0.5, opacity: 0.75, textAlign: 'right' }}
         >
-          {formatDateTime(message.createdAt)}
+          {formatDateTime(createdAt)}
         </Typography>
       </Box>
     </Box>
   );
 }
 
-const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request, currentMemberId }) => {
+const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
   if (!request) return null;
 
   const avatarSrc = request.avatarUrl?.trim() || DEFAULT_CHAT_AVATAR_SRC;
-  const programLabel = formatAcademicValue(request.program);
-  const majorLabel = formatAcademicValue(request.major);
-  const academicLine = [programLabel, majorLabel].filter(Boolean).join(' · ');
 
   return (
     <Drawer
@@ -114,13 +81,8 @@ const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request, currentMem
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {request.fullName}
             </Typography>
-            {academicLine ? (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {academicLine}
-              </Typography>
-            ) : null}
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Gửi lúc {formatDateTime(request.sentAt)}
+              Gửi lúc {formatDateTime(request.messageCreatedAt)}
             </Typography>
           </Box>
         </Stack>
@@ -140,18 +102,12 @@ const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request, currentMem
           gap: 1.5,
         }}
       >
-        {(request.messages ?? []).length === 0 ? (
+        {request.message ? (
+          <MessageBubble body={request.message} createdAt={request.messageCreatedAt} />
+        ) : (
           <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
             Chưa có tin nhắn.
           </Typography>
-        ) : (
-          request.messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              isOwn={message.senderMemberId === currentMemberId}
-            />
-          ))
         )}
       </Scrollbar>
     </Drawer>
