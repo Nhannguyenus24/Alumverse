@@ -28,27 +28,12 @@ import {
   joinOrganization, 
   requestPeerVerification,
   createVerificationRequest
-} from '../../api/userApi';
+} from '../../utils/api';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useOrganization } from '../../hooks/useOrganization';
+import { fileToBase64 } from '../../utils/imageUtils';
 import { z } from 'zod';
 import Iconify from '../../components/Iconify';
-
-/**
- * Helper to convert file to base64 string
- */
-const fileToBase64 = (file) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      // Remove data:*/ *;base64, prefix
-      const base64String = reader.result.toString().split(',')[1];
-      resolve(base64String);
-    };
-    reader.onerror = (error) => reject(error);
-  });
-};
 
 /**
  * Validation schema for organization registration

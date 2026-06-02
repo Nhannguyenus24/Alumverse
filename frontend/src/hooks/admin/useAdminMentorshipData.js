@@ -3,8 +3,8 @@ import { includesQuery, paginateRows, sortByField } from '../../utils/adminTable
 import {
   cancelSession,
   updateSessionStatus,
-} from '../../api/mentorshipApi';
-import { adminMentorshipApi } from '../../api/adminMentorshipApi';
+} from '../../utils/api';
+import { adminMentorshipApi } from '../../utils/api';
 
 const SEARCH_KEYS = ['mentorName', 'menteeName', 'topic', 'status'];
 

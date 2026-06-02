@@ -4,7 +4,7 @@ import { useSnackbar } from 'notistack';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { sendOtpSchema } from '../../schemas/authSchemas';
+import { sendOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 
 const ForgotPasswordPage = () => {

@@ -48,7 +48,7 @@ import DOMPurify from 'dompurify';
 import AdminStatusChip from './AdminStatusChip';
 import { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { adminOrganizationApi } from '../../utils/api';
 
 const formatOrgDate = (value) => {
   if (!value) {

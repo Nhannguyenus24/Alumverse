@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import * as api from '../../api/adminEventApi';
-import { organizationApi } from '../../api/organizationApi';
+import * as api from '../../utils/api';
+import { organizationApi } from '../../utils/api';
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };
 const fallbackStatistics = null;

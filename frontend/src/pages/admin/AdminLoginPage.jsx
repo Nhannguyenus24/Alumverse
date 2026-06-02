@@ -24,7 +24,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import LockIcon from '@mui/icons-material/Lock';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { loginSchema } from '../../schemas/authSchemas';
+import { loginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';

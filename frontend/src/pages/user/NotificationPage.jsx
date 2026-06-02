@@ -1,99 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
   Button,
   IconButton,
   Tooltip,
+  CircularProgress,
 } from "@mui/material";
 import Page from "../../components/Page";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../../utils/dateFormatter";
-
-// Mock notification data
-const mockNotifications = [
-  {
-    id: 1,
-    text: "Có sinh viên mới đăng ký tham gia diễn đàn",
-    timestamp: new Date(Date.now() - 5 * 60000),
-    isRead: false,
-  },
-  {
-    id: 2,
-    text: "Bạn nhận được bình luận mới trên bài viết",
-    timestamp: new Date(Date.now() - 30 * 60000),
-    isRead: false,
-  },
-  {
-    id: 3,
-    text: "Cựu sinh viên Nguyễn Văn A đã cập nhật hồ sơ",
-    timestamp: new Date(Date.now() - 2 * 60 * 60000),
-    isRead: true,
-  },
-  {
-    id: 4,
-    text: "Sự kiện mới: Talkshow cựu sinh viên",
-    timestamp: new Date(Date.now() - 24 * 60 * 60000),
-    isRead: true,
-  },
-  {
-    id: 5,
-    text: "Bạn được kết nối với sinh viên mới",
-    timestamp: new Date(Date.now() - 72 * 60 * 60000),
-    isRead: true,
-  },
-  {
-    id: 6,
-    text: "Bạn được mời tham gia nhóm thảo luận",
-    timestamp: new Date(Date.now() - 120 * 60 * 60000),
-    isRead: false,
-  },
-  {
-    id: 7,
-    text: "Có bài viết mới trong danh mục quan tâm",
-    timestamp: new Date(Date.now() - 168 * 60 * 60000),
-    isRead: true,
-  },
-  {
-    id: 8,
-    text: "Lời mời kết nối từ Trần Minh Châu",
-    timestamp: new Date(Date.now() - 240 * 60 * 60000),
-    isRead: false,
-  },
-  {
-    id: 9,
-    text: "Sự kiện sắp diễn ra: Buổi gặp gỡ cựu sinh viên",
-    timestamp: new Date(Date.now() - 360 * 60 * 60000),
-    isRead: true,
-  },
-  {
-    id: 10,
-    text: "Bài viết của bạn nhận được 10 lượt thích",
-    timestamp: new Date(Date.now() - 480 * 60 * 60000),
-    isRead: true,
-  },
-];
+import { notificationApi } from "../utils/api";
 
 const NotificationPage = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await notificationApi.getNotifications();
+      setNotifications(data);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const handleNotificationClick = (notificationId) => {
-    setNotifications((prev) =>
-      prev.map((notif) =>
-        notif.id === notificationId ? { ...notif, isRead: true } : notif
-      )
-    );
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      try {
+        await notificationApi.markAsRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((notif) =>
+            notif.id === notification.id ? { ...notif, isRead: true } : notif
+          )
+        );
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((notif) => ({ ...notif, isRead: true }))
-    );
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Assuming marking all as read is done by iterating for now, 
+      // or if backend has an endpoint for it. 
+      // Current notificationApi doesn't have markAllAsRead but we can add it or just map locally for UI.
+      // Based on UserController, there's no markAllAsRead, only mark individual or deleteAll.
+      // We'll mark them one by one or just update UI and let user know.
+      // For simplicity, let's just mark them locally for now if there's no backend endpoint.
+      
+      const unreadNotifications = notifications.filter(n => !n.isRead);
+      await Promise.all(unreadNotifications.map(n => notificationApi.markAsRead(n.id)));
+      
+      setNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, isRead: true }))
+      );
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
+    }
   };
 
   // Filter notifications based on active tab
@@ -187,11 +162,15 @@ const NotificationPage = () => {
 
         {/* Notifications List */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {filteredNotifications.length > 0 ? (
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : filteredNotifications.length > 0 ? (
             filteredNotifications.map((notification) => (
               <Box
                 key={notification.id}
-                onClick={() => handleNotificationClick(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
                 sx={{
                   p: 2.5,
                   display: "flex",
@@ -212,6 +191,18 @@ const NotificationPage = () => {
                 }}
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
+                  {notification.title && (
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 700,
+                        color: "text.primary",
+                        mb: 0.5
+                      }}
+                    >
+                      {notification.title}
+                    </Typography>
+                  )}
                   <Typography
                     variant="body1"
                     sx={{
@@ -221,7 +212,7 @@ const NotificationPage = () => {
                       mb: 0.5,
                     }}
                   >
-                    {notification.text}
+                    {notification.message}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -230,7 +221,7 @@ const NotificationPage = () => {
                       color: !notification.isRead ? "primary.main" : "text.disabled",
                     }}
                   >
-                    {formatTimeAgoVi(notification.timestamp)}
+                    {formatTimeAgoVi(notification.createdAt)}
                   </Typography>
                 </Box>
 

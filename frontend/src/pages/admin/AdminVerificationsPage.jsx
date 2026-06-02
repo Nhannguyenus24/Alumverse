@@ -27,7 +27,7 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
-import { getVerificationRequests, reviewVerificationRequest } from '../../api/adminUserApi';
+import { getVerificationRequests, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminVerificationsPage = () => {

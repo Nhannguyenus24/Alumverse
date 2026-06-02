@@ -1,14 +1,12 @@
 import { useState } from 'react';
-import { Outlet, useMatch } from 'react-router';
+import { Outlet, useParams } from 'react-router';
 import { Box, useTheme, alpha } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
-import { AdminSystemProvider } from '../contexts/AdminSystemContext';
-import { AdminUsersProvider } from '../contexts/AdminUsersContext';
-import { AdminForumProvider } from '../contexts/AdminForumContext';
+import { AdminProvider } from '../stores/AdminStore';
 import { useAuth } from '../hooks/useAuth';
 import Page from '../components/Page';
 
@@ -22,12 +20,8 @@ const AdminLayoutShell = () => {
   const [breadcrumbs, setBreadcrumbs] = useState(null);
   const theme = useTheme();
 
-  const slugMatchNested = useMatch('/:slug/admin/*');
-  const slugMatchExact = useMatch('/:slug/admin');
-  const slugMatch = slugMatchNested ?? slugMatchExact;
-  const isSlugContext = Boolean(slugMatch);
-  const slug = slugMatch?.params?.slug;
-  const adminBase = isSlugContext ? `/${slug}/admin` : '/admin';
+  const { slug } = useParams();
+  const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { user, logout } = useAuth();
 
@@ -106,13 +100,9 @@ const AdminLayout = () => {
   const forum = useAdminForumData(system.activeOrgId);
 
   return (
-    <AdminSystemProvider value={system}>
-      <AdminUsersProvider value={users}>
-        <AdminForumProvider value={forum}>
-          <AdminLayoutShell />
-        </AdminForumProvider>
-      </AdminUsersProvider>
-    </AdminSystemProvider>
+    <AdminProvider system={system} users={users} forum={forum}>
+      <AdminLayoutShell />
+    </AdminProvider>
   );
 };
 

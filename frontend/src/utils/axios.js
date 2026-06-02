@@ -101,15 +101,17 @@ export function syncAuthStoreFromAccessToken(data) {
   const accessToken = typeof data === 'string' ? data : data?.accessToken;
   const verificationLevel = typeof data === 'string' ? undefined : data?.verificationLevel;
 
-  if (accessToken) {
-    useAuthStore.getState().setToken(accessToken);
-    const authUser = userFromAccessToken(accessToken);
-    if (authUser) useAuthStore.getState().setUser(authUser);
-  }
+  if (!accessToken) return;
+
+  const authUser = userFromAccessToken(accessToken);
+  const authPayload = { token: accessToken };
   
+  if (authUser) authPayload.user = authUser;
   if (verificationLevel !== undefined && verificationLevel !== null) {
-    useAuthStore.getState().setVerificationLevel(verificationLevel);
+    authPayload.verificationLevel = verificationLevel;
   }
+
+  useAuthStore.getState().setAuth(authPayload);
 }
 
 // --- Request interceptor: attach Bearer token ---
@@ -162,7 +164,6 @@ apiClient.interceptors.response.use(
     isRefreshing = true;
 
     try {
-      console.log('Access token expired. Attempting silent refresh...');
       const refreshData = await refreshSessionAccessToken();
       const newToken = refreshData.accessToken;
 

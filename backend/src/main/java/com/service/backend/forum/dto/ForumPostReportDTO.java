@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.service.backend.shared.enums.Status;
 
 @Data
 @NoArgsConstructor
@@ -17,7 +18,7 @@ public class ForumPostReportDTO {
     private Integer reporterMemberId;
     private String reason;
     private String description;
-    private String status;
+    private Status status;
     private Integer reviewedByUserId;
     private String reviewNote;
     private LocalDateTime createdAt;

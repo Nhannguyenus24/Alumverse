@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
-import { saveMentorProfileDraft } from '../../api/mentorshipApi';
-import { fileToBase64 } from '../images/fileToBase64';
+import { saveMentorProfileDraft } from '../../utils/api';
+import { fileToBase64 } from '../../utils/imageUtils';
 
 const uploadImageIfPresent = async (file) => {
   if (!file) return null;

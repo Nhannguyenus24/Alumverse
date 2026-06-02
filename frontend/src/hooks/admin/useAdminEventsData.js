@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { includesQuery, paginateRows, sortByField } from '../../utils/adminTableState';
-import { eventApi } from '../../api/eventApi';
+import { eventApi } from '../../utils/api';
 
 const EVENT_SEARCH_KEYS = ['title', 'organizerName', 'location', 'status'];
 

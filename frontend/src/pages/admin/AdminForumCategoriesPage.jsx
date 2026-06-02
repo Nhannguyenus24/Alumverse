@@ -23,7 +23,7 @@ import {
   Grid,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { adminOrganizationApi } from '../../utils/api';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -37,8 +37,7 @@ import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
 
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
-import { useAdminForumContext } from '../../contexts/AdminForumContext';
-import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDate } from '../../utils/dateFormatter';
 
 /* ─── Build tree from flat list ─── */

@@ -4,7 +4,7 @@ import com.service.backend.article.dto.CreateAchievementRequest;
 import com.service.backend.article.dto.UpdateAchievementRequest;
 import com.service.backend.article.dto.AchievementResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.article.usecase.AchievementService;
+import com.service.backend.article.service.AchievementService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.enums.Status;
 
 @RestController
 @RequestMapping("/api/articles/achievements")
@@ -88,7 +89,8 @@ public class AchievementController {
             @PathVariable @NotBlank String status,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return achievementService.getByStatus(status, page, limit)
+        Status achievementStatus = Status.valueOf(status.toUpperCase());
+        return achievementService.getByStatus(achievementStatus, page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Achievements by status retrieved successfully", response)));
     }

@@ -22,9 +22,9 @@ import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 
 import java.util.Map;
-import com.service.backend.organization.entity.Organization;
-import com.service.backend.organization.entity.SchoolFeedback;
-import com.service.backend.shared.constants.ErrorCode;
+import com.service.backend.shared.entity.Organization;
+import com.service.backend.shared.entity.SchoolFeedback;
+import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.service.AdminOrganizationService;
 import com.service.backend.shared.dto.ApiResponse;

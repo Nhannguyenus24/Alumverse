@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { getMentorAvailableSlots } from '../../api/mentorshipApi';
+import { getMentorAvailableSlots } from '../../utils/api';
 
 const fetchSlots = async (mentorMemberId) => {
   const res = await getMentorAvailableSlots(mentorMemberId);

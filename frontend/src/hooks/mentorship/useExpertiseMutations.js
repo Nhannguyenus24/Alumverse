@@ -3,7 +3,7 @@ import {
   addMyExpertise,
   deleteMyExpertise,
   updateMyExpertise,
-} from '../../api/mentorshipApi';
+} from '../../utils/api';
 
 const EXPERTISE_KEY = ['mentorship', 'mentor', 'me', 'expertise'];
 

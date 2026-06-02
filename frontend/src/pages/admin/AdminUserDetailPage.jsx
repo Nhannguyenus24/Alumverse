@@ -33,12 +33,9 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
-import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { useAdminUsersContext, useAdminSystemContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';
-import { getLoginHistoryByUser } from '../../api/adminAuditApi';
-import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { getLoginHistoryByUser, getUserActivity, resetPasswordByAdmin, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUserDetailPage = () => {

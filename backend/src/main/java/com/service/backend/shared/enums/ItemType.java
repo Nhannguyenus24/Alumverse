@@ -1,5 +1,8 @@
 package com.service.backend.shared.enums;
 
+import lombok.Getter;
+
+@Getter
 public enum ItemType {
     NEWS("NEWS"),
     EVENT("EVENT"),
@@ -12,7 +15,4 @@ public enum ItemType {
         this.value = value;
     }
 
-    public String getValue() {
-        return value;
-    }
 }

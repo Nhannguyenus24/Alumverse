@@ -35,7 +35,7 @@ import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import Page from '../../components/Page';
 import Sidebar from '../../components/Sidebar';
-import { userSettingsApi } from '../../api/userSettingsApi';
+import { userSettingsApi } from '../../utils/api';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';

@@ -7,7 +7,7 @@ import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@m
 import GoogleIcon from '@mui/icons-material/Google';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { loginSchema } from '../../schemas/authSchemas';
+import { loginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';

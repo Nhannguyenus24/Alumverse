@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { filterMentors, getApprovedMentors, searchMentors } from '../../api/mentorshipApi';
+import { filterMentors, getApprovedMentors, searchMentors } from '../../utils/api';
 
 const fetchPage = async ({
   keyword,

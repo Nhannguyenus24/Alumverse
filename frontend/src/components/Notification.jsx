@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   IconButton,
@@ -6,54 +6,46 @@ import {
   Typography,
   Tooltip,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../utils/dateFormatter";
-
-// Mock notification data
-const mockNotifications = [
-  {
-    id: 1,
-    text: "Có sinh viên mới đăng ký tham gia diễn đàn",
-    timestamp: new Date(Date.now() - 5 * 60000), // 5 minutes ago
-    isRead: false,
-  },
-  {
-    id: 2,
-    text: "Bạn nhận được bình luận mới trên bài viết",
-    timestamp: new Date(Date.now() - 30 * 60000), // 30 minutes ago
-    isRead: false,
-  },
-  {
-    id: 3,
-    text: "Cựu sinh viên Nguyễn Văn A đã cập nhật hồ sơ",
-    timestamp: new Date(Date.now() - 2 * 60 * 60000), // 2 hours ago
-    isRead: true,
-  },
-  {
-    id: 4,
-    text: "Sự kiện mới: Talkshow cựu sinh viên",
-    timestamp: new Date(Date.now() - 24 * 60 * 60000), // 1 day ago
-    isRead: true,
-  },
-  {
-    id: 5,
-    text: "Bạn được kết nối với sinh viên mới",
-    timestamp: new Date(Date.now() - 72 * 60 * 60000), // 3 days ago
-    isRead: true,
-  },
-];
+import { notificationApi } from "../utils/api";
 
 const Notification = ({ headerTextColor = "text.primary" }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const open = Boolean(anchorEl);
 
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const data = await notificationApi.getNotifications();
+      setNotifications(data);
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchNotifications();
+    
+    // Set up polling every 1 minute
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
+    // Refresh notifications when opening
+    fetchNotifications();
   };
 
   const handleClose = () => {
@@ -64,12 +56,21 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     setActiveTab(newValue);
   };
 
-  const handleNotificationClick = (notificationId) => {
-    setNotifications(
-      notifications.map((notif) =>
-        notif.id === notificationId ? { ...notif, isRead: true } : notif
-      )
-    );
+  const handleNotificationClick = async (notification) => {
+    if (!notification.isRead) {
+      try {
+        await notificationApi.markAsRead(notification.id);
+        setNotifications(
+          notifications.map((notif) =>
+            notif.id === notification.id ? { ...notif, isRead: true } : notif
+          )
+        );
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
+    // Handle navigation if notification has a link (optional, depends on backend)
+    // if (notification.link) window.location.href = notification.link;
   };
 
   // Filter notifications based on active tab
@@ -197,7 +198,11 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
             },
           }}
         >
-          {filteredNotifications.length > 0 ? (
+          {loading && notifications.length === 0 ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : filteredNotifications.length > 0 ? (
             filteredNotifications.map((notification, index) => (
               <Box
                 key={notification.id}
@@ -219,10 +224,22 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
                   gap: 1,
                   alignItems: "flex-start",
                 }}
-                onClick={() => handleNotificationClick(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 {/* Notification content */}
                 <Box sx={{ flex: 1 }}>
+                  {notification.title && (
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: notification.isRead ? 600 : 700,
+                        color: "text.primary",
+                        mb: 0.5
+                      }}
+                    >
+                      {notification.title}
+                    </Typography>
+                  )}
                   <Typography
                     variant="body2"
                     sx={{
@@ -231,7 +248,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
                       lineHeight: 1.4,
                     }}
                   >
-                    {notification.text}
+                    {notification.message}
                   </Typography>
                   <Typography
                     variant="caption"
@@ -241,7 +258,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
                       color: "text.secondary",
                     }}
                   >
-                    {formatTimeAgoVi(notification.timestamp)}
+                    {formatTimeAgoVi(notification.createdAt)}
                   </Typography>
                 </Box>
 

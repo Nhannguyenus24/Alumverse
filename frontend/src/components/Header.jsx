@@ -17,6 +17,7 @@ import AccountMenu from './AccountMenu';
 import MessagesNavDropdown from './MessagesNavDropdown';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
+import { getNormalizedPathname } from '../utils/pathUtils';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -74,15 +75,7 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const normalizedPathname = (() => {
-    if (!routeSlug) return location.pathname;
-    const slugPrefix = `/${routeSlug}`;
-    if (location.pathname === slugPrefix) return '/';
-    if (location.pathname.startsWith(`${slugPrefix}/`)) {
-      return location.pathname.slice(slugPrefix.length) || '/';
-    }
-    return location.pathname;
-  })();
+  const normalizedPathname = getNormalizedPathname(location.pathname, routeSlug);
   const isHomePage = normalizedPathname === '/';
   const isAdmin = user?.role === 'ADMIN';
   const isGuestVerificationLevel = isAuthenticated && verificationLevel === 0;
