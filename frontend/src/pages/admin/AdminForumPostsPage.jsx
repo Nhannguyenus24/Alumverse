@@ -37,7 +37,7 @@ import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteD
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPosts';
-import { useAdminForumContext } from '../../contexts/AdminForumContext';
+import { useAdminForumContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { forumModerationLabel, truncateText } from '../../utils/stringUtils';

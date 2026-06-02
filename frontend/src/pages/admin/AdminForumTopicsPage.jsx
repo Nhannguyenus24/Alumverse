@@ -30,8 +30,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
-import { useAdminForumContext } from "../../contexts/AdminForumContext";
-import { useAdminSystemContext } from "../../contexts/AdminSystemContext";
+import { useAdminForumContext, useAdminSystemContext } from "../../stores/AdminStore";
 import { useAuth } from "../../hooks/useAuth";
 import { formatDate } from "../../utils/dateFormatter";
 

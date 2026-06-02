@@ -6,9 +6,7 @@ import AdminHeader from '../components/admin/AdminHeader';
 import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
-import { AdminSystemProvider } from '../contexts/AdminSystemContext';
-import { AdminUsersProvider } from '../contexts/AdminUsersContext';
-import { AdminForumProvider } from '../contexts/AdminForumContext';
+import { AdminProvider } from '../stores/AdminStore';
 import { useAuth } from '../hooks/useAuth';
 import Page from '../components/Page';
 
@@ -106,13 +104,9 @@ const AdminLayout = () => {
   const forum = useAdminForumData(system.activeOrgId);
 
   return (
-    <AdminSystemProvider value={system}>
-      <AdminUsersProvider value={users}>
-        <AdminForumProvider value={forum}>
-          <AdminLayoutShell />
-        </AdminForumProvider>
-      </AdminUsersProvider>
-    </AdminSystemProvider>
+    <AdminProvider system={system} users={users} forum={forum}>
+      <AdminLayoutShell />
+    </AdminProvider>
   );
 };
 

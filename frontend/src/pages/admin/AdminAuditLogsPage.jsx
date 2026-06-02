@@ -27,7 +27,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDataTable from '../../components/admin/AdminDataTable';
-import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
+import { useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
 import { stringifyJson, truncateText } from '../../utils/stringUtils';
 
