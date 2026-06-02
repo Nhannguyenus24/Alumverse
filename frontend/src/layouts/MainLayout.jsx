@@ -2,6 +2,7 @@ import { Outlet, useLocation, useMatches, useParams } from "react-router";
 import { Box, Toolbar } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { getNormalizedPathname } from "../utils/pathUtils";
 
 const MainLayout = () => {
   const location = useLocation();
@@ -10,19 +11,7 @@ const MainLayout = () => {
 
   const hideFooter = matches.some((m) => m.handle?.hideFooter);
 
-  const normalizedPathname = (() => {
-    if (!slug) return location.pathname;
-
-    const slugPrefix = `/${slug}`;
-
-    if (location.pathname === slugPrefix) return "/";
-
-    if (location.pathname.startsWith(`${slugPrefix}/`)) {
-      return location.pathname.slice(slugPrefix.length) || "/";
-    }
-
-    return location.pathname;
-  })();
+  const normalizedPathname = getNormalizedPathname(location.pathname, slug);
 
   const isHomePage = normalizedPathname === "/";
 
