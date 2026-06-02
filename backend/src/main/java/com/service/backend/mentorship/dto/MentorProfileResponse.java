@@ -1,6 +1,6 @@
 package com.service.backend.mentorship.dto;
 
-import com.service.backend.mentorship.entity.MentorProfile;
+import com.service.backend.shared.entity.MentorProfile;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -45,7 +45,7 @@ public class MentorProfileResponse {
                 .bio(profile.getBio())
                 .ratingAvg(profile.getRatingAvg())
                 .totalSessions(profile.getTotalSessions())
-                .status(profile.getStatus())
+                .status(profile.getStatus() != null ? profile.getStatus().getValue() : null)
                 .reviewNote(profile.getReviewNote())
                 .reviewedAt(profile.getReviewedAt())
                 .coverUrl(profile.getCoverUrl())

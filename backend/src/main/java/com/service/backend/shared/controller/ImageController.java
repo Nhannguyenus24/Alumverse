@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
  * <p>
  * Endpoints:
  * - POST /api/images/upload: Upload Base64 image and convert to WebP
- * - GET /api/images/health: Health check
  * </p>
  */
 @RestController

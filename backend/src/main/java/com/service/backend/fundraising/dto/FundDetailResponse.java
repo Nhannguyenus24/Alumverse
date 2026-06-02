@@ -1,7 +1,7 @@
 package com.service.backend.fundraising.dto;
 
-import com.service.backend.fundraising.entity.FundReceivingInfos;
-import com.service.backend.fundraising.entity.Funds;
+import com.service.backend.shared.entity.FundReceivingInfos;
+import com.service.backend.shared.entity.Funds;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -1,8 +1,8 @@
 package com.service.backend.event.controller;
 
-import com.service.backend.event.entity.Event;
-import com.service.backend.event.entity.EventInterest;
-import com.service.backend.event.entity.EventTicket;
+import com.service.backend.shared.entity.Event;
+import com.service.backend.shared.entity.EventInterest;
+import com.service.backend.shared.entity.EventTicket;
 import com.service.backend.event.dto.CreateEventRequest;
 import com.service.backend.event.dto.RegisterTicketRequest;
 import com.service.backend.event.dto.UpdateEventRequest;

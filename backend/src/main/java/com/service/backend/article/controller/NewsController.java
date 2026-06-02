@@ -4,7 +4,7 @@ import com.service.backend.article.dto.CreateNewsRequest;
 import com.service.backend.article.dto.UpdateNewsRequest;
 import com.service.backend.article.dto.NewsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.article.usecase.NewsService;
+import com.service.backend.article.service.NewsService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

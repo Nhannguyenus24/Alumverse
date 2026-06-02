@@ -4,7 +4,7 @@ import com.service.backend.article.dto.CreateJobRequest;
 import com.service.backend.article.dto.UpdateJobRequest;
 import com.service.backend.article.dto.JobResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.article.usecase.JobService;
+import com.service.backend.article.service.JobService;
 import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

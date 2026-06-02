@@ -4,7 +4,7 @@ import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
 
-import com.service.backend.admin.entity.OrganizationMember;
+import com.service.backend.shared.entity.OrganizationMember;
 import com.service.backend.chat.dto.NetworkMemberSearchItemResponse;
 
 import reactor.core.publisher.Flux;
@@ -35,7 +35,7 @@ public interface NetworkMemberSearchRepository
 
     String SEARCH_WHERE = """
             WHERE om.organization_id = :organizationId
-              AND om.status = 'active'
+              AND om.status = 'ACTIVE'
               AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
                                                         AND (:programJson IS NULL OR om.program @> CAST(:programJson AS jsonb))
                                                         AND (:majorJson IS NULL OR om.major @> CAST(:majorJson AS jsonb))
