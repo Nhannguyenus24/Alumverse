@@ -91,7 +91,15 @@ public enum ErrorCode {
     FUND_TIME_TOO_EARLY("Thời gian chỉnh sửa phải từ hiện tại + 10 phút", 400),
     ORGANIZATION_MEMBER_NOT_FOUND("Không tìm thấy thông tin thành viên tổ chức", 404),
     ERROR_EXTRACTING_MEMBERID_FROM_TOKEN("Co loi trong qua trinh extract memberId tu token", 401),
-    NOT_FOUND_MEMBERID("Khong tim thay memberId trong token", 401);
+    NOT_FOUND_MEMBERID("Khong tim thay memberId trong token", 401),
+
+    // Chat module
+    CONVERSATION_REQUEST_NOT_FOUND("Không tìm thấy yêu cầu kết nối", 404),
+    CONVERSATION_REQUEST_NOT_RECIPIENT("Chỉ người nhận yêu cầu mới có thể phản hồi", 403),
+    CONVERSATION_REQUEST_NOT_PENDING("Yêu cầu kết nối không còn ở trạng thái chờ phản hồi", 409),
+    CONVERSATION_REQUEST_ALREADY_PENDING("Yêu cầu kết nối đang chờ phản hồi từ phía kia", 409),
+    CONVERSATION_REQUEST_ALREADY_ACCEPTED("Hai người đã kết nối với nhau rồi", 409),
+    CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429);
 
     private final String message;
     private final int status;

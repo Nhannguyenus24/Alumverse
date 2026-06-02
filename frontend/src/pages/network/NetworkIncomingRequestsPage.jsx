@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  CircularProgress,
   Pagination,
   Stack,
   Typography,
@@ -11,8 +12,10 @@ import SearchBar from '../../components/SearchBar';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import NetworkIncomingRequestCard from '../../components/network/NetworkIncomingRequestCard';
 import NetworkIncomingRequestDetailDrawer from '../../components/network/NetworkIncomingRequestDetailDrawer';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import { useNetworkIncomingRequests } from '../../hooks/network/useNetworkIncomingRequests';
+import { useRespondConversationRequest } from '../../hooks/network/useRespondConversationRequest';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import { useNotification } from '../../hooks/useNotification';
 
@@ -21,7 +24,7 @@ const STATUS_FILTERS = [
     type: 'dropdown',
     key: 'status',
     label: 'Trạng thái',
-    multiple: true,
+    multiple: false,
     options: [
       { value: 'PENDING', label: 'Đang chờ' },
       { value: 'ACCEPTED', label: 'Đã chấp nhận' },
@@ -38,17 +41,19 @@ const NetworkIncomingRequestsPage = () => {
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({
     all: true,
-    status: [],
+    status: '',
   });
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [respondingId, setRespondingId] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
 
-  const { showSuccess } = useNotification();
+  const { showSuccess, showError } = useNotification();
   const currentMemberId = useNetworkCurrentMemberId();
 
-  const { items, totalPage, acceptRequest, rejectRequest } = useNetworkIncomingRequests({
+  const { items, totalPage, isLoading, isError } = useNetworkIncomingRequests({
     appliedFullName,
-    filters,
+    status: filters.status || undefined,
     page,
     pageSize: PAGE_SIZE,
   });
@@ -74,7 +79,6 @@ const NetworkIncomingRequestsPage = () => {
   };
 
   const hasActiveCriteria = Boolean(appliedFullName) || !filters.all;
-  const showEmptyState = items.length === 0;
 
   const handleViewDetail = useCallback((request) => {
     setSelectedRequest(request);
@@ -86,26 +90,103 @@ const NetworkIncomingRequestsPage = () => {
     setSelectedRequest(null);
   }, []);
 
-  const handleAccept = useCallback(
-    (requestId) => {
-      acceptRequest(requestId);
-      showSuccess('Đã chấp nhận yêu cầu kết nối.');
+  const respondMutation = useRespondConversationRequest({
+    onSuccess: (_, { status }) => {
+      setRespondingId(null);
+      showSuccess(
+        status === 'ACCEPTED'
+          ? 'Đã chấp nhận yêu cầu kết nối.'
+          : 'Đã từ chối yêu cầu kết nối.',
+      );
     },
-    [acceptRequest, showSuccess],
-  );
+    onError: () => {
+      setRespondingId(null);
+      showError('Đã xảy ra lỗi. Vui lòng thử lại.');
+    },
+  });
 
-  const handleReject = useCallback(
-    (requestId) => {
-      rejectRequest(requestId);
-      showSuccess('Đã từ chối yêu cầu kết nối.');
-    },
-    [rejectRequest, showSuccess],
-  );
+  const handleAccept = useCallback((requestId) => {
+    setPendingAction({ requestId, status: 'ACCEPTED' });
+  }, []);
+
+  const handleReject = useCallback((requestId) => {
+    setPendingAction({ requestId, status: 'REJECTED' });
+  }, []);
+
+  const handleConfirmRespond = useCallback(() => {
+    if (!pendingAction) return;
+    const { requestId, status } = pendingAction;
+    setPendingAction(null);
+    setRespondingId(requestId);
+    respondMutation.mutate({ requestId, status });
+  }, [pendingAction, respondMutation]);
+
+  const handleCancelRespond = useCallback(() => {
+    setPendingAction(null);
+  }, []);
+
+  const confirmDialogConfig =
+    pendingAction?.status === 'ACCEPTED'
+      ? {
+          title: 'Chấp nhận yêu cầu kết nối',
+          message: 'Bạn có chắc muốn chấp nhận yêu cầu kết nối này không?',
+          confirmText: 'Chấp nhận',
+          confirmColor: 'primary',
+        }
+      : {
+          title: 'Từ chối yêu cầu kết nối',
+          message: 'Bạn có chắc muốn từ chối yêu cầu kết nối này không?',
+          confirmText: 'Từ chối',
+          confirmColor: 'primary',
+        };
 
   const detailRequest =
     selectedRequest != null
       ? items.find((item) => item.id === selectedRequest.id) ?? selectedRequest
       : null;
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <Stack alignItems="center" py={4}>
+          <CircularProgress />
+        </Stack>
+      );
+    }
+
+    if (isError) {
+      return (
+        <Alert severity="error">
+          Không thể tải danh sách yêu cầu. Vui lòng thử lại.
+        </Alert>
+      );
+    }
+
+    if (items.length === 0) {
+      return (
+        <Alert severity="info">
+          {hasActiveCriteria
+            ? 'Không có yêu cầu nào phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
+            : 'Chưa có yêu cầu kết nối nào.'}
+        </Alert>
+      );
+    }
+
+    return (
+      <Stack spacing={2}>
+        {items.map((request) => (
+          <NetworkIncomingRequestCard
+            key={request.id}
+            request={request}
+            onViewDetail={handleViewDetail}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            isResponding={respondingId === request.id}
+          />
+        ))}
+      </Stack>
+    );
+  };
 
   return (
     <NetworkSectionLayout title="Yêu cầu kết nối">
@@ -140,25 +221,7 @@ const NetworkIncomingRequestsPage = () => {
         />
       </Stack>
 
-      {showEmptyState ? (
-        <Alert severity="info">
-          {hasActiveCriteria
-            ? 'Không có yêu cầu nào phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
-            : 'Chưa có yêu cầu kết nối nào.'}
-        </Alert>
-      ) : (
-        <Stack spacing={2}>
-          {items.map((request) => (
-            <NetworkIncomingRequestCard
-              key={request.id}
-              request={request}
-              onViewDetail={handleViewDetail}
-              onAccept={handleAccept}
-              onReject={handleReject}
-            />
-          ))}
-        </Stack>
-      )}
+      {renderContent()}
 
       {pageCount > 0 ? (
         <Stack
@@ -190,6 +253,17 @@ const NetworkIncomingRequestsPage = () => {
         onClose={handleCloseDetail}
         request={detailRequest}
         currentMemberId={currentMemberId}
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingAction)}
+        title={confirmDialogConfig.title}
+        message={confirmDialogConfig.message}
+        confirmText={confirmDialogConfig.confirmText}
+        confirmColor={confirmDialogConfig.confirmColor}
+        cancelText="Hủy"
+        onConfirm={handleConfirmRespond}
+        onCancel={handleCancelRespond}
       />
     </NetworkSectionLayout>
   );

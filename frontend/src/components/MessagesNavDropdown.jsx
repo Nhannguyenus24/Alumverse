@@ -3,24 +3,24 @@ import {
   Avatar,
   Box,
   Button,
+  CircularProgress,
   Divider,
   IconButton,
   Menu,
   Typography,
 } from '@mui/material';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import { BsChatSquare } from 'react-icons/bs';
 import Scrollbar from './Scrollbar';
-import {
-  MOCK_NETWORK_CHATS,
-  DEFAULT_CHAT_AVATAR_SRC,
-} from '../pages/chat/mockNetworkChats';
+import { DEFAULT_CHAT_AVATAR_SRC } from '../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../utils/dateFormatter';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
+import { useRecentChatPreviews } from '../hooks/chat/useRecentChatPreviews';
 
 const MessagesNavDropdown = ({ headerTextColor }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useOrgNavigate();
   const open = Boolean(anchorEl);
+  const { previews, isPending, isError } = useRecentChatPreviews();
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -51,7 +51,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
         onClick={handleOpen}
         sx={{ color: headerTextColor }}
       >
-        <EmailOutlinedIcon fontSize="small" />
+        <BsChatSquare size={20} aria-hidden />
       </IconButton>
 
       <Menu
@@ -86,14 +86,36 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
           }}
         >
           <Typography variant="subtitle1" fontWeight={700}>
-            Tin nhắn
+            Tin nhắn gần nhất
           </Typography>
         </Box>
 
         <Divider />
 
         <Scrollbar sx={{ flex: 1, minHeight: 0, maxHeight: 320 }}>
-          {MOCK_NETWORK_CHATS.map((chat, index) => (
+          {isPending && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
+
+          {isError && !isPending && (
+            <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Không thể tải tin nhắn.
+              </Typography>
+            </Box>
+          )}
+
+          {!isPending && !isError && previews.length === 0 && (
+            <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Chưa có tin nhắn nào.
+              </Typography>
+            </Box>
+          )}
+
+          {!isPending && !isError && previews.map((chat, index) => (
             <Box
               key={chat.id}
               role="button"
@@ -113,7 +135,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
                 py: 1.5,
                 cursor: 'pointer',
                 borderBottom:
-                  index < MOCK_NETWORK_CHATS.length - 1 ? '1px solid' : 'none',
+                  index < previews.length - 1 ? '1px solid' : 'none',
                 borderColor: 'divider',
                 '&:hover': { bgcolor: 'action.hover' },
               }}
