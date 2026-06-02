@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { bookSession, uploadCvFile } from '../../utils/api';
-import { fileToBase64 } from '../images/fileToBase64';
+import { fileToBase64 } from '../../utils/imageUtils';
 
 /**
  * Single mutation that handles:

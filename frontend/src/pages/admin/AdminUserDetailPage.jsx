@@ -36,9 +36,7 @@ import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAdminSystemContext } from '../../contexts/AdminSystemContext';
 import { useAuth } from '../../hooks/useAuth';
-import { getLoginHistoryByUser } from '../../api/adminAuditApi';
-import { getUserActivity, resetPasswordByAdmin } from '../../api/adminUserApi';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { getLoginHistoryByUser, getUserActivity, resetPasswordByAdmin, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUserDetailPage = () => {

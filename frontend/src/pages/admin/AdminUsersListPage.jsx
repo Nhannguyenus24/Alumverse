@@ -41,9 +41,8 @@ import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../contexts/AdminUsersContext';
 import { useAuth } from '../../hooks/useAuth';
-import { resetPasswordByAdmin } from '../../api/adminUserApi';
+import { resetPasswordByAdmin, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
 
 const AdminUsersListPage = () => {
   const theme = useTheme();

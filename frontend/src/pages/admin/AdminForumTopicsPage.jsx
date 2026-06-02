@@ -16,7 +16,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useOutletContext } from "react-router";
-import { adminOrganizationApi } from "../../api/adminOrganizationApi";
+import { adminOrganizationApi } from "../../utils/api";
 import { useEffect } from "react";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";

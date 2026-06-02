@@ -20,7 +20,7 @@ import { useOutletContext } from 'react-router';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { adminOrganizationApi } from '../../utils/api';
 import { useEffect } from 'react';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';

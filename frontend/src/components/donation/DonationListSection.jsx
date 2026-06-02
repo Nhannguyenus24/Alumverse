@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
-import { fundApi } from "../../api/fundApi";
+import { fundApi } from "../../utils/api";
 import DonationListItemCard from "./DonationListItemCard";
 import DonationListFilters from "./DonationListFilters";
 

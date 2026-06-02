@@ -23,7 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import * as api from '../../api/adminEventApi';
+import { adminEventApi as api } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const fallbackPage = { items: [], totalItem: 0, totalPage: 0, currentPage: 0, pageSize: 10 };

@@ -6,7 +6,7 @@ import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useCreateFund } from '../../hooks/news/useCreateFund';
-import { fileToBase64 } from '../../hooks/images/fileToBase64';
+import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 

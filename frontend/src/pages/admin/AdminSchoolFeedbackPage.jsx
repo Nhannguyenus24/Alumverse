@@ -20,7 +20,7 @@ import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminSchoolFeedbackDetailDialog from '../../components/admin/AdminSchoolFeedbackDetailDialog';
-import { adminOrganizationApi } from '../../api/adminOrganizationApi';
+import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminSchoolFeedbackPage = () => {
