@@ -7,7 +7,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
-import { fundApi } from "../../api/fundApi";
+import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 
 import DonationListSection from "../../components/donation/DonationListSection";

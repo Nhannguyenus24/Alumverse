@@ -5,7 +5,7 @@ import DOMPurify from "dompurify";
 import dayjs from "dayjs";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
-import { fundApi } from "../../api/fundApi";
+import { fundApi } from "../../utils/api";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
 const BANNER_IMG = "https://www.islamic-relief.org.uk/wp-content/uploads/2022/10/Fundraising-ideas-.jpg";
