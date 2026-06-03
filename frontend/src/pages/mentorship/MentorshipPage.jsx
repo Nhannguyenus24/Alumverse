@@ -15,11 +15,9 @@ import MentorshipCard from "../../components/mentorship/MentorshipCard";
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
-import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
-import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
+import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { useExpertiseTopics } from '../../hooks/mentorship/useExpertiseTopics';
 import { useExpertiseCategories } from '../../hooks/mentorship/useExpertiseCategories';
-import useAuthStore from '../../stores/authStore';
 import { formatRating } from '../../utils/numberFormatter';
 
 
@@ -55,14 +53,8 @@ const MentorshipPage = () => {
     availableOn: '',
   });
 
-  const authUser = useAuthStore((state) => state.user);
-  const isLoggedIn = Boolean(authUser?.id);
-
-  const mentorProfileQuery = useMyMentorProfile();
-  const menteeProfileQuery = useMyMenteeProfile();
-  const isMentor = Boolean(mentorProfileQuery.data && !mentorProfileQuery.isError);
-  const hasMenteeProfile = Boolean(menteeProfileQuery.data && !menteeProfileQuery.isError);
-  const ownMentorMemberId = mentorProfileQuery.data?.memberId ?? null;
+  const access = useMentorshipAccessState();
+  const ownMentorMemberId = access.mentorMemberId;
 
   const categoriesQuery = useExpertiseCategories();
   const categoryOptions = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
@@ -126,46 +118,63 @@ const MentorshipPage = () => {
     navigate(`/development/mentorship/mentors/${mentorMemberId}`);
 
   const handleBook = (mentorMemberId) => {
-    if (!isLoggedIn) {
+    if (access.isGuest) {
       enqueueSnackbar('Vui lòng đăng nhập để đặt lịch với cố vấn.', { variant: 'info' });
       goToLogin();
+      return;
+    }
+    if (!access.canUseMentorship) {
+      enqueueSnackbar(
+        access.needsEmailVerification
+          ? 'Vui lòng xác thực email để sử dụng tính năng này.'
+          : 'Bạn cần xác minh thông tin học vấn tại khoa để đặt lịch.',
+        { variant: 'warning' },
+      );
       return;
     }
     navigate(`/development/mentorship/mentors/${mentorMemberId}/book`);
   };
 
   const renderActionButtons = () => {
-    if (!isLoggedIn) {
+    if (access.isGuest) {
       return (
         <Button variant="contained" onClick={goToLogin}>
-          Đăng nhập để bắt đầu
+          Đăng nhập để tham gia
+        </Button>
+      );
+    }
+
+    if (access.needsEmailVerification) {
+      return (
+        <Button variant="contained" color="warning" onClick={() => navigate('/settings/account')}>
+          Xác thực email để tiếp tục
+        </Button>
+      );
+    }
+
+    if (access.needsOrgVerification) {
+      return (
+        <Button variant="contained" color="warning" onClick={() => navigate('/settings/account')}>
+          Xác minh học vấn để đặt lịch
+        </Button>
+      );
+    }
+
+    if (access.isLoading) {
+      return (
+        <Button variant="outlined" onClick={() => navigate('/development/mentorship/my-bookings')}>
+          Lịch hẹn của tôi
         </Button>
       );
     }
 
     const myBookingsBtn = (
-      <Button
-        variant="outlined"
-        onClick={() => navigate('/development/mentorship/my-bookings')}
-      >
+      <Button variant="outlined" onClick={() => navigate('/development/mentorship/my-bookings')}>
         Lịch hẹn của tôi
       </Button>
     );
 
-    if (mentorProfileQuery.isLoading) {
-      return myBookingsBtn;
-    }
-
-    const menteeBtn = (
-      <Button
-        variant={hasMenteeProfile ? 'outlined' : 'contained'}
-        onClick={() => navigate('/development/mentorship/mentee-signup')}
-      >
-        {hasMenteeProfile ? 'Cập nhật Mentee Profile' : 'Trở thành Mentee'}
-      </Button>
-    );
-
-    if (isMentor) {
+    if (access.isMentorApproved) {
       return (
         <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
           {myBookingsBtn}
@@ -179,7 +188,21 @@ const MentorshipPage = () => {
             variant="contained"
             onClick={() => navigate('/development/mentorship/dashboard')}
           >
-            Duyệt yêu cầu
+            Quản lý lịch
+          </Button>
+        </Stack>
+      );
+    }
+
+    if (access.isMentorPending) {
+      return (
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+          {myBookingsBtn}
+          <Button
+            variant="outlined"
+            onClick={() => navigate('/development/mentorship/profile')}
+          >
+            Xem hồ sơ đã gửi
           </Button>
         </Stack>
       );
@@ -188,7 +211,12 @@ const MentorshipPage = () => {
     return (
       <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
         {myBookingsBtn}
-        {menteeBtn}
+        <Button
+          variant="outlined"
+          onClick={() => navigate('/development/mentorship/mentee-signup')}
+        >
+          Hoàn thiện hồ sơ Mentorship
+        </Button>
         <Button
           variant="contained"
           onClick={() => navigate('/development/mentorship/signup')}
@@ -314,11 +342,13 @@ const MentorshipPage = () => {
                 >
                   {mentors.map((mentor) => {
                     const isOwnCard = ownMentorMemberId === mentor.memberId;
-                    const bookDisabledReason = !isLoggedIn
+                    const bookDisabledReason = access.isGuest
                       ? 'Đăng nhập để đặt lịch'
-                      : isOwnCard
-                        ? 'Đây là hồ sơ của bạn'
-                        : undefined;
+                      : !access.canUseMentorship
+                        ? 'Cần xác minh tài khoản để đặt lịch'
+                        : isOwnCard
+                          ? 'Đây là hồ sơ của bạn'
+                          : undefined;
 
                     return (
                       <MentorshipCard
@@ -335,7 +365,7 @@ const MentorshipPage = () => {
                         tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
                         onViewProfile={() => handleViewProfile(mentor.memberId)}
                         onBook={() => handleBook(mentor.memberId)}
-                        canBook={isLoggedIn && !isOwnCard}
+                        canBook={access.canUseMentorship && !isOwnCard}
                         bookDisabledReason={bookDisabledReason}
                       />
                     );
