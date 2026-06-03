@@ -1,11 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Alert,
   Box,
   Button,
   Card,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 
@@ -22,6 +27,7 @@ import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
+import { cancelMentorSession } from '../../utils/api';
 
 const TOP_TABS = [
   { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
@@ -36,6 +42,9 @@ const PAGE_SIZE = 50;
 
 const MentorshipDashboardPage = () => {
   const navigate = useOrgNavigate();
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelPending, setCancelPending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
@@ -67,6 +76,30 @@ const MentorshipDashboardPage = () => {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
+    }
+  };
+
+  const openCancelDialog = (session) => {
+    setCancelTarget(session);
+    setCancelReason('');
+  };
+
+  const closeCancelDialog = () => {
+    setCancelTarget(null);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelPending(true);
+    try {
+      await cancelMentorSession(cancelTarget.id, cancelReason.trim() || undefined);
+      sessionsQuery.refetch?.();
+      closeCancelDialog();
+    } catch {
+      /* silent */
+    } finally {
+      setCancelPending(false);
     }
   };
 
@@ -147,6 +180,14 @@ const MentorshipDashboardPage = () => {
                           <Button
                             size="small"
                             variant="outlined"
+                            color="error"
+                            onClick={() => openCancelDialog(session)}
+                          >
+                            Hủy lịch
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
                             onClick={() => callUpdate(session.id, 'COMPLETED')}
                           >
                             Đánh dấu hoàn tất
@@ -194,6 +235,38 @@ const MentorshipDashboardPage = () => {
           </Section>
         </Stack>
       </MentorshipProfileLayout>
+
+      {/* Cancel dialog */}
+      <Dialog open={Boolean(cancelTarget)} onClose={closeCancelDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Hủy lịch hẹn</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Lý do hủy sẽ được thông báo đến mentee.
+          </Typography>
+          <TextField
+            label="Lý do hủy (tùy chọn)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Ví dụ: Bận công việc đột xuất..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCancelDialog} color="inherit">
+            Quay lại
+          </Button>
+          <Button
+            onClick={handleConfirmCancel}
+            color="error"
+            variant="contained"
+            disabled={cancelPending}
+          >
+            Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Page>
   );
 };

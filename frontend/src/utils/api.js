@@ -974,6 +974,11 @@ export const mentorshipApi = {
 		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/status`, payload);
 	},
 
+	cancelMentorSession(sessionId, cancelReason) {
+		const params = cancelReason ? { cancelReason } : {};
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
+	},
+
 	getMyMentorFeedbacks(page = 0, limit = 10) {
 		return apiClient.get(`${BASE_MENTOR}/feedbacks`, { params: { page, limit } });
 	},
@@ -1001,6 +1006,7 @@ export const {
 	cancelSession,
 	createSessionFeedback,
 	reportSession,
+	cancelMentorSession,
 	createMentorProfile,
 	saveMentorProfileDraft,
 	updateMentorProfile,

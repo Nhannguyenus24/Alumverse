@@ -115,6 +115,15 @@ const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view
           </Box>
         )}
 
+        {session.cancelReason && ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR'].includes(session.status) && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Lý do hủy
+            </Typography>
+            <Typography variant="body2" color="error.main">{session.cancelReason}</Typography>
+          </Box>
+        )}
+
         {session.cvUrl && (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <DescriptionOutlinedIcon fontSize="small" color="action" />
