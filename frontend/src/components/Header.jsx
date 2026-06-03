@@ -31,6 +31,7 @@ const VERIFICATION_LABELS = {
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Giới thiệu', href: '/introduction' },
+  { label: 'Kết nối', href: '/search' },
   {
     label: 'Vinh danh', href: '/honors',
     children: [
@@ -53,7 +54,6 @@ const NAV_ITEMS = [
       { label: 'Cơ hội việc làm', href: '/development/jobs' },
     ],
   },
-  { label: 'Kết nối', href: '/search' },
   { label: 'Diễn đàn', href: '/forum' },
   { label: 'Quyên góp', href: '/donations' },
   { label: 'Liên hệ', href: '/contact' },
@@ -274,14 +274,14 @@ const Header = () => {
             sx={{
               pointerEvents: 'auto',
               position: 'relative',
-              borderRadius: 2,
+              borderRadius: 1,
               px: { xs: 1.5, sm: 2 },
               py: { xs: 1.25, sm: 1.5, md: 1.75 },
               display: 'flex',
               alignItems: { xs: 'flex-start', sm: 'center' },
               justifyContent: 'space-between',
               gap: 1.5,
-              bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : 'warning.light',
+              bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : 'warning.main',
               color: isAdmin ? 'primary.contrastText' : 'warning.contrastText',
               border: '1px solid',
               borderColor: isAdmin ? 'rgba(255,255,255,0.18)' : 'warning.main',
