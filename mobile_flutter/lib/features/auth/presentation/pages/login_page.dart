@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/logo.dart';
+import '../../../../shared/widgets/logo.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../organization/presentation/providers/organization_provider.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -56,11 +58,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const Center(child: AlumverseLogo(size: 80)),
+                const SizedBox(height: 48),
+                Text(
+                  'Đăng nhập',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
                 const Center(child: AlumverseLogo(size: 80)),
                 const SizedBox(height: 48),
                 Text(
@@ -79,6 +94,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     hintText: 'email@example.com',
+                    hintText: 'email@example.com',
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                 ),
@@ -90,6 +106,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   decoration: InputDecoration(
                     labelText: 'Mật khẩu',
                     hintText: '••••••••',
+                    hintText: '••••••••',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -97,6 +114,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       onPressed: () => setState(() => _obscure = !_obscure),
                     ),
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push(RouteNames.forgotPassword),
+                    child: const Text('Quên mật khẩu?'),
                   ),
                 ),
                 Align(
@@ -161,6 +185,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    ref.read(organizationStateProvider.notifier).reset();
+                  },
+                  child: const Text(
+                    'Đổi tổ chức',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ],
             ),
