@@ -234,36 +234,44 @@ public class MenteeService {
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
         return accessService.requireOrgVerifiedForMentorship()
                 .then(currentMemberId().flatMap(memberId ->
-                menteeProfileRepository.findById(memberId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Bạn cần hoàn thiện hồ sơ Mentee trước khi đặt lịch")))
-                        .flatMap(menteeProfile -> {
-                            if (!Boolean.TRUE.equals(menteeProfile.getIsActive())) {
-                                return Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Hồ sơ Mentee chưa được kích hoạt"));
-                            }
-                            return availabilityRepository.findById(request.getAvailabilityId())
-                                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability slot not found")))
-                                    .flatMap(availability -> {
-                                        if (Status.AVAILABLE != availability.getStatus()) {
-                                            return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "This time slot is no longer available"));
-                                        }
-
-                                        MentorshipSession session = MentorshipSession.builder()
-                                                .availabilityId(request.getAvailabilityId())
-                                                .menteeMemberId(memberId)
-                                                .status(Status.PENDING)
-                                                .bookingNote(request.getBookingNote())
-                                                .sessionType(MentorshipSessionType.valueOf(request.getSessionType().toUpperCase()))
-                                                .introduction(request.getIntroduction())
-                                                .description(request.getDescription())
-                                                .cvUrl(request.getCvUrl())
-                                                .createdAt(LocalDateTime.now())
-                                                .build();
-
-                                        return availabilityRepository.updateStatus(availability.getId(), Status.BOOKED.getValue())
-                                                .then(sessionRepository.save(session));
-                                    });
-                        })
-                        .flatMap(this::enrich)));
+                        availabilityRepository.findById(request.getAvailabilityId())
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.AVAILABILITY_NOT_FOUND, "Lịch trống không tồn tại")))
+                                .flatMap(availability -> {
+                                    // Block self-booking
+                                    if (memberId.equals(availability.getMentorMemberId())) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.SESSION_SELF_BOOKING_NOT_ALLOWED,
+                                                "Bạn không thể đặt lịch với chính mình"));
+                                    }
+                                    // Slot must still be available
+                                    if (Status.AVAILABLE != availability.getStatus()) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.AVAILABILITY_NOT_AVAILABLE,
+                                                "Lịch trống này đã có người đặt. Vui lòng chọn khung giờ khác"));
+                                    }
+                                    // Mentor must be APPROVED
+                                    return accessService
+                                            .requireApprovedMentorProfile(availability.getMentorMemberId())
+                                            .then(Mono.defer(() -> {
+                                                MentorshipSession session = MentorshipSession.builder()
+                                                        .availabilityId(request.getAvailabilityId())
+                                                        .menteeMemberId(memberId)
+                                                        .status(Status.CONFIRMED)
+                                                        .bookingNote(request.getBookingNote())
+                                                        .sessionType(MentorshipSessionType.valueOf(
+                                                                request.getSessionType().toUpperCase()))
+                                                        .introduction(request.getIntroduction())
+                                                        .description(request.getDescription())
+                                                        .cvUrl(request.getCvUrl())
+                                                        .createdAt(LocalDateTime.now())
+                                                        .build();
+                                                return availabilityRepository.updateStatus(
+                                                                availability.getId(), Status.BOOKED.getValue())
+                                                        .then(sessionRepository.save(session));
+                                            }));
+                                })
+                                .flatMap(this::enrich)));
     }
 
     // ===================== MY SESSIONS (Mentee view) =====================

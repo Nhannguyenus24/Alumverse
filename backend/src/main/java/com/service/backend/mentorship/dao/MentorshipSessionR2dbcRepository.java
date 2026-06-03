@@ -25,7 +25,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     @Query("SELECT ms.* FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
-            "LEFT JOIN organization_members om ON ms.mentee_member_id = om.id " +
+            "LEFT JOIN organization_members om ON ms.mentee_member_id = om.user_id " +
             "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
             "WHERE ma.mentor_member_id = :mentorMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
@@ -35,7 +35,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     @Query("SELECT COUNT(ms.*) FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
-            "LEFT JOIN organization_members om ON ms.mentee_member_id = om.id " +
+            "LEFT JOIN organization_members om ON ms.mentee_member_id = om.user_id " +
             "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
             "WHERE ma.mentor_member_id = :mentorMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
@@ -54,7 +54,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     @Query("SELECT ms.* FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
-            "LEFT JOIN organization_members om ON ma.mentor_member_id = om.id " +
+            "LEFT JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
             "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
             "WHERE ms.mentee_member_id = :menteeMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
@@ -64,7 +64,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
 
     @Query("SELECT COUNT(ms.*) FROM mentorship_sessions ms " +
             "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
-            "LEFT JOIN organization_members om ON ma.mentor_member_id = om.id " +
+            "LEFT JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
             "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
             "WHERE ms.mentee_member_id = :menteeMemberId " +
             "AND (:date IS NULL OR CAST(ma.start_time AS DATE) = :date) " +
@@ -89,7 +89,7 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("UPDATE mentorship_sessions SET meeting_link = :meetingLink WHERE id = :id")
     Mono<Integer> updateMeetingLink(Integer id, String meetingLink);
 
-    @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status != 'Rejected' AND status != 'Cancelled'")
+    @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status NOT IN ('REJECTED','CANCELLED','CANCELLED_BY_MENTEE','CANCELLED_BY_MENTOR')")
     Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
 
 }
