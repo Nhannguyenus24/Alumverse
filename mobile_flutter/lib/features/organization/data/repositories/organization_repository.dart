@@ -15,4 +15,6 @@ class OrganizationRepository {
   Future<Organization> getOrganizationBySlug(String slug) async {
     return await api.getOrganizationBySlug(slug);
   }
+
+  Future<List<Organization>> getOrganizations() => api.getOrganizations();
 }
