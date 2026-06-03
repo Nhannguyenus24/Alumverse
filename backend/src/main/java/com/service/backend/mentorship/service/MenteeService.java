@@ -344,7 +344,15 @@ public class MenteeService {
                                                 .createdAt(LocalDateTime.now())
                                                 .build();
 
-                                        return feedbackRepository.save(feedback);
+                                        return feedbackRepository.save(feedback)
+                                                .flatMap(savedFeedback ->
+                                                        availabilityRepository.findById(session.getAvailabilityId())
+                                                                .flatMap(avail ->
+                                                                        feedbackRepository.calculateAverageRating(avail.getMentorMemberId())
+                                                                                .defaultIfEmpty(BigDecimal.ZERO)
+                                                                                .flatMap(avg -> profileRepository.updateRatingAndIncrementSessions(
+                                                                                        avail.getMentorMemberId(), avg)))
+                                                                .thenReturn(savedFeedback));
                                     });
                         })
                         .map(SessionFeedbackResponse::from));

@@ -20,19 +20,23 @@ const SESSION_TYPE_LABEL = {
 };
 
 const STATUS_COLOR = {
-  Pending: 'warning',
-  Confirmed: 'info',
-  Completed: 'success',
-  Cancelled: 'default',
-  Rejected: 'error',
+  PENDING: 'warning',
+  CONFIRMED: 'info',
+  COMPLETED: 'success',
+  CANCELLED: 'default',
+  CANCELLED_BY_MENTEE: 'default',
+  CANCELLED_BY_MENTOR: 'warning',
+  REJECTED: 'error',
 };
 
 const STATUS_LABEL = {
-  Pending: 'Chờ duyệt',
-  Confirmed: 'Đã duyệt',
-  Completed: 'Đã hoàn thành',
-  Cancelled: 'Đã hủy',
-  Rejected: 'Bị từ chối',
+  PENDING: 'Chờ xác nhận',
+  CONFIRMED: 'Đã xác nhận',
+  COMPLETED: 'Đã hoàn thành',
+  CANCELLED: 'Đã hủy',
+  CANCELLED_BY_MENTEE: 'Đã hủy',
+  CANCELLED_BY_MENTOR: 'Cố vấn đã hủy',
+  REJECTED: 'Bị từ chối',
 };
 
 const formatRange = (start, end) => {
@@ -45,7 +49,8 @@ const formatRange = (start, end) => {
 const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view = 'mentee' }) => {
   const range = formatRange(session.startTime, session.endTime);
   const canCancel =
-    onCancel && session.status !== 'Cancelled' && session.status !== 'Completed' && session.status !== 'Rejected';
+    onCancel &&
+    !['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'REJECTED'].includes(session.status);
 
   // 'mentee' view → show mentor info; 'mentor' view → show mentee info
   const counterpartName =

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -41,7 +41,6 @@ const MentorshipDashboardPage = () => {
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
   const updateMutation = useUpdateSessionStatus();
-  const [updatingId, setUpdatingId] = useState(null);
 
   const items = useMemo(() => sessionsQuery.data?.items ?? [], [sessionsQuery.data]);
   const feedbacks = useMemo(
@@ -49,32 +48,25 @@ const MentorshipDashboardPage = () => {
     [feedbacksQuery.data],
   );
 
-  const pendingItems = useMemo(
-    () => items.filter((s) => s.status === 'Pending'),
-    [items],
-  );
   const upcomingItems = useMemo(
-    () => items.filter((s) => s.status === 'Confirmed'),
+    () => items.filter((s) => s.status === 'CONFIRMED'),
     [items],
   );
 
   const stats = useMemo(() => {
-    const completed = items.filter((s) => s.status === 'Completed').length;
+    const completed = items.filter((s) => s.status === 'COMPLETED').length;
     return [
       { value: items.length, label: 'lượt đặt' },
-      { value: pendingItems.length, label: 'chờ duyệt' },
+      { value: upcomingItems.length, label: 'sắp tới' },
       { value: completed, label: 'đã hoàn thành' },
     ];
-  }, [items, pendingItems]);
+  }, [items, upcomingItems]);
 
   const callUpdate = async (sessionId, status) => {
-    setUpdatingId(sessionId);
     try {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -142,25 +134,6 @@ const MentorshipDashboardPage = () => {
             <Alert severity="error">Không tải được danh sách buổi tư vấn.</Alert>
           ) : (
             <>
-              {/* YÊU CẦU CHỜ DUYỆT */}
-              <Section title={`Yêu cầu chờ duyệt (${pendingItems.length})`}>
-                {pendingItems.length === 0 ? (
-                  <EmptyState message="Chưa có yêu cầu nào đang chờ bạn duyệt." />
-                ) : (
-                  <Stack spacing={2}>
-                    {pendingItems.map((session) => (
-                      <PendingRequestCard
-                        key={session.id}
-                        session={session}
-                        onAccept={() => callUpdate(session.id, 'Confirmed')}
-                        onReject={() => callUpdate(session.id, 'Rejected')}
-                        loading={updatingId === session.id}
-                      />
-                    ))}
-                  </Stack>
-                )}
-              </Section>
-
               {/* LỊCH SẮP TỚI */}
               <Section title={`Lịch sắp tới (${upcomingItems.length})`}>
                 {upcomingItems.length === 0 ? (
@@ -168,7 +141,18 @@ const MentorshipDashboardPage = () => {
                 ) : (
                   <Stack spacing={2}>
                     {upcomingItems.map((session) => (
-                      <MentorshipBookingItem key={session.id} session={session} view="mentor" />
+                      <Box key={session.id}>
+                        <MentorshipBookingItem session={session} view="mentor" />
+                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => callUpdate(session.id, 'COMPLETED')}
+                          >
+                            Đánh dấu hoàn tất
+                          </Button>
+                        </Stack>
+                      </Box>
                     ))}
                   </Stack>
                 )}
@@ -232,20 +216,6 @@ const EmptyState = ({ message }) => (
       {message}
     </Typography>
   </Card>
-);
-
-const PendingRequestCard = ({ session, onAccept, onReject, loading }) => (
-  <Box>
-    <MentorshipBookingItem session={session} view="mentor" />
-    <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 1 }}>
-      <Button variant="outlined" color="error" disabled={loading} onClick={onReject}>
-        Từ chối
-      </Button>
-      <Button variant="contained" disabled={loading} onClick={onAccept}>
-        Chấp nhận
-      </Button>
-    </Stack>
-  </Box>
 );
 
 export default MentorshipDashboardPage;

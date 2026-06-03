@@ -18,11 +18,14 @@ import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions'
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
+const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
+const CANCELLED_STATUSES = new Set(['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'REJECTED']);
+
 const TAB_FILTERS = [
   { key: 'all', label: 'Tất cả', match: () => true },
-  { key: 'upcoming', label: 'Sắp tới', match: (s) => s.status === 'Pending' || s.status === 'Confirmed' },
-  { key: 'completed', label: 'Đã hoàn thành', match: (s) => s.status === 'Completed' },
-  { key: 'cancelled', label: 'Đã hủy / từ chối', match: (s) => s.status === 'Cancelled' || s.status === 'Rejected' },
+  { key: 'upcoming', label: 'Sắp tới', match: (s) => ACTIVE_STATUSES.has(s.status) },
+  { key: 'completed', label: 'Đã hoàn thành', match: (s) => s.status === 'COMPLETED' },
+  { key: 'cancelled', label: 'Đã hủy / từ chối', match: (s) => CANCELLED_STATUSES.has(s.status) },
 ];
 
 const PAGE_SIZE = 10;
