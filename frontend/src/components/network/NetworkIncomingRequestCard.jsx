@@ -11,7 +11,6 @@ import {
 import { alpha } from '@mui/material/styles';
 
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../../utils/dateFormatter';
 import ChatAvatar from '../ChatAvatar';
 
@@ -61,7 +60,7 @@ const NetworkIncomingRequestCard = ({
 }) => {
   const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
-  const avatarSrc = request.avatarUrl?.trim() || DEFAULT_CHAT_AVATAR_SRC;
+  const avatarSrc = request.avatarUrl?.trim();
 
   const handleCardClick = () => {
     onViewDetail?.(request);

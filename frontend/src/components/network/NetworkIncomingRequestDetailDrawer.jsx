@@ -9,7 +9,6 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 
 import Scrollbar from '../Scrollbar';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../../utils/dateFormatter';
 import ChatAvatar from '../ChatAvatar';
 
@@ -43,7 +42,7 @@ function MessageBubble({ body, createdAt }) {
 const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
   if (!request) return null;
 
-  const avatarSrc = request.avatarUrl?.trim() || DEFAULT_CHAT_AVATAR_SRC;
+  const avatarSrc = request.avatarUrl?.trim();
 
   return (
     <Drawer

@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import Scrollbar from './Scrollbar';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../utils/dateFormatter';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import { useRecentChatPreviews } from '../hooks/chat/useRecentChatPreviews';
