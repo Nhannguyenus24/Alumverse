@@ -1,13 +1,4 @@
 /** Ảnh mặc định trong `public` khi không có `avatarUrl` hoặc ảnh API lỗi */
-export const DEFAULT_CHAT_AVATAR_SRC = '/avatar_chat_fallback.svg';
-
-/**
- * Mock hội thoại — thay bằng API khi backend sẵn sàng.
- *
- * `preview` ≈ nội dung tin nhắn cuối (`chat_messages.content`).
- * `updatedAt` ≈ `chat_messages.created_at` của tin cuối trong thread (group).
- * `avatarUrl` ≈ ảnh đại diện peer (API); null/undefined → `DEFAULT_CHAT_AVATAR_SRC`.
- */
 export const MOCK_NETWORK_CHATS = [
   {
     id: 1,
