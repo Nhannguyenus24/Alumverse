@@ -10,7 +10,7 @@ import {
 import Page from "../../components/Page";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../../utils/dateFormatter";
-import { notificationApi } from "../utils/api";
+import { notificationApi } from "../../utils/api";
 
 const NotificationPage = () => {
   const [activeTab, setActiveTab] = useState(0);
