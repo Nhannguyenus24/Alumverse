@@ -141,10 +141,10 @@ const MentorshipProfilePage = () => {
             TRANG CÁ NHÂN
           </Typography>
 
-          {!profile.isApproved && (
+          {profile.status !== 'APPROVED' && (
             <Alert severity="warning">
-              Hồ sơ của bạn đang chờ admin duyệt. Trong thời gian này mentee sẽ chưa thấy bạn ở trang
-              tìm cố vấn.
+              Hồ sơ cố vấn của bạn đang chờ khoa duyệt. Trong thời gian này bạn chưa xuất hiện trong
+              danh sách tìm cố vấn.
             </Alert>
           )}
 

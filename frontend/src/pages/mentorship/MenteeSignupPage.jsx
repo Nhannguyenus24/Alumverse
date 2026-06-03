@@ -20,7 +20,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
 import { useMyMenteeProfile, useSaveMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
 
-const MIN_VERIFICATION_LEVEL = 1;
+const MIN_VERIFICATION_LEVEL = 2;
 
 const ACADEMIC_YEAR_OPTIONS = [
   'Year 1',
@@ -105,7 +105,7 @@ const MenteeSignupPage = () => {
 
   if (orgMemberQuery.isFetching) {
     return (
-      <Page title="Đăng ký Mentee">
+      <Page title="Hoàn thiện hồ sơ Mentorship">
         <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
           <CircularProgress />
         </Container>
@@ -117,8 +117,9 @@ const MenteeSignupPage = () => {
   const isVerified = verificationLevel >= MIN_VERIFICATION_LEVEL;
 
   if (!isVerified) {
+    const needsEmail = verificationLevel < 1;
     return (
-      <Page title="Đăng ký Mentee">
+      <Page title="Hoàn thiện hồ sơ Mentorship">
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -130,11 +131,12 @@ const MenteeSignupPage = () => {
           </Button>
           <Alert severity="warning">
             <Typography fontWeight={700} mb={0.5}>
-              Bạn chưa đủ điều kiện đăng ký làm Mentee
+              Bạn chưa đủ điều kiện sử dụng tính năng Mentorship
             </Typography>
             <Typography variant="body2">
-              Tài khoản của bạn cần được xác minh email (cấp {MIN_VERIFICATION_LEVEL} trở lên).
-              Hiện tại bạn đang ở cấp {verificationLevel}.
+              {needsEmail
+                ? 'Vui lòng xác thực email để tiếp tục sử dụng các tính năng cộng đồng.'
+                : 'Bạn cần xác minh thông tin học vấn tại khoa để sử dụng tính năng này.'}
             </Typography>
           </Alert>
         </Container>
@@ -145,7 +147,7 @@ const MenteeSignupPage = () => {
   const hasExisting = Boolean(existingQuery.data);
 
   return (
-    <Page title="Đăng ký Mentee">
+    <Page title="Hoàn thiện hồ sơ Mentorship">
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -157,7 +159,7 @@ const MenteeSignupPage = () => {
         </Button>
 
         <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
-          {hasExisting ? 'CẬP NHẬT HỒ SƠ MENTEE' : 'ĐĂNG KÝ MENTEE'}
+          {hasExisting ? 'CẬP NHẬT HỒ SƠ MENTORSHIP' : 'HOÀN THIỆN HỒ SƠ MENTORSHIP'}
         </Typography>
         <Typography color="text.secondary" mb={3}>
           Cho mentor biết bạn đang ở đâu trên hành trình và muốn được hỗ trợ điều gì.

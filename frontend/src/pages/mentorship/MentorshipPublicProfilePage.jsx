@@ -24,7 +24,7 @@ import MentorshipReviewCard from '../../components/mentorship/MentorshipReviewCa
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicProfile';
 import { useMentorPublicFeedbacks } from '../../hooks/mentorship/useMentorPublicFeedbacks';
-import useAuthStore from '../../stores/authStore';
+import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { formatRating } from '../../utils/numberFormatter';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -34,8 +34,7 @@ const MentorshipPublicProfilePage = () => {
   const navigate = useOrgNavigate();
   const { mentorId } = useParams();
   const mentorMemberId = Number(mentorId);
-  const isLoggedIn = useAuthStore((state) => Boolean(state.user?.id));
-  const authUserId = useAuthStore((state) => state.user?.id ?? null);
+  const access = useMentorshipAccessState();
 
   const [feedbackPage, setFeedbackPage] = useState(0);
 
@@ -46,17 +45,22 @@ const MentorshipPublicProfilePage = () => {
   const feedbackPage_ = feedbacksQuery.data;
   const feedbacks = feedbackPage_?.items ?? [];
 
-  const isOwnProfile = authUserId != null && mentor?.memberId === authUserId;
-  const canBook = isLoggedIn && !isOwnProfile;
-  const bookDisabledReason = !isLoggedIn
+  const isOwnProfile = access.mentorMemberId != null && mentor?.memberId === access.mentorMemberId;
+  const canBook = access.canUseMentorship && !isOwnProfile;
+  const bookDisabledReason = access.isGuest
     ? 'Đăng nhập để đặt lịch'
-    : isOwnProfile
-      ? 'Đây là hồ sơ của bạn'
-      : '';
+    : !access.canUseMentorship
+      ? 'Cần xác minh học vấn để đặt lịch'
+      : isOwnProfile
+        ? 'Đây là hồ sơ của bạn'
+        : '';
 
   const goToBooking = () => {
-    if (!isLoggedIn) {
+    if (access.isGuest) {
       navigate('/auth/login');
+      return;
+    }
+    if (!access.canUseMentorship) {
       return;
     }
     navigate(`/development/mentorship/mentors/${mentorMemberId}/book`);
