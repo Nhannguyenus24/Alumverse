@@ -9,7 +9,7 @@ import {
   Menu,
   Typography,
 } from '@mui/material';
-import { BsChatSquare } from 'react-icons/bs';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import Scrollbar from './Scrollbar';
 import { DEFAULT_CHAT_AVATAR_SRC } from '../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../utils/dateFormatter';
@@ -51,7 +51,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
         onClick={handleOpen}
         sx={{ color: headerTextColor }}
       >
-        <BsChatSquare size={20} aria-hidden />
+        <ChatBubbleOutlineIcon />
       </IconButton>
 
       <Menu
@@ -66,7 +66,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
             sx: {
               width: 360,
               maxHeight: 480,
-              mt: 1,
+              mt: 3,
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -85,8 +85,8 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
             flexShrink: 0,
           }}
         >
-          <Typography variant="subtitle1" fontWeight={700}>
-            Tin nhắn gần nhất
+          <Typography variant="h3" fontWeight={700} sx={{ color: 'primary.main' }}>
+            Tin nhắn
           </Typography>
         </Box>
 

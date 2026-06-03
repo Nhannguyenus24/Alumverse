@@ -94,7 +94,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
             aria-haspopup="true"
             aria-expanded={open ? "true" : undefined}
           >
-            <NotificationsOutlinedIcon fontSize="small" />
+            <NotificationsOutlinedIcon />
           </IconButton>
           {unreadCount > 0 && (
             <Box
@@ -123,9 +123,12 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
           sx: {
             width: 360,
             maxHeight: 500,
+            mt: 3,
             boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+            p: 1
           },
         }}
+        MenuListProps={{ sx: { p: 0 } }}
       >
         {/* Header with title and settings */}
         <Box
@@ -133,10 +136,11 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            p: 1
+            px: 1,
+            py: 1.25,
           }}
         >
-          <Typography variant="h3" sx={{ fontWeight: 600 }}>
+          <Typography variant="h3" sx={{ fontWeight: 700, color: "primary.main" }}>
             Thông báo
           </Typography>
           <Tooltip title="Cài đặt" arrow>
@@ -147,7 +151,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         </Box>
 
         {/* Tabs */}
-        <Box sx={{ borderBottom: "1px solid #e0e0e0", p: 1, display: "flex", gap: 1 }}>
+        <Box sx={{ borderBottom: "1px solid #e0e0e0", pb: 2, px: 1, display: "flex", gap: 1 }}>
           <Button
             variant={activeTab === 0 ? "contained" : "outlined"}
             color="primary"
