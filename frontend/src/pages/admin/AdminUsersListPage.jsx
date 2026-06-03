@@ -170,7 +170,7 @@ const AdminUsersListPage = () => {
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
           <Tooltip title="Xem chi tiết">
             <IconButton size="small" onClick={() => navigate(`/admin/users/${u.id}`)}>
-              <VisibilityOutlinedIcon fontSize="small" />
+              <VisibilityOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
@@ -279,7 +279,7 @@ const AdminUsersListPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Quản lý người dùng
           </Typography>
           <Typography
@@ -309,7 +309,7 @@ const AdminUsersListPage = () => {
           icon={<PeopleAltOutlinedIcon />}
         />
         <AdminDashboardMetricTile
-          label="Thành viên mới (24h)"
+          label="Tham gia hôm nay"
           value={stats.newToday}
           icon={<PersonAddOutlinedIcon />}
           valueColor="info.main"

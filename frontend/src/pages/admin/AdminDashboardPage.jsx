@@ -54,11 +54,11 @@ const AdminDashboardPage = () => {
     <Box>
       {/* Welcome Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -1 }}>
-          Chào mừng trở lại, {user?.fullName || user?.userName} 👋
+        <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+          Chào mừng trở lại, {user?.fullName || user?.userName}!
         </Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-          Đây là tổng quan về hoạt động của hệ thống HCMUS Alumni ngày hôm nay.
+          Đây là tổng quan về hoạt động của hệ thống AlumVerse ngày hôm nay.
         </Typography>
       </Box>
 
@@ -126,8 +126,8 @@ const AdminDashboardPage = () => {
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>Biểu đồ hoạt động</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>7 NGÀY GẦN NHẤT</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>Biểu đồ hoạt động</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>7 ngày qua</Typography>
             </Box>
             <Chart
               type="area"
@@ -151,9 +151,9 @@ const AdminDashboardPage = () => {
             <Box
               sx={{
                 p: 3,
-                bgcolor: alpha(theme.palette.primary.main, 0.03),
+                bgcolor: 'background.paper',
                 borderRadius: 3,
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                border: `1px solid ${theme.palette.divider}`,
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>
@@ -163,10 +163,10 @@ const AdminDashboardPage = () => {
                 <Button
                   component={NavLink}
                   to="/admin/users"
-                  variant="contained"
+                  variant="outlined"
                   fullWidth
                   startIcon={<GroupsOutlinedIcon />}
-                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                   disabled={!isAdmin}
                 >
                   Quản lý người dùng
@@ -177,9 +177,9 @@ const AdminDashboardPage = () => {
                   variant="outlined"
                   fullWidth
                   startIcon={<ForumOutlinedIcon />}
-                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: 'background.paper' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                 >
-                  Duyệt bài viết Diễn đàn
+                  Duyệt bài viết diễn đàn
                 </Button>
                 <Button
                   component={NavLink}
@@ -187,7 +187,7 @@ const AdminDashboardPage = () => {
                   variant="outlined"
                   fullWidth
                   startIcon={<GavelOutlinedIcon />}
-                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: 'background.paper' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                   disabled={!isAdmin}
                 >
                   Xem nhật ký hệ thống
@@ -197,7 +197,7 @@ const AdminDashboardPage = () => {
 
             {/* System Status or Recent Updates */}
             <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2 }}>Trạng thái hệ thống</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>Trạng thái hệ thống</Typography>
               <Stack spacing={2}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">Cơ sở dữ liệu</Typography>
