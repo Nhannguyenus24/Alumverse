@@ -2,6 +2,7 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
+import com.service.backend.shared.entity.MentorshipReport;
 import com.service.backend.shared.entity.MenteeProfile;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.enums.MentorshipSessionType;
@@ -41,6 +42,7 @@ public class MenteeService {
     private final MenteeProfileR2dbcRepository menteeProfileRepository;
     private final MentorshipAccessService accessService;
     private final NotificationService notificationService;
+    private final MentorshipReportR2dbcRepository reportRepository;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -391,5 +393,33 @@ public class MenteeService {
                         tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
                         tuple.getT2(), page, limit
                 ));
+    }
+
+    // ===================== REPORT =====================
+
+    public Mono<Void> reportSession(Integer sessionId, CreateReportRequest request) {
+        return currentMemberId().flatMap(reporterMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Không tìm thấy buổi mentoring")))
+                        .flatMap(session -> {
+                            boolean isMentee = reporterMemberId.equals(session.getMenteeMemberId());
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> {
+                                        Integer reportedMemberId = isMentee
+                                                ? avail.getMentorMemberId()
+                                                : session.getMenteeMemberId();
+                                        MentorshipReport report = MentorshipReport.builder()
+                                                .sessionId(sessionId)
+                                                .reporterMemberId(reporterMemberId)
+                                                .reportedMemberId(reportedMemberId)
+                                                .reasonCategory(request.getReasonCategory())
+                                                .description(request.getDescription())
+                                                .status("PENDING")
+                                                .createdAt(java.time.LocalDateTime.now())
+                                                .build();
+                                        return reportRepository.save(report).then();
+                                    });
+                        }));
     }
 }

@@ -22,6 +22,7 @@ import MentorshipBookingItem from '../../components/mentorship/MentorshipBooking
 import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions';
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { reportSession } from '../../utils/api';
 
 const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
 const CANCELLED_STATUSES = new Set(['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'REJECTED']);
@@ -41,6 +42,10 @@ const MentorshipMyBookingsPage = () => {
   const [page, setPage] = useState(0);
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportCategory, setReportCategory] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportPending, setReportPending] = useState(false);
 
   const sessionsQuery = useMyMenteeSessions({ page, limit: PAGE_SIZE });
   const cancelMutation = useCancelMenteeSession();
@@ -70,6 +75,34 @@ const MentorshipMyBookingsPage = () => {
       closeCancelDialog();
     } catch {
       /* error surfaced via cancelMutation.errorMessage */
+    }
+  };
+
+  const openReportDialog = (session) => {
+    setReportTarget(session);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const closeReportDialog = () => {
+    setReportTarget(null);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const handleConfirmReport = async () => {
+    if (!reportTarget || !reportCategory.trim()) return;
+    setReportPending(true);
+    try {
+      await reportSession(reportTarget.id, {
+        reasonCategory: reportCategory.trim(),
+        description: reportDescription.trim() || undefined,
+      });
+      closeReportDialog();
+    } catch {
+      /* silent fail — improve later */
+    } finally {
+      setReportPending(false);
     }
   };
 
@@ -140,6 +173,7 @@ const MentorshipMyBookingsPage = () => {
                 session={session}
                 onCancel={openCancelDialog}
                 cancelDisabled={cancelMutation.isPending}
+                onReport={openReportDialog}
               />
             ))}
           </Stack>
@@ -167,6 +201,46 @@ const MentorshipMyBookingsPage = () => {
           </Box>
         )}
       </Container>
+
+      {/* Report dialog */}
+      <Dialog open={Boolean(reportTarget)} onClose={closeReportDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Báo cáo sự cố</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Mô tả vấn đề bạn gặp phải trong buổi mentoring này. Đội quản trị sẽ xem xét và xử lý.
+          </Typography>
+          <TextField
+            label="Lý do báo cáo *"
+            value={reportCategory}
+            onChange={(e) => setReportCategory(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+            placeholder="Ví dụ: Không đến đúng giờ, Nội dung không phù hợp..."
+          />
+          <TextField
+            label="Mô tả thêm (tùy chọn)"
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Mô tả chi tiết sự việc..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReportDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmReport}
+            color="warning"
+            variant="contained"
+            disabled={reportPending || !reportCategory.trim()}
+          >
+            Gửi báo cáo
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Cancel dialog */}
       <Dialog open={Boolean(cancelTarget)} onClose={closeCancelDialog} maxWidth="xs" fullWidth>

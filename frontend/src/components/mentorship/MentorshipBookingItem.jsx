@@ -46,11 +46,12 @@ const formatRange = (start, end) => {
   return `${s.format('dddd, DD/MM/YYYY')} • ${s.format('HH:mm')} – ${e.format('HH:mm')}`;
 };
 
-const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view = 'mentee' }) => {
+const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view = 'mentee', onReport }) => {
   const range = formatRange(session.startTime, session.endTime);
   const canCancel =
     onCancel &&
     !['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'REJECTED'].includes(session.status);
+  const canReport = onReport && session.status === 'COMPLETED';
 
   // 'mentee' view → show mentor info; 'mentor' view → show mentee info
   const counterpartName =
@@ -146,17 +147,29 @@ const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view
           </Stack>
         )}
 
-        {canCancel && (
-          <Stack direction="row" justifyContent="flex-end">
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              disabled={cancelDisabled}
-              onClick={() => onCancel(session)}
-            >
-              Hủy lịch
-            </Button>
+        {(canCancel || canReport) && (
+          <Stack direction="row" justifyContent="flex-end" spacing={1}>
+            {canReport && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
+                onClick={() => onReport(session)}
+              >
+                Báo cáo sự cố
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                disabled={cancelDisabled}
+                onClick={() => onCancel(session)}
+              >
+                Hủy lịch
+              </Button>
+            )}
           </Stack>
         )}
       </Stack>

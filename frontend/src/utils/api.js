@@ -914,6 +914,10 @@ export const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/feedback`, payload);
 	},
 
+	reportSession(sessionId, payload) {
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/report`, payload);
+	},
+
 	createMentorProfile(payload) {
 		return apiClient.post(`${BASE_MENTOR}/profile`, payload);
 	},
@@ -996,6 +1000,7 @@ export const {
 	getMenteeSessionById,
 	cancelSession,
 	createSessionFeedback,
+	reportSession,
 	createMentorProfile,
 	saveMentorProfileDraft,
 	updateMentorProfile,

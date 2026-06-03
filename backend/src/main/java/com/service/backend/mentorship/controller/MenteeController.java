@@ -158,6 +158,14 @@ public class MenteeController {
                         .ok(new ApiResponse<>("Session cancelled successfully", response)));
     }
 
+    @PostMapping("/sessions/{sessionId}/report")
+    public Mono<ResponseEntity<ApiResponse<Void>>> reportSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @Valid @RequestBody CreateReportRequest request) {
+        return menteeService.reportSession(sessionId, request)
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Báo cáo đã được ghi nhận", null))));
+    }
+
     @PostMapping("/sessions/{sessionId}/feedback")
     public Mono<ResponseEntity<ApiResponse<SessionFeedbackResponse>>> createFeedback(
             @PathVariable @Min(1) Integer sessionId,
