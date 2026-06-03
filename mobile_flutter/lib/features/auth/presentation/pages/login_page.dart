@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/logo.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
 import '../providers/auth_provider.dart';
@@ -53,19 +54,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  'HCMUS Alumni',
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                const Center(child: AlumverseLogo(size: 80)),
+                const SizedBox(height: 48),
+                Text(
+                  'Đăng nhập',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                const Text('Đăng nhập để tiếp tục'),
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailCtl,
@@ -73,6 +78,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: 'Email',
+                    hintText: 'email@example.com',
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                 ),
@@ -83,6 +89,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   validator: Validators.password,
                   decoration: InputDecoration(
                     labelText: 'Mật khẩu',
+                    hintText: '••••••••',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
@@ -92,27 +99,68 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading ? null : _submit,
-                    child: loading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Đăng nhập'),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => context.push(RouteNames.forgotPassword),
+                    child: const Text('Quên mật khẩu?'),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.push(RouteNames.register),
-                  child: const Text('Chưa có tài khoản? Đăng ký'),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: loading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Đăng nhập', style: TextStyle(fontSize: 16)),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'hoặc tiếp tục với',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: Implement Google Sign In
+                  },
+                  icon: const Icon(Icons.g_mobiledata, size: 30),
+                  label: const Text('Tiếp tục với Google'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Bạn chưa có tài khoản?'),
+                    TextButton(
+                      onPressed: () => context.push(RouteNames.register),
+                      child: const Text(
+                        'Đăng ký ngay!',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -11,8 +11,8 @@ import {
 import { alpha } from '@mui/material/styles';
 
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../../utils/dateFormatter';
+import ChatAvatar from '../ChatAvatar';
 
 const STATUS_LABELS = {
   [CONVERSATION_REQUEST_STATUS.PENDING]: 'PENDING',
@@ -60,7 +60,7 @@ const NetworkIncomingRequestCard = ({
 }) => {
   const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
-  const avatarSrc = request.avatarUrl?.trim() || DEFAULT_CHAT_AVATAR_SRC;
+  const avatarSrc = request.avatarUrl?.trim();
 
   const handleCardClick = () => {
     onViewDetail?.(request);
@@ -107,12 +107,7 @@ const NetworkIncomingRequestCard = ({
         alignItems={{ xs: 'stretch', sm: 'flex-start' }}
       >
         <Stack direction="row" spacing={2} sx={{ flex: 1, minWidth: 0 }}>
-          <Avatar
-            src={avatarSrc}
-            alt={request.fullName}
-            slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
-            sx={{ width: 56, height: 56, flexShrink: 0 }}
-          />
+          <ChatAvatar avatarUrl={request.avatarUrl} name={request.fullName} size={56} />
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Stack

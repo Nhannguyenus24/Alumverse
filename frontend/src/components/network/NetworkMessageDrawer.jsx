@@ -15,13 +15,14 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import Scrollbar from '../Scrollbar';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { useNetworkConversationActions } from '../../hooks/network/useNetworkConversationActions';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import {
   isComposerEnabled,
   resolveConnectionDrawerState,
 } from '../../utils/networkConnectionDrawerUi';
+
+import ChatAvatar from '../ChatAvatar';
 
 function formatAcademicValue(value) {
   if (Array.isArray(value)) {
@@ -92,9 +93,9 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
   const [sentInSession, setSentInSession] = useState(false);
   const [localMessages, setLocalMessages] = useState([]);
 
-  const peerMemberId = peer?.memberId ?? null;
+  const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
-  const { sendMessage, isSending } = useNetworkConversationActions(peerMemberId);
+  const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
   const drawerState = resolveConnectionDrawerState(connectionStatus);
   const composerEnabled = isComposerEnabled({
@@ -113,7 +114,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
       }, 0);
       return () => clearTimeout(timer);
     }
-  }, [open, peerMemberId]);
+  }, [open, peerUserId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -147,7 +148,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
     handleSend();
   };
 
-  const avatarSrc = peer?.avatarUrl || DEFAULT_CHAT_AVATAR_SRC;
+  const avatarSrc = peer?.avatarUrl;
   const cohortLabel =
     peer?.startYear != null && peer.startYear !== '' ? peer.startYear : null;
   const programLabel = formatAcademicValue(peer?.program);
@@ -181,7 +182,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
-          <Avatar src={avatarSrc} sx={{ width: 48, height: 48 }} />
+          <ChatAvatar avatarUrl={peer?.avatarUrl} name={peer?.fullName} size={48} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {peer?.fullName ?? 'Thành viên'}

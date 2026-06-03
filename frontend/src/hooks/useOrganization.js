@@ -53,6 +53,7 @@ export const useOrganization = ({ enabled = true } = {}) => {
   }, [enabled, slug, currentSlug, loading, organization, error, fetchOrganization, navigate, reset, location.pathname]);
 
   const isOrganizationNotFound = statusCode === 404;
+  const isServerError = statusCode >= 500;
 
   return {
     slug,
@@ -60,6 +61,7 @@ export const useOrganization = ({ enabled = true } = {}) => {
     loading,
     error,
     isOrganizationNotFound,
+    isServerError,
     fetchOrganization,
     refetch: () => (enabled && slug ? fetchOrganization(slug) : Promise.resolve()),
     reset,

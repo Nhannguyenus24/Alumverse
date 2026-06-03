@@ -343,24 +343,22 @@ public class ChatService {
      * - other members are added as 'member'
      * NOTE: If memberIds.size() == 2, caller should use private chat API instead.
      */
-    public Mono<ChatGroup> createGroupChat(Long creatorMemberId, List<Long> memberIds) {
+    public Mono<ChatGroup> createGroupChat(Long creatorMemberId, String title, List<Long> memberIds) {
         if (creatorMemberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Creator member ID must not be null"));
         }
 
-        if (memberIds == null || memberIds.isEmpty()) {
-            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Member IDs must not be empty"));
-        }
-
-        if (memberIds.size() == 2) {
-            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_DUPLICATE, "Use private chat API for 1-1 conversations"));
+        if (memberIds == null || memberIds.size() < 2) {
+            return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group chat requires at least 2 other members (3 total including creator)"));
         }
 
         LocalDateTime now = LocalDateTime.now();
 
+        String resolvedTitle = (title != null && !title.isBlank()) ? title.trim() : null;
+
         ChatGroup group = ChatGroup.builder()
                 .type(ChatType.GROUP)
-                .title(null)
+                .title(resolvedTitle)
                 .createdBy(creatorMemberId)
                 .createdAt(now)
                 .updatedAt(now)

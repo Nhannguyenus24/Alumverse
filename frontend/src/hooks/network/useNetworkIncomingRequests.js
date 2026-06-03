@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { chatApi } from '../../api/chatApi';
+import { chatApi } from '../../utils/api';
 
 export function useNetworkIncomingRequests({ appliedFullName, status, page, pageSize }) {
   const apiPage = page - 1; // frontend is 1-based, API is 0-based

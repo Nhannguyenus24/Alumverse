@@ -11,10 +11,10 @@ import {
 } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import Scrollbar from './Scrollbar';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../pages/chat/mockNetworkChats';
 import { formatDateTime } from '../utils/dateFormatter';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import { useRecentChatPreviews } from '../hooks/chat/useRecentChatPreviews';
+import ChatAvatar from './ChatAvatar';
 
 const MessagesNavDropdown = ({ headerTextColor }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -140,16 +140,10 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
                 '&:hover': { bgcolor: 'action.hover' },
               }}
             >
-              <Avatar
-                src={(chat.avatarUrl?.trim() ?? '') || DEFAULT_CHAT_AVATAR_SRC}
-                alt={chat.name || ''}
-                slotProps={{ img: { referrerPolicy: 'no-referrer' } }}
-                sx={{
-                  width: 44,
-                  height: 44,
-                  bgcolor: 'action.hover',
-                  flexShrink: 0,
-                }}
+              <ChatAvatar
+                avatarUrl={chat.avatarUrl}
+                name={chat.name}
+                size={44}
               />
               <Box sx={{ minWidth: 0, flex: 1 }}>
                 <Box

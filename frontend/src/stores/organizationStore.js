@@ -62,12 +62,12 @@ const useOrganizationStore = create((set) => ({
     try {
       const organization = await organizationApi.getOrganizationBySlug(slug);
 
-      if (!organization) {
+      if (!organization || !organization.id) {
         set({
           organization: null,
           loading: false,
-          error: 'Invalid organization response',
-          statusCode: 200,
+          error: 'Tổ chức không tồn tại hoặc dữ liệu không hợp lệ',
+          statusCode: 404,
         });
         return;
       }
