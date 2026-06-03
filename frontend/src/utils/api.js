@@ -905,8 +905,9 @@ export const mentorshipApi = {
 		return apiClient.get(`${BASE_MENTEE}/sessions/${sessionId}`);
 	},
 
-	cancelSession(sessionId) {
-		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`);
+	cancelSession(sessionId, cancelReason) {
+		const params = cancelReason ? { cancelReason } : {};
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
 	createSessionFeedback(sessionId, payload) {

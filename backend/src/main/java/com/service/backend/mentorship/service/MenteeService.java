@@ -14,6 +14,7 @@ import com.service.backend.shared.entity.MentorExpertise;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -39,6 +40,7 @@ public class MenteeService {
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final MenteeProfileR2dbcRepository menteeProfileRepository;
     private final MentorshipAccessService accessService;
+    private final NotificationService notificationService;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -266,9 +268,14 @@ public class MenteeService {
                                                         .cvUrl(request.getCvUrl())
                                                         .createdAt(LocalDateTime.now())
                                                         .build();
-                                                return availabilityRepository.updateStatus(
-                                                                availability.getId(), Status.BOOKED.getValue())
-                                                        .then(sessionRepository.save(session));
+                                        return availabilityRepository.updateStatus(
+                                                        availability.getId(), Status.BOOKED.getValue())
+                                                .then(sessionRepository.save(session))
+                                                .doOnNext(saved ->
+                                                        notificationService.createNotificationAsync(
+                                                                availability.getMentorMemberId(),
+                                                                "Lịch hẹn mới",
+                                                                "Bạn có một lịch hẹn mentoring mới đã được xác nhận."));
                                             }));
                                 })
                                 .flatMap(this::enrich)));
@@ -305,18 +312,36 @@ public class MenteeService {
                 .flatMap(this::enrich);
     }
 
-    public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId) {
-        return sessionRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
-                .flatMap(session -> {
-                        if (Status.CANCELLED.equals(session.getStatus())) {
-                        return Mono.error(new ApplicationException(ErrorCode.SESSION_ALREADY_CANCELLED, "Session is already cancelled"));
-                    }
-                        return availabilityRepository.updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
-                            .then(sessionRepository.updateStatus(sessionId, Status.CANCELLED.getValue()))
-                            .then(sessionRepository.findById(sessionId));
-                })
-                .flatMap(this::enrich);
+    public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
+        return currentMemberId().flatMap(memberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (isCancelled(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring đã được hủy trước đó"));
+                            }
+                            if (!memberId.equals(session.getMenteeMemberId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
+                            }
+                            return availabilityRepository.updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
+                                    .then(sessionRepository.updateStatusWithCancelReason(
+                                            sessionId, Status.CANCELLED_BY_MENTEE.getValue(), cancelReason))
+                                    .then(availabilityRepository.findById(session.getAvailabilityId()))
+                                    .doOnNext(avail -> notificationService.createNotificationAsync(
+                                            avail.getMentorMemberId(),
+                                            "Lịch hẹn bị hủy",
+                                            "Mentee đã hủy một buổi mentoring với bạn."))
+                                    .then(sessionRepository.findById(sessionId));
+                        })
+                        .flatMap(this::enrich));
+    }
+
+    private static boolean isCancelled(Status s) {
+        return Status.CANCELLED.equals(s)
+                || Status.CANCELLED_BY_MENTEE.equals(s)
+                || Status.CANCELLED_BY_MENTOR.equals(s);
     }
 
     // ===================== FEEDBACK =====================

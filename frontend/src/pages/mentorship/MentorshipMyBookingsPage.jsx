@@ -5,9 +5,14 @@ import {
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Stack,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -34,6 +39,8 @@ const MentorshipMyBookingsPage = () => {
   const navigate = useOrgNavigate();
   const [tabKey, setTabKey] = useState('all');
   const [page, setPage] = useState(0);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
 
   const sessionsQuery = useMyMenteeSessions({ page, limit: PAGE_SIZE });
   const cancelMutation = useCancelMenteeSession();
@@ -46,12 +53,21 @@ const MentorshipMyBookingsPage = () => {
     return items.filter(matcher);
   }, [items, tabKey]);
 
-  const handleCancel = async (session) => {
-     
-    const ok = window.confirm('Bạn chắc chắn muốn hủy lịch hẹn này?');
-    if (!ok) return;
+  const openCancelDialog = (session) => {
+    setCancelTarget(session);
+    setCancelReason('');
+  };
+
+  const closeCancelDialog = () => {
+    setCancelTarget(null);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
     try {
-      await cancelMutation.cancelSession(session.id);
+      await cancelMutation.cancelSession({ sessionId: cancelTarget.id, cancelReason: cancelReason.trim() || undefined });
+      closeCancelDialog();
     } catch {
       /* error surfaced via cancelMutation.errorMessage */
     }
@@ -122,7 +138,7 @@ const MentorshipMyBookingsPage = () => {
               <MentorshipBookingItem
                 key={session.id}
                 session={session}
-                onCancel={handleCancel}
+                onCancel={openCancelDialog}
                 cancelDisabled={cancelMutation.isPending}
               />
             ))}
@@ -151,6 +167,38 @@ const MentorshipMyBookingsPage = () => {
           </Box>
         )}
       </Container>
+
+      {/* Cancel dialog */}
+      <Dialog open={Boolean(cancelTarget)} onClose={closeCancelDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Hủy lịch hẹn</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Bạn có chắc chắn muốn hủy lịch hẹn này không? Lý do hủy sẽ được gửi đến cố vấn.
+          </Typography>
+          <TextField
+            label="Lý do hủy (tùy chọn)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Ví dụ: Bận công việc đột xuất..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCancelDialog} color="inherit">
+            Quay lại
+          </Button>
+          <Button
+            onClick={handleConfirmCancel}
+            color="error"
+            variant="contained"
+            disabled={cancelMutation.isPending}
+          >
+            Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Page>
   );
 };

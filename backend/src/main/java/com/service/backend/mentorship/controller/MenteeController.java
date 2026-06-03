@@ -151,8 +151,9 @@ public class MenteeController {
 
     @PostMapping("/sessions/{sessionId}/cancel")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> cancelSession(
-            @PathVariable @Min(1) Integer sessionId) {
-        return menteeService.cancelSession(sessionId)
+            @PathVariable @Min(1) Integer sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String cancelReason) {
+        return menteeService.cancelSession(sessionId, cancelReason)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session cancelled successfully", response)));
     }

@@ -86,6 +86,10 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     Mono<Integer> updateStatus(Integer id, String status);
 
     @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, cancel_reason = :cancelReason WHERE id = :id")
+    Mono<Integer> updateStatusWithCancelReason(Integer id, String status, String cancelReason);
+
+    @Modifying
     @Query("UPDATE mentorship_sessions SET meeting_link = :meetingLink WHERE id = :id")
     Mono<Integer> updateMeetingLink(Integer id, String meetingLink);
 

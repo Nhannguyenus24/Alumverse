@@ -14,6 +14,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -37,6 +38,7 @@ public class MentorService {
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final DatabaseClient databaseClient;
     private final MentorshipAccessService accessService;
+    private final NotificationService notificationService;
 
     private Mono<Void> updateUserAvatar(Integer userId, String avatarUrl) {
         if (userId == null || avatarUrl == null || avatarUrl.isBlank()) return Mono.empty();
@@ -356,19 +358,60 @@ public class MentorService {
                         ));
     }
 
-    public Mono<MentorshipSessionResponse> updateSessionStatus(Integer sessionId, UpdateSessionStatusRequest request) {
-        return sessionRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
-                .flatMap(session -> {
-                    Mono<Integer> updateStatus = sessionRepository.updateStatus(sessionId, request.getStatus());
-                    Mono<Integer> updateLink = request.getMeetingLink() != null
-                            ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
-                            : Mono.just(0);
+    public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (Status.CANCELLED.equals(session.getStatus())
+                                    || Status.CANCELLED_BY_MENTEE.equals(session.getStatus())
+                                    || Status.CANCELLED_BY_MENTOR.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring đã được hủy trước đó"));
+                            }
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> {
+                                        if (!mentorMemberId.equals(avail.getMentorMemberId())) {
+                                            return Mono.error(new ApplicationException(
+                                                    ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
+                                        }
+                                        return availabilityRepository
+                                                .updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
+                                                .then(sessionRepository.updateStatusWithCancelReason(
+                                                        sessionId, Status.CANCELLED_BY_MENTOR.getValue(), cancelReason))
+                                                .doOnNext(rows -> notificationService.createNotificationAsync(
+                                                        session.getMenteeMemberId(),
+                                                        "Lịch hẹn bị hủy",
+                                                        "Cố vấn đã hủy một buổi mentoring với bạn."))
+                                                .then(sessionRepository.findById(sessionId));
+                                    });
+                        })
+                        .flatMap(this::enrich));
+    }
 
-                    return updateStatus.then(updateLink)
-                            .then(sessionRepository.findById(sessionId));
-                })
-                .flatMap(this::enrich);
+    public Mono<MentorshipSessionResponse> updateSessionStatus(Integer sessionId, UpdateSessionStatusRequest request) {
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            Mono<Integer> updateStatus = sessionRepository.updateStatus(sessionId, request.getStatus());
+                            Mono<Integer> updateLink = request.getMeetingLink() != null
+                                    ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
+                                    : Mono.just(0);
+                            return updateStatus.then(updateLink)
+                                    .doOnNext(ignored -> {
+                                        if ("COMPLETED".equals(request.getStatus())) {
+                                            notificationService.createNotificationAsync(
+                                                    session.getMenteeMemberId(),
+                                                    "Buổi mentoring đã hoàn tất",
+                                                    "Buổi mentoring của bạn đã hoàn thành. Hãy để lại đánh giá cho cố vấn nhé!");
+                                        }
+                                    })
+                                    .then(sessionRepository.findById(sessionId));
+                        })
+                        .flatMap(this::enrich));
     }
 
     // ===================== FEEDBACKS (Mentor view) =====================
