@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../organization/presentation/providers/organization_provider.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -161,6 +162,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    ref.read(organizationStateProvider.notifier).reset();
+                  },
+                  child: const Text(
+                    'Đổi tổ chức',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ],
             ),
