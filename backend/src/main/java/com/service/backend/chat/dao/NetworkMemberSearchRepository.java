@@ -44,7 +44,7 @@ public interface NetworkMemberSearchRepository
             """;
 
     @Query("""
-            SELECT om.id AS member_id,
+            SELECT om.user_id AS user_id,
                    gp.full_name AS full_name,
                    om.program AS program,
                    om.major AS major,

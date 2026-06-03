@@ -14,7 +14,7 @@ import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
 import IconButtonMenu from '../IconButtonMenu';
-
+import ChatAvatar from '../ChatAvatar';
 
 const NetworkChatSidebar = ({
   chats = [],
@@ -141,11 +141,11 @@ const NetworkChatSidebar = ({
                   '&:hover': { bgcolor: 'action.hover' },
                 }}
               >
-                <Avatar
-                  src={chat.avatarUrl}
-                  sx={{ width: 42, height: 42, bgcolor: 'primary.main', color: 'primary.contrastText' }}
-                >
-                </Avatar>
+                <ChatAvatar
+                  avatarUrl={chat.avatarUrl}
+                  name={chat.name}
+                  size={42}
+                />
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" fontWeight={600} noWrap>
                     {chat.name}

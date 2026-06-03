@@ -122,7 +122,7 @@ public class ChatController {
     public Mono<ResponseEntity<ApiResponse<ChatGroup>>> createGroupChat(
             @Valid @RequestBody CreateGroupRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(currentMemberId -> this.chatService.createGroupChat(currentMemberId, request.getMemberIds()))
+                .flatMap(currentMemberId -> this.chatService.createGroupChat(currentMemberId, request.getTitle(), request.getMemberIds()))
                 .map(group -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Group chat created successfully", group)));
