@@ -38,6 +38,7 @@ public class MenteeService {
     private final SessionFeedbackR2dbcRepository feedbackRepository;
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final MenteeProfileR2dbcRepository menteeProfileRepository;
+    private final MentorshipAccessService accessService;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -143,8 +144,7 @@ public class MenteeService {
     }
 
     public Mono<MentorProfileResponse> getMentorProfile(Integer mentorMemberId) {
-        return profileRepository.findById(mentorMemberId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND, "Mentor profile not found")))
+        return accessService.requireApprovedMentorProfile(mentorMemberId)
                 .map(MentorProfileResponse::from)
                 .flatMap(this::attachProfileDisplay);
     }
@@ -180,13 +180,15 @@ public class MenteeService {
     }
 
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
-        return expertiseRepository.findByMentorMemberId(mentorMemberId)
+        return accessService.requireApprovedMentorProfile(mentorMemberId)
+                .thenMany(expertiseRepository.findByMentorMemberId(mentorMemberId))
                 .map(MentorExpertiseResponse::from)
                 .collectList();
     }
 
     public Mono<List<MentorAvailabilityResponse>> getMentorAvailableSlots(Integer mentorMemberId) {
-        return availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now())
+        return accessService.requireApprovedMentorProfile(mentorMemberId)
+                .thenMany(availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now()))
                 .map(MentorAvailabilityResponse::from)
                 .collectList();
     }
@@ -194,7 +196,8 @@ public class MenteeService {
     // ===================== MENTEE PROFILE =====================
 
     public Mono<MenteeProfileResponse> createOrUpdateMyMenteeProfile(CreateMenteeProfileRequest request) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(currentMemberId().flatMap(memberId ->
                 menteeProfileRepository.findById(memberId)
                         .flatMap(existing -> {
                             existing.setMentoringGoal(request.getMentoringGoal());
@@ -216,7 +219,7 @@ public class MenteeService {
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
                                 .build())))
-                        .map(MenteeProfileResponse::from));
+                        .map(MenteeProfileResponse::from)));
     }
 
     public Mono<MenteeProfileResponse> getMyMenteeProfile() {
@@ -229,7 +232,8 @@ public class MenteeService {
     // ===================== BOOK SESSION =====================
 
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(currentMemberId().flatMap(memberId ->
                 menteeProfileRepository.findById(memberId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Bạn cần hoàn thiện hồ sơ Mentee trước khi đặt lịch")))
                         .flatMap(menteeProfile -> {
@@ -259,7 +263,7 @@ public class MenteeService {
                                                 .then(sessionRepository.save(session));
                                     });
                         })
-                        .flatMap(this::enrich));
+                        .flatMap(this::enrich)));
     }
 
     // ===================== MY SESSIONS (Mentee view) =====================

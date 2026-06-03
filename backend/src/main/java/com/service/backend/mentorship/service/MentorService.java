@@ -36,6 +36,7 @@ public class MentorService {
     private final SessionFeedbackR2dbcRepository feedbackRepository;
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final DatabaseClient databaseClient;
+    private final MentorshipAccessService accessService;
 
     private Mono<Void> updateUserAvatar(Integer userId, String avatarUrl) {
         if (userId == null || avatarUrl == null || avatarUrl.isBlank()) return Mono.empty();
@@ -106,11 +107,13 @@ public class MentorService {
     // ===================== PROFILE =====================
 
     public Mono<MentorProfileResponse> createProfile(CreateMentorProfileRequest request) {
-        return saveProfile(request, Status.PENDING);
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(saveProfile(request, Status.PENDING));
     }
 
     public Mono<MentorProfileResponse> saveDraft(CreateMentorProfileRequest request) {
-        return saveProfile(request, Status.DRAFT);
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(saveProfile(request, Status.DRAFT));
     }
 
     private Mono<MentorProfileResponse> saveProfile(CreateMentorProfileRequest request, Status targetStatus) {
@@ -251,23 +254,25 @@ public class MentorService {
     // ===================== AVAILABILITY =====================
 
     public Mono<MentorAvailabilityResponse> addAvailability(CreateAvailabilityRequest request) {
-        return currentMemberId().flatMap(memberId ->
-                validateSlot(memberId, request.getStartTime(), request.getEndTime(), null)
-                        .then(Mono.defer(() -> {
-                            MentorAvailability availability = MentorAvailability.builder()
-                                    .mentorMemberId(memberId)
-                                    .startTime(request.getStartTime())
-                                    .endTime(request.getEndTime())
-                                    .status(Status.AVAILABLE)
-                                    .build();
-                            return availabilityRepository.save(availability)
-                                    .map(MentorAvailabilityResponse::from);
-                        })));
+        return accessService.requireCurrentUserApprovedMentor()
+                .then(currentMemberId().flatMap(memberId ->
+                        validateSlot(memberId, request.getStartTime(), request.getEndTime(), null)
+                                .then(Mono.defer(() -> {
+                                    MentorAvailability availability = MentorAvailability.builder()
+                                            .mentorMemberId(memberId)
+                                            .startTime(request.getStartTime())
+                                            .endTime(request.getEndTime())
+                                            .status(Status.AVAILABLE)
+                                            .build();
+                                    return availabilityRepository.save(availability)
+                                            .map(MentorAvailabilityResponse::from);
+                                }))));
     }
 
     public Mono<MentorAvailabilityResponse> updateAvailability(Integer availabilityId,
                                                                CreateAvailabilityRequest request) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireCurrentUserApprovedMentor()
+                .then(currentMemberId().flatMap(memberId ->
                 availabilityRepository.findById(availabilityId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found")))
                         .flatMap(existing -> {
@@ -284,7 +289,7 @@ public class MentorService {
                                         return availabilityRepository.save(existing);
                                     }));
                         })
-                        .map(MentorAvailabilityResponse::from));
+                        .map(MentorAvailabilityResponse::from)));
     }
 
     private Mono<Void> validateSlot(Integer memberId, LocalDateTime startTime, LocalDateTime endTime, Integer excludeId) {
@@ -311,7 +316,8 @@ public class MentorService {
     }
 
     public Mono<Boolean> deleteAvailability(Integer availabilityId) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireCurrentUserApprovedMentor()
+                .then(currentMemberId().flatMap(memberId ->
                 availabilityRepository.findById(availabilityId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found with id: " + availabilityId)))
                         .flatMap(existing -> {
@@ -322,7 +328,7 @@ public class MentorService {
                                 return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
                             }
                             return availabilityRepository.deleteById(availabilityId).thenReturn(true);
-                        }));
+                        })));
     }
 
     // ===================== SESSIONS (Mentor view) =====================
