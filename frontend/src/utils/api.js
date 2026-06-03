@@ -367,6 +367,21 @@ export const chatApi = {
 		const response = await apiClient.get('/chat/recent-previews');
 		return unwrap(response) ?? [];
 	},
+
+	async searchIncomingRequests({ fullName, status, page = 0, size = 10 } = {}) {
+		const response = await apiClient.get('/chat/conversation-requests/search', {
+			params: { fullName, status, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async respondToConversationRequest(requestId, status) {
+		const response = await apiClient.put('/chat/conversation-requests/respond', {
+			id: requestId,
+			status,
+		});
+		return unwrap(response);
+	},
 };
 
 export const {
@@ -376,6 +391,9 @@ export const {
 	getConversationRequestStatus,
 	createConversationRequest,
 	getRecentPreviews,
+	searchIncomingRequests,
+	respondToConversationRequest,
+	createGroupChat,
 } = chatApi;
 
 export const eventApi = {

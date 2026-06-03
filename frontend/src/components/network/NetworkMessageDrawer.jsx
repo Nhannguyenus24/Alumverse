@@ -15,7 +15,6 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import SendIcon from '@mui/icons-material/Send';
 import Scrollbar from '../Scrollbar';
-import { DEFAULT_CHAT_AVATAR_SRC } from '../../pages/chat/mockNetworkChats';
 import { useNetworkConversationActions } from '../../hooks/network/useNetworkConversationActions';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import {
@@ -149,7 +148,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
     handleSend();
   };
 
-  const avatarSrc = peer?.avatarUrl || DEFAULT_CHAT_AVATAR_SRC;
+  const avatarSrc = peer?.avatarUrl;
   const cohortLabel =
     peer?.startYear != null && peer.startYear !== '' ? peer.startYear : null;
   const programLabel = formatAcademicValue(peer?.program);
