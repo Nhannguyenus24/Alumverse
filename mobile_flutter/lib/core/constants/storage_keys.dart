@@ -7,4 +7,5 @@ class StorageKeys {
   static const String themeMode = 'theme_mode';
   static const String locale = 'locale';
   static const String onboardingDone = 'onboarding_done';
+  static const String organizationSlug = 'organization_slug';
 }

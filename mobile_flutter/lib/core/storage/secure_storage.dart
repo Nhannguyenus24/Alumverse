@@ -22,6 +22,12 @@ class SecureStorage {
   Future<String?> readRefreshToken() =>
       _storage.read(key: StorageKeys.refreshToken);
 
+  Future<void> writeOrganizationSlug(String slug) =>
+      _storage.write(key: StorageKeys.organizationSlug, value: slug);
+
+  Future<String?> readOrganizationSlug() =>
+      _storage.read(key: StorageKeys.organizationSlug);
+
   Future<void> clearAuth() async {
     await _storage.delete(key: StorageKeys.accessToken);
     await _storage.delete(key: StorageKeys.refreshToken);
