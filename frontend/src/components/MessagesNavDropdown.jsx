@@ -67,7 +67,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
             sx: {
               width: 360,
               maxHeight: 480,
-              mt: 1,
+              mt: 3,
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -86,8 +86,8 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
             flexShrink: 0,
           }}
         >
-          <Typography variant="subtitle1" fontWeight={700}>
-            Tin nhắn gần nhất
+          <Typography variant="h3" fontWeight={700} sx={{ color: 'primary.main' }}>
+            Tin nhắn
           </Typography>
         </Box>
 
