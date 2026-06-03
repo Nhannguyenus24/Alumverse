@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class MentorshipAccessService {
 
+    public static final int MIN_EMAIL_VERIFIED_LEVEL = 1;
     public static final int MIN_ORG_VERIFIED_LEVEL = 2;
 
     private static final String MSG_EMAIL_VERIFICATION =
@@ -57,8 +58,17 @@ public class MentorshipAccessService {
                 });
     }
 
+    public Mono<Void> requireEmailVerifiedForMentorBrowse() {
+        return requireMinVerificationLevel(MIN_EMAIL_VERIFIED_LEVEL);
+    }
+
     public Mono<Void> requireOrgVerifiedForMentorship() {
         return requireMinVerificationLevel(MIN_ORG_VERIFIED_LEVEL);
+    }
+
+    public Mono<Boolean> isOrgVerifiedForMentorship() {
+        return getCurrentVerificationLevel()
+                .map(level -> level != null && level >= MIN_ORG_VERIFIED_LEVEL);
     }
 
     /**

@@ -8,6 +8,8 @@ import PublicRoute from "./PublicRoute";
 import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
+import MentorshipBrowseGate from "../components/mentorship/MentorshipBrowseGate";
+import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -156,8 +158,11 @@ const DevelopmentJobsPage = Loadable(
 );
 
 // Mentorship pages
-const MentorshipPage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipPage")),
+const MentorshipLandingPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipLandingPage")),
+);
+const MentorshipBrowsePage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipBrowsePage")),
 );
 const MentorshipProfilePage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipProfilePage")),
@@ -456,7 +461,16 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                element: <MentorshipPage />,
+                element: <MentorshipLandingPage />,
+                handle: { hideFooter: true },
+              },
+              {
+                path: "browse",
+                element: (
+                  <MentorshipBrowseGate>
+                    <MentorshipBrowsePage />
+                  </MentorshipBrowseGate>
+                ),
                 handle: { hideFooter: true },
               },
               {
@@ -486,19 +500,35 @@ export const router = createBrowserRouter([
               },
               {
                 path: "mentors/:mentorId/book",
-                element: <MentorshipBookingPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MentorshipBookingPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
               {
                 path: "my-bookings",
-                element: <MentorshipMyBookingsPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MentorshipMyBookingsPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
               {
                 path: "signup",
-                element: <MentorshipSignupPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MentorshipSignupPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
               {
                 path: "mentee-signup",
-                element: <MenteeSignupPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MenteeSignupPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
             ],
           },

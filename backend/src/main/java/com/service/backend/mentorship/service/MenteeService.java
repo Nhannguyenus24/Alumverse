@@ -138,28 +138,46 @@ public class MenteeService {
 
     // ===================== BROWSE MENTORS =====================
 
+    private Mono<List<MentorProfileResponse>> applyBrowseAccessView(List<MentorProfileResponse> profiles) {
+        return accessService.isOrgVerifiedForMentorship()
+                .map(fullAccess -> profiles.stream()
+                        .map(p -> fullAccess ? p : p.asPreview())
+                        .toList());
+    }
+
+    private Mono<MentorProfileResponse> applyBrowseAccessView(MentorProfileResponse profile) {
+        return accessService.isOrgVerifiedForMentorship()
+                .map(fullAccess -> fullAccess ? profile : profile.asPreview());
+    }
+
     public Mono<PaginatedResponse<MentorProfileResponse>> getApprovedMentors(int page, int limit) {
         int offset = page * limit;
-        return profileRepository.findApprovedMentors(limit, offset)
-                .collectList()
-                .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countApprovedMentors())
-                        .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(profileRepository.findApprovedMentors(limit, offset)
+                        .collectList()
+                        .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
+                                .flatMap(this::applyBrowseAccessView)
+                                .zipWith(profileRepository.countApprovedMentors())
+                                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit))));
     }
 
     public Mono<MentorProfileResponse> getMentorProfile(Integer mentorMemberId) {
-        return accessService.requireApprovedMentorProfile(mentorMemberId)
-                .map(MentorProfileResponse::from)
-                .flatMap(this::attachProfileDisplay);
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .map(MentorProfileResponse::from)
+                        .flatMap(this::attachProfileDisplay)
+                        .flatMap(this::applyBrowseAccessView));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> searchMentors(String keyword, int page, int limit) {
         int offset = page * limit;
-        return profileRepository.searchMentorsWithName(keyword, limit, offset)
-                .collectList()
-                .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countSearchMentorsWithName(keyword))
-                        .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(profileRepository.searchMentorsWithName(keyword, limit, offset)
+                        .collectList()
+                        .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
+                                .flatMap(this::applyBrowseAccessView)
+                                .zipWith(profileRepository.countSearchMentorsWithName(keyword))
+                                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit))));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> filterMentors(
@@ -167,34 +185,40 @@ public class MenteeService {
             LocalDateTime availableFrom, LocalDateTime availableTo,
             int page, int limit) {
         int offset = page * limit;
-        return profileRepository
-                .filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset)
-                .collectList()
-                .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo))
-                        .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(profileRepository
+                        .filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset)
+                        .collectList()
+                        .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
+                                .flatMap(this::applyBrowseAccessView)
+                                .zipWith(profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo))
+                                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit))));
     }
 
     public Mono<List<String>> getDistinctExpertiseTopics() {
-        return expertiseRepository.findDistinctTopics().collectList();
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(expertiseRepository.findDistinctTopics().collectList());
     }
 
     public Mono<List<String>> getDistinctExpertiseCategories() {
-        return expertiseRepository.findDistinctCategories().collectList();
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(expertiseRepository.findDistinctCategories().collectList());
     }
 
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
-        return accessService.requireApprovedMentorProfile(mentorMemberId)
-                .thenMany(expertiseRepository.findByMentorMemberId(mentorMemberId))
-                .map(MentorExpertiseResponse::from)
-                .collectList();
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .thenMany(expertiseRepository.findByMentorMemberId(mentorMemberId))
+                        .map(MentorExpertiseResponse::from)
+                        .collectList());
     }
 
     public Mono<List<MentorAvailabilityResponse>> getMentorAvailableSlots(Integer mentorMemberId) {
-        return accessService.requireApprovedMentorProfile(mentorMemberId)
-                .thenMany(availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now()))
-                .map(MentorAvailabilityResponse::from)
-                .collectList();
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .thenMany(availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now()))
+                        .map(MentorAvailabilityResponse::from)
+                        .collectList());
     }
 
     // ===================== MENTEE PROFILE =====================
@@ -386,13 +410,14 @@ public class MenteeService {
     }
 
     public Mono<PaginatedResponse<SessionFeedbackResponse>> getMentorFeedbacks(Integer mentorMemberId, int page, int limit) {
-        return feedbackRepository.findPublicFeedbacksByMentorId(mentorMemberId, limit, page * limit)
-                .collectList()
-                .zipWith(feedbackRepository.countPublicFeedbacksByMentorId(mentorMemberId))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .then(feedbackRepository.findPublicFeedbacksByMentorId(mentorMemberId, limit, page * limit)
+                                .collectList()
+                                .zipWith(feedbackRepository.countPublicFeedbacksByMentorId(mentorMemberId))
+                                .map(tuple -> PaginatedResponse.of(
+                                        tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
+                                        tuple.getT2(), page, limit))));
     }
 
     // ===================== REPORT =====================

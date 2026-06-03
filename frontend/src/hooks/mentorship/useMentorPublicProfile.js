@@ -6,9 +6,9 @@ const fetchMentorProfile = async (mentorMemberId) => {
   return res?.data?.data ?? null;
 };
 
-export const useMentorPublicProfile = (mentorMemberId) =>
+export const useMentorPublicProfile = (mentorMemberId, { enabled = true } = {}) =>
   useQuery({
     queryKey: ['mentorship', 'mentor', mentorMemberId],
     queryFn: () => fetchMentorProfile(mentorMemberId),
-    enabled: Boolean(mentorMemberId),
+    enabled: Boolean(mentorMemberId) && enabled,
   });

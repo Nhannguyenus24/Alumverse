@@ -36,12 +36,15 @@ export const useMentorshipAccessState = () => {
   const isMentorApproved = canUseMentorship && mentorStatus === 'APPROVED';
   const hasMentorProfile = isMentorPending || isMentorApproved;
 
+  const canPreviewMentors = isLoggedIn && level >= 1;
+
   return {
     isLoading: isLoggedIn && mentorProfileQuery.isLoading,
     isGuest,
     needsEmailVerification,
     needsOrgVerification,
     canUseMentorship,
+    canPreviewMentors,
     mentorStatus,
     mentorMemberId,
     isMentorPending,
