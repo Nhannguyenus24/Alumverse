@@ -3,20 +3,20 @@
 -- ============= USERS DATA =============
 -- password to login is Student@2024 for the last 3
 INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "avatar_url", "created_at", "updated_at") VALUES
-('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/admin.jpg', NOW(), NOW()),
-('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/john.jpg', NOW() - INTERVAL '90 days', NOW()),
-('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/jane.jpg', NOW() - INTERVAL '60 days', NOW()),
-('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/nguyena.jpg', NOW() - INTERVAL '45 days', NOW()),
-('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/tranb.jpg', NOW() - INTERVAL '30 days', NOW()),
-('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/phamc.jpg', NOW() - INTERVAL '20 days', NOW()),
-('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/hoangd.jpg', NOW() - INTERVAL '10 days', NOW()),
-('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/lee.jpg', NOW() - INTERVAL '5 days', NOW()),
-('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/duongf.jpg', NOW() - INTERVAL '2 days', NOW()),
-('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'ACTIVE', 'ALUMNI', 'https://api.example.com/avatars/vog.jpg', NOW(), NOW()),
-('test@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'testuser', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/test.jpg', NOW(), NOW()),
-('bui.van.h@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'buivanh', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/buih.jpg', NOW(), NOW()),
-('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'lythii', 'ACTIVE', 'STUDENT', 'https://api.example.com/avatars/lyi.jpg', NOW(), NOW()),
-('admin@gmail.com', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'testadmin', 'ACTIVE', 'ADMIN', 'https://api.example.com/avatars/test.jpg', NOW(), NOW());
+('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
+('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '90 days', NOW()),
+('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '60 days', NOW()),
+('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
+('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '30 days', NOW()),
+('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '20 days', NOW()),
+('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '10 days', NOW()),
+('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '5 days', NOW()),
+('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '2 days', NOW()),
+('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'ACTIVE', 'ALUMNI', NULL, NOW(), NOW()),
+('test@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'testuser', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
+('bui.van.h@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'buivanh', 'ACTIVE', 'STUDENT', NULL, NOW(), NOW()),
+('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'lythii', 'ACTIVE', 'STUDENT', NULL, NOW(), NOW()),
+('admin@gmail.com', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'testadmin', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW());
 
 
 -- ============= GLOBAL PROFILES DATA =============
@@ -79,6 +79,17 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  '["https://api.example.com/intro/eng_1.jpg","https://api.example.com/intro/eng_2.jpg","https://api.example.com/intro/eng_3.jpg"]',
  'https://api.example.com/banners/eng_banner.jpg',
  NOW() - INTERVAL '25 days');
+
+-- ============= ACADEMIC RECORDS DATA =============
+INSERT INTO "academic_records" ("member_id", "student_code", "degree_type", "class_name", "start_year", "graduated_year", "status") VALUES
+(2, '19127001', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
+(3, '19127002', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
+(4, '21127045', 'Bachelor', 'K63', 2021, NULL, 'STUDYING'),
+(5, '20127078', 'Bachelor', 'K62', 2020, 2024, 'GRADUATED'),
+(6, '18127010', 'Bachelor', 'K59', 2018, 2022, 'GRADUATED'),
+(7, '19227015', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
+(8, '19127088', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
+(9, '22127156', 'Bachelor', 'K64', 2022, NULL, 'STUDYING');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
 INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
@@ -389,12 +400,6 @@ INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message
 (8, 6, 'Mình có slide về EXPLAIN ANALYZE, share vào nhóm nha.', 'TEXT', NULL, NOW() - INTERVAL '18 hours', NULL, NULL),
 (8, 4, 'Em đang làm bài lab, mai hỏi thêm ạ!', 'TEXT', NULL, NOW() - INTERVAL '15 minutes', NULL, NULL);
 
--- ============= CHAT CONVERSATION REQUESTS DATA =============
-INSERT INTO "chat_conversation_requests" ("member_low_id", "member_high_id", "requester_member_id", "chat_group_id", "status", "created_at") VALUES
-(2, 4, 4, 1, 'ACCEPTED', NOW() - INTERVAL '12 days'),
-(2, 11, 11, 4, 'ACCEPTED', NOW() - INTERVAL '5 days'),
-(6, 11, 11, 6, 'ACCEPTED', NOW() - INTERVAL '3 days'),
-(4, 11, 4, 7, 'ACCEPTED', NOW() - INTERVAL '2 days');
 
 -- ============= FORUM CATEGORIES DATA =============
 INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES

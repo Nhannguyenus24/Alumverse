@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class NetworkMemberSearchItemResponse {
 
-    private Integer memberId;
+    private Integer userId;
     private String fullName;
     private String program;
     private String major;

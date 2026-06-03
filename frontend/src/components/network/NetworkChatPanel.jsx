@@ -16,6 +16,7 @@ import Scrollbar from '../Scrollbar';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import useAuthStore from '../../stores/authStore';
+import ChatAvatar from '../ChatAvatar';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -170,11 +171,11 @@ const NetworkChatPanel = ({ activeChat }) => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-          <Avatar
-            src={activeChat?.avatarUrl}
-            sx={{ bgcolor: 'primary.main', color: 'primary.contrastText' }}
-          >
-          </Avatar>
+          <ChatAvatar
+            avatarUrl={activeChat?.avatarUrl}
+            name={activeChat?.name}
+            size={40}
+          />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {activeChat?.name ?? 'Network Chat'}
@@ -250,17 +251,11 @@ const NetworkChatPanel = ({ activeChat }) => {
                 }}
               >
                 {!isOwn && (
-                  <Avatar
-                    src={msg.senderAvatarUrl ?? undefined}
-                    sx={{
-                      width: 32,
-                      height: 32,
-                      fontSize: '0.75rem',
-                      bgcolor: 'primary.main',
-                      color: 'primary.contrastText',
-                    }}
-                  >
-                  </Avatar>
+                  <ChatAvatar
+                    avatarUrl={msg.senderAvatarUrl}
+                    name={msg.senderFullName ?? `User ${msg.senderMemberId}`}
+                    size={32}
+                  />
                 )}
                 <Box sx={{ maxWidth: { xs: '85%', sm: '72%' } }}>
                   {!isOwn && (

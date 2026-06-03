@@ -2,15 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 
 import { chatApi } from '../../utils/api';
 
-const BACKEND_PAGE_SIZE = 5;
+const DEFAULT_PAGE_SIZE = 5;
 
-export function usePrivateChatList({ searchQuery = '', page = 1 }) {
+export function usePrivateChatList({ searchQuery = '', page = 1, pageSize = DEFAULT_PAGE_SIZE }) {
   const backendPage = Math.max(0, page - 1);
 
   const query = useQuery({
-    queryKey: ['privateChatList', searchQuery, backendPage],
+    queryKey: ['privateChatList', searchQuery, backendPage, pageSize],
     queryFn: () =>
-      chatApi.listPrivateChats({ text: searchQuery, page: backendPage, size: BACKEND_PAGE_SIZE }),
+      chatApi.listPrivateChats({ text: searchQuery, page: backendPage, size: pageSize }),
   });
 
   const data = query.data;

@@ -4,6 +4,7 @@ import { Alert, Box, Container, Stack, Typography } from '@mui/material';
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
 import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
+import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
 
@@ -34,6 +35,7 @@ const ChatPage = () => {
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [activeChatId, setActiveChatId] = useState(null);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
 
   const {
     items: groupItems,
@@ -103,6 +105,12 @@ const ChatPage = () => {
     setPage(value);
   };
 
+  const handleGroupCreated = (createdGroup) => {
+    if (createdGroup?.id) {
+      setActiveChatId(createdGroup.id);
+    }
+  };
+
   return (
     <Page title="Chat">
       <Container maxWidth={false} disableGutters sx={{ pb: 3 }}>
@@ -162,6 +170,7 @@ const ChatPage = () => {
                   chats={chats}
                   activeChatId={activeChatId}
                   onSelectChat={setActiveChatId}
+                  onCreateGroupChat={() => setCreateGroupOpen(true)}
                   searchValue={searchInput}
                   onSearchChange={setSearchInput}
                   onSearchSubmit={handleSearchSubmit}
@@ -177,6 +186,11 @@ const ChatPage = () => {
           </Box>
         </Container>
       </Container>
+      <CreateGroupChatDialog
+        open={createGroupOpen}
+        onClose={() => setCreateGroupOpen(false)}
+        onCreated={handleGroupCreated}
+      />
     </Page>
   );
 };

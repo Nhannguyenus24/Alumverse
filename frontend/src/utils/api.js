@@ -343,6 +343,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async createGroupChat({ title, memberIds }) {
+		const response = await apiClient.post('/chat/groups', { title: title || null, memberIds });
+		return unwrap(response);
+	},
+
 	async getConversationRequestStatus(targetMemberId) {
 		const response = await apiClient.get('/chat/conversation-requests/connection-status', {
 			params: { targetMemberId },
