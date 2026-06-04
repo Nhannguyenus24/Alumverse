@@ -15,6 +15,11 @@ class RouteNames {
   static const String events = '/events';
   static const String articles = '/articles';
   static const String mentorship = '/mentorship';
+  static const String mentorshipMyBookings = '/mentorship/my-bookings';
+  static const String mentorshipSignup = '/mentorship/signup';
+  static const String mentorDashboard = '/mentorship/mentor-dashboard';
+  static const String mentorAvailability = '/mentorship/mentor-availability';
+  // mentor profile: /mentorship/mentors/:id ; booking: /mentorship/mentors/:id/book
   static const String fundraising = '/fundraising';
   static const String network = '/network';
   static const String chat = '/chat';
