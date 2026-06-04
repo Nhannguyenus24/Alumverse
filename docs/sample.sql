@@ -30,7 +30,8 @@ INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "a
 ('thai.van.n@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'thaivann', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '15 days', NOW()),
 ('quynh.thi.p@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'quynhthip', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '10 days', NOW()),
 ('khai.van.q@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'khaivanq', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '250 days', NOW()),
-('linh.thi.r@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'linthir', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '260 days', NOW());
+('linh.thi.r@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'linthir', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '260 days', NOW()),
+('nguyen.van.h@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvanh', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '20 days', NOW());
 
 
 -- ============= GLOBAL PROFILES DATA =============
@@ -59,7 +60,8 @@ INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "g
 (23, 'Thái Văn N', '0911121212', 'Student - Year 1 CS', '2004-11-30', 'Male', '{"language":"vi","theme":"light"}'),
 (24, 'Quỳnh Thị P', '0912131313', 'Student - Year 2 CS', '2003-07-14', 'Female', '{"language":"vi","theme":"dark"}'),
 (25, 'Khải Văn Q', '0913141414', 'Software Architect at Grab', '1996-09-20', 'Male', '{"language":"vi","theme":"light"}'),
-(26, 'Linh Thị R', '0914151515', 'Data Engineer at Tiki', '1997-02-11', 'Female', '{"language":"vi","theme":"dark"}');
+(26, 'Linh Thị R', '0914151515', 'Data Engineer at Tiki', '1997-02-11', 'Female', '{"language":"vi","theme":"dark"}'),
+(27, 'Nguyễn Văn H', '0915161616', 'Student - Year 1 IT', '2005-01-20', 'Male', '{"language":"vi","theme":"light"}');
 
 -- ============= ORGANIZATIONS DATA =============
 INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "features_config", "programs", "majors", "created_at") VALUES
@@ -171,7 +173,8 @@ INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_yea
 (2, 3, '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '340 days', NOW()),
 (2, 5, '[2024]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '120 days', NOW()),
 (2, 13, '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '25 days', NOW()),
-(3, 7, '[2024]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW());
+(2, 27, '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '20 days', NOW()),
+(3, 14, '[2024]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW());
 
 -- ============= EVENTS DATA - Org 1 (CS) FOCUSED =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "topic", "is_published", "created_at") VALUES
@@ -544,8 +547,8 @@ INSERT INTO "jobs" ("organization_id", "poster_member_id", "is_referral", "type"
 (1, 2, true, 'FULL_TIME', 'Senior Software Engineer', 'Tech Solutions Inc', 'Ho Chi Minh City', '000-000/month', 'Referral opportunity: Senior engineer position with great benefits...', 'Contact John Doe directly', '2026-04-15', true, NOW() - INTERVAL '20 days'),
 (2, 3, false, 'INTERNSHIP', 'Product Management Intern', 'Innovation Hub', 'Ho Chi Minh City', '00-00/month', 'Help us shape the future of our products as a PM intern...', 'Apply via LinkedIn or email', '2026-03-15', true, NOW() - INTERVAL '18 days'),
 (2, 8, true, 'FULL_TIME', 'CTO/Co-founder', 'TechStart Ventures', 'Ho Chi Minh City', 'Competitive + Equity', 'Building the next unicorn startup. We seek talented tech co-founder...', 'Contact Lê Văn E', '2026-05-31', true, NOW() - INTERVAL '12 days'),
-(3, 7, 'Business Development Manager', 'Global Consulting Group', 'Ho Chi Minh City', '500-500/month', 'Lead business growth initiatives for our consulting firm...', 'Send application to hr@globalconsulting.com', '2026-03-30', true, NOW() - INTERVAL '10 days'),
-(4, 1, 'Systems Engineer', 'Tech Engineering Corp', 'Hanoi', '200-800/month', 'Join our infrastructure team and build scalable systems...', 'Apply online at careers.techeng.com', '2026-04-10', true, NOW() - INTERVAL '8 days'),
+(3, 14, false, 'FULL_TIME', 'Business Development Manager', 'Global Consulting Group', 'Ho Chi Minh City', '1500-2500/month', 'Lead business growth initiatives for our consulting firm...', 'Send application to hr@globalconsulting.com', '2026-03-30', true, NOW() - INTERVAL '10 days'),
+(4, 1, false, 'FULL_TIME', 'Systems Engineer', 'Tech Engineering Corp', 'Hanoi', '1200-1800/month', 'Join our infrastructure team and build scalable systems...', 'Apply online at careers.techeng.com', '2026-04-10', true, NOW() - INTERVAL '8 days'),
 (1, 11, true, 'FULL_TIME', 'Backend Developer (Spring Boot)', 'VNG Corp', 'Ho Chi Minh City', 'Competitive', 'Join our team at VNG. Referral available.', 'Contact Bui Van H directly', '2026-06-30', true, NOW() - INTERVAL '5 days'),
 (1, 7, false, 'INTERNSHIP', 'ML Engineer Intern', 'FPT Software', 'Ho Chi Minh City', '800-00/month', 'Apply for ML internship at FPT.', 'Apply via FPT career site', '2026-05-15', true, NOW() - INTERVAL '3 days');
 
