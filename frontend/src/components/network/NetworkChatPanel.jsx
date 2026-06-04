@@ -28,7 +28,7 @@ function formatTime(isoString) {
 
 const SCROLL_TOP_THRESHOLD = 8;
 
-const NetworkChatPanel = ({ activeChat }) => {
+const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const [draft, setDraft] = useState('');
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
   const token = useAuthStore((state) => state.token ?? null);
@@ -209,6 +209,8 @@ const NetworkChatPanel = ({ activeChat }) => {
         onClose={() => setMembersDrawerOpen(false)}
         groupId={activeChat?.type === 'GROUP' ? activeChat.id : null}
         groupName={activeChat?.name}
+        currentUserId={currentUserId}
+        onLeaveSuccess={onLeaveGroup}
       />
 
       {/* Message list */}

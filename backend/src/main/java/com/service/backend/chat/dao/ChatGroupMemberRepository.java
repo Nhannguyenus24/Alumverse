@@ -27,6 +27,10 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
     Mono<Void> deleteByGroupIdAndMemberId(Long groupId, Long memberId);
 
     @Modifying
+    @Query("UPDATE chat_group_members SET role = 'OWNER' WHERE group_id = :groupId AND member_id = :memberId")
+    Mono<Void> updateRoleToOwnerByGroupIdAndMemberId(Long groupId, Long memberId);
+
+    @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId")
     Mono<Void> deleteByGroupId(Long groupId);
 
@@ -88,6 +92,9 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
               AND (:namePattern IS NULL OR LOWER(gp.full_name) LIKE LOWER(:namePattern))
             """)
     Mono<Long> countMembersByGroupIdWithNameFilter(Long groupId, String namePattern);
+
+    @Query("SELECT COUNT(id) FROM chat_group_members WHERE group_id = :groupId")
+    Mono<Long> countMembersByGroupId(Long groupId);
 }
 
 

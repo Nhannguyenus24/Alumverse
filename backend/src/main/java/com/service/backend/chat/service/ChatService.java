@@ -28,6 +28,8 @@ import java.util.List;
 @Service
 public class ChatService {
 
+    private static final int MAX_GROUP_SIZE = 10;
+
     private final ChatGroupRepository chatGroupRepository;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final ChatMessageRepository chatMessageRepository;
@@ -353,8 +355,19 @@ public class ChatService {
             return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group chat requires at least 2 other members (3 total including creator)"));
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        List<Long> distinctOthers = memberIds.stream()
+                .filter(id -> !creatorMemberId.equals(id))
+                .distinct()
+                .toList();
 
+        // 1 (creator) + distinctOthers
+        if (distinctOthers.size() + 1 > MAX_GROUP_SIZE) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.GROUP_MEMBER_LIMIT_EXCEEDED,
+                    "Nhóm chat chỉ được phép tối đa " + MAX_GROUP_SIZE + " thành viên"));
+        }
+
+        LocalDateTime now = LocalDateTime.now();
         String resolvedTitle = (title != null && !title.isBlank()) ? title.trim() : null;
 
         ChatGroup group = ChatGroup.builder()
@@ -374,13 +387,11 @@ public class ChatService {
                             .joinedAt(now)
                             .build();
 
-                    List<ChatGroupMember> others = memberIds.stream()
-                            .filter(id -> !creatorMemberId.equals(id))
-                            .distinct()
-                                .map(id -> ChatGroupMember.builder()
+                    List<ChatGroupMember> others = distinctOthers.stream()
+                            .map(id -> ChatGroupMember.builder()
                                     .groupId(savedGroup.getId())
                                     .memberId(id)
-                                .role(ChatRole.MEMBER)
+                                    .role(ChatRole.MEMBER)
                                     .joinedAt(now)
                                     .build())
                             .toList();
@@ -420,15 +431,23 @@ public class ChatService {
                                         .filter(id -> !existingMembers.contains(id))
                                         .distinct()
                                         .map(id -> ChatGroupMember.builder()
-                                            .groupId(groupId)
-                                            .memberId(id)
-                                            .role(ChatRole.MEMBER)
-                                            .joinedAt(now)
-                                            .build())
+                                                .groupId(groupId)
+                                                .memberId(id)
+                                                .role(ChatRole.MEMBER)
+                                                .joinedAt(now)
+                                                .build())
                                         .toList();
 
                                 if (newMembers.isEmpty()) {
                                     return Mono.empty();
+                                }
+
+                                if (existingMembers.size() + newMembers.size() > MAX_GROUP_SIZE) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.GROUP_MEMBER_LIMIT_EXCEEDED,
+                                            "Nhóm chat chỉ được phép tối đa " + MAX_GROUP_SIZE + " thành viên. Hiện có "
+                                                    + existingMembers.size() + " thành viên, chỉ có thể thêm tối đa "
+                                                    + (MAX_GROUP_SIZE - existingMembers.size()) + " người nữa"));
                                 }
 
                                 return chatGroupMemberRepository.saveAll(Flux.fromIterable(newMembers))
@@ -588,6 +607,7 @@ public class ChatService {
                                                 group.setUpdatedAt(LocalDateTime.now());
 
                                                 return chatGroupRepository.save(group)
+                                                        .then(chatGroupMemberRepository.updateRoleToOwnerByGroupIdAndMemberId(groupId, newOwnerMember.getMemberId()))
                                                         .then(chatGroupMemberRepository.deleteByGroupIdAndMemberId(groupId, memberId));
                                             });
                                 })
