@@ -19,4 +19,22 @@ public interface ForumPostReportRepository extends R2dbcRepository<ForumPostRepo
     Mono<Long> countByStatus(Status status);
 
     Mono<Long> countByPostId(Integer postId);
+
+    @Query("SELECT reason, COUNT(*) as count FROM forum_post_reports GROUP BY reason")
+    Flux<Object> countByReason();
+
+    @Query("SELECT AVG(EXTRACT(EPOCH FROM (updated_at - created_at)) / 3600) FROM forum_post_reports WHERE status != 'PENDING'")
+    Mono<Double> getAverageResolutionTimeHours();
+
+    @Query("""
+        SELECT o.id as organization_id, o.name as organization_name, COUNT(fpr.id) as report_count
+        FROM forum_post_reports fpr
+        JOIN forum_posts fp ON fpr.post_id = fp.id
+        JOIN forum_topics ft ON fp.topic_id = ft.id
+        JOIN organizations o ON ft.organization_id = o.id
+        GROUP BY o.id, o.name
+        ORDER BY report_count DESC
+        LIMIT :limit
+    """)
+    Flux<Object> findFlaggedOrganizations(@Param("limit") int limit);
 }

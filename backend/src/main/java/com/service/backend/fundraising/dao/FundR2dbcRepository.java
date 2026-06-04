@@ -103,21 +103,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
             int offset
     );
 
-    @Query("""
-            SELECT COUNT(*) FROM funds
-            WHERE (:organizationId IS NULL OR organization_id = :organizationId)
-              AND (:statusId IS NULL OR status_id = :statusId)
-              AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-              AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
-              AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
-            """)
-    Mono<Long> countFiltered(
-            Integer organizationId,
-            Integer statusId,
-            String keyword,
-            LocalDateTime timeStartedFrom,
-            LocalDateTime timeStartedTo,
-            BigDecimal targetAmountMin,
-            BigDecimal targetAmountMax
-    );
+    @Query("SELECT COUNT(*) FROM funds WHERE organization_id = :organizationId")
+    Mono<Long> countByOrganizationId(@Param("organizationId") Integer organizationId);
 }

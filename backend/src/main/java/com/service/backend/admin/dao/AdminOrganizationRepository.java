@@ -54,5 +54,8 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
      */
     @Query("SELECT COUNT(*) FROM organization_members WHERE organization_id = :organizationId AND status = 'ACTIVE'")
     Mono<Long> countActiveMembersByOrganization(@Param("organizationId") Integer organizationId);
+
+    @Query("SELECT COUNT(*) FROM organizations WHERE status = 'ACTIVE'")
+    Mono<Long> countActiveOrganizations();
 }
 

@@ -36,4 +36,7 @@ public interface PeerVerificationRepository extends R2dbcRepository<PeerVerifica
         ORDER BY pv.created_at DESC
     """)
     Flux<PendingPeerVerificationResponse> findPendingRequestsByVerifierMemberId(@Param("verifierUserId") Integer verifierUserId);
+
+    @Query("SELECT COUNT(*) FROM peer_verifications WHERE status = :status")
+    Mono<Long> countByStatus(@Param("status") String status);
 }

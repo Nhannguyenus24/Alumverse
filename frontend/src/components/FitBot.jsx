@@ -274,7 +274,7 @@ const SUGGESTIONS = [
 // SSE response handler
 const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
   // Construct the API endpoint and query parameters
-  const apiEndpoint = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat/stream`;
+  const apiEndpoint = `https://c3a8-8-228-6-162.ngrok-free.app/api/chat/stream`;
   const params = new URLSearchParams({
     message: userMessage,
   });

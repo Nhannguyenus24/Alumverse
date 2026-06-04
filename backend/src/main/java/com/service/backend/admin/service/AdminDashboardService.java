@@ -1,17 +1,18 @@
 package com.service.backend.admin.service;
 
-import com.service.backend.admin.dao.AdminEventRepository;
-import com.service.backend.admin.dao.AdminOrganizationRepository;
-import com.service.backend.admin.dao.AdminAuditLogRepository;
-import com.service.backend.admin.dao.AuditRepository;
-import com.service.backend.admin.dao.AdminUserRepository;
+import com.service.backend.admin.dao.*;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
-import com.service.backend.admin.dto.DashboardMetricsDTO;
-import com.service.backend.admin.dto.ActivityItemDTO;
+import com.service.backend.fundraising.dao.FundR2dbcRepository;
+import com.service.backend.admin.dto.*;
+import com.service.backend.user.dao.UserOrganizationMemberRepository;
+import com.service.backend.user.dao.PeerVerificationRepository;
+import com.service.backend.forum.dao.ForumPostReportRepository;
+import com.service.backend.article.dao.JobR2dbcRepository;
 import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.AdminAuditLog;
+import com.service.backend.shared.enums.Status;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.function.Supplier;
 
 @Service
@@ -38,6 +40,14 @@ public class AdminDashboardService {
     private final AdminAuditLogRepository adminAuditLogRepository;
     private final AuditRepository auditRepository;
     private final CacheUtils cacheUtils;
+
+    // New repositories for dashboard enhancements
+    private final UserOrganizationMemberRepository userOrganizationMemberRepository;
+    private final PeerVerificationRepository peerVerificationRepository;
+    private final AdminMentorshipRepository adminMentorshipRepository;
+    private final ForumPostReportRepository forumPostReportRepository;
+    private final JobR2dbcRepository jobR2dbcRepository;
+    private final FundR2dbcRepository fundR2dbcRepository;
 
     public Mono<DashboardMetricsDTO> getMetrics() {
         Supplier<Mono<DashboardMetricsDTO>> supplier = () -> {
@@ -107,5 +117,111 @@ public class AdminDashboardService {
         dto.setResourceId(log.getResourceId());
         dto.setMetadata(log.getMetadata());
         return dto;
+    }
+
+    public Mono<GlobalOverviewDTO> getGlobalOverview() {
+        return Mono.zip(
+                adminOrganizationRepository.countActiveOrganizations(),
+                userOrganizationMemberRepository.count(),
+                userOrganizationMemberRepository.countByVerificationLevel(1),
+                userOrganizationMemberRepository.countByVerificationLevel(2),
+                userOrganizationMemberRepository.countNewMembershipsThisMonth()
+        ).map(t -> GlobalOverviewDTO.builder()
+                .activeOrganizations(t.getT1())
+                .totalMemberships(t.getT2())
+                .level1Accounts(t.getT3())
+                .level2Accounts(t.getT4())
+                .newMembershipsThisMonth(t.getT5())
+                .build());
+    }
+
+    public Mono<PendingWorkloadDTO> getPendingWorkload() {
+        return Mono.zip(
+                adminUserRepository.countPendingVerificationRequests(),
+                peerVerificationRepository.countByStatus("PENDING"),
+                adminMentorshipRepository.countMentorProfilesByStatus("PENDING"),
+                forumPostReportRepository.countByStatus(Status.PENDING)
+        ).map(t -> PendingWorkloadDTO.builder()
+                .pendingOCR(t.getT1())
+                .pendingReferrals(t.getT2())
+                .pendingMentorApplications(t.getT3())
+                .pendingForumPosts(0) // Placeholder
+                .pendingReports(t.getT4())
+                .build());
+    }
+
+    public Mono<OrganizationComparisonDTO> getOrganizationComparison() {
+        return adminOrganizationRepository.findAll()
+                .flatMap(org -> {
+                    Integer orgId = org.getId();
+                    return Mono.zip(
+                        adminUserRepository.countUsersByOrganization(orgId),
+                        adminEventRepository.countEventsByOrganization(orgId.longValue()),
+                        jobR2dbcRepository.countByOrganizationId(orgId),
+                        fundR2dbcRepository.countByOrganizationId(orgId)
+                    ).map(t -> OrganizationMetricDTO.builder()
+                        .organizationId(orgId)
+                        .organizationName(org.getName())
+                        .memberCount(t.getT1())
+                        .eventCount(t.getT2())
+                        .jobCount(t.getT3())
+                        .fundraisingCount(t.getT4())
+                        .build());
+                })
+                .collectList()
+                .map(list -> new OrganizationComparisonDTO(list));
+    }
+
+    public Mono<FeatureUsageDTO> getFeatureUsageSummary() {
+        return adminOrganizationRepository.findAll()
+                .collectList()
+                .map(orgs -> {
+                    Map<String, Long> featureCount = new HashMap<>();
+                    Map<Integer, List<String>> orgFeatures = new HashMap<>();
+                    for (var org : orgs) {
+                        List<String> features = parseFeatures(org.getFeaturesConfig());
+                        orgFeatures.put(org.getId(), features);
+                        for (String f : features) {
+                            featureCount.put(f, featureCount.getOrDefault(f, 0L) + 1);
+                        }
+                    }
+                    return new FeatureUsageDTO(featureCount, orgFeatures);
+                });
+    }
+
+    private List<String> parseFeatures(String config) {
+        if (config == null || config.isEmpty()) return List.of();
+        try {
+            // Placeholder: parse JSON or comma separated string
+            return List.of(config.split(","));
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    public Mono<ModerationSummaryDTO> getModerationSummary() {
+        return Mono.zip(
+                forumPostReportRepository.countByReason().collectList(),
+                forumPostReportRepository.getAverageResolutionTimeHours().defaultIfEmpty(0.0),
+                forumPostReportRepository.findFlaggedOrganizations(5).collectList()
+        ).map(t -> {
+            Map<String, Long> reportsByType = new HashMap<>();
+            // Map the results if needed, for now placeholder
+            return ModerationSummaryDTO.builder()
+                    .reportsByType(reportsByType)
+                    .averageResolutionTimeHours(t.getT2())
+                    .flaggedOrganizations(List.of()) // Placeholder
+                    .build();
+        });
+    }
+
+    public Mono<SystemHealthDTO> getSystemHealth() {
+        return jobR2dbcRepository.countActiveJobs()
+                .map(count -> SystemHealthDTO.builder()
+                        .apiErrorRate(0.0) // Mocked
+                        .activeJobsCount(count)
+                        .storageUsed("N/A") // Mocked
+                        .jobStatus(Map.of()) // Mocked
+                        .build());
     }
 }

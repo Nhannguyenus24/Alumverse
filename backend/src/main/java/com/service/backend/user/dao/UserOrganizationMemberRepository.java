@@ -45,4 +45,10 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             WHERE user_id = :userId
             """)
     Mono<Integer> incrementVerificationLevelByUserId(@Param("userId") Integer userId);
+
+    @Query("SELECT COUNT(*) FROM organization_members WHERE verification_level = :level")
+    Mono<Long> countByVerificationLevel(@Param("level") int level);
+
+    @Query("SELECT COUNT(*) FROM organization_members WHERE created_at >= date_trunc('month', current_date)")
+    Mono<Long> countNewMembershipsThisMonth();
 }

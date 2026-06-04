@@ -47,4 +47,7 @@ public interface JobR2dbcRepository extends ReactiveCrudRepository<Job, Integer>
     @Modifying
     @Query("UPDATE jobs SET is_active = false WHERE id = :id")
     Mono<Integer> deactivateJob(Integer id);
+
+    @Query("SELECT COUNT(*) FROM jobs WHERE is_active = true")
+    Mono<Long> countActiveJobs();
 }
