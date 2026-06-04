@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../shared/widgets/logo.dart';
+import '../providers/auth_provider.dart';
 
 class SignupCodePage extends ConsumerStatefulWidget {
   final String email;
@@ -23,6 +26,9 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
     (_) => FocusNode(),
   );
 
+  bool _verifying = false;
+  bool _resending = false;
+
   @override
   void dispose() {
     for (var c in _controllers) {
@@ -41,19 +47,68 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
     if (value.isEmpty && index > 0) {
       _focusNodes[index - 1].requestFocus();
     }
-    
-    // Check if all filled
-    if (_controllers.every((c) => c.text.isNotEmpty)) {
+
+    // Auto-submit once all six digits are filled.
+    if (!_verifying && _controllers.every((c) => c.text.isNotEmpty)) {
       _submit();
     }
   }
 
   Future<void> _submit() async {
     final otp = _controllers.map((c) => c.text).join();
-    // TODO: Implement verify OTP logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Đang xác thực mã: $otp')),
-    );
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập đủ 6 chữ số')),
+      );
+      return;
+    }
+
+    setState(() => _verifying = true);
+    try {
+      await ref
+          .read(authStateProvider.notifier)
+          .verifyOtp(email: widget.email, otp: otp);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Xác thực thành công! Vui lòng đăng nhập.'),
+        ),
+      );
+      // Account is now active — go back to login.
+      context.go(RouteNames.login);
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Xác thực mã thất bại';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _verifying = false);
+    }
+  }
+
+  Future<void> _resend() async {
+    setState(() => _resending = true);
+    try {
+      await ref.read(authStateProvider.notifier).sendOtp(widget.email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã gửi lại mã xác thực')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Gửi lại mã thất bại';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _resending = false);
+    }
   }
 
   @override
@@ -115,19 +170,30 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
               ),
               const SizedBox(height: 40),
               ElevatedButton(
-                onPressed: _submit,
+                onPressed: _verifying ? null : _submit,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
+                child: _verifying
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
               ),
               const SizedBox(height: 24),
               Center(
                 child: TextButton(
-                  onPressed: () {
-                    // TODO: Implement resend OTP
-                  },
-                  child: const Text('Chưa nhận được mã? Gửi lại mã'),
+                  onPressed: _resending ? null : _resend,
+                  child: Text(
+                    _resending
+                        ? 'Đang gửi lại...'
+                        : 'Chưa nhận được mã? Gửi lại mã',
+                  ),
                 ),
               ),
             ],
