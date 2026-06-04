@@ -1,0 +1,262 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/network/dio_client.dart';
+import '../models/mentor_availability.dart';
+import '../models/mentor_profile.dart';
+import '../models/mentorship_session.dart';
+import '../models/session_feedback.dart';
+
+final mentorshipRepositoryProvider = Provider<MentorshipRepository>((ref) {
+  return MentorshipRepository(ref.watch(dioProvider));
+});
+
+/// Mentee-side mentorship API. Mirrors the web `useBrowseMentors` routing:
+/// keyword-only → /search, any advanced filter → /filter, else → approved list.
+class MentorshipRepository {
+  MentorshipRepository(this._dio);
+
+  final Dio _dio;
+
+  Future<List<MentorProfile>> browseMentors({
+    String keyword = '',
+    String? category,
+    String? expertise,
+    int page = 0,
+    int limit = 10,
+  }) async {
+    final hasAdvanced =
+        (category != null && category.isNotEmpty) ||
+        (expertise != null && expertise.isNotEmpty);
+    final kw = keyword.trim();
+
+    final Response res;
+    if (hasAdvanced) {
+      res = await _dio.get(ApiEndpoints.menteeMentorFilter, queryParameters: {
+        if (kw.isNotEmpty) 'search': kw,
+        if (category != null && category.isNotEmpty) 'category': category,
+        if (expertise != null && expertise.isNotEmpty) 'expertise': expertise,
+        'page': page,
+        'limit': limit,
+      });
+    } else if (kw.isNotEmpty) {
+      res = await _dio.get(ApiEndpoints.menteeMentorSearch,
+          queryParameters: {'keyword': kw, 'page': page, 'limit': limit});
+    } else {
+      res = await _dio.get(ApiEndpoints.menteeMentors,
+          queryParameters: {'page': page, 'limit': limit});
+    }
+    return _items(res.data, MentorProfile.fromJson);
+  }
+
+  Future<MentorProfile> getMentorProfile(int memberId) async {
+    final res = await _dio.get(ApiEndpoints.menteeMentorProfile(memberId));
+    return MentorProfile.fromJson(_dataMap(res.data));
+  }
+
+  Future<List<MentorAvailability>> getMentorAvailability(int memberId) async {
+    final res = await _dio.get(ApiEndpoints.menteeMentorAvailability(memberId));
+    return _dataList(res.data)
+        .map((e) => MentorAvailability.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<String>> getExpertiseTopics() async {
+    final res = await _dio.get(ApiEndpoints.menteeExpertiseTopics);
+    return _dataList(res.data).map((e) => e.toString()).toList();
+  }
+
+  Future<List<String>> getExpertiseCategories() async {
+    final res = await _dio.get(ApiEndpoints.menteeExpertiseCategories);
+    return _dataList(res.data).map((e) => e.toString()).toList();
+  }
+
+  Future<MentorshipSession> bookSession({
+    required int availabilityId,
+    required String sessionType,
+    required String introduction,
+    String? description,
+    String? bookingNote,
+  }) async {
+    final res = await _dio.post(ApiEndpoints.menteeBookSession, data: {
+      'availabilityId': availabilityId,
+      'sessionType': sessionType,
+      'introduction': introduction,
+      if (description != null && description.isNotEmpty) 'description': description,
+      if (bookingNote != null && bookingNote.isNotEmpty) 'bookingNote': bookingNote,
+    });
+    return MentorshipSession.fromJson(_dataMap(res.data));
+  }
+
+  Future<List<MentorshipSession>> getMySessions({int page = 0, int limit = 20}) async {
+    final res = await _dio.get(ApiEndpoints.menteeSessions,
+        queryParameters: {'page': page, 'limit': limit});
+    return _items(res.data, MentorshipSession.fromJson);
+  }
+
+  /// Submit a rating+comment after a COMPLETED session.
+  Future<SessionFeedback> submitFeedback({
+    required int sessionId,
+    required int rating,
+    String? comment,
+    bool isPublic = true,
+  }) async {
+    final res = await _dio.post(ApiEndpoints.menteeSessionFeedback(sessionId), data: {
+      'rating': rating,
+      if (comment != null && comment.isNotEmpty) 'comment': comment,
+      'isPublic': isPublic,
+    });
+    return SessionFeedback.fromJson(_dataMap(res.data));
+  }
+
+  /// Public feedback list for a mentor profile (paginated).
+  Future<List<SessionFeedback>> getMentorFeedbacks(
+    int memberId, {
+    int page = 0,
+    int limit = 10,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.menteeMentorFeedbacks(memberId),
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return _items(res.data, SessionFeedback.fromJson);
+  }
+
+  Future<MentorshipSession> cancelSession(int sessionId) async {
+    final res = await _dio.post(ApiEndpoints.menteeSessionCancel(sessionId));
+    return MentorshipSession.fromJson(_dataMap(res.data));
+  }
+
+  // --- Mentor side ---
+
+  /// The current user's mentor profile, or null if they aren't a mentor yet
+  /// (backend returns an error/empty in that case).
+  Future<MentorProfile?> getMyMentorProfile() async {
+    try {
+      final res = await _dio.get(ApiEndpoints.mentorProfile);
+      final data = _dataMap(res.data);
+      if (data.isEmpty) return null;
+      return MentorProfile.fromJson(data);
+    } on DioException {
+      return null;
+    }
+  }
+
+  /// Create the mentor profile (signup). Returns the created profile.
+  Future<MentorProfile> createMentorProfile({
+    required String currentJobTitle,
+    required String currentCompany,
+    required String bio,
+    String? defaultMeetingLink,
+  }) async {
+    final res = await _dio.post(ApiEndpoints.mentorProfile, data: {
+      'currentJobTitle': currentJobTitle,
+      'currentCompany': currentCompany,
+      'bio': bio,
+      if (defaultMeetingLink != null && defaultMeetingLink.isNotEmpty)
+        'defaultMeetingLink': defaultMeetingLink,
+    });
+    return MentorProfile.fromJson(_dataMap(res.data));
+  }
+
+  // ── Mentor: sessions & status ─────────────────────────────────
+
+  Future<List<MentorshipSession>> getMentorSessions({
+    int page = 0,
+    int limit = 50,
+  }) async {
+    final res = await _dio.get(ApiEndpoints.mentorSessions,
+        queryParameters: {'page': page, 'limit': limit});
+    return _items(res.data, MentorshipSession.fromJson);
+  }
+
+  /// Accept or reject a session (CONFIRMED / REJECTED).
+  /// Pass [meetingLink] when confirming to set the meeting URL.
+  Future<MentorshipSession> updateSessionStatus(
+    int sessionId, {
+    required String status,
+    String? meetingLink,
+  }) async {
+    final res = await _dio.put(
+      ApiEndpoints.mentorSessionStatus(sessionId),
+      data: {
+        'status': status,
+        if (meetingLink != null && meetingLink.isNotEmpty)
+          'meetingLink': meetingLink,
+      },
+    );
+    return MentorshipSession.fromJson(_dataMap(res.data));
+  }
+
+  // ── Mentor: availability ──────────────────────────────────────
+
+  Future<List<MentorAvailability>> getMyAvailability() async {
+    final res = await _dio.get(ApiEndpoints.mentorAvailability);
+    return _dataList(res.data)
+        .map((e) => MentorAvailability.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<MentorAvailability> addAvailability({
+    required DateTime startTime,
+    required DateTime endTime,
+  }) async {
+    final res = await _dio.post(ApiEndpoints.mentorAvailability, data: {
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
+    });
+    return MentorAvailability.fromJson(_dataMap(res.data));
+  }
+
+  Future<void> deleteAvailability(int id) =>
+      _dio.delete(ApiEndpoints.mentorAvailabilityDelete(id));
+
+  // ── Mentor: feedbacks received ────────────────────────────────
+
+  Future<List<SessionFeedback>> getMyMentorFeedbacks({
+    int page = 0,
+    int limit = 20,
+  }) async {
+    final res = await _dio.get(ApiEndpoints.mentorFeedbacks,
+        queryParameters: {'page': page, 'limit': limit});
+    return _items(res.data, SessionFeedback.fromJson);
+  }
+
+  /// Add one expertise entry to the current mentor.
+  Future<void> addExpertise({
+    required String topic,
+    required String category,
+    int? yearsExperience,
+    String? description,
+  }) async {
+    await _dio.post(ApiEndpoints.mentorExpertise, data: {
+      'topic': topic,
+      'category': category,
+      if (yearsExperience != null) 'yearsExperience': yearsExperience,
+      if (description != null && description.isNotEmpty) 'description': description,
+    });
+  }
+
+  // --- helpers ---
+
+  /// Unwrap `ApiResponse.data` as a map.
+  Map<String, dynamic> _dataMap(dynamic body) {
+    final data = body is Map ? body['data'] : body;
+    return data is Map<String, dynamic> ? data : <String, dynamic>{};
+  }
+
+  /// Unwrap `ApiResponse.data` as a list.
+  List _dataList(dynamic body) {
+    final data = body is Map ? body['data'] : body;
+    return data is List ? data : const [];
+  }
+
+  /// Unwrap `ApiResponse.data.items` (PaginatedResponse) → mapped list.
+  List<T> _items<T>(dynamic body, T Function(Map<String, dynamic>) fromJson) {
+    final data = body is Map ? body['data'] : body;
+    final items = data is Map ? data['items'] : data;
+    if (items is! List) return const [];
+    return items.map((e) => fromJson(e as Map<String, dynamic>)).toList();
+  }
+}

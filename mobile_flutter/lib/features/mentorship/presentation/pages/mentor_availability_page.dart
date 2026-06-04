@@ -1,0 +1,413 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../data/models/mentor_availability.dart';
+import '../../data/repositories/mentorship_repository.dart';
+import '../providers/mentorship_providers.dart';
+
+/// Mentor availability management — view, add and delete open time slots.
+class MentorAvailabilityPage extends ConsumerWidget {
+  const MentorAvailabilityPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(myAvailabilityProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Lịch rảnh của tôi')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddSlot(context, ref),
+        icon: const Icon(Icons.add),
+        label: const Text('Thêm khung giờ'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(myAvailabilityProvider);
+          await ref.read(myAvailabilityProvider.future);
+        },
+        child: async.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => ListView(
+            children: [
+              const SizedBox(height: 120),
+              Center(
+                child: Column(
+                  children: [
+                    const Text('Không tải được lịch rảnh'),
+                    TextButton(
+                      onPressed: () => ref.invalidate(myAvailabilityProvider),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          data: (slots) {
+            // Sort: upcoming first, past after
+            final now = DateTime.now();
+            final sorted = [...slots]
+              ..sort((a, b) => a.startTime.compareTo(b.startTime));
+            final upcoming =
+                sorted.where((s) => s.endTime.isAfter(now)).toList();
+            final past =
+                sorted.where((s) => !s.endTime.isAfter(now)).toList();
+
+            if (slots.isEmpty) {
+              return ListView(
+                children: const [
+                  SizedBox(height: 120),
+                  Icon(Icons.calendar_today_outlined,
+                      size: 48, color: AppColors.textSecondary),
+                  SizedBox(height: 12),
+                  Center(
+                    child: Text(
+                      'Chưa có khung giờ rảnh nào.\nBấm "+ Thêm khung giờ" để bắt đầu.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+              children: [
+                if (upcoming.isNotEmpty) ...[
+                  const _GroupLabel('Sắp tới'),
+                  ...upcoming.map((s) => _SlotTile(slot: s)),
+                ],
+                if (past.isNotEmpty) ...[
+                  const _GroupLabel('Đã qua'),
+                  ...past.map((s) => _SlotTile(slot: s, isPast: true)),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showAddSlot(BuildContext context, WidgetRef ref) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const _AddSlotSheet(),
+    );
+    // Refresh after sheet closes (success or cancel)
+    ref.invalidate(myAvailabilityProvider);
+  }
+}
+
+class _SlotTile extends ConsumerWidget {
+  const _SlotTile({required this.slot, this.isPast = false});
+
+  final MentorAvailability slot;
+  final bool isPast;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final df = DateFormat('EEE dd/MM/yyyy');
+    final tf = DateFormat('HH:mm');
+    final st = (slot.status ?? '').toUpperCase();
+    final isBooked = st == 'BOOKED';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      color: isPast ? AppColors.background : AppColors.surface,
+      child: ListTile(
+        leading: Icon(
+          isBooked ? Icons.event_available : Icons.schedule,
+          color: isBooked
+              ? AppColors.success
+              : isPast
+                  ? AppColors.textSecondary
+                  : AppColors.primary,
+        ),
+        title: Text(
+          df.format(slot.startTime),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: isPast ? AppColors.textSecondary : AppColors.textPrimary,
+          ),
+        ),
+        subtitle: Text(
+          '${tf.format(slot.startTime)} – ${tf.format(slot.endTime)}'
+          '${isBooked ? ' · Đã được đặt' : ''}',
+          style: const TextStyle(fontSize: 13),
+        ),
+        trailing: (!isBooked && !isPast)
+            ? IconButton(
+                tooltip: 'Xóa slot',
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                onPressed: () => _delete(context, ref),
+              )
+            : null,
+      ),
+    );
+  }
+
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Xóa khung giờ?'),
+        content: const Text('Slot này sẽ không còn hiển thị cho mentee.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Hủy')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Xóa',
+                  style: TextStyle(color: AppColors.error))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref.read(mentorshipRepositoryProvider).deleteAvailability(slot.id);
+      ref.invalidate(myAvailabilityProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Đã xóa khung giờ')));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      }
+    }
+  }
+}
+
+class _AddSlotSheet extends ConsumerStatefulWidget {
+  const _AddSlotSheet();
+
+  @override
+  ConsumerState<_AddSlotSheet> createState() => _AddSlotSheetState();
+}
+
+class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
+  DateTime? _date;
+  TimeOfDay? _startTime;
+  TimeOfDay? _endTime;
+  bool _saving = false;
+
+  Future<void> _pickDate() async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
+    );
+    if (d != null) setState(() => _date = d);
+  }
+
+  Future<void> _pickTime(bool isStart) async {
+    final t = await showTimePicker(
+      context: context,
+      initialTime: isStart
+          ? const TimeOfDay(hour: 9, minute: 0)
+          : const TimeOfDay(hour: 10, minute: 0),
+    );
+    if (t != null) {
+      setState(() {
+        if (isStart) {
+          _startTime = t;
+        } else {
+          _endTime = t;
+        }
+      });
+    }
+  }
+
+  DateTime _combine(DateTime date, TimeOfDay time) =>
+      DateTime(date.year, date.month, date.day, time.hour, time.minute);
+
+  Future<void> _save() async {
+    if (_date == null || _startTime == null || _endTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng chọn đầy đủ ngày và giờ')));
+      return;
+    }
+    final start = _combine(_date!, _startTime!);
+    final end = _combine(_date!, _endTime!);
+    if (!end.isAfter(start)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Giờ kết thúc phải sau giờ bắt đầu')));
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(mentorshipRepositoryProvider)
+          .addAvailability(startTime: start, endTime: end);
+      ref.invalidate(myAvailabilityProvider);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Đã thêm khung giờ')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', ''))));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final df = DateFormat('dd/MM/yyyy');
+    final tf = DateFormat('HH:mm');
+    final now = DateTime.now();
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Thêm khung giờ rảnh',
+              style:
+                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 20),
+          _PickerTile(
+            icon: Icons.calendar_today,
+            label: 'Ngày',
+            value: _date != null ? df.format(_date!) : 'Chọn ngày',
+            onTap: _pickDate,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _PickerTile(
+                  icon: Icons.access_time,
+                  label: 'Bắt đầu',
+                  value: _startTime != null
+                      ? tf.format(_combine(
+                          _date ?? now, _startTime!))
+                      : 'Chọn giờ',
+                  onTap: () => _pickTime(true),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _PickerTile(
+                  icon: Icons.access_time_filled,
+                  label: 'Kết thúc',
+                  value: _endTime != null
+                      ? tf.format(_combine(
+                          _date ?? now, _endTime!))
+                      : 'Chọn giờ',
+                  onTap: () => _pickTime(false),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _save,
+              style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14)),
+              child: _saving
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
+                  : const Text('Lưu khung giờ',
+                      style: TextStyle(fontSize: 16)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PickerTile extends StatelessWidget {
+  const _PickerTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.divider),
+          borderRadius: BorderRadius.circular(8),
+          color: AppColors.surface,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: AppColors.primary),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          color: AppColors.textSecondary, fontSize: 11)),
+                  Text(value,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            letterSpacing: 0.5),
+      ),
+    );
+  }
+}

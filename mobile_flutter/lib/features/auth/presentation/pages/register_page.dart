@@ -24,6 +24,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String? _selectedYear;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
+  bool _submitting = false;
 
   final List<String> _years = List.generate(
     20,
@@ -42,15 +43,34 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    // TODO: Implement register logic in auth_provider
-    // For now, just show a snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đang xử lý đăng ký...')),
-    );
-    
-    // After success, navigate to signup code page
-    context.push(RouteNames.signupCode, extra: _emailCtl.text.trim());
+
+    final email = _emailCtl.text.trim();
+    setState(() => _submitting = true);
+    try {
+      final notifier = ref.read(authStateProvider.notifier);
+      // Step 1: create the (inactive) account.
+      await notifier.register(
+        email: email,
+        userName: _studentIdCtl.text.trim(),
+        fullName: _fullNameCtl.text.trim(),
+        password: _passCtl.text,
+      );
+      // Step 2: send the OTP so the verification screen is ready.
+      await notifier.sendOtp(email);
+
+      if (!mounted) return;
+      context.push(RouteNames.signupCode, extra: email);
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Đăng ký thất bại';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -156,11 +176,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 24),
                 Row(

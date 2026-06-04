@@ -14,6 +14,15 @@ import '../../features/organization/presentation/providers/organization_provider
 import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/splash_page.dart';
+import '../../features/article/presentation/pages/article_detail_page.dart';
+import '../../features/mentorship/presentation/pages/mentorship_page.dart';
+import '../../features/mentorship/presentation/pages/mentor_profile_page.dart';
+import '../../features/mentorship/presentation/pages/mentor_booking_page.dart';
+import '../../features/mentorship/presentation/pages/my_bookings_page.dart';
+import '../../features/mentorship/presentation/pages/mentor_signup_page.dart';
+import '../../features/mentorship/presentation/pages/mentor_dashboard_page.dart';
+import '../../features/mentorship/presentation/pages/mentor_availability_page.dart';
+import '../../shared/widgets/feature_placeholder_page.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -24,8 +33,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: RouteNames.splash,
     debugLogDiagnostics: true,
     redirect: (context, state) {
+      final isSplash = state.matchedLocation == RouteNames.splash;
+
+      // While auth/org are still resolving, stay on splash (avoids redirect
+      // races and the "route not found" flash during startup).
+      final isResolving = authState.isLoading || orgState.isLoading;
+      if (isResolving) return isSplash ? null : RouteNames.splash;
+
       final isLoggedIn = authState.maybeWhen(
-        data: (user) => user != null,
+        data: (auth) => auth.isLoggedIn,
         orElse: () => false,
       );
 
@@ -41,20 +57,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == RouteNames.signupCode ||
           state.matchedLocation == RouteNames.resetPassword ||
           state.matchedLocation == RouteNames.organizationRegistration;
-      final isSplash = state.matchedLocation == RouteNames.splash;
-
-      if (isSplash) return null;
-
-      // 1. If no organization selected, must go to organization select
+      // 1. No organization selected → must pick one first.
       if (!hasOrg && !isOrgSelectRoute) return RouteNames.organizationSelect;
-      
-      // 2. If has organization but at org select, go to login (if not logged in) or home
-      if (hasOrg && isOrgSelectRoute) return isLoggedIn ? RouteNames.home : RouteNames.login;
 
-      // 3. Normal auth check
-      if (!isLoggedIn && !isAuthRoute) return RouteNames.login;
+      // 2. Has organization but sitting on splash/org-select → move forward.
+      if (hasOrg && (isOrgSelectRoute || isSplash)) {
+        return isLoggedIn ? RouteNames.home : RouteNames.login;
+      }
+
+      // 3. Normal auth gate (org-select & splash are exempt — handled above).
+      if (!isLoggedIn && !isAuthRoute && !isSplash && !isOrgSelectRoute) {
+        return RouteNames.login;
+      }
       if (isLoggedIn && isAuthRoute) return RouteNames.home;
-      
+
       return null;
     },
     routes: [
@@ -97,6 +113,88 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.chat,
         builder: (_, __) => const ChatListPage(),
+      ),
+      GoRoute(
+        path: '${RouteNames.articles}/:id',
+        builder: (_, state) => ArticleDetailPage(
+          articleId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
+      ),
+      // Feature destinations from the home menu. These are placeholders until
+      // each feature screen is built; routing works end-to-end now.
+      GoRoute(
+        path: RouteNames.events,
+        builder: (_, __) => const FeaturePlaceholderPage(
+          title: 'Sự kiện & Hội thảo',
+          icon: Icons.event_available_rounded,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.network,
+        builder: (_, __) => const FeaturePlaceholderPage(
+          title: 'Kết nối cựu sinh viên',
+          icon: Icons.groups_rounded,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.mentorshipMyBookings,
+        builder: (_, __) => const MyBookingsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.mentorshipSignup,
+        builder: (_, __) => const MentorSignupPage(),
+      ),
+      GoRoute(
+        path: RouteNames.mentorDashboard,
+        builder: (_, __) => const MentorDashboardPage(),
+      ),
+      GoRoute(
+        path: RouteNames.mentorAvailability,
+        builder: (_, __) => const MentorAvailabilityPage(),
+      ),
+      GoRoute(
+        path: RouteNames.mentorship,
+        builder: (_, __) => const MentorshipPage(),
+      ),
+      GoRoute(
+        path: '${RouteNames.mentorship}/mentors/:id',
+        builder: (_, state) => MentorProfilePage(
+          memberId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '${RouteNames.mentorship}/mentors/:id/book',
+        builder: (_, state) => MentorBookingPage(
+          memberId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.profile,
+        builder: (_, __) => const FeaturePlaceholderPage(
+          title: 'Hồ sơ cá nhân',
+          icon: Icons.person_rounded,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.settings,
+        builder: (_, __) => const FeaturePlaceholderPage(
+          title: 'Cài đặt',
+          icon: Icons.settings_rounded,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.forum,
+        builder: (_, __) => const FeaturePlaceholderPage(
+          title: 'Diễn đàn',
+          icon: Icons.forum_rounded,
+        ),
+      ),
+      GoRoute(
+        path: RouteNames.fundraising,
+        builder: (_, __) => const FeaturePlaceholderPage(
+          title: 'Đóng góp & Quỹ',
+          icon: Icons.volunteer_activism_rounded,
+        ),
       ),
     ],
     errorBuilder: (_, state) => Scaffold(
