@@ -51,7 +51,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
         onClick={handleOpen}
         sx={{ color: headerTextColor }}
       >
-        <ChatBubbleOutlineIcon fontSize="small" aria-hidden />
+        <ChatBubbleOutlineIcon />
       </IconButton>
 
       <Menu

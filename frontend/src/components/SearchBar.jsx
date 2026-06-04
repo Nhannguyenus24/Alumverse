@@ -6,13 +6,20 @@ const SearchBar = ({
   onChange,
   onKeyDown,
   placeholder = 'Tìm kiếm',
+  size = 'small',
+  disabled = false,
+  fullWidth = true,
+  InputProps,
   sx,
   inputSx,
   iconSx,
+  ...props
 }) => {
   return (
     <TextField
-      fullWidth
+      fullWidth={fullWidth}
+      size={size}
+      disabled={disabled}
       value={value}
       onChange={(e) => onChange?.(e.target.value)}
       onKeyDown={onKeyDown}
@@ -24,18 +31,26 @@ const SearchBar = ({
           borderRadius: 10,
           fontSize: '0.8rem',
           fontWeight: 500,
-          paddingLeft: 1.5,
-          backgroundColor: 'grey.200',
+          pl: 1.5,
+          bgcolor: 'grey.200',
           ...inputSx,
         },
       }}
       InputProps={{
         startAdornment: (
           <InputAdornment position="start">
-            <SearchIcon sx={{ fontSize: '1rem', color: 'text.secondary', ...iconSx }} />
+            <SearchIcon
+              sx={{
+                fontSize: '1rem',
+                color: 'text.secondary',
+                ...iconSx,
+              }}
+            />
           </InputAdornment>
         ),
+        ...InputProps,
       }}
+      {...props}
     />
   );
 };

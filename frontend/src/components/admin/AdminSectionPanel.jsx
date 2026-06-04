@@ -29,7 +29,7 @@ const AdminSectionPanel = ({ title, subtitle, action, children, sx }) => {
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -0.5 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main', letterSpacing: -0.5 }}>
             {title}
           </Typography>
           {subtitle && (
