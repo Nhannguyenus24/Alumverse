@@ -149,7 +149,7 @@ const AdminOrganizationsPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Quản lý tổ chức
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
@@ -160,7 +160,7 @@ const AdminOrganizationsPage = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+          sx={{ borderRadius: 1, fontWeight: 700, textTransform: 'none' }}
         >
           Thêm tổ chức
         </Button>
@@ -241,11 +241,12 @@ const StatCard = ({ label, value, icon }) => (
     <Box
       sx={{
         p: 1.5,
-        borderRadius: 2,
+        borderRadius: 1,
         bgcolor: 'action.hover',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        bgColor: 'primary.main'
       }}
     >
       {icon}

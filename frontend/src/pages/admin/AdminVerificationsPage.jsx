@@ -169,7 +169,7 @@ const AdminVerificationsPage = () => {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+        <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
           Xác thực minh chứng
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>

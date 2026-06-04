@@ -111,7 +111,7 @@ const LoginPage = () => {
         <Typography
           variant="h5"
           fontWeight={700}
-          color="primary.dark"
+          color="primary.main"
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
@@ -145,7 +145,7 @@ const LoginPage = () => {
             to={toOrgPath('/auth/forgot-password')}
             variant="body2"
             color="primary.main"
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
           >
             Quên mật khẩu?
           </Typography>
@@ -177,8 +177,7 @@ const LoginPage = () => {
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               useOneTap={false}
-              size="large"
-              shape="pill"
+              size="large"         
               text="signin_with"
               locale="vi"
               width="100%"

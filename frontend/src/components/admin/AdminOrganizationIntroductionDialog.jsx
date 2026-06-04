@@ -206,24 +206,14 @@ const AdminOrganizationIntroductionDialog = ({
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: "action.hover" }}>
         <Button
           onClick={onClose}
-          sx={{
-            textTransform: "none",
-            fontWeight: 600,
-            color: "text.secondary",
-          }}
+          variant="outlined" color="secondary"
         >
-          Hủy bỏ
+          Hủy
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            px: 4,
-            borderRadius: 2,
-            boxShadow: (theme) => theme.customShadows?.primary,
-          }}
+          variant="contained"
         >
           Cập nhật nội dung
         </Button>

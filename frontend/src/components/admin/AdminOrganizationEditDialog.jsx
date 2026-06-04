@@ -213,19 +213,12 @@ useEffect(() => {
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
-          Hủy bỏ
+        <Button onClick={onClose} variant="outlined" color="secondary">
+          Huỷ
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 4,
-            borderRadius: 2,
-            boxShadow: (theme) => theme.customShadows?.primary,
-          }}
         >
           {organization ? 'Lưu thay đổi' : 'Tạo tổ chức'}
         </Button>

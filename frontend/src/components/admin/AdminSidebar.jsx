@@ -49,11 +49,16 @@ const NAV_GROUPS = (adminBase) => [
     ],
   },
   {
-    title: 'Nội dung & Cộng đồng',
+    title: 'Diễn đàn',
     items: [
-      { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: 'Bài viết Diễn đàn' },
+      { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: 'Bài viết' },
       { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: 'Chủ đề', role: 'ADMIN' },
       { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: 'Danh mục', role: 'ADMIN' },
+    ],
+  },
+    {
+    title: 'Nội dung & Cộng đồng',
+    items: [
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
       { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: 'Bài viết', role: 'ADMIN' },
       { to: `${adminBase}/fundraising`, icon: <VolunteerActivismOutlinedIcon />, label: 'Gây quỹ', role: 'ADMIN' },
