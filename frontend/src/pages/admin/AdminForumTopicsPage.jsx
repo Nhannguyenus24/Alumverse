@@ -162,7 +162,7 @@ const AdminForumTopicsPage = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <Tooltip title="Chi tiết">
-            <IconButton size="small" onClick={() => setDetailTopic(row)}>
+            <IconButton size="small" color="primary" onClick={() => setDetailTopic(row)}>
               <VisibilityOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -253,7 +253,7 @@ const AdminForumTopicsPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Chủ đề diễn đàn
           </Typography>
           <Typography
@@ -284,7 +284,6 @@ const AdminForumTopicsPage = () => {
             variant="contained"
             startIcon={<AddOutlinedIcon />}
             onClick={openCreate}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
           >
             Tạo chủ đề
           </Button>
@@ -384,7 +383,7 @@ const AdminForumTopicsPage = () => {
           <Button
             onClick={() => setDetailTopic(null)}
             variant="outlined"
-            sx={{ borderRadius: 2 }}
+            color="secondary"
           >
             Đóng
           </Button>
@@ -401,9 +400,7 @@ const AdminForumTopicsPage = () => {
         <DialogTitle sx={{ fontWeight: 700 }}>
           {dialog.mode === "create" ? "Tạo chủ đề mới" : "Chỉnh sửa chủ đề"}
         </DialogTitle>
-        <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}
-        >
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
           <TextField
             label="Tiêu đề"
             required
@@ -430,13 +427,12 @@ const AdminForumTopicsPage = () => {
           </TextField>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setDialog((d) => ({ ...d, open: false }))}>
+          <Button variant="outlined" color="secondary" onClick={() => setDialog((d) => ({ ...d, open: false }))}>
             Hủy
           </Button>
           <Button
             variant="contained"
             onClick={handleSave}
-            sx={{ borderRadius: 2 }}
           >
             Lưu
           </Button>

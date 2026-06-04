@@ -118,7 +118,7 @@ const Header = () => {
 
   const navButtonSx = {
     color: headerTextColor, 
-    fontWeight: 500, 
+    fontWeight: 600, 
     fontSize: '0.9375rem',
     textTransform: 'none', 
     px: 1.5, 
@@ -187,7 +187,7 @@ const Header = () => {
                       <Button
                         key={child.label} component={Link} to={toOrgPath(child.href)}
                         sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
-                              textTransform: 'none', color: 'text.primary', width: '100%',
+                              textTransform: 'none', color: 'text.primary', width: '100%', fontWeight: 500,
                               '&:hover': { bgcolor: 'action.hover' } }}
                       >
                         {child.label}
