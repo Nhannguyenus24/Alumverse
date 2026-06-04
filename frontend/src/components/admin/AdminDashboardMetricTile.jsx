@@ -22,14 +22,14 @@ const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
           {label}
         </Typography>
         {icon && (
-          <Box sx={{ p: 1, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', display: 'flex' }}>
+          <Box sx={{ borderRadius: 2, color: 'primary.main', display: 'flex' }}>
             {icon}
           </Box>
         )}
       </Box>
 
       <Box sx={{ mt: 'auto' }}>
-        <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800, lineHeight: 1 }}>
+        <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 800, lineHeight: 1 }}>
           {value}
         </Typography>
         
@@ -43,7 +43,7 @@ const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
                   px: 1, 
                   py: 0.25, 
                   borderRadius: 1, 
-                  bgcolor: trend > 0 ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.error.main, 0.1),
+                  bgcolor: trend > 0 ? 'success.lighter' : 'error.lighter',
                   color: trend > 0 ? 'success.main' : 'error.main',
                 }}
               >

@@ -17,8 +17,10 @@ class ApiEndpoints {
   static const String authRegister = '/api/auth/register';
   static const String authRefresh = '/api/auth/refresh';
   static const String authLogout = '/api/auth/logout';
-  static const String authGoogle = '/api/auth/google';
-  static const String authMe = '/api/auth/me';
+  static const String authGoogleLogin = '/api/auth/google-login';
+  static const String authSendOtp = '/api/auth/send-otp';
+  static const String authVerifyOtp = '/api/auth/verify-otp';
+  static String authChangePassword(int userId) => '/api/auth/password/$userId';
 
   // --- User Settings / Me ---
   static const String meProfile = '/api/users/me/profile';
@@ -52,37 +54,49 @@ class ApiEndpoints {
   static const String forumTopics = '/api/forum/topics';
   static const String forumPosts = '/api/forum/posts';
 
+  // --- Articles / News ---
+  static const String newsPublished = '/api/articles/news/published';
+  static const String alumniPostsPublished = '/api/articles/alumni-posts/published';
+  static String newsDetail(int id) => '/api/articles/news/$id';
+
   // --- Events ---
   static const String events = '/api/events';
+  static const String eventsUpcoming = '/api/events/upcoming';
+  static const String eventsPast = '/api/events/past';
   static String eventDetail(int id) => '/api/events/$id';
   static String eventPublish(int id) => '/api/events/$id/publish';
   static String eventUnpublish(int id) => '/api/events/$id/unpublish';
 
-  // --- Mentorship ---
-  static const String mentorshipMenteeProfile = '/api/mentorship/mentee-profile';
-  static const String mentorshipMentors = '/api/mentorship/mentors';
-  static const String mentorshipMentorSearch = '/api/mentorship/mentors/search';
-  static const String mentorshipMentorFilter = '/api/mentorship/mentors/filter';
-  static const String mentorshipExpertiseTopics = '/api/mentorship/expertise/topics';
-  static const String mentorshipExpertiseCategories = '/api/mentorship/expertise/categories';
-  static String mentorshipMentorExpertise(int memberId) => '/api/mentorship/mentors/$memberId/expertise';
-  static String mentorshipMentorAvailability(int memberId) => '/api/mentorship/mentors/$memberId/availability';
-  static String mentorshipMentorFeedbacks(int memberId) => '/api/mentorship/mentors/$memberId/feedbacks';
-  static const String mentorshipSessions = '/api/mentorship/sessions';
-  static const String mentorshipSessionsMentee = '/api/mentorship/sessions/mentee';
-  static const String mentorshipSessionsMentor = '/api/mentorship/sessions/mentor';
-  static String mentorshipSessionDetail(int id) => '/api/mentorship/sessions/$id';
-  static String mentorshipSessionCancel(int id) => '/api/mentorship/sessions/$id/cancel';
-  static String mentorshipSessionFeedback(int id) => '/api/mentorship/sessions/$id/feedback';
-  static String mentorshipSessionStatus(int id) => '/api/mentorship/sessions/$id/status';
-  static const String mentorshipProfile = '/api/mentorship/profile';
-  static const String mentorshipProfileDraft = '/api/mentorship/profile/draft';
-  static const String mentorshipExpertise = '/api/mentorship/expertise';
-  static String mentorshipExpertiseDelete(int id) => '/api/mentorship/expertise/$id';
-  static const String mentorshipAvailability = '/api/mentorship/availability';
-  static String mentorshipAvailabilityDelete(int id) => '/api/mentorship/availability/$id';
-  static const String mentorshipFeedbacks = '/api/mentorship/feedbacks';
-  static const String mentorshipCvUpload = '/api/mentorship/cv/upload';
+  // --- Mentorship (mentee side) ---
+  // Backend splits mentee/mentor controllers: `/api/mentorship/mentee/*`
+  // and `/api/mentorship/mentor/*`. Do NOT use a flat `/mentorship/...`.
+  static const String menteeMentors = '/api/mentorship/mentee/mentors';
+  static const String menteeMentorSearch = '/api/mentorship/mentee/mentors/search';
+  static const String menteeMentorFilter = '/api/mentorship/mentee/mentors/filter';
+  static const String menteeExpertiseTopics = '/api/mentorship/mentee/expertise-topics';
+  static const String menteeExpertiseCategories = '/api/mentorship/mentee/expertise-categories';
+  static String menteeMentorProfile(int memberId) => '/api/mentorship/mentee/mentors/$memberId';
+  static String menteeMentorExpertise(int memberId) => '/api/mentorship/mentee/mentors/$memberId/expertise';
+  static String menteeMentorAvailability(int memberId) => '/api/mentorship/mentee/mentors/$memberId/availability';
+  static String menteeMentorFeedbacks(int memberId) => '/api/mentorship/mentee/mentors/$memberId/feedbacks';
+  static const String menteeProfile = '/api/mentorship/mentee/profile';
+  static const String menteeBookSession = '/api/mentorship/mentee/sessions/book';
+  static const String menteeSessions = '/api/mentorship/mentee/sessions';
+  static String menteeSessionDetail(int id) => '/api/mentorship/mentee/sessions/$id';
+  static String menteeSessionCancel(int id) => '/api/mentorship/mentee/sessions/$id/cancel';
+  static String menteeSessionFeedback(int id) => '/api/mentorship/mentee/sessions/$id/feedback';
+  static String menteeMentorFeedbacksPage(int memberId, int page, int limit) =>
+      '/api/mentorship/mentee/mentors/$memberId/feedbacks?page=$page&limit=$limit';
+
+  // --- Mentorship (mentor side) ---
+  static const String mentorProfile = '/api/mentorship/mentor/profile';
+  static const String mentorProfileDraft = '/api/mentorship/mentor/profile/draft';
+  static const String mentorExpertise = '/api/mentorship/mentor/expertise';
+  static const String mentorSessions = '/api/mentorship/mentor/sessions';
+  static String mentorSessionStatus(int id) => '/api/mentorship/mentor/sessions/$id/status';
+  static const String mentorAvailability = '/api/mentorship/mentor/availability';
+  static String mentorAvailabilityDelete(int id) => '/api/mentorship/mentor/availability/$id';
+  static const String mentorFeedbacks = '/api/mentorship/mentor/feedbacks';
 
   // --- Funds ---
   static const String funds = '/api/funds';
@@ -116,8 +130,8 @@ class ApiEndpoints {
   static const String adminUserBan = '/api/admin/users/ban';
   static const String adminUserUnban = '/api/admin/users/unban';
   static const String adminUserAdmins = '/api/admin/users/admins';
-  static const String adminUserActivity(int id) => '/api/admin/users/$id/activity';
-  static const String adminUserResetPassword(int id) => '/api/admin/users/$id/reset-password';
+  static String adminUserActivity(int id) => '/api/admin/users/$id/activity';
+  static String adminUserResetPassword(int id) => '/api/admin/users/$id/reset-password';
   static const String adminVerificationRequests = '/api/admin/users/verification-requests';
   static String adminUserVerificationRequests(int id) => '/api/admin/users/$id/verification-requests';
   static String adminReviewVerificationRequest(int id) => '/api/admin/users/verification-requests/$id';
