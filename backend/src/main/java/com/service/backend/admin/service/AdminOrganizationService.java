@@ -266,17 +266,17 @@ public class AdminOrganizationService {
                 .doOnSuccess(r -> logger.info("updateBrandConfig result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<Map<String, FeatureConfig.Feature>> getFeatures(Integer organizationId) {
+    public Mono<FeatureConfig.OrganizationFeatures> getFeatures(Integer organizationId) {
         return requireOrganization(organizationId)
                 .map(org -> {
-                    Map<String, FeatureConfig.Feature> features =
+                    FeatureConfig.OrganizationFeatures features =
                             parseConfig(org.getFeaturesConfig()).getFeaturesConfig();
-                    return features != null ? features : new HashMap<>();
+                    return features != null ? features : new FeatureConfig.OrganizationFeatures();
                 });
     }
 
     public Mono<FeatureConfig> updateFeatures(Integer organizationId,
-            Map<String, FeatureConfig.Feature> featuresConfig) {
+            FeatureConfig.OrganizationFeatures featuresConfig) {
         return requireOrganization(organizationId)
                 .flatMap(org -> {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
@@ -300,7 +300,7 @@ public class AdminOrganizationService {
                     FeatureConfig.Feature feature = requireFeature(config, featureName);
                     if (patch.getEnabled() != null) feature.setEnabled(patch.getEnabled());
                     if (patch.getSettings() != null) feature.setSettings(patch.getSettings());
-                    config.getFeaturesConfig().put(featureName, feature);
+                    config.getFeaturesConfig().setFeature(featureName, feature);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
                 })
@@ -313,7 +313,7 @@ public class AdminOrganizationService {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
                     FeatureConfig.Feature feature = requireFeature(config, featureName);
                     feature.setEnabled(!Boolean.TRUE.equals(feature.getEnabled()));
-                    config.getFeaturesConfig().put(featureName, feature);
+                    config.getFeaturesConfig().setFeature(featureName, feature);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
                     return organizationRepository.save(org).thenReturn(config);
                 })
@@ -472,11 +472,12 @@ public class AdminOrganizationService {
     }
 
     private FeatureConfig.Feature requireFeature(FeatureConfig config, String featureName) {
-        Map<String, FeatureConfig.Feature> features = config.getFeaturesConfig();
-        if (features == null || !features.containsKey(featureName)) {
+        FeatureConfig.OrganizationFeatures features = config.getFeaturesConfig();
+        FeatureConfig.Feature feature = (features != null) ? features.getFeature(featureName) : null;
+        if (feature == null) {
             throw new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND,
                     "Feature not found: " + featureName);
         }
-        return features.get(featureName);
+        return feature;
     }
 }

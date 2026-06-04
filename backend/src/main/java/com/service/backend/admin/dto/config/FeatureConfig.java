@@ -22,7 +22,7 @@ public class FeatureConfig {
     private BrandConfig brandConfig;
 
     @JsonProperty("features_config")
-    private Map<String, Feature> featuresConfig;
+    private OrganizationFeatures featuresConfig;
 
     @JsonProperty("privacy_settings")
     private PrivacySettings privacySettings;
@@ -67,9 +67,52 @@ public class FeatureConfig {
     // ── features_config ────────────────────────────────────────────────────────
 
     @Data @NoArgsConstructor @AllArgsConstructor @Builder
+    public static class OrganizationFeatures {
+        private Feature mentorship;
+        private Feature job;
+        private Feature fund;
+        private Feature events;
+        private Feature forum;
+
+        public Feature getFeature(String name) {
+            return switch (name.toLowerCase()) {
+                case "mentorship" -> mentorship;
+                case "job" -> job;
+                case "fund" -> fund;
+                case "events" -> events;
+                case "forum" -> forum;
+                default -> null;
+            };
+        }
+
+        public void setFeature(String name, Feature feature) {
+            switch (name.toLowerCase()) {
+                case "mentorship" -> mentorship = feature;
+                case "job" -> job = feature;
+                case "fund" -> fund = feature;
+                case "events" -> events = feature;
+                case "forum" -> forum = feature;
+            }
+        }
+    }
+
+    @Data @NoArgsConstructor @AllArgsConstructor @Builder
     public static class Feature {
         private Boolean enabled;
         private Map<String, Object> settings;
+
+        @com.fasterxml.jackson.annotation.JsonCreator
+        public static Feature fromValue(Object value) {
+            if (value instanceof Boolean b) {
+                return Feature.builder().enabled(b).build();
+            }
+            if (value instanceof Map map) {
+                Boolean enabled = (Boolean) map.get("enabled");
+                Map<String, Object> settings = (Map<String, Object>) map.get("settings");
+                return Feature.builder().enabled(enabled).settings(settings).build();
+            }
+            return null;
+        }
     }
 
     // ── privacy_settings ───────────────────────────────────────────────────────

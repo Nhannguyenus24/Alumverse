@@ -271,7 +271,7 @@ public class AdminOrganizationController {
     }
 
     @GetMapping("/{organizationId}/features-config/features")
-    public Mono<ResponseEntity<ApiResponse<Map<String, FeatureConfig.Feature>>>> getFeatures(
+    public Mono<ResponseEntity<ApiResponse<FeatureConfig.OrganizationFeatures>>> getFeatures(
             @PathVariable Integer organizationId) {
         return organizationService.getFeatures(organizationId)
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Fetched successfully", v)));
@@ -280,7 +280,7 @@ public class AdminOrganizationController {
     @PutMapping("/{organizationId}/features-config/features")
     public Mono<ResponseEntity<ApiResponse<FeatureConfig>>> updateFeatures(
             @PathVariable Integer organizationId,
-            @RequestBody Map<String, FeatureConfig.Feature> featuresConfig) {
+            @RequestBody FeatureConfig.OrganizationFeatures featuresConfig) {
         return organizationService.updateFeatures(organizationId, featuresConfig)
                 .map(updated -> ResponseEntity.ok(new ApiResponse<>("Updated successfully", updated)));
     }
