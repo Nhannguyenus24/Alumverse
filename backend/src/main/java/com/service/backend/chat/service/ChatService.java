@@ -4,6 +4,7 @@ import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
+import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
@@ -461,10 +462,42 @@ public class ChatService {
     }
 
     /**
-     * Get members of a group.
+     * Get members of a group with profile info.
+     * Only existing group members can view the list.
      */
-    public Flux<ChatGroupMember> getGroupMembers(Long groupId) {
-        return chatGroupMemberRepository.findByGroupId(groupId);
+    public Mono<PaginatedResponse<ChatGroupMemberItemResponse>> getGroupMembersWithProfile(
+            Long groupId,
+            Long currentMemberId,
+            String text,
+            int page,
+            int size) {
+        if (groupId == null || currentMemberId == null) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Group ID and current member ID must not be null"));
+        }
+
+        int limit = Math.max(size, 1);
+        int offset = Math.max(page, 0) * limit;
+        String namePattern = toContainsPattern(text);
+
+        return chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, currentMemberId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
+                        "Current user is not a member of this chat group")))
+                .flatMap(ignored -> Mono.zip(
+                        chatGroupMemberRepository.countMembersByGroupIdWithNameFilter(groupId, namePattern),
+                        chatGroupMemberRepository
+                                .findMembersByGroupIdWithProfile(groupId, namePattern, limit, offset)
+                                .collectList()))
+                .map(tuple -> PaginatedResponse.of(tuple.getT2(), tuple.getT1(), page, limit));
+    }
+
+    private static String toContainsPattern(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        return "%" + text.trim() + "%";
     }
 
     /**

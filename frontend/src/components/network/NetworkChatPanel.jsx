@@ -13,6 +13,7 @@ import SendIcon from '@mui/icons-material/Send';
 import MoodIcon from '@mui/icons-material/Mood';
 
 import Scrollbar from '../Scrollbar';
+import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import useAuthStore from '../../stores/authStore';
@@ -29,6 +30,7 @@ const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat }) => {
   const [draft, setDraft] = useState('');
+  const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
   const token = useAuthStore((state) => state.token ?? null);
   const currentUserId = useAuthStore((state) => state.user?.id ?? null);
 
@@ -76,6 +78,10 @@ const NetworkChatPanel = ({ activeChat }) => {
       wsActionsRef.current.joinGroup(currentGroupId);
     }
     prevGroupIdRef.current = currentGroupId;
+  }, [activeChat?.id]);
+
+  useEffect(() => {
+    setMembersDrawerOpen(false);
   }, [activeChat?.id]);
 
   // --- Scroll ---
@@ -175,6 +181,7 @@ const NetworkChatPanel = ({ activeChat }) => {
             avatarUrl={activeChat?.avatarUrl}
             name={activeChat?.name}
             size={40}
+            variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
           />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
@@ -187,10 +194,22 @@ const NetworkChatPanel = ({ activeChat }) => {
             )}
           </Box>
         </Box>
-        <IconButton size="small" aria-label="More options">
+        <IconButton
+          size="small"
+          aria-label="Xem thành viên nhóm"
+          disabled={activeChat?.type !== 'GROUP'}
+          onClick={() => setMembersDrawerOpen(true)}
+        >
           <MoreHorizIcon />
         </IconButton>
       </Box>
+
+      <GroupMembersDrawer
+        open={membersDrawerOpen}
+        onClose={() => setMembersDrawerOpen(false)}
+        groupId={activeChat?.type === 'GROUP' ? activeChat.id : null}
+        groupName={activeChat?.name}
+      />
 
       {/* Message list */}
       <Scrollbar

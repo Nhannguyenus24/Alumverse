@@ -1,19 +1,22 @@
 package com.service.backend.chat.dto;
 
+import com.service.backend.shared.enums.ChatRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NetworkMemberSearchItemResponse {
+public class ChatGroupMemberItemResponse {
 
-    private Integer userId;
+    private Long memberId;
     private String fullName;
-    private String program;
-    private String major;
     private String avatarUrl;
+    private ChatRole role;
+    private LocalDateTime joinedAt;
 }
