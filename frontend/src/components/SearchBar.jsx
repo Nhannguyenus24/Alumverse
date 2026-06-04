@@ -31,7 +31,8 @@ const SearchBar = ({
           borderRadius: 10,
           fontSize: '0.8rem',
           fontWeight: 500,
-          pl: 1.5,
+          py: 0.75,
+          px: 2,
           bgcolor: 'grey.200',
           ...inputSx,
         },
@@ -41,7 +42,7 @@ const SearchBar = ({
           <InputAdornment position="start">
             <SearchIcon
               sx={{
-                fontSize: '1rem',
+                fontSize: '1.5rem',
                 color: 'text.secondary',
                 ...iconSx,
               }}

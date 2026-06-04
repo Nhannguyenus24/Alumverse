@@ -126,7 +126,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
         ) : null}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} disabled={loading} sx={{ textTransform: 'none' }}>
+        <Button variant="outlined" color="secondary" onClick={onClose} disabled={loading} sx={{ textTransform: 'none' }}>
           Hủy
         </Button>
         <Button

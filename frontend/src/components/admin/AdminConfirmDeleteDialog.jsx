@@ -27,7 +27,7 @@ const AdminConfirmDeleteDialog = ({
         </Typography>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none' }}>
+        <Button variant="outlined" color="secondary" onClick={onClose} sx={{ textTransform: 'none' }}>
           Hủy
         </Button>
         <Button
