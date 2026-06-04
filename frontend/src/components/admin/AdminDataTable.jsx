@@ -19,7 +19,7 @@ import {
   Tooltip,
   Collapse,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import SearchBar from '../SearchBar';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -73,25 +73,12 @@ const AdminDataTable = ({
           justifyContent="space-between"
         >
           {/* Search */}
-          <TextField
-            size="small"
+          <SearchBar
             value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
+            onChange={onSearchChange}
             placeholder={searchPlaceholder}
-            sx={{ 
-              maxWidth: { md: 320 },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: alpha(theme.palette.action.hover, 0.5),
-                '&:hover': { bgcolor: theme.palette.action.hover },
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
+            sx={{
+              maxWidth: { md: 400 },
             }}
           />
 
@@ -136,9 +123,9 @@ const AdminDataTable = ({
                   key={column.id}
                   align={column.align || 'left'}
                   sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? '#F4F6F8' : t.palette.background.default,
+                    bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
                     fontWeight: 700,
-                    color: 'text.secondary',
+                    color: 'primary.contrastText',
                     fontSize: 13,
                     py: 2,
                     textTransform: 'uppercase',

@@ -138,7 +138,7 @@ const Chart = ({
   return (
     <Paper sx={{ p: 2 }}>
       {title && (
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h6" sx={{ pb: 3 }}>
           {title}
         </Typography>
       )}

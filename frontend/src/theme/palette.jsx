@@ -29,27 +29,27 @@ const INFO = {
 };
 
 const SUCCESS = {
-  lighter: '#5dff5d',
-  light: '#0bc90b',
+  lighter: '#ddffdd',
+  light: '#66db66',
   main: '#00A500',
   dark: '#005a00',
   darker: '#004400',
 };
 
 const WARNING = {
-  lighter: '#ffe76e',
-  light: '#f3d438',
+  lighter: '#fff4bb',
+  light: '#f7db51',
   main: '#DFBA00',
   dark: '#998000',
-  darker: '#6b5900',
+  darker: '#5a4b00',
 };
 
 const ERROR = {
-  lighter: '#ff8d8d',
-  light: '#fa3f3f',
+  lighter: '#ffcece',
+  light: '#ff5e5e',
   main: '#E70000',
   dark: '#910000',
-  darker: '#570000',
+  darker: '#550000',
 };
 
 const GREY = {
@@ -100,8 +100,8 @@ const COMMON = {
   tertiary: { ...TERTIARY },
   footer: { ...FOOTER },
   info: { ...INFO, contrastText: '#fff' },
-  success: { ...SUCCESS, contrastText: GREY[800] },
-  warning: { ...WARNING, contrastText: GREY[800] },
+  success: { ...SUCCESS, contrastText: '#fff' },
+  warning: { ...WARNING, contrastText: '#fff' },
   error: { ...ERROR, contrastText: '#fff' },
   grey: GREY,
   gradients: GRADIENTS,

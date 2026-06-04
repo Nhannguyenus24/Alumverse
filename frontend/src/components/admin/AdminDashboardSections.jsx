@@ -6,10 +6,17 @@ import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
 
 const chartBlockSx = {
-  flex: '1 1 300px',
-  minWidth: 280,
-  display: 'flex',
-  flexDirection: 'column',
+  flex: '1 1 300px', minWidth: 280, display: 'flex', flexDirection: 'column',
+};
+
+const metricGridSx = {
+  display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3,
+  '& > *': {
+    flex: {
+      xs: '1 1 100%', sm: '1 1 calc(50% - 12px)',
+      md: '1 1 calc(25% - 12px)', lg: '1 1 0',
+    },
+  },
 };
 
 const AdminDashboardSections = ({ aggregates, forumStats }) => {
@@ -22,28 +29,16 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         title="Người dùng"
         subtitle="Tài khoản, xu hướng đăng ký và phân loại trạng thái."
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            mb: 3,
-            '& > *': {
-              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(33.333% - 12px)', lg: '1 1 0' },
-            },
-          }}
-        >
+        <Box sx={{ ...metricGridSx }}>
           <AdminDashboardMetricTile label="Tổng người dùng" value={user.totalUsers} valueColor="primary.main" />
           <AdminDashboardMetricTile
-            label="Mới (7 ngày)"
+            label="Tham gia tuần này"
             value={user.newUsersWeek}
-            caption="Tuần qua"
             valueColor="info.main"
           />
           <AdminDashboardMetricTile
-            label="Mới (30 ngày)"
+            label="Tham gia tháng này"
             value={user.newUsersMonth}
-            caption="Tháng qua"
             valueColor="info.dark"
           />
           <AdminDashboardMetricTile label="Hoạt động" value={user.activeUsers} valueColor="success.main" />
@@ -67,28 +62,22 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         subtitle="Khối lượng bài viết, tình trạng kiểm duyệt và thống kê trực tiếp từ API."
       >
         {/* Row 1: core metrics from local aggregates + API stats */}
-        <Box
-          sx={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 2,
-            mb: 3,
-            '& > *': {
-              flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 12px)', lg: '1 1 0' },
-            },
-          }}
-        >
-          <AdminDashboardMetricTile label="Tổng bài viết" value={stats.totalPosts ?? forum.totalPosts} valueColor="primary.main" />
-          <AdminDashboardMetricTile label="Tổng chủ đề" value={stats.totalTopics ?? 0} valueColor="info.main" />
-          <AdminDashboardMetricTile label="Tổng danh mục" value={stats.totalCategories ?? 0} valueColor="info.dark" />
-          <AdminDashboardMetricTile label="Đã khóa" value={stats.bannedPosts ?? 0} valueColor="error.main" />
-          <AdminDashboardMetricTile label="Chủ đề hôm nay" value={stats.newTopicsToday ?? 0} valueColor="success.main" />
-          <AdminDashboardMetricTile label="Bài viết hôm nay" value={stats.newPostsToday ?? 0} valueColor="success.dark" />
-          <AdminDashboardMetricTile label="Chờ duyệt" value={forum.pending} valueColor="warning.main" />
-          <AdminDashboardMetricTile label="Bị báo cáo" value={forum.flagged} valueColor="error.light" />
-          <AdminDashboardMetricTile label="Đã duyệt" value={forum.approved} valueColor="success.main" />
-          <AdminDashboardMetricTile label="Đã từ chối" value={forum.rejected} valueColor="text.secondary" />
-          <AdminDashboardMetricTile label="Báo xấu" value={forum.totalFlags} valueColor="secondary.main" />
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ ...metricGridSx }}>
+            <AdminDashboardMetricTile label="Tổng bài viết" value={stats.totalPosts ?? forum.totalPosts} valueColor="primary.main" />
+            <AdminDashboardMetricTile label="Tổng chủ đề" value={stats.totalTopics ?? 0} valueColor="info.main" />
+            <AdminDashboardMetricTile label="Tổng danh mục" value={stats.totalCategories ?? 0} valueColor="info.dark" />
+            <AdminDashboardMetricTile label="Chủ đề hôm nay" value={stats.newTopicsToday ?? 0} valueColor="success.main" />
+            <AdminDashboardMetricTile label="Bài viết hôm nay" value={stats.newPostsToday ?? 0} valueColor="success.dark" />
+          </Box>
+          <Box sx={{ ...metricGridSx }}>
+            <AdminDashboardMetricTile label="Chờ duyệt" value={forum.pending} valueColor="warning.main" />
+            <AdminDashboardMetricTile label="Đã duyệt" value={forum.approved} valueColor="success.main" />
+            <AdminDashboardMetricTile label="Đã từ chối" value={forum.rejected} valueColor="text.secondary" />
+            <AdminDashboardMetricTile label="Bị báo cáo" value={forum.flagged} valueColor="error.light" />
+            <AdminDashboardMetricTile label="Báo xấu" value={forum.totalFlags} valueColor="secondary.main" />
+            <AdminDashboardMetricTile label="Đã khóa" value={stats.bannedPosts ?? 0} valueColor="error.main" />
+          </Box>
         </Box>
 
         {/* Row 2: charts */}
@@ -132,7 +121,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <StarOutlinedIcon sx={{ color: 'warning.main', fontSize: 20 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'warning.main' }}>
                     Chủ đề nổi bật nhất
                   </Typography>
                 </Box>
@@ -167,8 +156,8 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <StarOutlinedIcon sx={{ color: 'info.main', fontSize: 20 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                  <StarOutlinedIcon sx={{ color: 'success.main', fontSize: 20 }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main' }}>
                     Danh mục nổi bật nhất
                   </Typography>
                 </Box>
@@ -197,8 +186,8 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         {stats.ghostTopics && stats.ghostTopics.length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <WarningAmberOutlinedIcon sx={{ color: 'warning.main', fontSize: 20 }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'warning.dark' }}>
+              <WarningAmberOutlinedIcon sx={{ color: 'error.main', fontSize: 20 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'error.main' }}>
                 Chủ đề bị lãng quên ({stats.ghostTopics.length})
               </Typography>
               <Typography variant="caption" color="text.secondary">
@@ -229,7 +218,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
       </AdminSectionPanel>
 
       <AdminSectionPanel
-        title="Tổ chức / Đơn vị"
+        title="Tổ chức & Đơn vị"
         subtitle="Tổng quan về vòng đời và các cộng đồng hàng đầu theo số lượng thành viên."
       >
         <Box
@@ -268,7 +257,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
           }}
         >
           <Box sx={{ flex: '1 1 280px', minWidth: 260 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'primary.main', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography variant="h6" sx={{ color: 'warning.main', pb: 2 }}>
               Top theo thành viên
             </Typography>
             <List disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.default' }}>
@@ -293,7 +282,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
             </List>
           </Box>
           <Box sx={{ flex: '1 1 280px', minWidth: 260 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: 'success.main', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <Typography variant="h6" sx={{ color: 'success.main', pb: 2 }}>
               Tổ chức đang hoạt động
             </Typography>
             <List disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.default' }}>
