@@ -5,6 +5,9 @@ import '../constants/storage_keys.dart';
 
 final secureStorageProvider = Provider<SecureStorage>((ref) => SecureStorage());
 
+/// Secure key/value store for auth state. The refresh token is intentionally
+/// NOT stored here — the backend keeps it in an HTTP-only cookie managed by the
+/// dio cookie jar. We persist only the access token and verification level.
 class SecureStorage {
   final FlutterSecureStorage _storage = const FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
@@ -16,11 +19,13 @@ class SecureStorage {
   Future<String?> readAccessToken() =>
       _storage.read(key: StorageKeys.accessToken);
 
-  Future<void> writeRefreshToken(String token) =>
-      _storage.write(key: StorageKeys.refreshToken, value: token);
+  Future<void> writeVerificationLevel(int level) =>
+      _storage.write(key: StorageKeys.verificationLevel, value: '$level');
 
-  Future<String?> readRefreshToken() =>
-      _storage.read(key: StorageKeys.refreshToken);
+  Future<int?> readVerificationLevel() async {
+    final raw = await _storage.read(key: StorageKeys.verificationLevel);
+    return raw == null ? null : int.tryParse(raw);
+  }
 
   Future<void> writeOrganizationSlug(String slug) =>
       _storage.write(key: StorageKeys.organizationSlug, value: slug);
@@ -30,7 +35,7 @@ class SecureStorage {
 
   Future<void> clearAuth() async {
     await _storage.delete(key: StorageKeys.accessToken);
-    await _storage.delete(key: StorageKeys.refreshToken);
+    await _storage.delete(key: StorageKeys.verificationLevel);
     await _storage.delete(key: StorageKeys.currentUser);
   }
 

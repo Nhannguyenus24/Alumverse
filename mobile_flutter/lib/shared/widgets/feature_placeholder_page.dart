@@ -1,0 +1,56 @@
+import 'package:flutter/material.dart';
+
+import '../../core/theme/app_colors.dart';
+
+/// Generic "coming soon" screen for features that are routed but not built yet.
+/// Lets navigation from the home menu work end-to-end without dead taps.
+class FeaturePlaceholderPage extends StatelessWidget {
+  const FeaturePlaceholderPage({
+    super.key,
+    required this.title,
+    required this.icon,
+    this.message = 'Tính năng đang được phát triển',
+  });
+
+  final String title;
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 48, color: AppColors.primary),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                title,
+                style: const TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.w600),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                style: const TextStyle(color: AppColors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

@@ -18,4 +18,12 @@ class Env {
     'IMAGE_BASE_URL',
     defaultValue: 'http://10.0.2.2/images/',
   );
+
+  /// Default organization slug. The web client currently runs a single tenant
+  /// (`cs-hcmus`), so the mobile app boots straight into it instead of asking
+  /// the user to pick one. Override at build time with --dart-define.
+  static const String defaultOrganizationSlug = String.fromEnvironment(
+    'DEFAULT_ORG_SLUG',
+    defaultValue: 'cs-hcmus',
+  );
 }

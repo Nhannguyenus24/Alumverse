@@ -1,0 +1,493 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../core/router/route_names.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../data/models/mentorship_session.dart';
+import '../../data/repositories/mentorship_repository.dart';
+import '../providers/mentorship_providers.dart';
+import '../widgets/feedback_card.dart';
+
+/// Mentor-side dashboard: stats, pending requests to accept/reject, upcoming
+/// confirmed sessions. Mirrors `MentorshipDashboardPage.jsx`.
+class MentorDashboardPage extends ConsumerStatefulWidget {
+  const MentorDashboardPage({super.key});
+
+  @override
+  ConsumerState<MentorDashboardPage> createState() =>
+      _MentorDashboardPageState();
+}
+
+class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabCtrl = TabController(length: 3, vsync: this);
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sessionsAsync = ref.watch(mentorSessionsProvider);
+    final profileAsync = ref.watch(myMentorProfileProvider);
+
+    final ratingLabel = profileAsync.valueOrNull?.ratingAvg != null
+        ? profileAsync.valueOrNull!.ratingAvg!.toStringAsFixed(1)
+        : '-';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Quản lý cố vấn'),
+        actions: [
+          IconButton(
+            tooltip: 'Lịch rảnh của tôi',
+            icon: const Icon(Icons.calendar_month),
+            onPressed: () => context.push(RouteNames.mentorAvailability),
+          ),
+        ],
+        bottom: TabBar(
+          controller: _tabCtrl,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
+          tabs: const [
+            Tab(text: 'Chờ duyệt'),
+            Tab(text: 'Sắp tới'),
+            Tab(text: 'Đánh giá nhận được'),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          // ── Stats banner ─────────────────────────────────────────
+          sessionsAsync.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (sessions) {
+              final pending = sessions
+                  .where((s) =>
+                      (s.status ?? '').toUpperCase() == 'PENDING')
+                  .length;
+              final completed = sessions
+                  .where((s) =>
+                      (s.status ?? '').toUpperCase() == 'COMPLETED')
+                  .length;
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 14, horizontal: 16),
+                color: AppColors.primary,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _Stat(value: '${sessions.length}', label: 'Lượt đặt'),
+                    _Stat(value: '$pending', label: 'Chờ duyệt'),
+                    _Stat(value: '$completed', label: 'Hoàn thành'),
+                    _Stat(value: ratingLabel, label: 'Đánh giá'),
+                  ],
+                ),
+              );
+            },
+          ),
+          // ── Tab content ──────────────────────────────────────────
+          Expanded(
+            child: sessionsAsync.when(
+              loading: () =>
+                  const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Không tải được danh sách'),
+                    TextButton(
+                      onPressed: () =>
+                          ref.invalidate(mentorSessionsProvider),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              ),
+              data: (sessions) {
+                final pending = sessions
+                    .where((s) =>
+                        (s.status ?? '').toUpperCase() == 'PENDING')
+                    .toList();
+                final upcoming = sessions
+                    .where((s) =>
+                        (s.status ?? '').toUpperCase() == 'CONFIRMED')
+                    .toList();
+                return TabBarView(
+                  controller: _tabCtrl,
+                  children: [
+                    _PendingList(sessions: pending),
+                    _UpcomingList(sessions: upcoming),
+                    const _FeedbackList(),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Pending requests ───────────────────────────────────────────────────────
+
+class _PendingList extends ConsumerWidget {
+  const _PendingList({required this.sessions});
+  final List<MentorshipSession> sessions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (sessions.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.inbox_outlined,
+                size: 48, color: AppColors.textSecondary),
+            SizedBox(height: 12),
+            Text('Không có yêu cầu chờ duyệt',
+                style: TextStyle(color: AppColors.textSecondary)),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(mentorSessionsProvider);
+        await ref.read(mentorSessionsProvider.future);
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: sessions.length,
+        itemBuilder: (_, i) => _PendingCard(session: sessions[i]),
+      ),
+    );
+  }
+}
+
+class _PendingCard extends ConsumerWidget {
+  const _PendingCard({required this.session});
+  final MentorshipSession session;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final when = session.startTime != null
+        ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
+        : 'Chờ xác nhận thời gian';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              session.menteeName ?? 'Mentee #${session.menteeMemberId}',
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 6),
+            _InfoLine(icon: Icons.schedule, text: when),
+            if (session.sessionType != null)
+              _InfoLine(
+                  icon: Icons.category_outlined,
+                  text: _typeLabel(session.sessionType!)),
+            if (session.introduction != null &&
+                session.introduction!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                session.introduction!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 13),
+              ),
+            ],
+            const SizedBox(height: 12),
+            _AcceptRejectButtons(session: session),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _typeLabel(String t) => switch (t.toUpperCase()) {
+        'CAREER' => 'Nghề nghiệp',
+        'ACADEMIC' => 'Học thuật',
+        'SOFT_SKILLS' => 'Kỹ năng mềm',
+        _ => t,
+      };
+}
+
+class _AcceptRejectButtons extends ConsumerStatefulWidget {
+  const _AcceptRejectButtons({required this.session});
+  final MentorshipSession session;
+
+  @override
+  ConsumerState<_AcceptRejectButtons> createState() =>
+      _AcceptRejectButtonsState();
+}
+
+class _AcceptRejectButtonsState
+    extends ConsumerState<_AcceptRejectButtons> {
+  bool _loading = false;
+  String? _action; // 'confirm' | 'reject'
+
+  Future<void> _update(String status) async {
+    String? meetingLink;
+    if (status == 'CONFIRMED') {
+      meetingLink = await _askMeetingLink();
+      if (meetingLink == null) return; // cancelled
+    }
+    setState(() {
+      _loading = true;
+      _action = status == 'CONFIRMED' ? 'confirm' : 'reject';
+    });
+    try {
+      await ref.read(mentorshipRepositoryProvider).updateSessionStatus(
+            widget.session.id,
+            status: status,
+            meetingLink: meetingLink,
+          );
+      ref.invalidate(mentorSessionsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(status == 'CONFIRMED'
+              ? 'Đã xác nhận lịch hẹn'
+              : 'Đã từ chối yêu cầu'),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content:
+                Text(e.toString().replaceFirst('Exception: ', ''))));
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<String?> _askMeetingLink() async {
+    final ctl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Link họp'),
+        content: TextField(
+          controller: ctl,
+          keyboardType: TextInputType.url,
+          decoration: const InputDecoration(
+            hintText: 'https://meet.google.com/...',
+            labelText: 'Link meeting (tùy chọn)',
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy')),
+          ElevatedButton(
+              onPressed: () => Navigator.pop(context, ctl.text.trim()),
+              child: const Text('Xác nhận')),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton(
+            onPressed: (_loading && _action == 'reject')
+                ? null
+                : () => _update('REJECTED'),
+            style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error)),
+            child: (_loading && _action == 'reject')
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: AppColors.error))
+                : const Text('Từ chối'),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: ElevatedButton(
+            onPressed: (_loading && _action == 'confirm')
+                ? null
+                : () => _update('CONFIRMED'),
+            child: (_loading && _action == 'confirm')
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Text('Xác nhận'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Upcoming confirmed sessions ────────────────────────────────────────────
+
+class _UpcomingList extends ConsumerWidget {
+  const _UpcomingList({required this.sessions});
+  final List<MentorshipSession> sessions;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (sessions.isEmpty) {
+      return const Center(
+        child: Text('Không có buổi nào sắp tới',
+            style: TextStyle(color: AppColors.textSecondary)),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: sessions.length,
+      itemBuilder: (_, i) => _UpcomingCard(session: sessions[i]),
+    );
+  }
+}
+
+class _UpcomingCard extends StatelessWidget {
+  const _UpcomingCard({required this.session});
+  final MentorshipSession session;
+
+  @override
+  Widget build(BuildContext context) {
+    final when = session.startTime != null
+        ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
+        : '-';
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: const CircleAvatar(
+          backgroundColor: AppColors.info,
+          child: Icon(Icons.event, color: Colors.white, size: 20),
+        ),
+        title: Text(
+          session.menteeName ?? 'Mentee #${session.menteeMemberId}',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(when,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 12)),
+            if (session.meetingLink != null &&
+                session.meetingLink!.isNotEmpty)
+              Text(session.meetingLink!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: AppColors.primary, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Feedbacks received ─────────────────────────────────────────────────────
+
+class _FeedbackList extends ConsumerWidget {
+  const _FeedbackList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(myMentorFeedbacksProvider);
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Không tải được đánh giá'),
+            TextButton(
+              onPressed: () => ref.invalidate(myMentorFeedbacksProvider),
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      ),
+      data: (feedbacks) {
+        if (feedbacks.isEmpty) {
+          return const Center(
+            child: Text('Chưa có đánh giá nào',
+                style: TextStyle(color: AppColors.textSecondary)),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: feedbacks.length,
+          itemBuilder: (_, i) => FeedbackCard(feedback: feedbacks[i]),
+        );
+      },
+    );
+  }
+}
+
+// ── Shared helpers ─────────────────────────────────────────────────────────
+
+class _Stat extends StatelessWidget {
+  const _Stat({required this.value, required this.label});
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold)),
+        Text(label,
+            style:
+                const TextStyle(color: Colors.white70, fontSize: 11)),
+      ],
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.icon, required this.text});
+  final IconData icon;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: 6),
+          Expanded(
+              child: Text(text,
+                  style: const TextStyle(
+                      color: AppColors.textSecondary, fontSize: 13))),
+        ],
+      ),
+    );
+  }
+}
