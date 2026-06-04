@@ -127,12 +127,11 @@ const AdminLoginPage = () => {
         {/* Left Side: Login Form */}
         <Box
           sx={{
-            flex: { xs: '1 1 auto', md: '0 0 50%' },
-            width: { xs: '100%', md: '50%' },
-            minHeight: '100vh',
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            position: 'relative',
+            alignItems: 'stretch',
+            gap: { xs: 1.5, sm: 2 },
           }}
         >
           {/* Logo at Top Left */}
@@ -170,7 +169,6 @@ const AdminLoginPage = () => {
               justifyContent: 'center',
               px: { xs: 2, sm: 4, md: 6 },
               pt: { xs: 12, md: 0 },
-              pb: 4,
             }}
           >
             <Box sx={{ maxWidth: 420, width: '100%' }}>
@@ -183,14 +181,12 @@ const AdminLoginPage = () => {
                     width: 60,
                     height: 60,
                     borderRadius: 2,
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
-                    mb: 2,
+                    color: 'primary.main',
                   }}
                 >
                   <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 36 }} />
                 </Box>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
+                <Typography variant="h3" fontWeight={700} color="primary.main" textAlign="center">
                   Admin Login
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -230,14 +226,18 @@ const AdminLoginPage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <FormControlLabel
                     control={<Checkbox size="small" />}
-                    label={<Typography variant="body2">Ghi nhớ</Typography>}
+                    label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
                   />
                   <Typography
                     component={Link}
                     to="/auth/forgot-password"
                     variant="body2"
                     color="primary.main"
-                    sx={{ textDecoration: 'none', fontWeight: 600 }}
+                    sx={{
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
                   >
                     Quên mật khẩu?
                   </Typography>
@@ -249,14 +249,6 @@ const AdminLoginPage = () => {
                   fullWidth
                   size="large"
                   disabled={loading}
-                  sx={{
-                    py: 1.5,
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    textTransform: 'none',
-                    borderRadius: 2,
-                    boxShadow: (theme) => theme.customShadows?.primary,
-                  }}
                 >
                   {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
                 </Button>
@@ -276,7 +268,7 @@ const AdminLoginPage = () => {
                   />
                 </Box>
 
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Box sx={{ mt: 1.5, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
                     Bạn không có quyền quản trị?{' '}
                     <Typography
@@ -284,10 +276,10 @@ const AdminLoginPage = () => {
                       to="/"
                       variant="body2"
                       color="primary.main"
-                      fontWeight={700}
+                      fontWeight={600}
                       sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                     >
-                      Quay lại Trang chủ
+                      Quay lại trang chủ
                     </Typography>
                   </Typography>
                 </Box>
@@ -321,7 +313,7 @@ const AdminLoginPage = () => {
             sx={{
               position: 'absolute',
               inset: 0,
-              bgcolor: alpha(theme.palette.primary.dark, 0.4),
+              bgcolor: alpha(theme.palette.secondary.darker, 0.4),
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',

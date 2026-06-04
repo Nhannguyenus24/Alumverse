@@ -347,7 +347,7 @@ const AdminUsersListPage = () => {
             size="small"
             startIcon={<AddOutlinedIcon />}
             onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none', ml: 1 }}
+            sx={{ fontWeight: 700, textTransform: 'none', ml: 1 }}
           >
             Thêm
           </Button>
