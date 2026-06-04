@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -30,7 +29,6 @@ public class CreateFundDonationRequest {
     @Schema(example = "123")
     private Integer donorMemberId;
 
-    @NotBlank
     @Size(max = 50)
     @JsonProperty("donor_name")
     @Schema(example = "Nguyễn Văn A")
