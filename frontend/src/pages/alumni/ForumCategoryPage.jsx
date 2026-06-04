@@ -1,121 +1,50 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useParams, useLocation } from 'react-router';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
 import Page from '../../components/Page';
 import Breadcrumb from '../../components/Breadcrumb';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
+import ForumTopicListItem from '../../components/forum/ForumTopicListItem';
 
 import { useOrganization } from '../../hooks/useOrganization';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-import { useForumCategories } from '../../hooks/forum/useForumCategories';
-import { useForumTopics } from '../../hooks/forum/useForumTopics';
-import { useNotification } from '../../hooks/useNotification';
-import { formatRelativeTimeVi } from '../../utils/dateFormatter';
+import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
 
 const ForumCategoryPage = () => {
-  const { categoryId: categoryIdParam } = useParams();
-  const navigate = useOrgNavigate();
-  const location = useLocation();
   const { organization } = useOrganization();
-  const { showError } = useNotification();
-  const hasShownTopicsErrorRef = useRef(false);
-  const invalidCategoryShownRef = useRef(false);
-
   const organizationId = organization?.id ?? null;
-  const { categories, isPending: categoriesPending } = useForumCategories(organizationId);
 
-  const categoryId = useMemo(() => {
-    const n = Number(categoryIdParam);
-    return Number.isFinite(n) && n > 0 ? n : null;
-  }, [categoryIdParam]);
+  const {
+    categoryId,
+    topics,
+    topicsPending,
+    isError,
+    filters,
+    activeCategory,
+    selectedSidebarId,
+    breadcrumbItems,
+    pageTitle,
+    handleFilterChange,
+    navigate,
+  } = useForumCategoryLogic(organizationId);
 
-  const { topics, isPending: topicsPending, isError } = useForumTopics(categoryId, 0, 50);
-
-  useEffect(() => {
-    if (categoryId != null) {
-      invalidCategoryShownRef.current = false;
-      return;
-    }
-    if (!invalidCategoryShownRef.current) {
-      showError('Danh mục không hợp lệ.');
-      invalidCategoryShownRef.current = true;
-    }
-  }, [categoryId, showError]);
-
-  useEffect(() => {
-    if (categoryId == null) return;
-    if (isError) {
-      if (!hasShownTopicsErrorRef.current) {
-        showError('Không thể tải danh sách chủ đề.');
-        hasShownTopicsErrorRef.current = true;
-      }
-      return;
-    }
-    hasShownTopicsErrorRef.current = false;
-  }, [categoryId, isError, showError]);
-
-  const parentCategories = useMemo(() => {
-    const list = (categories ?? []).filter((c) => c.parentId == null);
-    list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
-    return list;
-  }, [categories]);
-
-  const filters = useMemo(() => {
-    if (categoriesPending && !categories?.length) {
-      return [{ id: 'all', label: 'Tất cả' }];
-    }
-    return [{ id: 'all', label: 'Tất cả' }, ...parentCategories.map((p) => ({ id: `parent-${p.id}`, label: p.name }))];
-  }, [categories, categoriesPending, parentCategories]);
-
-  const activeCategory = useMemo(
-    () => (categoryId != null ? categories?.find((c) => c.id === categoryId) : null),
-    [categories, categoryId]
-  );
-
-  const parentCategory = useMemo(() => {
-    if (!activeCategory?.parentId) return null;
-    return categories?.find((c) => c.id === activeCategory.parentId) ?? null;
-  }, [activeCategory, categories]);
-
-  const selectedSidebarId = useMemo(() => {
-    const fromNav = location.state?.selectedFilterId;
-    if (fromNav === 'all' || (typeof fromNav === 'string' && fromNav.startsWith('parent-'))) {
-      return fromNav;
-    }
-    if (!activeCategory) return 'all';
-    if (activeCategory.parentId != null) return `parent-${activeCategory.parentId}`;
-    return `parent-${activeCategory.id}`;
-  }, [activeCategory, location.state?.selectedFilterId]);
-
-  const handleFilterChange = useCallback(
-    (id) => {
-      if (id === 'all') {
-        navigate('/forum');
-        return;
-      }
-      if (typeof id === 'string' && id.startsWith('parent-')) {
-        navigate('/forum', { state: { selectedFilterId: id } });
-      }
-    },
-    [navigate]
-  );
-
-  const breadcrumbItems = useMemo(() => {
-    const items = [];
-    if (parentCategory) {
-      items.push({
-        label: parentCategory.name,
-        path: '/forum',
-        state: { selectedFilterId: `parent-${parentCategory.id}` },
-      });
-    }
-    items.push({ label: activeCategory?.name ?? 'Danh mục' });
-    return items;
-  }, [activeCategory, parentCategory]);
-
-  const pageTitle = activeCategory?.name ? `${activeCategory.name} — Diễn đàn` : 'Diễn đàn — Danh mục';
+  const handleTopicClick = (topic) => {
+    navigate(`/forum/alumni/career/${topic.id}`, {
+      state: {
+        topicTitle: topic.title,
+        topicSummary: {
+          id: topic.id,
+          title: topic.title,
+          createdByMemberId: topic.createdByMemberId ?? null,
+          createdAt: topic.createdAt ?? null,
+          viewCount: topic.viewCount ?? null,
+          categoryId: topic.categoryId ?? null,
+        },
+        selectedFilterId:
+          activeCategory?.parentId != null
+            ? `parent-${activeCategory.parentId}`
+            : `parent-${categoryId}`,
+      },
+    });
+  };
 
   if (categoryId == null) {
     return (
@@ -245,130 +174,13 @@ const ForumCategoryPage = () => {
                     </Box>
                   ) : (
                     topics.map((topic) => (
-                      <Box
+                      <ForumTopicListItem
                         key={topic.id}
-                        onClick={() =>
-                          navigate(`/forum/alumni/career/${topic.id}`, {
-                            state: {
-                              topicTitle: topic.title,
-                              topicSummary: {
-                                id: topic.id,
-                                title: topic.title,
-                                createdByMemberId: topic.createdByMemberId ?? null,
-                                createdAt: topic.createdAt ?? null,
-                                viewCount: topic.viewCount ?? null,
-                                categoryId: topic.categoryId ?? null,
-                              },
-                              selectedFilterId:
-                                activeCategory?.parentId != null
-                                  ? `parent-${activeCategory.parentId}`
-                                  : `parent-${categoryId}`,
-                            },
-                          })
-                        }
-                        sx={{
-                          px: { xs: 1.5, sm: 2, md: 3 },
-                          py: { xs: 1.5, md: 2 },
-                          display: 'flex',
-                          flexDirection: { xs: 'column', md: 'row' },
-                          alignItems: { xs: 'flex-start', md: 'center' },
-                          gap: { xs: 1.5, md: 3 },
-                          borderTop: 1,
-                          borderColor: 'divider',
-                          cursor: 'pointer',
-                          '&:hover': { backgroundColor: 'action.hover' },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1.5,
-                            flex: 1,
-                            minWidth: 0,
-                          }}
-                        >
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography
-                              variant="subtitle1"
-                              fontWeight={600}
-                              sx={{
-                                fontSize: { xs: '0.95rem', md: '1rem' },
-                                overflow: 'hidden',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                              }}
-                            >
-                              {topic.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Được tạo lúc · {formatRelativeTimeVi(topic.createdAt)}
-                            </Typography>
-                          </Box>
-                        </Box>
-
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            alignItems: 'center',
-                            gap: { xs: 2, md: 3 },
-                            ml: { md: 'auto' },
-                            flexShrink: 0,
-                          }}
-                        >
-                          <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Lượt xem
-                            </Typography>
-                            <Typography variant="body2" fontWeight={800}>
-                              {topic.viewCount ?? 0}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Thảo luận
-                            </Typography>
-                            <Typography variant="body2" fontWeight={800}>
-                              {topic.postCount ?? 0}
-                            </Typography>
-                          </Box>
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                              minWidth: { xs: 120, sm: 160 },
-                              justifyContent: 'flex-end',
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                              }}
-                            >
-                              <PersonIcon sx={{ fontSize: 18 }} />
-                            </Box>
-                            <Box sx={{ textAlign: 'left' }}>
-                              <Typography variant="body2" fontWeight={600}>
-                                Thành viên #{topic.createdByMemberId ?? '—'}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {formatRelativeTimeVi(topic.updatedAt)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Box>
+                        topic={topic}
+                        activeCategory={activeCategory}
+                        categoryId={categoryId}
+                        onClick={handleTopicClick}
+                      />
                     ))
                   )}
                 </Box>
