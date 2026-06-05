@@ -16,7 +16,8 @@ const BASE_ADMIN_EVENTS = '/admin/events';
 const BASE_ADMIN_FORUM = '/admin/forum/admin';
 const BASE_ADMIN_FORUM_V2 = '/admin/forum';
 const BASE_FUND = '/funds';
-const BASE_MENTOR = '/mentorship';
+const BASE_MENTEE = '/mentorship/mentee';
+const BASE_MENTOR = '/mentorship/mentor';
 const BACKEND_PAGE_SIZE = 5;
 
 export const organizationApi = {
@@ -348,6 +349,13 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getGroupMembers(groupId, { text = '', page = 0, size = 50 } = {}) {
+		const response = await apiClient.get(`/chat/groups/${groupId}/members`, {
+			params: { text, page, size },
+		});
+		return unwrap(response);
+	},
+
 	async getConversationRequestStatus(targetMemberId) {
 		const response = await apiClient.get('/chat/conversation-requests/connection-status', {
 			params: { targetMemberId },
@@ -382,6 +390,21 @@ export const chatApi = {
 		});
 		return unwrap(response);
 	},
+
+	async addMembersToGroup(groupId, memberIds) {
+		const response = await apiClient.post(`/chat/groups/${groupId}/members`, { memberIds });
+		return unwrap(response);
+	},
+
+	async removeMemberFromGroup(groupId, memberId) {
+		const response = await apiClient.delete(`/chat/groups/${groupId}/members/${memberId}`);
+		return unwrap(response);
+	},
+
+	async leaveGroup(groupId) {
+		const response = await apiClient.delete(`/chat/groups/${groupId}/leave`);
+		return unwrap(response);
+	},
 };
 
 export const {
@@ -394,6 +417,7 @@ export const {
 	searchIncomingRequests,
 	respondToConversationRequest,
 	createGroupChat,
+	getGroupMembers,
 } = chatApi;
 
 export const eventApi = {
@@ -849,67 +873,67 @@ export const {
 
 export const mentorshipApi = {
 	saveMenteeProfile(payload) {
-		return apiClient.post(`${BASE_MENTOR}/mentee-profile`, payload);
+		return apiClient.post(`${BASE_MENTEE}/profile`, payload);
 	},
 
 	getMyMenteeProfile() {
-		return apiClient.get(`${BASE_MENTOR}/mentee-profile`);
+		return apiClient.get(`${BASE_MENTEE}/profile`);
 	},
 
 	getApprovedMentors(page = 0, limit = 12) {
-		return apiClient.get(`${BASE_MENTOR}/mentors`, { params: { page, limit } });
+		return apiClient.get(`${BASE_MENTEE}/mentors`, { params: { page, limit } });
 	},
 
 	getMentorProfile(mentorMemberId) {
-		return apiClient.get(`${BASE_MENTOR}/mentors/${mentorMemberId}`);
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}`);
 	},
 
 	searchMentors(keyword, page = 0, limit = 12) {
-		return apiClient.get(`${BASE_MENTOR}/mentors/search`, { params: { keyword, page, limit } });
+		return apiClient.get(`${BASE_MENTEE}/mentors/search`, { params: { keyword, page, limit } });
 	},
 
 	filterMentors(params = {}) {
-		return apiClient.get(`${BASE_MENTOR}/mentors/filter`, { params });
+		return apiClient.get(`${BASE_MENTEE}/mentors/filter`, { params });
 	},
 
 	getExpertiseTopics() {
-		return apiClient.get(`${BASE_MENTOR}/expertise/topics`);
+		return apiClient.get(`${BASE_MENTEE}/expertise-topics`);
 	},
 
 	getExpertiseCategories() {
-		return apiClient.get(`${BASE_MENTOR}/expertise/categories`);
+		return apiClient.get(`${BASE_MENTEE}/expertise-categories`);
 	},
 
 	getMentorExpertise(mentorMemberId) {
-		return apiClient.get(`${BASE_MENTOR}/mentors/${mentorMemberId}/expertise`);
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/expertise`);
 	},
 
 	getMentorAvailableSlots(mentorMemberId) {
-		return apiClient.get(`${BASE_MENTOR}/mentors/${mentorMemberId}/availability`);
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/availability`);
 	},
 
 	getMentorFeedbacks(mentorMemberId, page = 0, limit = 10) {
-		return apiClient.get(`${BASE_MENTOR}/mentors/${mentorMemberId}/feedbacks`, { params: { page, limit } });
+		return apiClient.get(`${BASE_MENTEE}/mentors/${mentorMemberId}/feedbacks`, { params: { page, limit } });
 	},
 
 	bookSession(payload) {
-		return apiClient.post(`${BASE_MENTOR}/sessions`, payload);
+		return apiClient.post(`${BASE_MENTEE}/sessions/book`, payload);
 	},
 
 	getMyMenteeSessions(params = {}) {
-		return apiClient.get(`${BASE_MENTOR}/sessions/mentee`, { params });
+		return apiClient.get(`${BASE_MENTEE}/sessions`, { params });
 	},
 
 	getMenteeSessionById(sessionId) {
-		return apiClient.get(`${BASE_MENTOR}/sessions/${sessionId}`);
+		return apiClient.get(`${BASE_MENTEE}/sessions/${sessionId}`);
 	},
 
 	cancelSession(sessionId) {
-		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`);
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`);
 	},
 
 	createSessionFeedback(sessionId, payload) {
-		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/feedback`, payload);
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/feedback`, payload);
 	},
 
 	createMentorProfile(payload) {
@@ -961,7 +985,7 @@ export const mentorshipApi = {
 	},
 
 	getMyMentorSessions(params = {}) {
-		return apiClient.get(`${BASE_MENTOR}/sessions/mentor`, { params });
+		return apiClient.get(`${BASE_MENTOR}/sessions`, { params });
 	},
 
 	updateSessionStatus(sessionId, payload) {

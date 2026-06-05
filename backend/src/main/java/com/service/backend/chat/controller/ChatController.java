@@ -1,6 +1,7 @@
 package com.service.backend.chat.controller;
 
 import com.service.backend.chat.dto.AddMembersRequest;
+import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
@@ -9,7 +10,6 @@ import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.shared.entity.ChatGroup;
-import com.service.backend.shared.entity.ChatGroupMember;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -158,15 +157,20 @@ public class ChatController {
 
 
     /*
-        Get all member of a group ID 
+        Get all members of a group ID with profile info.
+        Only group members can access this endpoint.
     */
     @GetMapping("/groups/{groupId}/members")
-    public Mono<ResponseEntity<ApiResponse<List<ChatGroupMember>>>> getGroupMembers(
-            @PathVariable("groupId") @Min(1) Long groupId) {
-        Flux<ChatGroupMember> membersFlux = this.chatService.getGroupMembers(groupId);
-        return membersFlux.collectList()
-                .map(members -> ResponseEntity
-                        .ok(new ApiResponse<>("Group members retrieved successfully", members)));
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ChatGroupMemberItemResponse>>>> getGroupMembers(
+            @PathVariable("groupId") @Min(1) Long groupId,
+            @RequestParam(required = false, defaultValue = "") String text,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentMemberId ->
+                        this.chatService.getGroupMembersWithProfile(groupId, currentMemberId, text, page, size))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Group members retrieved successfully", result)));
     }
 
     /*

@@ -18,6 +18,10 @@ class NetworkMember {
   });
 
   /// Short subtitle line: "Major • K{startYear}" / program fallback.
+    this.avatarUrl,
+  });
+
+  /// Short subtitle line: major, or program fallback.
   String get subtitle {
     final parts = <String>[];
     if (major != null && major!.isNotEmpty) {

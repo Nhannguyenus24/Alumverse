@@ -220,38 +220,9 @@ const AdminUserDetailPage = () => {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
-              <Button variant="outlined" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
+              <Button variant="outlined" color="secondary" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
                 Sửa thông tin
               </Button>
-              {user.status === 'BANNED' ? (
-                <Button
-                  variant="outlined"
-                  color="success"
-                  size="small"
-                  startIcon={<LockOpenOutlinedIcon />}
-                  onClick={async () => {
-                    try {
-                      await unbanUser(user.id);
-                    } catch {
-                      /* snackbar in hook */
-                    }
-                  }}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Unban
-                </Button>
-              ) : (
-                <Button
-                  variant="outlined"
-                  color="warning"
-                  size="small"
-                  startIcon={<BlockOutlinedIcon />}
-                  onClick={() => setBanOpen(true)}
-                  sx={{ textTransform: 'none' }}
-                >
-                  Ban
-                </Button>
-              )}
               <Button
                 variant="outlined"
                 size="small"
@@ -279,7 +250,36 @@ const AdminUserDetailPage = () => {
               >
                 Đặt lại mật khẩu
               </Button>
-              <Button variant="outlined" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
+              {user.status === 'BANNED' ? (
+                <Button
+                  variant="contained"
+                  color="success"
+                  size="small"
+                  startIcon={<LockOpenOutlinedIcon />}
+                  onClick={async () => {
+                    try {
+                      await unbanUser(user.id);
+                    } catch {
+                      /* snackbar in hook */
+                    }
+                  }}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Bỏ chặn
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="warning"
+                  size="small"
+                  startIcon={<BlockOutlinedIcon />}
+                  onClick={() => setBanOpen(true)}
+                  sx={{ textTransform: 'none' }}
+                >
+                  Chặn
+                </Button>
+              )}
+              <Button variant="contained" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
                 Xóa tài khoản
               </Button>
             </Box>

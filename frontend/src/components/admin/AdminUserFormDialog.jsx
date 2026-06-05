@@ -264,11 +264,11 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         ) : null}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none' }}>
+        <Button variant="outlined" color="secondary"onClick={onClose} sx={{ textTransform: 'none' }}>
           Hủy
         </Button>
         <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          {mode === 'create' ? 'Tạo' : 'Lưu'}
+          {mode === 'create' ? 'Tạo người dùng' : 'Lưu thông tin'}
         </Button>
       </DialogActions>
     </Dialog>

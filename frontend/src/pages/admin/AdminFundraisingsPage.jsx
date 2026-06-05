@@ -504,8 +504,8 @@ const AdminFundraisingsPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
-            Quản lý gây quỹ
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            Quản lý quyên góp
           </Typography>
           <Typography
             variant="body2"
@@ -535,7 +535,6 @@ const AdminFundraisingsPage = () => {
             variant="contained"
             startIcon={<AddOutlinedIcon />}
             onClick={handleOpenCreateDialog}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
           >
             Tạo chiến dịch
           </Button>

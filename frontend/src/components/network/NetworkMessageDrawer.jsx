@@ -149,8 +149,6 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
   };
 
   const avatarSrc = peer?.avatarUrl;
-  const cohortLabel =
-    peer?.startYear != null && peer.startYear !== '' ? peer.startYear : null;
   const programLabel = formatAcademicValue(peer?.program);
   const majorLabel = formatAcademicValue(peer?.major);
 
@@ -187,11 +185,9 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {peer?.fullName ?? 'Thành viên'}
             </Typography>
-            {(cohortLabel || programLabel || majorLabel) && (
+            {(programLabel || majorLabel) && (
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {[cohortLabel && `Khóa ${cohortLabel}`, programLabel, majorLabel]
-                  .filter(Boolean)
-                  .join(' · ')}
+                {[programLabel, majorLabel].filter(Boolean).join(' · ')}
               </Typography>
             )}
           </Box>

@@ -26,7 +26,6 @@ public class NetworkMemberSearchService {
             String fullName,
             String program,
             String major,
-            Integer startYear,
             int page,
             int size) {
 
@@ -48,8 +47,7 @@ public class NetworkMemberSearchService {
                             currentUserId,
                             fullNamePattern,
                             programJson,
-                            majorJson,
-                            startYear);
+                            majorJson);
 
                     return networkMemberSearchRepository
                             .searchMembers(
@@ -58,7 +56,6 @@ public class NetworkMemberSearchService {
                                     fullNamePattern,
                                     programJson,
                                     majorJson,
-                                    startYear,
                                     size,
                                     offset)
                             .collectList()

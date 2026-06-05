@@ -202,7 +202,7 @@ const AdminForumPostsPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Kiểm duyệt diễn đàn
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
@@ -213,9 +213,8 @@ const AdminForumPostsPage = () => {
           variant="outlined"
           startIcon={<FileDownloadOutlinedIcon />}
           onClick={handleExport}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
-          Xuất Excel
+          Xuất dữ liệu
         </Button>
       </Box>
 

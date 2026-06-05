@@ -249,7 +249,7 @@ const AdminForumCategoriesPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Danh mục diễn đàn
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
@@ -273,7 +273,6 @@ const AdminForumCategoriesPage = () => {
             variant="contained"
             startIcon={<AddOutlinedIcon />}
             onClick={openCreateRoot}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
           >
             Thêm danh mục
           </Button>
@@ -353,7 +352,7 @@ const AdminForumCategoriesPage = () => {
         <DialogTitle sx={{ fontWeight: 700 }}>
           {modal.mode === 'create' ? 'Tạo danh mục mới' : 'Chỉnh sửa danh mục'}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible', }} >
           <TextField
             label="Tên danh mục"
             required
@@ -390,8 +389,12 @@ const AdminForumCategoriesPage = () => {
           </TextField>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setModal(m => ({ ...m, open: false }))}>Hủy</Button>
-          <Button variant="contained" onClick={handleSave} sx={{ borderRadius: 2 }}>Lưu</Button>
+          <Button variant="outlined" color="secondary" onClick={() => setModal(m => ({ ...m, open: false }))}>
+            Hủy
+          </Button>
+          <Button variant="contained" onClick={handleSave}>
+            Lưu
+          </Button>
         </DialogActions>
       </Dialog>
 

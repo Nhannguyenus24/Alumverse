@@ -33,15 +33,6 @@ const FILTERS = [
     inputMode: 'text',
     placeholder: 'VD: Computer Science…',
   },
-  {
-    type: 'input',
-    key: 'startYear',
-    label: 'Khóa',
-    inputMode: 'number',
-    placeholder: 'VD: 2019',
-    min: 1990,
-    max: 2035,
-  },
 ];
 
 const PAGE_SIZE = 5;
@@ -54,7 +45,6 @@ const NetworkPage = () => {
     all: true,
     program: '',
     major: '',
-    startYear: '',
   });
   const [messagePeer, setMessagePeer] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(null);
@@ -105,7 +95,6 @@ const NetworkPage = () => {
           userId: member.userId,
           fullName: member.fullName,
           avatarUrl: member.avatarUrl,
-          startYear: member.startYear,
           program: member.program,
           major: member.major,
         });
@@ -189,7 +178,6 @@ const NetworkPage = () => {
               key={member.userId}
               avatar={member.avatarUrl}
               fullName={member.fullName}
-              startYear={member.startYear}
               program={member.program}
               major={member.major}
               onMessage={() => handleOpenMessage(member)}
