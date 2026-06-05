@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Container, Stack, Typography } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
@@ -31,6 +32,7 @@ function normalizePrivateChat(item) {
 }
 
 const ChatPage = () => {
+  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -111,6 +113,13 @@ const ChatPage = () => {
     }
   };
 
+  const handleLeaveGroup = (leftGroupId) => {
+    queryClient.invalidateQueries({ queryKey: ['chat', 'groups'] });
+    if (activeChatId === leftGroupId) {
+      setActiveChatId(null);
+    }
+  };
+
   return (
     <Page title="Chat">
       <Container maxWidth={false} disableGutters sx={{ pb: 3 }}>
@@ -180,7 +189,7 @@ const ChatPage = () => {
                   isPending={isPending}
                   isFetching={isFetching}
                 />
-                <NetworkChatPanel activeChat={activeChat} />
+                <NetworkChatPanel activeChat={activeChat} onLeaveGroup={handleLeaveGroup} />
               </Box>
             </Stack>
           </Box>

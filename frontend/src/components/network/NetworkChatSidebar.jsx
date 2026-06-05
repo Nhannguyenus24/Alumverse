@@ -145,6 +145,7 @@ const NetworkChatSidebar = ({
                   avatarUrl={chat.avatarUrl}
                   name={chat.name}
                   size={42}
+                  variant={chat.type === 'GROUP' ? 'group' : 'user'}
                 />
                 <Box sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" fontWeight={600} noWrap>

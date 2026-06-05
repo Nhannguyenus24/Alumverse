@@ -19,7 +19,6 @@ class _OrganizationRegistrationPageState
   final _studentCodeCtl = TextEditingController();
   final _programCtl = TextEditingController();
   final _majorCtl = TextEditingController();
-  final _startYearCtl = TextEditingController();
   final _graduatedYearCtl = TextEditingController();
 
   @override
@@ -27,7 +26,6 @@ class _OrganizationRegistrationPageState
     _studentCodeCtl.dispose();
     _programCtl.dispose();
     _majorCtl.dispose();
-    _startYearCtl.dispose();
     _graduatedYearCtl.dispose();
     super.dispose();
   }
@@ -94,30 +92,14 @@ class _OrganizationRegistrationPageState
                   ),
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _startYearCtl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Năm bắt đầu',
-                          hintText: '2015',
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _graduatedYearCtl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Năm tốt nghiệp',
-                          hintText: '2019',
-                        ),
-                      ),
-                    ),
-                  ],
+                TextFormField(
+                  controller: _graduatedYearCtl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Năm tốt nghiệp (Tùy chọn)',
+                    hintText: '2019',
+                    prefixIcon: Icon(Icons.calendar_today_outlined),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
