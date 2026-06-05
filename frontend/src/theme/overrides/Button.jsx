@@ -6,7 +6,7 @@ const Button = (theme) => {
       styleOverrides: {
         root: {
           textTransform: "none",
-          fontWeight: 600,
+          fontWeight: 700,
           borderRadius: 6,
           padding: "6px 16px",
           minWidth: 64,

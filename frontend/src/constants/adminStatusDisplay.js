@@ -40,7 +40,33 @@ export const formatAuditStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
+export const formatForumStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+
+  const map = {
+    PENDING: 'Pending',
+    FLAGGED: 'Flagged',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+  };
+
+  return map[key] || formatTitleCase(status);
+};
+
+export const formatFeedbackStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+
+  const map = {
+    NEW: 'New',
+    READ: 'Read',
+  };
+
+  return map[key] || formatTitleCase(status);
+};
+
 const STATUS_COLORS = {
+  PENDING: 'info',
+
   ACTIVE: 'success',
   INACTIVE: 'warning',
   BANNED: 'error',
@@ -48,10 +74,16 @@ const STATUS_COLORS = {
   DELETED: 'secondary',
   DISABLED: 'tertiary',
   UNVERIFIED: 'primary',
-  PENDING: 'info',
 
   SUCCESS: 'success',
   FAILED: 'error',
+
+  FLAGGED: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'error',
+
+  NEW: 'primary',
+  READ: 'default',
 };
 
 /**
@@ -74,6 +106,14 @@ export const resolveAdminStatusChip = (status, category) => {
 
     case 'audit':
       label = formatAuditStatusLabel(status);
+      break;
+
+    case 'forum':
+      label = formatForumStatusLabel(status);
+      break;
+
+    case 'feedback':
+      label = formatFeedbackStatusLabel(status);
       break;
 
     default:
