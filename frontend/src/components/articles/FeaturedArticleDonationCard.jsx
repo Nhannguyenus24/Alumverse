@@ -1,6 +1,8 @@
 import { Box, Typography, Button, LinearProgress, Stack } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { useState } from "react";
 import dayjs from "dayjs";
 import { truncateText } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
@@ -29,16 +31,66 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
   const startedAt = formatDate(data?.timeStarted);
   const endedAt = formatDate(data?.timeEnded);
 
+  const [hovered, setHovered] = useState(false);
+
   return (
-    <Box onClick={onNavigate} sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: { xs: "stretch", md: "center" }, width: "100%", gap: 3, cursor: "pointer" }}>
+    <Box
+      onClick={onNavigate}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", md: "row" },
+        alignItems: { xs: "stretch", md: "center" },
+        width: "100%",
+        gap: 3,
+        cursor: "pointer",
+
+        transition: "transform 0.25s ease",
+        transform: hovered
+          ? "translateY(-4px)"
+          : "translateY(0)",
+      }}
+    >
       {/* IMAGE */}
       <Box
-        component="img" src={data?.logoUrl || data?.image || LOGO_FALLBACK_URL} alt={data?.name || data?.title}
-        sx={{ width: { xs: "100%", md: "45%" }, height: { xs: 220, md: 280 }, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-      />
+        sx={{
+          width: { xs: "100%", md: "45%" },
+          height: { xs: 220, md: 280 },
+
+          borderRadius: 2,
+          overflow: "hidden",
+
+          flexShrink: 0,
+        }}
+      >
+        <Box
+          component="img"
+          src={data?.logoUrl || data?.image || LOGO_FALLBACK_URL}
+          alt={data?.name || data?.title}
+          sx={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+
+            transition: "transform 0.4s ease",
+
+            transform: hovered
+              ? "scale(1.06)"
+              : "scale(1)",
+          }}
+        />
+      </Box>
 
       {/* CONTENT */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
+      <Box
+        sx={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
         {/* INFO BLOCK */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 0.7 }}>
           {/* DATE */}
@@ -47,15 +99,53 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
           </Typography>
 
           {/* TITLE */}
-          <Typography
-            variant="h2" fontWeight={700}
+          <Box
             sx={{
-              fontSize: { xs: "1.5rem", md: "2rem" }, lineHeight: 1.25, overflow: "hidden", textOverflow: "ellipsis",
-              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflowWrap: "anywhere",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 0.5,
             }}
           >
-            {data?.name || data?.title}
-          </Typography>
+            <Typography
+              variant="h2"
+              fontWeight={700}
+              sx={{
+                flex: 1,
+
+                fontSize: { xs: "1.5rem", md: "2rem" },
+
+                color: hovered
+                  ? "primary.main"
+                  : "text.primary",
+
+                transition: "color 0.2s ease",
+
+                overflow: "hidden",
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+              }}
+            >
+              {data?.name || data?.title}
+            </Typography>
+
+            <ArrowForwardIcon
+              sx={{
+                mt: "6px",
+
+                color: "primary.main",
+
+                opacity: hovered ? 1 : 0,
+
+                transform: hovered
+                  ? "translateX(0)"
+                  : "translateX(-6px)",
+
+                transition:
+                  "opacity 0.2s ease, transform 0.2s ease",
+              }}
+            />
+          </Box>
 
           {/* ORGANIZER */}
           <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -76,9 +166,25 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
         </Box>
 
         {/* DESCRIPTION */}
-        <Typography sx={{ mt: 0.5 }}>
-          {truncateText(data?.descriptionShort || data?.description || "", CAMPAIGN_DESCRIPTION_MAX_CHARS)}
+        <Typography
+          sx={{
+            mt: 1,
+
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
+          {truncateText(
+            data?.descriptionShort ||
+            data?.description ||
+            "",
+            CAMPAIGN_DESCRIPTION_MAX_CHARS
+          )}
         </Typography>
+
+        <Box sx={{ flex: 1 }} />
 
         {/* ADMIN PROGRESS */}
         {isAdmin && (
