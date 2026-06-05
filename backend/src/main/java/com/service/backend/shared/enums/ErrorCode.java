@@ -99,7 +99,9 @@ public enum ErrorCode {
     CONVERSATION_REQUEST_NOT_PENDING("Yêu cầu kết nối không còn ở trạng thái chờ phản hồi", 409),
     CONVERSATION_REQUEST_ALREADY_PENDING("Yêu cầu kết nối đang chờ phản hồi từ phía kia", 409),
     CONVERSATION_REQUEST_ALREADY_ACCEPTED("Hai người đã kết nối với nhau rồi", 409),
-    CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429);
+    CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429),
+    CHAT_USER_NOT_GROUP_MEMBER("Bạn không phải thành viên của nhóm chat này", 403),
+    GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400);
 
     private final String message;
     private final int status;

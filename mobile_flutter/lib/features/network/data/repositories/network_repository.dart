@@ -18,7 +18,6 @@ class NetworkRepository {
     String? fullName,
     String? program,
     String? major,
-    int? startYear,
     int page = 0,
     int size = 9,
   }) async {
@@ -28,7 +27,6 @@ class NetworkRepository {
         if (fullName != null && fullName.isNotEmpty) 'fullName': fullName,
         if (program != null && program.isNotEmpty) 'program': program,
         if (major != null && major.isNotEmpty) 'major': major,
-        if (startYear != null) 'startYear': startYear,
         'page': page,
         'size': size,
       },

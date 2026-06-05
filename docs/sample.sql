@@ -80,17 +80,6 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'https://api.example.com/banners/eng_banner.jpg',
  NOW() - INTERVAL '25 days');
 
--- ============= ACADEMIC RECORDS DATA =============
-INSERT INTO "academic_records" ("member_id", "student_code", "degree_type", "class_name", "start_year", "graduated_year", "status") VALUES
-(2, '19127001', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(3, '19127002', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(4, '21127045', 'Bachelor', 'K63', 2021, NULL, 'STUDYING'),
-(5, '20127078', 'Bachelor', 'K62', 2020, 2024, 'GRADUATED'),
-(6, '18127010', 'Bachelor', 'K59', 2018, 2022, 'GRADUATED'),
-(7, '19227015', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(8, '19127088', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(9, '22127156', 'Bachelor', 'K64', 2022, NULL, 'STUDYING');
-
 -- ============= ORGANIZATION MEMBERS DATA =============
 INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
 (1, 1, '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
@@ -351,7 +340,7 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (1, 2, 'OWNER', NOW() - INTERVAL '12 days'),
 (1, 4, 'MEMBER', NOW() - INTERVAL '12 days'),
 (2, 6, 'OWNER', NOW() - INTERVAL '8 days'),
-(2, 2, 'ADMIN', NOW() - INTERVAL '8 days'),
+(2, 2, 'MEMBER', NOW() - INTERVAL '8 days'),
 (2, 4, 'MEMBER', NOW() - INTERVAL '7 days'),
 (2, 9, 'MEMBER', NOW() - INTERVAL '6 days'),
 (3, 3, 'OWNER', NOW() - INTERVAL '6 days'),
@@ -360,7 +349,7 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (4, 11, 'OWNER', NOW() - INTERVAL '5 days'),
 (4, 2, 'MEMBER', NOW() - INTERVAL '5 days'),
 (5, 11, 'OWNER', NOW() - INTERVAL '4 days'),
-(5, 2, 'ADMIN', NOW() - INTERVAL '4 days'),
+(5, 2, 'MEMBER', NOW() - INTERVAL '4 days'),
 (5, 6, 'MEMBER', NOW() - INTERVAL '3 days'),
 (5, 4, 'MEMBER', NOW() - INTERVAL '3 days'),
 (6, 11, 'OWNER', NOW() - INTERVAL '3 days'),
@@ -368,7 +357,7 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (7, 11, 'MEMBER', NOW() - INTERVAL '2 days'),
 (7, 4, 'OWNER', NOW() - INTERVAL '2 days'),
 (8, 11, 'OWNER', NOW() - INTERVAL '1 day'),
-(8, 6, 'ADMIN', NOW() - INTERVAL '1 day'),
+(8, 6, 'MEMBER', NOW() - INTERVAL '1 day'),
 (8, 4, 'MEMBER', NOW() - INTERVAL '20 hours');
 
 -- ============= CHAT MESSAGES DATA =============

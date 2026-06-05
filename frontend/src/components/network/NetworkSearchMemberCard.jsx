@@ -3,14 +3,11 @@ import { alpha } from '@mui/material/styles';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
- * Dữ liệu khớp nguồn DB: global_profiles (fullName), users (userName),
- * academic_records.startYear (khóa), organization_members (program, major).
- * `onMessage`: tùy chọn — gắn khi có luồng nhắn tin (chưa truyền thì bấm không làm gì).
+ * Dữ liệu: global_profiles (fullName), users (avatar), organization_members (program, major).
  */
 const NetworkSearchMemberCard = ({
   avatar,
   fullName,
-  startYear,
   program,
   major,
   onMessage,
@@ -18,7 +15,6 @@ const NetworkSearchMemberCard = ({
   isMessageLoading = false,
 }) => {
   const displayName = fullName || 'N/A';
-  const cohortLabel = startYear != null && startYear !== '' ? startYear : 'N/A';
   const programLabel = formatAcademicValue(program, '—');
   const majorLabel = formatAcademicValue(major, 'N/A');
 
@@ -58,12 +54,6 @@ const NetworkSearchMemberCard = ({
             })}
           >
             <Stack spacing={0.75} alignItems="center">
-              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
-                Khóa:{' '}
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {cohortLabel}
-                </Box>
-              </Typography>
               <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
                 Program:{' '}
                 <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>

@@ -349,6 +349,13 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getGroupMembers(groupId, { text = '', page = 0, size = 50 } = {}) {
+		const response = await apiClient.get(`/chat/groups/${groupId}/members`, {
+			params: { text, page, size },
+		});
+		return unwrap(response);
+	},
+
 	async getConversationRequestStatus(targetMemberId) {
 		const response = await apiClient.get('/chat/conversation-requests/connection-status', {
 			params: { targetMemberId },
@@ -383,6 +390,21 @@ export const chatApi = {
 		});
 		return unwrap(response);
 	},
+
+	async addMembersToGroup(groupId, memberIds) {
+		const response = await apiClient.post(`/chat/groups/${groupId}/members`, { memberIds });
+		return unwrap(response);
+	},
+
+	async removeMemberFromGroup(groupId, memberId) {
+		const response = await apiClient.delete(`/chat/groups/${groupId}/members/${memberId}`);
+		return unwrap(response);
+	},
+
+	async leaveGroup(groupId) {
+		const response = await apiClient.delete(`/chat/groups/${groupId}/leave`);
+		return unwrap(response);
+	},
 };
 
 export const {
@@ -395,6 +417,7 @@ export const {
 	searchIncomingRequests,
 	respondToConversationRequest,
 	createGroupChat,
+	getGroupMembers,
 } = chatApi;
 
 export const eventApi = {

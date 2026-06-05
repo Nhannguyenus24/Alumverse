@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Button, Card, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, TextField, Typography, LinearProgress } from "@mui/material";
+import { Box, Button, Card, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Grid, MenuItem, Switch, TextField, Typography, LinearProgress } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
 import dayjs from "dayjs";
 import styled from "@emotion/styled";
@@ -16,7 +16,8 @@ import Breadcrumb from "../../components/Breadcrumb";
 const donationSchema = z.object({
   amountOption: z.string().min(1, "Vui lòng chọn số tiền"),
   customAmount: z.coerce.number().optional(),
-  donorName: z.string().min(1, "Vui lòng nhập họ và tên/tổ chức").max(50, "Tên tối đa 50 ký tự"),
+  isAnonymous: z.boolean().default(false),
+  donorName: z.string().trim().max(50, "Tên tối đa 50 ký tự").optional().or(z.literal("")),
   email: z.string().trim().max(255, "Email tối đa 255 ký tự").optional().or(z.literal("")),
   phone: z.string().trim().max(50, "Số điện thoại tối đa 50 ký tự").optional().or(z.literal("")),
   address: z.string().trim().max(500, "Địa chỉ tối đa 500 ký tự").optional().or(z.literal("")),
@@ -32,7 +33,15 @@ const donationSchema = z.object({
     }
   }
 
-  if (data.email && !z.string().email().safeParse(data.email).success) {
+  if (!data.isAnonymous && (!data.donorName || data.donorName.trim().length === 0)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["donorName"],
+      message: "Vui lòng nhập họ và tên/tổ chức",
+    });
+  }
+
+  if (!data.isAnonymous && data.email && !z.string().email().safeParse(data.email).success) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["email"],
@@ -163,14 +172,15 @@ function DonationContributionForm({ fundDetail }) {
   const [isCheckoutPopupOpen, setIsCheckoutPopupOpen] = useState(false);
   const [isQrFailed, setIsQrFailed] = useState(false);
   
-  const { control, watch, handleSubmit, reset, formState: { errors } } = useForm({
+  const { control, watch, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(donationSchema),
     defaultValues: {
-      amountOption: "", customAmount: "", donorName: "", email: "", phone: "", address: "", message: "",
+      amountOption: "", customAmount: "", isAnonymous: false, donorName: "", email: "", phone: "", address: "", message: "",
     },
   });
 
   const selectedAmountOption = watch("amountOption");
+  const isAnonymous = watch("isAnonymous");
 
   const onSubmit = async (data) => {
     setSubmitError("");
@@ -180,11 +190,11 @@ function DonationContributionForm({ fundDetail }) {
       const payload = {
         fundId: Number(fundDetail?.id),
         donor_member_id: isAuthenticated ? user?.id ?? null : null,
-        donor_name: data.donorName.trim(),
+        donor_name: data.isAnonymous ? null : data.donorName?.trim() || null,
         amount: selectedAmount,
-        address: data.address?.trim() || null,
-        phone: data.phone?.trim() || null,
-        email: data.email?.trim() || null,
+        address: data.isAnonymous ? null : data.address?.trim() || null,
+        phone: data.isAnonymous ? null : data.phone?.trim() || null,
+        email: data.isAnonymous ? null : data.email?.trim() || null,
         message: data.message?.trim() || null,
       };
 
@@ -251,61 +261,65 @@ function DonationContributionForm({ fundDetail }) {
                 </Grid>
               )}
 
-              <Grid size={12}>
-                <Controller
-                  name="donorName"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field} fullWidth label="Họ và tên/tổ chức đóng góp"
-                      error={Boolean(errors.donorName)} helperText={errors.donorName?.message}
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+              {!isAnonymous && (
+                <>
+                  <Grid size={12}>
+                    <Controller
+                      name="donorName"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field} fullWidth label="Họ và tên/tổ chức đóng góp"
+                          error={Boolean(errors.donorName)} helperText={errors.donorName?.message}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </Grid>
+                  </Grid>
 
-              <Grid size={12}>
-                <Controller
-                  name="email"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field} fullWidth label="Email" placeholder="Nhập email (không bắt buộc)"
-                      error={Boolean(errors.email)} helperText={errors.email?.message}
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                  <Grid size={12}>
+                    <Controller
+                      name="email"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field} fullWidth label="Email" placeholder="Nhập email (không bắt buộc)"
+                          error={Boolean(errors.email)} helperText={errors.email?.message}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </Grid>
+                  </Grid>
 
-              <Grid size={12}>
-                <Controller
-                  name="phone"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field} fullWidth label="Số điện thoại" placeholder="VD: 0976312345 (không bắt buộc)"
-                      error={Boolean(errors.phone)} helperText={errors.phone?.message}
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                  <Grid size={12}>
+                    <Controller
+                      name="phone"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field} fullWidth label="Số điện thoại" placeholder="VD: 0976312345 (không bắt buộc)"
+                          error={Boolean(errors.phone)} helperText={errors.phone?.message}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </Grid>
+                  </Grid>
 
-              <Grid size={12}>
-                <Controller
-                  name="address"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field} fullWidth label="Địa chỉ" placeholder="VD: 59C Nguyễn Đình Chiểu... (không bắt buộc)"
-                      error={Boolean(errors.address)} helperText={errors.address?.message}
-                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                  <Grid size={12}>
+                    <Controller
+                      name="address"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field} fullWidth label="Địa chỉ" placeholder="VD: 59C Nguyễn Đình Chiểu... (không bắt buộc)"
+                          error={Boolean(errors.address)} helperText={errors.address?.message}
+                          sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
+                        />
+                      )}
                     />
-                  )}
-                />
-              </Grid>
+                  </Grid>
+                </>
+              )}
 
               <Grid size={12}>
                 <Controller
@@ -322,6 +336,57 @@ function DonationContributionForm({ fundDetail }) {
                 />
               </Grid>
             </Grid>
+
+            <Controller
+              name="isAnonymous"
+              control={control}
+              render={({ field }) => (
+                <Box
+                  component="label"
+                  sx={{
+                    mt: 2.2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 2,
+                    py: 1.2,
+                    borderRadius: 2,
+                    border: "1px solid",
+                    borderColor: field.value ? "#93c5fd" : "#c4b5fd",
+                    backgroundColor: field.value ? "#eff6ff" : "#f5f3ff",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    userSelect: "none",
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ fontWeight: 700, color: "#0f2f5f", fontSize: "0.94rem" }}>
+                      Quyên góp ẩn danh
+                    </Typography>
+                    <Typography sx={{ color: "#5f78a4", fontSize: "0.8rem", mt: 0.2 }}>
+                      Chỉ cần nhập số tiền và lời nhắn, thông tin cá nhân sẽ được ẩn
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={field.value}
+                    onChange={(e) => {
+                      field.onChange(e.target.checked);
+                      if (e.target.checked) {
+                        setValue("donorName", "");
+                        setValue("email", "");
+                        setValue("phone", "");
+                        setValue("address", "");
+                      }
+                    }}
+                    sx={{
+                      "& .MuiSwitch-switchBase.Mui-checked": { color: "#0f2f5f" },
+                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { backgroundColor: "#0f2f5f" },
+                      "& .MuiSwitch-track": { backgroundColor: "#7c6fd4" },
+                    }}
+                  />
+                </Box>
+              )}
+            />
 
             <Button
               type="submit" fullWidth variant="contained" disabled={isSubmitting}

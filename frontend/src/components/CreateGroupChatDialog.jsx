@@ -28,6 +28,7 @@ import { usePrivateChatList } from '../hooks/chat/usePrivateChatList';
 import { useCreateGroupChat } from '../hooks/chat/useCreateGroupChat';
 
 const MIN_OTHER_MEMBERS = 2;
+const MAX_OTHER_MEMBERS = 9; // 10 total including creator
 const DIALOG_PAGE_SIZE = 20;
 
 const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
@@ -67,6 +68,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
       if (alreadySelected) {
         return prev.filter((m) => m.peerMemberId !== contact.peerMemberId);
       }
+      if (prev.length >= MAX_OTHER_MEMBERS) return prev;
       return [...prev, { peerMemberId: contact.peerMemberId, peerUserName: contact.peerUserName, peerAvatarUrl: contact.peerAvatarUrl }];
     });
   };
@@ -83,7 +85,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
     });
   };
 
-  const canSubmit = selectedMembers.length >= MIN_OTHER_MEMBERS && !isCreating;
+  const canSubmit = selectedMembers.length >= MIN_OTHER_MEMBERS && selectedMembers.length <= MAX_OTHER_MEMBERS && !isCreating;
 
   useEffect(() => {
     if (!open) {
@@ -152,8 +154,18 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
           </Box>
         )}
 
-        <Typography variant="caption" color={selectedMembers.length < MIN_OTHER_MEMBERS ? 'error' : 'text.secondary'}>
-          Đã chọn {selectedMembers.length}/{MIN_OTHER_MEMBERS} thành viên tối thiểu
+        <Typography
+          variant="caption"
+          color={
+            selectedMembers.length < MIN_OTHER_MEMBERS
+              ? 'error'
+              : selectedMembers.length >= MAX_OTHER_MEMBERS
+                ? 'warning.main'
+                : 'text.secondary'
+          }
+        >
+          Đã chọn {selectedMembers.length} người (tối thiểu {MIN_OTHER_MEMBERS}, tối đa {MAX_OTHER_MEMBERS})
+          {selectedMembers.length >= MAX_OTHER_MEMBERS ? ' — đã đạt giới hạn' : ''}
         </Typography>
 
         <Box
@@ -179,11 +191,12 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
             <List dense disablePadding>
               {contacts.map((contact) => {
                 const isSelected = selectedMembers.some((m) => m.peerMemberId === contact.peerMemberId);
+                const isDisabled = isCreating || (!isSelected && selectedMembers.length >= MAX_OTHER_MEMBERS);
                 return (
                   <ListItem key={contact.peerMemberId} disablePadding>
                     <ListItemButton
                       onClick={() => handleToggleMember(contact)}
-                      disabled={isCreating}
+                      disabled={isDisabled}
                       dense
                       sx={{ px: 1.5 }}
                     >
@@ -204,7 +217,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
                         tabIndex={-1}
                         disableRipple
                         size="small"
-                        disabled={isCreating}
+                        disabled={isDisabled}
                       />
                     </ListItemButton>
                   </ListItem>
