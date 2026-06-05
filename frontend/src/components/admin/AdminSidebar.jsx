@@ -61,13 +61,13 @@ const NAV_GROUPS = (adminBase) => [
     items: [
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
       { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: 'Bài viết', role: 'ADMIN' },
-      { to: `${adminBase}/fundraising`, icon: <VolunteerActivismOutlinedIcon />, label: 'Gây quỹ', role: 'ADMIN' },
+      { to: `${adminBase}/fundraising`, icon: <VolunteerActivismOutlinedIcon />, label: 'Quyên góp', role: 'ADMIN' },
     ],
   },
   {
     title: 'Hệ thống',
     items: [
-      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: 'Góp ý / Phản hồi', role: 'ADMIN' },
+      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: 'Phản hồi', role: 'ADMIN' },
       { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: 'Nhật ký hệ thống', role: 'ADMIN' },
     ],
   },

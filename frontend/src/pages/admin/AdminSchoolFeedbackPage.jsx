@@ -109,7 +109,6 @@ const AdminSchoolFeedbackPage = () => {
         <AdminStatusChip
           status={val ? 'READ' : 'NEW'}
           category="feedback"
-          label={val ? 'Đã đọc' : 'Mới'}
         />
       )
     },
@@ -151,7 +150,7 @@ const AdminSchoolFeedbackPage = () => {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+        <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
           Phản hồi từ người dùng
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
