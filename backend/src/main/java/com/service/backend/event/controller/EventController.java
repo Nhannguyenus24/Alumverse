@@ -1,16 +1,10 @@
 package com.service.backend.event.controller;
 
-import com.service.backend.shared.entity.Event;
-import com.service.backend.shared.entity.EventInterest;
-import com.service.backend.shared.entity.EventTicket;
-import com.service.backend.event.dto.CreateEventRequest;
-import com.service.backend.event.dto.RegisterTicketRequest;
-import com.service.backend.event.dto.UpdateEventRequest;
-import com.service.backend.event.dto.EventStatisticsResponse;
-import com.service.backend.event.dto.InterestCheckResponse;
+import com.service.backend.shared.entity.*;
+import com.service.backend.event.dto.*;
+import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.event.service.EventService;
-import com.service.backend.shared.dto.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -30,216 +24,284 @@ public class EventController {
 
     private final EventService eventService;
 
+    // ─── Event CRUD ───────────────────────────────────────────────────────────
+
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Event>>> createEvent(@Valid @RequestBody CreateEventRequest request) {
         return eventService.createEvent(request)
-                .map(createdEvent -> ResponseEntity
-                        .status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("Event created successfully", createdEvent)));
+                .map(e -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Event created successfully", e)));
     }
 
     @PutMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Event>>> updateEvent(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId,
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @Valid @RequestBody UpdateEventRequest request) {
         return eventService.updateEvent(eventId, request)
-                .map(updatedEvent -> ResponseEntity
-                        .ok(new ApiResponse<>("Event updated successfully", updatedEvent)));
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Event updated successfully", e)));
     }
 
     @DeleteMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> deleteEvent(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.deleteEvent(eventId)
-                .map(deleted -> ResponseEntity
-                        .ok(new ApiResponse<>("Event deleted successfully", null)));
+                .map(d -> ResponseEntity.ok(new ApiResponse<>("Event deleted successfully", (Void) null)));
     }
 
     @GetMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Event>>> getEventById(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.getEventById(eventId)
-                .map(event -> ResponseEntity
-                        .ok(new ApiResponse<>("Event retrieved successfully", event)));
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Event retrieved successfully", e)));
     }
 
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getEvents(
-            @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         return eventService.getEventsByOrganization(page, limit)
-                .map(events -> ResponseEntity
-                        .ok(new ApiResponse<>("Events retrieved successfully", events)));
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Events retrieved successfully", e)));
     }
 
     @PostMapping("/{eventId}/publish")
     public Mono<ResponseEntity<ApiResponse<Event>>> publishEvent(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.publishEvent(eventId)
-                .map(event -> ResponseEntity
-                        .ok(new ApiResponse<>("Event published successfully", event)));
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Event published successfully", e)));
     }
 
     @PostMapping("/{eventId}/unpublish")
     public Mono<ResponseEntity<ApiResponse<Event>>> unpublishEvent(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.unpublishEvent(eventId)
-                .map(event -> ResponseEntity
-                        .ok(new ApiResponse<>("Event unpublished successfully", event)));
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Event unpublished successfully", e)));
     }
 
     @GetMapping("/upcoming")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getUpcomingEvents(
-            @Parameter(example = "0")
+            @RequestParam Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.getUpcomingEvents(page, limit)
-                .map(events -> ResponseEntity
-                        .ok(new ApiResponse<>("Upcoming events retrieved successfully", events)));
+        return eventService.getUpcomingEvents(organizationId, page, limit)
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Upcoming events retrieved successfully", e)));
     }
 
     @GetMapping("/past")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getPastEvents(
-            @Parameter(example = "0")
+            @RequestParam Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.getPastEvents(page, limit)
-                .map(events -> ResponseEntity
-                        .ok(new ApiResponse<>("Past events retrieved successfully", events)));
+        return eventService.getPastEvents(organizationId, page, limit)
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Past events retrieved successfully", e)));
     }
 
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> searchEvents(
-            @Parameter(example = "Hội thảo AI 2026")
+            @RequestParam Long organizationId,
             @RequestParam @NotBlank String keyword,
-            @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.searchEvents(keyword, page, limit)
-                .map(events -> ResponseEntity
-                        .ok(new ApiResponse<>("Search results retrieved successfully", events)));
+        return eventService.searchEvents(organizationId, keyword, page, limit)
+                .map(e -> ResponseEntity.ok(new ApiResponse<>("Search results retrieved successfully", e)));
     }
+
+    // ─── Interest ─────────────────────────────────────────────────────────────
 
     @PostMapping("/{eventId}/interest")
     public Mono<ResponseEntity<ApiResponse<EventInterest>>> addInterest(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.addInterest(eventId)
-                .map(interest -> ResponseEntity
-                        .status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("Interest added successfully", interest)));
+                .map(i -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Interest added successfully", i)));
     }
 
     @DeleteMapping("/{eventId}/interest")
     public Mono<ResponseEntity<ApiResponse<Void>>> removeInterest(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.removeInterest(eventId)
-                .map(removed -> ResponseEntity
-                        .ok(new ApiResponse<>("Interest removed successfully", null)));
+                .map(r -> ResponseEntity.ok(new ApiResponse<>("Interest removed successfully", (Void) null)));
     }
 
     @GetMapping("/{eventId}/interest/check")
     public Mono<ResponseEntity<ApiResponse<InterestCheckResponse>>> checkInterest(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.checkInterest(eventId)
-                .map(isInterested -> ResponseEntity
-                        .ok(new ApiResponse<>("Interest status retrieved",
-                                InterestCheckResponse.builder().isInterested(isInterested).build())));
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Interest status retrieved",
+                        InterestCheckResponse.builder().isInterested(v).build())));
     }
 
     @GetMapping("/{eventId}/interests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInterest>>>> getEventInterests(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId,
-            @Parameter(example = "0")
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         return eventService.getEventInterests(eventId, page, limit)
-                .map(interests -> ResponseEntity
-                        .ok(new ApiResponse<>("Event interests retrieved successfully", interests)));
+                .map(i -> ResponseEntity.ok(new ApiResponse<>("Event interests retrieved successfully", i)));
     }
+
+    // ─── Step 1: Invite users ─────────────────────────────────────────────────
+
+    @PostMapping("/{eventId}/invitations")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> inviteUsers(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @Valid @RequestBody InviteUsersRequest request) {
+        return eventService.inviteUsers(eventId, request)
+                .map(count -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Invitations sent: " + count, count)));
+    }
+
+    @GetMapping("/{eventId}/invitations")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventInvitation>>>> getInvitations(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return eventService.getInvitationsByEvent(eventId, page, limit)
+                .map(i -> ResponseEntity.ok(new ApiResponse<>("Invitations retrieved successfully", i)));
+    }
+
+    // ─── Step 2.1: Confirm invitation ─────────────────────────────────────────
+
+    @PostMapping("/invitations/confirm")
+    public Mono<ResponseEntity<ApiResponse<EventTicket>>> confirmInvitation(
+            @RequestParam @NotBlank String token) {
+        return eventService.confirmInvitation(token)
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("Invitation confirmed, ticket issued", t)));
+    }
+
+    // ─── Step 2.2: Self-register ──────────────────────────────────────────────
 
     @PostMapping("/{eventId}/register")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> registerForEvent(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId,
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @Valid @RequestBody(required = false) RegisterTicketRequest request) {
         return eventService.registerForEvent(eventId, request)
-                .map(registeredTicket -> ResponseEntity
-                        .status(HttpStatus.CREATED)
-                        .body(new ApiResponse<>("Registered successfully", registeredTicket)));
+                .map(t -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Registration submitted, pending approval", t)));
     }
 
-    @PostMapping("/tickets/{ticketCode}/cancel")
-    public Mono<ResponseEntity<ApiResponse<EventTicket>>> cancelTicket(
-            @Parameter(example = "EVT2026-001")
-            @PathVariable @NotBlank String ticketCode) {
-        return eventService.cancelTicket(ticketCode)
-                .map(ticket -> ResponseEntity
-                        .ok(new ApiResponse<>("Ticket cancelled successfully", ticket)));
+    // ─── Step 3: Approve / reject tickets ────────────────────────────────────
+
+    @PostMapping("/tickets/{ticketId}/approve")
+    public Mono<ResponseEntity<ApiResponse<EventTicket>>> approveTicket(
+            @Parameter(example = "1") @PathVariable @Min(1) Long ticketId) {
+        return eventService.approveTicket(ticketId)
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket approved", t)));
+    }
+
+    @PostMapping("/tickets/{ticketId}/reject")
+    public Mono<ResponseEntity<ApiResponse<EventTicket>>> rejectTicket(
+            @Parameter(example = "1") @PathVariable @Min(1) Long ticketId,
+            @RequestBody(required = false) ApproveTicketRequest request) {
+        return eventService.rejectTicket(ticketId, request)
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket rejected", t)));
+    }
+
+    @PostMapping("/{eventId}/tickets/bulk-approve")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> bulkApproveTickets(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @Valid @RequestBody BulkApproveRequest request) {
+        return eventService.bulkApproveTickets(eventId, request)
+                .map(count -> ResponseEntity.ok(new ApiResponse<>("Approved " + count + " tickets", count)));
+    }
+
+    @PostMapping("/{eventId}/tickets/approve-all")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> approveAllPending(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
+        return eventService.approveAllPending(eventId)
+                .map(count -> ResponseEntity.ok(new ApiResponse<>("Approved " + count + " pending tickets", count)));
+    }
+
+    // ─── Step 4: Reminder emails ──────────────────────────────────────────────
+
+    @PostMapping("/{eventId}/reminders")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> sendReminders(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @Valid @RequestBody ReminderEmailRequest request) {
+        return eventService.sendReminderEmails(eventId, request)
+                .map(count -> ResponseEntity.ok(new ApiResponse<>("Reminder sent to " + count + " recipients", count)));
+    }
+
+    @GetMapping("/{eventId}/email-logs")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventEmailLog>>>> getEmailLogs(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return eventService.getEmailLogsByEvent(eventId, page, limit)
+                .map(logs -> ResponseEntity.ok(new ApiResponse<>("Email logs retrieved successfully", logs)));
+    }
+
+    // ─── Step 5: Send issued ticket emails ───────────────────────────────────
+
+    @PostMapping("/{eventId}/tickets/send-emails")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> sendTicketEmails(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
+        return eventService.sendIssuedTicketEmails(eventId)
+                .map(count -> ResponseEntity.ok(new ApiResponse<>("Ticket emails sent to " + count + " recipients", count)));
+    }
+
+    // ─── Step 6: Activate + check-in ─────────────────────────────────────────
+
+    @PostMapping("/{eventId}/tickets/activate")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> activateTickets(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
+        return eventService.activateTickets(eventId)
+                .map(count -> ResponseEntity.ok(new ApiResponse<>("Activated " + count + " tickets", count)));
     }
 
     @PostMapping("/tickets/{ticketCode}/check-in")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> checkInTicket(
-            @Parameter(example = "EVT2026-001")
-            @PathVariable @NotBlank String ticketCode) {
+            @Parameter(example = "ABC12345") @PathVariable @NotBlank String ticketCode) {
         return eventService.checkInTicket(ticketCode)
-                .map(ticket -> ResponseEntity
-                        .ok(new ApiResponse<>("Checked in successfully", ticket)));
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("Checked in successfully", t)));
+    }
+
+    // ─── Step 7: Expire tickets ───────────────────────────────────────────────
+
+    @PostMapping("/{eventId}/tickets/expire")
+    public Mono<ResponseEntity<ApiResponse<Integer>>> expireTickets(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
+        return eventService.expireTickets(eventId)
+                .map(count -> ResponseEntity.ok(new ApiResponse<>("Expired " + count + " tickets", count)));
+    }
+
+    // ─── Ticket queries ───────────────────────────────────────────────────────
+
+    @PostMapping("/tickets/{ticketCode}/cancel")
+    public Mono<ResponseEntity<ApiResponse<EventTicket>>> cancelTicket(
+            @Parameter(example = "ABC12345") @PathVariable @NotBlank String ticketCode) {
+        return eventService.cancelTicket(ticketCode)
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket cancelled successfully", t)));
     }
 
     @GetMapping("/tickets/code/{ticketCode}")
     public Mono<ResponseEntity<ApiResponse<EventTicket>>> getTicketByCode(
-            @Parameter(example = "EVT2026-001")
-            @PathVariable @NotBlank String ticketCode) {
+            @Parameter(example = "ABC12345") @PathVariable @NotBlank String ticketCode) {
         return eventService.getTicketByCode(ticketCode)
-                .map(ticket -> ResponseEntity
-                        .ok(new ApiResponse<>("Ticket retrieved successfully", ticket)));
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("Ticket retrieved successfully", t)));
     }
 
     @GetMapping("/{eventId}/tickets")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicket>>>> getTicketsByEvent(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId,
-            @Parameter(example = "0")
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
+            @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.getTicketsByEvent(eventId, page, limit)
-                .map(tickets -> ResponseEntity
-                        .ok(new ApiResponse<>("Event tickets retrieved successfully", tickets)));
+        Mono<PaginatedResponse<EventTicket>> result = status != null
+                ? eventService.getTicketsByEventAndStatus(eventId, status, page, limit)
+                : eventService.getTicketsByEvent(eventId, page, limit);
+        return result.map(t -> ResponseEntity.ok(new ApiResponse<>("Event tickets retrieved successfully", t)));
     }
 
     @GetMapping("/my-tickets")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<EventTicket>>>> getMyTickets(
-            @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         return eventService.getMyTickets(page, limit)
-                .map(tickets -> ResponseEntity
-                        .ok(new ApiResponse<>("My tickets retrieved successfully", tickets)));
+                .map(t -> ResponseEntity.ok(new ApiResponse<>("My tickets retrieved successfully", t)));
     }
 
     @GetMapping("/{eventId}/statistics")
     public Mono<ResponseEntity<ApiResponse<EventStatisticsResponse>>> getEventStatistics(
-            @Parameter(example = "100")
-            @PathVariable @Min(1) Long eventId) {
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
         return eventService.getEventStatistics(eventId)
-                .map(stats -> ResponseEntity
-                        .ok(new ApiResponse<>("Event statistics retrieved successfully", stats)));
+                .map(s -> ResponseEntity.ok(new ApiResponse<>("Event statistics retrieved successfully", s)));
     }
 }

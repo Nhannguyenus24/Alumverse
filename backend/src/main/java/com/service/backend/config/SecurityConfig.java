@@ -66,7 +66,12 @@ public class SecurityConfig {
             "/api/mentorship/mentee/mentors",
             "/api/mentorship/mentee/mentors/**",
             "/api/mentorship/mentee/expertise-topics",
-            "/api/mentorship/mentee/expertise-categories"
+            "/api/mentorship/mentee/expertise-categories",
+            "/api/events",
+            "/api/events/upcoming",
+            "/api/events/past",
+            "/api/events/search",
+            "/api/events/{eventId}"
     };
 
     @Value("${app.cors.allowed-origin-patterns:}")
