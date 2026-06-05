@@ -45,6 +45,13 @@ public enum ErrorCode {
     ALREADY_INTERESTED("Bạn đã đăng ký quan tâm sự kiện này", 409),
     TICKET_ALREADY_CANCELLED("Vé đã được hủy trước đó", 400),
     TICKET_ALREADY_CHECKED_IN("Vé đã được check-in", 400),
+    TICKET_NOT_ACTIVE("Vé chưa ở trạng thái Active để check-in", 400),
+    TICKET_NOT_PENDING("Vé không ở trạng thái chờ duyệt", 400),
+    TICKET_ALREADY_REGISTERED("Bạn đã đăng ký sự kiện này rồi", 409),
+    INVITATION_NOT_FOUND("Không tìm thấy lời mời", 404),
+    INVITATION_EXPIRED("Lời mời đã hết hạn", 400),
+    INVITATION_ALREADY_USED("Lời mời đã được sử dụng", 409),
+    NO_TICKETS_TO_ISSUE("Không có vé nào để phát hành", 400),
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức", 404),
