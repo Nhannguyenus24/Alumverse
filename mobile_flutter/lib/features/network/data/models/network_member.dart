@@ -5,7 +5,6 @@ class NetworkMember {
   final String fullName;
   final String? program;
   final String? major;
-  final int? startYear;
   final String? avatarUrl;
 
   const NetworkMember({
@@ -13,11 +12,10 @@ class NetworkMember {
     required this.fullName,
     this.program,
     this.major,
-    this.startYear,
     this.avatarUrl,
   });
 
-  /// Short subtitle line: "Major • K{startYear}" / program fallback.
+  /// Short subtitle line: major, or program fallback.
   String get subtitle {
     final parts = <String>[];
     if (major != null && major!.isNotEmpty) {
@@ -25,7 +23,6 @@ class NetworkMember {
     } else if (program != null && program!.isNotEmpty) {
       parts.add(program!);
     }
-    if (startYear != null) parts.add('K$startYear');
     return parts.join(' • ');
   }
 
@@ -35,7 +32,6 @@ class NetworkMember {
       fullName: json['fullName'] as String? ?? '',
       program: json['program'] as String?,
       major: json['major'] as String?,
-      startYear: (json['startYear'] as num?)?.toInt(),
       avatarUrl: json['avatarUrl'] as String?,
     );
   }
