@@ -85,6 +85,8 @@ const PostEventPage = () => {
     }
   };
 
+  const [registrationQuestions, setRegistrationQuestions] = useState([]);
+
   return (
     <Page title="Đăng sự kiện" meta={<meta name="description" content="Đăng sự kiện - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
@@ -128,6 +130,8 @@ const PostEventPage = () => {
               setTopic={setTopic}
               eventData={eventData}
               handleEventInputChange={handleEventInputChange}
+              registrationQuestions={registrationQuestions}
+              setRegistrationQuestions={setRegistrationQuestions}
             />
 
             {/* Action Buttons */}

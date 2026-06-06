@@ -20,7 +20,7 @@ import { normalizeNews } from '../../hooks/articles/normalizeArticle';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
-
+import { useAuth } from '../../hooks/useAuth';
 
 const SIDEBAR = [
   { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
@@ -75,6 +75,17 @@ const ActivitiesPage = () => {
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+
+  const handleEdit = (article) => {
+    navigate(`/article/${article.channel}/${article.id}/edit`);
+  };
+
+  const handleDelete = (article) => {
+    console.log('Delete article', article.id);
   };
 
   return (
@@ -133,7 +144,12 @@ const ActivitiesPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featuredNews)}>
-                  <FeaturedArticleCard article={featuredCard} />
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featuredNews)}
+                    onDelete={() => handleDelete(featuredNews)}
+                  />
                 </Box>
               )}
 
@@ -157,7 +173,12 @@ const ActivitiesPage = () => {
                   >
                     {newsCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(newsRest[i])}>
-                        <ArticleCard article={card} />
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(newsRest[i])}
+                          onDelete={() => handleDelete(newsRest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -184,7 +205,12 @@ const ActivitiesPage = () => {
                   >
                     {eventCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingEvents[i])}>
-                        <ArticleEventCard article={card} />
+                        <ArticleEventCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(upcomingEvents[i])}
+                          onDelete={() => handleDelete(upcomingEvents[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
