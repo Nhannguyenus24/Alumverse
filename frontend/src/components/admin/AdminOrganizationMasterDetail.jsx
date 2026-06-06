@@ -37,6 +37,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
 import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
 import FavoriteRoundedIcon from '@mui/icons-material/FavoriteRounded';
@@ -44,13 +45,17 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 import DOMPurify from 'dompurify';
 import AdminStatusChip from './AdminStatusChip';
 import SearchBar from '../SearchBar';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material';
-import { adminOrganizationApi } from '../../utils/api';
+import { adminOrganizationApi, adminUserApi } from '../../utils/api';
+import { useSnackbar } from 'notistack';
+import AdminManualMemberDialog from './AdminManualMemberDialog';
+import { fileToBase64 } from '../../utils/imageUtils';
 
 const formatOrgDate = (value) => {
   if (!value) {
@@ -103,9 +108,11 @@ const AdminOrganizationMasterDetail = ({
   onSelectOrganizationId,
   onEditOrganization,
   onEditIntroduction,
+  onDeleteOrganization,
   onRefresh,
 }) => {
   const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
   const [orgSearch, setOrgSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [activeTab, setActiveTab] = useState(0);
@@ -166,10 +173,96 @@ const AdminOrganizationMasterDetail = ({
     heroBannerUrl: '',
     themeColors: { primary: '#1976d2', secondary: '#9c27b0', accent: '#ffb300' },
   });
+  const [identityState, setIdentityState] = useState({
+    siteTitle: '',
+    tagline: '',
+    description: '',
+  });
+  const [privacyState, setPrivacyState] = useState({
+    visibilityMode: 'PUBLIC',
+  });
+
   const [programList, setProgramList] = useState([]);
   const [majorList, setMajorList] = useState([]);
   const [newProgram, setNewProgram] = useState('');
   const [newMajor, setNewMajor] = useState('');
+
+  const [personnelDialog, setPersonnelDialog] = useState({
+    open: false,
+    type: 'leaders', // 'leaders' or 'teamMembers'
+    member: null,
+    index: -1,
+  });
+
+  const handleOpenPersonnelDialog = (type, member = null, index = -1) => {
+    setPersonnelDialog({ open: true, type, member, index });
+  };
+
+  const handleClosePersonnelDialog = () => {
+    setPersonnelDialog({ open: false, type: 'leaders', member: null, index: -1 });
+  };
+
+  const handleUpdatePersonnel = async (memberData) => {
+    if (!selectedOrg || !selectedIntroduction) return;
+
+    const { type, index } = personnelDialog;
+    const currentList = [...(selectedIntroduction[type] || [])];
+    
+    if (index >= 0) {
+      currentList[index] = memberData;
+    } else {
+      currentList.push(memberData);
+    }
+
+    const payload = {
+      content: selectedIntroduction.content,
+      vision: selectedIntroduction.vision,
+      mission: selectedIntroduction.mission,
+      coreValues: selectedIntroduction.coreValues,
+      bannerUrl: selectedIntroduction.bannerUrl,
+      images: selectedIntroduction.imageUrls || [],
+      leaders: type === 'leaders' ? currentList : selectedIntroduction.leaders || [],
+      teamMembers: type === 'teamMembers' ? currentList : selectedIntroduction.teamMembers || [],
+      leadersContent: selectedIntroduction.leadersContent,
+      teamMembersContent: selectedIntroduction.teamMembersContent,
+    };
+
+    try {
+      await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
+      enqueueSnackbar('Đã cập nhật nhân sự', { variant: 'success' });
+      onRefresh?.();
+    } catch (error) {
+      enqueueSnackbar('Không thể cập nhật nhân sự', { variant: 'error' });
+    }
+  };
+
+  const handleDeletePersonnel = async (type, index) => {
+    if (!selectedOrg || !selectedIntroduction) return;
+    if (!window.confirm('Xóa nhân sự này khỏi danh sách?')) return;
+
+    const currentList = [...(selectedIntroduction[type] || [])].filter((_, i) => i !== index);
+
+    const payload = {
+      content: selectedIntroduction.content,
+      vision: selectedIntroduction.vision,
+      mission: selectedIntroduction.mission,
+      coreValues: selectedIntroduction.coreValues,
+      bannerUrl: selectedIntroduction.bannerUrl,
+      images: selectedIntroduction.imageUrls || [],
+      leaders: type === 'leaders' ? currentList : selectedIntroduction.leaders || [],
+      teamMembers: type === 'teamMembers' ? currentList : selectedIntroduction.teamMembers || [],
+      leadersContent: selectedIntroduction.leadersContent,
+      teamMembersContent: selectedIntroduction.teamMembersContent,
+    };
+
+    try {
+      await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
+      enqueueSnackbar('Đã xóa nhân sự', { variant: 'success' });
+      onRefresh?.();
+    } catch (error) {
+      enqueueSnackbar('Không thể xóa nhân sự', { variant: 'error' });
+    }
+  };
 
   useEffect(() => {
     if (!selectedOrg) return;
@@ -178,15 +271,14 @@ const AdminOrganizationMasterDetail = ({
       setProgramList(normalizeList(selectedOrg.programs));
       setMajorList(normalizeList(selectedOrg.majors));
 
-      // init brand/theme from featuresConfig if present
+      // init config from featuresConfig
       let cfg = {};
       try {
         cfg = selectedOrg.featuresConfig
           ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
           : {};
-      } catch {
-        cfg = {};
-      }
+      } catch { cfg = {}; }
+
       const brand = cfg.brand_config || cfg.brandConfig || {};
       const themeColors = brand.theme_colors || brand.themeColors || {};
       setBrandState((s) => ({
@@ -200,6 +292,19 @@ const AdminOrganizationMasterDetail = ({
           accent: themeColors.accent || s.themeColors.accent,
         },
       }));
+
+      const identity = cfg.site_identity || cfg.siteIdentity || {};
+      const intro = identity.introduction || {};
+      setIdentityState({
+        siteTitle: identity.site_title || identity.siteTitle || '',
+        tagline: intro.tagline || '',
+        description: intro.description || '',
+      });
+
+      const privacy = cfg.privacy_settings || cfg.privacySettings || {};
+      setPrivacyState({
+        visibilityMode: privacy.visibility_mode || privacy.visibilityMode || 'PUBLIC',
+      });
     }, 0);
     return () => clearTimeout(timer);
   }, [selectedOrg]);
@@ -357,6 +462,14 @@ const AdminOrganizationMasterDetail = ({
                     >
                       Sửa thông tin
                     </Button>
+                    <IconButton 
+                      size="small" 
+                      color="error"
+                      onClick={() => onDeleteOrganization(selectedOrg.id)} 
+                      sx={{ border: 1, borderColor: 'error.lighter', borderRadius: 1.5 }}
+                    >
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
                     <IconButton size="small" onClick={onRefresh} sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5 }}>
                       <RefreshOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -383,6 +496,7 @@ const AdminOrganizationMasterDetail = ({
                   <Tab icon={<AutoStoriesOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Giới thiệu" />
                   <Tab icon={<SchoolOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Đào tạo" />
                   <Tab icon={<SettingsOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Cấu hình" />
+                  <Tab icon={<PeopleOutlineIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Nhân sự" />
                 </Tabs>
               </Box>
 
@@ -472,24 +586,125 @@ const AdminOrganizationMasterDetail = ({
                         </Card>
                       </Box>
                     </Stack>
+
+                    {/* Leaders Section */}
+                    {selectedIntroduction?.leaders?.length > 0 && (
+                      <DetailSection title="Ban lãnh đạo">
+                        {selectedIntroduction.leadersContent && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                            {selectedIntroduction.leadersContent}
+                          </Typography>
+                        )}
+                        <Grid container spacing={2}>
+                          {selectedIntroduction.leaders.map((leader, idx) => (
+                            <Grid item xs={12} sm={6} key={idx}>
+                              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <Avatar src={leader.image} sx={{ width: 48, height: 48 }} />
+                                <Box>
+                                  <Typography variant="subtitle2" fontWeight={700}>{leader.name}</Typography>
+                                  <Typography variant="caption" color="primary.main" fontWeight={600}>{leader.positions}</Typography>
+                                </Box>
+                              </Paper>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </DetailSection>
+                    )}
+
+                    {/* Team Members Section */}
+                    {selectedIntroduction?.teamMembers?.length > 0 && (
+                      <DetailSection title="Đội ngũ tiêu biểu">
+                        {selectedIntroduction.teamMembersContent && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
+                            {selectedIntroduction.teamMembersContent}
+                          </Typography>
+                        )}
+                        <Grid container spacing={2}>
+                          {selectedIntroduction.teamMembers.map((member, idx) => (
+                            <Grid item xs={12} sm={6} key={idx}>
+                              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <Avatar src={member.image} sx={{ width: 40, height: 40 }} />
+                                <Box>
+                                  <Typography variant="subtitle2" fontWeight={700}>{member.name}</Typography>
+                                  <Typography variant="caption" color="text.secondary">{member.positions}</Typography>
+                                </Box>
+                              </Paper>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </DetailSection>
+                    )}
                   </Stack>
                 )}
 
                 {activeTab === 2 && (
                   <Stack spacing={3}>
                     <DetailSection title="Chương trình đào tạo">
-                      <Stack direction="row" flexWrap="wrap" gap={1}>
-                        {selectedPrograms.length > 0 ? (
-                          selectedPrograms.map(p => <Paper key={p} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{p}</Paper>)
-                        ) : <Typography variant="body2" color="text.disabled">Chưa cấu hình chương trình</Typography>}
-                      </Stack>
-                    </DetailSection>
-                    <DetailSection title="Các chuyên ngành">
-                      <Stack direction="row" flexWrap="wrap" gap={1}>
-                        {selectedMajors.length > 0 ? (
-                          selectedMajors.map(m => <Paper key={m} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{m}</Paper>)
-                        ) : <Typography variant="body2" color="text.disabled">Chưa cấu hình chuyên ngành</Typography>}
-                      </Stack>
+                                              <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chương trình</Typography>
+                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
+                              {programList.map((p) => (
+                                <Paper key={p} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p}</Typography>
+                                  <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                                </Paper>
+                              ))}
+                            </Stack>
+                            <Stack
+                              direction={{ xs: 'column', sm: 'row' }}
+                              spacing={1}
+                            >
+                              <TextField size="small" placeholder="Thêm chương trình" value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
+                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>Thêm</Button>
+                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
+                                try {
+                                  const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
+                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
+                                  const toAdd = programList.filter(p => !remoteList.includes(p));
+                                  const toRemove = remoteList.filter(p => !programList.includes(p));
+                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
+                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
+                                  onRefresh?.();
+                                } catch (err) {
+                                  console.error('Save programs failed', err);
+                                }
+                              }}>Lưu</Button>
+                            </Stack>
+                          </Grid>
+
+                          <Grid item xs={12} sm={6}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chuyên ngành</Typography>
+                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
+                              {majorList.map((m) => (
+                                <Paper key={m} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{m}</Typography>
+                                  <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
+                                </Paper>
+                              ))}
+                            </Stack>
+                            <Stack
+                              direction={{ xs: 'column', sm: 'row' }}
+                              spacing={1}
+                            >
+                              <TextField size="small" placeholder="Thêm chuyên ngành" value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
+                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>Thêm</Button>
+                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
+                                try {
+                                  const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
+                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
+                                  const toAdd = majorList.filter(p => !remoteList.includes(p));
+                                  const toRemove = remoteList.filter(p => !majorList.includes(p));
+                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
+                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
+                                  onRefresh?.();
+                                } catch (err) {
+                                  console.error('Save majors failed', err);
+                                }
+                              }}>Lưu</Button>
+                            </Stack>
+                          </Grid>
+                        </Grid>
                     </DetailSection>
                   </Stack>
                 )}
@@ -556,41 +771,55 @@ const AdminOrganizationMasterDetail = ({
                             Hình ảnh
                           </Typography>
 
-                          <Grid container spacing={2}>
+                          <Grid container spacing={3}>
                             <Grid item xs={12} md={4}>
-                              <TextField
-                                label="Logo URL"
-                                size="small"
-                                fullWidth
-                                value={brandState.logoUrl}
-                                onChange={(e) =>
-                                  setBrandState((s) => ({ ...s, logoUrl: e.target.value }))
-                                }
-                              />
+                              <Stack spacing={1} alignItems="center">
+                                <Avatar src={brandState.logoUrl} variant="rounded" sx={{ width: 64, height: 64, border: 1, borderColor: 'divider' }} />
+                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
+                                  Logo
+                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const base64 = await fileToBase64(file);
+                                      setBrandState(s => ({ ...s, logoUrl: base64 }));
+                                    }
+                                  }} />
+                                </Button>
+                              </Stack>
                             </Grid>
 
                             <Grid item xs={12} md={4}>
-                              <TextField
-                                label="Favicon URL"
-                                size="small"
-                                fullWidth
-                                value={brandState.faviconUrl}
-                                onChange={(e) =>
-                                  setBrandState((s) => ({ ...s, faviconUrl: e.target.value }))
-                                }
-                              />
+                              <Stack spacing={1} alignItems="center">
+                                <Avatar src={brandState.faviconUrl} variant="rounded" sx={{ width: 32, height: 32, border: 1, borderColor: 'divider' }} />
+                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
+                                  Favicon
+                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const base64 = await fileToBase64(file);
+                                      setBrandState(s => ({ ...s, faviconUrl: base64 }));
+                                    }
+                                  }} />
+                                </Button>
+                              </Stack>
                             </Grid>
 
                             <Grid item xs={12} md={4}>
-                              <TextField
-                                label="Hero banner URL"
-                                size="small"
-                                fullWidth
-                                value={brandState.heroBannerUrl}
-                                onChange={(e) =>
-                                  setBrandState((s) => ({ ...s, heroBannerUrl: e.target.value }))
-                                }
-                              />
+                              <Stack spacing={1} alignItems="center">
+                                <Box sx={{ width: '100%', height: 64, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+                                  {brandState.heroBannerUrl && <img src={brandState.heroBannerUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                </Box>
+                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
+                                  Hero Banner
+                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const base64 = await fileToBase64(file);
+                                      setBrandState(s => ({ ...s, heroBannerUrl: base64 }));
+                                    }
+                                  }} />
+                                </Button>
+                              </Stack>
                             </Grid>
                           </Grid>
                         </Box>
@@ -667,84 +896,16 @@ const AdminOrganizationMasterDetail = ({
                                 };
                                 const newCfg = { ...cfg, brand_config: brand };
                                 await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
+                                enqueueSnackbar('Đã lưu cấu hình giao diện', { variant: 'success' });
                                 onRefresh?.();
                               } catch (err) {
-                                console.error('Save brand/theme failed', err);
+                                enqueueSnackbar('Lưu thất bại', { variant: 'error' });
                               }
                             }}
                          sx={{ mt: 2 }}
                         >
-                          Lưu
+                          Lưu giao diện
                         </Button>
-                      </DetailSection>
-
-                      {/* Programs & Majors editable lists */}
-                      <DetailSection title="Cấu hình đào tạo">
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chương trình</Typography>
-                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
-                              {programList.map((p) => (
-                                <Paper key={p} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{p}</Typography>
-                                  <IconButton size="small" onClick={() => setProgramList(pl => pl.filter(x => x !== p))}><DeleteOutlineIcon fontSize="small" /></IconButton>
-                                </Paper>
-                              ))}
-                            </Stack>
-                            <Stack
-                              direction={{ xs: 'column', sm: 'row' }}
-                              spacing={1}
-                            >
-                              <TextField size="small" placeholder="Thêm chương trình" value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
-                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>Thêm</Button>
-                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
-                                try {
-                                  const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
-                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
-                                  const toAdd = programList.filter(p => !remoteList.includes(p));
-                                  const toRemove = remoteList.filter(p => !programList.includes(p));
-                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
-                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
-                                  onRefresh?.();
-                                } catch (err) {
-                                  console.error('Save programs failed', err);
-                                }
-                              }}>Lưu</Button>
-                            </Stack>
-                          </Grid>
-
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chuyên ngành</Typography>
-                            <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
-                              {majorList.map((m) => (
-                                <Paper key={m} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Typography sx={{ fontWeight: 700, fontSize: 13 }}>{m}</Typography>
-                                  <IconButton size="small" onClick={() => setMajorList(ml => ml.filter(x => x !== m))}><DeleteOutlineIcon fontSize="small" /></IconButton>
-                                </Paper>
-                              ))}
-                            </Stack>
-                            <Stack
-                              direction={{ xs: 'column', sm: 'row' }}
-                              spacing={1}
-                            >
-                              <TextField size="small" placeholder="Thêm chuyên ngành" value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
-                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>Thêm</Button>
-                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
-                                try {
-                                  const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
-                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
-                                  const toAdd = majorList.filter(p => !remoteList.includes(p));
-                                  const toRemove = remoteList.filter(p => !majorList.includes(p));
-                                  await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
-                                  await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
-                                  onRefresh?.();
-                                } catch (err) {
-                                  console.error('Save majors failed', err);
-                                }
-                              }}>Lưu</Button>
-                            </Stack>
-                          </Grid>
-                        </Grid>
                       </DetailSection>
 
                       <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
@@ -755,7 +916,131 @@ const AdminOrganizationMasterDetail = ({
                       </Box>
                   </Stack>
                 )}
+
+                {activeTab === 4 && (
+                  <Stack spacing={3}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>
+                        Quản lý nhân sự (Thêm thủ công)
+                      </Typography>
+                    </Box>
+
+                    {/* Section: Leaders */}
+                    <Box>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight={800}>Ban lãnh đạo</Typography>
+                        <Button
+                          size="small"
+                          startIcon={<AddIcon />}
+                          onClick={() => handleOpenPersonnelDialog('leaders')}
+                        >
+                          Thêm lãnh đạo
+                        </Button>
+                      </Stack>
+                      {!selectedIntroduction?.leaders?.length ? (
+                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic', mb: 2 }}>Chưa có thông tin ban lãnh đạo.</Typography>
+                      ) : (
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 3 }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                                <TableCell sx={{ fontWeight: 700 }}>Họ tên</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Chức vụ</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {selectedIntroduction.leaders.map((leader, idx) => (
+                                <TableRow key={idx} sx={{ '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.02) } }}>
+                                  <TableCell>
+                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                      <Avatar src={leader.image} sx={{ width: 32, height: 32 }} />
+                                      <Typography variant="subtitle2" fontWeight={700}>{leader.name}</Typography>
+                                    </Stack>
+                                  </TableCell>
+                                  <TableCell sx={{ fontSize: 13 }}>{leader.positions}</TableCell>
+                                  <TableCell sx={{ fontSize: 13 }}>{leader.email}</TableCell>
+                                  <TableCell align="right">
+                                    <IconButton size="small" onClick={() => handleOpenPersonnelDialog('leaders', leader, idx)}>
+                                      <EditOutlinedIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton size="small" color="error" onClick={() => handleDeletePersonnel('leaders', idx)}>
+                                      <DeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      )}
+                    </Box>
+
+                    <Divider />
+
+                    {/* Section: Team Members */}
+                    <Box>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight={800}>Đội ngũ nhân sự tiêu biểu</Typography>
+                        <Button
+                          size="small"
+                          startIcon={<AddIcon />}
+                          onClick={() => handleOpenPersonnelDialog('teamMembers')}
+                        >
+                          Thêm thành viên
+                        </Button>
+                      </Stack>
+                      {!selectedIntroduction?.teamMembers?.length ? (
+                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>Chưa có thông tin đội ngũ nhân sự.</Typography>
+                      ) : (
+                        <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                                <TableCell sx={{ fontWeight: 700 }}>Họ tên</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Chức vụ</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {selectedIntroduction.teamMembers.map((m, idx) => (
+                                <TableRow key={idx} sx={{ '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.02) } }}>
+                                  <TableCell>
+                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                      <Avatar src={m.image} sx={{ width: 32, height: 32 }} />
+                                      <Typography variant="subtitle2" fontWeight={700}>{m.name}</Typography>
+                                    </Stack>
+                                  </TableCell>
+                                  <TableCell sx={{ fontSize: 13 }}>{m.positions}</TableCell>
+                                  <TableCell sx={{ fontSize: 13 }}>{m.email}</TableCell>
+                                  <TableCell align="right">
+                                    <IconButton size="small" onClick={() => handleOpenPersonnelDialog('teamMembers', m, idx)}>
+                                      <EditOutlinedIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton size="small" color="error" onClick={() => handleDeletePersonnel('teamMembers', idx)}>
+                                      <DeleteOutlineIcon fontSize="small" />
+                                    </IconButton>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      )}
+                    </Box>
+                  </Stack>
+                )}
               </Box>
+
+              <AdminManualMemberDialog
+                open={personnelDialog.open}
+                onClose={handleClosePersonnelDialog}
+                member={personnelDialog.member}
+                onConfirm={handleUpdatePersonnel}
+                title={personnelDialog.type === 'leaders' ? "Thông tin Lãnh đạo" : "Thông tin Nhân sự"}
+              />
             </Box>
           </Fade>
         )}

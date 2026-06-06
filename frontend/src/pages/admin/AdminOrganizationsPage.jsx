@@ -101,6 +101,17 @@ const AdminOrganizationsPage = () => {
     }
   }, [editTarget, enqueueSnackbar]);
 
+  const handleDeleteOrganization = useCallback(async (orgId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa tổ chức này?')) return;
+    try {
+      await adminOrganizationApi.deleteOrganization(orgId);
+      setOrganizations((prev) => prev.filter((item) => item.id !== orgId));
+      enqueueSnackbar('Đã xóa tổ chức thành công', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể xóa tổ chức', { variant: 'error' });
+    }
+  }, [enqueueSnackbar]);
+
   const handleUpdateIntroduction = useCallback(async (payload) => {
     if (!selectedOrganizationId) return;
     try {
@@ -205,6 +216,7 @@ const AdminOrganizationsPage = () => {
         onEditOrganization={(org) => { setEditTarget(org); setEditDialogOpen(true); }}
         onEditIntroduction={() => setIntroDialogOpen(true)}
         onUpdateOrganization={(org) => handleUpdateOrganization(org.id, org)}
+        onDeleteOrganization={handleDeleteOrganization}
         onRefresh={loadOrganizations}
       />
 
