@@ -457,6 +457,7 @@ CREATE TABLE "forum_topic_subscriptions" (
   "topic_id" integer NOT NULL,
   "member_id" integer NOT NULL,
   "last_read_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "last_notified_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -720,3 +721,8 @@ CREATE INDEX ON "forum_post_reports" ("status", "created_at" DESC);
 CREATE INDEX ON "admin_audit_logs" ("target_user_id", "created_at" DESC);
 
 CREATE INDEX ON "school_feedbacks" ("organization_id", "is_read", "created_at" DESC);
+
+CREATE INDEX ON "forum_posts" ("topic_id", "created_at" DESC);
+
+CREATE INDEX ON "forum_topic_subscriptions" ("topic_id", "member_id", "last_read_at", "last_notified_at");
+

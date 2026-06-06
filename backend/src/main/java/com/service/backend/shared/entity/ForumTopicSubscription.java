@@ -31,6 +31,9 @@ public class ForumTopicSubscription {
     @Column("last_read_at")
     private LocalDateTime lastReadAt;
     
+    @Column("last_notified_at")
+    private LocalDateTime lastNotifiedAt;
+    
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

@@ -16,5 +16,6 @@ public class ForumTopicSubscriptionDTO {
     private Integer topicId;
     private Integer memberId;
     private LocalDateTime lastReadAt;
+    private LocalDateTime lastNotifiedAt;
     private LocalDateTime createdAt;
 }

@@ -1,5 +1,6 @@
 package com.service.backend.forum.service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -7,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
@@ -59,6 +61,7 @@ public class ForumService {
     private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumPostReportRepository forumPostReportRepository;
     private final ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
+    private final Cache<String, LocalDateTime> forumRecentPostsCache;
 
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
@@ -189,6 +192,15 @@ public class ForumService {
                 })
                 .subscribe();
 
+        if (memberId != null) {
+            forumTopicSubscriptionRepository.updateLastReadAt(topicId, memberId, java.time.LocalDateTime.now())
+                    .onErrorResume(error -> {
+                        log.warn("Failed to update last read at for topic ID: {}, member ID: {}", topicId, memberId, error);
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+
         long offset = (long) page * size;
 
         Mono<List<ForumPost>> postsMono = forumPostRepository
@@ -243,6 +255,12 @@ public class ForumService {
                             .build();
 
                     return forumPostRepository.save(post);
+                })
+                .doOnNext(post -> {
+                    String cacheKey = post.getTopicId() + ":" + post.getId();
+                    LocalDateTime createdAt = post.getCreatedAt() != null
+                            ? post.getCreatedAt() : LocalDateTime.now();
+                    forumRecentPostsCache.put(cacheKey, createdAt);
                 })
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("createPost result: {}", JsonUtils.toJson(result)))
@@ -491,6 +509,7 @@ public class ForumService {
                 .topicId(subscription.getTopicId())
                 .memberId(subscription.getMemberId())
                 .lastReadAt(subscription.getLastReadAt())
+                .lastNotifiedAt(subscription.getLastNotifiedAt())
                 .createdAt(subscription.getCreatedAt())
                 .build();
     }
