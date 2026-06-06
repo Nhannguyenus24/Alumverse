@@ -13,30 +13,27 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("notifications")
-public class Notification {
-
+@Builder
+@Table("forum_topic_subscriptions")
+public class ForumTopicSubscription {
+    
     @Id
     private Integer id;
-
+    
+    @Column("topic_id")
+    private Integer topicId;
+    
     @Column("member_id")
     private Integer memberId;
-
-    @Column("title")
-    private String title;
-
-    @Column("message")
-    private String message;
-
-    @Column("is_read")
-    private Boolean isRead;
-
-    @Column("link")
-    private String link;
-
+    
+    @Column("last_read_at")
+    private LocalDateTime lastReadAt;
+    
+    @Column("last_notified_at")
+    private LocalDateTime lastNotifiedAt;
+    
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

@@ -25,11 +25,16 @@ public class NotificationService {
 	private final NotificationRepository notificationRepository;
 
 	public void createNotificationAsync(Integer memberId, String title, String message) {
+		createNotificationAsync(memberId, title, message, null);
+	}
+
+	public void createNotificationAsync(Integer memberId, String title, String message, String link) {
 		Notification notification = Notification.builder()
 				.memberId(memberId)
 				.title(title)
 				.message(message)
 				.isRead(false)
+				.link(link)
 				.build();
 
 		notificationRepository.save(notification)
@@ -49,6 +54,7 @@ public class NotificationService {
 						.title(notification.getTitle())
 						.message(notification.getMessage())
 						.isRead(notification.getIsRead())
+						.link(notification.getLink())
 						.createdAt(notification.getCreatedAt())
 						.build())
 				.collectList();

@@ -148,9 +148,6 @@ const ForumCategoryPage = () => {
                         width: { xs: '100%', sm: 'auto' },
                       }}
                     >
-                      <Button variant="outlined" color="primary" sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>
-                        Theo dõi
-                      </Button>
                       <Button
                         variant="contained"
                         color="primary"

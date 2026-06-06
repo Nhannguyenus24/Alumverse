@@ -1,4 +1,4 @@
-package com.service.backend.user.dto;
+package com.service.backend.forum.dto;
 
 import java.time.LocalDateTime;
 
@@ -8,14 +8,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationResponse {
+@Builder
+public class ForumTopicSubscriptionDTO {
     private Integer id;
-    private String title;
-    private String message;
-    private Boolean isRead;
-    private String link;
+    private Integer topicId;
+    private Integer memberId;
+    private LocalDateTime lastReadAt;
+    private LocalDateTime lastNotifiedAt;
     private LocalDateTime createdAt;
 }
