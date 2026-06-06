@@ -110,6 +110,7 @@ const AdminOrganizationMasterDetail = ({
   onEditIntroduction,
   onDeleteOrganization,
   onRefresh,
+  onRefreshIntroduction,
 }) => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -203,11 +204,12 @@ const AdminOrganizationMasterDetail = ({
   };
 
   const handleUpdatePersonnel = async (memberData) => {
-    if (!selectedOrg || !selectedIntroduction) return;
+    if (!selectedOrg) return;
 
     const { type, index } = personnelDialog;
-    const currentList = [...(selectedIntroduction[type] || [])];
-    
+    const currentIntro = selectedIntroduction || {};
+    const currentList = [...(currentIntro[type] || [])];
+
     if (index >= 0) {
       currentList[index] = memberData;
     } else {
@@ -215,22 +217,22 @@ const AdminOrganizationMasterDetail = ({
     }
 
     const payload = {
-      content: selectedIntroduction.content,
-      vision: selectedIntroduction.vision,
-      mission: selectedIntroduction.mission,
-      coreValues: selectedIntroduction.coreValues,
-      bannerUrl: selectedIntroduction.bannerUrl,
-      images: selectedIntroduction.imageUrls || [],
-      leaders: type === 'leaders' ? currentList : selectedIntroduction.leaders || [],
-      teamMembers: type === 'teamMembers' ? currentList : selectedIntroduction.teamMembers || [],
-      leadersContent: selectedIntroduction.leadersContent,
-      teamMembersContent: selectedIntroduction.teamMembersContent,
+      content: currentIntro.content || '',
+      vision: currentIntro.vision || '',
+      mission: currentIntro.mission || '',
+      coreValues: currentIntro.coreValues || '',
+      bannerUrl: currentIntro.bannerUrl || '',
+      images: currentIntro.imageUrls || [],
+      leaders: type === 'leaders' ? currentList : (currentIntro.leaders || []),
+      teamMembers: type === 'teamMembers' ? currentList : (currentIntro.teamMembers || []),
+      leadersContent: currentIntro.leadersContent || '',
+      teamMembersContent: currentIntro.teamMembersContent || '',
     };
 
     try {
       await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
       enqueueSnackbar('Đã cập nhật nhân sự', { variant: 'success' });
-      onRefresh?.();
+      onRefreshIntroduction?.();
     } catch (error) {
       enqueueSnackbar('Không thể cập nhật nhân sự', { variant: 'error' });
     }
@@ -243,22 +245,22 @@ const AdminOrganizationMasterDetail = ({
     const currentList = [...(selectedIntroduction[type] || [])].filter((_, i) => i !== index);
 
     const payload = {
-      content: selectedIntroduction.content,
-      vision: selectedIntroduction.vision,
-      mission: selectedIntroduction.mission,
-      coreValues: selectedIntroduction.coreValues,
-      bannerUrl: selectedIntroduction.bannerUrl,
+      content: selectedIntroduction.content || '',
+      vision: selectedIntroduction.vision || '',
+      mission: selectedIntroduction.mission || '',
+      coreValues: selectedIntroduction.coreValues || '',
+      bannerUrl: selectedIntroduction.bannerUrl || '',
       images: selectedIntroduction.imageUrls || [],
-      leaders: type === 'leaders' ? currentList : selectedIntroduction.leaders || [],
-      teamMembers: type === 'teamMembers' ? currentList : selectedIntroduction.teamMembers || [],
-      leadersContent: selectedIntroduction.leadersContent,
-      teamMembersContent: selectedIntroduction.teamMembersContent,
+      leaders: type === 'leaders' ? currentList : (selectedIntroduction.leaders || []),
+      teamMembers: type === 'teamMembers' ? currentList : (selectedIntroduction.teamMembers || []),
+      leadersContent: selectedIntroduction.leadersContent || '',
+      teamMembersContent: selectedIntroduction.teamMembersContent || '',
     };
 
     try {
       await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
       enqueueSnackbar('Đã xóa nhân sự', { variant: 'success' });
-      onRefresh?.();
+      onRefreshIntroduction?.();
     } catch (error) {
       enqueueSnackbar('Không thể xóa nhân sự', { variant: 'error' });
     }
@@ -508,7 +510,6 @@ const AdminOrganizationMasterDetail = ({
                         <DetailItem label="ID Hệ thống" value={selectedOrg.id} />
                         <DetailItem label="Slug / Alias" value={selectedOrg.slug} />
                         <DetailItem label="Ngày tạo" value={formatOrgDate(selectedOrg.createdAt)} />
-                        <DetailItem label="Cập nhật lần cuối" value={formatOrgDate(selectedOrg.updatedAt)} />
                         <DetailItem label="Logo URL" value={selectedOrg.logoUrl || 'N/A'} isFullWidth />
                       </Grid>
                     </DetailSection>
@@ -660,14 +661,15 @@ const AdminOrganizationMasterDetail = ({
                               <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
                                 try {
                                   const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
-                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
+                                  const remoteList = Array.isArray(remote) ? remote : [];
                                   const toAdd = programList.filter(p => !remoteList.includes(p));
                                   const toRemove = remoteList.filter(p => !programList.includes(p));
                                   await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
                                   await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
+                                  enqueueSnackbar('Đã lưu danh sách chương trình', { variant: 'success' });
                                   onRefresh?.();
                                 } catch (err) {
-                                  console.error('Save programs failed', err);
+                                  enqueueSnackbar('Lưu chương trình thất bại', { variant: 'error' });
                                 }
                               }}>Lưu</Button>
                             </Stack>
@@ -692,14 +694,15 @@ const AdminOrganizationMasterDetail = ({
                               <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
                                 try {
                                   const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
-                                  const remoteList = Array.isArray(remote) ? remote : remote || [];
+                                  const remoteList = Array.isArray(remote) ? remote : [];
                                   const toAdd = majorList.filter(p => !remoteList.includes(p));
                                   const toRemove = remoteList.filter(p => !majorList.includes(p));
                                   await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
                                   await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
+                                  enqueueSnackbar('Đã lưu danh sách chuyên ngành', { variant: 'success' });
                                   onRefresh?.();
                                 } catch (err) {
-                                  console.error('Save majors failed', err);
+                                  enqueueSnackbar('Lưu chuyên ngành thất bại', { variant: 'error' });
                                 }
                               }}>Lưu</Button>
                             </Stack>
@@ -729,10 +732,10 @@ const AdminOrganizationMasterDetail = ({
                           const handleToggle = async (key) => {
                             try {
                               await adminOrganizationApi.toggleFeature(selectedOrg.id, key);
-                              // refresh parent view
+                              enqueueSnackbar(`Đã cập nhật tính năng "${featureLabels[key]}"`, { variant: 'success' });
                               onRefresh?.();
                             } catch (err) {
-                              console.error('Toggle feature failed', err);
+                              enqueueSnackbar('Không thể cập nhật tính năng', { variant: 'error' });
                             }
                           };
 
@@ -755,7 +758,7 @@ const AdminOrganizationMasterDetail = ({
                                 </Typography>
                               </Box>
                               <Switch
-                                checked={config[key] ?? true}
+                                checked={config?.features_config?.[key]?.enabled ?? true}
                                 onChange={() => handleToggle(key)}
                               />
                             </Box>

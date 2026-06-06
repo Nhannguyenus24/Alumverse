@@ -79,7 +79,9 @@ useEffect(() => {
       ...formData,
       programs: formData.programs.split(',').map(s => s.trim()).filter(Boolean),
       majors: formData.majors.split(',').map(s => s.trim()).filter(Boolean),
-      featuresConfig: JSON.stringify(formData.featuresConfig),
+      featuresConfig: formData.featuresConfig && typeof formData.featuresConfig === 'object'
+        ? JSON.stringify(formData.featuresConfig)
+        : null,
     });
   };
 

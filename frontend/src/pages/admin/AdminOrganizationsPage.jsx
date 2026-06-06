@@ -56,13 +56,15 @@ const AdminOrganizationsPage = () => {
     });
   }, [organizations]);
 
-  useEffect(() => {
-    if (selectedOrganizationId) {
-      organizationApi.getIntroduction(selectedOrganizationId)
-        .then(data => setIntroduction(data || null))
-        .catch(() => setIntroduction(null));
-    } else setIntroduction(null);
+  const loadIntroduction = useCallback(async () => {
+    if (!selectedOrganizationId) { setIntroduction(null); return; }
+    try {
+      const data = await organizationApi.getIntroduction(selectedOrganizationId);
+      setIntroduction(data || null);
+    } catch { setIntroduction(null); }
   }, [selectedOrganizationId]);
+
+  useEffect(() => { loadIntroduction(); }, [loadIntroduction]);
 
   const selectedOrganization = useMemo(
     () => organizations.find((org) => org.id === selectedOrganizationId) || null,
@@ -215,6 +217,7 @@ const AdminOrganizationsPage = () => {
         selectedIntroduction={introduction}
         onEditOrganization={(org) => { setEditTarget(org); setEditDialogOpen(true); }}
         onEditIntroduction={() => setIntroDialogOpen(true)}
+        onRefreshIntroduction={loadIntroduction}
         onUpdateOrganization={(org) => handleUpdateOrganization(org.id, org)}
         onDeleteOrganization={handleDeleteOrganization}
         onRefresh={loadOrganizations}
