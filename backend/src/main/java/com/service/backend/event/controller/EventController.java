@@ -15,6 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.Parameter;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/events")
@@ -126,6 +127,14 @@ public class EventController {
         return eventService.checkInterest(eventId)
                 .map(v -> ResponseEntity.ok(new ApiResponse<>("Interest status retrieved",
                         InterestCheckResponse.builder().isInterested(v).build())));
+    }
+
+    @GetMapping("/{eventId}/check-registered")
+    public Mono<ResponseEntity<ApiResponse<Map<String, Boolean>>>> checkRegistered(
+            @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
+        return eventService.checkRegistered(eventId)
+                .map(v -> ResponseEntity.ok(new ApiResponse<>("Registration status retrieved",
+                        Map.of("isRegistered", v))));
     }
 
     @GetMapping("/{eventId}/interests")

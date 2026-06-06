@@ -30,6 +30,17 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         setIsInterested(checked);
       })
       .catch(() => {});
+    eventApi.checkRegistered(eventId)
+      .then((res) => {
+        if (res?.isRegistered) setIsJoined(true);
+      })
+      .catch(() => {});
+    eventApi.getEventStatisticsById(eventId)
+      .then((res) => {
+        if (res?.interestedCount != null) setInterestedCount(res.interestedCount);
+        if (res?.registeredCount != null) setJoinedCount(res.registeredCount);
+      })
+      .catch(() => {});
   }, [channel, eventId]);
 
   const handleInterest = async () => {
@@ -61,7 +72,12 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
       setJoinedCount((c) => c + 1);
       enqueueSnackbar("Đăng ký tham gia thành công! Chờ admin duyệt.", { variant: "success" });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+      if (err?.response?.status === 409) {
+        setIsJoined(true);
+        enqueueSnackbar("Bạn đã đăng ký sự kiện này rồi.", { variant: "info" });
+      } else {
+        enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+      }
     } finally {
       setLoadingJoin(false);
     }
