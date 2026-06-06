@@ -1,5 +1,6 @@
 package com.service.backend.chat.dao;
 
+import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.RecentChatPreviewResponse;
 import com.service.backend.shared.entity.ChatGroupMember;
 import org.springframework.data.r2dbc.repository.Modifying;
@@ -24,6 +25,10 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
     @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId AND member_id = :memberId")
     Mono<Void> deleteByGroupIdAndMemberId(Long groupId, Long memberId);
+
+    @Modifying
+    @Query("UPDATE chat_group_members SET role = 'OWNER' WHERE group_id = :groupId AND member_id = :memberId")
+    Mono<Void> updateRoleToOwnerByGroupIdAndMemberId(Long groupId, Long memberId);
 
     @Modifying
     @Query("DELETE FROM chat_group_members WHERE group_id = :groupId")
@@ -57,6 +62,39 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
             LIMIT 5
             """)
     Flux<RecentChatPreviewResponse> findTop5RecentChatPreviewsByMemberId(Long memberId);
+
+    @Query("""
+            SELECT cgm.member_id AS member_id,
+                   gp.full_name AS full_name,
+                   u.avatar_url AS avatar_url,
+                   cgm.role AS role,
+                   cgm.joined_at AS joined_at
+            FROM chat_group_members cgm
+            INNER JOIN users u ON u.id = cgm.member_id
+            LEFT JOIN global_profiles gp ON gp.user_id = cgm.member_id
+            WHERE cgm.group_id = :groupId
+              AND (:namePattern IS NULL OR LOWER(gp.full_name) LIKE LOWER(:namePattern))
+            ORDER BY CASE cgm.role WHEN 'OWNER' THEN 0 ELSE 1 END,
+                     cgm.joined_at ASC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<ChatGroupMemberItemResponse> findMembersByGroupIdWithProfile(
+            Long groupId,
+            String namePattern,
+            int limit,
+            int offset);
+
+    @Query("""
+            SELECT COUNT(cgm.id)
+            FROM chat_group_members cgm
+            LEFT JOIN global_profiles gp ON gp.user_id = cgm.member_id
+            WHERE cgm.group_id = :groupId
+              AND (:namePattern IS NULL OR LOWER(gp.full_name) LIKE LOWER(:namePattern))
+            """)
+    Mono<Long> countMembersByGroupIdWithNameFilter(Long groupId, String namePattern);
+
+    @Query("SELECT COUNT(id) FROM chat_group_members WHERE group_id = :groupId")
+    Mono<Long> countMembersByGroupId(Long groupId);
 }
 
 

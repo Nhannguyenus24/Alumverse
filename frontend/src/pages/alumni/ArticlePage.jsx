@@ -1,83 +1,111 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
 import { Box, Container, Typography, CircularProgress, Button, Stack } from "@mui/material";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import { useArticleById } from "../../hooks/articles/useArticleById";
 import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
+import JoinEventDialog from "../../components/event/JoinEventDialog";
+import { eventApi } from "../../utils/api";
+import JoinEventDialog from "../../components/event/JoinEventDialog";
 
-const ArticleHighlightCard = ({ data, channel }) => {
+const ArticleHighlightCard = ({ data, channel, eventId }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
+  const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
+  const [joinedCount, setJoinedCount] = useState(data.stats?.[1]?.value ?? 0);
+  const [loadingInterest, setLoadingInterest] = useState(false);
+  const [loadingJoin, setLoadingJoin] = useState(false);
+
+  useEffect(() => {
+    if (channel !== "event" || !eventId) return;
+    eventApi.checkInterest(eventId)
+      .then((res) => {
+        const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
+        setIsInterested(checked);
+      })
+      .catch(() => {});
+  }, [channel, eventId]);
+
+  const handleInterest = async () => {
+    if (loadingInterest) return;
+    setLoadingInterest(true);
+    try {
+      if (isInterested) {
+        await eventApi.removeInterest(eventId);
+        setIsInterested(false);
+        setInterestedCount((c) => Math.max(0, c - 1));
+      } else {
+        await eventApi.addInterest(eventId);
+        setIsInterested(true);
+        setInterestedCount((c) => c + 1);
+      }
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || "Thao tác thất bại", { variant: "error" });
+    } finally {
+      setLoadingInterest(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    if (loadingJoin || isJoined) return;
+    setLoadingJoin(true);
+    try {
+      await eventApi.registerForEvent(eventId);
+      setIsJoined(true);
+      setJoinedCount((c) => c + 1);
+      enqueueSnackbar("Đăng ký tham gia thành công! Chờ admin duyệt.", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+    } finally {
+      setLoadingJoin(false);
+    }
+  };
+
+  const displayStats = channel === "event"
+    ? [
+        { value: interestedCount, label: "người quan tâm" },
+        { value: joinedCount, label: "người tham gia" },
+      ]
+    : data.stats;
 
   return (
-    <Box
-      sx={{
-        mt: 3,
-        mb: 6,
-        p: 5,
-        bgcolor: "primary.light",
-        borderRadius: 2,
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: 3,
-      }}
-    >
+    <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
       {/* LEFT */}
       <Box sx={{ flex: 1 }}>
-        <Typography variant="h4" sx={{ color: "primary.main" }}>
-          {data.channel}
-        </Typography>
-
-        <Typography variant="h2" sx={{ color: "primary.main" }}>
-          {data.title}
-        </Typography>
-
+        <Typography variant="h4" sx={{ color: "primary.main" }}>{data.channel}</Typography>
+        <Typography variant="h2" sx={{ color: "primary.main" }}>{data.title}</Typography>
         <Typography variant="body1">{data.organizer}</Typography>
-
-        <Typography variant="body2" color="text.secondary">
-          {data.date}
-        </Typography>
+        <Typography variant="body2" color="text.secondary">{data.date}</Typography>
       </Box>
 
       {/* RIGHT */}
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          gap: 2,
-        }}
-      >
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
         {/* STATS */}
         <Box sx={{ display: "flex", justifyContent: "space-around" }}>
-          {data.stats?.map((item, i) => (
+          {displayStats?.map((item, i) => (
             <Box key={i} textAlign="center">
-              <Typography variant="h2" fontWeight={700}>
-                {item.value}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {item.label}
-              </Typography>
+              <Typography variant="h2" fontWeight={700}>{item.value}</Typography>
+              <Typography variant="body2" color="text.secondary">{item.label}</Typography>
             </Box>
           ))}
         </Box>
 
         {/* BUTTONS */}
         {channel === "donation" ? (
-          <Button fullWidth variant="contained">
-            Quyên góp
-          </Button>
+          <Button fullWidth variant="contained">Quyên góp</Button>
         ) : (
           <Stack direction="row" spacing={1}>
             <Button
               fullWidth
               variant={isInterested ? "outlined" : "contained"}
-              onClick={() => setIsInterested(!isInterested)}
+              disabled={loadingInterest}
+              onClick={handleInterest}
             >
               {isInterested ? "Đã quan tâm" : "Quan tâm"}
             </Button>
@@ -85,18 +113,34 @@ const ArticleHighlightCard = ({ data, channel }) => {
             <Button
               fullWidth
               variant={isJoined ? "outlined" : "contained"}
+              disabled={loadingJoin || isJoined}
               sx={{
                 bgcolor: isJoined ? "transparent" : "grey.700",
                 color: isJoined ? "grey.700" : "common.white",
               }}
-              onClick={() => setIsJoined(!isJoined)}
+              onClick={handleJoin}
             >
-              {isJoined ? "Đã tham gia" : "Tham gia"}
+              {isJoined ? "Đã đăng ký" : "Tham gia"}
             </Button>
           </Stack>
         )}
       </Box>
+      
+      {/* EVENT QUESTIONS */}
+      <JoinEventDialog
+        open={openJoinDialog}
+        onClose={() => setOpenJoinDialog(false)}
+        eventTitle={data.title}
+        questions={mockQuestions}
+        // questions={[]} // mở khoá cái này cho trường hợp không có câu hỏi
+        onConfirm={(answers) => {
+          console.log("Join answers:", answers);
+          setIsJoined(true);
+          setOpenJoinDialog(false);
+        }}
+      />
     </Box>
+    
   );
 };
 
@@ -106,9 +150,28 @@ const ArticlePage = () => {
   const loadErrorShownRef = useRef(false);
   const { article, isPending, isError, errorMessage } = useArticleById(channel, id);
 
-  const cleanContent = article?.content
-  ? DOMPurify.sanitize(article.content)
-  : "";
+  const cleanContent = article?.content ? DOMPurify.sanitize(article.content) : "";
+  
+  const navigate = useNavigate();
+  const contentRef = useRef(null);
+  const heroRef = useRef(null);
+  const [placeholderHeight, setPlaceholderHeight] = useState(600);
+
+  const recalcPlaceholder = useCallback(() => {
+    if (!contentRef.current || !heroRef.current) return;
+    const heroH = heroRef.current.getBoundingClientRect().height;
+    const contentH = contentRef.current.getBoundingClientRect().height;
+    const contentTopInHero = heroH * 0.55;
+    const overflow = contentH - (heroH - contentTopInHero);
+    setPlaceholderHeight(Math.max(overflow + 100, 100));
+  }, []);
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const ro = new ResizeObserver(recalcPlaceholder);
+    ro.observe(contentRef.current);
+    return () => ro.disconnect();
+  }, [article, recalcPlaceholder]);
 
   useEffect(() => {
     if (isPending) return;
@@ -147,10 +210,7 @@ const ArticlePage = () => {
           title: article.title,
           organizer: article.organizer ?? article.location ?? "",
           date: formatDateRange(article.eventDate, article.eventEndDate),
-          stats: [
-            { value: article.interestedCount ?? 0, label: "người quan tâm" },
-            { value: article.joinedCount ?? 0, label: "người tham gia" },
-          ],
+          stats: [{ value: article.interestedCount ?? 0, label: "người quan tâm" }, { value: article.joinedCount ?? 0, label: "người tham gia" }],
         }
       : resolvedChannel === "donation"
       ? {
@@ -158,142 +218,48 @@ const ArticlePage = () => {
           title: article.title,
           organizer: article.organizer ?? "",
           date: formatDateRange(article.donationDate, article.donationEndDate),
-          stats: [
-            { value: article.donorCount ?? 0, label: "người quyên góp" },
-            {
-              value:
-                article.targetAmount != null
-                  ? `${formatNumberVi(article.targetAmount)} VNĐ`
-                  : "0 VNĐ",
-              label: "mục tiêu",
-            },
-          ],
+          stats: [{ value: article.donorCount ?? 0, label: "người quyên góp" }, { value: article.targetAmount != null ? `${formatNumberVi(article.targetAmount)} VNĐ` : "0 VNĐ", label: "mục tiêu" }],
         }
       : null;
   
   return (
-    <Page
-      title={article.title}
-      meta={
-        <meta
-          name="description"
-          content={`${article.title} - AlumVerse`}
-        />
-      }
-    >
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ display: "flex", flexDirection: "column" }}
-      >
+    <Page title={article.title} meta={<meta name="description" content={`${article.title} - AlumVerse`} />}>
+      <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
         {/* Hero + absolute content frame wrapper */}
-        <Box
-          sx={{
-            position: "relative",
-            height: { xs: "70vh", sm: "75vh", md: "85vh" },
-            minHeight: { xs: 360, md: 480 },
-          }}
-        >
+        <Box ref={heroRef} sx={{ position: "relative", top: "-1px", pt: "1px", height: { xs: "35vh", sm: "40vh", md: "50vh" }, minHeight: { xs: 260, sm: 300, md: 380 } }}>
           {/* Hero banner */}
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              backgroundColor: "primary.dark",
-              backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-            }}
-          />
-
+          <Box sx={{ position: "absolute", inset: 0, top: "-1px", backgroundColor: "primary.dark", backgroundImage: article.thumbnailUrl ? `url(${article.thumbnailUrl})` : "none", backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }} />
           {/* Main content frame */}
-          <Box
-            sx={{
-              position: "absolute",
-              top: { xs: "50%", sm: "52%", md: "55%" },
-              left: 0,
-              right: 0,
-              display: "flex",
-              justifyContent: "center",
-              px: { xs: 2, sm: 3 },
-            }}
-          >
-            <Box
-              sx={{
-                width: "100%",
-                maxWidth: 1200,
-                backgroundColor: "#fff",
-                borderRadius: 2,
-                boxShadow:
-                  "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)",
-                overflow: "hidden",
-                py: { xs: 5, md: 6 },
-                px: { xs: 4, md: 6 },
-              }}
-            >
+          <Box ref={contentRef} sx={{ position: "absolute", top: { xs: "60%", sm: "65%", md: "60%" }, left: 0, right: 0, display: "flex", justifyContent: "center", px: { xs: 2, sm: 3 } }}>
+            <Box sx={{ width: "100%", maxWidth: 1200, backgroundColor: "#fff", borderRadius: 2, boxShadow: "0 4px 24px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", overflow: "hidden", py: { xs: 5, md: 6 }, px: { xs: 4, md: 6 } }}>
               {/* Breadcrumb */}
-              <Breadcrumb
-                items={[
-                  { label: "VINH DANH", path: "/honors" },
-                  { label: article.title },
-                ]}
-                fontSize="0.8rem"
-              />
+              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
+                  Quay lại
+                </Button>
+              </Box>
 
               {/* Title */}
-              <Typography
-                variant="h1"
-                component="h1"
-                fontWeight={700}
-                color="primary.main"
-                textAlign="center"
-                sx={{
-                  mb: 1,
-                  fontSize: { xs: "1.8rem", md: "2.1rem" },
-                }}
-              >
+              <Typography variant="h1" component="h1" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 1, fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
                 {article.title}
               </Typography>
 
               {/* Date */}
               {article.publishedAt && (
-                <Typography
-                  variant="body2"
-                  sx={{
-                    textAlign: "center",
-                    color: "text.secondary",
-                    mb: 4,
-                  }}
-                >
+                <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary", mb: 4 }}>
                   {formatDate(article.publishedAt)}
                 </Typography>
               )}
 
               {/* HIGHLIGHT */}
               {highlightData && (
-                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} />
+                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} />
               )}
 
               {/* Thumbnail */}
               {article.thumbnailUrl && (
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    mb: 4,
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={article.thumbnailUrl}
-                    alt={article.title}
-                    sx={{
-                      width: { xs: "100%", md: "60%" },
-                      borderRadius: 2,
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    }}
-                  />
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+                  <Box component="img" src={article.thumbnailUrl} alt={article.title} sx={{ width: { xs: "100%", md: "60%" }, borderRadius: 2, boxShadow: "0 2px 10px rgba(0,0,0,0.1)" }} />
                 </Box>
               )}
 
@@ -304,7 +270,7 @@ const ArticlePage = () => {
         </Box>
 
         {/* Placeholder space */}
-        <Box sx={{ minHeight: { xs: 1200, md: 800 } }} />
+        <Box sx={{ height: placeholderHeight }} />
       </Container>
     </Page>
   );

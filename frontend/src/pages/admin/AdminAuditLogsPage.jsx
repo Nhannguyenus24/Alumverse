@@ -155,7 +155,7 @@ const AdminAuditLogsPage = () => {
   ];
 
   const renderExpandableRow = (log) => (
-    <Box sx={{ p: 2, bgcolor: alpha(theme.palette.action.hover, 0.3), borderRadius: 2 }}>
+    <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Thông tin yêu cầu</Typography>
@@ -228,7 +228,7 @@ const AdminAuditLogsPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Nhật ký hệ thống
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
@@ -239,7 +239,6 @@ const AdminAuditLogsPage = () => {
           variant="outlined"
           startIcon={<FileDownloadOutlinedIcon />}
           onClick={handleExportCsv}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
           Xuất dữ liệu
         </Button>

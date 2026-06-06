@@ -349,6 +349,13 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getGroupMembers(groupId, { text = '', page = 0, size = 50 } = {}) {
+		const response = await apiClient.get(`/chat/groups/${groupId}/members`, {
+			params: { text, page, size },
+		});
+		return unwrap(response);
+	},
+
 	async getConversationRequestStatus(targetMemberId) {
 		const response = await apiClient.get('/chat/conversation-requests/connection-status', {
 			params: { targetMemberId },
@@ -383,6 +390,21 @@ export const chatApi = {
 		});
 		return unwrap(response);
 	},
+
+	async addMembersToGroup(groupId, memberIds) {
+		const response = await apiClient.post(`/chat/groups/${groupId}/members`, { memberIds });
+		return unwrap(response);
+	},
+
+	async removeMemberFromGroup(groupId, memberId) {
+		const response = await apiClient.delete(`/chat/groups/${groupId}/members/${memberId}`);
+		return unwrap(response);
+	},
+
+	async leaveGroup(groupId) {
+		const response = await apiClient.delete(`/chat/groups/${groupId}/leave`);
+		return unwrap(response);
+	},
 };
 
 export const {
@@ -395,6 +417,7 @@ export const {
 	searchIncomingRequests,
 	respondToConversationRequest,
 	createGroupChat,
+	getGroupMembers,
 } = chatApi;
 
 export const eventApi = {
@@ -471,6 +494,122 @@ export const eventApi = {
 		const response = await apiClient.delete(`/events/${eventId}`);
 		return unwrap(response);
 	},
+
+	// ── Interest ─────────────────────────────────────────────────────────────
+	async addInterest(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/interest`);
+		return unwrap(response);
+	},
+
+	async removeInterest(eventId) {
+		const response = await apiClient.delete(`/events/${eventId}/interest`);
+		return unwrap(response);
+	},
+
+	async checkInterest(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/interest/check`);
+		return unwrap(response);
+	},
+
+	// ── Invitations ──────────────────────────────────────────────────────────
+	async inviteUsers(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/invitations`, payload);
+		return unwrap(response);
+	},
+
+	async confirmInvitation(token) {
+		const response = await apiClient.post('/events/invitations/confirm', null, { params: { token } });
+		return unwrap(response);
+	},
+
+	async getInvitations(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/invitations`, { params });
+		return unwrap(response);
+	},
+
+	// ── Register (user self-register) ─────────────────────────────────────
+	async registerForEvent(eventId, payload = {}) {
+		const response = await apiClient.post(`/events/${eventId}/register`, payload);
+		return unwrap(response);
+	},
+
+	// ── Approve / Reject ──────────────────────────────────────────────────
+	async approveTicket(ticketId) {
+		const response = await apiClient.post(`/events/tickets/${ticketId}/approve`);
+		return unwrap(response);
+	},
+
+	async rejectTicket(ticketId, payload = {}) {
+		const response = await apiClient.post(`/events/tickets/${ticketId}/reject`, payload);
+		return unwrap(response);
+	},
+
+	async bulkApproveTickets(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/bulk-approve`, payload);
+		return unwrap(response);
+	},
+
+	async approveAllPending(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/approve-all`);
+		return unwrap(response);
+	},
+
+	// ── Reminder emails ───────────────────────────────────────────────────
+	async sendReminders(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/reminders`, payload);
+		return unwrap(response);
+	},
+
+	async getEmailLogs(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/email-logs`, { params });
+		return unwrap(response);
+	},
+
+	// ── Ticket lifecycle ──────────────────────────────────────────────────
+	async sendIssuedTicketEmails(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/send-emails`);
+		return unwrap(response);
+	},
+
+	async activateTickets(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/activate`);
+		return unwrap(response);
+	},
+
+	async expireTickets(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/expire`);
+		return unwrap(response);
+	},
+
+	async getTicketsByEvent(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/tickets`, { params });
+		return unwrap(response);
+	},
+
+	async getTicketsByStatus(eventId, status, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/tickets`, { params: { status, ...params } });
+		return unwrap(response);
+	},
+
+	async checkInTicket(ticketCode) {
+		const response = await apiClient.post(`/events/tickets/${ticketCode}/check-in`);
+		return unwrap(response);
+	},
+
+	async cancelTicketByCode(ticketCode) {
+		const response = await apiClient.post(`/events/tickets/${ticketCode}/cancel`);
+		return unwrap(response);
+	},
+
+	async getMyTickets(params = {}) {
+		const response = await apiClient.get('/events/my-tickets', { params });
+		return unwrap(response);
+	},
+
+	async getEventStatisticsById(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/statistics`);
+		return unwrap(response);
+	},
 };
 
 export const adminEventApi = {
@@ -514,8 +653,56 @@ export const adminEventApi = {
 		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/tickets`, { params: { page, size } });
 	},
 
+	getTicketsByEventAndStatus(eventId, status, page = 0, size = 10) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/tickets`, { params: { status, page, size } });
+	},
+
 	cancelTicket(ticketCode) {
 		return apiClient.post(`${BASE_ADMIN_EVENTS}/tickets/${ticketCode}/cancel`);
+	},
+
+	approveTicket(ticketId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/tickets/${ticketId}/approve`);
+	},
+
+	rejectTicket(ticketId, payload = {}) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/tickets/${ticketId}/reject`, payload);
+	},
+
+	bulkApproveTickets(eventId, payload) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/bulk-approve`, payload);
+	},
+
+	approveAllPending(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/approve-all`);
+	},
+
+	sendIssuedTicketEmails(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/send-emails`);
+	},
+
+	activateTickets(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/activate`);
+	},
+
+	expireTickets(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/expire`);
+	},
+
+	inviteUsers(eventId, payload) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/invitations`, payload);
+	},
+
+	getInvitations(eventId, page = 0, size = 10) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/invitations`, { params: { page, size } });
+	},
+
+	sendReminders(eventId, payload) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/reminders`, payload);
+	},
+
+	getEmailLogs(eventId, page = 0, size = 10) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/email-logs`, { params: { page, size } });
 	},
 
 	getInterestsByEvent(eventId, page = 0, size = 10) {
@@ -524,6 +711,10 @@ export const adminEventApi = {
 
 	getEventStatistics() {
 		return apiClient.get(`${BASE_ADMIN_EVENTS}/statistics`);
+	},
+
+	getEventStatisticsById(eventId) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/statistics`);
 	},
 };
 
@@ -538,9 +729,22 @@ export const {
 	publishEvent: publishAdminEvent,
 	unpublishEvent: unpublishAdminEvent,
 	getTicketsByEvent,
+	getTicketsByEventAndStatus,
 	cancelTicket,
+	approveTicket,
+	rejectTicket,
+	bulkApproveTickets,
+	approveAllPending,
+	sendIssuedTicketEmails,
+	activateTickets,
+	expireTickets,
+	inviteUsers: inviteEventUsers,
+	getInvitations: getEventInvitations,
+	sendReminders,
+	getEmailLogs,
 	getInterestsByEvent,
 	getEventStatistics,
+	getEventStatisticsById,
 } = adminEventApi;
 
 export const adminForumApi = {
@@ -752,7 +956,7 @@ export const userApi = {
 		const body = {
 			organizationId: Number(payload.organizationId),
 			userId: Number(userId),
-			graduatedYear: payload.graduatedYear ? Number(payload.graduatedYear) : null,
+			graduatedYear: payload.graduatedYear ? [Number(payload.graduatedYear)] : null,
 			graduationStatus: payload.graduationStatus ?? null,
 			program: payload.program ?? null,
 			major: payload.major ?? null,

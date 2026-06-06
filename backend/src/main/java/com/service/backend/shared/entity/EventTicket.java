@@ -48,4 +48,13 @@ public class EventTicket {
 
     @Column("checked_in_at")
     private LocalDateTime checkedInAt;
+
+    @Column("reviewed_by")
+    private Long reviewedBy;
+
+    @Column("reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column("reject_reason")
+    private String rejectReason;
 }

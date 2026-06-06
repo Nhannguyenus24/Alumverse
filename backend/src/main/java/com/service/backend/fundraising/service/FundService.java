@@ -460,13 +460,16 @@ public class FundService {
     public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();
+        String resolvedDonorName = (request.getDonorName() != null && !request.getDonorName().isBlank())
+                ? request.getDonorName()
+                : "Ẩn danh";
 
         // khi guest ko dang nhap ma donate thi field donorMemberId la null
         if (donorMemberId == null) {
             FundDonations donation = FundDonations.builder()
                     .fundId(fundId)
                     .donorMemberId(null)
-                    .donorName(request.getDonorName())
+                    .donorName(resolvedDonorName)
                     .amount(request.getAmount())
                     .address(request.getAddress())
                     .phone(request.getPhone())
@@ -488,7 +491,7 @@ public class FundService {
                     FundDonations donation = FundDonations.builder()
                             .fundId(fundId)
                             .donorMemberId(donorMemberId)
-                            .donorName(request.getDonorName())
+                            .donorName(resolvedDonorName)
                             .amount(request.getAmount())
                             .address(request.getAddress())
                             .phone(request.getPhone())

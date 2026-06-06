@@ -23,14 +23,6 @@ function buildSearchParams({ appliedFullName, filters, page, pageSize }) {
     if (major) {
       params.major = major;
     }
-
-    const yearRaw = filters.startYear || '';
-    if (yearRaw) {
-      const startYear = Number.parseInt(yearRaw, 10);
-      if (!Number.isNaN(startYear)) {
-        params.startYear = startYear;
-      }
-    }
   }
 
   return params;
@@ -45,7 +37,6 @@ export function useNetworkMembers({ appliedFullName, filters, page, pageSize, en
       params.fullName ?? '',
       params.program ?? '',
       params.major ?? '',
-      params.startYear ?? '',
       params.page,
       params.size,
     ],

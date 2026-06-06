@@ -45,6 +45,13 @@ public enum ErrorCode {
     ALREADY_INTERESTED("Bạn đã đăng ký quan tâm sự kiện này", 409),
     TICKET_ALREADY_CANCELLED("Vé đã được hủy trước đó", 400),
     TICKET_ALREADY_CHECKED_IN("Vé đã được check-in", 400),
+    TICKET_NOT_ACTIVE("Vé chưa ở trạng thái Active để check-in", 400),
+    TICKET_NOT_PENDING("Vé không ở trạng thái chờ duyệt", 400),
+    TICKET_ALREADY_REGISTERED("Bạn đã đăng ký sự kiện này rồi", 409),
+    INVITATION_NOT_FOUND("Không tìm thấy lời mời", 404),
+    INVITATION_EXPIRED("Lời mời đã hết hạn", 400),
+    INVITATION_ALREADY_USED("Lời mời đã được sử dụng", 409),
+    NO_TICKETS_TO_ISSUE("Không có vé nào để phát hành", 400),
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức", 404),
@@ -100,7 +107,9 @@ public enum ErrorCode {
     CONVERSATION_REQUEST_NOT_PENDING("Yêu cầu kết nối không còn ở trạng thái chờ phản hồi", 409),
     CONVERSATION_REQUEST_ALREADY_PENDING("Yêu cầu kết nối đang chờ phản hồi từ phía kia", 409),
     CONVERSATION_REQUEST_ALREADY_ACCEPTED("Hai người đã kết nối với nhau rồi", 409),
-    CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429);
+    CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429),
+    CHAT_USER_NOT_GROUP_MEMBER("Bạn không phải thành viên của nhóm chat này", 403),
+    GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400);
 
     private final String message;
     private final int status;

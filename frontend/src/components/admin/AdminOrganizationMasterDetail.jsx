@@ -44,8 +44,10 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ColorLensIcon from '@mui/icons-material/ColorLens';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+
 import DOMPurify from 'dompurify';
 import AdminStatusChip from './AdminStatusChip';
+import SearchBar from '../SearchBar';
 import { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import { adminOrganizationApi } from '../../utils/api';
@@ -209,7 +211,8 @@ const AdminOrganizationMasterDetail = ({
         flexDirection: { xs: 'column', lg: 'row' },
         alignItems: 'stretch',
         gap: 3,
-        minHeight: 600,
+        minHeight: 0,
+        height: { xs: 'none', lg: '80vh' },
       }}
     >
       {/* MASTER LIST */}
@@ -224,26 +227,21 @@ const AdminOrganizationMasterDetail = ({
           flexDirection: 'column',
           overflow: 'hidden',
           bgcolor: 'background.paper',
+          minWidth: 0,
+          maxHeight: { lg: '80vh' }
         }}
       >
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'action.hover' }}>
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}>
           <Stack spacing={2}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+            <Typography variant="h5" sx={{ color: 'primary.main' }}>
               Tổ chức ({filteredOrganizations.length})
             </Typography>
-            <TextField
+            <SearchBar
+              value={orgSearch}
+              onChange={setOrgSearch}
+              placeholder="Tìm theo tên..."
               size="small"
               fullWidth
-              placeholder="Tìm theo tên..."
-              value={orgSearch}
-              onChange={(e) => setOrgSearch(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchOutlinedIcon fontSize="small" color="action" />
-                  </InputAdornment>
-                ),
-              }}
             />
             <TextField
               select
@@ -259,7 +257,7 @@ const AdminOrganizationMasterDetail = ({
           </Stack>
         </Box>
 
-        <Box sx={{ flex: 1, overflowY: 'auto', maxHeight: { lg: 'calc(100vh - 400px)' } }}>
+        <Box sx={{ flex: 1, overflowY: 'auto' }}>
           <List disablePadding>
             {filteredOrganizations.map((org) => {
               const isSelected = org.id === selectedOrganizationId;
@@ -314,10 +312,14 @@ const AdminOrganizationMasterDetail = ({
           display: 'flex',
           flexDirection: 'column',
           bgcolor: 'background.paper',
+          overflow: 'hidden',
+          minHeight: 0,
+          minWidth: 0,
+          maxHeight: { lg: '80vh' },
         }}
       >
         {!selectedOrg ? (
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+          <Box sx={{ minHeight: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4 }}>
             <BusinessOutlinedIcon sx={{ fontSize: 80, color: 'text.disabled', opacity: 0.5, mb: 2 }} />
             <Typography variant="h6" color="text.secondary" fontWeight={700}>
               Chọn một tổ chức để xem chi tiết
@@ -325,7 +327,7 @@ const AdminOrganizationMasterDetail = ({
           </Box>
         ) : (
           <Fade in key={selectedOrg.id}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
               <Box sx={{ px: 3, pt: 3, pb: 1, borderBottom: 1, borderColor: 'divider' }}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }} justifyContent="space-between">
                   <Stack direction="row" spacing={2} alignItems="center">
@@ -343,13 +345,15 @@ const AdminOrganizationMasterDetail = ({
                       </Stack>
                     </Box>
                   </Stack>
-                  <Stack direction="row" spacing={1}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1}
+                  >
                     <Button
                       variant="outlined"
                       size="small"
                       startIcon={<EditOutlinedIcon />}
                       onClick={() => onEditOrganization(selectedOrg)}
-                      sx={{ borderRadius: 1.5, textTransform: 'none', fontWeight: 600 }}
                     >
                       Sửa thông tin
                     </Button>
@@ -362,6 +366,9 @@ const AdminOrganizationMasterDetail = ({
                 <Tabs
                   value={activeTab}
                   onChange={handleTabChange}
+                  variant="scrollable"
+                  scrollButtons="auto"
+                  allowScrollButtonsMobile
                   sx={{
                     mt: 3,
                     '& .MuiTab-root': {
@@ -379,7 +386,7 @@ const AdminOrganizationMasterDetail = ({
                 </Tabs>
               </Box>
 
-              <Box sx={{ flex: 1, p: 3, overflowY: 'auto', maxHeight: 'calc(100vh - 450px)' }}>
+              <Box sx={{ flex: 1, p: 3, overflowY: 'auto' }}>
                 {activeTab === 0 && (
                   <Stack spacing={3}>
                     <DetailSection title="Thông tin cơ bản">
@@ -399,6 +406,7 @@ const AdminOrganizationMasterDetail = ({
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <Button
                         size="small"
+                        variant="outlined"
                         startIcon={<EditOutlinedIcon />}
                         onClick={() => onEditIntroduction(selectedOrg)}
                         sx={{ textTransform: 'none' }}
@@ -437,10 +445,10 @@ const AdminOrganizationMasterDetail = ({
                     </DetailSection>
                     <Stack spacing={2}>
                       <Box>
-                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.info.main, 0.02), border: `1px solid ${alpha(theme.palette.info.main, 0.1)}` }}>
+                        <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.success.main, 0.02), border: `1px solid ${alpha(theme.palette.success.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-                            <Avatar sx={{ bgcolor: 'info.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'info.dark' }}>Tầm nhìn</Typography>
+                            <Avatar sx={{ bgcolor: 'success.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main' }}>Tầm nhìn</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.vision || '—'}</Typography>
                         </Card>
@@ -472,14 +480,14 @@ const AdminOrganizationMasterDetail = ({
                     <DetailSection title="Chương trình đào tạo">
                       <Stack direction="row" flexWrap="wrap" gap={1}>
                         {selectedPrograms.length > 0 ? (
-                          selectedPrograms.map(p => <Paper key={p} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{p}</Paper>)
+                          selectedPrograms.map(p => <Paper key={p} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{p}</Paper>)
                         ) : <Typography variant="body2" color="text.disabled">Chưa cấu hình chương trình</Typography>}
                       </Stack>
                     </DetailSection>
                     <DetailSection title="Các chuyên ngành">
                       <Stack direction="row" flexWrap="wrap" gap={1}>
                         {selectedMajors.length > 0 ? (
-                          selectedMajors.map(m => <Paper key={m} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1.5, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{m}</Paper>)
+                          selectedMajors.map(m => <Paper key={m} variant="outlined" sx={{ px: 1.5, py: 0.5, borderRadius: 1, bgcolor: 'background.neutral', fontSize: 13, fontWeight: 600 }}>{m}</Paper>)
                         ) : <Typography variant="body2" color="text.disabled">Chưa cấu hình chuyên ngành</Typography>}
                       </Stack>
                     </DetailSection>
@@ -539,116 +547,142 @@ const AdminOrganizationMasterDetail = ({
                           ));
                         })()}
                       </List>
+                     </DetailSection>
 
                       {/* Brand / theme editor */}
-                      <Box sx={{ mt: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>Brand & Theme</Typography>
-                        <Grid container spacing={2} alignItems="center">
-                          <Grid item xs={12} sm={6}>
-                            <TextField
-                              label="Logo URL"
-                              size="small"
-                              fullWidth
-                              value={brandState.logoUrl}
-                              onChange={(e) => setBrandState((s) => ({ ...s, logoUrl: e.target.value }))}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <TextField
-                              label="Favicon URL"
-                              size="small"
-                              fullWidth
-                              value={brandState.faviconUrl}
-                              onChange={(e) => setBrandState((s) => ({ ...s, faviconUrl: e.target.value }))}
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <TextField
-                              label="Hero banner URL"
-                              size="small"
-                              fullWidth
-                              value={brandState.heroBannerUrl}
-                              onChange={(e) => setBrandState((s) => ({ ...s, heroBannerUrl: e.target.value }))}
-                            />
-                          </Grid>
+                      <DetailSection title="Cấu hình giao diện">
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
+                            Hình ảnh
+                          </Typography>
 
-                          <Grid item xs={12} sm={4}>
-                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu chính</Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <ColorLensIcon color="action" />
-                              <input
-                                type="color"
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                label="Logo URL"
+                                size="small"
+                                fullWidth
+                                value={brandState.logoUrl}
+                                onChange={(e) =>
+                                  setBrandState((s) => ({ ...s, logoUrl: e.target.value }))
+                                }
+                              />
+                            </Grid>
+
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                label="Favicon URL"
+                                size="small"
+                                fullWidth
+                                value={brandState.faviconUrl}
+                                onChange={(e) =>
+                                  setBrandState((s) => ({ ...s, faviconUrl: e.target.value }))
+                                }
+                              />
+                            </Grid>
+
+                            <Grid item xs={12} md={4}>
+                              <TextField
+                                label="Hero banner URL"
+                                size="small"
+                                fullWidth
+                                value={brandState.heroBannerUrl}
+                                onChange={(e) =>
+                                  setBrandState((s) => ({ ...s, heroBannerUrl: e.target.value }))
+                                }
+                              />
+                            </Grid>
+                          </Grid>
+                        </Box>
+
+                        <Box sx={{ mt: 3 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
+                            Màu sắc
+                          </Typography>
+
+                          <Grid container spacing={2}>
+                            
+                            {/* Primary */}
+                            <Grid item xs={12} md={4}>
+                              <ColorBlock
+                                label="Màu chính"
                                 value={brandState.themeColors.primary}
-                                onChange={(e) => setBrandState((s) => ({ ...s, themeColors: { ...s.themeColors, primary: e.target.value } }))}
-                                style={{ width: 48, height: 36, border: 0, background: 'transparent' }}
+                                onChange={(v) =>
+                                  setBrandState((s) => ({
+                                    ...s,
+                                    themeColors: { ...s.themeColors, primary: v },
+                                  }))
+                                }
                               />
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{brandState.themeColors.primary}</Typography>
-                            </Stack>
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu phụ</Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <input
-                                type="color"
-                                value={brandState.themeColors.secondary}
-                                onChange={(e) => setBrandState((s) => ({ ...s, themeColors: { ...s.themeColors, secondary: e.target.value } }))}
-                                style={{ width: 48, height: 36, border: 0, background: 'transparent' }}
-                              />
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{brandState.themeColors.secondary}</Typography>
-                            </Stack>
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>Màu accent</Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <input
-                                type="color"
-                                value={brandState.themeColors.accent}
-                                onChange={(e) => setBrandState((s) => ({ ...s, themeColors: { ...s.themeColors, accent: e.target.value } }))}
-                                style={{ width: 48, height: 36, border: 0, background: 'transparent' }}
-                              />
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{brandState.themeColors.accent}</Typography>
-                            </Stack>
-                          </Grid>
+                            </Grid>
 
-                          <Grid item xs={12}>
-                            <Button
-                              startIcon={<SaveOutlinedIcon />}
-                              variant="contained"
-                              size="small"
-                                onClick={async () => {
-                                  try {
-                                    let cfg = {};
-                                    try {
-                                      cfg = selectedOrg.featuresConfig
-                                        ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
-                                        : {};
-                                    } catch { cfg = {}; }
-                                    const brand = {
-                                      logo_url: brandState.logoUrl,
-                                      favicon_url: brandState.faviconUrl,
-                                      hero_banner_url: brandState.heroBannerUrl,
-                                      theme_colors: { ...brandState.themeColors },
-                                    };
-                                    const newCfg = { ...cfg, brand_config: brand };
-                                    await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
-                                    onRefresh?.();
-                                  } catch (err) {
-                                    console.error('Save brand/theme failed', err);
-                                  }
-                                }}
-                            >
-                              Lưu brand & theme
-                            </Button>
+                            {/* Secondary */}
+                            <Grid item xs={12} md={4}>
+                              <ColorBlock
+                                label="Màu phụ"
+                                value={brandState.themeColors.secondary}
+                                onChange={(v) =>
+                                  setBrandState((s) => ({
+                                    ...s,
+                                    themeColors: { ...s.themeColors, secondary: v },
+                                  }))
+                                }
+                              />
+                            </Grid>
+
+                            {/* Accent */}
+                            <Grid item xs={12} md={4}>
+                              <ColorBlock
+                                label="Màu accent"
+                                value={brandState.themeColors.accent}
+                                onChange={(v) =>
+                                  setBrandState((s) => ({
+                                    ...s,
+                                    themeColors: { ...s.themeColors, accent: v },
+                                  }))
+                                }
+                              />
+                            </Grid>
+
                           </Grid>
-                        </Grid>
-                      </Box>
+                        </Box>
+
+                        <Button
+                          startIcon={<SaveOutlinedIcon />}
+                          variant="contained"
+                          size="small"
+                            onClick={async () => {
+                              try {
+                                let cfg = {};
+                                try {
+                                  cfg = selectedOrg.featuresConfig
+                                    ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
+                                    : {};
+                                } catch { cfg = {}; }
+                                const brand = {
+                                  logo_url: brandState.logoUrl,
+                                  favicon_url: brandState.faviconUrl,
+                                  hero_banner_url: brandState.heroBannerUrl,
+                                  theme_colors: { ...brandState.themeColors },
+                                };
+                                const newCfg = { ...cfg, brand_config: brand };
+                                await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
+                                onRefresh?.();
+                              } catch (err) {
+                                console.error('Save brand/theme failed', err);
+                              }
+                            }}
+                         sx={{ mt: 2 }}
+                        >
+                          Lưu
+                        </Button>
+                      </DetailSection>
 
                       {/* Programs & Majors editable lists */}
-                      <Box sx={{ mt: 3 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1 }}>Chương trình & Chuyên ngành</Typography>
+                      <DetailSection title="Cấu hình đào tạo">
                         <Grid container spacing={2}>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Chương trình</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chương trình</Typography>
                             <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
                               {programList.map((p) => (
                                 <Paper key={p} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -657,10 +691,13 @@ const AdminOrganizationMasterDetail = ({
                                 </Paper>
                               ))}
                             </Stack>
-                            <Stack direction="row" spacing={1}>
+                            <Stack
+                              direction={{ xs: 'column', sm: 'row' }}
+                              spacing={1}
+                            >
                               <TextField size="small" placeholder="Thêm chương trình" value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
-                              <Button startIcon={<AddIcon />} size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>Thêm</Button>
-                              <Button variant="outlined" size="small" onClick={async () => {
+                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>Thêm</Button>
+                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
                                 try {
                                   const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
                                   const remoteList = Array.isArray(remote) ? remote : remote || [];
@@ -677,7 +714,7 @@ const AdminOrganizationMasterDetail = ({
                           </Grid>
 
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="caption" sx={{ display: 'block', mb: 1 }}>Chuyên ngành</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chuyên ngành</Typography>
                             <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
                               {majorList.map((m) => (
                                 <Paper key={m} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -686,10 +723,13 @@ const AdminOrganizationMasterDetail = ({
                                 </Paper>
                               ))}
                             </Stack>
-                            <Stack direction="row" spacing={1}>
+                            <Stack
+                              direction={{ xs: 'column', sm: 'row' }}
+                              spacing={1}
+                            >
                               <TextField size="small" placeholder="Thêm chuyên ngành" value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
-                              <Button startIcon={<AddIcon />} size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>Thêm</Button>
-                              <Button variant="outlined" size="small" onClick={async () => {
+                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>Thêm</Button>
+                              <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
                                 try {
                                   const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
                                   const remoteList = Array.isArray(remote) ? remote : remote || [];
@@ -705,15 +745,14 @@ const AdminOrganizationMasterDetail = ({
                             </Stack>
                           </Grid>
                         </Grid>
-                      </Box>
+                      </DetailSection>
 
                       <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
                         <Typography variant="caption" color="primary.darker" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
                           <InfoOutlinedIcon sx={{ fontSize: 14 }} />
-                          Lưu ý: Các thay đổi chương trình / chuyên ngành lưu khi bạn nhấn nút "Lưu".
+                          Lưu ý: Các thay đổi chương trình & chuyên ngành lưu khi bạn nhấn nút "Lưu".
                         </Typography>
                       </Box>
-                    </DetailSection>
                   </Stack>
                 )}
               </Box>
@@ -745,6 +784,51 @@ const DetailItem = ({ label, value, isFullWidth = false }) => (
       {value || '—'}
     </Typography>
   </Grid>
+);
+
+const ColorBlock = ({ label, value, onChange }) => (
+  <Box
+    sx={{
+      px: 2.5,
+      py: 1.5,
+      border: 1,
+      borderColor: 'divider',
+      borderRadius: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 1.2,
+    }}
+  >
+    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+      {label}
+    </Typography>
+    
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 1,
+      }}
+    >
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{
+          width: 44,
+          height: 34,
+          border: 'none',
+          background: 'transparent',
+          cursor: 'pointer',
+        }}
+      />
+
+      <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
+        {value}
+      </Typography>
+    </Box>
+  </Box>
 );
 
 export default AdminOrganizationMasterDetail;

@@ -12,13 +12,12 @@ import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
-import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedNews } from '../../hooks/news/usePublishedNews';
 import { normalizeNews } from '../../hooks/articles/normalizeArticle';
 import { toCardShape } from '../../hooks/articles/toCardShape';
-
+import { useAuth } from '../../hooks/useAuth';
 
 const SIDEBAR = [
   { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
@@ -72,6 +71,17 @@ const ActivitiesPage = () => {
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+
+  const handleEdit = (article) => {
+    navigate(`/article/${article.channel}/${article.id}/edit`);
+  };
+
+  const handleDelete = (article) => {
+    console.log('Delete article', article.id);
   };
 
   return (
@@ -130,7 +140,12 @@ const ActivitiesPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
-                  <FeaturedArticleCard article={featuredCard} />
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
                 </Box>
               )}
 
@@ -154,7 +169,12 @@ const ActivitiesPage = () => {
                   >
                     {suggestionCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
-                        <ArticleCard article={card} />
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(rest[i])}
+                          onDelete={() => handleDelete(rest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -167,7 +187,6 @@ const ActivitiesPage = () => {
                   <Typography variant="h4" fontWeight={700} mb={3}>
                     Hàng ngày
                   </Typography>
-
                   <Box
                     sx={{
                       display: 'grid',
@@ -180,8 +199,17 @@ const ActivitiesPage = () => {
                     }}
                   >
                     {dailyCards.map((card, i) => (
-                      <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i + 3])}>
-                        <ArticleCard article={card} />
+                      <Box
+                        key={card.id ?? i}
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => openArticle(rest[i + 3])}
+                      >
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(rest[i + 3])}
+                          onDelete={() => handleDelete(rest[i + 3])}
+                        />
                       </Box>
                     ))}
                   </Box>

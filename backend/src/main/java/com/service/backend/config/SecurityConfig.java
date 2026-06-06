@@ -62,6 +62,14 @@ public class SecurityConfig {
             "/api/payment/**"
     };
 
+    private static final String[] PUBLIC_GET_URLS = {
+            "/api/events",
+            "/api/events/upcoming",
+            "/api/events/past",
+            "/api/events/search",
+            "/api/events/{eventId}"
+    };
+
     @Value("${app.cors.allowed-origin-patterns:}")
     private String extraOriginPatterns;
 
@@ -73,6 +81,7 @@ public class SecurityConfig {
                 .addFilterAt(headerAuthenticationFilter(jwtUtils), SecurityWebFiltersOrder.AUTHENTICATION)
                 .authorizeExchange(auth -> auth
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
                         .pathMatchers(PUBLIC_URLS).permitAll()
                         .anyExchange().authenticated());
 
@@ -82,6 +91,7 @@ public class SecurityConfig {
     private WebFilter headerAuthenticationFilter(JwtUtils jwtUtils) {
         ServerWebExchangeMatcher publicMatcher = ServerWebExchangeMatchers.matchers(
                 ServerWebExchangeMatchers.pathMatchers(HttpMethod.OPTIONS, "/**"),
+                ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, PUBLIC_GET_URLS),
                 ServerWebExchangeMatchers.pathMatchers(PUBLIC_URLS)
         );
 

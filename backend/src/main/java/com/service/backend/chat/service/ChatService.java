@@ -4,6 +4,7 @@ import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
+import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
@@ -26,6 +27,8 @@ import java.util.List;
 
 @Service
 public class ChatService {
+
+    private static final int MAX_GROUP_SIZE = 10;
 
     private final ChatGroupRepository chatGroupRepository;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
@@ -352,8 +355,19 @@ public class ChatService {
             return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group chat requires at least 2 other members (3 total including creator)"));
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        List<Long> distinctOthers = memberIds.stream()
+                .filter(id -> !creatorMemberId.equals(id))
+                .distinct()
+                .toList();
 
+        // 1 (creator) + distinctOthers
+        if (distinctOthers.size() + 1 > MAX_GROUP_SIZE) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.GROUP_MEMBER_LIMIT_EXCEEDED,
+                    "Nhóm chat chỉ được phép tối đa " + MAX_GROUP_SIZE + " thành viên"));
+        }
+
+        LocalDateTime now = LocalDateTime.now();
         String resolvedTitle = (title != null && !title.isBlank()) ? title.trim() : null;
 
         ChatGroup group = ChatGroup.builder()
@@ -373,13 +387,11 @@ public class ChatService {
                             .joinedAt(now)
                             .build();
 
-                    List<ChatGroupMember> others = memberIds.stream()
-                            .filter(id -> !creatorMemberId.equals(id))
-                            .distinct()
-                                .map(id -> ChatGroupMember.builder()
+                    List<ChatGroupMember> others = distinctOthers.stream()
+                            .map(id -> ChatGroupMember.builder()
                                     .groupId(savedGroup.getId())
                                     .memberId(id)
-                                .role(ChatRole.MEMBER)
+                                    .role(ChatRole.MEMBER)
                                     .joinedAt(now)
                                     .build())
                             .toList();
@@ -419,15 +431,23 @@ public class ChatService {
                                         .filter(id -> !existingMembers.contains(id))
                                         .distinct()
                                         .map(id -> ChatGroupMember.builder()
-                                            .groupId(groupId)
-                                            .memberId(id)
-                                            .role(ChatRole.MEMBER)
-                                            .joinedAt(now)
-                                            .build())
+                                                .groupId(groupId)
+                                                .memberId(id)
+                                                .role(ChatRole.MEMBER)
+                                                .joinedAt(now)
+                                                .build())
                                         .toList();
 
                                 if (newMembers.isEmpty()) {
                                     return Mono.empty();
+                                }
+
+                                if (existingMembers.size() + newMembers.size() > MAX_GROUP_SIZE) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.GROUP_MEMBER_LIMIT_EXCEEDED,
+                                            "Nhóm chat chỉ được phép tối đa " + MAX_GROUP_SIZE + " thành viên. Hiện có "
+                                                    + existingMembers.size() + " thành viên, chỉ có thể thêm tối đa "
+                                                    + (MAX_GROUP_SIZE - existingMembers.size()) + " người nữa"));
                                 }
 
                                 return chatGroupMemberRepository.saveAll(Flux.fromIterable(newMembers))
@@ -461,10 +481,42 @@ public class ChatService {
     }
 
     /**
-     * Get members of a group.
+     * Get members of a group with profile info.
+     * Only existing group members can view the list.
      */
-    public Flux<ChatGroupMember> getGroupMembers(Long groupId) {
-        return chatGroupMemberRepository.findByGroupId(groupId);
+    public Mono<PaginatedResponse<ChatGroupMemberItemResponse>> getGroupMembersWithProfile(
+            Long groupId,
+            Long currentMemberId,
+            String text,
+            int page,
+            int size) {
+        if (groupId == null || currentMemberId == null) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Group ID and current member ID must not be null"));
+        }
+
+        int limit = Math.max(size, 1);
+        int offset = Math.max(page, 0) * limit;
+        String namePattern = toContainsPattern(text);
+
+        return chatGroupMemberRepository.findByGroupIdAndMemberId(groupId, currentMemberId)
+                .switchIfEmpty(Mono.error(new ApplicationException(
+                        ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
+                        "Current user is not a member of this chat group")))
+                .flatMap(ignored -> Mono.zip(
+                        chatGroupMemberRepository.countMembersByGroupIdWithNameFilter(groupId, namePattern),
+                        chatGroupMemberRepository
+                                .findMembersByGroupIdWithProfile(groupId, namePattern, limit, offset)
+                                .collectList()))
+                .map(tuple -> PaginatedResponse.of(tuple.getT2(), tuple.getT1(), page, limit));
+    }
+
+    private static String toContainsPattern(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        return "%" + text.trim() + "%";
     }
 
     /**
@@ -555,6 +607,7 @@ public class ChatService {
                                                 group.setUpdatedAt(LocalDateTime.now());
 
                                                 return chatGroupRepository.save(group)
+                                                        .then(chatGroupMemberRepository.updateRoleToOwnerByGroupIdAndMemberId(groupId, newOwnerMember.getMemberId()))
                                                         .then(chatGroupMemberRepository.deleteByGroupIdAndMemberId(groupId, memberId));
                                             });
                                 })

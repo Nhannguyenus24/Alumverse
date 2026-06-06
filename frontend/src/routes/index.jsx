@@ -75,6 +75,10 @@ const MyProfileEditPage = Loadable(
   lazy(() => import("../pages/user/MyProfileEditPage")),
 );
 
+const MyTicketsPage = Loadable(
+  lazy(() => import("../pages/user/MyTicketsPage")),
+)
+
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
 const AdminLoginPage = Loadable(lazy(() => import("../pages/admin/AdminLoginPage")));
@@ -373,6 +377,15 @@ export const router = createBrowserRouter([
           {
             path: "edit",
             element: <MyProfileEditPage />,
+          },
+        ],
+      },
+      {
+        path: "my-tickets",
+        children: [
+          {
+            index: true,
+            element: <MyTicketsPage />,
           },
         ],
       },

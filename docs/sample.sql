@@ -37,10 +37,10 @@ INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "g
 
 -- ============= ORGANIZATIONS DATA =============
 INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "features_config", "programs", "majors", "created_at") VALUES
-('HCMUS - Computer Science', 'cs-hcmus', 'https://api.example.com/logos/cs.png', '{"primary":"#1976d2","secondary":"#dc004e"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","Advanced Program"]', '["Computer Science","Data Science","Artificial Intelligence"]', NOW() - INTERVAL '365 days'),
-('HCMUS - Information Technology', 'it-hcmus', 'https://api.example.com/logos/it.png', '{"primary":"#388e3c","secondary":"#ff9800"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","High Quality"]', '["Information Technology","Software Engineering","Information Systems"]', NOW() - INTERVAL '360 days'),
-('HCMUS - Business Administration', 'ba-hcmus', 'https://api.example.com/logos/ba.png', '{"primary":"#f57c00","secondary":"#512da8"}', '{"mentorship":true,"job":true,"fund":false,"events":true,"forum":true}', '["Regular"]', '["Business Administration","Marketing","Finance"]', NOW() - INTERVAL '350 days'),
-('HCMUS - Engineering', 'eng-hcmus', 'https://api.example.com/logos/eng.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Mechanical Engineering","Electrical Engineering","Mechatronics"]', NOW() - INTERVAL '340 days');
+('HCMUS - Computer Science', 'cs-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#1976d2","secondary":"#dc004e"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","Advanced Program"]', '["Computer Science","Data Science","Artificial Intelligence"]', NOW() - INTERVAL '365 days'),
+('HCMUS - Information Technology', 'it-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#388e3c","secondary":"#ff9800"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","High Quality"]', '["Information Technology","Software Engineering","Information Systems"]', NOW() - INTERVAL '360 days'),
+('HCMUS - Business Administration', 'ba-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#f57c00","secondary":"#512da8"}', '{"mentorship":true,"job":true,"fund":false,"events":true,"forum":true}', '["Regular"]', '["Business Administration","Marketing","Finance"]', NOW() - INTERVAL '350 days'),
+('HCMUS - Engineering', 'eng-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Mechanical Engineering","Electrical Engineering","Mechatronics"]', NOW() - INTERVAL '340 days');
 
 -- ============= ORGANIZATION INTRODUCTIONS DATA =============
 INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "mission", "core_values", "image_urls", "banner_url", "updated_at") VALUES
@@ -49,8 +49,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To be a world-class computer science program recognized for excellence in education and research',
  'To provide comprehensive education in computer science and cultivate innovative problem-solvers',
  'Excellence, Innovation, Integrity, Collaboration, Continuous Learning',
- '["https://api.example.com/intro/cs_1.jpg","https://api.example.com/intro/cs_2.jpg","https://api.example.com/intro/cs_3.jpg"]',
- 'https://api.example.com/banners/cs_banner.jpg',
+ '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
  NOW() - INTERVAL '30 days'),
 
 (2,
@@ -58,8 +58,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To become the leading IT program transforming lives through technology education',
  'To deliver quality IT education that prepares students for successful careers and innovation',
  'Quality, Relevance, Teamwork, Accountability, Customer-focused',
- '["https://api.example.com/intro/it_1.jpg","https://api.example.com/intro/it_2.jpg"]',
- 'https://api.example.com/banners/it_banner.jpg',
+ '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
  NOW() - INTERVAL '28 days'),
 
 (3,
@@ -67,8 +67,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To produce ethical and innovative business leaders who drive organizational and societal growth',
  'To provide business education that develops strategic thinkers and ethical leaders',
  'Integrity, Innovation, Responsibility, Excellence, Inclusivity',
- '["https://api.example.com/intro/ba_1.jpg","https://api.example.com/intro/ba_2.jpg"]',
- 'https://api.example.com/banners/ba_banner.jpg',
+ '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
  NOW() - INTERVAL '26 days'),
 
 (4,
@@ -76,20 +76,9 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To be recognized as a premier engineering program developing innovative solutions',
  'To educate and mentor engineers who contribute to technological advancement',
  'Precision, Innovation, Sustainability, Professionalism, Teamwork',
- '["https://api.example.com/intro/eng_1.jpg","https://api.example.com/intro/eng_2.jpg","https://api.example.com/intro/eng_3.jpg"]',
- 'https://api.example.com/banners/eng_banner.jpg',
+ '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
  NOW() - INTERVAL '25 days');
-
--- ============= ACADEMIC RECORDS DATA =============
-INSERT INTO "academic_records" ("member_id", "student_code", "degree_type", "class_name", "start_year", "graduated_year", "status") VALUES
-(2, '19127001', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(3, '19127002', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(4, '21127045', 'Bachelor', 'K63', 2021, NULL, 'STUDYING'),
-(5, '20127078', 'Bachelor', 'K62', 2020, 2024, 'GRADUATED'),
-(6, '18127010', 'Bachelor', 'K59', 2018, 2022, 'GRADUATED'),
-(7, '19227015', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(8, '19127088', 'Bachelor', 'K60', 2019, 2023, 'GRADUATED'),
-(9, '22127156', 'Bachelor', 'K64', 2022, NULL, 'STUDYING');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
 INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
@@ -109,13 +98,13 @@ INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_yea
 
 -- ============= EVENTS DATA =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "topic", "is_published", "created_at") VALUES
-(1, 2, 'CS Alumni Meetup 2026', 'Annual gathering for CS alumni and current students', 'https://api.example.com/banners/cs_meetup.jpg', 'Ho Chi Minh City Convention Center', NOW() + INTERVAL '30 days', NOW() + INTERVAL '30 days 4 hours', NOW(), NOW() + INTERVAL '25 days', 200, 45, 'Networking', true, NOW() - INTERVAL '10 days'),
-(1, 2, 'Web Development Workshop', 'Learn modern web development with React and Node.js', 'https://api.example.com/banners/web_workshop.jpg', 'HCMUS Campus - Room 101', NOW() + INTERVAL '15 days', NOW() + INTERVAL '15 days 3 hours', NOW(), NOW() + INTERVAL '12 days', 50, 28, 'Technical', true, NOW() - INTERVAL '5 days'),
-(1, 6, 'Database Design Seminar', 'Advanced database design patterns and optimization', 'https://api.example.com/banners/db_seminar.jpg', 'Online via Zoom', NOW() + INTERVAL '20 days', NOW() + INTERVAL '20 days 2 hours', NOW(), NOW() + INTERVAL '18 days', 100, 15, 'Databases', true, NOW() - INTERVAL '3 days'),
-(2, 3, 'IT Internship Fair', 'Connect with top tech companies', 'https://api.example.com/banners/internship_fair.jpg', 'HCMUS Campus - Auditorium', NOW() + INTERVAL '45 days', NOW() + INTERVAL '45 days 5 hours', NOW(), NOW() + INTERVAL '40 days', 150, 67, 'Career', true, NOW() - INTERVAL '8 days'),
-(2, 8, 'AI & Machine Learning Summit', 'Explore the future of AI technology', 'https://api.example.com/banners/ai_summit.jpg', 'Saigon Pearl Building, District 1', NOW() + INTERVAL '60 days', NOW() + INTERVAL '60 days 6 hours', NOW(), NOW() + INTERVAL '50 days', 300, 89, 'AI/ML', true, NOW() - INTERVAL '15 days'),
-(3, 7, 'Business Leadership Workshop', 'Develop your leadership skills', 'https://api.example.com/banners/leadership.jpg', 'HCMUS Campus - Hall A', NOW() + INTERVAL '25 days', NOW() + INTERVAL '25 days 3 hours', NOW(), NOW() + INTERVAL '20 days', 80, 32, 'Leadership', true, NOW() - INTERVAL '6 days'),
-(4, 1, 'Engineering Excellence Conference', 'Latest innovations in engineering', 'https://api.example.com/banners/eng_conf.jpg', 'Ho Chi Minh City', NOW() + INTERVAL '50 days', NOW() + INTERVAL '50 days 8 hours', NOW(), NOW() + INTERVAL '45 days', 250, 56, 'Engineering', true, NOW() - INTERVAL '12 days');
+(1, 2, 'CS Alumni Meetup 2026', 'Annual gathering for CS alumni and current students', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Ho Chi Minh City Convention Center', NOW() + INTERVAL '30 days', NOW() + INTERVAL '30 days 4 hours', NOW(), NOW() + INTERVAL '25 days', 200, 45, 'Networking', true, NOW() - INTERVAL '10 days'),
+(1, 2, 'Web Development Workshop', 'Learn modern web development with React and Node.js', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'HCMUS Campus - Room 101', NOW() + INTERVAL '15 days', NOW() + INTERVAL '15 days 3 hours', NOW(), NOW() + INTERVAL '12 days', 50, 28, 'Technical', true, NOW() - INTERVAL '5 days'),
+(1, 6, 'Database Design Seminar', 'Advanced database design patterns and optimization', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Online via Zoom', NOW() + INTERVAL '20 days', NOW() + INTERVAL '20 days 2 hours', NOW(), NOW() + INTERVAL '18 days', 100, 15, 'Databases', true, NOW() - INTERVAL '3 days'),
+(2, 3, 'IT Internship Fair', 'Connect with top tech companies', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'HCMUS Campus - Auditorium', NOW() + INTERVAL '45 days', NOW() + INTERVAL '45 days 5 hours', NOW(), NOW() + INTERVAL '40 days', 150, 67, 'Career', true, NOW() - INTERVAL '8 days'),
+(2, 8, 'AI & Machine Learning Summit', 'Explore the future of AI technology', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Saigon Pearl Building, District 1', NOW() + INTERVAL '60 days', NOW() + INTERVAL '60 days 6 hours', NOW(), NOW() + INTERVAL '50 days', 300, 89, 'AI/ML', true, NOW() - INTERVAL '15 days'),
+(3, 7, 'Business Leadership Workshop', 'Develop your leadership skills', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'HCMUS Campus - Hall A', NOW() + INTERVAL '25 days', NOW() + INTERVAL '25 days 3 hours', NOW(), NOW() + INTERVAL '20 days', 80, 32, 'Leadership', true, NOW() - INTERVAL '6 days'),
+(4, 1, 'Engineering Excellence Conference', 'Latest innovations in engineering', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Ho Chi Minh City', NOW() + INTERVAL '50 days', NOW() + INTERVAL '50 days 8 hours', NOW(), NOW() + INTERVAL '45 days', 250, 56, 'Engineering', true, NOW() - INTERVAL '12 days');
 
 -- ============= EVENT INTERESTS DATA =============
 INSERT INTO "event_interests" ("event_id", "member_id", "created_at") VALUES
@@ -214,18 +203,18 @@ INSERT INTO "session_feedbacks" ("session_id", "mentee_member_id", "rating", "co
 
 -- ============= NEWS DATA =============
 INSERT INTO "news" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "is_hidden", "published_at") VALUES
-(1, 2, 'CS Department Launches New AI Lab', 'cs-new-ai-lab', 'We are excited to announce the opening of our state-of-the-art AI research laboratory...', 'https://api.example.com/news/ai_lab.jpg', 'Research', false, NOW() - INTERVAL '20 days'),
-(1, 6, '2026 Scholarship Program Now Open', 'scholarship-program-2026', 'Applications for the 2026 scholarship program are now being accepted. Apply now...', 'https://api.example.com/news/scholarship.jpg', 'Education', false, NOW() - INTERVAL '15 days'),
-(2, 3, 'IT Department Achievement: 100 Job Placements', 'it-100-placements', 'Congratulations to our graduates who secured employment...', 'https://api.example.com/news/placements.jpg', 'Career', false, NOW() - INTERVAL '10 days'),
-(2, 8, 'Innovation Week 2026 Schedule Released', 'innovation-week-2026', 'Mark your calendars for our annual Innovation Week...', 'https://api.example.com/news/innovation_week.jpg', 'Event', false, NOW() - INTERVAL '7 days'),
-(3, 7, 'Alumni Business Forum: Success Stories', 'alumni-business-forum', 'Join us as successful alumni share their entrepreneurial journeys...', 'https://api.example.com/news/forum.jpg', 'Networking', false, NOW() - INTERVAL '5 days'),
-(4, 1, 'Engineering Capstone Projects Exhibition', 'capstone-exhibition', 'View the innovative projects created by our engineering students...', 'https://api.example.com/news/capstone.jpg', 'Exhibition', false, NOW() - INTERVAL '3 days');
+(1, 2, 'CS Department Launches New AI Lab', 'cs-new-ai-lab', 'We are excited to announce the opening of our state-of-the-art AI research laboratory...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Research', false, NOW() - INTERVAL '20 days'),
+(1, 6, '2026 Scholarship Program Now Open', 'scholarship-program-2026', 'Applications for the 2026 scholarship program are now being accepted. Apply now...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', false, NOW() - INTERVAL '15 days'),
+(2, 3, 'IT Department Achievement: 100 Job Placements', 'it-100-placements', 'Congratulations to our graduates who secured employment...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', false, NOW() - INTERVAL '10 days'),
+(2, 8, 'Innovation Week 2026 Schedule Released', 'innovation-week-2026', 'Mark your calendars for our annual Innovation Week...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Event', false, NOW() - INTERVAL '7 days'),
+(3, 7, 'Alumni Business Forum: Success Stories', 'alumni-business-forum', 'Join us as successful alumni share their entrepreneurial journeys...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Networking', false, NOW() - INTERVAL '5 days'),
+(4, 1, 'Engineering Capstone Projects Exhibition', 'capstone-exhibition', 'View the innovative projects created by our engineering students...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Exhibition', false, NOW() - INTERVAL '3 days');
 
 -- ============= ALUMNI POSTS DATA =============
 INSERT INTO "alumni_posts" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "is_hidden", "published_at") VALUES
-(1, 2, 'My Journey from Student to Senior Engineer', 'my-journey-student-to-senior', 'Reflecting on 10 years in the industry after graduating from HCMUS...', 'https://api.example.com/posts/journey.jpg', 'Career', false, NOW() - INTERVAL '5 days'),
-(1, 6, 'Tips for Navigating the Tech Industry', 'tips-navigating-tech-industry', 'Sharing some lessons learned throughout my career as a developer...', 'https://api.example.com/posts/tips.jpg', 'Advice', false, NOW() - INTERVAL '3 days'),
-(2, 3, 'The Importance of Continuous Learning', 'importance-continuous-learning', 'How staying curious helped me grow as a Product Manager...', 'https://api.example.com/posts/learning.jpg', 'Education', false, NOW() - INTERVAL '2 days');
+(1, 2, 'My Journey from Student to Senior Engineer', 'my-journey-student-to-senior', 'Reflecting on 10 years in the industry after graduating from HCMUS...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', false, NOW() - INTERVAL '5 days'),
+(1, 6, 'Tips for Navigating the Tech Industry', 'tips-navigating-tech-industry', 'Sharing some lessons learned throughout my career as a developer...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Advice', false, NOW() - INTERVAL '3 days'),
+(2, 3, 'The Importance of Continuous Learning', 'importance-continuous-learning', 'How staying curious helped me grow as a Product Manager...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', false, NOW() - INTERVAL '2 days');
 
 -- ============= SAVED ITEMS DATA =============
 INSERT INTO "saved_items" ("member_id", "item_type", "item_id", "note", "saved_at") VALUES
@@ -238,11 +227,11 @@ INSERT INTO "saved_items" ("member_id", "item_type", "item_id", "note", "saved_a
 
 -- ============= ACHIEVEMENTS DATA =============
 INSERT INTO "achievements" ("member_id", "title", "description", "image_url", "awarded_date", "topic", "status") VALUES
-(2, 'Outstanding Alumni Award 2024', 'Recognized for significant contributions to tech community', 'https://api.example.com/achievements/outstanding.jpg', '2024-06-15', 'Recognition', 'APPROVED'),
-(3, 'Mentor of the Year', 'Awarded for exceptional mentoring and guidance', 'https://api.example.com/achievements/mentor.jpg', '2024-05-10', 'Mentorship', 'APPROVED'),
-(6, 'Innovation Excellence', 'Developed groundbreaking solutions in system design', 'https://api.example.com/achievements/innovation.jpg', '2024-07-20', 'Innovation', 'APPROVED'),
-(4, 'Scholarship Recipient 2025-2026', 'Awarded academic excellence scholarship', 'https://api.example.com/achievements/scholarship.jpg', '2025-08-01', 'Scholarship', 'APPROVED'),
-(5, 'Academic Excellence', 'Graduated with high honors', 'https://api.example.com/achievements/honors.jpg', '2024-06-01', 'Academic', 'APPROVED');
+(2, 'Outstanding Alumni Award 2024', 'Recognized for significant contributions to tech community', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-06-15', 'Recognition', 'APPROVED'),
+(3, 'Mentor of the Year', 'Awarded for exceptional mentoring and guidance', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-05-10', 'Mentorship', 'APPROVED'),
+(6, 'Innovation Excellence', 'Developed groundbreaking solutions in system design', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-07-20', 'Innovation', 'APPROVED'),
+(4, 'Scholarship Recipient 2025-2026', 'Awarded academic excellence scholarship', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2025-08-01', 'Scholarship', 'APPROVED'),
+(5, 'Academic Excellence', 'Graduated with high honors', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-06-01', 'Academic', 'APPROVED');
 
 -- ============= JOBS DATA =============
 INSERT INTO "jobs" ("organization_id", "poster_member_id", "is_referral", "type", "title", "company_name", "location", "salary_range", "description", "how_to_apply", "deadline", "is_active", "created_at") VALUES
@@ -351,7 +340,7 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (1, 2, 'OWNER', NOW() - INTERVAL '12 days'),
 (1, 4, 'MEMBER', NOW() - INTERVAL '12 days'),
 (2, 6, 'OWNER', NOW() - INTERVAL '8 days'),
-(2, 2, 'ADMIN', NOW() - INTERVAL '8 days'),
+(2, 2, 'MEMBER', NOW() - INTERVAL '8 days'),
 (2, 4, 'MEMBER', NOW() - INTERVAL '7 days'),
 (2, 9, 'MEMBER', NOW() - INTERVAL '6 days'),
 (3, 3, 'OWNER', NOW() - INTERVAL '6 days'),
@@ -360,7 +349,7 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (4, 11, 'OWNER', NOW() - INTERVAL '5 days'),
 (4, 2, 'MEMBER', NOW() - INTERVAL '5 days'),
 (5, 11, 'OWNER', NOW() - INTERVAL '4 days'),
-(5, 2, 'ADMIN', NOW() - INTERVAL '4 days'),
+(5, 2, 'MEMBER', NOW() - INTERVAL '4 days'),
 (5, 6, 'MEMBER', NOW() - INTERVAL '3 days'),
 (5, 4, 'MEMBER', NOW() - INTERVAL '3 days'),
 (6, 11, 'OWNER', NOW() - INTERVAL '3 days'),
@@ -368,7 +357,7 @@ INSERT INTO "chat_group_members" ("group_id", "member_id", "role", "joined_at") 
 (7, 11, 'MEMBER', NOW() - INTERVAL '2 days'),
 (7, 4, 'OWNER', NOW() - INTERVAL '2 days'),
 (8, 11, 'OWNER', NOW() - INTERVAL '1 day'),
-(8, 6, 'ADMIN', NOW() - INTERVAL '1 day'),
+(8, 6, 'MEMBER', NOW() - INTERVAL '1 day'),
 (8, 4, 'MEMBER', NOW() - INTERVAL '20 hours');
 
 -- ============= CHAT MESSAGES DATA =============
@@ -550,10 +539,10 @@ INSERT INTO "peer_verifications" ("target_member_id", "verifier_member_id", "cre
 
 -- ============= VERIFICATION REQUESTS DATA =============
 INSERT INTO "verification_requests" ("member_id", "document_url", "document_type", "status", "admin_note", "reviewed_by_member_id", "created_at") VALUES
-(4, 'https://api.example.com/documents/student_id_4.pdf', 'STUDENT_ID', 'APPROVED', 'Student ID verified and matches system records', 1, NOW() - INTERVAL '40 days'),
-(5, 'https://api.example.com/documents/graduation_cert_5.pdf', 'GRADUATION_CERTIFICATE', 'APPROVED', 'Graduation verified', 1, NOW() - INTERVAL '25 days'),
-(9, 'https://api.example.com/documents/student_id_9.pdf', 'STUDENT_ID', 'PENDING', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
-(10, 'https://api.example.com/documents/diploma_10.pdf', 'DIPLOMA', 'REJECTED', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
+(4, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'APPROVED', 'Student ID verified and matches system records', 1, NOW() - INTERVAL '40 days'),
+(5, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'GRADUATION_CERTIFICATE', 'APPROVED', 'Graduation verified', 1, NOW() - INTERVAL '25 days'),
+(9, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'PENDING', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
+(10, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'DIPLOMA', 'REJECTED', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
 
 -- ============= POLL DATA =============
 INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES

@@ -29,7 +29,11 @@ public enum Status {
     DISABLED("DISABLED"),
     UNVERIFIED("UNVERIFIED"),
     AVAILABLE("AVAILABLE"),
-    BOOKED("BOOKED");
+    BOOKED("BOOKED"),
+    ISSUED("ISSUED"),
+    USED("USED"),
+    EXPIRED("EXPIRED"),
+    DECLINED("DECLINED");
 
     private final String value;
 

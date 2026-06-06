@@ -117,7 +117,18 @@ const AdminDataTable = ({
         <Table stickyHeader size="medium">
           <TableHead>
             <TableRow>
-              {renderExpandableRow && <TableCell sx={{ width: 48, bgcolor: (t) => t.palette.mode === 'light' ? '#F4F6F8' : t.palette.background.default }} />}
+              {renderExpandableRow && (
+                <TableCell
+                  sx={{
+                    width: 48,
+                    bgcolor: (t) =>
+                      t.palette.mode === 'light'
+                        ? 'primary.main'
+                        : 'primary.dark',
+                    color: 'primary.contrastText',
+                  }}
+                />
+              )}
               {columns.map((column) => (
                 <TableCell
                   key={column.id}
