@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { useLocation, useParams } from "react-router";
 import {
   Box,
   Container,
   Typography,
-  Button,
-  Tabs,
-  Tab,
   CircularProgress,
   Stack,
   Grid,
@@ -20,9 +17,21 @@ const BANNER_IMG = "/home_page/home_page.png";
 
 const IntroducePage = () => {
   const { organization } = useOrganization();
+  const location = useLocation();
   const [introduction, setIntroduction] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tabValue, setTabValue] = useState(0);
+  const [mode, setMode] = useState("general"); // general, leaders, team
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.endsWith("/leaders")) {
+      setMode("leaders");
+    } else if (path.endsWith("/team")) {
+      setMode("team");
+    } else {
+      setMode("general");
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const fetchIntro = async () => {
@@ -41,9 +50,24 @@ const IntroducePage = () => {
     fetchIntro();
   }, [organization?.id]);
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue);
+  const getPageConfig = () => {
+    switch (mode) {
+      case "leaders":
+        return {
+          title: "BAN LÃNH ĐẠO",
+        };
+      case "team":
+        return {
+          title: "ĐỘI NGŨ",
+        };
+      default:
+        return {
+          title: "GIỚI THIỆU",
+        };
+    }
   };
+
+  const config = getPageConfig();
 
   const renderHTML = (html) => {
     if (!html) return null;
@@ -98,44 +122,70 @@ const IntroducePage = () => {
 
       {(introduction?.vision || introduction?.mission || introduction?.coreValues) && (
         <Box sx={{ mt: 6 }}>
-          <Grid container spacing={3}>
-            {introduction?.vision && (
-              <Grid item xs={12} md={4}>
-                <Paper elevation={0} sx={{ p: 3, height: "100%", bgcolor: "grey.50", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
-                  <Typography variant="h6" color="primary" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    Tầm nhìn
-                  </Typography>
-                  <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary' }}>
-                    {introduction.vision}
-                  </Typography>
-                </Paper>
-              </Grid>
-            )}
-            {introduction?.mission && (
-              <Grid item xs={12} md={4}>
-                <Paper elevation={0} sx={{ p: 3, height: "100%", bgcolor: "grey.50", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
-                  <Typography variant="h6" color="primary" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    Sứ mệnh
-                  </Typography>
-                  <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary' }}>
-                    {introduction.mission}
-                  </Typography>
-                </Paper>
-              </Grid>
-            )}
-            {introduction?.coreValues && (
-              <Grid item xs={12} md={4}>
-                <Paper elevation={0} sx={{ p: 3, height: "100%", bgcolor: "grey.50", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
-                  <Typography variant="h6" color="primary" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    Giá trị cốt lõi
-                  </Typography>
-                  <Typography variant="body2" sx={{ lineHeight: 1.7, color: 'text.secondary' }}>
-                    {introduction.coreValues}
-                  </Typography>
-                </Paper>
-              </Grid>
-            )}
-          </Grid>
+<Stack
+  direction={{ xs: "column", md: "column" }}                                            
+  spacing={3}
+>
+  {introduction?.vision && (
+    <Box flex={1}>
+      <Typography
+        variant="h6"
+        color="primary"
+        fontWeight={700}
+        gutterBottom
+        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      >
+        Tầm nhìn
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{ lineHeight: 1.7, color: "text.secondary" }}
+      >
+        {introduction.vision}
+      </Typography>
+    </Box>
+  )}
+
+  {introduction?.mission && (
+    <Box flex={1}>
+      <Typography
+        variant="h6"
+        color="primary"
+        fontWeight={700}
+        gutterBottom
+        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      >
+        Sứ mệnh
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{ lineHeight: 1.7, color: "text.secondary" }}
+      >
+        {introduction.mission}
+      </Typography>
+    </Box>
+  )}
+
+  {introduction?.coreValues && (
+    <Box flex={1}>
+      <Typography
+        variant="h6"
+        color="primary"
+        fontWeight={700}
+        gutterBottom
+        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+      >
+        Giá trị cốt lõi
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{ lineHeight: 1.7, color: "text.secondary" }}
+      >
+        {introduction.coreValues}
+      </Typography>
+    </Box>
+  )}
+</Stack>
         </Box>
       )}
     </Box>
@@ -149,17 +199,58 @@ const IntroducePage = () => {
           <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
             Ban Lãnh đạo
           </Typography>
-          <Grid container spacing={2}>
+          <Stack spacing={2}>
             {introduction.leaders.map((leader, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Paper sx={{ p: 3, textAlign: "center", height: "100%", borderRadius: 2, transition: 'all 0.3s', '&:hover': { boxShadow: 4 } }}>
+              <Paper
+                key={index}
+                sx={{
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  width: '100%',
+                  borderRadius: 2,
+                  transition: 'all 0.3s',
+                }}
+              >
+                <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
+                  <Box
+                    component="img"
+                    src={leader.image || "/default_avatar.png"}
+                    alt={leader.name}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 2,
+                      objectFit: "cover",
+                      border: '1px solid',
+                      borderColor: 'grey.200'
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle1" fontWeight={700} color="primary.main">
-                    {leader}
+                    {leader.name}
                   </Typography>
-                </Paper>
-              </Grid>
+                  {leader.positions && (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600, mt: 0.5 }}>
+                      {leader.positions}
+                    </Typography>
+                  )}
+                  {leader.email && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      {leader.email}
+                    </Typography>
+                  )}
+                  {leader.content && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      {leader.content}
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
             ))}
-          </Grid>
+          </Stack>
         </Box>
       )}
     </Box>
@@ -173,25 +264,78 @@ const IntroducePage = () => {
           <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
             Thành viên tiêu biểu
           </Typography>
-          <Grid container spacing={2}>
+          <Stack spacing={2}>
             {introduction.teamMembers.map((member, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Paper sx={{ p: 3, textAlign: "center", height: "100%", borderRadius: 2, transition: 'all 0.3s', '&:hover': { boxShadow: 4 } }}>
+              <Paper
+                key={index}
+                sx={{
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  width: '100%',
+                  borderRadius: 2,
+                  transition: 'all 0.3s',
+                  '&:hover': { boxShadow: 4 }
+                }}
+              >
+                <Box sx={{ width: 100, height: 100, flexShrink: 0 }}>
+                  <Box
+                    component="img"
+                    src={member.image || "/default_avatar.png"}
+                    alt={member.name}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 2,
+                      objectFit: "cover",
+                      border: '1px solid',
+                      borderColor: 'grey.200'
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle1" fontWeight={700} color="primary.main">
-                    {member}
+                    {member.name}
                   </Typography>
-                </Paper>
-              </Grid>
+                  {member.positions && (
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                      {member.positions}
+                    </Typography>
+                  )}
+                  {member.email && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      {member.email}
+                    </Typography>
+                  )}
+                  {member.content && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      {member.content}
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
             ))}
-          </Grid>
+          </Stack>
         </Box>
       )}
     </Box>
   );
 
+  const renderContent = () => {
+    switch (mode) {
+      case "leaders":
+        return renderLeaders();
+      case "team":
+        return renderMembers();
+      default:
+        return renderGeneralInfo();
+    }
+  };
+
   return (
     <Page
-      title="Giới thiệu"
+      title={config.title}
       meta={
         <meta
           name="description"
@@ -243,6 +387,7 @@ const IntroducePage = () => {
               p: { xs: 3, md: 8 },
             }}
           >
+
             <Typography
               variant="h3"
               component="h1"
@@ -250,36 +395,14 @@ const IntroducePage = () => {
               color="primary.main"
               textAlign="center"
               sx={{
-                mb: 4,
+                mb: 6,
                 fontSize: { xs: "2rem", md: "3rem" },
                 textTransform: "uppercase",
                 letterSpacing: 1
               }}
             >
-              GIỚI THIỆU
+              {config.title}
             </Typography>
-
-            <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 6 }}>
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                centered
-                textColor="primary"
-                indicatorColor="primary"
-                variant="fullWidth"
-                sx={{
-                  '& .MuiTab-root': {
-                    fontSize: { xs: '0.9rem', md: '1.1rem' },
-                    py: 2,
-                    transition: 'all 0.2s'
-                  }
-                }}
-              >
-                <Tab label="Thông tin chung" sx={{ fontWeight: 800 }} />
-                <Tab label="Lãnh đạo" sx={{ fontWeight: 800 }} />
-                <Tab label="Thành viên" sx={{ fontWeight: 800 }} />
-              </Tabs>
-            </Box>
 
             {loading ? (
               <Box sx={{ display: "flex", justifyContent: "center", py: 15 }}>
@@ -297,40 +420,10 @@ const IntroducePage = () => {
                     </Typography>
                   </Stack>
                 ) : (
-                  <>
-                    {tabValue === 0 && renderGeneralInfo()}
-                    {tabValue === 1 && renderLeaders()}
-                    {tabValue === 2 && renderMembers()}
-                  </>
+                  renderContent()
                 )}
               </Box>
             )}
-
-            {/* CTA: Introduce Faculties */}
-            <Box sx={{ textAlign: "center", mt: 10, pt: 6, borderTop: "1px solid", borderColor: "grey.100" }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
-                Bạn muốn khám phá thêm về các Khoa?
-              </Typography>
-              <Button
-                component={Link}
-                to={`/${organization?.slug}/faculties`}
-                variant="contained"
-                size="large"
-                sx={{
-                  fontWeight: 700,
-                  px: 8,
-                  py: 2,
-                  borderRadius: 2,
-                  fontSize: '1.1rem',
-                  boxShadow: 3,
-                  '&:hover': {
-                    boxShadow: 6
-                  }
-                }}
-              >
-                Giới thiệu các Khoa
-              </Button>
-            </Box>
           </Box>
         </Box>
       </Container>

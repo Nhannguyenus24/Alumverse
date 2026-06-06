@@ -16,6 +16,7 @@ import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dao.SchoolFeedbackRepository;
+import com.service.backend.organization.dto.OrgIntroductionMemberResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 import com.service.backend.shared.entity.Organization;
 import com.service.backend.shared.entity.OrganizationIntroduction;
@@ -221,22 +222,53 @@ public class AdminOrganizationService {
                 .mission(intro.getMission())
                 .coreValues(intro.getCoreValues())
                 .bannerUrl(intro.getBannerUrl())
-                .imageUrls(parseJsonList(intro.getImageUrls()))
-                .leaders(parseJsonList(intro.getLeaders()))
-                .teamMembers(parseJsonList(intro.getTeamMembers()))
+                .imageUrls(parseStringList(intro.getImageUrls()))
+                .leaders(parseMemberList(intro.getLeaders()))
+                .teamMembers(parseMemberList(intro.getTeamMembers()))
                 .leadersContent(intro.getLeadersContent())
                 .teamMembersContent(intro.getTeamMembersContent())
                 .updatedAt(intro.getUpdatedAt())
                 .build();
     }
 
-    private List<String> parseJsonList(String json) {
-        if (json == null) {
+    private List<String> parseStringList(String json) {
+        if (json == null || json.trim().isEmpty()) {
             return List.of();
         }
-        return JsonUtils.isJsonArray(json)
-                ? JsonUtils.fromJsonToList(json, String.class)
-                : List.of();
+        if (!JsonUtils.isJsonArray(json)) {
+            return List.of(json);
+        }
+        try {
+            return JsonUtils.fromJsonToList(json, String.class);
+        } catch (Exception e) {
+            logger.error("Failed to parse string list: {}", json, e);
+            return List.of();
+        }
+    }
+
+    private List<OrgIntroductionMemberResponse> parseMemberList(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return List.of();
+        }
+        if (!JsonUtils.isJsonArray(json)) {
+            return List.of(OrgIntroductionMemberResponse.builder()
+                    .name(json)
+                    .build());
+        }
+        try {
+            return JsonUtils.fromJsonToList(json, OrgIntroductionMemberResponse.class);
+        } catch (Exception e) {
+            // Fallback for list of strings
+            try {
+                List<String> strings = JsonUtils.fromJsonToList(json, String.class);
+                return strings.stream()
+                        .map(s -> OrgIntroductionMemberResponse.builder().name(s).build())
+                        .toList();
+            } catch (Exception ex) {
+                logger.error("Failed to parse member list: {}", json, ex);
+                return List.of();
+            }
+        }
     }
 
     private Mono<List<String>> uploadImages(List<String> base64Images) {

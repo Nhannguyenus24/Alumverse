@@ -21,8 +21,8 @@ public class OrganizationIntroductionResponse {
     private String mission;
     private String coreValues;
     private String bannerUrl;
-    private List<String> leaders;
-    private List<String> teamMembers;
+    private List<OrgIntroductionMemberResponse> leaders;
+    private List<OrgIntroductionMemberResponse> teamMembers;
     private String leadersContent;
     private String teamMembersContent;
     private LocalDateTime updatedAt;
