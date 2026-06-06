@@ -1,5 +1,6 @@
 package com.service.backend.organization.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -20,4 +21,9 @@ public class OrganizationIntroductionResponse {
     private String mission;
     private String coreValues;
     private String bannerUrl;
+    private List<String> leaders;
+    private List<String> teamMembers;
+    private String leadersContent;
+    private String teamMembersContent;
+    private LocalDateTime updatedAt;
 }

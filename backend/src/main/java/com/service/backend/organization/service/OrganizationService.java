@@ -76,17 +76,14 @@ public class OrganizationService {
                         .orgaId(orgaId)
                         .content(null)
                         .imageUrls(List.of())
+                        .leaders(List.of())
+                        .teamMembers(List.of())
                         .build()))
                 .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
-        List<String> urls = intro.getImageUrls() != null
-                ? JsonUtils.isJsonArray(intro.getImageUrls())
-                        ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
-                        : List.of()
-                : List.of();
         return OrganizationIntroductionResponse.builder()
                 .orgaId(intro.getOrgaId())
                 .content(intro.getContent())
@@ -94,8 +91,22 @@ public class OrganizationService {
                 .mission(intro.getMission())
                 .coreValues(intro.getCoreValues())
                 .bannerUrl(intro.getBannerUrl())
-                .imageUrls(urls)
+                .imageUrls(parseJsonList(intro.getImageUrls()))
+                .leaders(parseJsonList(intro.getLeaders()))
+                .teamMembers(parseJsonList(intro.getTeamMembers()))
+                .leadersContent(intro.getLeadersContent())
+                .teamMembersContent(intro.getTeamMembersContent())
+                .updatedAt(intro.getUpdatedAt())
                 .build();
+    }
+
+    private List<String> parseJsonList(String json) {
+        if (json == null) {
+            return List.of();
+        }
+        return JsonUtils.isJsonArray(json)
+                ? JsonUtils.fromJsonToList(json, String.class)
+                : List.of();
     }
 
     public Mono<SchoolFeedback> createSchoolFeedback(Integer organizationId, CreateSchoolFeedbackRequest request) {

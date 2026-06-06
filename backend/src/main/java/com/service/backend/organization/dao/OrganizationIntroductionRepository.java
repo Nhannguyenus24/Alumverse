@@ -18,7 +18,9 @@ public interface OrganizationIntroductionRepository extends R2dbcRepository<Orga
     @Modifying
     @Query("UPDATE organization_introductions SET content = :content, " +
            "vision = :vision, mission = :mission, core_values = :coreValues, " +
-           "banner_url = :bannerUrl, image_urls = CAST(:imageUrls AS json) WHERE orga_id = :orgaId")
+           "banner_url = :bannerUrl, image_urls = CAST(:imageUrls AS json), " +
+           "leaders = CAST(:leaders AS json), team_members = CAST(:teamMembers AS json), " +
+           "leaders_content = :leadersContent, team_members_content = :teamMembersContent WHERE orga_id = :orgaId")
     Mono<Integer> updateFields(
             @Param("orgaId") Integer orgaId,
             @Param("content") String content,
@@ -26,6 +28,10 @@ public interface OrganizationIntroductionRepository extends R2dbcRepository<Orga
             @Param("mission") String mission,
             @Param("coreValues") String coreValues,
             @Param("bannerUrl") String bannerUrl,
-            @Param("imageUrls") String imageUrls
+            @Param("imageUrls") String imageUrls,
+            @Param("leaders") String leaders,
+            @Param("teamMembers") String teamMembers,
+            @Param("leadersContent") String leadersContent,
+            @Param("teamMembersContent") String teamMembersContent
     );
 }

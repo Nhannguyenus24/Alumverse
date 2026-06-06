@@ -176,6 +176,9 @@ public class AdminOrganizationService {
                         .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
                         .flatMap(intro -> {
                             String imageUrlsJson = JsonUtils.toJson(urls);
+                            String leadersJson = JsonUtils.toJson(request.getLeaders());
+                            String teamMembersJson = JsonUtils.toJson(request.getTeamMembers());
+
                             if (intro.getId() != null) {
                                 return introductionRepository.updateFields(
                                         orgaId,
@@ -184,10 +187,13 @@ public class AdminOrganizationService {
                                         request.getMission(),
                                         request.getCoreValues(),
                                         request.getBannerUrl(),
-                                        imageUrlsJson
+                                        imageUrlsJson,
+                                        leadersJson,
+                                        teamMembersJson,
+                                        request.getLeadersContent(),
+                                        request.getTeamMembersContent()
                                 )
-                                .then(introductionRepository.findByOrgaId(orgaId))
-                                .thenReturn(urls);
+                                .then(introductionRepository.findByOrgaId(orgaId));
                             } else {
                                 intro.setContent(request.getContent());
                                 intro.setVision(request.getVision());
@@ -195,20 +201,42 @@ public class AdminOrganizationService {
                                 intro.setCoreValues(request.getCoreValues());
                                 intro.setImageUrls(imageUrlsJson);
                                 intro.setBannerUrl(request.getBannerUrl());
-                                return introductionRepository.save(intro).thenReturn(urls);
+                                intro.setLeaders(leadersJson);
+                                intro.setTeamMembers(teamMembersJson);
+                                intro.setLeadersContent(request.getLeadersContent());
+                                intro.setTeamMembersContent(request.getTeamMembersContent());
+                                return introductionRepository.save(intro);
                             }
                         }))
-                .map(urls -> OrganizationIntroductionResponse.builder()
-                        .orgaId(orgaId)
-                        .content(request.getContent())
-                        .vision(request.getVision())
-                        .mission(request.getMission())
-                        .coreValues(request.getCoreValues())
-                        .imageUrls(urls)
-                        .bannerUrl(request.getBannerUrl())
-                        .build())
+                .map(this::toResponse)
                 .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
+    }
+
+    private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
+        return OrganizationIntroductionResponse.builder()
+                .orgaId(intro.getOrgaId())
+                .content(intro.getContent())
+                .vision(intro.getVision())
+                .mission(intro.getMission())
+                .coreValues(intro.getCoreValues())
+                .bannerUrl(intro.getBannerUrl())
+                .imageUrls(parseJsonList(intro.getImageUrls()))
+                .leaders(parseJsonList(intro.getLeaders()))
+                .teamMembers(parseJsonList(intro.getTeamMembers()))
+                .leadersContent(intro.getLeadersContent())
+                .teamMembersContent(intro.getTeamMembersContent())
+                .updatedAt(intro.getUpdatedAt())
+                .build();
+    }
+
+    private List<String> parseJsonList(String json) {
+        if (json == null) {
+            return List.of();
+        }
+        return JsonUtils.isJsonArray(json)
+                ? JsonUtils.fromJsonToList(json, String.class)
+                : List.of();
     }
 
     private Mono<List<String>> uploadImages(List<String> base64Images) {
