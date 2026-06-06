@@ -11,7 +11,6 @@ import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi } from "../../utils/api";
-import JoinEventDialog from "../../components/event/JoinEventDialog";
 
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -21,6 +20,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const [joinedCount, setJoinedCount] = useState(data.stats?.[1]?.value ?? 0);
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
+  const [openJoinDialog, setOpenJoinDialog] = useState(false);
 
   useEffect(() => {
     if (channel !== "event" || !eventId) return;
@@ -131,10 +131,8 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         open={openJoinDialog}
         onClose={() => setOpenJoinDialog(false)}
         eventTitle={data.title}
-        questions={mockQuestions}
-        // questions={[]} // mở khoá cái này cho trường hợp không có câu hỏi
-        onConfirm={(answers) => {
-          console.log("Join answers:", answers);
+        questions={[]}
+        onConfirm={() => {
           setIsJoined(true);
           setOpenJoinDialog(false);
         }}
