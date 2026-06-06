@@ -10,18 +10,69 @@ import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
+import { eventApi } from "../../utils/api";
+import JoinEventDialog from "../../components/event/JoinEventDialog";
 
-const ArticleHighlightCard = ({ data, channel }) => {
+const ArticleHighlightCard = ({ data, channel, eventId }) => {
+  const { enqueueSnackbar } = useSnackbar();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
-  const [openJoinDialog, setOpenJoinDialog] = useState(false);
+  const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
+  const [joinedCount, setJoinedCount] = useState(data.stats?.[1]?.value ?? 0);
+  const [loadingInterest, setLoadingInterest] = useState(false);
+  const [loadingJoin, setLoadingJoin] = useState(false);
 
-// Event mock questions
-const mockQuestions = [
-  { id: 1, type: "shortText", label: "Bạn đang học năm mấy?" },
-  { id: 2, type: "singleChoice", label: "Bạn biết đến sự kiện từ đâu?", options: ["Facebook", "Website", "Email", "Bạn bè"] },
-  { id: 3, type: "multiChoice", label: "Bạn quan tâm nội dung nào?", options: ["Networking", "CV Review", "Internship", "Mock Interview"] },
-];
+  useEffect(() => {
+    if (channel !== "event" || !eventId) return;
+    eventApi.checkInterest(eventId)
+      .then((res) => {
+        const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
+        setIsInterested(checked);
+      })
+      .catch(() => {});
+  }, [channel, eventId]);
+
+  const handleInterest = async () => {
+    if (loadingInterest) return;
+    setLoadingInterest(true);
+    try {
+      if (isInterested) {
+        await eventApi.removeInterest(eventId);
+        setIsInterested(false);
+        setInterestedCount((c) => Math.max(0, c - 1));
+      } else {
+        await eventApi.addInterest(eventId);
+        setIsInterested(true);
+        setInterestedCount((c) => c + 1);
+      }
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || "Thao tác thất bại", { variant: "error" });
+    } finally {
+      setLoadingInterest(false);
+    }
+  };
+
+  const handleJoin = async () => {
+    if (loadingJoin || isJoined) return;
+    setLoadingJoin(true);
+    try {
+      await eventApi.registerForEvent(eventId);
+      setIsJoined(true);
+      setJoinedCount((c) => c + 1);
+      enqueueSnackbar("Đăng ký tham gia thành công! Chờ admin duyệt.", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+    } finally {
+      setLoadingJoin(false);
+    }
+  };
+
+  const displayStats = channel === "event"
+    ? [
+        { value: interestedCount, label: "người quan tâm" },
+        { value: joinedCount, label: "người tham gia" },
+      ]
+    : data.stats;
 
   return (
     <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3 }}>
@@ -37,7 +88,7 @@ const mockQuestions = [
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 2 }}>
         {/* STATS */}
         <Box sx={{ display: "flex", justifyContent: "space-around" }}>
-          {data.stats?.map((item, i) => (
+          {displayStats?.map((item, i) => (
             <Box key={i} textAlign="center">
               <Typography variant="h2" fontWeight={700}>{item.value}</Typography>
               <Typography variant="body2" color="text.secondary">{item.label}</Typography>
@@ -53,9 +104,8 @@ const mockQuestions = [
             <Button
               fullWidth
               variant={isInterested ? "outlined" : "contained"}
-              color="primary"
-              sx={{ bgcolor: isInterested ? "white" : "primary.main" }}
-              onClick={() => setIsInterested(!isInterested)}
+              disabled={loadingInterest}
+              onClick={handleInterest}
             >
               {isInterested ? "Đã quan tâm" : "Quan tâm"}
             </Button>
@@ -63,12 +113,14 @@ const mockQuestions = [
             <Button
               fullWidth
               variant={isJoined ? "outlined" : "contained"}
-              color="success"
-              sx={{ bgcolor: isJoined ? "white" : "success.main" }}
-              disabled={isJoined}
-              onClick={() => setOpenJoinDialog(true)}
+              disabled={loadingJoin || isJoined}
+              sx={{
+                bgcolor: isJoined ? "transparent" : "grey.700",
+                color: isJoined ? "grey.700" : "common.white",
+              }}
+              onClick={handleJoin}
             >
-              {isJoined ? "Đã tham gia" : "Tham gia"}
+              {isJoined ? "Đã đăng ký" : "Tham gia"}
             </Button>
           </Stack>
         )}
@@ -200,7 +252,9 @@ const ArticlePage = () => {
               )}
 
               {/* HIGHLIGHT */}
-              {highlightData && <ArticleHighlightCard data={highlightData} channel={resolvedChannel} />}
+              {highlightData && (
+                <ArticleHighlightCard data={highlightData} channel={resolvedChannel} eventId={id} />
+              )}
 
               {/* Thumbnail */}
               {article.thumbnailUrl && (
