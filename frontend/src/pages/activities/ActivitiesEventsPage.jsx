@@ -16,7 +16,7 @@ import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
-
+import { useAuth } from '../../hooks/useAuth';
 
 const SIDEBAR = [
   { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
@@ -90,6 +90,17 @@ const ActivitiesPage = () => {
     navigate(`/article/${article.channel}/${article.id}`);
   };
 
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+
+  const handleEdit = (event) => {
+    navigate(`/activities/events/${event.id}/edit`);
+  };
+
+  const handleDelete = (event) => {
+    console.log('Delete event', event.id);
+  };
+
   return (
     <Page title="Sự kiện">
       <Container
@@ -146,7 +157,12 @@ const ActivitiesPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
-                  <FeaturedArticleEventCard article={featuredCard} />
+                  <FeaturedArticleEventCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
                 </Box>
               )}
 
@@ -170,7 +186,12 @@ const ActivitiesPage = () => {
                   >
                     {upcomingCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
-                        <ArticleEventCard article={card} />
+                        <ArticleEventCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(upcomingRest[i])}
+                          onDelete={() => handleDelete(upcomingRest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
