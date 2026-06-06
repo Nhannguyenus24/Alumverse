@@ -24,22 +24,22 @@ public class ChatConversationRequest {
     private Long id;
 
     @Column("member_low_id")
-    private Long memberLowId;
+    private Integer memberLowId;
 
     @Column("member_high_id")
-    private Long memberHighId;
+    private Integer memberHighId;
 
     @Column("requester_member_id")
-    private Long requesterMemberId;
+    private Integer requesterMemberId;
 
     @Column("target_member_id")
-    private Long targetMemberId;
+    private Integer targetMemberId;
 
     @Column("chat_group_id")
-    private Long chatGroupId;
+    private Integer chatGroupId;
 
-    @Column("last_request_message_Id")
-    private Long lastRequestMessageId;
+    @Column("last_request_message_id")
+    private Integer lastRequestMessageId;
 
     @Column("cooldown_until")
     private LocalDateTime cooldownUntil;

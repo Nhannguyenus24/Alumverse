@@ -30,16 +30,20 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.dto.UpdateForumPostRequest;
+import com.service.backend.forum.dto.ForumTopicSubscriptionDTO;
+import com.service.backend.forum.dto.CreateForumTopicSubscriptionRequest;
 import com.service.backend.shared.entity.ForumCategory;
 import com.service.backend.shared.entity.ForumPost;
 import com.service.backend.shared.entity.ForumPostReaction;
 import com.service.backend.shared.entity.ForumPostReport;
 import com.service.backend.shared.entity.ForumTopic;
+import com.service.backend.shared.entity.ForumTopicSubscription;
 import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
 import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
+import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -54,6 +58,7 @@ public class ForumService {
     private final ForumPostRepository forumPostRepository;
     private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumPostReportRepository forumPostReportRepository;
+    private final ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
 
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
@@ -346,6 +351,43 @@ public class ForumService {
                 .doOnError(error -> log.info("No reaction found for post ID: {} by member: {}", postId, memberId));
     }
 
+    // ========== SUBSCRIPTION METHODS ==========
+
+    public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request) {
+        return forumTopicRepository.findById(request.getTopicId())
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.error("Topic not found with ID: {}", request.getTopicId());
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
+                }))
+                .flatMap(topic -> forumTopicSubscriptionRepository.findByTopicIdAndMemberId(
+                            request.getTopicId(), request.getMemberId())
+                        .flatMap(existingSubscription -> {
+                            log.info("Removing existing subscription from topic ID: {}, member: {}",
+                                    request.getTopicId(), request.getMemberId());
+                            return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
+                                    request.getTopicId(), request.getMemberId())
+                                    .then(Mono.<ForumTopicSubscription>empty());
+                        })
+                        .switchIfEmpty(Mono.defer(() -> {
+                            log.info("Creating new subscription for topic ID: {}, member: {}",
+                                    request.getTopicId(), request.getMemberId());
+                            ForumTopicSubscription subscription = ForumTopicSubscription.builder()
+                                    .topicId(request.getTopicId())
+                                    .memberId(request.getMemberId())
+                                    .build();
+                            return forumTopicSubscriptionRepository.save(subscription);
+                        })))
+                .map(this::convertToSubscriptionDTO)
+                .doOnSuccess(result -> log.info("subscribeToTopic result: {}", JsonUtils.toJson(result)))
+                .doOnError(error -> log.error("Error toggling subscription for topic ID: {}", request.getTopicId(), error));
+    }
+
+    public Mono<Boolean> isSubscribed(Integer topicId, Integer memberId) {
+        return forumTopicSubscriptionRepository.findByTopicIdAndMemberId(topicId, memberId)
+                .map(s -> true)
+                .defaultIfEmpty(false);
+    }
+
     // Helper methods to convert entities to DTOs
     private Mono<ForumCategoryDTO> convertToCategoryDTOWithStats(ForumCategory category) {
         ForumCategoryDTO base = convertToCategoryDTO(category);
@@ -440,6 +482,16 @@ public class ForumService {
                 .postId(reaction.getPostId())
                 .memberId(reaction.getMemberId())
                 .createdAt(reaction.getCreatedAt())
+                .build();
+    }
+
+    private ForumTopicSubscriptionDTO convertToSubscriptionDTO(ForumTopicSubscription subscription) {
+        return ForumTopicSubscriptionDTO.builder()
+                .id(subscription.getId())
+                .topicId(subscription.getTopicId())
+                .memberId(subscription.getMemberId())
+                .lastReadAt(subscription.getLastReadAt())
+                .createdAt(subscription.getCreatedAt())
                 .build();
     }
 }

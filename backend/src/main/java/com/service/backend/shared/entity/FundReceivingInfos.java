@@ -15,7 +15,7 @@ import org.springframework.data.relational.core.mapping.Table;
 @Table("fund_receiving_infos")
 public class FundReceivingInfos {
     @Id
-    private Integer id;
+    private Long id;
 
     @Column("account_number")
     private String accountNumber;

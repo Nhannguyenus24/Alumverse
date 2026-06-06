@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Table("funds")
 public class Funds {
     @Id
-    private Integer id;
+    private Long id;
 
     @Column("organization_id")
     private Integer organizationId;

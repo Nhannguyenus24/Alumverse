@@ -20,13 +20,13 @@ import java.time.LocalDateTime;
 public class ChatMessage {
 
     @Id
-    private Long id;
+    private Integer id;
 
     @Column("group_id")
-    private Long groupId;
+    private Integer groupId;
 
     @Column("sender_member_id")
-    private Long senderMemberId;
+    private Integer senderMemberId;
 
 
     private String content;

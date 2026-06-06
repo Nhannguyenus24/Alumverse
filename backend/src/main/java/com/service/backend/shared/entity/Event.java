@@ -19,13 +19,13 @@ import java.time.LocalDateTime;
 public class Event {
 
     @Id
-    private Long id;
+    private Integer id;
 
     @Column("organization_id")
-    private Long organizationId;
+    private Integer organizationId;
 
     @Column("creator_member_id")
-    private Long creatorMemberId;
+    private Integer creatorMemberId;
 
     private String title;
 

@@ -21,10 +21,10 @@ import java.time.LocalDateTime;
 @Table("fund_donations")
 public class FundDonations {
     @Id
-    private Integer id;
+    private Long id;
 
     @Column("fund_id")
-    private Integer fundId;
+    private Long fundId;
 
     @Column("donor_member_id")
     private Integer donorMemberId;

@@ -18,13 +18,13 @@ import java.time.LocalDateTime;
 public class EventEmailLog {
 
     @Id
-    private Long id;
+    private Integer id;
 
     @Column("event_id")
-    private Long eventId;
+    private Integer eventId;
 
     @Column("sent_by")
-    private Long sentBy;
+    private Integer sentBy;
 
     @Column("template_name")
     private String templateName;
