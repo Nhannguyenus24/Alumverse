@@ -21,11 +21,13 @@ import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
 import com.service.backend.forum.dto.CreateForumPostReportRequest;
+import com.service.backend.forum.dto.CreateForumTopicSubscriptionRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
+import com.service.backend.forum.dto.ForumTopicSubscriptionDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
@@ -141,6 +143,29 @@ public class ForumController {
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)));
     }
 
+    /**
+     * Subscribe or unsubscribe to a forum topic
+     */
+    @PostMapping("/topic/subscribe")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicSubscriptionDTO>>> subscribeToTopic(
+            @Valid @RequestBody CreateForumTopicSubscriptionRequest request) {
+        return forumService.subscribeToTopic(request)
+                .map(subscription -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Subscribed to topic successfully", subscription)))
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Unsubscribed from topic successfully", null))));
+    }
+
+    /**
+     * Check if a member is subscribed to a topic
+     */
+    @GetMapping("/topic/{topicId}/is-subscribed")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> isSubscribed(
+            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId,
+            @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
+        return forumService.isSubscribed(topicId, memberId)
+                .map(isSubscribed -> ResponseEntity.ok(new ApiResponse<>("Subscription status retrieved successfully", isSubscribed)));
+    }
+
     // ========== POST ENDPOINTS ==========
 
     /**
@@ -249,4 +274,3 @@ public class ForumController {
                         new ApiResponse<>("No reaction found for this post", null))));
     }
 }
-

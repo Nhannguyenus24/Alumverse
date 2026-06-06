@@ -11,12 +11,13 @@ import org.springframework.data.relational.core.mapping.Table;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Data;
+import lombok.Builder;
 import com.service.backend.shared.enums.Status;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @Table("organization_members")
 public class OrganizationMember {
 
@@ -29,11 +30,14 @@ public class OrganizationMember {
     @Column("user_id")
     private Integer userId;
 
+    @Column("started_year")
+    private String startedYear;
+
     @Column("graduated_year")
     private String graduatedYear;
 
     @Column("graduation_status")
-    private Status graduationStatus;
+    private String graduationStatus;
 
     @Column("program")
     private String program;

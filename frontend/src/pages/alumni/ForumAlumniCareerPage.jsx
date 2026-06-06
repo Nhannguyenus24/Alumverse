@@ -163,9 +163,6 @@ const ForumAlumniCareerPage = () => {
                       width: { xs: '100%', sm: 'auto' },
                     }}
                   >
-                    <Button variant="outlined" color="primary" fullWidth={false} sx={{ minWidth: { xs: '100%', sm: 'auto' } }}>
-                      Theo dõi
-                    </Button>
                     <Button
                       variant="contained"
                       color="primary"

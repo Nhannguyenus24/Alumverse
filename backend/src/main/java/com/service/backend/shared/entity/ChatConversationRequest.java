@@ -38,7 +38,7 @@ public class ChatConversationRequest {
     @Column("chat_group_id")
     private Long chatGroupId;
 
-    @Column("last_request_message_Id")
+    @Column("last_request_message_id")
     private Long lastRequestMessageId;
 
     @Column("cooldown_until")
