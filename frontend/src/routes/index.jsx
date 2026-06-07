@@ -424,7 +424,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "post/donation",
-        element: <PostArticleDonationPage />,
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <PostArticleDonationPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "article/:channel/:id",
