@@ -511,6 +511,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async checkRegistered(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/check-registered`);
+		return unwrap(response);
+	},
+
 	// ── Invitations ──────────────────────────────────────────────────────────
 	async inviteUsers(eventId, payload) {
 		const response = await apiClient.post(`/events/${eventId}/invitations`, payload);
@@ -902,6 +907,21 @@ export const fundApi = {
 		return unwrap(response) ?? [];
 	},
 
+	async getFundReceivingInfos(params = {}) {
+		const response = await apiClient.get(`${BASE_FUND}/receiving-infos`, { params });
+		return unwrap(response);
+	},
+
+	async getSupportedBanks() {
+		const response = await apiClient.get(`${BASE_FUND}/banks`);
+		return unwrap(response);
+	},
+
+	async createFundReceivingInfo(payload) {
+		const response = await apiClient.post(`${BASE_FUND}/receiving-infos`, payload);
+		return unwrap(response);
+	},
+
 	async getFundDonationsByFundId(fundId, params = {}) {
 		const response = await apiClient.get(`/fund-donations/${fundId}`, { params });
 		return unwrap(response);
@@ -934,6 +954,9 @@ export const {
 	getFundStatuses,
 	getFundStatistics,
 	getActiveFundReceivingInfos,
+	getFundReceivingInfos,
+	getSupportedBanks,
+	createFundReceivingInfo,
 	getFundDonationsByFundId,
 	createFundDonation,
 	createFund,

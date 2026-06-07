@@ -1,55 +1,31 @@
 import { useState } from "react";
-import {
-  Container,
-  Stack,
-  Box,
-  Typography,
-} from "@mui/material";
-
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Container, Stack, Box, Typography, CircularProgress } from "@mui/material";
 import Page from "../../components/Page";
 import SearchBar from "../../components/SearchBar";
 import MyTicketCard from "../../components/MyTicketCard";
+import { eventApi } from "../../utils/api";
 
-const mockTickets = [
-  {
-    id: 1,
-    date: "20/06/2026",
-    title: "Alumni Networking Night 2026",
-    organizer: "HCMUS Alumni Association",
-    participants: 250,
-    interested: 430,
-    status: "upcoming",
-  },
-  {
-    id: 2,
-    date: "05/05/2026",
-    title: "Career Talk: AI & Data Science",
-    organizer: "Faculty of IT",
-    participants: 180,
-    interested: 350,
-    status: "attended",
-  },
-  {
-    id: 3,
-    date: "12/03/2026",
-    title: "Spring Alumni Meetup",
-    organizer: "HCMUS",
-    participants: 120,
-    interested: 210,
-    status: "finished",
-  },
-];
+const useMyTickets = () => {
+  return useQuery({
+    queryKey: ["myTickets"],
+    queryFn: () => eventApi.getMyTickets({ page: 0, limit: 100 }),
+    select: (data) => data?.items ?? [],
+  });
+};
 
 const MyTicketsPage = () => {
-  const [filters, setFilters] = useState({
-    search: "",
-  });
+  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+  const { data: tickets = [], isPending, isError } = useMyTickets();
 
-  const filteredTickets = mockTickets.filter((ticket) =>
-    ticket.title
-      .toLowerCase()
-      .includes(filters.search.toLowerCase())
+  const filtered = tickets.filter((t) =>
+    (t.eventTitle ?? t.ticketCode ?? "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleCancelled = () => {
+    queryClient.invalidateQueries({ queryKey: ["myTickets"] });
+  };
 
   return (
     <Page title="Vé của tôi">
@@ -64,50 +40,43 @@ const MyTicketsPage = () => {
         <Stack spacing={3}>
           {/* HEADER */}
           <Stack gap={2}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography
                 variant="h1"
                 fontWeight={800}
                 color="primary.main"
-                sx={{
-                  fontSize: {
-                    xs: "1.8rem",
-                    md: "2.3rem",
-                  },
-                }}
+                sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" } }}
               >
                 VÉ CỦA TÔI
               </Typography>
             </Box>
 
-            {/* SEARCH */}
-            <SearchBar
-              value={filters.search}
-              onChange={(val) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  search: val,
-                }))
-              }
-            />
+            <SearchBar value={search} onChange={setSearch} />
           </Stack>
+
+          {/* STATE */}
+          {isPending && (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+              <CircularProgress />
+            </Box>
+          )}
+
+          {isError && (
+            <Typography color="text.secondary" textAlign="center">
+              Không thể tải danh sách vé.
+            </Typography>
+          )}
+
+          {!isPending && !isError && filtered.length === 0 && (
+            <Typography color="text.secondary" textAlign="center">
+              Bạn chưa có vé nào.
+            </Typography>
+          )}
 
           {/* TICKETS */}
           <Stack spacing={2}>
-            {filteredTickets.map((ticket) => (
-              <MyTicketCard
-                key={ticket.id}
-                ticket={ticket}
-                onViewTicket={() => {
-                  console.log("View ticket", ticket.id);
-                }}
-              />
+            {filtered.map((ticket) => (
+              <MyTicketCard key={ticket.id} ticket={ticket} onCancelled={handleCancelled} />
             ))}
           </Stack>
         </Stack>

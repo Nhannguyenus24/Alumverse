@@ -96,6 +96,7 @@ const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMent
 const AdminArticlesPage = Loadable(lazy(() => import("../pages/admin/AdminArticlesPage")));
 const AdminEditArticlePage = Loadable(lazy(() => import("../pages/admin/AdminEditArticlePage")));
 const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
+const AdminFundReceivingInfosPage = Loadable(lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
 
 const CreateDonationPage = Loadable(
@@ -661,6 +662,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "fundraising/bank-accounts",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminFundReceivingInfosPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "article",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
@@ -872,6 +881,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminFundraisingsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "fundraising/bank-accounts",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminFundReceivingInfosPage />
           </ProtectedRoute>
         ),
       },
