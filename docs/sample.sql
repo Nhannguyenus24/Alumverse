@@ -97,20 +97,20 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  NOW() - INTERVAL '25 days');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
-INSERT INTO "organization_members" ("organization_id", "user_id", "started_year", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
-(1, 1, '[2008, 2014]', '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
-(1, 2, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '90 days', NOW()),
-(1, 4, '[2022]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW() - INTERVAL '45 days', NOW()),
-(1, 6, '[2018, 2023]', '[2022, 2024]', '["GRADUATED", "STUDYING"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
-(1, 11, '[2018]', '[2022]', '["GRADUATED"]', '["Regular"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
-(2, 3, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '60 days', NOW()),
-(2, 5, '[2020, 2025]', '[2024, 2026]', '["GRADUATED", "STUDYING"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', 1, false, 'ACTIVE', NOW() - INTERVAL '30 days', NOW()),
-(2, 8, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '180 days', NOW()),
-(2, 9, '[2023]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '15 days', NOW()),
-(3, 7, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, '[2021]', '[]', '["STUDYING"]', '["Regular"]', '["Business Administration"]', 1, false, 'PENDING', NOW() - INTERVAL '3 days', NOW()),
-(1, 12, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW(), NOW()),
-(2, 13, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW(), NOW());
+INSERT INTO "organization_members" ("organization_id", "user_id", "started_year", "graduated_year", "graduation_status", "program", "major", "faculty", "department", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
+(1, 1, '[2008, 2014]', '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, '[2022]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, '[2018, 2023]', '[2022, 2024]', '["GRADUATED", "STUDYING"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Computer Science", "Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
+(1, 11, '[2018]', '[2022]', '["GRADUATED"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
+(2, 3, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, '[2020, 2025]', '[2024, 2026]', '["GRADUATED", "STUDYING"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Information Technology", "Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, '[2023]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '15 days', NOW()),
+(3, 7, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', '["Faculty of Mathematics & Computer Science"]', '["Mathematics"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, '[2021]', '[]', '["STUDYING"]', '["Regular"]', '["Business Administration"]', '["Faculty of Mathematics & Computer Science"]', '["Mathematics"]', 1, false, 'PENDING', NOW() - INTERVAL '3 days', NOW()),
+(1, 12, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW(), NOW()),
+(2, 13, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW(), NOW());
 
 -- ============= EVENTS DATA =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "topic", "is_published", "created_at") VALUES

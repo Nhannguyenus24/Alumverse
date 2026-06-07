@@ -59,6 +59,8 @@ CREATE TABLE "organization_members" (
   "graduation_status" jsonb,
   "program" jsonb,
   "major" jsonb,
+  "faculty" jsonb,
+  "department" jsonb,
   "verification_level" integer DEFAULT 0,
   "is_trusted_verifier" boolean DEFAULT false,
   "status" text DEFAULT 'ACTIVE',
