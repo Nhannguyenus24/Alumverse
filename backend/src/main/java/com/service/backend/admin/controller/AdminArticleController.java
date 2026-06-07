@@ -1,6 +1,8 @@
 package com.service.backend.admin.controller;
 
+import com.service.backend.admin.dto.ContentStatisticsDTO;
 import com.service.backend.admin.service.AdminArticleService;
+import com.service.backend.admin.service.AdminContentService;
 import com.service.backend.admin.service.AdminEventService;
 import com.service.backend.article.dto.*;
 import com.service.backend.shared.entity.Event;
@@ -26,10 +28,14 @@ public class AdminArticleController {
 
     private final AdminArticleService adminArticleService;
     private final AdminEventService adminEventService;
+    private final AdminContentService adminContentService;
 
-    public AdminArticleController(AdminArticleService adminArticleService, AdminEventService adminEventService) {
+    public AdminArticleController(AdminArticleService adminArticleService,
+                                   AdminEventService adminEventService,
+                                   AdminContentService adminContentService) {
         this.adminArticleService = adminArticleService;
         this.adminEventService = adminEventService;
+        this.adminContentService = adminContentService;
     }
 
     @Operation(summary = "Get all news across organizations")
@@ -93,5 +99,12 @@ public class AdminArticleController {
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
         return adminArticleService.getAllFunds(page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Funds retrieved successfully", response)));
+    }
+
+    @Operation(summary = "Get content statistics across all types")
+    @GetMapping("/statistics")
+    public Mono<ResponseEntity<ApiResponse<ContentStatisticsDTO>>> getContentStatistics() {
+        return adminContentService.getStatistics()
+                .map(stats -> ResponseEntity.ok(new ApiResponse<>("Content statistics fetched successfully", stats)));
     }
 }

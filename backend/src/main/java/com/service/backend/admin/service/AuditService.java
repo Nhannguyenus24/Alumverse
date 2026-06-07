@@ -2,6 +2,7 @@ package com.service.backend.admin.service;
 
 import com.service.backend.admin.dao.AuditRepository;
 import com.service.backend.admin.dto.LoginHistoryResponse;
+import com.service.backend.admin.dto.SuspiciousLoginInfo;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.JsonUtils;
 import org.slf4j.Logger;
@@ -46,8 +47,14 @@ public class AuditService {
 
     public Mono<Map<String, Object>> getLoginStats() {
         return Mono.zip(
-                auditRepository.getLoginMethodStats().collectList(),
-                auditRepository.getDailyLoginStats().collectList()
+                auditRepository.getLoginMethodStats()
+                        .map(p -> Map.of("method", p.getMethod() != null ? p.getMethod() : "unknown",
+                                         "count", p.getCount() != null ? p.getCount() : 0L))
+                        .collectList(),
+                auditRepository.getDailyLoginStats()
+                        .map(p -> Map.of("date", p.getDate() != null ? p.getDate().toString() : "",
+                                         "count", p.getCount() != null ? p.getCount() : 0L))
+                        .collectList()
         ).map(t -> {
             Map<String, Object> stats = new HashMap<>();
             stats.put("methodStats", t.getT1());
@@ -58,7 +65,7 @@ public class AuditService {
         .doOnError(e -> logger.error("Error fetching login stats", e));
     }
 
-    public Mono<List<Object>> getSuspiciousLogins() {
+    public Mono<List<SuspiciousLoginInfo>> getSuspiciousLogins() {
         return auditRepository.findSuspiciousLogins()
                 .collectList()
                 .doOnSuccess(r -> logger.info("getSuspiciousLogins result: {}", JsonUtils.toJson(r)))

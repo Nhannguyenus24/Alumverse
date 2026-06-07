@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.service.backend.admin.dto.FeedbackStatisticsDTO;
 import com.service.backend.admin.dto.UpdateOrganizationRequest;
 import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
@@ -581,6 +582,26 @@ public class AdminOrganizationService {
         return imageService.uploadBase64IfPresent(value)
                 .defaultIfEmpty(value)
                 .onErrorReturn(value);
+    }
+
+    public Mono<FeedbackStatisticsDTO> getFeedbackStatistics() {
+        return Mono.zip(
+                schoolFeedbackRepository.countByOrganizationId(null),
+                schoolFeedbackRepository.countUnread(),
+                schoolFeedbackRepository.getDailyFeedbackCounts()
+                        .map(p -> FeedbackStatisticsDTO.DayCount.builder()
+                                .date(p.getDate() != null ? p.getDate().toString() : "")
+                                .count(p.getCount() != null ? p.getCount() : 0L)
+                                .build())
+                        .collectList()
+        ).map(t -> FeedbackStatisticsDTO.builder()
+                .totalFeedbacks(t.getT1())
+                .unreadFeedbacks(t.getT2())
+                .readFeedbacks(t.getT1() - t.getT2())
+                .feedbackTimeline(t.getT3())
+                .build())
+                .doOnSuccess(r -> logger.info("getFeedbackStatistics completed"))
+                .doOnError(e -> logger.error("Error fetching feedback statistics", e));
     }
 
     /** Uploads each member's image field through ImageService (if it is Base64). */

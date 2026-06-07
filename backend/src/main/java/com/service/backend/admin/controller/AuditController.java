@@ -1,6 +1,7 @@
 package com.service.backend.admin.controller;
 
 import com.service.backend.admin.dto.LoginHistoryResponse;
+import com.service.backend.admin.dto.SuspiciousLoginInfo;
 import com.service.backend.admin.service.AuditService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -68,7 +69,7 @@ public class AuditController {
      * Get users with logins from more than 3 distinct IPs in the last 7 days
      */
     @GetMapping("/login-history/suspicious")
-    public Mono<ResponseEntity<ApiResponse<List<Object>>>> getSuspiciousLogins() {
+    public Mono<ResponseEntity<ApiResponse<List<SuspiciousLoginInfo>>>> getSuspiciousLogins() {
         return auditService.getSuspiciousLogins()
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Suspicious logins fetched successfully", data)));

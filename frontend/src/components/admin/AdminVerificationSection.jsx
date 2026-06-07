@@ -1,0 +1,81 @@
+import { Stack } from '@mui/material';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import Chart from '../Chart';
+import AdminSectionPanel from './AdminSectionPanel';
+import AdminDashboardMetricTile from './AdminDashboardMetricTile';
+import useAdminVerificationStats from '../../hooks/admin/useAdminVerificationStats';
+
+const metricRowSx = {
+  '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } },
+};
+
+const AdminVerificationSection = () => {
+  const { stats } = useAdminVerificationStats();
+
+  const alumniStatusData = [
+    { name: 'Chờ duyệt', count: Number(stats.pendingAlumniRequests) },
+    { name: 'Đã duyệt', count: Number(stats.approvedAlumniRequests) },
+    { name: 'Từ chối', count: Number(stats.rejectedAlumniRequests) },
+    { name: 'Cần chỉnh sửa', count: Number(stats.needsRevisionRequests) },
+  ];
+
+  const peerStatusData = [
+    { name: 'Chờ duyệt', count: Number(stats.pendingPeerVerifications) },
+    { name: 'Đã duyệt', count: Number(stats.approvedPeerVerifications) },
+  ];
+
+  return (
+    <AdminSectionPanel
+      title="Xác minh tài khoản"
+      subtitle="Trạng thái yêu cầu xác minh alumni và xác minh đồng nghiệp."
+    >
+      <Stack spacing={3}>
+        <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+          <AdminDashboardMetricTile
+            label="Tổng yêu cầu xác minh"
+            value={Number(stats.totalAlumniVerificationRequests).toLocaleString()}
+            icon={<VerifiedUserOutlinedIcon />}
+          />
+          <AdminDashboardMetricTile
+            label="Chờ duyệt"
+            value={Number(stats.pendingAlumniRequests).toLocaleString()}
+            caption="Cần xử lý"
+          />
+          <AdminDashboardMetricTile
+            label="Đã duyệt"
+            value={Number(stats.approvedAlumniRequests).toLocaleString()}
+          />
+          <AdminDashboardMetricTile
+            label="Từ chối"
+            value={Number(stats.rejectedAlumniRequests).toLocaleString()}
+          />
+          <AdminDashboardMetricTile
+            label="Tổng xác minh đồng nghiệp"
+            value={Number(stats.totalPeerVerifications).toLocaleString()}
+          />
+        </Stack>
+
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+          <Chart
+            type="bar"
+            title="Yêu cầu xác minh alumni theo trạng thái"
+            data={alumniStatusData}
+            dataKey="count"
+            xAxisKey="name"
+            height={260}
+          />
+          <Chart
+            type="bar"
+            title="Xác minh đồng nghiệp theo trạng thái"
+            data={peerStatusData}
+            dataKey="count"
+            xAxisKey="name"
+            height={260}
+          />
+        </Stack>
+      </Stack>
+    </AdminSectionPanel>
+  );
+};
+
+export default AdminVerificationSection;
