@@ -5,22 +5,17 @@ import {
   IconButton,
   MenuItem,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
-import { ADMIN_FILTER_BAR_SX, ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
+import AdminDataTable from '../../components/admin/AdminDataTable';
+import { ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
@@ -51,6 +46,8 @@ const AdminArticlesPage = () => {
     rowsPerPage, setRowsPerPage,
   } = useAdminArticles('news');
 
+  const [search, setSearch] = useState('');
+
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Bài viết', active: true }]);
   }, [setBreadcrumbs]);
@@ -58,84 +55,100 @@ const AdminArticlesPage = () => {
   const openEdit = (a) => navigate(`/admin/article/${channel}/${idOf(a)}/edit`);
   const openView = (a) => navigate(`/article/${channel}/${idOf(a)}`);
 
+  const filteredArticles = articles.filter(a => titleOf(a).toLowerCase().includes(search.toLowerCase()));
+
   return (
     <AdminSectionPanel
       title="Quản lý bài viết"
       subtitle="Chỉnh sửa bất kỳ bài viết nào đã đăng trên 7 chuyên mục."
     >
-      <Box sx={ADMIN_FILTER_BAR_SX}>
-        <TextField
-          select size="small" label="Chuyên mục"
-          value={channel}
-          onChange={(e) => setChannel(e.target.value)}
-          sx={{ minWidth: 220 }}
-        >
-          {CHANNEL_OPTIONS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-          ))}
-        </TextField>
-        <Chip label={channelLabel(channel)} color="primary" sx={ADMIN_STATUS_CHIP_SX} />
-      </Box>
-
       {loading ? (
         <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={28} /></Stack>
       ) : (
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Tiêu đề</TableCell>
-              <TableCell>Ngày tạo</TableCell>
-              <TableCell align="right">Thao tác</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {articles.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4}>
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                    Chưa có bài viết nào trong chuyên mục này.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              articles.map((a) => (
-                <TableRow key={idOf(a)} hover sx={{ cursor: 'pointer' }} onClick={() => openEdit(a)}>
-                  <TableCell>{idOf(a)}</TableCell>
-                  <TableCell sx={{ maxWidth: 360 }}>
-                    <Typography variant="body2" noWrap>{titleOf(a)}</Typography>
-                  </TableCell>
-                  <TableCell>{formatDateTime(createdOf(a))}</TableCell>
-                  <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                      <Tooltip title="Xem trang công khai">
-                        <IconButton size="small" color="primary" onClick={() => openView(a)}>
-                          <VisibilityOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Chỉnh sửa">
-                        <IconButton size="small" color="primary" onClick={() => openEdit(a)}>
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <AdminDataTable
+          columns={[
+            { id: "id", label: "ID", render: (_, a) => idOf(a) },
+            {
+              id: "title",
+              label: "Tiêu đề",
+              render: (_, a) => (
+                <Typography variant="body2" noWrap sx={{ maxWidth: 360 }}>
+                  {titleOf(a)}
+                </Typography>
+              ),
+            },
+            {
+              id: "createdAt",
+              label: "Ngày tạo",
+              render: (_, a) => formatDateTime(createdOf(a)),
+            },
+            {
+              id: "actions",
+              label: "Thao tác",
+              align: "right",
+              render: (_, a) => (
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Tooltip title="Xem trang công khai">
+                    <IconButton size="small" color="primary" onClick={() => openView(a)}>
+                      <VisibilityOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Chỉnh sửa">
+                    <IconButton size="small" color="primary" onClick={() => openEdit(a)}>
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              ),
+            },
+          ]}
+          rows={filteredArticles}
+          totalCount={totalItems}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          onPageChange={(_, p) => setPage(p)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(Number(e.target.value));
+            setPage(0);
+          }}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setPage(0);
+          }}
+          searchValue={search}
+          searchPlaceholder="Tìm tiêu đề..."
+          onRowClick={(a) => openEdit(a)}
+          filters={
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                select
+                size="small"
+                label="Chuyên mục"
+                value={channel}
+                onChange={(e) => {
+                  setChannel(e.target.value);
+                  setSearch('');
+                }}
+                sx={{ minWidth: 220 }}
+              >
+                {CHANNEL_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <Chip
+                label={channelLabel(channel)}
+                color="primary"
+                sx={ADMIN_STATUS_CHIP_SX}
+              />
+            </Stack>
+          }
+        />
       )}
-
-      <TablePagination
-        component="div"
-        count={totalItems}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        onPageChange={(_, p) => setPage(p)}
-        onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-        rowsPerPageOptions={[10, 20, 50]}
-      />
     </AdminSectionPanel>
   );
 };
