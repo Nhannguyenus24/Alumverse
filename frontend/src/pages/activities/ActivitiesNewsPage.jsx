@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
 import LocalActivityIcon from '@mui/icons-material/LocalActivity';
@@ -13,11 +14,14 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedNews } from '../../hooks/news/usePublishedNews';
 import { normalizeNews } from '../../hooks/articles/normalizeArticle';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import { useAuth } from '../../hooks/useAuth';
+import { useSnackbar } from 'notistack';
+import apiClient from '../../utils/axios';
 
 const SIDEBAR = [
   { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
@@ -52,17 +56,26 @@ const FILTERS = [
   },
 ];
 
+const CHANNEL_TO_ENDPOINT = {
+  news: '/admin/articles/news',
+  alumni: '/admin/articles/alumni-posts',
+  achievement: '/admin/articles/achievements',
+  job: '/admin/articles/jobs',
+  learning: '/admin/articles/learning-resources',
+};
+
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
   const { news: rawNews } = usePublishedNews(0, 12);
 
-  const [filters, setFilters] = useState({
-    all: true,
-  });
+  const [filters, setFilters] = useState({ all: true });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const normalized = rawNews.map(normalizeNews);
-
   const [featured, ...rest] = normalized;
   const featuredCard = featured ? toCardShape(featured) : null;
   const suggestionCards = rest.slice(0, 3).map(toCardShape);
@@ -80,8 +93,22 @@ const ActivitiesPage = () => {
     navigate(`/article/${article.channel}/${article.id}/edit`);
   };
 
-  const handleDelete = (article) => {
-    console.log('Delete article', article.id);
+  const handleDelete = (article) => setDeleteTarget(article);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      const endpoint = CHANNEL_TO_ENDPOINT[deleteTarget.channel];
+      if (endpoint) await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      queryClient.invalidateQueries({ queryKey: ['publishedNews'] });
+      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -219,6 +246,15 @@ const ActivitiesPage = () => {
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá bài viết"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };
