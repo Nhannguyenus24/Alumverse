@@ -33,7 +33,7 @@ import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useCreateFund } from "../../hooks/news/useCreateFund";
 import { useFundStatuses } from "../../hooks/news/useFundStatuses";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
-import { useUploadImage } from "../../utils/imageUtils";
+import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
 
 const isEmptyHtml = (html) => {
@@ -114,12 +114,22 @@ export default function PostArticleDonationPage() {
   const { statuses } = useFundStatuses();
   const { infos: receivingInfos } = useFundReceivingInfos();
 
+  const pickImageFile = (file, onValid, inputEl) => {
+    const result = validateImageFile(file);
+    if (!result.valid) {
+      enqueueSnackbar(result.message, { variant: "warning" });
+      if (inputEl) inputEl.value = "";
+      return;
+    }
+    onValid(file);
+  };
+
   // Ảnh bìa trang — decorative, không submit vào API
   const [coverPreview, setCoverPreview] = useState(null);
   const handleCoverChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCoverPreview(URL.createObjectURL(file));
+    pickImageFile(file, (f) => setCoverPreview(URL.createObjectURL(f)), e.target);
   };
 
   // Logo quỹ — upload riêng → POST /images/upload → logoUrl
@@ -129,8 +139,14 @@ export default function PostArticleDonationPage() {
   const handleLogoChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
+    pickImageFile(
+      file,
+      (f) => {
+        setLogoFile(f);
+        setLogoPreview(URL.createObjectURL(f));
+      },
+      e.target,
+    );
   };
   const handleLogoRemove = () => {
     setLogoFile(null);
@@ -195,7 +211,7 @@ export default function PostArticleDonationPage() {
     >
       <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
         {/* Ảnh bìa trang — chỉ hiển thị, không liên quan logoUrl */}
-        <CoverUpload value={coverPreview} onChange={handleCoverChange} />
+        <CoverUpload value={coverPreview} onChange={handleCoverChange} accept={IMAGE_ACCEPT} />
 
         <Container maxWidth="lg" sx={{ position: "relative", zIndex: 10 }}>
           <Box
@@ -259,6 +275,9 @@ export default function PostArticleDonationPage() {
                       >
                         Logo quỹ (tuỳ chọn)
                       </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                        Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.
+                      </Typography>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         {logoPreview && (
                           <Box
@@ -280,7 +299,7 @@ export default function PostArticleDonationPage() {
                           <input
                             ref={logoInputRef}
                             type="file"
-                            accept="image/*"
+                            accept={IMAGE_ACCEPT}
                             style={{ display: "none" }}
                             onChange={handleLogoChange}
                           />
