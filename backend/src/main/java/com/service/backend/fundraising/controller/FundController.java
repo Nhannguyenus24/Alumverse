@@ -5,6 +5,7 @@ import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
+import com.service.backend.fundraising.dto.SupportedBanksResponse;
 import com.service.backend.shared.entity.Funds;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -69,6 +70,13 @@ public class FundController {
                 .map(result -> ResponseEntity.ok(
                         new ApiResponse<>("Funds retrieved successfully", result)
                 ));
+    }
+
+    @GetMapping("/banks")
+    public Mono<ResponseEntity<ApiResponse<SupportedBanksResponse>>> getSupportedBanks() {
+        return fundService.getSupportedBanksResponse()
+                .map(response -> ResponseEntity.ok(
+                        new ApiResponse<>("Supported banks retrieved successfully", response)));
     }
 
     @GetMapping("/{fundId}")

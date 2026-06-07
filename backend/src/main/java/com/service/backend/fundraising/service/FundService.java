@@ -18,6 +18,7 @@ import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.BanksPayloadDto;
 import com.service.backend.fundraising.dto.BankInfoDto;
+import com.service.backend.fundraising.dto.SupportedBanksResponse;
 import com.service.backend.shared.entity.Funds;
 import com.service.backend.shared.entity.FundReceivingInfos;
 import com.service.backend.shared.entity.FundDonations;
@@ -101,28 +102,65 @@ public class FundService {
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
-        FundReceivingInfos fundReceivingInfos = FundReceivingInfos.builder()
-                .accountNumber(request.getAccountNumber())
-                .accountName(request.getAccountName())
-                .bankName(request.getBankName())
-                .isActive(false)
-                .build();
+        String bankCode = request.getBankName() == null ? "" : request.getBankName().trim();
 
-        return fundReceivingInfosRepository
-                .existsByBankNameAndAccountNumber(request.getBankName(), request.getAccountNumber())
-                .flatMap(exists -> {
-                    if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new ApplicationException(
-                                ErrorCode.RESOURCES_DUPLICATE,
-                                "Fund receiving info already exists for bankName + accountNumber"));
-                    }
-                    return fundReceivingInfosRepository.save(fundReceivingInfos);
-                });
+        return validateSupportedBankCode(bankCode)
+                .then(Mono.defer(() -> {
+                    FundReceivingInfos fundReceivingInfos = FundReceivingInfos.builder()
+                            .accountNumber(request.getAccountNumber().trim())
+                            .accountName(request.getAccountName().trim())
+                            .bankName(bankCode)
+                            .isActive(true)
+                            .build();
+
+                    return fundReceivingInfosRepository
+                            .existsByBankNameAndAccountNumber(bankCode, request.getAccountNumber().trim())
+                            .flatMap(exists -> {
+                                if (Boolean.TRUE.equals(exists)) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.RESOURCES_DUPLICATE,
+                                            "Fund receiving info already exists for bankName + accountNumber"));
+                                }
+                                return fundReceivingInfosRepository.save(fundReceivingInfos);
+                            });
+                }));
     }
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
         return fundReceivingInfosRepository.findAll()
                 .filter(FundReceivingInfos::isActive);
+    }
+
+    public Mono<PaginatedResponse<FundReceivingInfos>> getActiveFundReceivingInfos(int page, int limit) {
+        int offset = page * limit;
+        return fundReceivingInfosRepository.countActive()
+                .flatMap(total -> fundReceivingInfosRepository.findActivePage(limit, offset)
+                        .collectList()
+                        .map(items -> PaginatedResponse.of(items, total, page, limit)));
+    }
+
+    public Mono<SupportedBanksResponse> getSupportedBanksResponse() {
+        return getSupportedBanks()
+                .map(banks -> SupportedBanksResponse.builder()
+                        .message("Chỉ các ngân hàng sau được hỗ trợ cho quyên góp qua Sepay.")
+                        .banks(banks)
+                        .build());
+    }
+
+    private Mono<Void> validateSupportedBankCode(String bankCode) {
+        if (bankCode.isBlank()) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Bank code is required"));
+        }
+
+        return getSupportedBanks()
+                .flatMap(banks -> banks.stream()
+                        .anyMatch(bank -> isBankMatched(bank, bankCode))
+                        ? Mono.empty()
+                        : Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "Bank is not supported: " + bankCode)));
     }
 
     public Mono<PaginatedResponse<Funds>> getFunds(int page, int limit, String keyword) {

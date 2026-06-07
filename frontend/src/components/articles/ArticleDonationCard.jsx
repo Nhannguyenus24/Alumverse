@@ -1,5 +1,6 @@
 import { Box, Typography, Button, LinearProgress, Stack } from "@mui/material";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useState } from "react";
@@ -187,24 +188,33 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
           Xem
         </Button>
       ) : isAdmin ? (
-        <Stack direction="row" spacing={1}>
+        <Stack spacing={1}>
           <Button
-            fullWidth variant="outlined" color="secondary" startIcon={<EditOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }}
-            onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+            fullWidth variant="outlined" color="primary" startIcon={<InfoOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }}
+            onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
           >
-            Sửa
+            Thông tin quỹ
           </Button>
 
-          <Button
-            fullWidth variant="contained" startIcon={<LockOutlinedIcon />}
-            sx={{
-              textTransform: "none", fontWeight: 600, backgroundColor: "warning.main", color: "common.white",
-              "&:hover": { backgroundColor: "warning.dark" },
-            }}
-            onClick={(e) => { e.stopPropagation(); onClose?.(); }}
-          >
-            Đóng
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button
+              fullWidth variant="outlined" color="secondary" startIcon={<EditOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }}
+              onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+            >
+              Sửa
+            </Button>
+
+            <Button
+              fullWidth variant="contained" startIcon={<LockOutlinedIcon />}
+              sx={{
+                textTransform: "none", fontWeight: 600, backgroundColor: "warning.main", color: "common.white",
+                "&:hover": { backgroundColor: "warning.dark" },
+              }}
+              onClick={(e) => { e.stopPropagation(); onClose?.(); }}
+            >
+              Đóng
+            </Button>
+          </Stack>
         </Stack>
       ) : (
         <Button
