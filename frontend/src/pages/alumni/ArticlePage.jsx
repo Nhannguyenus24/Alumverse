@@ -11,7 +11,6 @@ import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi } from "../../utils/api";
-import JoinEventDialog from "../../components/event/JoinEventDialog";
 
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();

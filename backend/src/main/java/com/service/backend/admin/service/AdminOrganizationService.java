@@ -1,6 +1,5 @@
 package com.service.backend.admin.service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,6 +15,7 @@ import com.service.backend.admin.dto.UpsertOrganizationIntroductionRequest;
 import com.service.backend.admin.dto.config.FeatureConfig;
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dao.SchoolFeedbackRepository;
+import com.service.backend.organization.dto.OrgIntroductionMemberResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 import com.service.backend.shared.entity.Organization;
 import com.service.backend.shared.entity.OrganizationIntroduction;
@@ -99,18 +99,17 @@ public class AdminOrganizationService {
     }
 
     public Mono<Organization> createOrganization(UpdateOrganizationRequest request) {
-        Organization organization = Organization.builder()
-                .name(request.getName())
-                .slug(request.getSlug())
-                .logoUrl(request.getLogoUrl())
-                .status(request.getStatus() != null ? request.getStatus() : Status.ACTIVE)
-                .featuresConfig(request.getFeaturesConfig())
-                .programs(JsonUtils.toJson(request.getPrograms()))
-                .majors(JsonUtils.toJson(request.getMajors()))
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        return organizationRepository.save(organization)
+        return resolveImageUrl(request.getLogoUrl(), null)
+                .defaultIfEmpty("")
+                .flatMap(resolvedLogo -> organizationRepository.insertOrganization(
+                        request.getName(),
+                        request.getSlug(),
+                        resolvedLogo.isBlank() ? null : resolvedLogo,
+                        request.getStatus() != null ? request.getStatus() : Status.ACTIVE,
+                        request.getFeaturesConfig(),
+                        JsonUtils.toJson(request.getPrograms()),
+                        JsonUtils.toJson(request.getMajors())
+                ))
                 .doOnSuccess(saved -> logger.info("createOrganization result: {}", JsonUtils.toJson(saved)))
                 .doOnError(error -> logger.error("Failed to create organization: {}", request.getName(), error));
     }
@@ -118,18 +117,23 @@ public class AdminOrganizationService {
     public Mono<Organization> updateOrganization(Integer organizationId, UpdateOrganizationRequest organizationUpdate) {
         return organizationRepository.findById(organizationId)
                 .flatMap(existing -> {
-                    String name = organizationUpdate.getName() != null ? organizationUpdate.getName() : existing.getName();
-                    String slug = organizationUpdate.getSlug() != null ? organizationUpdate.getSlug() : existing.getSlug();
-                    String logoUrl = organizationUpdate.getLogoUrl() != null ? organizationUpdate.getLogoUrl() : existing.getLogoUrl();
-                    Status status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
-                    String brandConfig = existing.getBrandConfig();
-                    String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
-                    String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();
-                    String majors = organizationUpdate.getMajors() != null ? JsonUtils.toJson(organizationUpdate.getMajors()) : existing.getMajors();
+                    String rawLogo = organizationUpdate.getLogoUrl();
+                    Mono<String> resolvedLogo = resolveImageUrl(rawLogo, existing.getLogoUrl()).defaultIfEmpty("");
 
-                    return organizationRepository.updateOrganizationFields(
-                            organizationId, name, slug, logoUrl, status, brandConfig, featuresConfig, programs, majors
-                    ).flatMap(rows -> organizationRepository.findById(organizationId));
+                    return resolvedLogo.flatMap(logoUrl -> {
+                        String name = organizationUpdate.getName() != null ? organizationUpdate.getName() : existing.getName();
+                        String slug = organizationUpdate.getSlug() != null ? organizationUpdate.getSlug() : existing.getSlug();
+                        String finalLogoUrl = logoUrl.isBlank() ? null : logoUrl;
+                        Status status = organizationUpdate.getStatus() != null ? organizationUpdate.getStatus() : existing.getStatus();
+                        String brandConfig = existing.getBrandConfig();
+                        String featuresConfig = organizationUpdate.getFeaturesConfig() != null ? organizationUpdate.getFeaturesConfig() : existing.getFeaturesConfig();
+                        String programs = organizationUpdate.getPrograms() != null ? JsonUtils.toJson(organizationUpdate.getPrograms()) : existing.getPrograms();
+                        String majors = organizationUpdate.getMajors() != null ? JsonUtils.toJson(organizationUpdate.getMajors()) : existing.getMajors();
+
+                        return organizationRepository.updateOrganizationFields(
+                                organizationId, name, slug, finalLogoUrl, status, brandConfig, featuresConfig, programs, majors
+                        ).flatMap(rows -> organizationRepository.findById(organizationId));
+                    });
                 })
                 .doOnSuccess(saved -> logger.info("updateOrganization result: {}", JsonUtils.toJson(saved)))
                 .doOnError(error -> logger.error("Failed to update organization - ID: {}", organizationId, error));
@@ -170,45 +174,114 @@ public class AdminOrganizationService {
     public Mono<OrganizationIntroductionResponse> upsertIntroduction(
             Integer orgaId, UpsertOrganizationIntroductionRequest request) {
         Mono<List<String>> uploadedUrls = uploadImages(request.getImages());
+        Mono<String> uploadedBanner = resolveImageUrl(request.getBannerUrl(), null).defaultIfEmpty("");
+        Mono<List<OrgIntroductionMemberResponse>> uploadedLeaders = uploadMemberImages(request.getLeaders());
+        Mono<List<OrgIntroductionMemberResponse>> uploadedTeamMembers = uploadMemberImages(request.getTeamMembers());
+
         return requireOrganization(orgaId)
-                .flatMap(org -> uploadedUrls)
-                .flatMap(urls -> introductionRepository.findByOrgaId(orgaId)
-                        .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
-                        .flatMap(intro -> {
-                            String imageUrlsJson = JsonUtils.toJson(urls);
-                            if (intro.getId() != null) {
-                                return introductionRepository.updateFields(
-                                        orgaId,
-                                        request.getContent(),
-                                        request.getVision(),
-                                        request.getMission(),
-                                        request.getCoreValues(),
-                                        request.getBannerUrl(),
-                                        imageUrlsJson
-                                )
-                                .then(introductionRepository.findByOrgaId(orgaId))
-                                .thenReturn(urls);
-                            } else {
-                                intro.setContent(request.getContent());
-                                intro.setVision(request.getVision());
-                                intro.setMission(request.getMission());
-                                intro.setCoreValues(request.getCoreValues());
-                                intro.setImageUrls(imageUrlsJson);
-                                intro.setBannerUrl(request.getBannerUrl());
-                                return introductionRepository.save(intro).thenReturn(urls);
-                            }
-                        }))
-                .map(urls -> OrganizationIntroductionResponse.builder()
-                        .orgaId(orgaId)
-                        .content(request.getContent())
-                        .vision(request.getVision())
-                        .mission(request.getMission())
-                        .coreValues(request.getCoreValues())
-                        .imageUrls(urls)
-                        .bannerUrl(request.getBannerUrl())
-                        .build())
+                .flatMap(org -> Mono.zip(uploadedUrls, uploadedBanner, uploadedLeaders, uploadedTeamMembers))
+                .flatMap(tuple -> {
+                    List<String> urls = tuple.getT1();
+                    String bannerUrl = tuple.getT2().isBlank() ? null : tuple.getT2();
+                    List<OrgIntroductionMemberResponse> leaders = tuple.getT3();
+                    List<OrgIntroductionMemberResponse> teamMembers = tuple.getT4();
+
+                    return introductionRepository.findByOrgaId(orgaId)
+                            .defaultIfEmpty(OrganizationIntroduction.builder().orgaId(orgaId).build())
+                            .flatMap(intro -> {
+                                String imageUrlsJson = JsonUtils.toJson(urls);
+                                String leadersJson = JsonUtils.toJson(leaders);
+                                String teamMembersJson = JsonUtils.toJson(teamMembers);
+
+                                if (intro.getId() != null) {
+                                    return introductionRepository.updateFields(
+                                            orgaId,
+                                            request.getContent(),
+                                            request.getVision(),
+                                            request.getMission(),
+                                            request.getCoreValues(),
+                                            bannerUrl,
+                                            imageUrlsJson,
+                                            leadersJson,
+                                            teamMembersJson,
+                                            request.getLeadersContent(),
+                                            request.getTeamMembersContent()
+                                    ).then(introductionRepository.findByOrgaId(orgaId));
+                                } else {
+                                    intro.setContent(request.getContent());
+                                    intro.setVision(request.getVision());
+                                    intro.setMission(request.getMission());
+                                    intro.setCoreValues(request.getCoreValues());
+                                    intro.setImageUrls(imageUrlsJson);
+                                    intro.setBannerUrl(bannerUrl);
+                                    intro.setLeaders(leadersJson);
+                                    intro.setTeamMembers(teamMembersJson);
+                                    intro.setLeadersContent(request.getLeadersContent());
+                                    intro.setTeamMembersContent(request.getTeamMembersContent());
+                                    return introductionRepository.save(intro);
+                                }
+                            });
+                })
+                .map(this::toResponse)
                 .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
+    }
+
+    private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
+        return OrganizationIntroductionResponse.builder()
+                .orgaId(intro.getOrgaId())
+                .content(intro.getContent())
+                .vision(intro.getVision())
+                .mission(intro.getMission())
+                .coreValues(intro.getCoreValues())
+                .bannerUrl(intro.getBannerUrl())
+                .imageUrls(parseStringList(intro.getImageUrls()))
+                .leaders(parseMemberList(intro.getLeaders()))
+                .teamMembers(parseMemberList(intro.getTeamMembers()))
+                .leadersContent(intro.getLeadersContent())
+                .teamMembersContent(intro.getTeamMembersContent())
+                .updatedAt(intro.getUpdatedAt())
+                .build();
+    }
+
+    private List<String> parseStringList(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return List.of();
+        }
+        if (!JsonUtils.isJsonArray(json)) {
+            return List.of(json);
+        }
+        try {
+            return JsonUtils.fromJsonToList(json, String.class);
+        } catch (Exception e) {
+            logger.error("Failed to parse string list: {}", json, e);
+            return List.of();
+        }
+    }
+
+    private List<OrgIntroductionMemberResponse> parseMemberList(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return List.of();
+        }
+        if (!JsonUtils.isJsonArray(json)) {
+            return List.of(OrgIntroductionMemberResponse.builder()
+                    .name(json)
+                    .build());
+        }
+        try {
+            return JsonUtils.fromJsonToList(json, OrgIntroductionMemberResponse.class);
+        } catch (Exception e) {
+            // Fallback for list of strings
+            try {
+                List<String> strings = JsonUtils.fromJsonToList(json, String.class);
+                return strings.stream()
+                        .map(s -> OrgIntroductionMemberResponse.builder().name(s).build())
+                        .toList();
+            } catch (Exception ex) {
+                logger.error("Failed to parse member list: {}", json, ex);
+                return List.of();
+            }
+        }
     }
 
     private Mono<List<String>> uploadImages(List<String> base64Images) {
@@ -229,7 +302,7 @@ public class AdminOrganizationService {
         return requireOrganization(organizationId)
                 .flatMap(org -> {
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("updateConfig result: {}", JsonUtils.toJson(r)));
     }
@@ -245,7 +318,7 @@ public class AdminOrganizationService {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
                     config.setSiteIdentity(siteIdentity);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("updateSiteIdentity result: {}", JsonUtils.toJson(r)));
     }
@@ -261,7 +334,7 @@ public class AdminOrganizationService {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
                     config.setBrandConfig(brandConfig);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("updateBrandConfig result: {}", JsonUtils.toJson(r)));
     }
@@ -282,7 +355,7 @@ public class AdminOrganizationService {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
                     config.setFeaturesConfig(featuresConfig);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("updateFeatures result: {}", JsonUtils.toJson(r)));
     }
@@ -302,7 +375,7 @@ public class AdminOrganizationService {
                     if (patch.getSettings() != null) feature.setSettings(patch.getSettings());
                     config.getFeaturesConfig().put(featureName, feature);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("updateFeature result: {}", JsonUtils.toJson(r)));
     }
@@ -311,11 +384,18 @@ public class AdminOrganizationService {
         return requireOrganization(organizationId)
                 .flatMap(org -> {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
-                    FeatureConfig.Feature feature = requireFeature(config, featureName);
+                    Map<String, FeatureConfig.Feature> features = config.getFeaturesConfig();
+                    if (features == null) {
+                        features = new HashMap<>();
+                        config.setFeaturesConfig(features);
+                    }
+                    // Auto-create with enabled=true if not yet in map, then toggle
+                    FeatureConfig.Feature feature = features.getOrDefault(featureName,
+                            FeatureConfig.Feature.builder().enabled(true).build());
                     feature.setEnabled(!Boolean.TRUE.equals(feature.getEnabled()));
-                    config.getFeaturesConfig().put(featureName, feature);
+                    features.put(featureName, feature);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("toggleFeature result: {}", JsonUtils.toJson(r)));
     }
@@ -332,7 +412,7 @@ public class AdminOrganizationService {
                     FeatureConfig config = parseConfig(org.getFeaturesConfig());
                     config.setPrivacySettings(privacySettings);
                     org.setFeaturesConfig(JsonUtils.toJson(config));
-                    return organizationRepository.save(org).thenReturn(config);
+                    return saveOrganizationFields(org).thenReturn(config);
                 })
                 .doOnSuccess(r -> logger.info("updatePrivacySettings result: {}", JsonUtils.toJson(r)));
     }
@@ -357,8 +437,7 @@ public class AdminOrganizationService {
                     }
                     options.add(normalizedValue);
                     writeOptions(organization, options, isProgram);
-                    return organizationRepository.save(organization)
-                            .thenReturn(options);
+                    return saveOrganizationFields(organization).thenReturn(options);
                 });
     }
 
@@ -385,8 +464,7 @@ public class AdminOrganizationService {
 
                     options.set(oldIndex, newValue);
                     writeOptions(organization, options, isProgram);
-                    return organizationRepository.save(organization)
-                            .thenReturn(options);
+                    return saveOrganizationFields(organization).thenReturn(options);
                 });
     }
 
@@ -405,8 +483,7 @@ public class AdminOrganizationService {
 
                     options.remove(targetIndex);
                     writeOptions(organization, options, isProgram);
-                    return organizationRepository.save(organization)
-                            .thenReturn(options);
+                    return saveOrganizationFields(organization).thenReturn(options);
                 });
     }
 
@@ -478,5 +555,48 @@ public class AdminOrganizationService {
                     "Feature not found: " + featureName);
         }
         return features.get(featureName);
+    }
+
+    /** Use the custom UPDATE query (with CAST AS json) instead of repository.save() to avoid R2DBC JSON type issues. */
+    private Mono<Integer> saveOrganizationFields(Organization org) {
+        return organizationRepository.updateOrganizationFields(
+                org.getId(), org.getName(), org.getSlug(), org.getLogoUrl(),
+                org.getStatus(), org.getBrandConfig(), org.getFeaturesConfig(),
+                org.getPrograms(), org.getMajors());
+    }
+
+    /**
+     * Resolves an image field: uploads to ImageService if it is a Base64 data URL,
+     * returns the existing value unchanged if it is already an HTTP URL,
+     * or falls back to {@code fallback} if the value is null/blank.
+     * Emits empty if both value and fallback are null/blank.
+     */
+    private Mono<String> resolveImageUrl(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return (fallback != null && !fallback.isBlank()) ? Mono.just(fallback) : Mono.empty();
+        }
+        if (value.startsWith("http") || value.startsWith("/")) {
+            return Mono.just(value);
+        }
+        return imageService.uploadBase64IfPresent(value)
+                .defaultIfEmpty(value)
+                .onErrorReturn(value);
+    }
+
+    /** Uploads each member's image field through ImageService (if it is Base64). */
+    private Mono<List<OrgIntroductionMemberResponse>> uploadMemberImages(List<OrgIntroductionMemberResponse> members) {
+        if (members == null || members.isEmpty()) return Mono.just(List.of());
+        return Flux.fromIterable(members)
+                .flatMapSequential(member -> {
+                    String img = member.getImage();
+                    if (img == null || img.isBlank() || img.startsWith("http") || img.startsWith("/")) {
+                        return Mono.just(member);
+                    }
+                    return imageService.uploadBase64IfPresent(img)
+                            .map(url -> { member.setImage(url); return member; })
+                            .defaultIfEmpty(member)
+                            .onErrorReturn(member);
+                })
+                .collectList();
     }
 }

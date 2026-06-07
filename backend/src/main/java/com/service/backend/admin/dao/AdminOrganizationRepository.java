@@ -32,6 +32,20 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
     @Query("SELECT COUNT(*) FROM organizations WHERE :search IS NULL OR name ILIKE :search")
     Mono<Long> countWithFilters(@Param("search") String search);
 
+    @Query("INSERT INTO organizations (name, slug, logo_url, status, features_config, programs, majors) " +
+           "VALUES (:name, :slug, :logoUrl, :status, " +
+           "CAST(:featuresConfig AS json), CAST(:programs AS json), CAST(:majors AS json)) " +
+           "RETURNING *")
+    Mono<Organization> insertOrganization(
+            @Param("name") String name,
+            @Param("slug") String slug,
+            @Param("logoUrl") String logoUrl,
+            @Param("status") Status status,
+            @Param("featuresConfig") String featuresConfig,
+            @Param("programs") String programs,
+            @Param("majors") String majors
+    );
+
     @Modifying
     @Query("UPDATE organizations SET name = :name, slug = :slug, logo_url = :logoUrl, status = :status, " +
            "brand_config = CAST(:brandConfig AS json), features_config = CAST(:featuresConfig AS json), " +

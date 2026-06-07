@@ -30,7 +30,13 @@ const VERIFICATION_LABELS = {
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
-  { label: 'Giới thiệu', href: '/introduction' },
+  { label: 'Giới thiệu', href: '/introduction',
+    children: [
+      { label: 'Thông tin chung', href: '/introduction' },
+      { label: 'Ban lãnh đạo', href: '/introduction/leaders' },
+      { label: 'Đội ngũ', href: '/introduction/team' },
+    ]
+   },
   { label: 'Kết nối', href: '/search' },
   {
     label: 'Vinh danh', href: '/honors',
