@@ -252,10 +252,6 @@ export const adminUserApi = {
 	getUserActivity(userId) {
 		return apiClient.get(`${BASE_ADMIN_USERS}/${userId}/activity`);
 	},
-
-	resetPasswordByAdmin(userId, payload) {
-		return apiClient.post(`${BASE_ADMIN_USERS}/${userId}/reset-password`, payload);
-	},
 };
 
 export const {
@@ -272,7 +268,6 @@ export const {
 	reviewVerificationRequest,
 	addOrganizationMember,
 	getUserActivity,
-	resetPasswordByAdmin,
 } = adminUserApi;
 
 export const adminMentorshipApi = {
