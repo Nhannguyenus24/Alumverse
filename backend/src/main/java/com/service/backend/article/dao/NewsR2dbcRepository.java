@@ -41,4 +41,7 @@ public interface NewsR2dbcRepository extends ReactiveCrudRepository<News, Intege
     @Modifying
     @Query("UPDATE news SET is_hidden = true WHERE id = :id")
     Mono<Integer> hideNews(Integer id);
+
+    @Query("SELECT COUNT(*) FROM news WHERE published_at >= :since")
+    Mono<Long> countSince(java.time.LocalDateTime since);
 }

@@ -45,6 +45,22 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
     @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE status = 'SUCCESS' AND created_at >= :start AND created_at < :end")
     Mono<BigDecimal> sumAmountBetween(LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT COUNT(*) FROM fund_donations")
+    Mono<Long> countAllDonations();
+
+    @Query("SELECT COUNT(*) FROM fund_donations WHERE status = :status")
+    Mono<Long> countByStatus(String status);
+
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM fund_donations WHERE status = 'SUCCESS'")
+    Mono<BigDecimal> sumSuccessfulAmount();
+
+    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count, COALESCE(SUM(amount), 0) AS amount " +
+           "FROM fund_donations " +
+           "WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' " +
+           "GROUP BY CAST(created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyAmountProjection> getDailyDonationCounts();
+
     @Query("""
             SELECT
               fd.id AS id,

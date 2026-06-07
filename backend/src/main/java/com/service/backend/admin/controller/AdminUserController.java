@@ -22,9 +22,11 @@ import com.service.backend.admin.dto.DeleteUserRequest;
 import com.service.backend.admin.dto.ReviewVerificationRequest;
 import com.service.backend.admin.dto.UnbanUserRequest;
 import com.service.backend.admin.dto.UpdateUserRequest;
+import com.service.backend.admin.dto.UserGrowthStatisticsDTO;
 import com.service.backend.admin.dto.UserResponse;
 import com.service.backend.admin.dto.UserActivityResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
+import com.service.backend.admin.dto.VerificationStatisticsDTO;
 import com.service.backend.shared.entity.AdminAuditLog;
 import com.service.backend.admin.service.AdminUserService;
 import com.service.backend.shared.enums.ErrorCode;
@@ -298,6 +300,20 @@ public class AdminUserController {
             @PathVariable Integer requestId,
             @Valid @RequestBody ReviewVerificationRequest request) {
         return reviewVerificationRequest(requestId, request);
+    }
+
+    @GetMapping("/growth-statistics")
+    public Mono<ResponseEntity<ApiResponse<UserGrowthStatisticsDTO>>> getUserGrowthStatistics() {
+        return adminUserService.getUserGrowthStatistics()
+                .map(stats -> ResponseEntity.ok(
+                        new ApiResponse<>("User growth statistics fetched successfully", stats)));
+    }
+
+    @GetMapping("/verification-statistics")
+    public Mono<ResponseEntity<ApiResponse<VerificationStatisticsDTO>>> getVerificationStatistics() {
+        return adminUserService.getVerificationStatistics()
+                .map(stats -> ResponseEntity.ok(
+                        new ApiResponse<>("Verification statistics fetched successfully", stats)));
     }
 
     /**

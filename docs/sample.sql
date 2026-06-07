@@ -43,14 +43,18 @@ INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "featur
 ('HCMUS - Engineering', 'eng-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Mechanical Engineering","Electrical Engineering","Mechatronics"]', NOW() - INTERVAL '340 days');
 
 -- ============= ORGANIZATION INTRODUCTIONS DATA =============
-INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "mission", "core_values", "image_urls", "banner_url", "updated_at") VALUES
+INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "mission", "core_values", "image_urls", "banner_url", "leaders", "team_members", "leaders_content", "team_members_content", "updated_at") VALUES
 (1, 
  'The Computer Science Department at HCMUS is a leading institution dedicated to advancing computer science education, research, and innovation. We prepare students to become proficient software engineers, researchers, and technology leaders.',
  'To be a world-class computer science program recognized for excellence in education and research',
  'To provide comprehensive education in computer science and cultivate innovative problem-solvers',
  'Excellence, Innovation, Integrity, Collaboration, Continuous Learning',
- '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
  'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ '[{"name": "Prof. Nguyen Van A", "positions": "Head of CS Department", "email": "nva@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Leading the department towards excellence in AI and Software Engineering."}, {"name": "Assoc. Prof. Tran Thi B", "positions": "Deputy Head", "email": "ttb@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Specializing in Data Science and Big Data analytics."}]',
+ '[{"name": "Dr. Le Van C", "positions": "Senior Lecturer", "email": "lvc@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Researcher in Computer Vision."}, {"name": "Ms. Pham Thi D", "positions": "Program Coordinator", "email": "ptd@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Ensuring the best learning experience for students."}]',
+ 'Our leadership team consists of seasoned educators and researchers dedicated to academic growth.',
+ 'Our faculty members are experts in their fields, bringing industry experience to the classroom.',
  NOW() - INTERVAL '30 days'),
 
 (2,
@@ -58,8 +62,12 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To become the leading IT program transforming lives through technology education',
  'To deliver quality IT education that prepares students for successful careers and innovation',
  'Quality, Relevance, Teamwork, Accountability, Customer-focused',
- '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
  'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ '[{"name": "Dr. Hoang Van E", "positions": "IT Director", "email": "hve@it.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Expert in Cybersecurity and Network Infrastructure."}]',
+ '[{"name": "Mr. Vu Van F", "positions": "Technical Lead", "email": "vvf@it.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Cloud Computing enthusiast."}]',
+ 'Passionate leaders driving digital transformation in education.',
+ 'A dedicated team of IT professionals and technical instructors.',
  NOW() - INTERVAL '28 days'),
 
 (3,
@@ -67,8 +75,12 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To produce ethical and innovative business leaders who drive organizational and societal growth',
  'To provide business education that develops strategic thinkers and ethical leaders',
  'Integrity, Innovation, Responsibility, Excellence, Inclusivity',
- '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
  'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ '[{"name": "Mrs. Dang Thi G", "positions": "Dean of BA", "email": "dtg@ba.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Expert in Marketing Strategy and Consumer Behavior."}]',
+ '[{"name": "Mr. Phan Van H", "positions": "Assistant Professor", "email": "pvh@ba.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Specializing in Financial Management."}]',
+ 'Visionary leaders shaping the future of global business.',
+ 'Experienced professionals with deep insights into market dynamics.',
  NOW() - INTERVAL '26 days'),
 
 (4,
@@ -76,25 +88,29 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To be recognized as a premier engineering program developing innovative solutions',
  'To educate and mentor engineers who contribute to technological advancement',
  'Precision, Innovation, Sustainability, Professionalism, Teamwork',
- '["https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png","https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png"]',
  'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ '[{"name": "Prof. Bui Van I", "positions": "Engineering Dean", "email": "bvi@eng.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Leader in Sustainable Energy Research."}]',
+ '[{"name": "Dr. Ly Van J", "positions": "Lab Manager", "email": "lvj@eng.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Managing advanced robotics laboratories."}]',
+ 'Leading innovation in mechanical and electrical engineering.',
+ 'Talented engineers dedicated to solving complex technical challenges.',
  NOW() - INTERVAL '25 days');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
-INSERT INTO "organization_members" ("organization_id", "user_id", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
-(1, 1, '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
-(1, 2, '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '90 days', NOW()),
-(1, 4, '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW() - INTERVAL '45 days', NOW()),
-(1, 6, '[2022, 2024]', '["GRADUATED", "STUDYING"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
-(1, 11, '[2022]', '["GRADUATED"]', '["Regular"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
-(2, 3, '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '60 days', NOW()),
-(2, 5, '[2024, 2026]', '["GRADUATED", "STUDYING"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', 1, false, 'ACTIVE', NOW() - INTERVAL '30 days', NOW()),
-(2, 8, '[2023]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '180 days', NOW()),
-(2, 9, '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '15 days', NOW()),
-(3, 7, '[2023]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, '[]', '["STUDYING"]', '["Regular"]', '["Business Administration"]', 1, false, 'PENDING', NOW() - INTERVAL '3 days', NOW()),
-(1, 12, '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW(), NOW()),
-(2, 13, '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW(), NOW());
+INSERT INTO "organization_members" ("organization_id", "user_id", "started_year", "graduated_year", "graduation_status", "program", "major", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
+(1, 1, '[2008, 2014]', '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, '[2022]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, '[2018, 2023]', '[2022, 2024]', '["GRADUATED", "STUDYING"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
+(1, 11, '[2018]', '[2022]', '["GRADUATED"]', '["Regular"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
+(2, 3, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, '[2020, 2025]', '[2024, 2026]', '["GRADUATED", "STUDYING"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', 1, false, 'ACTIVE', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, '[2023]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '15 days', NOW()),
+(3, 7, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, '[2021]', '[]', '["STUDYING"]', '["Regular"]', '["Business Administration"]', 1, false, 'PENDING', NOW() - INTERVAL '3 days', NOW()),
+(1, 12, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW(), NOW()),
+(2, 13, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW(), NOW());
 
 -- ============= EVENTS DATA =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "topic", "is_published", "created_at") VALUES
@@ -301,14 +317,14 @@ INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amoun
 (6, NULL, 'Mạnh thường quân', 10000000, NULL, NULL, NULL, 'Gửi tặng các em sinh viên.', 'SUCCESS', NOW() - INTERVAL '1 day');
 
 -- ============= NOTIFICATIONS DATA =============
-INSERT INTO "notifications" ("member_id", "title", "message", "is_read", "created_at") VALUES
-(4, 'Event Registration Confirmed', 'Your registration for Web Development Workshop has been confirmed', false, NOW() - INTERVAL '2 days'),
-(4, 'New Mentorship Session Scheduled', 'You have a new mentorship session scheduled with John Doe', false, NOW() - INTERVAL '1 day'),
-(5, 'Job Opportunity Match', 'Found a job that matches your profile: Junior Software Developer', true, NOW() - INTERVAL '5 days'),
-(9, 'Scholarship Opportunity', 'You are eligible for the Student Scholarship Fund', false, NOW()),
-(10, 'Profile Review Required', 'Please complete your profile to join as an active member', false, NOW() - INTERVAL '3 days'),
-(2, 'New Mentee Request', 'Trần Thị B requested a mentorship session', true, NOW() - INTERVAL '4 days'),
-(6, 'Event Registration Confirmed', 'Your registration for Database Design Seminar has been confirmed', true, NOW() - INTERVAL '6 days');
+INSERT INTO "notifications" ("member_id", "title", "message", "is_read", "link", "created_at") VALUES
+(4, 'Event Registration Confirmed', 'Your registration for Web Development Workshop has been confirmed', false, '/events/1', NOW() - INTERVAL '2 days'),
+(4, 'New Mentorship Session Scheduled', 'You have a new mentorship session scheduled with John Doe', false, '/mentorship', NOW() - INTERVAL '1 day'),
+(5, 'Job Opportunity Match', 'Found a job that matches your profile: Junior Software Developer', true, '/jobs/1', NOW() - INTERVAL '5 days'),
+(9, 'Scholarship Opportunity', 'You are eligible for the Student Scholarship Fund', false, '/fundraising', NOW()),
+(10, 'Profile Review Required', 'Please complete your profile to join as an active member', false, '/profile', NOW() - INTERVAL '3 days'),
+(2, 'New Mentee Request', 'Trần Thị B requested a mentorship session', true, '/mentorship', NOW() - INTERVAL '4 days'),
+(6, 'Event Registration Confirmed', 'Your registration for Database Design Seminar has been confirmed', true, '/events/2', NOW() - INTERVAL '6 days');
 
 -- ============= USER LOGIN HISTORIES DATA =============
 INSERT INTO "user_login_histories" ("user_id", "login_at", "login_method", "login_ip", "user_agent") VALUES
@@ -414,22 +430,22 @@ INSERT INTO "forum_topics" ("organization_id", "title", "created_by_member_id", 
 (4, 'Sustainable Engineering for the Future', 6, 8, 67, false, NOW() - INTERVAL '8 days', NOW() - INTERVAL '3 days');
 
 -- ============= FORUM POSTS DATA =============
-INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to_post_id", "is_hidden", "created_at", "updated_at") VALUES
-(1, 2, 'Hi everyone! Excited to be part of this community. I graduated in 2023 and am now working at Tech Solutions Inc. Looking forward to mentoring newcomers!', NULL, false, NOW() - INTERVAL '355 days', NOW() - INTERVAL '355 days'),
-(1, 6, 'Welcome John! Great to have experienced alumni like you in the community. Hope to collaborate on mentorship initiatives.', 1, false, NOW() - INTERVAL '354 days', NOW() - INTERVAL '354 days'),
-(2, 4, 'What are your thoughts on React Hooks? I find them more intuitive than class components for state management.', NULL, false, NOW() - INTERVAL '44 days', NOW() - INTERVAL '44 days'),
-(2, 6, 'Great question! I prefer hooks too. They make code more reusable and easier to test. Here are some best practices...', 3, false, NOW() - INTERVAL '43 days', NOW() - INTERVAL '43 days'),
-(3, 6, 'The key to successful job search is networking. Connect with alumni, attend events, and prepare well for interviews.', NULL, false, NOW() - INTERVAL '29 days', NOW() - INTERVAL '29 days'),
-(3, 9, 'This is very helpful! I just started my search. Thanks for the tips!', 5, false, NOW() - INTERVAL '27 days', NOW() - INTERVAL '27 days'),
-(4, 6, 'Database indexing is crucial. Always analyze your query plans before and after optimization.', NULL, false, NOW() - INTERVAL '24 days', NOW() - INTERVAL '24 days'),
-(4, 2, 'Totally agree. Also consider table partitioning for very large datasets.', 7, true, NOW() - INTERVAL '23 days', NOW() - INTERVAL '23 days'),
-(5, 5, 'Node.js is perfect for I/O-intensive applications. The async/await pattern makes it so much cleaner than callbacks.', NULL, false, NOW() - INTERVAL '19 days', NOW() - INTERVAL '19 days'),
-(5, 9, 'I am new to Node.js. Any recommended projects for beginners to start with?', 9, false, NOW() - INTERVAL '18 days', NOW() - INTERVAL '18 days'),
-(6, 3, 'It was an incredible journey! Started with passion, raised funding, built great team, and now ready for the next chapter.', NULL, false, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days'),
-(6, 8, 'Inspiring story, Jane! What was your biggest challenge during the startup phase?', 11, false, NOW() - INTERVAL '13 days', NOW() - INTERVAL '13 days'),
-(6, 3, 'Great question! The biggest challenge was finding product-market fit and managing burn rate during early days.', 12, false, NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days'),
-(7, 8, 'Microservices bring agility but also complexity. Event-driven architecture helps manage inter-service communication.', NULL, false, NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days'),
-(8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, false, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
+INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to_post_id", "ai_tag", "is_hidden", "created_at", "updated_at") VALUES
+(1, 2, 'Hi everyone! Excited to be part of this community. I graduated in 2023 and am now working at Tech Solutions Inc. Looking forward to mentoring newcomers!', NULL, 'VERIFIED', false, NOW() - INTERVAL '355 days', NOW() - INTERVAL '355 days'),
+(1, 6, 'Welcome John! Great to have experienced alumni like you in the community. Hope to collaborate on mentorship initiatives.', 1, 'VERIFIED', false, NOW() - INTERVAL '354 days', NOW() - INTERVAL '354 days'),
+(2, 4, 'What are your thoughts on React Hooks? I find them more intuitive than class components for state management.', NULL, 'VERIFIED', false, NOW() - INTERVAL '44 days', NOW() - INTERVAL '44 days'),
+(2, 6, 'Great question! I prefer hooks too. They make code more reusable and easier to test. Here are some best practices...', 3, 'VERIFIED', false, NOW() - INTERVAL '43 days', NOW() - INTERVAL '43 days'),
+(3, 6, 'The key to successful job search is networking. Connect with alumni, attend events, and prepare well for interviews.', NULL, 'VERIFIED', false, NOW() - INTERVAL '29 days', NOW() - INTERVAL '29 days'),
+(3, 9, 'This is very helpful! I just started my search. Thanks for the tips!', 5, 'VERIFIED', false, NOW() - INTERVAL '27 days', NOW() - INTERVAL '27 days'),
+(4, 6, 'Database indexing is crucial. Always analyze your query plans before and after optimization.', NULL, 'VERIFIED', false, NOW() - INTERVAL '24 days', NOW() - INTERVAL '24 days'),
+(4, 2, 'Totally agree. Also consider table partitioning for very large datasets.', 7, 'VIOLATED', true, NOW() - INTERVAL '23 days', NOW() - INTERVAL '23 days'),
+(5, 5, 'Node.js is perfect for I/O-intensive applications. The async/await pattern makes it so much cleaner than callbacks.', NULL, 'VERIFIED', false, NOW() - INTERVAL '19 days', NOW() - INTERVAL '19 days'),
+(5, 9, 'I am new to Node.js. Any recommended projects for beginners to start with?', 9, 'UNVERIFIED', false, NOW() - INTERVAL '18 days', NOW() - INTERVAL '18 days'),
+(6, 3, 'It was an incredible journey! Started with passion, raised funding, built great team, and now ready for the next chapter.', NULL, 'VERIFIED', false, NOW() - INTERVAL '14 days', NOW() - INTERVAL '14 days'),
+(6, 8, 'Inspiring story, Jane! What was your biggest challenge during the startup phase?', 11, 'VERIFIED', false, NOW() - INTERVAL '13 days', NOW() - INTERVAL '13 days'),
+(6, 3, 'Great question! The biggest challenge was finding product-market fit and managing burn rate during early days.', 12, 'VERIFIED', false, NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days'),
+(7, 8, 'Microservices bring agility but also complexity. Event-driven architecture helps manage inter-service communication.', NULL, 'VERIFIED', false, NOW() - INTERVAL '11 days', NOW() - INTERVAL '11 days'),
+(8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, 'VERIFIED', false, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
 
 -- ============= FORUM POST REPORTS DATA =============
 INSERT INTO "forum_post_reports" ("post_id", "reporter_member_id", "reason", "description", "status", "reviewed_by_user_id", "review_note", "created_at", "updated_at") VALUES
@@ -538,11 +554,11 @@ INSERT INTO "peer_verifications" ("target_member_id", "verifier_member_id", "cre
 (10, 7, NOW() - INTERVAL '2 days');
 
 -- ============= VERIFICATION REQUESTS DATA =============
-INSERT INTO "verification_requests" ("member_id", "document_url", "document_type", "status", "admin_note", "reviewed_by_member_id", "created_at") VALUES
-(4, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'APPROVED', 'Student ID verified and matches system records', 1, NOW() - INTERVAL '40 days'),
-(5, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'GRADUATION_CERTIFICATE', 'APPROVED', 'Graduation verified', 1, NOW() - INTERVAL '25 days'),
-(9, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'PENDING', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
-(10, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'DIPLOMA', 'REJECTED', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
+INSERT INTO "verification_requests" ("member_id", "document_url", "document_type", "ai_summary", "status", "admin_note", "reviewed_by_member_id", "created_at") VALUES
+(4, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'Student ID card for member 4', 'APPROVED', 'Student ID verified and matches system records', 1, NOW() - INTERVAL '40 days'),
+(5, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'GRADUATION_CERTIFICATE', 'Bachelor graduation certificate', 'APPROVED', 'Graduation verified', 1, NOW() - INTERVAL '25 days'),
+(9, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'Student ID for AI verification', 'PENDING', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
+(10, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'DIPLOMA', 'Diploma document scan', 'REJECTED', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
 
 -- ============= POLL DATA =============
 INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
@@ -574,9 +590,19 @@ INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "creat
 (2, 1, 8, NOW());
 
 -- ============= SCHOOL FEEDBACKS DATA =============
-INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email", "subject", "content", "created_at", "is_read") VALUES
-(1, 'Nguyễn Minh Khang', '0908123456', 'khang.nguyen@example.com', 'Góp ý về lịch workshop', 'Mong trường công bố lịch workshop sớm hơn để sinh viên chủ động đăng ký.', NOW() - INTERVAL '4 days', false),
-(1, 'Trần Thu Hà', '0912233445', 'ha.tran@example.com', 'Đề xuất cải thiện diễn đàn', 'Nên có bộ lọc theo chuyên ngành để tìm chủ đề nhanh hơn.', NOW() - INTERVAL '2 days', true),
-(2, 'Lê Quốc Bảo', '0988776655', 'bao.le@example.com', 'Hỗ trợ thông tin học bổng', 'Mình mong có chuyên mục riêng cập nhật học bổng theo từng học kỳ.', NOW() - INTERVAL '1 day', false),
-(1, 'Phạm Tuấn Anh', '0933445566', 'tuananh.pham@example.com', 'Hỏi về quy trình cấp lại bằng', 'Mình làm mất bằng tốt nghiệp, trường cho mình hỏi quy trình cấp lại như thế nào ạ?', NOW() - INTERVAL '3 days', false),
-(2, 'Đỗ Thị Lan', '0944556677', 'lan.do@example.com', 'Góp ý về mentor', 'Chất lượng mentor rất tốt, mong có thêm nhiều buổi offline hơn.', NOW() - INTERVAL '5 days', true);
+INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email", "subject", "ai_summary", "content", "created_at", "is_read") VALUES
+(1, 'Nguyễn Minh Khang', '0908123456', 'khang.nguyen@example.com', 'Góp ý về lịch workshop', 'Student suggests earlier announcement of workshop schedules.', 'Mong trường công bố lịch workshop sớm hơn để sinh viên chủ động đăng ký.', NOW() - INTERVAL '4 days', false),
+(1, 'Trần Thu Hà', '0912233445', 'ha.tran@example.com', 'Đề xuất cải thiện diễn đàn', 'User recommends adding department filters to the forum.', 'Nên có bộ lọc theo chuyên ngành để tìm chủ đề nhanh hơn.', NOW() - INTERVAL '2 days', true),
+(2, 'Lê Quốc Bảo', '0988776655', 'bao.le@example.com', 'Hỗ trợ thông tin học bổng', 'Request for a dedicated scholarship information section.', 'Mình mong có chuyên mục riêng cập nhật học bổng theo từng học kỳ.', NOW() - INTERVAL '1 day', false),
+(1, 'Phạm Tuấn Anh', '0933445566', 'tuananh.pham@example.com', 'Hỏi về quy trình cấp lại bằng', 'Inquiry regarding the process for reissuing a lost diploma.', 'Mình làm mất bằng tốt nghiệp, trường cho mình hỏi quy trình cấp lại như thế nào ạ?', NOW() - INTERVAL '3 days', false),
+(2, 'Đỗ Thị Lan', '0944556677', 'lan.do@example.com', 'Góp ý về mentor', 'Positive feedback on mentor quality with a request for offline sessions.', 'Chất lượng mentor rất tốt, mong có thêm nhiều buổi offline hơn.', NOW() - INTERVAL '5 days', true);
+
+-- ============= FORUM TOPIC SUBSCRIPTIONS DATA =============
+INSERT INTO "forum_topic_subscriptions" ("topic_id", "member_id", "last_read_at", "created_at") VALUES
+(1, 4, NOW() - INTERVAL '10 days', NOW() - INTERVAL '30 days'),
+(1, 6, NOW() - INTERVAL '5 days', NOW() - INTERVAL '30 days'),
+(2, 6, NOW() - INTERVAL '1 day', NOW() - INTERVAL '40 days'),
+(3, 4, NOW() - INTERVAL '2 days', NOW() - INTERVAL '25 days'),
+(5, 9, NOW() - INTERVAL '3 days', NOW() - INTERVAL '15 days'),
+(6, 2, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '10 days'),
+(6, 6, NOW() - INTERVAL '2 days', NOW() - INTERVAL '12 days');

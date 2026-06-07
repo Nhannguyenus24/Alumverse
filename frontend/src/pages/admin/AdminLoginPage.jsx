@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, Navigate } from 'react-router';
 import { useSnackbar } from 'notistack';
-import { GoogleLogin } from '@react-oauth/google';
 import {
   Box,
   Typography,
@@ -18,7 +17,6 @@ import {
   alpha,
   Alert,
 } from '@mui/material';
-import GoogleIcon from '@mui/icons-material/Google';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import SecurityIcon from '@mui/icons-material/Security';
 import LockIcon from '@mui/icons-material/Lock';
@@ -34,7 +32,7 @@ const AdminLoginPage = () => {
   const navigate = useOrgNavigate();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
-  const { login, loginWithGoogle, isSubmitting: loading, setError, forgotPassword, isAuthenticated } = useAuth();
+  const { login, isSubmitting: loading, setError, forgotPassword, isAuthenticated } = useAuth();
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 
   const redirectTo = location.state?.from?.pathname || '/admin';
@@ -79,35 +77,6 @@ const AdminLoginPage = () => {
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
     }
-  };
-
-  const handleGoogleSuccess = async (credentialResponse) => {
-    const idToken = credentialResponse?.credential;
-    if (!idToken) {
-      enqueueSnackbar('Không thể lấy Google token.', { variant: 'error' });
-      return;
-    }
-
-    setError(null);
-    const result = await loginWithGoogle(idToken);
-    if (result?.ok) {
-      enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
-
-      // Check if user has admin role
-      if (result?.data?.user?.role === 'ADMIN' || result?.data?.user?.role === 'MODERATOR') {
-        navigate(redirectTo, { replace: true });
-      } else {
-        enqueueSnackbar('Bạn không có quyền truy cập trang admin.', { variant: 'error' });
-        navigate('/', { replace: true });
-      }
-      return;
-    }
-
-    enqueueSnackbar(result?.error ?? 'Đăng nhập Google thất bại.', { variant: 'error' });
-  };
-
-  const handleGoogleError = () => {
-    enqueueSnackbar('Đăng nhập Google thất bại.', { variant: 'error' });
   };
 
   return (
@@ -252,21 +221,6 @@ const AdminLoginPage = () => {
                 >
                   {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
                 </Button>
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 1 }}>
-                  <Divider sx={{ flex: 1 }} />
-                  <Typography variant="caption" color="text.secondary">hoặc</Typography>
-                  <Divider sx={{ flex: 1 }} />
-                </Box>
-
-                <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    locale="vi"
-                    width="100%"
-                  />
-                </Box>
 
                 <Box sx={{ mt: 1.5, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">

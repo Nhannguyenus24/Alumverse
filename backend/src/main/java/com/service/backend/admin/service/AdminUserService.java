@@ -18,8 +18,10 @@ import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.AdminResetPasswordRequest;
 import com.service.backend.admin.dto.UserActivityResponse;
 import com.service.backend.admin.dto.UpdateUserRequest;
+import com.service.backend.admin.dto.UserGrowthStatisticsDTO;
 import com.service.backend.admin.dto.UserResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
+import com.service.backend.admin.dto.VerificationStatisticsDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.shared.entity.User;
@@ -357,6 +359,59 @@ public class AdminUserService {
                     }
                 })
                 .doOnError(error -> logger.error("Error updating is_trusted_verifier for user {} and organization {}", userId, organizationId, error));
+    }
+
+    public Mono<UserGrowthStatisticsDTO> getUserGrowthStatistics() {
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime sevenDaysAgo = now.minusDays(7);
+        java.time.LocalDateTime thirtyDaysAgo = now.minusDays(30);
+
+        return Mono.zip(
+                adminUserRepository.countUsersSince(sevenDaysAgo),
+                adminUserRepository.countUsersSince(thirtyDaysAgo),
+                adminUserRepository.countUsersByStatus("ACTIVE"),
+                adminUserRepository.countUsersByStatus("BANNED"),
+                adminUserRepository.countUsersByStatus("DELETED"),
+                adminUserRepository.getDailyUserRegistrations()
+                        .map(p -> UserGrowthStatisticsDTO.DayCount.builder()
+                                .date(p.getDate() != null ? p.getDate().toString() : "")
+                                .count(p.getCount() != null ? p.getCount() : 0L)
+                                .build())
+                        .collectList()
+        ).map(t -> UserGrowthStatisticsDTO.builder()
+                .newUsersLast7Days(t.getT1())
+                .newUsersLast30Days(t.getT2())
+                .totalActiveUsers(t.getT3())
+                .totalBannedUsers(t.getT4())
+                .totalDeletedUsers(t.getT5())
+                .dailyRegistrations(t.getT6())
+                .build())
+                .doOnSuccess(r -> logger.info("getUserGrowthStatistics completed"))
+                .doOnError(e -> logger.error("Error fetching user growth statistics", e));
+    }
+
+    public Mono<VerificationStatisticsDTO> getVerificationStatistics() {
+        return Mono.zip(
+                adminUserRepository.countAllVerificationRequests(),
+                adminUserRepository.countVerificationRequestsByStatus("PENDING"),
+                adminUserRepository.countVerificationRequestsByStatus("APPROVED"),
+                adminUserRepository.countVerificationRequestsByStatus("REJECTED"),
+                adminUserRepository.countVerificationRequestsByStatus("NEEDS_REVISION"),
+                adminUserRepository.countAllPeerVerifications(),
+                adminUserRepository.countPeerVerificationsByStatus("PENDING"),
+                adminUserRepository.countPeerVerificationsByStatus("APPROVED")
+        ).map(t -> VerificationStatisticsDTO.builder()
+                .totalAlumniVerificationRequests(t.getT1())
+                .pendingAlumniRequests(t.getT2())
+                .approvedAlumniRequests(t.getT3())
+                .rejectedAlumniRequests(t.getT4())
+                .needsRevisionRequests(t.getT5())
+                .totalPeerVerifications(t.getT6())
+                .pendingPeerVerifications(t.getT7())
+                .approvedPeerVerifications(t.getT8())
+                .build())
+                .doOnSuccess(r -> logger.info("getVerificationStatistics completed"))
+                .doOnError(e -> logger.error("Error fetching verification statistics", e));
     }
 
     /**

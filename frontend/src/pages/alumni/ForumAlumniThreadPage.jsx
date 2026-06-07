@@ -26,6 +26,8 @@ import { useReactToForumPost } from '../../hooks/forum/useReactToForumPost';
 import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
+import { useSubscribeToTopic } from '../../hooks/forum/useSubscribeToTopic';
+import { useForumTopicSubscriptionStatus } from '../../hooks/forum/useForumTopicSubscriptionStatus';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -355,6 +357,8 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
+  const { isSubscribed, isPending: subStatusPending } = useForumTopicSubscriptionStatus(topicId, memberId);
+  const { toggleSubscription, isPending: subTogglePending } = useSubscribeToTopic();
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
@@ -574,6 +578,19 @@ const ForumAlumniThreadPage = () => {
     }
   }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
 
+  const handleToggleSubscription = async () => {
+    if (!topicId || !memberId) {
+      showWarning('Vui lòng đăng nhập để thực hiện chức năng này.');
+      return;
+    }
+    try {
+      await toggleSubscription({ topicId, memberId });
+      showSuccess(isSubscribed ? 'Đã hủy theo dõi chủ đề.' : 'Đã theo dõi chủ đề.');
+    } catch (err) {
+      showError('Không thể thực hiện yêu cầu.');
+    }
+  };
+
   const filters = useMemo(() => {
     const parentCategories = (categories ?? []).filter((c) => c.parentId == null);
     return [
@@ -790,14 +807,16 @@ const ForumAlumniThreadPage = () => {
                         variant="contained"
                         size="small"
                         startIcon={<NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={handleToggleSubscription}
+                        disabled={subStatusPending || subTogglePending}
                         sx={{
-                          bgcolor: '#374151',
+                          bgcolor: isSubscribed ? 'primary.main' : '#374151',
                           color: 'white',
-                          '&:hover': { bgcolor: '#4B5563' },
+                          '&:hover': { bgcolor: isSubscribed ? 'primary.dark' : '#4B5563' },
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        Theo dõi
+                        {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
                       </Button>
                       <Button
                         fullWidth
@@ -867,12 +886,14 @@ const ForumAlumniThreadPage = () => {
                       }}
                     >
                       <Button
-                        variant="outlined"
+                        variant={isSubscribed ? 'contained' : 'outlined'}
                         color="primary"
                         size="small"
                         startIcon={<NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={handleToggleSubscription}
+                        disabled={subStatusPending || subTogglePending}
                       >
-                        Theo dõi
+                        {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
                       </Button>
                       <Button
                         variant="contained"

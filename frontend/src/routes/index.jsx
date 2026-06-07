@@ -253,7 +253,20 @@ export const router = createBrowserRouter([
       },
       {
         path: "introduction",
-        element: <IntroducePage />,
+        children: [
+          {
+            index: true,
+            element: <IntroducePage />,
+          },
+          {
+            path: "leaders",
+            element: <IntroducePage />,
+          },
+          {
+            path: "team",
+            element: <IntroducePage />,
+          },
+        ],
       },
       {
         path: "forum",

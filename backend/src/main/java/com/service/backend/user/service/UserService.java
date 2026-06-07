@@ -87,7 +87,8 @@ public class UserService {
                                                 notificationService.createNotificationAsync(
                                                         verifierUserId,
                                                         "Yêu cầu xác thực đồng nghiệp",
-                                                        String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId())
+                                                        String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId()),
+                                                        "/profile/" + targetMember.getUserId()
                                                 );
                                             }
                                         });
@@ -303,7 +304,7 @@ public class UserService {
                 .organizationId(member.getOrganizationId())
                 .userId(member.getUserId())
                 .graduatedYear(parseIntegerList(member.getGraduatedYear()))
-                .graduationStatus(parseStringList(member.getGraduationStatus() != null ? member.getGraduationStatus().getValue() : null))
+                .graduationStatus(parseStringList(member.getGraduationStatus() != null ? member.getGraduationStatus() : null))
                 .program(parseStringList(member.getProgram()))
                 .major(parseStringList(member.getMajor()))
                 .verificationLevel(member.getVerificationLevel())

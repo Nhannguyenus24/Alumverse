@@ -6,6 +6,8 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.admin.dto.LoginHistoryResponse;
 import com.service.backend.shared.entity.User;
@@ -318,4 +320,26 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         @Param("status") String status,
         @Param("organizationId") Integer organizationId
     );
+
+    @Query("SELECT COUNT(*) FROM users WHERE created_at >= :since")
+    Mono<Long> countUsersSince(@Param("since") LocalDateTime since);
+
+    @Query("SELECT COUNT(*) FROM users WHERE \"status\" = :status")
+    Mono<Long> countUsersByStatus(@Param("status") String status);
+
+    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM users " +
+           "WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' " +
+           "GROUP BY CAST(created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyUserRegistrations();
+
+    @Query("SELECT COUNT(*) FROM verification_requests WHERE \"status\" = :status")
+    Mono<Long> countVerificationRequestsByStatus(@Param("status") String status);
+
+    @Query("SELECT COUNT(*) FROM peer_verifications")
+    Mono<Long> countAllPeerVerifications();
+
+    @Query("SELECT COUNT(*) FROM peer_verifications WHERE \"status\" = :status")
+    Mono<Long> countPeerVerificationsByStatus(@Param("status") String status);
 }

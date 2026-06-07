@@ -31,4 +31,7 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countSearchResources(Integer organizationId, String keyword);
+
+    @Query("SELECT COUNT(*) FROM learning_resources WHERE created_at >= :since")
+    Mono<Long> countSince(java.time.LocalDateTime since);
 }
