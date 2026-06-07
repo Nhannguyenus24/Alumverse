@@ -1,7 +1,10 @@
 package com.service.backend.admin.dao;
 
 import com.service.backend.admin.dto.LoginHistoryResponse;
+import com.service.backend.admin.dto.SuspiciousLoginInfo;
 import com.service.backend.shared.entity.UserLoginHistory;
+import com.service.backend.shared.projection.DailyCountProjection;
+import com.service.backend.shared.projection.LoginMethodProjection;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
@@ -38,20 +41,20 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
     @Query("SELECT COUNT(*) FROM user_login_histories WHERE user_id = :userId")
     Mono<Long> countByUserId(@Param("userId") Integer userId);
 
-    @Query("SELECT login_method, COUNT(*) AS login_count " +
+    @Query("SELECT login_method AS method, COUNT(*) AS count " +
            "FROM user_login_histories " +
            "GROUP BY login_method " +
-           "ORDER BY login_count DESC")
-    Flux<Object> getLoginMethodStats();
+           "ORDER BY count DESC")
+    Flux<LoginMethodProjection> getLoginMethodStats();
 
-    @Query("SELECT CAST(login_at AS DATE) AS login_date, COUNT(*) AS login_count " +
+    @Query("SELECT CAST(login_at AS DATE) AS date, COUNT(*) AS count " +
            "FROM user_login_histories " +
            "WHERE login_at >= CURRENT_DATE - INTERVAL '30 days' " +
            "GROUP BY CAST(login_at AS DATE) " +
-           "ORDER BY login_date DESC")
-    Flux<Object> getDailyLoginStats();
+           "ORDER BY date DESC")
+    Flux<DailyCountProjection> getDailyLoginStats();
 
-    @Query("SELECT ulh.user_id, u.email, u.user_name, " +
+    @Query("SELECT ulh.user_id AS user_id, u.email AS email, u.user_name AS user_name, " +
            "COUNT(DISTINCT ulh.login_ip) AS distinct_ip_count, COUNT(*) AS total_logins " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
@@ -59,9 +62,8 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
            "GROUP BY ulh.user_id, u.email, u.user_name " +
            "HAVING COUNT(DISTINCT ulh.login_ip) > 3 " +
            "ORDER BY distinct_ip_count DESC")
-    Flux<Object> findSuspiciousLogins();
-    
-       @Query("SELECT COUNT(DISTINCT user_id) FROM user_login_histories WHERE login_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'")
-       Mono<Long> countDailyActive();
+    Flux<SuspiciousLoginInfo> findSuspiciousLogins();
 
+    @Query("SELECT COUNT(DISTINCT user_id) FROM user_login_histories WHERE login_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'")
+    Mono<Long> countDailyActive();
 }

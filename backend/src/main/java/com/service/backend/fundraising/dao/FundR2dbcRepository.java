@@ -37,6 +37,15 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("SELECT COALESCE(SUM(current_amount), 0) FROM funds")
     Mono<BigDecimal> sumCurrentAmount();
 
+    @Query("SELECT COUNT(*) FROM funds WHERE time_ended IS NOT NULL AND time_ended <= CURRENT_TIMESTAMP")
+    Mono<Long> countCompletedFunds();
+
+    @Query("SELECT COALESCE(SUM(target_amount), 0) FROM funds")
+    Mono<BigDecimal> sumTargetAmount();
+
+    @Query("SELECT * FROM funds ORDER BY current_amount DESC LIMIT :limit")
+    Flux<Funds> findTopByCurrentAmount(int limit);
+
     @Query("""
             SELECT * FROM funds
             WHERE (:organizationId IS NULL OR organization_id = :organizationId)

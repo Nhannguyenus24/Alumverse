@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.service.backend.admin.dto.FeedbackStatisticsDTO;
 import com.service.backend.admin.dto.OrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationOptionRequest;
 import com.service.backend.admin.dto.UpdateOrganizationRequest;
@@ -90,7 +91,14 @@ public class AdminOrganizationController {
                 .thenReturn(ResponseEntity.ok(
                         new ApiResponse<>("School feedback marked as read", true)));
     }
-    
+
+    @GetMapping("/feedback-statistics")
+    public Mono<ResponseEntity<ApiResponse<FeedbackStatisticsDTO>>> getFeedbackStatistics() {
+        return organizationService.getFeedbackStatistics()
+                .map(stats -> ResponseEntity.ok(
+                        new ApiResponse<>("Feedback statistics fetched successfully", stats)));
+    }
+
     /**
      * Get organization by slug
      */

@@ -12,9 +12,10 @@ import PersonIcon from "@mui/icons-material/Person";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import { useAuth } from "../hooks/useAuth";
-import { useOrgPath } from '../hooks/useOrgNavigate';
+import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
+  const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [prevAvatarUrl, setPrevAvatarUrl] = useState(avatarUrl);
@@ -37,6 +38,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const handleLogout = async () => {
     handleClose();
     await logout();
+    navigate("/");
   };
 
   const avatarSx = {
@@ -221,7 +223,6 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
 
         <MenuItem
           onClick={handleLogout}
-          to="/auth/login"
           sx={{
             color: "error.main",
           }}

@@ -1,5 +1,7 @@
 import { Box, Paper, Typography } from "@mui/material";
 import {
+  AreaChart,
+  Area,
   LineChart,
   Line,
   BarChart,
@@ -29,6 +31,7 @@ const Chart = ({
   height = 300,
   showLegend = true,
   showGrid = true,
+  color,
 }) => {
   // Recharts ResponsiveContainer with height="100%" often measures -1 until a parent
   // chain has explicit height (flex/tabs). Use a concrete pixel height instead.
@@ -47,8 +50,35 @@ const Chart = ({
     );
   }
 
+  const strokeColor = color || "#1976d2";
+
   const renderChart = () => {
     switch (type) {
+      case "area":
+        return (
+          <AreaChart data={data}>
+            {showGrid && <CartesianGrid strokeDasharray="3 3" />}
+            <XAxis dataKey={xAxisKey} />
+            <YAxis />
+            <Tooltip />
+            {showLegend && <Legend />}
+            <defs>
+              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={strokeColor} stopOpacity={0.15} />
+                <stop offset="95%" stopColor={strokeColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <Area
+              type="monotone"
+              dataKey={dataKey}
+              stroke={strokeColor}
+              strokeWidth={2}
+              fill="url(#areaGradient)"
+              dot={false}
+            />
+          </AreaChart>
+        );
+
       case "line":
         return (
           <LineChart data={data}>

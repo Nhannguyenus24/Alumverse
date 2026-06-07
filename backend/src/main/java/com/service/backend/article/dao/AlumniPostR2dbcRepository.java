@@ -41,4 +41,7 @@ public interface AlumniPostR2dbcRepository extends ReactiveCrudRepository<Alumni
     @Modifying
     @Query("UPDATE alumni_posts SET is_hidden = true WHERE id = :id")
     Mono<Integer> hideAlumniPost(Integer id);
+
+    @Query("SELECT COUNT(*) FROM alumni_posts WHERE published_at >= :since")
+    Mono<Long> countSince(java.time.LocalDateTime since);
 }

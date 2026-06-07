@@ -30,4 +30,14 @@ public interface SchoolFeedbackRepository extends R2dbcRepository<SchoolFeedback
     @Modifying
     @Query("UPDATE school_feedbacks SET is_read = true WHERE id = :feedbackId")
     Mono<Integer> markAsRead(Integer feedbackId);
+
+    @Query("SELECT COUNT(*) FROM school_feedbacks WHERE is_read = false")
+    Mono<Long> countUnread();
+
+    @Query("SELECT CAST(created_at AS DATE) AS date, COUNT(*) AS count " +
+           "FROM school_feedbacks " +
+           "WHERE created_at >= CURRENT_DATE - INTERVAL '30 days' " +
+           "GROUP BY CAST(created_at AS DATE) " +
+           "ORDER BY date")
+    Flux<com.service.backend.shared.projection.DailyCountProjection> getDailyFeedbackCounts();
 }
