@@ -8,7 +8,6 @@ import {
   Typography,
 } from '@mui/material';
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import dayjs from 'dayjs';
@@ -27,6 +26,7 @@ const STATUS_COLOR = {
   CANCELLED_BY_MENTEE: 'default',
   CANCELLED_BY_MENTOR: 'warning',
   REJECTED: 'error',
+  REPORTED: 'warning',
 };
 
 const STATUS_LABEL = {
@@ -37,6 +37,7 @@ const STATUS_LABEL = {
   CANCELLED_BY_MENTEE: 'Đã hủy',
   CANCELLED_BY_MENTOR: 'Cố vấn đã hủy',
   REJECTED: 'Bị từ chối',
+  REPORTED: 'Đang xử lý',
 };
 
 const formatRange = (start, end) => {
@@ -46,14 +47,24 @@ const formatRange = (start, end) => {
   return `${s.format('dddd, DD/MM/YYYY')} • ${s.format('HH:mm')} – ${e.format('HH:mm')}`;
 };
 
-const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view = 'mentee', onReport }) => {
+const MentorshipBookingItem = ({
+  session,
+  onCancel,
+  cancelDisabled = false,
+  view = 'mentee',
+  onReport,
+  onFeedback,
+  onReschedule,
+  onPostpone,
+}) => {
   const range = formatRange(session.startTime, session.endTime);
-  const canCancel =
-    onCancel &&
-    !['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'REJECTED'].includes(session.status);
-  const canReport = onReport && session.status === 'COMPLETED';
+  const terminalStatuses = ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'REJECTED'];
+  const canCancel = onCancel && !terminalStatuses.includes(session.status);
+  const canReport = onReport && ['CONFIRMED', 'COMPLETED'].includes(session.status);
+  const canFeedback = onFeedback && session.status === 'COMPLETED';
+  const canReschedule = onReschedule && session.status === 'CONFIRMED';
+  const canPostpone = onPostpone && session.status === 'CONFIRMED';
 
-  // 'mentee' view → show mentor info; 'mentor' view → show mentee info
   const counterpartName =
     view === 'mentor'
       ? session.menteeName ?? (session.menteeMemberId ? `Mentee #${session.menteeMemberId}` : `Booking #${session.id}`)
@@ -156,8 +167,23 @@ const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view
           </Stack>
         )}
 
-        {(canCancel || canReport) && (
-          <Stack direction="row" justifyContent="flex-end" spacing={1}>
+        {(canCancel || canReport || canFeedback || canReschedule || canPostpone) && (
+          <Stack direction="row" justifyContent="flex-end" spacing={1} flexWrap="wrap" useFlexGap>
+            {canReschedule && (
+              <Button size="small" variant="outlined" onClick={() => onReschedule(session)}>
+                Đề xuất đổi lịch
+              </Button>
+            )}
+            {canPostpone && (
+              <Button size="small" variant="outlined" onClick={() => onPostpone(session)}>
+                Đề nghị dời lịch
+              </Button>
+            )}
+            {canFeedback && (
+              <Button size="small" variant="contained" onClick={() => onFeedback(session)}>
+                Đánh giá buổi cố vấn
+              </Button>
+            )}
             {canReport && (
               <Button
                 size="small"

@@ -23,20 +23,20 @@ import { useMyMenteeProfile, useSaveMenteeProfile } from '../../hooks/mentorship
 const MIN_VERIFICATION_LEVEL = 2;
 
 const ACADEMIC_YEAR_OPTIONS = [
-  'Year 1',
-  'Year 2',
-  'Year 3',
-  'Year 4',
-  'Year 5+',
-  'Graduated',
+  'Năm 1',
+  'Năm 2',
+  'Năm 3',
+  'Năm 4',
+  'Năm 5+',
+  'Đã tốt nghiệp',
 ];
 
 const COMMITMENTS = [
-  'Cung cấp thông tin hồ sơ trung thực, rõ ràng và phù hợp với mục đích mentoring.',
-  'Tôn trọng thời gian của mentor, phản hồi booking trong thời gian hợp lý và thông báo sớm nếu cần hủy/đổi lịch.',
-  'Bảo mật các thông tin cá nhân hoặc nội dung nhạy cảm được chia sẻ trong quá trình mentoring.',
+  'Cung cấp thông tin hồ sơ trung thực, rõ ràng và phù hợp với mục đích nhận cố vấn.',
+  'Tôn trọng thời gian của cố vấn, phản hồi sớm và báo trước nếu cần hủy hoặc đổi lịch hẹn.',
+  'Bảo mật các thông tin cá nhân hoặc nội dung nhạy cảm được chia sẻ trong quá trình trao đổi.',
   'Không sử dụng ngôn từ, hành vi quấy rối, phân biệt đối xử, xúc phạm hoặc vi phạm pháp luật.',
-  'Cho phép hệ thống ghi nhận lịch sử session và feedback nhằm cải thiện chất lượng mentorship.',
+  'Cho phép hệ thống lưu lại lịch sử buổi hẹn và đánh giá để nâng cao chất lượng chương trình.',
 ];
 
 const initialValues = {

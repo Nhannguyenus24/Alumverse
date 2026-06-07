@@ -8,7 +8,6 @@ import PublicRoute from "./PublicRoute";
 import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
-import MentorshipBrowseGate from "../components/mentorship/MentorshipBrowseGate";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
 
 if (typeof window !== "undefined") {
@@ -163,11 +162,8 @@ const DevelopmentJobsPage = Loadable(
 );
 
 // Mentorship pages
-const MentorshipLandingPage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipLandingPage")),
-);
-const MentorshipBrowsePage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipBrowsePage")),
+const MentorshipPage = Loadable(
+  lazy(() => import("../pages/mentorship/MentorshipPage")),
 );
 const MentorshipProfilePage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipProfilePage")),
@@ -190,9 +186,6 @@ const MentorshipMyBookingsPage = Loadable(
 );
 const MentorshipSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipSignupPage")),
-);
-const MentorshipPublicProfilePage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipPublicProfilePage")),
 );
 const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
@@ -488,17 +481,12 @@ export const router = createBrowserRouter([
             children: [
               {
                 index: true,
-                element: <MentorshipLandingPage />,
+                element: <MentorshipPage />,
                 handle: { hideFooter: true },
               },
               {
                 path: "browse",
-                element: (
-                  <MentorshipBrowseGate>
-                    <MentorshipBrowsePage />
-                  </MentorshipBrowseGate>
-                ),
-                handle: { hideFooter: true },
+                element: <Navigate to=".." replace />,
               },
               {
                 path: "dashboard",
@@ -523,7 +511,7 @@ export const router = createBrowserRouter([
               },
               {
                 path: "mentors/:mentorId",
-                element: <MentorshipPublicProfilePage />,
+                element: <MentorshipProfilePage />,
               },
               {
                 path: "mentors/:mentorId/book",

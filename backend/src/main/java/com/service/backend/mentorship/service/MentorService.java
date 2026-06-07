@@ -383,7 +383,45 @@ public class MentorService {
                                                 .doOnNext(rows -> notificationService.createNotificationAsync(
                                                         session.getMenteeMemberId(),
                                                         "Lịch hẹn bị hủy",
-                                                        "Cố vấn đã hủy một buổi mentoring với bạn."))
+                                                        "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
+                                                        "/development/mentorship/my-bookings"))
+                                                .then(sessionRepository.findById(sessionId));
+                                    });
+                        })
+                        .flatMap(this::enrich));
+    }
+
+    public Mono<MentorshipSessionResponse> postponeSession(Integer sessionId, String reason) {
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (Status.CANCELLED.equals(session.getStatus())
+                                    || Status.CANCELLED_BY_MENTEE.equals(session.getStatus())
+                                    || Status.CANCELLED_BY_MENTOR.equals(session.getStatus())
+                                    || Status.COMPLETED.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring không thể dời lịch ở trạng thái hiện tại"));
+                            }
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> {
+                                        if (!mentorMemberId.equals(avail.getMentorMemberId())) {
+                                            return Mono.error(new ApplicationException(
+                                                    ErrorCode.FORBIDDEN, "Bạn không có quyền dời buổi mentoring này"));
+                                        }
+                                        String note = (reason == null || reason.isBlank())
+                                                ? "Cố vấn đề nghị dời buổi hẹn"
+                                                : "Cố vấn đề nghị dời buổi hẹn: " + reason;
+                                        return availabilityRepository
+                                                .updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
+                                                .then(sessionRepository.updateStatusWithCancelReason(
+                                                        sessionId, Status.CANCELLED_BY_MENTOR.getValue(), note))
+                                                .doOnNext(rows -> notificationService.createNotificationAsync(
+                                                        session.getMenteeMemberId(),
+                                                        "Cố vấn đề nghị dời lịch hẹn",
+                                                        "Cố vấn mong muốn dời buổi hẹn sang thời gian khác. Vui lòng chọn khung giờ mới phù hợp với bạn.",
+                                                        "/development/mentorship/mentors/" + mentorMemberId))
                                                 .then(sessionRepository.findById(sessionId));
                                     });
                         })
@@ -405,8 +443,9 @@ public class MentorService {
                                         if ("COMPLETED".equals(request.getStatus())) {
                                             notificationService.createNotificationAsync(
                                                     session.getMenteeMemberId(),
-                                                    "Buổi mentoring đã hoàn tất",
-                                                    "Buổi mentoring của bạn đã hoàn thành. Hãy để lại đánh giá cho cố vấn nhé!");
+                                                    "Buổi cố vấn đã hoàn tất",
+                                                    "Buổi cố vấn của bạn đã hoàn thành. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
+                                                    "/development/mentorship/my-bookings");
                                         }
                                     })
                                     .then(sessionRepository.findById(sessionId));

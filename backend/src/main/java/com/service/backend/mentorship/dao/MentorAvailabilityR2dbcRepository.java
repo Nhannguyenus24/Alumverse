@@ -16,7 +16,7 @@ public interface MentorAvailabilityR2dbcRepository extends ReactiveCrudRepositor
     @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId ORDER BY start_time ASC")
     Flux<MentorAvailability> findByMentorMemberId(Integer mentorMemberId);
 
-    @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND status = 'Available' AND start_time > :now ORDER BY start_time ASC")
+    @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND status = 'AVAILABLE' AND start_time > :now ORDER BY start_time ASC")
     Flux<MentorAvailability> findAvailableSlots(Integer mentorMemberId, LocalDateTime now);
 
     @Modifying

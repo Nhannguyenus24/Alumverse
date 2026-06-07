@@ -301,7 +301,8 @@ public class MenteeService {
                                                         notificationService.createNotificationAsync(
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
-                                                                "Bạn có một lịch hẹn mentoring mới đã được xác nhận."));
+                                                                "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi.",
+                                                                "/development/mentorship/dashboard"));
                                             }));
                                 })
                                 .flatMap(this::enrich)));
@@ -358,7 +359,8 @@ public class MenteeService {
                                     .doOnNext(avail -> notificationService.createNotificationAsync(
                                             avail.getMentorMemberId(),
                                             "Lịch hẹn bị hủy",
-                                            "Mentee đã hủy một buổi mentoring với bạn."))
+                                            "Người được cố vấn đã hủy một buổi hẹn với bạn. Khung giờ tương ứng đã được mở lại.",
+                                            "/development/mentorship/dashboard"))
                                     .then(sessionRepository.findById(sessionId));
                         })
                         .flatMap(this::enrich));
@@ -402,7 +404,12 @@ public class MenteeService {
                                                                         feedbackRepository.calculateAverageRating(avail.getMentorMemberId())
                                                                                 .defaultIfEmpty(BigDecimal.ZERO)
                                                                                 .flatMap(avg -> profileRepository.updateRatingAndIncrementSessions(
-                                                                                        avail.getMentorMemberId(), avg)))
+                                                                                        avail.getMentorMemberId(), avg))
+                                                                                .doOnSuccess(ignored -> notificationService.createNotificationAsync(
+                                                                                        avail.getMentorMemberId(),
+                                                                                        "Bạn nhận được một đánh giá mới",
+                                                                                        "Một buổi cố vấn vừa được đánh giá " + request.getRating() + "/5 sao. Xem chi tiết phản hồi của bạn.",
+                                                                                        "/development/mentorship/dashboard")))
                                                                 .thenReturn(savedFeedback));
                                     });
                         })

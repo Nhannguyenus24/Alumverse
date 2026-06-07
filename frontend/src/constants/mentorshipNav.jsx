@@ -17,4 +17,19 @@ export const MENTORSHIP_STATS = [
 ];
 
 export const MENTORSHIP_LANDING = '/development/mentorship';
-export const MENTORSHIP_BROWSE = '/development/mentorship/browse';
+/** @deprecated use MENTORSHIP_LANDING — browse is inline on hub page for v1/v2 */
+export const MENTORSHIP_BROWSE = MENTORSHIP_LANDING;
+
+/** Tabs for an approved mentor's personal workspace. */
+export const MENTOR_PROFILE_TABS = [
+  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
+  { label: 'Tổng quan', path: '/development/mentorship/dashboard' },
+  { label: 'Lịch rảnh', path: '/development/mentorship/calendar' },
+  { label: 'Buổi hẹn của tôi', path: '/development/mentorship/my-bookings' },
+];
+
+/** Tabs for a mentee's personal workspace. */
+export const MENTEE_PROFILE_TABS = [
+  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
+  { label: 'Lịch hẹn của tôi', path: '/development/mentorship/my-bookings' },
+];
