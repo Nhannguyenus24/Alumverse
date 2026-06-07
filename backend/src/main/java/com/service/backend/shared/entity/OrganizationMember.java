@@ -45,6 +45,12 @@ public class OrganizationMember {
     @Column("major")
     private String major;
 
+    @Column("faculty")
+    private String faculty;
+
+    @Column("department")
+    private String department;
+
     @Column("verification_level")
     private Integer verificationLevel;
 
