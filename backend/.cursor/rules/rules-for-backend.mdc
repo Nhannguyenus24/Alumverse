@@ -1,0 +1,109 @@
+---
+name: backend-webflux
+description: Backend rules for Spring WebFlux + R2DBC
+alwaysApply: true
+---
+
+# Backend Rules (Spring WebFlux + R2DBC)
+
+## Architecture
+- Follow layered architecture:
+  - Controller → Service → Repository
+- Keep controller thin: only handle request/response mapping.
+- Put all business logic in service layer.
+- Repository is strictly for data access only.
+
+---
+
+## Reactive Principles (Critical)
+- Use reactive types consistently (Mono, Flux).
+- NEVER call `.block()` in application code.
+- NEVER call `.subscribe()` manually.
+- Do not mix blocking code inside reactive flow.
+
+- Keep reactive chains readable:
+  - Avoid deeply nested `flatMap`
+  - Extract complex flows into smaller methods
+  - Prefer clarity over chaining everything
+
+---
+
+## Repository (DAO)
+
+### General Rules
+- Use `ReactiveCrudRepository` as base.
+- Repository must NOT contain business logic.
+
+### Query Rules (Strict)
+- EVERY repository method MUST use `@Query`.
+- DO NOT use derived query methods (method name parsing is NOT allowed).
+
+### Query Quality
+- Always specify columns explicitly (NO `SELECT *`)
+- Queries must be:
+  - simple
+  - readable
+  - predictable
+
+- Avoid:
+  - overly complex joins
+  - deeply nested SQL
+
+- If query becomes complex:
+  - simplify it OR
+  - move part of logic to service layer
+
+Example (GOOD):
+```java
+@Query("SELECT id, name, email FROM users WHERE email = :email")
+Mono<User> findByEmail(String email);
+```
+Example (BAD):
+```java
+Mono<User> findByEmail(String email); // ❌ NOT allowed
+```
+---
+
+## Error Handling
+- MUST have ErrorCode and Message when throw exception. Can reuse ErrorCode, but also can create new ones. depends on the business logic. 
+
+- MUST NOT reuse 1 errorCode for all throw exception when the business logic does not match the meaning. 
+
+---
+
+## Logging
+- MUST log important business events at service layer.
+- MUST NOT log excessively inside reactive chains.
+- MUST NOT log sensitive data.
+
+--- 
+
+## Configuration & Constants
+- MUST NOT hardcode:
+  - URLs
+  - timeouts
+  - config values
+
+- MUST use configuration or constants.
+
+--- 
+
+## Naming
+- Repository methods MUST reflect actual query intent.
+- Service methods MUST describe business action clearly.
+- The name of method maybe long, but it is accepted if it describe the business action well.
+
+Example:
+- ❌ getUser
+- ✅ getActiveUserByEmail
+
+--- 
+
+## Code Quality
+- MUST prioritize readability over cleverness.
+- Methods MUST be small and focused.
+- MUST avoid duplication.
+
+
+
+

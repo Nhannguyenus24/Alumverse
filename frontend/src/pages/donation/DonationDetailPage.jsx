@@ -364,7 +364,7 @@ function DonationContributionForm({ fundDetail }) {
                       Quyên góp ẩn danh
                     </Typography>
                     <Typography sx={{ color: "#5f78a4", fontSize: "0.8rem", mt: 0.2 }}>
-                      Chỉ cần nhập số tiền và lời nhắn, thông tin cá nhân sẽ được ẩn
+                      Chỉ cần nhập số tiền, thông tin cá nhân sẽ được ẩn
                     </Typography>
                   </Box>
                   <Switch

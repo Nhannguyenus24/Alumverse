@@ -1,0 +1,22 @@
+---
+name: globalrules
+description: Global rules applied to all AI responses
+alwaysApply: true
+---
+
+# Global Rules
+
+## Code Understanding
+- Before proposing changes, read **relevant existing files**.
+- If required files are not visible, ask the user to open or share them.
+
+## Problem SolvingS
+- When addressing a problem:
+  - Propose **at least 2 possible solutions**.
+  - Clearly list **advantages and disadvantages** of each solution.
+  - Compare them and **justify the chosen solution**.
+ 
+
+## Editing Policy
+- **Always ask for confirmation before editing any file**.
+- Clearly specify **which file(s)** will be edited and **why**.
