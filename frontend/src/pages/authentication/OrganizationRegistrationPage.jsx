@@ -491,7 +491,7 @@ const OrganizationRegistrationPage = () => {
               <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 1 }}>
                 {proofFile
                   ? `Đã chọn: ${proofFile.name}`
-                  : 'Hỗ trợ PDF/JPG/PNG, tối đa 5MB.'}
+                  : 'Hỗ trợ PDF/JPG/PNG, tối đa 2MB.'}
               </Typography>
             </Box>
 
