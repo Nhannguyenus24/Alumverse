@@ -140,12 +140,17 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
+           "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
+           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
-    Flux<VerificationRequestResponse> findAllVerificationRequests(@Param("limit") int limit, @Param("offset") int offset);
+    Flux<VerificationRequestResponse> findAllVerificationRequests(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
 
-    @Query("SELECT COUNT(*) FROM verification_requests")
-    Mono<Long> countAllVerificationRequests();
+    @Query("SELECT COUNT(*) FROM verification_requests vr " +
+           "JOIN users u ON vr.member_id = u.id " +
+           "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
+           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword)")
+    Mono<Long> countAllVerificationRequests(@Param("keyword") String keyword);
 
     /**
      * Fetch only pending verification requests, paginated
@@ -156,13 +161,19 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
+           "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "WHERE vr.\"status\" = 'PENDING' " +
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
-    Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("limit") int limit, @Param("offset") int offset);
+    Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
 
-    @Query("SELECT COUNT(*) FROM verification_requests WHERE \"status\" = 'PENDING'")
-    Mono<Long> countPendingVerificationRequests();
+    @Query("SELECT COUNT(*) FROM verification_requests vr " +
+           "JOIN users u ON vr.member_id = u.id " +
+           "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
+           "WHERE vr.\"status\" = 'PENDING' " +
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword)")
+    Mono<Long> countPendingVerificationRequests(@Param("keyword") String keyword);
 
     /**
      * Update verification request "status" and admin note

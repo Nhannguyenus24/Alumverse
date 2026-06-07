@@ -38,6 +38,7 @@ const useAdminArticles = (initialChannel = 'news') => {
   const [channel, setChannel] = useState(initialChannel);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [search, setSearch] = useState('');
   const [paged, setPaged] = useState(fallbackPage);
   const [loading, setLoading] = useState(true);
 
@@ -45,13 +46,15 @@ const useAdminArticles = (initialChannel = 'news') => {
     const url = ENDPOINT_BY_CHANNEL[channel];
     if (!url) return;
     setLoading(true);
+    const params = { page, limit: rowsPerPage };
+    if (search && search.trim() !== '') params.keyword = search.trim();
     const data = await safeFetch(
-      () => apiClient.get(url, { params: { page, limit: rowsPerPage } }),
+      () => apiClient.get(url, { params }),
       fallbackPage,
     );
     setPaged(normalizePage(data));
     setLoading(false);
-  }, [channel, page, rowsPerPage]);
+  }, [channel, page, rowsPerPage, search]);
 
   useEffect(() => {
     const timer = setTimeout(loadArticles, 0);
@@ -68,6 +71,8 @@ const useAdminArticles = (initialChannel = 'news') => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
+    search,
+    setSearch,
     refresh: loadArticles,
   };
 };
