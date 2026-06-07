@@ -147,6 +147,11 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
+    public Mono<Boolean> checkUserRegistered(Long eventId, Long memberId) {
+        return ticketRepo.existsByEventIdAndMemberId(eventId, memberId);
+    }
+
+    @Override
     public Mono<Event> updateInterestedCount(Long eventId, Boolean increment) {
         Mono<Integer> updateMono = increment
                 ? eventRepo.incrementInterestedCount(eventId)
