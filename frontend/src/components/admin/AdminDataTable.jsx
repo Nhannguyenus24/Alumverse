@@ -78,6 +78,7 @@ const AdminDataTable = ({
             <SearchBar
               value={searchValue}
               onChange={onSearchChange}
+              onKeyDown={onSearchKeyDown}
               placeholder={searchPlaceholder}
               sx={{
                 maxWidth: { md: 400 },
