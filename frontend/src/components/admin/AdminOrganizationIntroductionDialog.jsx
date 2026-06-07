@@ -8,11 +8,16 @@ import {
   TextField,
   Box,
   Typography,
+  Stack,
   Divider,
+  Avatar,
+  IconButton,
 } from "@mui/material";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import Grid from "@mui/material/Grid";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { fileToBase64 } from "../../utils/imageUtils";
 
 const AdminOrganizationIntroductionDialog = ({
   open,
@@ -26,6 +31,7 @@ const AdminOrganizationIntroductionDialog = ({
     mission: "",
     coreValues: "",
     bannerUrl: "",
+    images: "",
   });
 
   useEffect(() => {
@@ -38,6 +44,7 @@ const AdminOrganizationIntroductionDialog = ({
           mission: introduction.mission || "",
           coreValues: introduction.coreValues || "",
           bannerUrl: introduction.bannerUrl || "",
+          images: Array.isArray(introduction.imageUrls) ? introduction.imageUrls.join(", ") : "",
         });
       } else {
         setFormData({
@@ -46,6 +53,7 @@ const AdminOrganizationIntroductionDialog = ({
           mission: "",
           coreValues: "",
           bannerUrl: "",
+          images: "",
         });
       }
     }, 0);
@@ -58,7 +66,16 @@ const AdminOrganizationIntroductionDialog = ({
   };
 
   const handleSubmit = () => {
-    onConfirm(formData);
+    const payload = {
+      ...formData,
+      images: formData.images.split(",").map(s => s.trim()).filter(Boolean),
+      // Keep existing leaders and teamMembers
+      leaders: introduction?.leaders || [],
+      teamMembers: introduction?.teamMembers || [],
+      leadersContent: introduction?.leadersContent || "",
+      teamMembersContent: introduction?.teamMembersContent || "",
+    };
+    onConfirm(payload);
   };
 
   return (
@@ -82,8 +99,9 @@ const AdminOrganizationIntroductionDialog = ({
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 1 }}>
-        <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 3 }}>
-          <Box sx={{ mb: 2 }}>
+        <Box sx={{ mt: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+          {/* General Introduction Section */}
+          <Box>
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
               Giới thiệu chung (Rich Text)
             </Typography>
@@ -110,58 +128,115 @@ const AdminOrganizationIntroductionDialog = ({
                 placeholder="Mô tả tóm tắt về lịch sử, quy mô, thành tựu của tổ chức..."
               />
             </Box>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mt: 1, display: "block" }}
-            >
-              Nội dung chính hiển thị ở phần đầu trang giới thiệu. Bạn có thể
-              chèn ảnh trực tiếp vào đây.
-            </Typography>
           </Box>
-          <Box sx={{ mb: 1 }}>
+
+          <Box>
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
               Ảnh bìa tổ chức
             </Typography>
             {formData.bannerUrl && (
-              <Box 
+              <Box
                 component="img"
                 src={formData.bannerUrl}
-                sx={{ 
-                  width: '100%', 
-                  height: 200, 
-                  objectFit: 'cover', 
+                sx={{
+                  width: "100%",
+                  height: 200,
+                  objectFit: "cover",
                   borderRadius: 2,
                   mb: 2,
-                  border: '1px solid',
-                  borderColor: 'divider'
+                  border: "1px solid",
+                  borderColor: "divider",
                 }}
               />
             )}
-            <TextField
-              fullWidth
-              label="Banner URL"
-              name="bannerUrl"
-              value={formData.bannerUrl}
-              onChange={handleChange}
-              placeholder="https://example.com/banner.png"
-              helperText="Nhập URL ảnh bìa cho tổ chức (định dạng rộng, ví dụ 1200x400)"
-            />
+            <Button
+              component="label"
+              variant="outlined"
+              size="small"
+              startIcon={<CloudUploadIcon />}
+              sx={{ textTransform: 'none', mb: 1 }}
+            >
+              Tải ảnh bìa lên
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const base64 = await fileToBase64(file);
+                    setFormData(prev => ({ ...prev, bannerUrl: base64 }));
+                  }
+                }}
+              />
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Ảnh bìa sẽ được gửi dưới dạng Base64
+            </Typography>
           </Box>
 
-          <Divider sx={{ my: 1 }}>
-            <Typography
-              variant="caption"
-              color="text.disabled"
-              fontWeight={700}
-              sx={{ textTransform: "uppercase", letterSpacing: 1 }}
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
+              Bộ sưu tập ảnh (Gallery)
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
+              {formData.images.split(",").filter(Boolean).map((img, idx) => (
+                <Box key={idx} sx={{ position: 'relative' }}>
+                  <Avatar 
+                    src={img} 
+                    variant="rounded" 
+                    sx={{ width: 80, height: 80, border: 1, borderColor: 'divider' }} 
+                  />
+                  <IconButton 
+                    size="small" 
+                    sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'error.main', color: 'white', '&:hover': { bgcolor: 'error.dark' } }}
+                    onClick={() => {
+                      const list = formData.images.split(",").filter(Boolean);
+                      list.splice(idx, 1);
+                      setFormData(prev => ({ ...prev, images: list.join(",") }));
+                    }}
+                  >
+                    <Box sx={{ fontSize: 12 }}>×</Box>
+                  </IconButton>
+                </Box>
+              ))}
+            </Stack>
+            <Button
+              component="label"
+              variant="outlined"
+              size="small"
+              startIcon={<CloudUploadIcon />}
+              sx={{ textTransform: 'none' }}
             >
-              Mục tiêu & Giá trị cốt lõi
+              Thêm ảnh vào bộ sưu tập
+              <input
+                type="file"
+                hidden
+                multiple
+                accept="image/*"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || []);
+                  const base64s = await Promise.all(files.map(fileToBase64));
+                  setFormData(prev => {
+                    const current = prev.images.split(",").filter(Boolean);
+                    return { ...prev, images: [...current, ...base64s].join(",") };
+                  });
+                }}
+              />
+            </Button>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+              Bạn có thể chọn nhiều ảnh cùng lúc
+            </Typography>
+          </Box>
+
+          <Divider>
+            <Typography variant="caption" color="text.disabled" fontWeight={700}>
+              TẦM NHÌN - SỨ MẠNG - GIÁ TRỊ CỐT LÕI
             </Typography>
           </Divider>
 
           <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Tầm nhìn"
@@ -170,11 +245,10 @@ const AdminOrganizationIntroductionDialog = ({
                 onChange={handleChange}
                 multiline
                 rows={4}
-                placeholder="Định hướng phát triển dài hạn..."
-                slotProps={{ inputLabel: { shrink: true } }}
+                placeholder="Định hướng dài hạn..."
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Sứ mạng"
@@ -183,11 +257,10 @@ const AdminOrganizationIntroductionDialog = ({
                 onChange={handleChange}
                 multiline
                 rows={4}
-                placeholder="Mục đích cốt lõi và nhiệm vụ của tổ chức..."
-                slotProps={{ inputLabel: { shrink: true } }}
+                placeholder="Mục đích cốt lõi..."
               />
             </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
+            <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
                 label="Giá trị cốt lõi"
@@ -196,25 +269,17 @@ const AdminOrganizationIntroductionDialog = ({
                 onChange={handleChange}
                 multiline
                 rows={4}
-                placeholder="Các nguyên tắc dẫn dắt và triết lý hoạt động..."
-                slotProps={{ inputLabel: { shrink: true } }}
+                placeholder="Triết lý hoạt động..."
               />
             </Grid>
           </Grid>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: "action.hover" }}>
-        <Button
-          onClick={onClose}
-          variant="outlined" color="secondary"
-        >
+        <Button onClick={onClose} variant="outlined" color="secondary">
           Hủy
         </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          variant="contained"
-        >
+        <Button variant="contained" onClick={handleSubmit}>
           Cập nhật nội dung
         </Button>
       </DialogActions>

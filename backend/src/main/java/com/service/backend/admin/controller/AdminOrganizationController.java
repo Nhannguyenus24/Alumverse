@@ -147,7 +147,7 @@ public class AdminOrganizationController {
     @PutMapping("/{organizationId}/introduction")
     public Mono<ResponseEntity<ApiResponse<OrganizationIntroductionResponse>>> upsertIntroduction(
             @PathVariable Integer organizationId,
-            @RequestBody UpsertOrganizationIntroductionRequest request) {
+            @Valid @RequestBody UpsertOrganizationIntroductionRequest request) {
         return organizationService.upsertIntroduction(organizationId, request)
                 .map(intro -> ResponseEntity.ok(
                         new ApiResponse<>("Introduction saved successfully", intro)));

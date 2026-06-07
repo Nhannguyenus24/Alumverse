@@ -56,13 +56,15 @@ const AdminOrganizationsPage = () => {
     });
   }, [organizations]);
 
-  useEffect(() => {
-    if (selectedOrganizationId) {
-      organizationApi.getIntroduction(selectedOrganizationId)
-        .then(data => setIntroduction(data || null))
-        .catch(() => setIntroduction(null));
-    } else setIntroduction(null);
+  const loadIntroduction = useCallback(async () => {
+    if (!selectedOrganizationId) { setIntroduction(null); return; }
+    try {
+      const data = await organizationApi.getIntroduction(selectedOrganizationId);
+      setIntroduction(data || null);
+    } catch { setIntroduction(null); }
   }, [selectedOrganizationId]);
+
+  useEffect(() => { loadIntroduction(); }, [loadIntroduction]);
 
   const selectedOrganization = useMemo(
     () => organizations.find((org) => org.id === selectedOrganizationId) || null,
@@ -100,6 +102,17 @@ const AdminOrganizationsPage = () => {
       enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật tổ chức', { variant: 'error' });
     }
   }, [editTarget, enqueueSnackbar]);
+
+  const handleDeleteOrganization = useCallback(async (orgId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa tổ chức này?')) return;
+    try {
+      await adminOrganizationApi.deleteOrganization(orgId);
+      setOrganizations((prev) => prev.filter((item) => item.id !== orgId));
+      enqueueSnackbar('Đã xóa tổ chức thành công', { variant: 'success' });
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể xóa tổ chức', { variant: 'error' });
+    }
+  }, [enqueueSnackbar]);
 
   const handleUpdateIntroduction = useCallback(async (payload) => {
     if (!selectedOrganizationId) return;
@@ -204,7 +217,9 @@ const AdminOrganizationsPage = () => {
         selectedIntroduction={introduction}
         onEditOrganization={(org) => { setEditTarget(org); setEditDialogOpen(true); }}
         onEditIntroduction={() => setIntroDialogOpen(true)}
+        onRefreshIntroduction={loadIntroduction}
         onUpdateOrganization={(org) => handleUpdateOrganization(org.id, org)}
+        onDeleteOrganization={handleDeleteOrganization}
         onRefresh={loadOrganizations}
       />
 
