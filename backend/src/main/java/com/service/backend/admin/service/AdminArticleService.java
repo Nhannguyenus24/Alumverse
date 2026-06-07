@@ -136,11 +136,12 @@ public class AdminArticleService {
 
     public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(String keyword, int page, int limit) {
         int offset = page * limit;
-        return fundRepository.findFiltered(null, null, keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null, null, null, null, null, limit, offset)
+        String kw = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+        return fundRepository.findFiltered(null, null, kw, null, null, null, null, limit, offset)
                 .map(FundListItemResponse::from)
                 .collectList()
-                .zipWith(fundRepository.countFiltered(null, null, keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null, null, null, null, null))
+                .zipWith(fundRepository.countFiltered(null, null, kw, null, null, null, null))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
-                .doOnSuccess(r -> log.info("getAllFunds result: {}", JsonUtils.toJson(r)));
+                .doOnSuccess(r -> log.info("getAllFunds result (keyword={}): {}", kw, JsonUtils.toJson(r)));
     }
 }

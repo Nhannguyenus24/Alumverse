@@ -96,6 +96,7 @@ const AdminForumPostsPage = () => {
 
   useEffect(() => {
     setPostsSearch(debouncedSearch);
+    setPostsPage(0); // reset về trang đầu khi keyword thay đổi
   }, [debouncedSearch, setPostsSearch]);
 
   const handleExport = () => {
@@ -278,7 +279,11 @@ const AdminForumPostsPage = () => {
         <AdminDataTable
           columns={columns}
           rows={posts}
-          totalCount={allPosts?.totalElements || 0}
+          totalCount={
+            (statusFilter !== 'ALL' || organizationFilter !== 'ALL')
+              ? posts.length  // filter phía client → chỉ hiển thị số dòng hiện tại
+              : allPosts?.totalElements || 0
+          }
           page={postsPage}
           rowsPerPage={postsSize}
           onPageChange={(_, p) => setPostsPage(p)}

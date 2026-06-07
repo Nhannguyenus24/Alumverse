@@ -52,8 +52,11 @@ const AdminArticlesPage = () => {
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
+    // Bỏ qua nếu giá trị không thay đổi (tránh double API call khi đổi channel)
+    if (debouncedSearch === backendSearch) return;
     setBackendSearch(debouncedSearch);
-  }, [debouncedSearch, setBackendSearch]);
+    setPage(0); // reset về trang đầu khi keyword thay đổi
+  }, [debouncedSearch, backendSearch, setBackendSearch, setPage]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Bài viết', active: true }]);

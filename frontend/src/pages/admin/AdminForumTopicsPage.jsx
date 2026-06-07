@@ -78,6 +78,7 @@ const AdminForumTopicsPage = () => {
 
   useEffect(() => {
     setTopicsSearch(debouncedSearch);
+    setTopicsPage?.(0); // reset về trang đầu khi keyword thay đổi
   }, [debouncedSearch, setTopicsSearch]);
 
   const topicsList = useMemo(() => {

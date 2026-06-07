@@ -467,7 +467,8 @@ const useAdminForumData = (activeOrgId) => {
     setPostsSize,
     posts,
     postsSearch,
-    setPostsSearch,
+    // setPostsSearch resets page to 0 to prevent stale-page bugs
+    setPostsSearch: (kw) => { setPostsSearch(kw); setPostsPage(0); },
     statusFilter,
     setStatusFilter,
     organizationFilter,
@@ -483,7 +484,8 @@ const useAdminForumData = (activeOrgId) => {
     // Topics
     topics,
     topicsSearch,
-    setTopicsSearch,
+    // setTopicsSearch resets page to 0 to prevent stale-page bugs
+    setTopicsSearch: (kw) => { setTopicsSearch(kw); setTopicsPage(0); },
     topicsPage,
     setTopicsPage,
     topicsSize,
