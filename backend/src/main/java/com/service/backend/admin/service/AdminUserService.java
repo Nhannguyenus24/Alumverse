@@ -260,12 +260,20 @@ public class AdminUserService {
 
     public Mono<Boolean> reviewVerificationRequest(Integer requestId, String status, String adminNote) {
         String upperStatus = status == null ? null : status.toUpperCase();
-        return adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
-                .map(count -> count > 0)
-                .then(
-                        if (status == "APPROVED") userOrganizationMemberRepository.incrementVerificationLevelByUserId(request.getTargetMemberId()));
+        return adminUserRepository.findMemberIdByRequestId(requestId)
+                .flatMap(memberId -> adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
+                        .flatMap(count -> {
+                            if (count <= 0) return Mono.just(false);
+                            
+                            if ("APPROVED".equals(upperStatus)) {
+                                return userOrganizationMemberRepository.incrementVerificationLevelByUserId(memberId)
+                                        .thenReturn(true);
+                            }
+                            return Mono.just(true);
+                        }))
                 .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, upperStatus, ok))
-                .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e));
+                .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e))
+                .defaultIfEmpty(false);
     }
 
     public Mono<UserActivityResponse> getUserActivity(Integer userId) {

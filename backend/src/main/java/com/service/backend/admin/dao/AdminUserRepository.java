@@ -177,6 +177,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
             @Param("adminNote") String adminNote);
 
     /**
+     * Get the member ID associated with a verification request
+     */
+    @Query("SELECT member_id FROM verification_requests WHERE id = :requestId")
+    Mono<Integer> findMemberIdByRequestId(@Param("requestId") Integer requestId);
+
+    /**
      * Create organization members for a list of users
      * Note: This uses a batch insert approach
      * @param organizationId The organization ID
