@@ -238,21 +238,23 @@ public class AdminUserService {
         return b.build();
     }
 
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(int page, int size) {
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(String keyword, int page, int size) {
         int offset = page * size;
+        String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
         return Mono.zip(
-                adminUserRepository.findAllVerificationRequests(size, offset).collectList(),
-                adminUserRepository.countAllVerificationRequests()
+                adminUserRepository.findAllVerificationRequests(kw, size, offset).collectList(),
+                adminUserRepository.countAllVerificationRequests(kw)
         ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
          .doOnSuccess(r -> logger.info("getAllVerificationRequests result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests", e));
     }
 
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(int page, int size) {
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(String keyword, int page, int size) {
         int offset = page * size;
+        String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
         return Mono.zip(
-                adminUserRepository.findPendingVerificationRequests(size, offset).collectList(),
-                adminUserRepository.countPendingVerificationRequests()
+                adminUserRepository.findPendingVerificationRequests(kw, size, offset).collectList(),
+                adminUserRepository.countPendingVerificationRequests(kw)
         ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
          .doOnSuccess(r -> logger.info("getPendingVerificationRequests result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching pending verification requests", e));
@@ -404,7 +406,7 @@ public class AdminUserService {
 
     public Mono<VerificationStatisticsDTO> getVerificationStatistics() {
         return Mono.zip(
-                adminUserRepository.countAllVerificationRequests(),
+                adminUserRepository.countAllVerificationRequests(null),
                 adminUserRepository.countVerificationRequestsByStatus("PENDING"),
                 adminUserRepository.countVerificationRequestsByStatus("APPROVED"),
                 adminUserRepository.countVerificationRequestsByStatus("REJECTED"),

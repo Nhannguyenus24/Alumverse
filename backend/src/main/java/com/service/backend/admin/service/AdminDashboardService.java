@@ -43,7 +43,8 @@ public class AdminDashboardService {
         Supplier<Mono<DashboardMetricsDTO>> supplier = () -> {
             Mono<Long> totalUsersMono = adminUserRepository.countAllUsers();
             Mono<Long> totalOrgsMono = adminOrganizationRepository.count();
-            Mono<Long> pendingVerifMono = adminUserRepository.countPendingVerificationRequests();
+            Mono<Long> pendingVerifMono = adminUserRepository.countPendingVerificationRequests(null);
+            Mono<Long> pendingPeerVerificationsMono = adminUserRepository.countPeerVerificationsByStatus("PENDING");
             Mono<Long> totalEventsMono = adminEventRepository.countAllEvents();
             Mono<Long> upcomingEventsMono = adminEventRepository.countUpcomingEvents(LocalDateTime.now());
             Mono<Long> ticketsSoldMono = adminEventRepository.countAllTickets();

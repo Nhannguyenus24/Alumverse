@@ -114,6 +114,7 @@ const AdminFundraisingsPage = () => {
     search,
     setSearch,
     submitSearch,
+    updateSearchQuery,
     page,
     setPage,
     rowsPerPage,
@@ -122,12 +123,16 @@ const AdminFundraisingsPage = () => {
     reload,
   } = useAdminFundraisingsData(activeOrgId);
 
-  const [searchTerm, setSearchTerm] = useState(search);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
+    if (debouncedSearch === searchQuery) return;
+    setSearchQuery(debouncedSearch);
     setSearch(debouncedSearch);
-  }, [debouncedSearch, setSearch]);
+    updateSearchQuery(debouncedSearch);
+  }, [debouncedSearch, searchQuery, setSearch, updateSearchQuery]);
 
   const [detailItem, setDetailItem] = useState(null);
   const [closeTarget, setCloseTarget] = useState(null);
@@ -510,15 +515,9 @@ const AdminFundraisingsPage = () => {
           setRowsPerPage(Number(e.target.value));
           setPage(0);
         }}
-        onSearchChange={setSearch}
-        onSearchKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            submitSearch();
-          }
-        }}
-        searchValue={search}
-        searchPlaceholder="Tìm theo tên quỹ... (Enter để tìm)"
+        onSearchChange={setSearchTerm}
+        searchValue={searchTerm}
+        searchPlaceholder="Tìm theo tên quỹ..."
         onRowClick={(f) => setDetailItem(f)}
       />
 

@@ -233,8 +233,8 @@ export const adminUserApi = {
 		return apiClient.post(`${BASE_ADMIN_USERS}/admins`, body);
 	},
 
-	getVerificationRequests(pendingOnly = false, page = 0, size = 20) {
-		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params: { pendingOnly, page, size } });
+	getVerificationRequests(pendingOnly = false, page = 0, size = 20, keyword = '') {
+		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params: { pendingOnly, page, size, keyword } });
 	},
 
 	getUserVerificationRequests(userId) {
