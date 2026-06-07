@@ -158,7 +158,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
 
     @Modifying
     @Query("INSERT INTO verification_requests (member_id, document_url, document_type, \"status\", created_at, updated_at) " +
-           "VALUES (:userId, :documentUrl, :documentType, 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+           "VALUES (:userId, :documentUrl, :documentType, 'PENDING', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> insertVerificationRequest(
             @Param("userId") Integer userId,
             @Param("documentUrl") String documentUrl,

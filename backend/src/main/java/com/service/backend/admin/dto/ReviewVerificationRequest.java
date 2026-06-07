@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReviewVerificationRequest {
     @NotBlank(message = "Status is required")
-    @Pattern(regexp = "approved|rejected", message = "Status must be 'approved' or 'rejected'")
+    @Pattern(regexp = "APPROVED|REJECTED", message = "Status must be 'APPROVED' or 'REJECTED'")
     private String status;
 
     private String adminNote;

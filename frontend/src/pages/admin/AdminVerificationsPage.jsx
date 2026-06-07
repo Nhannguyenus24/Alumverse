@@ -23,10 +23,11 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-
+import Page from "../../components/Page";
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
+import Iconify from '../../components/Iconify';
 import { getVerificationRequests, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -76,15 +77,18 @@ const AdminVerificationsPage = () => {
     setReviewDialogOpen(true);
   };
 
-  const submitReview = async (status) => {
-    if (!selectedRequest) return;
+  const submitReview = async (request, status, note = '') => {
+    if (!request) return;
     setSubLoading(true);
     try {
-      await reviewVerificationRequest(selectedRequest.id, status, adminNote);
-      enqueueSnackbar(`Đã ${status === 'approved' ? 'duyệt' : 'từ chối'} yêu cầu thành công.`, { variant: 'success' });
+      // Send uppercase status to match backend @Pattern validation
+      const finalStatus = status.toUpperCase();
+      await reviewVerificationRequest(request.id, finalStatus, note);
+      enqueueSnackbar(`Đã ${finalStatus === 'APPROVED' ? 'duyệt' : 'từ chối'} yêu cầu thành công.`, { variant: 'success' });
       setReviewDialogOpen(false);
       void fetchRequests();
     } catch (error) {
+      console.error('Review submission error:', error);
       enqueueSnackbar(error?.response?.data?.message || 'Lỗi khi xử lý yêu cầu.', { variant: 'error' });
     } finally {
       setSubLoading(false);
@@ -128,7 +132,13 @@ const AdminVerificationsPage = () => {
       id: 'documentUrl',
       label: 'Minh chứng',
       render: (val) => (
-        <Link href={val} target="_blank" rel="noopener" sx={{ fontSize: 13, fontWeight: 600 }}>
+        <Link 
+          href={val} 
+          target="_blank" 
+          rel="noopener" 
+          sx={{ fontSize: 13, fontWeight: 600 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           Xem tài liệu
         </Link>
       )
@@ -145,24 +155,33 @@ const AdminVerificationsPage = () => {
       id: 'actions',
       label: '',
       align: 'right',
-      render: (_, r) => (
-        <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-          {r.status === 'pending' && (
-            <>
-              <Tooltip title="Duyệt / Từ chối">
-                <IconButton size="small" color="primary" onClick={() => handleReview(r)}>
-                  <VisibilityOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+      render: (_, r) => {
+        const isPending = r.status?.toLowerCase() === 'pending';
+        return (
+          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+            <Tooltip title="Xem chi tiết">
+              <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleReview(r); }}>
+                <VisibilityOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            
+            {isPending && (
               <Tooltip title="Duyệt nhanh">
-                <IconButton size="small" color="success" onClick={() => { setSelectedRequest(r); submitReview('approved'); }}>
+                <IconButton 
+                  size="small" 
+                  color="success" 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    submitReview(r, 'APPROVED'); 
+                  }}
+                >
                   <CheckCircleOutlineIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-            </>
-          )}
-        </Stack>
-      )
+            )}
+          </Stack>
+        );
+      }
     }
   ];
 
@@ -185,8 +204,9 @@ const AdminVerificationsPage = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={(_, next) => setPage(next)}
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-        onSearchChange={() => {}} // Not implemented in backend for verifications yet
+        onSearchChange={() => {}} 
         searchValue=""
+        onRowClick={handleReview}
         filters={
           <TextField
             select
@@ -232,6 +252,17 @@ const AdminVerificationsPage = () => {
                 </Button>
               </Box>
 
+              {selectedRequest.aiSummary && (
+                <Box sx={{ p: 2, bgcolor: alpha(theme.palette.info.main, 0.08), borderRadius: 2, border: `1px dashed ${theme.palette.info.main}` }}>
+                  <Typography variant="caption" sx={{ color: 'info.main', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Iconify icon="fluent:bot-24-filled" /> TÓM TẮT TỪ AI
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.primary', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+                    {selectedRequest.aiSummary}
+                  </Typography>
+                </Box>
+              )}
+
               <Box>
                 <Typography variant="caption" color="text.secondary" gutterBottom display="block">
                   GHI CHÚ CỦA QUẢN TRỊ VIÊN
@@ -256,28 +287,32 @@ const AdminVerificationsPage = () => {
             color="inherit"
             sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
           >
-            Hủy
+            Đóng
           </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            disabled={submitting} 
-            startIcon={<HighlightOffIcon />}
-            onClick={() => submitReview('rejected')}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-          >
-            Từ chối
-          </Button>
-          <Button 
-            variant="contained" 
-            color="success" 
-            disabled={submitting} 
-            startIcon={<CheckCircleOutlineIcon />}
-            onClick={() => submitReview('approved')}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-          >
-            Phê duyệt
-          </Button>
+          {selectedRequest?.status === 'PENDING' && (
+            <>
+              <Button 
+                variant="contained" 
+                color="error" 
+                disabled={submitting} 
+                startIcon={<HighlightOffIcon />}
+                onClick={() => submitReview(selectedRequest, 'REJECTED', adminNote)}
+                sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+              >
+                Từ chối
+              </Button>
+              <Button 
+                variant="contained" 
+                color="success" 
+                disabled={submitting} 
+                startIcon={<CheckCircleOutlineIcon />}
+                onClick={() => submitReview(selectedRequest, 'APPROVED', adminNote)}
+                sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+              >
+                Phê duyệt
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
@@ -285,3 +320,4 @@ const AdminVerificationsPage = () => {
 };
 
 export default AdminVerificationsPage;
+Page;

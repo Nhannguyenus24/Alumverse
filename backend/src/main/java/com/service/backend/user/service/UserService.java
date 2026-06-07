@@ -252,9 +252,12 @@ public class UserService {
                         request.getOrganizationId(),
                         userId,
                 JsonUtils.toJson(request.getProgram()),
+                JsonUtils.toJson(request.getStartedYear()),
                 JsonUtils.toJson(request.getGraduatedYear()),
                 JsonUtils.toJson(request.getGraduationStatus()),
-                JsonUtils.toJson(request.getMajor()))
+                JsonUtils.toJson(request.getMajor()),
+                JsonUtils.toJson(request.getFaculty()),
+                JsonUtils.toJson(request.getDepartment()))
                 .flatMap(updatedRows -> {
                     if (updatedRows == null || updatedRows <= 0) {
                         return Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND));
@@ -303,10 +306,13 @@ public class UserService {
                 .id(member.getId())
                 .organizationId(member.getOrganizationId())
                 .userId(member.getUserId())
+                .startedYear(parseStringList(member.getStartedYear()))
                 .graduatedYear(parseIntegerList(member.getGraduatedYear()))
                 .graduationStatus(parseStringList(member.getGraduationStatus() != null ? member.getGraduationStatus() : null))
                 .program(parseStringList(member.getProgram()))
                 .major(parseStringList(member.getMajor()))
+                .faculty(parseStringList(member.getFaculty()))
+                .department(parseStringList(member.getDepartment()))
                 .verificationLevel(member.getVerificationLevel())
                 .isTrustedVerifier(member.getIsTrustedVerifier())
                 .status(member.getStatus() != null ? member.getStatus().getValue() : null)

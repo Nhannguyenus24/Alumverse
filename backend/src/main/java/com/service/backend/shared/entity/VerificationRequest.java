@@ -33,6 +33,9 @@ public class VerificationRequest {
     @Column("document_type")
     private DocumentType documentType;
 
+    @Column("ai_summary")
+    private String aiSummary;
+
     @Column("status")
     private Status status;
 

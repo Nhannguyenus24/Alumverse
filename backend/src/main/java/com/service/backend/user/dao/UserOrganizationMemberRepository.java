@@ -23,9 +23,12 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
     @Query("""
             UPDATE organization_members
             SET program = COALESCE(CAST(:program AS jsonb), program),
+                started_year = COALESCE(CAST(:startedYear AS jsonb), started_year),
                 graduated_year = COALESCE(CAST(:graduatedYear AS jsonb), graduated_year),
                 graduation_status = COALESCE(CAST(:graduationStatus AS jsonb), graduation_status),
                 major = COALESCE(CAST(:major AS jsonb), major),
+                faculty = COALESCE(CAST(:faculty AS jsonb), faculty),
+                department = COALESCE(CAST(:department AS jsonb), department),
                 updated_at = CURRENT_TIMESTAMP
             WHERE organization_id = :organizationId AND user_id = :userId
             """)
@@ -33,14 +36,17 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             @Param("organizationId") Integer organizationId,
             @Param("userId") Integer userId,
             @Param("program") String program,
+            @Param("startedYear") String startedYear,
             @Param("graduatedYear") String graduatedYear,
             @Param("graduationStatus") String graduationStatus,
-            @Param("major") String major);
+            @Param("major") String major,
+            @Param("faculty") String faculty,
+            @Param("department") String department);
 
     @Modifying
     @Query("""
             UPDATE organization_members
-            SET verification_level = verification_level + 1,
+            SET verification_level = 2,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = :userId
             """)
