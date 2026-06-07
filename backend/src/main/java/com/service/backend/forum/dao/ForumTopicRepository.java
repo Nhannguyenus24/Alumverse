@@ -33,11 +33,14 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Flux<ForumTopic> findByOrganizationId(Integer organizationId);
 
     /**
-     * Find forum topics by organization id with pagination
+     * Find forum topics by organization id with pagination and keyword
      */
-    @Query("SELECT * FROM forum_topics WHERE organization_id = :organizationId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_topics WHERE organization_id = :organizationId " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<ForumTopic> findByOrganizationIdWithPagination(
             @Param("organizationId") Integer organizationId,
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") long offset
     );
@@ -69,9 +72,14 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Mono<Long> countDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
 
     /**
-     * Count topics by organization id
+     * Count topics by organization id with keyword
      */
-    Mono<Long> countByOrganizationId(Integer organizationId);
+    @Query("SELECT COUNT(*) FROM forum_topics WHERE organization_id = :organizationId " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countByOrganizationId(
+            @Param("organizationId") Integer organizationId,
+            @Param("keyword") String keyword
+    );
 
     // ========== STATISTICS QUERIES ==========
 

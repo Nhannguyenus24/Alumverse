@@ -83,11 +83,19 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Find all forum posts with pagination (admin moderation list).
      */
-    @Query("SELECT * FROM forum_posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_posts WHERE (:keyword IS NULL OR LOWER(content) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<ForumPost> findAllPostsWithPagination(
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") long offset
     );
+
+    /**
+     * Count all forum posts with keyword
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE (:keyword IS NULL OR LOWER(content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countAllPostsWithKeyword(@Param("keyword") String keyword);
 
     /**
      * Count all banned forum posts

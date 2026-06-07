@@ -14,6 +14,12 @@ public interface AchievementR2dbcRepository extends ReactiveCrudRepository<Achie
     @Query("SELECT * FROM achievements ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
     Flux<Achievement> findAllWithPagination(int limit, int offset);
 
+    @Query("SELECT * FROM achievements WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY awarded_date DESC LIMIT :limit OFFSET :offset")
+    Flux<Achievement> searchAllByTitleWithPagination(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM achievements WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countAllSearchByTitle(String keyword);
+
     @Query("SELECT COUNT(*) FROM achievements")
     Mono<Long> countAll();
 

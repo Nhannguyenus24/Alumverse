@@ -20,6 +20,12 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
     @Query("SELECT * FROM learning_resources ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findAllWithPagination(int limit, int offset);
 
+    @Query("SELECT * FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<LearningResource> searchAllByTitleWithPagination(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countAllSearchByTitle(String keyword);
+
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND type = :type ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findByType(Integer organizationId, LearningResourceType type, int limit, int offset);
 

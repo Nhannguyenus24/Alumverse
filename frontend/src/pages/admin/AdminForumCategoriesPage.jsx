@@ -315,7 +315,15 @@ const AdminForumCategoriesPage = () => {
         />
       </Box>
 
-      <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
+      <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <Box sx={{ display: 'flex', bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark', px: 2, py: 2 }}>
+          <Typography sx={{ flex: 1, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, pl: 6 }}>
+            Tên danh mục & Mô tả
+          </Typography>
+          <Typography sx={{ width: 120, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right', pr: 1 }}>
+            Thao tác
+          </Typography>
+        </Box>
         {categoriesLoading ? (
           <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Skeleton variant="rounded" height={60} />
