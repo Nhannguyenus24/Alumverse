@@ -39,8 +39,17 @@ public class AdminArticleService {
         this.fundRepository = fundRepository;
     }
 
-    public Mono<PaginatedResponse<NewsResponse>> getAllNews(int page, int limit) {
+    public Mono<PaginatedResponse<NewsResponse>> getAllNews(String keyword, int page, int limit) {
         int offset = page * limit;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = keyword.trim();
+            return newsRepository.searchAllByTitleWithPagination(kw, limit, offset)
+                    .map(NewsResponse::from)
+                    .collectList()
+                    .zipWith(newsRepository.countAllSearchByTitle(kw))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                    .doOnSuccess(r -> log.info("searchAllNews result: {}", JsonUtils.toJson(r)));
+        }
         return newsRepository.findAllWithPagination(limit, offset)
                 .map(NewsResponse::from)
                 .collectList()
@@ -49,8 +58,17 @@ public class AdminArticleService {
                 .doOnSuccess(r -> log.info("getAllNews result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(int page, int limit) {
+    public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(String keyword, int page, int limit) {
         int offset = page * limit;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = keyword.trim();
+            return alumniPostRepository.searchAllByTitleWithPagination(kw, limit, offset)
+                    .map(AlumniPostResponse::from)
+                    .collectList()
+                    .zipWith(alumniPostRepository.countAllSearchByTitle(kw))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                    .doOnSuccess(r -> log.info("searchAllAlumniPosts result: {}", JsonUtils.toJson(r)));
+        }
         return alumniPostRepository.findAllWithPagination(limit, offset)
                 .map(AlumniPostResponse::from)
                 .collectList()
@@ -59,8 +77,17 @@ public class AdminArticleService {
                 .doOnSuccess(r -> log.info("getAllAlumniPosts result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<AchievementResponse>> getAllAchievements(int page, int limit) {
+    public Mono<PaginatedResponse<AchievementResponse>> getAllAchievements(String keyword, int page, int limit) {
         int offset = page * limit;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = keyword.trim();
+            return achievementRepository.searchAllByTitleWithPagination(kw, limit, offset)
+                    .map(AchievementResponse::from)
+                    .collectList()
+                    .zipWith(achievementRepository.countAllSearchByTitle(kw))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                    .doOnSuccess(r -> log.info("searchAllAchievements result: {}", JsonUtils.toJson(r)));
+        }
         return achievementRepository.findAllWithPagination(limit, offset)
                 .map(AchievementResponse::from)
                 .collectList()
@@ -69,8 +96,17 @@ public class AdminArticleService {
                 .doOnSuccess(r -> log.info("getAllAchievements result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<JobResponse>> getAllJobs(int page, int limit) {
+    public Mono<PaginatedResponse<JobResponse>> getAllJobs(String keyword, int page, int limit) {
         int offset = page * limit;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = keyword.trim();
+            return jobRepository.searchAllByTitleWithPagination(kw, limit, offset)
+                    .map(JobResponse::from)
+                    .collectList()
+                    .zipWith(jobRepository.countAllSearchByTitle(kw))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                    .doOnSuccess(r -> log.info("searchAllJobs result: {}", JsonUtils.toJson(r)));
+        }
         return jobRepository.findAllWithPagination(limit, offset)
                 .map(JobResponse::from)
                 .collectList()
@@ -79,8 +115,17 @@ public class AdminArticleService {
                 .doOnSuccess(r -> log.info("getAllJobs result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(int page, int limit) {
+    public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(String keyword, int page, int limit) {
         int offset = page * limit;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String kw = keyword.trim();
+            return learningResourceRepository.searchAllByTitleWithPagination(kw, limit, offset)
+                    .map(LearningResourceResponse::from)
+                    .collectList()
+                    .zipWith(learningResourceRepository.countAllSearchByTitle(kw))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
+                    .doOnSuccess(r -> log.info("searchAllLearningResources result: {}", JsonUtils.toJson(r)));
+        }
         return learningResourceRepository.findAllWithPagination(limit, offset)
                 .map(LearningResourceResponse::from)
                 .collectList()
@@ -89,12 +134,12 @@ public class AdminArticleService {
                 .doOnSuccess(r -> log.info("getAllLearningResources result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(int page, int limit) {
+    public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(String keyword, int page, int limit) {
         int offset = page * limit;
-        return fundRepository.findAllWithPagination(limit, offset)
+        return fundRepository.findFiltered(null, null, keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null, null, null, null, null, limit, offset)
                 .map(FundListItemResponse::from)
                 .collectList()
-                .zipWith(fundRepository.countAll())
+                .zipWith(fundRepository.countFiltered(null, null, keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null, null, null, null, null))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
                 .doOnSuccess(r -> log.info("getAllFunds result: {}", JsonUtils.toJson(r)));
     }

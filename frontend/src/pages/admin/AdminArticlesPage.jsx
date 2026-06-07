@@ -13,6 +13,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
+import { useDebounce } from '../../hooks/useDebounce';
 import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import { ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
@@ -44,9 +45,15 @@ const AdminArticlesPage = () => {
     articles, totalItems, loading,
     page, setPage,
     rowsPerPage, setRowsPerPage,
+    search: backendSearch, setSearch: setBackendSearch,
   } = useAdminArticles('news');
 
-  const [search, setSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState(backendSearch);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setBackendSearch(debouncedSearch);
+  }, [debouncedSearch, setBackendSearch]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Bài viết', active: true }]);
@@ -54,8 +61,6 @@ const AdminArticlesPage = () => {
 
   const openEdit = (a) => navigate(`/admin/article/${channel}/${idOf(a)}/edit`);
   const openView = (a) => navigate(`/article/${channel}/${idOf(a)}`);
-
-  const filteredArticles = articles.filter(a => titleOf(a).toLowerCase().includes(search.toLowerCase()));
 
   return (
     <AdminSectionPanel
@@ -105,7 +110,7 @@ const AdminArticlesPage = () => {
               ),
             },
           ]}
-          rows={filteredArticles}
+          rows={articles}
           totalCount={totalItems}
           page={page}
           rowsPerPage={rowsPerPage}
@@ -115,11 +120,11 @@ const AdminArticlesPage = () => {
             setPage(0);
           }}
           onSearchChange={(val) => {
-            setSearch(val);
+            setSearchTerm(val);
             setPage(0);
           }}
-          searchValue={search}
-          searchPlaceholder="Tìm tiêu đề..."
+          searchValue={searchTerm}
+          searchPlaceholder="Tìm kiếm tiêu đề..."
           onRowClick={(a) => openEdit(a)}
           filters={
             <Stack direction="row" spacing={1} alignItems="center">
@@ -130,7 +135,8 @@ const AdminArticlesPage = () => {
                 value={channel}
                 onChange={(e) => {
                   setChannel(e.target.value);
-                  setSearch('');
+                  setSearchTerm('');
+                  setBackendSearch('');
                 }}
                 sx={{ minWidth: 220 }}
               >

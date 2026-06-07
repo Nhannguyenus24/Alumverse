@@ -20,6 +20,12 @@ public interface AlumniPostR2dbcRepository extends ReactiveCrudRepository<Alumni
     @Query("SELECT * FROM alumni_posts ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<AlumniPost> findAllWithPagination(int limit, int offset);
 
+    @Query("SELECT * FROM alumni_posts WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<AlumniPost> searchAllByTitleWithPagination(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM alumni_posts WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countAllSearchByTitle(String keyword);
+
     @Query("SELECT * FROM alumni_posts WHERE organization_id = :organizationId AND is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<AlumniPost> findPublishedByOrganizationId(Integer organizationId, int limit, int offset);
 

@@ -16,6 +16,7 @@ import {
   Stack,
 } from "@mui/material";
 import { useOutletContext } from "react-router";
+import { useDebounce } from "../../hooks/useDebounce";
 import { adminOrganizationApi } from "../../utils/api";
 import { useEffect } from "react";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
@@ -49,6 +50,8 @@ const AdminForumTopicsPage = () => {
     updateTopic,
     deleteTopic,
     updateTopicLock,
+    topicsSearch,
+    setTopicsSearch,
   } = useAdminForumContext();
   const { setBreadcrumbs } = useOutletContext();
   const { setActiveOrgId } = useAdminSystemContext();
@@ -70,15 +73,19 @@ const AdminForumTopicsPage = () => {
 
   const { user } = useAuth();
 
+  const [searchTerm, setSearchTerm] = useState(topicsSearch);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setTopicsSearch(debouncedSearch);
+  }, [debouncedSearch, setTopicsSearch]);
+
   const topicsList = useMemo(() => {
     if (!topicsPaginated) return [];
-    if (Array.isArray(topicsPaginated)) return topicsPaginated;
     return topicsPaginated.content ?? [];
   }, [topicsPaginated]);
 
-  const totalElements = topicsPaginated?.totalElements ?? topicsList.length;
-
-  const [search, setSearch] = useState("");
+  const totalElements = topicsPaginated?.totalElements ?? 0;
   const [detailTopic, setDetailTopic] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [dialog, setDialog] = useState({
@@ -337,10 +344,14 @@ const AdminForumTopicsPage = () => {
           setTopicsSize?.(Number(e.target.value));
           setTopicsPage?.(0);
         }}
-        onSearchChange={(v) => setSearch(v)}
-        searchValue={search}
+        onSearchChange={(v) => {
+          setSearchTerm(v);
+          setTopicsPage?.(0);
+        }}
+        searchValue={searchTerm}
         searchPlaceholder="Tìm kiếm tiêu đề..."
         loading={topicsLoading}
+        onRowClick={(row) => window.open(`/forum/topic/${row.id}`, "_blank")}
       />
 
       {/* Detail Dialog */}

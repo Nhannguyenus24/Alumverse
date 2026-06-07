@@ -767,8 +767,10 @@ export const adminForumApi = {
 		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params: { page, size } });
 	},
 
-	getAllPosts(page = 0, size = 20) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params: { page, size } });
+	getAllPosts(keyword = '', page = 0, size = 20) {
+		const params = { page, size };
+		if (keyword) params.keyword = keyword;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params });
 	},
 
 	banPost(postId) {
@@ -819,8 +821,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/categories/${categoryId}`);
 	},
 
-	getAllTopics(organizationId, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params: { organizationId, page, size } });
+	getAllTopics(organizationId, keyword = '', page = 0, size = 10) {
+		const params = { organizationId, page, size };
+		if (keyword) params.keyword = keyword;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params });
 	},
 
 	getTopicById(topicId) {

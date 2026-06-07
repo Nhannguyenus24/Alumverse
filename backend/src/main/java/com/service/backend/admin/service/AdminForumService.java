@@ -121,12 +121,12 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
 
-    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(int page, int size) {
+    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumPostRepository.findAllPostsWithPagination(size, offset)
+        return forumPostRepository.findAllPostsWithPagination(keyword, size, offset)
                 .concatMap(this::convertToPostDTO)
                 .collectList()
-                .zipWith(forumPostRepository.count())
+                .zipWith(forumPostRepository.countAllPostsWithKeyword(keyword))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(r -> log.info("getAllPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all forum posts", error));
@@ -263,12 +263,12 @@ public class AdminForumService {
     // ========== TOPIC MANAGEMENT ==========
 
     public Mono<PaginatedResponse<com.service.backend.forum.dto.ForumTopicDTO>> getAllTopicsByOrganization(
-            Integer organizationId, int page, int size) {
+            Integer organizationId, String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumTopicRepository.findByOrganizationIdWithPagination(organizationId, size, offset)
+        return forumTopicRepository.findByOrganizationIdWithPagination(organizationId, keyword, size, offset)
                 .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
-                .zipWith(forumTopicRepository.countByOrganizationId(organizationId))
+                .zipWith(forumTopicRepository.countByOrganizationId(organizationId, keyword))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
                 .doOnSuccess(r -> log.info("getAllTopicsByOrganization result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching topics for organization ID: {}", organizationId, error));

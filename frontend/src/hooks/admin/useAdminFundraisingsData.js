@@ -39,6 +39,7 @@ const extractFunds = (payload) => {
 
 const useAdminFundraisingsData = (organizationId) => {
   const [allRows, setAllRows] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
@@ -52,20 +53,34 @@ const useAdminFundraisingsData = (organizationId) => {
     setLoading(true);
     setLoadError(false);
     try {
-      const params = { page: 0, limit: 200 };
-      if (organizationId) {
-        params.organizationId = organizationId;
+      const params = { page, limit: rowsPerPage };
+      if (organizationId) params.organizationId = organizationId;
+      if (search && search.trim() !== '') params.q = search.trim();
+      
+      // Map statusFilter to backend status ID if needed
+      if (statusFilter !== 'ALL') {
+        const statusMap = { ACTIVE: 1, PAUSED: 2, COMPLETED: 3, DRAFT: 4 };
+        if (statusMap[statusFilter]) {
+          params.statusId = statusMap[statusFilter];
+        }
       }
+
       const data = await fundApi.getFunds(params);
       const rows = extractFunds(data).map(mapFundRow);
       setAllRows(rows);
+      
+      // Calculate total count
+      const totalElements = data?.data?.totalItem || data?.totalItem || rows.length;
+      setTotalCount(totalElements > 200 ? totalElements : (data?.data?.totalElements || data?.totalElements || totalElements));
+
     } catch {
       setAllRows([]);
+      setTotalCount(0);
       setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [organizationId]);
+  }, [organizationId, page, rowsPerPage, search, statusFilter]);
 
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const reload = useCallback(() => setReloadTrigger((prev) => prev + 1), []);
@@ -73,23 +88,6 @@ const useAdminFundraisingsData = (organizationId) => {
   useEffect(() => {
     loadFunds();
   }, [loadFunds, reloadTrigger]);
-
-  const filteredRows = useMemo(() => {
-    return allRows.filter((item) => {
-      if (statusFilter !== 'ALL' && item.status !== statusFilter) return false;
-      return includesQuery(item, SEARCH_KEYS, search);
-    });
-  }, [allRows, search, statusFilter]);
-
-  const sortedRows = useMemo(
-    () => sortByField(filteredRows, sortBy, sortOrder),
-    [filteredRows, sortBy, sortOrder],
-  );
-
-  const pagedRows = useMemo(
-    () => paginateRows(sortedRows, page, rowsPerPage),
-    [sortedRows, page, rowsPerPage],
-  );
 
   const updateStatus = useCallback(async (id, status) => {
     try {
@@ -109,8 +107,8 @@ const useAdminFundraisingsData = (organizationId) => {
   }, []);
 
   return {
-    fundraisings: pagedRows,
-    filteredCount: sortedRows.length,
+    fundraisings: allRows,
+    filteredCount: totalCount,
     loading,
     loadError,
     search,

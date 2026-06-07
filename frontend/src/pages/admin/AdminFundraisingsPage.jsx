@@ -56,6 +56,7 @@ import { ADMIN_FUNDRAISING_STATUS_OPTIONS } from "../../constants/adminDefaultFu
 import useAdminFundraisingsData from "../../hooks/admin/useAdminFundraisingsData";
 import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
+import { useDebounce } from "../../hooks/useDebounce";
 
 const AdminFundraisingsPage = () => {
   const navigate = useNavigate();
@@ -128,6 +129,13 @@ const AdminFundraisingsPage = () => {
     deleteItem,
     reload,
   } = useAdminFundraisingsData(activeOrgId);
+
+  const [searchTerm, setSearchTerm] = useState(search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch, setSearch]);
 
   const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -589,10 +597,11 @@ const AdminFundraisingsPage = () => {
           setPage(0);
         }}
         onSearchChange={(v) => {
-          setSearch(v);
+          setSearchTerm(v);
           setPage(0);
         }}
-        searchValue={search}
+        searchValue={searchTerm}
+        searchPlaceholder="Tìm kiếm chiến dịch..."
         filters={Filters}
         onRowClick={(f) => setDetailItem(f)}
       />

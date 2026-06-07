@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
+import { useDebounce } from "../../hooks/useDebounce";
 import {
   Box,
   Button,
@@ -99,6 +100,13 @@ const AdminEventsPage = () => {
     updateEvent,
   } = useAdminEvents();
   const { setBreadcrumbs } = useOutletContext();
+
+  const [searchTerm, setSearchTerm] = useState(search);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setSearch(debouncedSearch);
+  }, [debouncedSearch, setSearch]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Sự kiện', active: true }]);
@@ -371,10 +379,10 @@ const AdminEventsPage = () => {
             setPage(0);
           }}
           onSearchChange={(val) => {
-            setSearch(val);
+            setSearchTerm(val);
             setPage(0);
           }}
-          searchValue={search}
+          searchValue={searchTerm}
           searchPlaceholder="Tiêu đề hoặc mô tả..."
           onRowClick={(event) => setDetailItem(event)}
           filters={

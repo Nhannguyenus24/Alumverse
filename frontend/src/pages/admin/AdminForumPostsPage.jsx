@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -13,7 +13,6 @@ import {
   Stack,
   useTheme,
   Avatar,
-  Grid,
   Button,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
@@ -21,7 +20,6 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
 import { adminOrganizationApi } from '../../utils/api';
-import { useEffect } from 'react';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -49,36 +47,41 @@ const AdminForumPostsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const {
     posts,
+    postsPage,
+    setPostsPage,
+    postsSize,
+    setPostsSize,
+    allPosts,
+    postsSearch,
+    setPostsSearch,
     statusFilter,
     setStatusFilter,
-    search,
-    setSearch,
+    organizationFilter,
+    setOrganizationFilter,
     updatePostStatus,
+    deletePostApi,
+    banPost: banPostApi,
+    unbanPost: unbanPostApi,
     bannedPosts,
     bannedPage,
     setBannedPage,
     yesterdayPosts,
     yesterdayPage,
     setYesterdayPage,
-    banPost: banPostApi,
-    unbanPost: unbanPostApi,
-    deletePostApi,
     reports,
     reportsPage,
     setReportsPage,
     reviewReport,
     updatePostVisibility,
-    organizationFilter,
-    setOrganizationFilter,
   } = useAdminForumContext();
   const { setBreadcrumbs } = useOutletContext();
-  const [searchTerm, setSearchTerm] = useState(search);
+  const [searchTerm, setSearchTerm] = useState(postsSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);
   const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Bài viết Diễn đàn', active: true }]);
-    
+
     // Fetch organizations for filter
     const fetchOrgs = async () => {
       try {
@@ -92,8 +95,8 @@ const AdminForumPostsPage = () => {
   }, [setBreadcrumbs]);
 
   useEffect(() => {
-    setSearch(debouncedSearch);
-  }, [debouncedSearch, setSearch]);
+    setPostsSearch(debouncedSearch);
+  }, [debouncedSearch, setPostsSearch]);
 
   const handleExport = () => {
     const exportData = posts.map(p => ({
@@ -138,6 +141,7 @@ const AdminForumPostsPage = () => {
   };
 
   const columns = [
+    { id: 'id', label: 'ID', width: 60 },
     {
       id: 'author',
       label: 'Tác giả',
@@ -192,7 +196,7 @@ const AdminForumPostsPage = () => {
   ];
 
   const stats = {
-    total: posts.length,
+    total: allPosts?.totalElements ?? 0,
     pending: posts.filter(p => p.moderationStatus === 'PENDING').length,
     reported: reports?.totalElements ?? 0,
     banned: bannedPosts?.totalElements ?? 0,
@@ -257,8 +261,8 @@ const AdminForumPostsPage = () => {
       <Tabs
         value={activeTab}
         onChange={(_, v) => setActiveTab(v)}
-        sx={{ 
-          mb: 3, 
+        sx={{
+          mb: 3,
           '& .MuiTab-root': { textTransform: 'none', fontWeight: 700, fontSize: 15, minWidth: 100, py: 1.5 },
           borderBottom: 1,
           borderColor: 'divider'
@@ -274,11 +278,20 @@ const AdminForumPostsPage = () => {
         <AdminDataTable
           columns={columns}
           rows={posts}
-          totalCount={posts.length}
-          page={0}
-          rowsPerPage={100}
-          onSearchChange={(v) => setSearchTerm(v)}
+          totalCount={allPosts?.totalElements || 0}
+          page={postsPage}
+          rowsPerPage={postsSize}
+          onPageChange={(_, p) => setPostsPage(p)}
+          onRowsPerPageChange={(e) => {
+            setPostsSize(Number(e.target.value));
+            setPostsPage(0);
+          }}
+          onSearchChange={(v) => {
+            setSearchTerm(v);
+            setPostsPage(0);
+          }}
           searchValue={searchTerm}
+          searchPlaceholder="Tìm kiếm nội dung bài viết..."
           filters={
             <Stack direction="row" spacing={2}>
               <TextField
@@ -349,8 +362,8 @@ const AdminForumPostsPage = () => {
               render: (_, r) => (
                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                   <Tooltip title="Ẩn bài viết">
-                    <IconButton 
-                      size="small" 
+                    <IconButton
+                      size="small"
                       color="primary"
                       onClick={async () => {
                         const ok = await reviewReport(r.id, { decision: 'APPROVED', action: 'HIDE_POST', adminUserId });
