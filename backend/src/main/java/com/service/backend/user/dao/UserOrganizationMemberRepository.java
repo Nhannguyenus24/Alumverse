@@ -40,7 +40,7 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
     @Modifying
     @Query("""
             UPDATE organization_members
-            SET verification_level = verification_level + 1,
+            SET verification_level = 2,
                 updated_at = CURRENT_TIMESTAMP
             WHERE user_id = :userId
             """)

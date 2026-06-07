@@ -134,8 +134,10 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     /**
      * Fetch all verification requests joined with user info, paginated
      */
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.\"status\", vr.admin_note, " +
-           "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
+    @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
+           "vr.document_type, vr.ai_summary, vr.\"status\", " +
+           "vr.admin_note, vr.reviewed_by_member_id, " +
+           "vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
            "ORDER BY vr.created_at DESC " +
@@ -148,8 +150,10 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     /**
      * Fetch only pending verification requests, paginated
      */
-    @Query("SELECT vr.id, vr.member_id, vr.document_url, vr.document_type, vr.\"status\", vr.admin_note, " +
-           "vr.reviewed_by_member_id, vr.created_at, vr.updated_at, u.email, u.user_name " +
+    @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
+           "vr.document_type, vr.ai_summary, vr.\"status\", " +
+           "vr.admin_note, vr.reviewed_by_member_id, " +
+           "vr.created_at, vr.updated_at, u.email, u.user_name " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
            "WHERE vr.\"status\" = 'PENDING' " +

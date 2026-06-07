@@ -6,6 +6,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.user.dao.UserOrganizationMemberRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,6 +46,7 @@ public class AdminUserService {
     private final PasswordEncoder passwordEncoder;
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository;
+    private final UserOrganizationMemberRepository userOrganizationMemberRepository;
 
     public Mono<PaginatedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
         int offset = page * size;
@@ -260,6 +262,8 @@ public class AdminUserService {
         String upperStatus = status == null ? null : status.toUpperCase();
         return adminUserRepository.reviewVerificationRequest(requestId, Status.valueOf(upperStatus).getValue(), adminNote)
                 .map(count -> count > 0)
+                .then(
+                        if (status == "APPROVED") userOrganizationMemberRepository.incrementVerificationLevelByUserId(request.getTargetMemberId()));
                 .doOnSuccess(ok -> logger.info("reviewVerificationRequest: requestId={}, status={}, success={}", requestId, upperStatus, ok))
                 .doOnError(e -> logger.error("Error reviewing verification request {}", requestId, e));
     }
