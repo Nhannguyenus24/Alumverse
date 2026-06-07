@@ -34,6 +34,7 @@ const AdminDataTable = ({
   onPageChange,
   onRowsPerPageChange,
   onSearchChange,
+  onSearchKeyDown,
   searchValue,
   searchPlaceholder = 'Tìm kiếm...',
   actions,
@@ -76,6 +77,7 @@ const AdminDataTable = ({
           <SearchBar
             value={searchValue}
             onChange={onSearchChange}
+            onKeyDown={onSearchKeyDown}
             placeholder={searchPlaceholder}
             sx={{
               maxWidth: { md: 400 },

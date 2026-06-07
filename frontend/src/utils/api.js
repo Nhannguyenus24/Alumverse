@@ -902,6 +902,21 @@ export const fundApi = {
 		return unwrap(response) ?? [];
 	},
 
+	async getFundReceivingInfos(params = {}) {
+		const response = await apiClient.get(`${BASE_FUND}/receiving-infos`, { params });
+		return unwrap(response);
+	},
+
+	async getSupportedBanks() {
+		const response = await apiClient.get(`${BASE_FUND}/banks`);
+		return unwrap(response);
+	},
+
+	async createFundReceivingInfo(payload) {
+		const response = await apiClient.post(`${BASE_FUND}/receiving-infos`, payload);
+		return unwrap(response);
+	},
+
 	async getFundDonationsByFundId(fundId, params = {}) {
 		const response = await apiClient.get(`/fund-donations/${fundId}`, { params });
 		return unwrap(response);
@@ -934,6 +949,9 @@ export const {
 	getFundStatuses,
 	getFundStatistics,
 	getActiveFundReceivingInfos,
+	getFundReceivingInfos,
+	getSupportedBanks,
+	createFundReceivingInfo,
 	getFundDonationsByFundId,
 	createFundDonation,
 	createFund,
