@@ -30,9 +30,6 @@ import {
 import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import PauseCircleOutlineIcon from "@mui/icons-material/PauseCircleOutline";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
@@ -45,14 +42,11 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
-import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminDataTable from "../../components/admin/AdminDataTable";
-import { ADMIN_FUNDRAISING_STATUS_OPTIONS } from "../../constants/adminDefaultFundraisings";
 import useAdminFundraisingsData from "../../hooks/admin/useAdminFundraisingsData";
 import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
@@ -119,14 +113,12 @@ const AdminFundraisingsPage = () => {
     filteredCount,
     search,
     setSearch,
-    statusFilter,
-    setStatusFilter,
+    submitSearch,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     updateStatus,
-    deleteItem,
     reload,
   } = useAdminFundraisingsData(activeOrgId);
 
@@ -138,7 +130,6 @@ const AdminFundraisingsPage = () => {
   }, [debouncedSearch, setSearch]);
 
   const [detailItem, setDetailItem] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
   const [closeTarget, setCloseTarget] = useState(null);
   const [isClosing, setIsClosing] = useState(false);
   const [donationsDialogOpen, setDonationsDialogOpen] = useState(false);
@@ -403,54 +394,6 @@ const AdminFundraisingsPage = () => {
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {fund.status === "DRAFT" && (
-            <Tooltip title="Kích hoạt">
-              <IconButton
-                size="small"
-                color="success"
-                onClick={() => {
-                  updateStatus(fund.id, "ACTIVE");
-                  enqueueSnackbar("Đã kích hoạt chiến dịch.", {
-                    variant: "success",
-                  });
-                }}
-              >
-                <CheckCircleOutlineIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {fund.status === "ACTIVE" && (
-            <Tooltip title="Tạm dừng">
-              <IconButton
-                size="small"
-                color="warning"
-                onClick={() => {
-                  updateStatus(fund.id, "PAUSED");
-                  enqueueSnackbar("Đã tạm dừng chiến dịch.", {
-                    variant: "warning",
-                  });
-                }}
-              >
-                <PauseCircleOutlineIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          {fund.status === "PAUSED" && (
-            <Tooltip title="Kích hoạt lại">
-              <IconButton
-                size="small"
-                color="success"
-                onClick={() => {
-                  updateStatus(fund.id, "ACTIVE");
-                  enqueueSnackbar("Đã kích hoạt lại chiến dịch.", {
-                    variant: "success",
-                  });
-                }}
-              >
-                <CheckCircleOutlineIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
           {fund.status !== "COMPLETED" && (
             <Tooltip title="Đóng quỹ">
               <IconButton
@@ -467,39 +410,10 @@ const AdminFundraisingsPage = () => {
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title="Xóa">
-            <IconButton
-              size="small"
-              color="error"
-              onClick={() => setDeleteTarget(fund)}
-            >
-              <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
         </Stack>
       ),
     },
   ];
-
-  const Filters = (
-    <TextField
-      select
-      size="small"
-      label="Trạng thái"
-      value={statusFilter}
-      onChange={(e) => {
-        setStatusFilter(e.target.value);
-        setPage(0);
-      }}
-      sx={{ minWidth: 160 }}
-    >
-      {ADMIN_FUNDRAISING_STATUS_OPTIONS.map((opt) => (
-        <MenuItem key={opt.value} value={opt.value}>
-          {opt.label}
-        </MenuItem>
-      ))}
-    </TextField>
-  );
 
   return (
     <Box>
@@ -596,13 +510,15 @@ const AdminFundraisingsPage = () => {
           setRowsPerPage(Number(e.target.value));
           setPage(0);
         }}
-        onSearchChange={(v) => {
-          setSearchTerm(v);
-          setPage(0);
+        onSearchChange={setSearch}
+        onSearchKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            submitSearch();
+          }
         }}
-        searchValue={searchTerm}
-        searchPlaceholder="Tìm kiếm chiến dịch..."
-        filters={Filters}
+        searchValue={search}
+        searchPlaceholder="Tìm theo tên quỹ... (Enter để tìm)"
         onRowClick={(f) => setDetailItem(f)}
       />
 
@@ -726,24 +642,6 @@ const AdminFundraisingsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <AdminConfirmDeleteDialog
-        open={Boolean(deleteTarget)}
-        title="Xóa chiến dịch"
-        description={
-          deleteTarget
-            ? `Bạn có chắc chắn muốn xóa chiến dịch "${deleteTarget.title}"?`
-            : ""
-        }
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={() => {
-          if (deleteTarget) {
-            deleteItem(deleteTarget.id);
-            enqueueSnackbar("Đã xóa chiến dịch.", { variant: "success" });
-          }
-          setDeleteTarget(null);
-        }}
-      />
 
       {/* Modal Đóng quỹ sớm (Admin Custom) */}
       <Dialog

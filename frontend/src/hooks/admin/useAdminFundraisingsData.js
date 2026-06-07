@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { includesQuery, paginateRows, sortByField } from '../../utils/adminTableState';
+import { useCallback, useEffect, useState } from 'react';
 import { fundApi } from '../../utils/api';
-
-const SEARCH_KEYS = ['title', 'ownerName', 'status'];
 
 const normalizeFundStatus = (value) => {
   const status = String(value || '').toUpperCase();
@@ -22,65 +19,66 @@ const mapFundRow = (fund) => ({
   updatedAt: fund.updatedAt || fund.timeUpdated || fund.createdAt || new Date().toISOString(),
 });
 
-const extractFunds = (payload) => {
-  // If payload is already the inner data object (due to unwrap in fundApi)
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.content)) return payload.content;
-  
-  // If payload still has a data wrapper (double nesting)
-  const nestedData = payload?.data;
-  if (Array.isArray(nestedData)) return nestedData;
-  if (Array.isArray(nestedData?.items)) return nestedData.items;
-  if (Array.isArray(nestedData?.content)) return nestedData.content;
+const extractPagedFunds = (payload) => {
+  const paged = payload?.data ?? payload;
+  const items = Array.isArray(paged?.items)
+    ? paged.items
+    : Array.isArray(paged)
+      ? paged
+      : [];
 
-  return [];
+  return {
+    items,
+    totalItem: Number(paged?.totalItem ?? items.length),
+  };
 };
 
 const useAdminFundraisingsData = (organizationId) => {
-  const [allRows, setAllRows] = useState([]);
+  const [fundraisings, setFundraisings] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [sortBy, setSortBy] = useState('updatedAt');
-  const [sortOrder, setSortOrder] = useState('DESC');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  useEffect(() => {
+    setPage(0);
+  }, [organizationId]);
+
+  const submitSearch = useCallback(() => {
+    setSearchQuery(search.trim());
+    setPage(0);
+  }, [search]);
 
   const loadFunds = useCallback(async () => {
     setLoading(true);
     setLoadError(false);
     try {
-      const params = { page, limit: rowsPerPage };
-      if (organizationId) params.organizationId = organizationId;
-      if (search && search.trim() !== '') params.q = search.trim();
-      
-      // Map statusFilter to backend status ID if needed
-      if (statusFilter !== 'ALL') {
-        const statusMap = { ACTIVE: 1, PAUSED: 2, COMPLETED: 3, DRAFT: 4 };
-        if (statusMap[statusFilter]) {
-          params.statusId = statusMap[statusFilter];
-        }
+      const params = {
+        page,
+        limit: rowsPerPage,
+      };
+      if (organizationId) {
+        params.organizationId = String(organizationId);
+      }
+      if (searchQuery) {
+        params.q = searchQuery;
       }
 
-      const data = await fundApi.getFunds(params);
-      const rows = extractFunds(data).map(mapFundRow);
-      setAllRows(rows);
-      
-      // Calculate total count
-      const totalElements = data?.data?.totalItem || data?.totalItem || rows.length;
-      setTotalCount(totalElements > 200 ? totalElements : (data?.data?.totalElements || data?.totalElements || totalElements));
-
+      const payload = await fundApi.getFunds(params);
+      const { items, totalItem } = extractPagedFunds(payload);
+      setFundraisings(items.map(mapFundRow));
+      setTotalCount(totalItem);
     } catch {
-      setAllRows([]);
+      setFundraisings([]);
       setTotalCount(0);
       setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [organizationId, page, rowsPerPage, search, statusFilter]);
+  }, [organizationId, page, rowsPerPage, searchQuery]);
 
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const reload = useCallback(() => setReloadTrigger((prev) => prev + 1), []);
@@ -90,41 +88,33 @@ const useAdminFundraisingsData = (organizationId) => {
   }, [loadFunds, reloadTrigger]);
 
   const updateStatus = useCallback(async (id, status) => {
-    try {
-      if (status === 'COMPLETED') {
-        await fundApi.closeFund(id);
-      }
-    } catch {
-      // keep optimistic local state
-    }
-    setAllRows((prev) =>
-      prev.map((row) => (row.id === id ? { ...row, status, updatedAt: new Date().toISOString() } : row)),
-    );
-  }, []);
+    if (status !== 'COMPLETED') return;
 
-  const deleteItem = useCallback((id) => {
-    setAllRows((prev) => prev.filter((row) => row.id !== id));
+    try {
+      await fundApi.closeFund(id);
+      setFundraisings((prev) =>
+        prev.map((row) =>
+          row.id === id ? { ...row, status: 'COMPLETED', updatedAt: new Date().toISOString() } : row,
+        ),
+      );
+    } catch {
+      throw new Error('Failed to close fund');
+    }
   }, []);
 
   return {
-    fundraisings: allRows,
+    fundraisings,
     filteredCount: totalCount,
     loading,
     loadError,
     search,
     setSearch,
-    statusFilter,
-    setStatusFilter,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
+    submitSearch,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     updateStatus,
-    deleteItem,
     reload,
   };
 };

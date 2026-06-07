@@ -34,6 +34,7 @@ const AdminDataTable = ({
   onPageChange,
   onRowsPerPageChange,
   onSearchChange,
+  onSearchKeyDown,
   searchValue,
   searchPlaceholder = 'Tìm kiếm...',
   actions,
