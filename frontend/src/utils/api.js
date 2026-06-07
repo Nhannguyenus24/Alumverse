@@ -511,6 +511,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async checkRegistered(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/check-registered`);
+		return unwrap(response);
+	},
+
 	// ── Invitations ──────────────────────────────────────────────────────────
 	async inviteUsers(eventId, payload) {
 		const response = await apiClient.post(`/events/${eventId}/invitations`, payload);

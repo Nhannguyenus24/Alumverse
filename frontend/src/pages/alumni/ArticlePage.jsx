@@ -20,6 +20,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const [joinedCount, setJoinedCount] = useState(data.stats?.[1]?.value ?? 0);
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
+  const [openJoinDialog, setOpenJoinDialog] = useState(false);
 
   useEffect(() => {
     if (channel !== "event" || !eventId) return;
@@ -27,6 +28,17 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
       .then((res) => {
         const checked = res?.isInterested ?? res?.data?.isInterested ?? false;
         setIsInterested(checked);
+      })
+      .catch(() => {});
+    eventApi.checkRegistered(eventId)
+      .then((res) => {
+        if (res?.isRegistered) setIsJoined(true);
+      })
+      .catch(() => {});
+    eventApi.getEventStatisticsById(eventId)
+      .then((res) => {
+        if (res?.interestedCount != null) setInterestedCount(res.interestedCount);
+        if (res?.registeredCount != null) setJoinedCount(res.registeredCount);
       })
       .catch(() => {});
   }, [channel, eventId]);
@@ -60,7 +72,12 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
       setJoinedCount((c) => c + 1);
       enqueueSnackbar("Đăng ký tham gia thành công! Chờ admin duyệt.", { variant: "success" });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+      if (err?.response?.status === 409) {
+        setIsJoined(true);
+        enqueueSnackbar("Bạn đã đăng ký sự kiện này rồi.", { variant: "info" });
+      } else {
+        enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+      }
     } finally {
       setLoadingJoin(false);
     }
@@ -130,10 +147,8 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         open={openJoinDialog}
         onClose={() => setOpenJoinDialog(false)}
         eventTitle={data.title}
-        questions={mockQuestions}
-        // questions={[]} // mở khoá cái này cho trường hợp không có câu hỏi
-        onConfirm={(answers) => {
-          console.log("Join answers:", answers);
+        questions={[]}
+        onConfirm={() => {
           setIsJoined(true);
           setOpenJoinDialog(false);
         }}

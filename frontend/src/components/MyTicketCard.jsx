@@ -4,31 +4,49 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material
 import { useSnackbar } from "notistack";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import { eventApi } from "../utils/api";
 
 const STATUS_CONFIG = {
-  upcoming: { label: "Chưa diễn ra", color: "tertiary" },
-  attended: { label: "Đang diễn ra", color: "warning" },
-  finished: { label: "Đã diễn ra", color: "success" },
+  PENDING:   { label: "Chờ duyệt",    color: "default",   canCancel: true  },
+  ISSUED:    { label: "Đã cấp vé",    color: "tertiary",  canCancel: true  },
+  ACTIVE:    { label: "Đang diễn ra", color: "warning",   canCancel: false },
+  USED:      { label: "Đã tham gia",  color: "success",   canCancel: false },
+  EXPIRED:   { label: "Đã hết hạn",   color: "default",   canCancel: false },
+  CANCELLED: { label: "Đã huỷ",       color: "error",     canCancel: false },
 };
 
-const MyTicketCard = ({ ticket, onViewTicket }) => {
-  const status = STATUS_CONFIG[ticket.status] || STATUS_CONFIG.upcoming;
+const formatDate = (iso) => {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("vi-VN");
+};
+
+const MyTicketCard = ({ ticket, onCancelled }) => {
+  const statusCfg = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.PENDING;
   const [openTicket, setOpenTicket] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
+  const [loading, setLoading] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
 
-  const handleConfirmCancel = () => {
-    if (!cancelReason.trim()) return;
-    console.log("Cancel ticket:", ticket.id, cancelReason);
-    setOpenCancelDialog(false);
-    setCancelReason("");
-    enqueueSnackbar("Vé của bạn đã được huỷ.", {
-        variant: "info",
-    });
+  const handleConfirmCancel = async () => {
+    if (!cancelReason.trim() || loading) return;
+    setLoading(true);
+    try {
+      await eventApi.cancelTicketByCode(ticket.ticketCode);
+      setOpenCancelDialog(false);
+      setCancelReason("");
+      enqueueSnackbar("Vé của bạn đã được huỷ.", { variant: "info" });
+      onCancelled?.();
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || "Huỷ vé thất bại.", { variant: "error" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // gọi API huỷ vé ở đây
-    };
+  const qrData = ticket.ticketCode
+    ? `ALUMVERSE-TICKET-${ticket.ticketCode}`
+    : "ALUMVERSE-TICKET-DEMO";
 
   return (
     <Box
@@ -48,30 +66,38 @@ const MyTicketCard = ({ ticket, onViewTicket }) => {
 
       {/* CONTENT */}
       <Box sx={{ flex: 1, display: "flex", justifyContent: "space-between", gap: 3, p: 3 }}>
-        
+
         {/* LEFT */}
         <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
           <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 700 }}>
-            {ticket.date}
+            {formatDate(ticket.registeredAt)}
           </Typography>
 
           <Typography variant="h4" fontWeight={700}>
-            {ticket.title}
+            {ticket.eventTitle ?? `Sự kiện #${ticket.eventId}`}
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
-            {ticket.organizer || "Ban tổ chức"}
+            {ticket.organizer ?? "Ban tổ chức"}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            {ticket.participants || 0} người tham gia · {ticket.interested || 0} người quan tâm
+            Mã vé: {ticket.ticketCode ?? "—"}
           </Typography>
         </Box>
 
         {/* RIGHT */}
-        <Box sx={{ minWidth: 180, display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <Box
+          sx={{
+            minWidth: 180,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+          }}
+        >
           <Stack spacing={1} alignItems="flex-end" sx={{ flexDirection: { xs: "column", md: "row" }, gap: 1 }}>
-            {ticket.status === "upcoming" && (
+            {statusCfg.canCancel && (
               <Button
                 variant="outlined"
                 color="error"
@@ -92,7 +118,12 @@ const MyTicketCard = ({ ticket, onViewTicket }) => {
             </Button>
           </Stack>
 
-          <Chip label={status.label} color={status.color} size="small" sx={{ fontWeight: 700, p: 2 }} />
+          <Chip
+            label={statusCfg.label}
+            color={statusCfg.color}
+            size="small"
+            sx={{ fontWeight: 700, p: 2 }}
+          />
         </Box>
       </Box>
 
@@ -104,26 +135,23 @@ const MyTicketCard = ({ ticket, onViewTicket }) => {
 
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 1 }}>
-            {/* EVENT NAME */}
             <Typography variant="h5" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 3 }}>
-              {ticket.title}
+              {ticket.eventTitle ?? `Sự kiện #${ticket.eventId}`}
             </Typography>
 
-            {/* QR SAMPLE */}
             <Box
               component="img"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=ALUMVERSE-TICKET-DEMO"
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrData)}`}
               alt="QR Code"
               sx={{ width: 220, height: 220 }}
             />
 
-            {/* PARTICIPATION CODE */}
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                 Mã tham gia
               </Typography>
               <Typography variant="h5" fontWeight={800} letterSpacing={2} color="primary.main">
-                AV-2026-8451
+                {ticket.ticketCode ?? "—"}
               </Typography>
             </Box>
           </Box>
@@ -138,9 +166,7 @@ const MyTicketCard = ({ ticket, onViewTicket }) => {
 
       {/* CANCEL TICKET DIALOG */}
       <Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>
-          Huỷ vé
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Huỷ vé</DialogTitle>
 
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -172,7 +198,7 @@ const MyTicketCard = ({ ticket, onViewTicket }) => {
           <Button
             variant="contained"
             color="error"
-            disabled={!cancelReason.trim()}
+            disabled={!cancelReason.trim() || loading}
             onClick={handleConfirmCancel}
           >
             Xác nhận huỷ vé

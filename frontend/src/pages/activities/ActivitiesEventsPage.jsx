@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import LocalActivityIcon from '@mui/icons-material/LocalActivity';
 import EventIcon from '@mui/icons-material/Event';
@@ -13,10 +15,12 @@ import SearchBar from '../../components/SearchBar';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import FeaturedArticleEventCard from '../../components/articles/FeaturedArticleEventCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 import { useAuth } from '../../hooks/useAuth';
+import { eventApi } from '../../utils/api';
 
 const SIDEBAR = [
   { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
@@ -72,13 +76,15 @@ const FILTERS = [
 
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
   const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, 9);
   const { events: pastEvents } = usePublishedEvents('past', 0, 6);
 
-  const [filters, setFilters] = useState({
-    all: true,
-  });
+  const [filters, setFilters] = useState({ all: true });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [featured, ...upcomingRest] = upcomingEvents;
   const featuredCard = featured ? toEventCardShape(featured) : null;
@@ -97,8 +103,21 @@ const ActivitiesPage = () => {
     navigate(`/activities/events/${event.id}/edit`);
   };
 
-  const handleDelete = (event) => {
-    console.log('Delete event', event.id);
+  const handleDelete = (event) => setDeleteTarget(event);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await eventApi.deleteEvent(deleteTarget.id);
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
+      enqueueSnackbar('Đã xoá sự kiện.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -228,6 +247,15 @@ const ActivitiesPage = () => {
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá sự kiện"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };

@@ -143,6 +143,11 @@ public class EventService {
                 .flatMap(memberId -> eventRepository.checkUserInterest(eventId, memberId));
     }
 
+    public Mono<Boolean> checkRegistered(Long eventId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(memberId -> eventRepository.checkUserRegistered(eventId, memberId));
+    }
+
     public Mono<PaginatedResponse<EventInterest>> getEventInterests(Long eventId, int page, int limit) {
         return eventRepository.findEventInterests(eventId, page, limit);
     }
