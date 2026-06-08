@@ -6,6 +6,7 @@ import com.service.backend.fundraising.dto.FundDonationListItemResponse;
 import com.service.backend.fundraising.service.FundService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class FundDonationsController {
 
     private final FundService fundService;
 
+    @PublicEndpoint
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<FundDonationCheckoutResponse>>> createDonation(
             @Valid @RequestBody CreateFundDonationRequest request
@@ -34,6 +36,7 @@ public class FundDonationsController {
                         .body(new ApiResponse<>("Fund donation created and payment link generated successfully", result)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{fundId}")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundDonationListItemResponse>>>> getDonations(
             @PathVariable @Min(1) Long fundId,

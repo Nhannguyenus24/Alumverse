@@ -31,7 +31,9 @@ import com.service.backend.shared.utils.JwtUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.annotations.PublicEndpoint;
 
+@PublicEndpoint
 @RestController
 @RequestMapping("/api/auth")
 @Validated
