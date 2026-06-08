@@ -10,13 +10,16 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AchievementService {
 
     private final AchievementR2dbcRepository achievementRepository;
@@ -99,8 +102,9 @@ public class AchievementService {
 
         public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
         int offset = page * limit;
-        return achievementRepository.findByStatus(status, limit, offset)
+        return achievementRepository.findDetailsByStatus(status, limit, offset)
                 .collectList()
+                .doOnNext(list -> log.info("Fetched {} achievements with status {}: {}", list.size(), status, JsonUtils.toJson(list)))
                 .zipWith(achievementRepository.countByStatus(status))
                 .map(tuple -> PaginatedResponse.of(
                         tuple.getT1().stream().map(AchievementResponse::from).toList(),

@@ -470,6 +470,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async getUpcomingEvents(params = {}) {
+		const response = await apiClient.get('/events/upcoming', { params });
+		return unwrap(response);
+	},
+
 	async updateEvent(eventId, payload) {
 		const response = await apiClient.put(`/events/${eventId}`, payload);
 		return unwrap(response);
