@@ -30,6 +30,14 @@ public class FileUploadService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
+    public String getLocalPath(String fileUrl) {
+        if (fileUrl == null || !fileUrl.startsWith(domain)) {
+            return null;
+        }
+        String fileName = fileUrl.substring(domain.length());
+        return uploadDir + fileName;
+    }
+
     private String doUpload(String base64String, String originalFileName) throws Exception {
         if (base64String == null || base64String.isBlank()) {
             throw new IllegalArgumentException("Base64 string cannot be empty");
