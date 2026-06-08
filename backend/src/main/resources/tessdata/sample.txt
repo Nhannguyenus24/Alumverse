@@ -1,0 +1,15 @@
+Bạn đừng lo lắng, đây không phải là lỗi hỏng chương trình! Thực chất đoạn code của bạn đã chạy thành công (như bạn thấy dòng [INFO] BUILD SUCCESS ở cuối).
+
+Có hai điều xảy ra trong output của bạn mà tôi xin giải thích chi tiết:
+
+1. Cái lỗi "lạ" ở cuối cùng (java.lang.InterruptedException tại Cleaner)
+Đây là một cảnh báo cực kỳ phổ biến và hoàn toàn vô hại khi dùng thư viện Tess4J (nó dùng nền tảng JNA để gọi thư viện Tesseract viết bằng C++).
+
+Nguyên nhân: Khi chương trình in xong kết quả OCR và chuẩn bị tắt (JVM tắt), tiến trình dọn dẹp bộ nhớ tự động của JNA (Cleaner) bị hệ điều hành tắt ngang, nên nó báo InterruptedException.
+Tại sao không đáng lo?: Bởi vì chữ đã được đọc và in ra xong xuôi rồi. Khi bạn đưa code này vào chạy thực tế trên Web Server (Spring Boot chạy liên tục 24/7 không tắt), thì lỗi dọn dẹp này sẽ không bao giờ xuất hiện. Bạn hoàn toàn có thể lờ nó đi!
+2. Tiếng Việt bị biến thành dấu hỏi (VD: Làm quen v?i MySQL)
+Bản thân thằng Tesseract OCR nhận diện tiếng Việt cực chuẩn và chuỗi String bên trong Java là hoàn toàn không bị lỗi.
+
+Nguyên nhân: Bạn bị lỗi font chữ do Terminal (như PowerShell / CMD trên Windows) mặc định sử dụng bảng mã cũ (CP1252 hoặc tương tự) thay vì UTF-8. Vì thế nó không in được chữ ớ hay ệ mà biến thành ?.
+Cách kiểm chứng: Nếu bạn làm một API (ví dụ Spring Boot RestController) và gọi bằng Postman hoặc gọi từ Frontend, văn bản trả về sẽ hiển thị Tiếng Việt đầy đủ không sai một dấu nào. Hoặc nếu bạn ghi kết quả đấy ra một file .txt thay vì in ra màn hình System.out.println thì cũng không bị lỗi.
+Tóm lại: Bạn đã tích hợp thành công AI nhận diện chữ vào hệ thống rồi! Chữ đã lấy ra đúng, chỉ là màn hình console hiển thị tiếng Việt chưa tốt thôi. Bước tiếp theo, bạn hoàn toàn có thể yên tâm đưa đoạn code này vào xử lý luồng Upload tài liệu của bạn (ví dụ như làm API extractTextFromMultipartFile cho Frontend gọi lên).
