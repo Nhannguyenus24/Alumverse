@@ -11,24 +11,20 @@ const MentorshipBrowseGate = ({ children }) => {
   const navigate = useOrgNavigate();
   const access = useMentorshipAccessState();
 
-  const blocked = access.isGuest || access.needsEmailVerification;
+  const blocked = !access.isLoading && (access.isGuest || access.needsEmailVerification);
 
   useEffect(() => {
-    if (!access.isLoading && blocked) {
+    if (blocked) {
       navigate(MENTORSHIP_LANDING, { replace: true });
     }
-  }, [access.isLoading, blocked, navigate]);
+  }, [blocked, navigate]);
 
-  if (access.isLoading) {
+  if (access.isLoading || blocked) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <CircularProgress />
       </Box>
     );
-  }
-
-  if (blocked) {
-    return null;
   }
 
   return children;

@@ -289,6 +289,14 @@ const OwnMentorProfile = ({ navigate }) => {
     );
   }
 
+  if (!profile) {
+    return (
+      <Alert severity="error" sx={{ maxWidth: 720, mx: 'auto', mt: 4 }}>
+        Không tải được hồ sơ. Vui lòng thử lại.
+      </Alert>
+    );
+  }
+
   const user = {
     name: profile.fullName ?? `Mentor #${profile.memberId}`,
     role:
@@ -644,6 +652,15 @@ const MentorshipProfilePage = () => {
   const mentorMemberId = isPublicView ? Number(mentorId) : null;
 
   if (isPublicView) {
+    if (!mentorMemberId || mentorMemberId <= 0) {
+      return (
+        <Page title="Không tìm thấy">
+          <Alert severity="error" sx={{ maxWidth: 720, mx: 'auto', mt: 4 }}>
+            Hồ sơ cố vấn không tồn tại.
+          </Alert>
+        </Page>
+      );
+    }
     return (
       <MentorshipBrowseGate>
         <Page title="Hồ sơ cố vấn">
