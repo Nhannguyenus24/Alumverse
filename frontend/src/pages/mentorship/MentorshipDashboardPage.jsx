@@ -5,7 +5,12 @@ import {
   Button,
   Card,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
 
@@ -22,12 +27,10 @@ import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
+import { cancelMentorSession, postponeMentorSession, reportSession } from '../../utils/api';
+import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
-const TOP_TABS = [
-  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
-  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
-  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
-];
+const TOP_TABS = MENTOR_PROFILE_TABS;
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -36,12 +39,21 @@ const PAGE_SIZE = 50;
 
 const MentorshipDashboardPage = () => {
   const navigate = useOrgNavigate();
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelPending, setCancelPending] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportCategory, setReportCategory] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportPending, setReportPending] = useState(false);
+  const [postponeTarget, setPostponeTarget] = useState(null);
+  const [postponeReason, setPostponeReason] = useState('');
+  const [postponePending, setPostponePending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
   const updateMutation = useUpdateSessionStatus();
-  const [updatingId, setUpdatingId] = useState(null);
 
   const items = useMemo(() => sessionsQuery.data?.items ?? [], [sessionsQuery.data]);
   const feedbacks = useMemo(
@@ -49,32 +61,101 @@ const MentorshipDashboardPage = () => {
     [feedbacksQuery.data],
   );
 
-  const pendingItems = useMemo(
-    () => items.filter((s) => s.status === 'Pending'),
-    [items],
-  );
   const upcomingItems = useMemo(
-    () => items.filter((s) => s.status === 'Confirmed'),
+    () => items.filter((s) => s.status === 'CONFIRMED'),
     [items],
   );
 
   const stats = useMemo(() => {
-    const completed = items.filter((s) => s.status === 'Completed').length;
+    const completed = items.filter((s) => s.status === 'COMPLETED').length;
     return [
       { value: items.length, label: 'lượt đặt' },
-      { value: pendingItems.length, label: 'chờ duyệt' },
+      { value: upcomingItems.length, label: 'sắp tới' },
       { value: completed, label: 'đã hoàn thành' },
     ];
-  }, [items, pendingItems]);
+  }, [items, upcomingItems]);
 
   const callUpdate = async (sessionId, status) => {
-    setUpdatingId(sessionId);
     try {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
+    }
+  };
+
+  const openCancelDialog = (session) => {
+    setCancelTarget(session);
+    setCancelReason('');
+  };
+
+  const closeCancelDialog = () => {
+    setCancelTarget(null);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelPending(true);
+    try {
+      await cancelMentorSession(cancelTarget.id, cancelReason.trim() || undefined);
+      sessionsQuery.refetch?.();
+      closeCancelDialog();
+    } catch {
+      /* silent */
     } finally {
-      setUpdatingId(null);
+      setCancelPending(false);
+    }
+  };
+
+  const openPostponeDialog = (session) => {
+    setPostponeTarget(session);
+    setPostponeReason('');
+  };
+
+  const closePostponeDialog = () => {
+    setPostponeTarget(null);
+    setPostponeReason('');
+  };
+
+  const handleConfirmPostpone = async () => {
+    if (!postponeTarget) return;
+    setPostponePending(true);
+    try {
+      await postponeMentorSession(postponeTarget.id, postponeReason.trim() || undefined);
+      sessionsQuery.refetch?.();
+      closePostponeDialog();
+    } catch {
+      /* silent */
+    } finally {
+      setPostponePending(false);
+    }
+  };
+
+  const openReportDialog = (session) => {
+    setReportTarget(session);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const closeReportDialog = () => {
+    setReportTarget(null);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const handleConfirmReport = async () => {
+    if (!reportTarget || !reportCategory.trim()) return;
+    setReportPending(true);
+    try {
+      await reportSession(reportTarget.id, {
+        reasonCategory: reportCategory.trim(),
+        description: reportDescription.trim() || undefined,
+      });
+      closeReportDialog();
+    } catch {
+      /* silent */
+    } finally {
+      setReportPending(false);
     }
   };
 
@@ -92,7 +173,7 @@ const MentorshipDashboardPage = () => {
   const ratingAvg = formatRating(profile?.ratingAvg);
 
   return (
-    <Page title="Cố vấn - Dashboard">
+    <Page title="Cố vấn - Tổng quan">
       <MentorshipProfileLayout
         user={user}
         cover={user.cover}
@@ -102,7 +183,7 @@ const MentorshipDashboardPage = () => {
       >
         <Stack spacing={4}>
           <Typography variant="h2" fontWeight={800} color="primary.main">
-            DASHBOARD
+            TỔNG QUAN
           </Typography>
 
           {/* STATS */}
@@ -142,25 +223,6 @@ const MentorshipDashboardPage = () => {
             <Alert severity="error">Không tải được danh sách buổi tư vấn.</Alert>
           ) : (
             <>
-              {/* YÊU CẦU CHỜ DUYỆT */}
-              <Section title={`Yêu cầu chờ duyệt (${pendingItems.length})`}>
-                {pendingItems.length === 0 ? (
-                  <EmptyState message="Chưa có yêu cầu nào đang chờ bạn duyệt." />
-                ) : (
-                  <Stack spacing={2}>
-                    {pendingItems.map((session) => (
-                      <PendingRequestCard
-                        key={session.id}
-                        session={session}
-                        onAccept={() => callUpdate(session.id, 'Confirmed')}
-                        onReject={() => callUpdate(session.id, 'Rejected')}
-                        loading={updatingId === session.id}
-                      />
-                    ))}
-                  </Stack>
-                )}
-              </Section>
-
               {/* LỊCH SẮP TỚI */}
               <Section title={`Lịch sắp tới (${upcomingItems.length})`}>
                 {upcomingItems.length === 0 ? (
@@ -168,7 +230,25 @@ const MentorshipDashboardPage = () => {
                 ) : (
                   <Stack spacing={2}>
                     {upcomingItems.map((session) => (
-                      <MentorshipBookingItem key={session.id} session={session} view="mentor" />
+                      <Box key={session.id}>
+                        <MentorshipBookingItem
+                          session={session}
+                          view="mentor"
+                          onCancel={openCancelDialog}
+                          cancelDisabled={cancelPending}
+                          onReport={openReportDialog}
+                          onPostpone={openPostponeDialog}
+                        />
+                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            onClick={() => callUpdate(session.id, 'COMPLETED')}
+                          >
+                            Đánh dấu hoàn tất
+                          </Button>
+                        </Stack>
+                      </Box>
                     ))}
                   </Stack>
                 )}
@@ -210,6 +290,101 @@ const MentorshipDashboardPage = () => {
           </Section>
         </Stack>
       </MentorshipProfileLayout>
+
+      <Dialog open={Boolean(postponeTarget)} onClose={closePostponeDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Đề nghị dời lịch</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Buổi hẹn hiện tại sẽ được mở lại để người được cố vấn chọn khung giờ khác phù hợp hơn.
+            Bạn có thể ghi chú lý do để họ nắm rõ.
+          </Typography>
+          <TextField
+            label="Lý do dời lịch (tùy chọn)"
+            value={postponeReason}
+            onChange={(e) => setPostponeReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closePostponeDialog} color="inherit">
+            Đóng
+          </Button>
+          <Button onClick={handleConfirmPostpone} variant="contained" disabled={postponePending}>
+            {postponePending ? 'Đang gửi...' : 'Gửi đề nghị'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(reportTarget)} onClose={closeReportDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Báo cáo sự cố</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Mô tả vấn đề trong buổi mentoring. Đội quản trị sẽ xem xét và xử lý.
+          </Typography>
+          <TextField
+            label="Lý do báo cáo *"
+            value={reportCategory}
+            onChange={(e) => setReportCategory(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            label="Mô tả thêm (tùy chọn)"
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReportDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmReport}
+            color="warning"
+            variant="contained"
+            disabled={reportPending || !reportCategory.trim()}
+          >
+            Gửi báo cáo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cancel dialog */}
+      <Dialog open={Boolean(cancelTarget)} onClose={closeCancelDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Hủy lịch hẹn</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Lý do hủy sẽ được thông báo đến mentee.
+          </Typography>
+          <TextField
+            label="Lý do hủy (tùy chọn)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Ví dụ: Bận công việc đột xuất..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCancelDialog} color="inherit">
+            Quay lại
+          </Button>
+          <Button
+            onClick={handleConfirmCancel}
+            color="error"
+            variant="contained"
+            disabled={cancelPending}
+          >
+            Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Page>
   );
 };
@@ -232,20 +407,6 @@ const EmptyState = ({ message }) => (
       {message}
     </Typography>
   </Card>
-);
-
-const PendingRequestCard = ({ session, onAccept, onReject, loading }) => (
-  <Box>
-    <MentorshipBookingItem session={session} view="mentor" />
-    <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 1 }}>
-      <Button variant="outlined" color="error" disabled={loading} onClick={onReject}>
-        Từ chối
-      </Button>
-      <Button variant="contained" disabled={loading} onClick={onAccept}>
-        Chấp nhận
-      </Button>
-    </Stack>
-  </Box>
 );
 
 export default MentorshipDashboardPage;

@@ -6,9 +6,10 @@ const fetchCategories = async () => {
   return res?.data?.data ?? [];
 };
 
-export const useExpertiseCategories = () =>
+export const useExpertiseCategories = ({ enabled = true } = {}) =>
   useQuery({
     queryKey: ['mentorship', 'expertise-categories'],
     queryFn: fetchCategories,
     staleTime: 5 * 60 * 1000,
+    enabled,
   });

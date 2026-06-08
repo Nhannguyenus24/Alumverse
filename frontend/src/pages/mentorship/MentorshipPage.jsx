@@ -1,206 +1,266 @@
-import { useMemo, useState } from "react";
-import { Alert, Box, Button, CircularProgress, Container, Stack, Typography } from '@mui/material';
-import { useSnackbar } from 'notistack';
-
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import SchoolIcon from '@mui/icons-material/School';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import WorkIcon from '@mui/icons-material/Work';
+import {
+  Box,
+  Button,
+  Card,
+  Container,
+  Stack,
+  Typography,
+} from '@mui/material';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
 import Page from '../../components/Page';
 import Sidebar from '../../components/Sidebar';
-import SearchBar from '../../components/SearchBar';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
-import MentorshipCard from "../../components/mentorship/MentorshipCard";
-import DynamicFilterBar from '../../components/DynamicFilterBar';
+import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
+import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-import { useBrowseMentors } from '../../hooks/mentorship/useBrowseMentors';
-import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
-import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
-import { useExpertiseTopics } from '../../hooks/mentorship/useExpertiseTopics';
-import { useExpertiseCategories } from '../../hooks/mentorship/useExpertiseCategories';
-import useAuthStore from '../../stores/authStore';
-import { formatRating } from '../../utils/numberFormatter';
+import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
+import { MENTORSHIP_SIDEBAR, MENTORSHIP_STATS } from '../../constants/mentorshipNav';
 
-
-const SIDEBAR = [
-  { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
-  { id: '/development/mentorship', label: 'Cố vấn', icon: <SchoolIcon /> },
-  { id: '/development/academics', label: 'Cơ hội học tập', icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
+const BENEFITS = [
+  {
+    icon: <GroupsOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
+    title: 'Kết nối cộng đồng',
+    description:
+      'Gặp gỡ cựu sinh viên và chuyên gia cùng khoa, sẵn sàng chia sẻ kinh nghiệm thực tế.',
+  },
+  {
+    icon: <EventAvailableOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
+    title: 'Đặt lịch linh hoạt',
+    description:
+      'Chọn khung giờ phù hợp và nhận xác nhận ngay — không cần chờ duyệt từng buổi hẹn.',
+  },
+  {
+    icon: <VerifiedUserOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
+    title: 'Tin cậy & an toàn',
+    description:
+      'Chỉ thành viên đã xác minh học vấn tại khoa mới tham gia; cố vấn được khoa phê duyệt trước khi hỗ trợ.',
+  },
 ];
 
-const STATS = [
-  { value: '500+', label: 'cố vấn' },
-  { value: '2,000+', label: 'buổi họp' },
-  { value: '100%', label: 'alumni đã xác nhận' },
+const STEPS = [
+  {
+    step: '1',
+    title: 'Xác minh tài khoản',
+    text: 'Xác thực email và thông tin học vấn tại khoa bạn đang tham gia.',
+  },
+  {
+    step: '2',
+    title: 'Tìm cố vấn phù hợp',
+    text: 'Duyệt danh sách cố vấn theo lĩnh vực, kinh nghiệm và thời gian rảnh.',
+  },
+  {
+    step: '3',
+    title: 'Đặt lịch & trao đổi',
+    text: 'Chọn slot, gửi mục tiêu buổi hẹn và bắt đầu buổi mentoring.',
+  },
 ];
 
-const PAGE_SIZE = 9;
+const StatsBanner = () => (
+  <Box
+    sx={{
+      backgroundColor: 'primary.main',
+      borderRadius: 2,
+      px: { xs: 3, md: 6 },
+      py: { xs: 3, md: 4 },
+      display: 'grid',
+      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
+      gap: 3,
+      textAlign: 'center',
+    }}
+  >
+    {MENTORSHIP_STATS.map((item) => (
+      <Box key={item.label}>
+        <Typography variant="h2" fontWeight={700} color="common.white">
+          {item.value}
+        </Typography>
+        <Typography variant="body2" color="common.white" sx={{ opacity: 0.9 }}>
+          {item.label}
+        </Typography>
+      </Box>
+    ))}
+  </Box>
+);
 
-const startOfDayIso = (dateStr) => (dateStr ? `${dateStr}T00:00:00` : '');
-const endOfDayIso = (dateStr) => (dateStr ? `${dateStr}T23:59:59` : '');
-
-const MentorshipPage = () => {
+/** Full marketing landing — guest & level 0 only */
+const GuestLandingContent = () => {
+  const access = useMentorshipAccessState();
   const navigate = useOrgNavigate();
-  const { enqueueSnackbar } = useSnackbar();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(0);
-
-  const [filters, setFilters] = useState({
-    all: true,
-    categories: [],
-    topics: [],
-    status: [],
-    availableOn: '',
-  });
-
-  const authUser = useAuthStore((state) => state.user);
-  const isLoggedIn = Boolean(authUser?.id);
-
-  const mentorProfileQuery = useMyMentorProfile();
-  const menteeProfileQuery = useMyMenteeProfile();
-  const isMentor = Boolean(mentorProfileQuery.data && !mentorProfileQuery.isError);
-  const hasMenteeProfile = Boolean(menteeProfileQuery.data && !menteeProfileQuery.isError);
-  const ownMentorMemberId = mentorProfileQuery.data?.memberId ?? null;
-
-  const categoriesQuery = useExpertiseCategories();
-  const categoryOptions = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
-
-  const topicsQuery = useExpertiseTopics();
-  const topicOptions = useMemo(() => topicsQuery.data ?? [], [topicsQuery.data]);
-
-  const MENTORSHIP_FILTERS = useMemo(
-    () => [
-      {
-        type: 'dropdown',
-        key: 'categories',
-        label: 'Lĩnh vực',
-        multiple: true,
-        options: categoryOptions,
-      },
-      {
-        type: 'dropdown',
-        key: 'topics',
-        label: 'Chủ đề',
-        multiple: true,
-        options: topicOptions,
-      },
-      {
-        type: 'date',
-        key: 'availableOn',
-        label: 'Ngày rảnh',
-      },
-      {
-        type: 'topics',
-        key: 'status',
-        options: ['Thịnh hành'],
-      },
-    ],
-    [categoryOptions, topicOptions],
-  );
-
-  const categoryFilter = useMemo(() => (filters.categories ?? [])[0] ?? '', [filters.categories]);
-  const expertiseFilter = useMemo(() => (filters.topics ?? [])[0] ?? '', [filters.topics]);
-
-  const hasAvailability = (filters.status ?? []).includes('Thịnh hành');
-  const availableFrom = startOfDayIso(filters.availableOn);
-  const availableTo = endOfDayIso(filters.availableOn);
-
-  const browseQuery = useBrowseMentors({
-    keyword: searchQuery,
-    category: categoryFilter,
-    expertise: expertiseFilter,
-    hasAvailability,
-    availableFrom,
-    availableTo,
-    page,
-    limit: PAGE_SIZE,
-  });
-  const paginated = browseQuery.data;
-  const mentors = useMemo(() => paginated?.items ?? [], [paginated]);
-
-  const goToLogin = () => navigate('/auth/login');
-
-  const handleViewProfile = (mentorMemberId) =>
-    navigate(`/development/mentorship/mentors/${mentorMemberId}`);
-
-  const handleBook = (mentorMemberId) => {
-    if (!isLoggedIn) {
-      enqueueSnackbar('Vui lòng đăng nhập để đặt lịch với cố vấn.', { variant: 'info' });
-      goToLogin();
-      return;
-    }
-    navigate(`/development/mentorship/mentors/${mentorMemberId}/book`);
-  };
-
-  const renderActionButtons = () => {
-    if (!isLoggedIn) {
-      return (
-        <Button variant="contained" onClick={goToLogin}>
-          Đăng nhập để bắt đầu
-        </Button>
-      );
-    }
-
-    const myBookingsBtn = (
-      <Button
-        variant="outlined"
-        onClick={() => navigate('/development/mentorship/my-bookings')}
-      >
-        Lịch hẹn của tôi
-      </Button>
-    );
-
-    if (mentorProfileQuery.isLoading) {
-      return myBookingsBtn;
-    }
-
-    const menteeBtn = (
-      <Button
-        variant={hasMenteeProfile ? 'outlined' : 'contained'}
-        onClick={() => navigate('/development/mentorship/mentee-signup')}
-      >
-        {hasMenteeProfile ? 'Cập nhật Mentee Profile' : 'Trở thành Mentee'}
-      </Button>
-    );
-
-    if (isMentor) {
-      return (
-        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-          {myBookingsBtn}
-          <Button
-            variant="outlined"
-            onClick={() => navigate('/development/mentorship/profile')}
-          >
-            Trang cá nhân
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => navigate('/development/mentorship/dashboard')}
-          >
-            Duyệt yêu cầu
-          </Button>
-        </Stack>
-      );
-    }
-
-    return (
-      <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
-        {myBookingsBtn}
-        {menteeBtn}
-        <Button
-          variant="contained"
-          onClick={() => navigate('/development/mentorship/signup')}
-        >
-          Trở thành cố vấn
-        </Button>
-      </Stack>
-    );
-  };
 
   return (
-    <Page title="Cố vấn">
+    <Stack spacing={4}>
+      <Box
+        sx={{
+          borderRadius: 3,
+          px: { xs: 3, md: 5 },
+          py: { xs: 4, md: 5 },
+          background: (theme) =>
+            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          color: 'common.white',
+        }}
+      >
+        <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 2 }}>
+          CHƯƠNG TRÌNH CỐ VẤN
+        </Typography>
+        <Typography
+          variant="h3"
+          fontWeight={800}
+          sx={{ mt: 1, mb: 2, fontSize: { xs: '1.75rem', md: '2.25rem' } }}
+        >
+          Kết nối kinh nghiệm — Định hướng tương lai
+        </Typography>
+        <Typography sx={{ opacity: 0.92, maxWidth: 640, mb: 3, lineHeight: 1.7 }}>
+          Chương trình cố vấn phi lợi nhuận dành cho sinh viên và cựu sinh viên HCMUS.
+          Tìm anh chị đi trước để được hỗ trợ học tập, định hướng nghề nghiệp và phát triển kỹ năng.
+        </Typography>
+        <MentorshipHubActions tone="onPrimary" />
+      </Box>
+
+      <StatsBanner />
+
+      <Box>
+        <Typography variant="h4" fontWeight={700} mb={3}>
+          Lợi ích khi tham gia
+        </Typography>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+            gap: 2,
+          }}
+        >
+          {BENEFITS.map((item) => (
+            <Card key={item.title} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
+              <Box mb={1.5}>{item.icon}</Box>
+              <Typography fontWeight={700} mb={1}>
+                {item.title}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {item.description}
+              </Typography>
+            </Card>
+          ))}
+        </Box>
+      </Box>
+
+      <Box>
+        <Typography variant="h4" fontWeight={700} mb={3}>
+          Cách hoạt động
+        </Typography>
+        <Stack spacing={2}>
+          {STEPS.map((item) => (
+            <Card
+              key={item.step}
+              sx={{
+                p: 2.5,
+                border: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                gap: 2,
+                alignItems: 'flex-start',
+              }}
+              elevation={0}
+            >
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  bgcolor: 'primary.main',
+                  color: 'common.white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                {item.step}
+              </Box>
+              <Box>
+                <Typography fontWeight={700}>{item.title}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {item.text}
+                </Typography>
+              </Box>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
+
+      <Card
+        sx={{
+          p: { xs: 3, md: 4 },
+          textAlign: 'center',
+          border: '1px dashed',
+          borderColor: 'primary.light',
+          bgcolor: (theme) => `${theme.palette.primary.main}0a`,
+        }}
+        elevation={0}
+      >
+        <Typography variant="h5" fontWeight={700} mb={1}>
+          {access.isGuest ? 'Sẵn sàng bắt đầu?' : 'Xác thực email để tiếp tục'}
+        </Typography>
+        <Typography color="text.secondary" mb={3} maxWidth={520} mx="auto">
+          {access.isGuest
+            ? 'Đăng nhập hoặc tạo tài khoản để tham gia chương trình cố vấn cùng cộng đồng khoa.'
+            : 'Bạn cần xác thực email trước khi xem danh sách cố vấn và đặt lịch.'}
+        </Typography>
+        <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
+          <MentorshipHubActions />
+          {!access.isGuest && (
+            <Button variant="outlined" onClick={() => navigate('/settings/account')}>
+              Đi tới cài đặt tài khoản
+            </Button>
+          )}
+        </Stack>
+      </Card>
+    </Stack>
+  );
+};
+
+/** Hub header + mentor list — level 1 & 2 */
+const HubContent = () => (
+  <Stack spacing={4}>
+    <Stack spacing={2}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 1.5,
+        }}
+      >
+        <Typography
+          variant="h1"
+          fontWeight={800}
+          color="primary.main"
+          sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+        >
+          CỐ VẤN
+        </Typography>
+        <MentorshipHubActions />
+      </Box>
+      <Typography color="text.secondary">
+        Chương trình cố vấn dành cho sinh viên và cựu sinh viên — kết nối với anh chị đi trước
+        để được hỗ trợ học tập, định hướng nghề nghiệp và phát triển kỹ năng.
+      </Typography>
+    </Stack>
+
+    <StatsBanner />
+    <MentorshipMentorListSection />
+  </Stack>
+);
+
+const MentorshipPage = () => {
+  const access = useMentorshipAccessState();
+  const showGuestLanding = access.isGuest || access.needsEmailVerification;
+
+  return (
+    <Page title={showGuestLanding ? 'Chương trình Cố vấn' : 'Cố vấn'}>
       <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
@@ -211,7 +271,7 @@ const MentorshipPage = () => {
             }}
           >
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={MENTORSHIP_SIDEBAR} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -220,152 +280,9 @@ const MentorshipPage = () => {
               />
             </Stack>
 
-            <Stack spacing={4} sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 } }}>
-              <Stack spacing={2}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
-                  <Typography
-                    variant="h1"
-                    fontWeight={800}
-                    color="primary.main"
-                    sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-                  >
-                    CỐ VẤN
-                  </Typography>
-
-                  {renderActionButtons()}
-                </Box>
-
-                <Typography color="text.secondary">
-                  Chương trình cố vấn hoàn toàn mới dành cho các bạn Sinh viên muốn
-                  tìm các anh chị Cựu sinh viên để hỗ trợ mình trong học tập và trong công việc.
-                </Typography>
-              </Stack>
-
-              <Box
-                sx={{
-                  backgroundColor: 'primary.main',
-                  borderRadius: 2,
-                  px: { xs: 3, md: 6 },
-                  py: { xs: 3, md: 4 },
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
-                  gap: 3,
-                  textAlign: 'center',
-                }}
-              >
-                {STATS.map((item, i) => (
-                  <Box key={i}>
-                    <Typography variant="h2" fontWeight={700} color="common.white">
-                      {item.value}
-                    </Typography>
-                    <Typography variant="body2" color="common.white" sx={{ opacity: 0.9 }}>
-                      {item.label}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-
-              <Box>
-                <Typography variant="h4" fontWeight={700} mb={2}>
-                  Tìm kiếm cố vấn
-                </Typography>
-                <SearchBar
-                  value={searchQuery}
-                  onChange={(v) => {
-                    setSearchQuery(v);
-                    setPage(0);
-                  }}
-                  placeholder="Tìm theo tên, chức danh, công ty hoặc bio..."
-                />
-              </Box>
-
-              <DynamicFilterBar
-                config={MENTORSHIP_FILTERS}
-                value={filters}
-                onChange={(next) => {
-                  setFilters(next);
-                  setPage(0);
-                }}
-              />
-
-              {browseQuery.isLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-                  <CircularProgress />
-                </Box>
-              ) : browseQuery.isError ? (
-                <Alert severity="error">Không tải được danh sách cố vấn. Vui lòng thử lại.</Alert>
-              ) : mentors.length === 0 ? (
-                <Alert severity="info">
-                  {searchQuery.trim()
-                    ? `Không tìm thấy cố vấn nào khớp "${searchQuery}".`
-                    : 'Chưa có cố vấn nào trong hệ thống.'}
-                </Alert>
-              ) : (
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: {
-                      xs: '1fr',
-                      sm: '1fr 1fr',
-                      md: '1fr 1fr 1fr',
-                    },
-                    gap: 3,
-                  }}
-                >
-                  {mentors.map((mentor) => {
-                    const isOwnCard = ownMentorMemberId === mentor.memberId;
-                    const bookDisabledReason = !isLoggedIn
-                      ? 'Đăng nhập để đặt lịch'
-                      : isOwnCard
-                        ? 'Đây là hồ sơ của bạn'
-                        : undefined;
-
-                    return (
-                      <MentorshipCard
-                        key={mentor.memberId}
-                        avatar={mentor.avatarUrl}
-                        name={mentor.fullName ?? `Mentor #${mentor.memberId}`}
-                        role={
-                          [mentor.currentJobTitle, mentor.currentCompany]
-                            .filter(Boolean)
-                            .join(' @ ') || 'Cố vấn'
-                        }
-                        rating={formatRating(mentor.ratingAvg)}
-                        reviews={mentor.totalSessions ?? 0}
-                        tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
-                        onViewProfile={() => handleViewProfile(mentor.memberId)}
-                        onBook={() => handleBook(mentor.memberId)}
-                        canBook={isLoggedIn && !isOwnCard}
-                        bookDisabledReason={bookDisabledReason}
-                      />
-                    );
-                  })}
-                </Box>
-              )}
-
-              {paginated && paginated.totalPage > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
-                  <Button
-                    variant="outlined"
-                    disabled={!paginated.hasPrevious}
-                    onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  >
-                    Trước
-                  </Button>
-                  <Typography sx={{ display: 'flex', alignItems: 'center', px: 2 }}>
-                    {paginated.currentPage + 1} / {paginated.totalPage}
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    disabled={!paginated.hasNext}
-                    onClick={() => setPage((p) => p + 1)}
-                  >
-                    Sau
-                  </Button>
-                </Box>
-              )}
-
-            </Stack>
+            <Box sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
+              {showGuestLanding ? <GuestLandingContent /> : <HubContent />}
+            </Box>
           </Box>
         </Container>
       </Container>
