@@ -131,12 +131,22 @@ public class FundService {
                 .filter(FundReceivingInfos::isActive);
     }
 
-    public Mono<PaginatedResponse<FundReceivingInfos>> getActiveFundReceivingInfos(int page, int limit) {
+    public Mono<PaginatedResponse<FundReceivingInfos>> getActiveFundReceivingInfos(int page, int limit, String keyword) {
         int offset = page * limit;
-        return fundReceivingInfosRepository.countActive()
-                .flatMap(total -> fundReceivingInfosRepository.findActivePage(limit, offset)
-                        .collectList()
-                        .map(items -> PaginatedResponse.of(items, total, page, limit)));
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        String kw = hasKeyword ? keyword.trim() : null;
+
+        Mono<Long> countMono = hasKeyword
+                ? fundReceivingInfosRepository.countActiveByKeyword(kw)
+                : fundReceivingInfosRepository.countActive();
+
+        Flux<FundReceivingInfos> dataFlux = hasKeyword
+                ? fundReceivingInfosRepository.findActivePageByKeyword(kw, limit, offset)
+                : fundReceivingInfosRepository.findActivePage(limit, offset);
+
+        return countMono.flatMap(total -> dataFlux
+                .collectList()
+                .map(items -> PaginatedResponse.of(items, total, page, limit)));
     }
 
     public Mono<SupportedBanksResponse> getSupportedBanksResponse() {

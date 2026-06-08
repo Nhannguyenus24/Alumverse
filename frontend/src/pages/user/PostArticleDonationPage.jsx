@@ -1,165 +1,518 @@
-import { useState } from 'react';
+import { useRef, useState, useMemo } from "react";
+import { z } from "zod";
+import dayjs from "dayjs";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { useSnackbar } from "notistack";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  FormControl,
+  FormHelperText,
+  Grid,
+  InputLabel,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import PublishOutlinedIcon from "@mui/icons-material/PublishOutlined";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
-import { Box, Button, Container, Typography } from '@mui/material';
+import Page from "../../components/Page";
+import CoverUpload from "../../components/CoverUpload";
+import WYSIWYG from "../../components/WYSIWYG";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useCreateFund } from "../../hooks/news/useCreateFund";
+import { useFundStatuses } from "../../hooks/news/useFundStatuses";
+import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
+import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
+import useOrganizationStore from "../../stores/organizationStore";
 
-import Page from '../../components/Page';
-import PostArticleForm from '../../components/PostArticleForm';
-import CoverUpload from '../../components/CoverUpload';
-import { useCreateFund } from '../../hooks/news/useCreateFund';
-import { fileToBase64 } from '../../utils/imageUtils';
-import { useNotification } from '../../hooks/useNotification';
-import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-
-const MOCK_ORGANIZATION_ID = 1;
-
-const toIsoDateTime = (value) => {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toISOString();
+const isEmptyHtml = (html) => {
+  if (!html || typeof html !== "string") return true;
+  const stripped = html.replace(/<[^>]*>/g, "").trim();
+  return stripped.length === 0;
 };
 
-const PostDonationPage = () => {
+const buildSchema = (minStartTime) =>
+  z
+    .object({
+      fundName: z.string().trim().min(1, "Vui lòng nhập tên quỹ quyên góp"),
+      organizer: z.string().trim().min(1, "Vui lòng nhập người tổ chức"),
+      statusId: z.coerce.number().int().positive("Vui lòng chọn trạng thái"),
+      fundReceivingInfoId: z.coerce
+        .number()
+        .int()
+        .positive("Vui lòng chọn tài khoản nhận quỹ"),
+      targetAmount: z.coerce
+        .number({ message: "Mục tiêu quyên góp phải là số" })
+        .positive("Mục tiêu quyên góp phải lớn hơn 0"),
+      descriptionShort: z
+        .string()
+        .trim()
+        .min(1, "Vui lòng nhập mô tả ngắn")
+        .max(120, "Mô tả ngắn tối đa 120 ký tự"),
+      descriptionFull: z
+        .string()
+        .refine((v) => !isEmptyHtml(v), "Vui lòng nhập mô tả đầy đủ"),
+      startDate: z
+        .custom((v) => v === null || dayjs.isDayjs(v), {
+          message: "Vui lòng chọn thời gian bắt đầu",
+        })
+        .refine((v) => v !== null, "Vui lòng chọn thời gian bắt đầu"),
+      endDate: z
+        .custom((v) => v === null || dayjs.isDayjs(v), {
+          message: "Vui lòng chọn thời gian kết thúc",
+        })
+        .refine((v) => v !== null, "Vui lòng chọn thời gian kết thúc"),
+    })
+    .superRefine(({ startDate, endDate }, ctx) => {
+      if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) return;
+      if (startDate.isBefore(minStartTime)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Thời gian bắt đầu phải từ hiện tại + 1 giờ",
+          path: ["startDate"],
+        });
+      }
+      if (endDate.isBefore(startDate.add(1, "hour"))) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 giờ",
+          path: ["endDate"],
+        });
+      }
+    });
+
+const defaultValues = {
+  fundName: "",
+  organizer: "",
+  statusId: "",
+  fundReceivingInfoId: "",
+  targetAmount: "",
+  descriptionShort: "",
+  descriptionFull: "",
+  startDate: null,
+  endDate: null,
+};
+
+export default function PostArticleDonationPage() {
   const navigate = useOrgNavigate();
-  const { showSuccess, showError } = useNotification();
+  const { enqueueSnackbar } = useSnackbar();
   const { createFund, isPending } = useCreateFund();
+  const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [topic, setTopic] = useState('');
-  const [coverFile, setCoverFile] = useState(null);
+  const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
+  const { statuses } = useFundStatuses();
+  const { infos: receivingInfos } = useFundReceivingInfos();
+
+  const pickImageFile = (file, onValid, inputEl) => {
+    const result = validateImageFile(file);
+    if (!result.valid) {
+      enqueueSnackbar(result.message, { variant: "warning" });
+      if (inputEl) inputEl.value = "";
+      return;
+    }
+    onValid(file);
+  };
+
+  // Ảnh bìa trang — decorative, không submit vào API
   const [coverPreview, setCoverPreview] = useState(null);
+  const handleCoverChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    pickImageFile(file, (f) => setCoverPreview(URL.createObjectURL(f)), e.target);
+  };
 
-  const [donationData, setDonationData] = useState({
-    donationFundName: '',
-    organizer: '',
-    statusId: '',
-    fundReceivingInfoId: '',
-    donationGoal: '',
-    reasonForDonation: '',
-    startDate: '',
-    endDate: '',
+  // Logo quỹ — upload riêng → POST /images/upload → logoUrl
+  const logoInputRef = useRef(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    pickImageFile(
+      file,
+      (f) => {
+        setLogoFile(f);
+        setLogoPreview(URL.createObjectURL(f));
+      },
+      e.target,
+    );
+  };
+  const handleLogoRemove = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  };
+
+  const minStartTime = useMemo(() => dayjs().add(1, "hour"), []);
+  const schema = useMemo(() => buildSchema(minStartTime), [minStartTime]);
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues,
+    mode: "onSubmit",
   });
 
-  const handleDonationInputChange = (e) => {
-    const { name, value } = e.target;
-    setDonationData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCoverUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setCoverFile(file);
-      setCoverPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!title.trim() || !content.trim() || content === '<p><br></p>') {
-      showError('Vui lòng nhập tiêu đề và nội dung');
-      return;
-    }
-    if (!donationData.donationFundName.trim()) {
-      showError('Vui lòng nhập tên quỹ');
-      return;
-    }
-    if (!donationData.statusId || !donationData.fundReceivingInfoId) {
-      showError('Vui lòng chọn trạng thái và tài khoản nhận');
-      return;
-    }
-    if (!donationData.donationGoal || Number(donationData.donationGoal) <= 0) {
-      showError('Vui lòng nhập mục tiêu quyên góp hợp lệ');
-      return;
-    }
-    if (!donationData.startDate || !donationData.endDate) {
-      showError('Vui lòng nhập thời gian bắt đầu và kết thúc');
+  const onSubmit = async (values) => {
+    if (!organizationId) {
+      enqueueSnackbar("Không tìm thấy tổ chức để tạo quỹ", { variant: "error" });
       return;
     }
 
     try {
-      const logoBase64 = coverFile ? await fileToBase64(coverFile) : null;
+      const logoUrl = logoFile ? await uploadLogo(logoFile) : null;
 
       const payload = {
-        name: donationData.donationFundName.trim(),
-        description_short: donationData.reasonForDonation?.trim() || title.trim(),
-        description_full: content.trim(),
-        managerName: donationData.organizer?.trim() || null,
-        logoBase64,
-        organizationId: MOCK_ORGANIZATION_ID,
-        fundReceivingInfoId: Number(donationData.fundReceivingInfoId),
-        status_id: Number(donationData.statusId),
-        targetAmount: Number(donationData.donationGoal),
-        timeStarted: toIsoDateTime(donationData.startDate),
-        timeEnded: toIsoDateTime(donationData.endDate),
+        name: values.fundName,
+        managerName: values.organizer,
+        logoUrl: logoUrl ?? null,
+        status_id: Number(values.statusId),
+        fundReceivingInfoId: Number(values.fundReceivingInfoId),
+        targetAmount: Number(values.targetAmount),
+        description_short: values.descriptionShort,
+        description_full: values.descriptionFull,
+        organizationId: Number(organizationId),
+        timeStarted: values.startDate.format("YYYY-MM-DDTHH:mm:ss"),
+        timeEnded: values.endDate.format("YYYY-MM-DDTHH:mm:ss"),
       };
 
       const result = await createFund(payload);
-      showSuccess('Thông tin quyên góp đã được đăng thành công!');
-      navigate(`/article/donation/${result.id}`);
-    } catch (err) {
-      showError(err.response?.data?.message ?? 'Đăng quyên góp thất bại');
+      enqueueSnackbar("Tạo quỹ quyên góp thành công.", { variant: "success" });
+      navigate(result?.id ? `/donations/${result.id}` : "/donations");
+    } catch (error) {
+      enqueueSnackbar(
+        error?.response?.data?.message || "Tạo quỹ thất bại",
+        { variant: "error" }
+      );
     }
   };
 
-  return (
-    <Page title="Tạo quyên góp" meta={<meta name="description" content="Tạo quyên góp - AlumVerse" />}>
-      <Box sx={{ minHeight: '100vh' }}>
-        {/* Cover Upload Section */}
-        <CoverUpload value={coverPreview} onChange={handleCoverUpload} />
+  const isBusy = isSubmitting || isPending || isUploadingLogo;
 
-        {/* Form Container */}
-        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
+  return (
+    <Page
+      title="Tạo quỹ quyên góp"
+      meta={<meta name="description" content="Tạo quỹ quyên góp" />}
+    >
+      <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
+        {/* Ảnh bìa trang — chỉ hiển thị, không liên quan logoUrl */}
+        <CoverUpload value={coverPreview} onChange={handleCoverChange} accept={IMAGE_ACCEPT} />
+
+        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 10 }}>
           <Box
             sx={{
-              width: { xs: '100%', md: '85%', lg: '75%' },
-              mx: 'auto',
+              width: { xs: "100%", md: "85%", lg: "75%" },
+              mx: "auto",
               mt: -10,
               mb: 6,
-              backgroundColor: 'background.paper',
-              borderRadius: 2,
-              boxShadow: (theme) => theme.customShadows?.z24 || 10,
-              p: { xs: 3, md: 5 },
-              border: '1px solid',
-              borderColor: 'divider',
             }}
           >
-            <Typography
-              variant="h1"
-              fontWeight={800}
-              color="primary.main"
-              sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 3, md: 5 },
+                border: "1px solid",
+                borderColor: "divider",
+              }}
             >
-              ĐĂNG BÀI
-            </Typography>
+              <Typography
+                variant="h1"
+                fontWeight={800}
+                color="primary.main"
+                sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, textAlign: "center", mb: 4 }}
+              >
+                TẠO QUỸ QUYÊN GÓP
+              </Typography>
 
-            {/* PostArticleForm with donation layout */}
-            <PostArticleForm
-              channel="donation"
-              channelLabel="Quyên góp"
-              title={title}
-              setTitle={setTitle}
-              content={content}
-              setContent={setContent}
-              topic={topic}
-              setTopic={setTopic}
-              donationData={donationData}
-              handleDonationInputChange={handleDonationInputChange}
-            />
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+                  <Grid container spacing={2.5}>
 
-            {/* Action Buttons */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
-              <Button variant="outlined" color="inherit" onClick={() => navigate(-1)} sx={{ px: 4 }}>
-                Huỷ
-              </Button>
-              <Button variant="contained" color="primary" onClick={handleSubmit} disabled={isPending} sx={{ px: 4 }}>
-                {isPending ? 'Đang đăng...' : 'Đăng quyên góp'}
-              </Button>
-            </Box>
+                    {/* Tên quỹ */}
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        label="Tên quỹ quyên góp"
+                        placeholder="Nhập tên quỹ quyên góp"
+                        {...register("fundName")}
+                        error={!!errors.fundName}
+                        helperText={errors.fundName?.message}
+                      />
+                    </Grid>
+
+                    {/* Người tổ chức */}
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        label="Người tổ chức"
+                        placeholder="Nhập tên người tổ chức"
+                        {...register("organizer")}
+                        error={!!errors.organizer}
+                        helperText={errors.organizer?.message}
+                      />
+                    </Grid>
+
+                    {/* Logo quỹ — upload ảnh riêng */}
+                    <Grid size={12}>
+                      <Typography
+                        variant="body2"
+                        sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
+                      >
+                        Logo quỹ (tuỳ chọn)
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                        Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.
+                      </Typography>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        {logoPreview && (
+                          <Box
+                            component="img"
+                            src={logoPreview}
+                            alt="Logo preview"
+                            sx={{
+                              width: 72,
+                              height: 72,
+                              borderRadius: 2,
+                              objectFit: "cover",
+                              border: "1px solid",
+                              borderColor: "divider",
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <input
+                            ref={logoInputRef}
+                            type="file"
+                            accept={IMAGE_ACCEPT}
+                            style={{ display: "none" }}
+                            onChange={handleLogoChange}
+                          />
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => logoInputRef.current?.click()}
+                            sx={{ textTransform: "none" }}
+                          >
+                            {logoPreview ? "Đổi ảnh logo" : "Chọn ảnh logo"}
+                          </Button>
+                          {logoPreview && (
+                            <Button
+                              variant="text"
+                              size="small"
+                              color="error"
+                              onClick={handleLogoRemove}
+                              sx={{ textTransform: "none" }}
+                            >
+                              Xoá
+                            </Button>
+                          )}
+                        </Stack>
+                      </Box>
+                    </Grid>
+
+                    {/* Trạng thái + Tài khoản nhận */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <FormControl fullWidth error={!!errors.statusId}>
+                        <InputLabel id="status-label">Trạng thái</InputLabel>
+                        <Controller
+                          name="statusId"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                              labelId="status-label"
+                              label="Trạng thái"
+                              MenuProps={{ disableScrollLock: true }}
+                            >
+                              {statuses.map((s) => (
+                                <MenuItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          )}
+                        />
+                        <FormHelperText>{errors.statusId?.message}</FormHelperText>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
+                        <InputLabel id="receiving-label">Tài khoản nhận quỹ</InputLabel>
+                        <Controller
+                          name="fundReceivingInfoId"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              {...field}
+                              onChange={(e) => field.onChange(Number(e.target.value))}
+                              labelId="receiving-label"
+                              label="Tài khoản nhận quỹ"
+                              MenuProps={{ disableScrollLock: true }}
+                            >
+                              {receivingInfos.map((info) => (
+                                <MenuItem key={info.id} value={info.id}>
+                                  {`${info.bankName} - ${info.accountName} - ${info.accountNumber}`}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          )}
+                        />
+                        <FormHelperText>{errors.fundReceivingInfoId?.message}</FormHelperText>
+                      </FormControl>
+                    </Grid>
+
+                    {/* Số tiền mục tiêu */}
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label="Số tiền mục tiêu để quyên góp (VNĐ)"
+                        placeholder="Nhập số tiền mục tiêu"
+                        {...register("targetAmount")}
+                        error={!!errors.targetAmount}
+                        helperText={errors.targetAmount?.message}
+                      />
+                    </Grid>
+
+                    {/* Thời gian bắt đầu + kết thúc */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="startDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DateTimePicker
+                            label="Thời gian bắt đầu"
+                            value={field.value}
+                            onChange={field.onChange}
+                            views={["year", "month", "day", "hours", "minutes", "seconds"]}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                error: !!errors.startDate,
+                                helperText: errors.startDate?.message,
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Controller
+                        name="endDate"
+                        control={control}
+                        render={({ field }) => (
+                          <DateTimePicker
+                            label="Thời gian kết thúc"
+                            value={field.value}
+                            onChange={field.onChange}
+                            views={["year", "month", "day", "hours", "minutes", "seconds"]}
+                            slotProps={{
+                              textField: {
+                                fullWidth: true,
+                                error: !!errors.endDate,
+                                helperText: errors.endDate?.message,
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+
+                    {/* Mô tả ngắn */}
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        label="Mô tả ngắn (tối đa 120 ký tự)"
+                        placeholder="Nhập mô tả ngắn"
+                        inputProps={{ maxLength: 120 }}
+                        {...register("descriptionShort")}
+                        error={!!errors.descriptionShort}
+                        helperText={errors.descriptionShort?.message}
+                      />
+                    </Grid>
+
+                    {/* Mô tả đầy đủ — WYSIWYG */}
+                    <Grid size={12}>
+                      <Typography
+                        variant="body2"
+                        sx={{ mb: 1, fontWeight: 600, color: "text.secondary" }}
+                      >
+                        Mô tả đầy đủ
+                      </Typography>
+                      <Controller
+                        name="descriptionFull"
+                        control={control}
+                        render={({ field }) => (
+                          <WYSIWYG
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Nhập mô tả chi tiết về quỹ quyên góp..."
+                            height={320}
+                          />
+                        )}
+                      />
+                      {errors.descriptionFull && (
+                        <Typography
+                          variant="caption"
+                          color="error"
+                          sx={{ mt: 0.5, display: "block" }}
+                        >
+                          {errors.descriptionFull.message}
+                        </Typography>
+                      )}
+                    </Grid>
+
+                  </Grid>
+
+                  <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 4 }}>
+                    <Button
+                      variant="outlined"
+                      startIcon={<CloseOutlinedIcon />}
+                      onClick={() => navigate(-1)}
+                      disabled={isBusy}
+                      sx={{ textTransform: "none", px: 3 }}
+                    >
+                      Huỷ
+                    </Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      startIcon={isUploadingLogo ? <CircularProgress size={16} color="inherit" /> : <PublishOutlinedIcon />}
+                      disabled={isBusy}
+                      sx={{ textTransform: "none", px: 3 }}
+                    >
+                      {isUploadingLogo
+                        ? "Đang tải ảnh..."
+                        : isBusy
+                        ? "Đang đăng..."
+                        : "Đăng quyên góp"}
+                    </Button>
+                  </Stack>
+                </Box>
+              </LocalizationProvider>
+            </Paper>
           </Box>
         </Container>
       </Box>
     </Page>
   );
-};
-
-export default PostDonationPage;
+}

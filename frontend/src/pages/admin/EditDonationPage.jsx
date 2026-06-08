@@ -624,7 +624,7 @@ export default function EditDonationPage() {
                     </Grid>
 
                     <Stack direction="row" justifyContent="flex-end" spacing={1.2} sx={{ mt: 2.5 }}>
-                      <Button variant="outlined" onClick={() => navigate(`/donations/${id}`)} sx={{ textTransform: "none", px: 2.6 }}>
+                      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ textTransform: "none", px: 2.6 }}>
                         Hủy
                       </Button>
                       <Button type="submit" variant="contained" disabled={isSubmitting || disableAllFields} sx={{ textTransform: "none", px: 2.6 }}>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Button } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 
-const CoverUpload = ({ value, onChange }) => {
+const CoverUpload = ({ value, onChange, accept = "image/*" }) => {
   return (
     <Box
       sx={{
@@ -38,7 +38,7 @@ const CoverUpload = ({ value, onChange }) => {
         <input 
           hidden 
           type="file" 
-          accept="image/*" 
+          accept={accept}
           onChange={(e) => {
             onChange(e);
             e.target.value = null;

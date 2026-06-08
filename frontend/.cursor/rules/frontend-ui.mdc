@@ -1,0 +1,63 @@
+---
+name: frontend-ui
+description: Frontend rules for React/MUI code in this repo
+alwaysApply: true
+---
+
+# Frontend UI Rules
+
+## General Principles
+- Prioritize readability, maintainability, and consistency.
+- New UI should match the existing project tone, visual language.
+- Prefer simple solutions first. Do not introduce abstraction too early.
+- Default to MUI for UI implementation to ensure consistency.
+- Still allow plain React/HTML/CSS when it is clearly simpler or more appropriate.
+
+## Color and Theme Usage
+- Do not hardcode color hex values directly in JSX or component styles when the value is used more than once.
+- Prefer theme tokens, shared constants, or centralized variables for colors, spacing, and common sizes.
+- If a value looks reusable, extract it into a constant or theme token.
+- Avoid scattering repeated magic numbers across multiple files.
+
+## Component Structure
+- A component file should stay focused on one responsibility.
+- If a file starts becoming long, split it into smaller components, hooks, or utility files.
+- Break components only when it improves clarity, reusability, or testability.
+- Do not over-split. Avoid creating many tiny files if it makes the flow harder to understand.
+
+## Controlled Refactoring
+- When refactoring, preserve behavior first.
+- Do not change logic and structure at the same time unless necessary.
+- Keep the existing API and props stable unless a change is clearly needed.
+- If a component is split, ensure prop flow, state flow, and side effects remain correct.
+- Prefer incremental refactors over large rewrites.
+
+## MUI Usage (Priority First)
+- Prefer MUI components as the default choice for building UI.
+- Use MUI when it provides ready-made structure, accessibility, or consistent styling.
+- Only fall back to plain JSX/HTML/CSS when:
+  - MUI does not support the use case well, or
+  - Using MUI would introduce unnecessary complexity.
+- Do not force everything into MUI if a simpler native solution is clearly better.
+- Keep styling consistent between MUI and custom components.
+
+## Styling
+- Prefer reusable style objects, theme overrides, styled components, or shared constants over inline duplication.
+- Keep styles close to where they are used when that improves clarity.
+- Avoid deeply nested or overly clever styling solutions.
+- Make responsive behavior explicit and easy to read.
+
+## State and Logic
+- Keep business logic out of presentational components when possible.
+- Use hooks or helper functions for reusable logic.
+- Do not duplicate data transformation logic across components.
+- Prefer clear names for state, handlers, and computed values.
+
+## Before Making Changes
+- Inspect the relevant existing files before proposing modifications.
+- Match the current project structure and style.
+- Keep changes minimal unless a broader refactor is clearly beneficial.
+
+## Output Quality
+- Avoid introducing unnecessary dependencies.
+- If a change touches multiple files, keep the change set small and coherent.
