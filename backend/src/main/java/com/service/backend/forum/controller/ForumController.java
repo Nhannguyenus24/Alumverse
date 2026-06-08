@@ -112,18 +112,20 @@ public class ForumController {
     }
 
     /**
-     * Find forum topics by category id with pagination
+     * Find forum topics by category id with pagination and keyword
      */
     @PublicEndpoint
     @GetMapping("/topic")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumTopicDTO>>>> getTopicsByCategoryId(
             @Parameter(example = "2")
             @RequestParam Integer categoryId,
+            @Parameter(description = "Keyword to search topics by title")
+            @RequestParam(required = false) String keyword,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") int size) {
-        return forumService.findTopicsByCategoryId(categoryId, page, size)
+        return forumService.findTopicsByCategoryId(categoryId, keyword, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Topics retrieved successfully", response)));
     }
 

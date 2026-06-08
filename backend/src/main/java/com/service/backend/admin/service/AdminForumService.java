@@ -419,7 +419,7 @@ public class AdminForumService {
 
         Mono<ForumStatisticsDTO.CategorySummary> popularCategoryMono = forumTopicRepository.findCategoryIdWithMostPosts()
                 .flatMap(categoryId -> forumCategoryRepository.findById(categoryId)
-                        .zipWith(forumTopicRepository.countByCategoryId(categoryId))
+                        .zipWith(forumTopicRepository.countByCategoryId(categoryId, null))
                         .zipWith(forumPostRepository.countPostsByCategoryId(categoryId))
                         .map(tuple -> ForumStatisticsDTO.CategorySummary.builder()
                                 .categoryId(tuple.getT1().getT1().getId())

@@ -20,7 +20,7 @@ export const useForumCategoryLogic = (organizationId) => {
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [categoryIdParam]);
 
-  const { topics, isPending: topicsPending, isError } = useForumTopics(categoryId, 0, 50);
+  const { topics, isPending: topicsPending, isError } = useForumTopics(categoryId, '', 0, 50);
 
   useEffect(() => {
     if (categoryId != null) {

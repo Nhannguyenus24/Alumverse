@@ -132,14 +132,14 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topic by title: {}", title, error));
     }
 
-    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, int page, int size) {
+    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumTopicRepository.findByCategoryIdWithPagination(categoryId, size, offset)
+        return forumTopicRepository.findByCategoryIdWithPagination(categoryId, keyword, size, offset)
                 .concatMap(this::convertToTopicDTOWithPostCount)
                 .collectList()
-                .zipWith(forumTopicRepository.countByCategoryId(categoryId))
+                .zipWith(forumTopicRepository.countByCategoryId(categoryId, keyword))
                 .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
-                .doOnSuccess(result -> log.info("findTopicsByCategoryId result: {}", JsonUtils.toJson(result)))
+                .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} result: {}", keyword,  JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
@@ -417,7 +417,7 @@ public class ForumService {
             return Mono.just(base);
         }
 
-        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId()).defaultIfEmpty(0L);
+        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId(), null).defaultIfEmpty(0L);
         Mono<Long> participantCountMono = forumTopicRepository
                 .countDistinctParticipantsByCategoryId(category.getId())
                 .defaultIfEmpty(0L);
