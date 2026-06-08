@@ -674,14 +674,6 @@ export const router = createBrowserRouter([
             element: <DonationPage />,
           },
           {
-            path: "create",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <CreateDonationPage />
-              </ProtectedRoute>
-            ),
-          },
-          {
             path: ":id/edit",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
