@@ -23,4 +23,29 @@ public interface FundReceivingInfosR2dbcRepository extends R2dbcRepository<FundR
 
     @Query("SELECT COUNT(*) FROM fund_receiving_infos WHERE is_active = true")
     Mono<Long> countActive();
+
+    @Query("""
+            SELECT id, account_number, account_name, bank_name, is_active
+            FROM fund_receiving_infos
+            WHERE is_active = true
+              AND (
+                LOWER(account_number) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(account_name)  LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(bank_name)     LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            ORDER BY id DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<FundReceivingInfos> findActivePageByKeyword(String keyword, int limit, int offset);
+
+    @Query("""
+            SELECT COUNT(*) FROM fund_receiving_infos
+            WHERE is_active = true
+              AND (
+                LOWER(account_number) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(account_name)  LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(bank_name)     LIKE LOWER(CONCAT('%', :keyword, '%'))
+              )
+            """)
+    Mono<Long> countActiveByKeyword(String keyword);
 }

@@ -32,8 +32,9 @@ public class FundReceivingInfosController {
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundReceivingInfos>>>> getAllActivePaged(
             @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return fundService.getActiveFundReceivingInfos(page, limit)
+            @RequestParam(defaultValue = "10") @Min(1) int limit,
+            @RequestParam(required = false) String q) {
+        return fundService.getActiveFundReceivingInfos(page, limit, q)
                 .map(response -> ResponseEntity.ok(
                         new ApiResponse<>("Active fund receiving infos retrieved successfully", response)));
     }
