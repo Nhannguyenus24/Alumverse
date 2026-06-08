@@ -6,6 +6,7 @@ import com.service.backend.article.dto.AlumniPostResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.service.AlumniPostService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -48,6 +49,7 @@ public class AlumniPostController {
                         .ok(new ApiResponse<>("Alumni post deleted successfully", null)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getById(@PathVariable @Min(1) Integer id) {
         return alumniPostService.getById(id)
@@ -55,6 +57,7 @@ public class AlumniPostController {
                         .ok(new ApiResponse<>("Alumni post retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/slug/{slug}")
     public Mono<ResponseEntity<ApiResponse<AlumniPostResponse>>> getBySlug(@PathVariable @NotBlank String slug) {
         return alumniPostService.getBySlug(slug)
@@ -62,6 +65,7 @@ public class AlumniPostController {
                         .ok(new ApiResponse<>("Alumni post retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -71,6 +75,7 @@ public class AlumniPostController {
                         .ok(new ApiResponse<>("Alumni posts retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/published")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getPublished(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -80,6 +85,7 @@ public class AlumniPostController {
                         .ok(new ApiResponse<>("Published alumni posts retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> search(
             @RequestParam @NotBlank String keyword,

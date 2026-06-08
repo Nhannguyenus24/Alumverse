@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.shared.dto.DataWithWarnings;
+import com.service.backend.shared.annotations.PublicEndpoint;
 
+@PublicEndpoint
 @RestController
 @RequestMapping("/api/funds")
 @RequiredArgsConstructor

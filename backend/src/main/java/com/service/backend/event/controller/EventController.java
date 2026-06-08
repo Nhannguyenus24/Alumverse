@@ -5,6 +5,7 @@ import com.service.backend.event.dto.*;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.event.service.EventService;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -48,6 +49,7 @@ public class EventController {
                 .map(d -> ResponseEntity.ok(new ApiResponse<>("Event deleted successfully", (Void) null)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{eventId}")
     public Mono<ResponseEntity<ApiResponse<Event>>> getEventById(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId) {
@@ -55,6 +57,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Event retrieved successfully", e)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getEvents(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -77,6 +80,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Event unpublished successfully", e)));
     }
 
+    @PublicEndpoint
     @GetMapping("/upcoming")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getUpcomingEvents(
             @RequestParam Long organizationId,
@@ -86,6 +90,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Upcoming events retrieved successfully", e)));
     }
 
+    @PublicEndpoint
     @GetMapping("/past")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getPastEvents(
             @RequestParam Long organizationId,
@@ -95,6 +100,7 @@ public class EventController {
                 .map(e -> ResponseEntity.ok(new ApiResponse<>("Past events retrieved successfully", e)));
     }
 
+    @PublicEndpoint
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> searchEvents(
             @RequestParam Long organizationId,
