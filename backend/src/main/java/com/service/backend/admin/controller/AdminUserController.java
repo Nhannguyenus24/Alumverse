@@ -186,12 +186,13 @@ public class AdminUserController {
      */
     @GetMapping("/verification-requests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getVerificationRequests(
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean pendingOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
         Mono<PaginatedResponse<VerificationRequestResponse>> source = pendingOnly
-                ? adminUserService.getPendingVerificationRequests(page, size)
-                : adminUserService.getAllVerificationRequests(page, size);
+                ? adminUserService.getPendingVerificationRequests(keyword, page, size)
+                : adminUserService.getAllVerificationRequests(keyword, page, size);
         return source
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Verification requests fetched successfully", data)));
@@ -289,10 +290,11 @@ public class AdminUserController {
 
     @GetMapping("/alumni/verification-requests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getAlumniVerificationRequests(
+            @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "true") boolean pendingOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return getVerificationRequests(pendingOnly, page, size);
+        return getVerificationRequests(keyword, pendingOnly, page, size);
     }
 
     @PutMapping("/alumni/verification-requests/{requestId}")

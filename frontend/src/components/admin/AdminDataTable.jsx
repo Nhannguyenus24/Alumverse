@@ -74,15 +74,19 @@ const AdminDataTable = ({
           justifyContent="space-between"
         >
           {/* Search */}
-          <SearchBar
-            value={searchValue}
-            onChange={onSearchChange}
-            onKeyDown={onSearchKeyDown}
-            placeholder={searchPlaceholder}
-            sx={{
-              maxWidth: { md: 400 },
-            }}
-          />
+          {onSearchChange ? (
+            <SearchBar
+              value={searchValue}
+              onChange={onSearchChange}
+              onKeyDown={onSearchKeyDown}
+              placeholder={searchPlaceholder}
+              sx={{
+                maxWidth: { md: 400 },
+              }}
+            />
+          ) : (
+            <Box sx={{ flex: 1 }} />
+          )}
 
           {/* Actions & Filters */}
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>

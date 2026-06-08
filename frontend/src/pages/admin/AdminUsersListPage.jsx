@@ -14,9 +14,7 @@ import {
   alpha,
   useTheme,
   Avatar,
-  Grid,
 } from '@mui/material';
-import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
@@ -25,7 +23,6 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
-import PasswordOutlinedIcon from '@mui/icons-material/PasswordOutlined';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import PersonAddOutlinedIcon from '@mui/icons-material/PersonAddOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
@@ -40,15 +37,12 @@ import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetri
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
 import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 import { useAdminUsersContext } from '../../stores/AdminStore';
-import { useAuth } from '../../hooks/useAuth';
-import { resetPasswordByAdmin, adminOrganizationApi } from '../../utils/api';
+import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUsersListPage = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
-  const { enqueueSnackbar } = useSnackbar();
   const {
     users,
     filteredCount,
@@ -126,8 +120,8 @@ const AdminUsersListPage = () => {
       label: 'Người dùng',
       render: (_, u) => (
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <Avatar 
-            src={u.avatarUrl} 
+          <Avatar
+            src={u.avatarUrl}
             sx={{ width: 32, height: 32, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontSize: 13, fontWeight: 700 }}
           >
             {(u.fullName || u.userName || '?')[0].toUpperCase()}
@@ -185,7 +179,7 @@ const AdminUsersListPage = () => {
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          
+
           {u.status === 'BANNED' ? (
             <Tooltip title="Bỏ chặn">
               <IconButton size="small" color="success" onClick={() => unbanUser(u.id)}>
@@ -203,27 +197,6 @@ const AdminUsersListPage = () => {
           <Tooltip title="Xóa">
             <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
               <DeleteOutlineIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Đặt lại mật khẩu">
-            <IconButton
-              size="small"
-              onClick={() => {
-                const nextPass = window.prompt(`Mật khẩu mới cho người dùng #${u.id}:`, '');
-                if (!nextPass || nextPass.length < 8) {
-                  if (nextPass) enqueueSnackbar('Mật khẩu phải từ 8 ký tự.', { variant: 'warning' });
-                  return;
-                }
-                resetPasswordByAdmin(u.id, {
-                  newPassword: nextPass,
-                  adminUserId: Number(currentUser?.id),
-                  reason: 'Admin reset from list',
-                }).then(() => enqueueSnackbar('Đã đặt lại mật khẩu.', { variant: 'success' }))
-                  .catch(err => enqueueSnackbar(err?.response?.data?.message || 'Lỗi đặt lại mật khẩu.', { variant: 'error' }));
-              }}
-            >
-              <PasswordOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Stack>
@@ -263,7 +236,7 @@ const AdminUsersListPage = () => {
     total: filteredCount,
     active: users.filter(u => u.status === 'ACTIVE').length,
     banned: users.filter(u => u.status === 'BANNED').length,
-    newToday: users.filter(u => new Date(u.createdAt) > new Date(now - 24*60*60*1000)).length,
+    newToday: users.filter(u => new Date(u.createdAt) > new Date(now - 24 * 60 * 60 * 1000)).length,
   };
 
   return (

@@ -98,9 +98,6 @@ const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFu
 const AdminFundReceivingInfosPage = Loadable(lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
 
-const CreateDonationPage = Loadable(
-  lazy(() => import("../pages/admin/CreateDonationPage")),
-);
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
 );
@@ -422,7 +419,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "post/donation",
-        element: <PostArticleDonationPage />,
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <PostArticleDonationPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "article/:channel/:id",
@@ -689,14 +690,6 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <DonationPage />,
-          },
-          {
-            path: "create",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <CreateDonationPage />
-              </ProtectedRoute>
-            ),
           },
           {
             path: ":id/edit",

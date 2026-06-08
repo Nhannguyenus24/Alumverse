@@ -30,6 +30,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import Iconify from '../../components/Iconify';
 import { getVerificationRequests, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const AdminVerificationsPage = () => {
   const theme = useTheme();
@@ -42,6 +43,16 @@ const AdminVerificationsPage = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [pendingOnly, setPendingOnly] = useState(true);
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    if (debouncedSearch === searchQuery) return;
+    setSearchQuery(debouncedSearch);
+    setPage(0);
+  }, [debouncedSearch, searchQuery]);
 
   // Review Dialog State
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
@@ -56,7 +67,7 @@ const AdminVerificationsPage = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage);
+      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery);
       const data = res?.data?.data || {};
       setRequests(data.items || []);
       setTotalCount(data.totalElements || 0);
@@ -69,7 +80,7 @@ const AdminVerificationsPage = () => {
 
   useEffect(() => {
     void fetchRequests();
-  }, [page, rowsPerPage, pendingOnly]);
+  }, [page, rowsPerPage, pendingOnly, searchQuery]);
 
   const handleReview = (request) => {
     setSelectedRequest(request);
@@ -204,8 +215,9 @@ const AdminVerificationsPage = () => {
         rowsPerPage={rowsPerPage}
         onPageChange={(_, next) => setPage(next)}
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
-        onSearchChange={() => {}} 
-        searchValue=""
+        onSearchChange={setSearchTerm} 
+        searchValue={searchTerm}
+        searchPlaceholder="Tìm theo tên, email..."
         onRowClick={handleReview}
         filters={
           <TextField

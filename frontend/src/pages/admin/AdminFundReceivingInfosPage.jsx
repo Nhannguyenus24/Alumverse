@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
@@ -48,22 +48,22 @@ const AdminFundReceivingInfosPage = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createForm, setCreateForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [search, setSearch] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const {
     accounts,
+    totalCount,
     loading,
     loadError,
+    search,
+    setSearch,
+    submitSearch,
+    searchQuery,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
     reload,
   } = useAdminFundReceivingInfosData();
-
-  const submitSearch = useCallback(() => {
-    setSearchQuery(search.trim());
-    setPage(0);
-  }, [search]);
 
   useEffect(() => {
     setBreadcrumbs?.([
@@ -103,31 +103,6 @@ const AdminFundReceivingInfosPage = () => {
     });
     return map;
   }, [banksPayload.banks]);
-
-  const filteredAccounts = useMemo(() => {
-    const keyword = searchQuery.trim().toLowerCase();
-    if (!keyword) return accounts;
-
-    return accounts.filter((account) => {
-      const bankLabel = bankLabelByCode.get(account.bankName) || account.bankName || '';
-      const haystack = [
-        account.accountNumber,
-        account.accountName,
-        account.bankName,
-        bankLabel,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-
-      return haystack.includes(keyword);
-    });
-  }, [accounts, bankLabelByCode, searchQuery]);
-
-  const pagedAccounts = useMemo(() => {
-    const start = page * rowsPerPage;
-    return filteredAccounts.slice(start, start + rowsPerPage);
-  }, [filteredAccounts, page, rowsPerPage]);
 
   const columns = useMemo(
     () => [
@@ -273,8 +248,8 @@ const AdminFundReceivingInfosPage = () => {
 
       <AdminDataTable
         columns={columns}
-        rows={pagedAccounts}
-        totalCount={filteredAccounts.length}
+        rows={accounts}
+        totalCount={totalCount}
         page={page}
         rowsPerPage={rowsPerPage}
         onPageChange={(_, nextPage) => setPage(nextPage)}

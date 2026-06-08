@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { enqueueSnackbar } from 'notistack';
 import * as api from '../../utils/api';
 import { useAuth } from '../useAuth';
-
 /* ─── Fallback data (used when API is unavailable) ─── */
 
 const fallbackStatistics = {
@@ -102,9 +101,11 @@ const useAdminForumData = (activeOrgId) => {
   const [reports, setReports] = useState(fallbackPaginated);
   const [reportsPage, setReportsPage] = useState(0);
 
-  /** Tab "All posts": merged from API (yesterday + banned); no mock data. */
-  const [mergedModerationPosts, setMergedModerationPosts] = useState([]);
-  const [search, setSearch] = useState('');
+  /** Tab "All posts": from API */
+  const [allPosts, setAllPosts] = useState(fallbackPaginated);
+  const [postsSearch, setPostsSearch] = useState('');
+  const [postsPage, setPostsPage] = useState(0);
+  const [postsSize, setPostsSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [organizationFilter, setOrganizationFilter] = useState('ALL');
 
@@ -114,6 +115,7 @@ const useAdminForumData = (activeOrgId) => {
 
   // Topics (real API)
   const [topics, setTopics] = useState(fallbackPaginated);
+  const [topicsSearch, setTopicsSearch] = useState('');
   const [topicsPage, setTopicsPage] = useState(0);
   const [topicsSize, setTopicsSize] = useState(10);
   const [topicsLoading, setTopicsLoading] = useState(false);
@@ -200,43 +202,28 @@ const useAdminForumData = (activeOrgId) => {
     return () => clearTimeout(timer);
   }, [loadReports]);
 
-  const loadMergedModerationPosts = useCallback(async () => {
-    const allPayload = await safeFetch(() => api.getAllPosts(0, 200), fallbackPaginated);
-    const all = normalizePaginated(allPayload, 200).content;
-    const normalized = (Array.isArray(all) ? all : [])
-      .map(normalizePostRowForAdmin)
-      .filter(Boolean)
-      .sort((a, b) => {
-        const ta = new Date(a.postedAt || a.createdAt || 0).getTime();
-        const tb = new Date(b.postedAt || b.createdAt || 0).getTime();
-        return tb - ta;
-      });
-    setMergedModerationPosts(normalized);
-  }, []);
+  const loadAllPosts = useCallback(async () => {
+    const allPayload = await safeFetch(() => api.getAllPosts(postsSearch, postsPage, postsSize), fallbackPaginated);
+    const paginated = normalizePaginated(allPayload, postsSize);
+    const normalized = paginated.content.map(normalizePostRowForAdmin).filter(Boolean);
+    setAllPosts({ ...paginated, content: normalized });
+  }, [postsSearch, postsPage, postsSize]);
 
   useEffect(() => {
-    const timer = setTimeout(loadMergedModerationPosts, 0);
+    const timer = setTimeout(loadAllPosts, 0);
     return () => clearTimeout(timer);
-  }, [loadMergedModerationPosts]);
+  }, [loadAllPosts]);
 
   const posts = useMemo(() => {
-    let list = mergedModerationPosts;
+    let list = allPosts.content;
     if (statusFilter !== 'ALL') {
       list = list.filter((post) => String(post.moderationStatus || '').toUpperCase() === statusFilter);
     }
     if (organizationFilter !== 'ALL') {
       list = list.filter((post) => Number(post.organizationId) === Number(organizationFilter));
     }
-    const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((post) => {
-      const haystack = [post.topicTitle, post.authorName, post.content, String(post.id), post.organizationName]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(q);
-    });
-  }, [mergedModerationPosts, statusFilter, organizationFilter, search]);
+    return list;
+  }, [allPosts, statusFilter, organizationFilter]);
 
   /* ─── Load categories ─── */
 
@@ -260,10 +247,10 @@ const useAdminForumData = (activeOrgId) => {
   const loadTopics = useCallback(async (orgId) => {
     if (!orgId) return;
     setTopicsLoading(true);
-    const data = await safeFetch(() => api.getAllTopics(orgId, topicsPage, topicsSize), fallbackPaginated);
+    const data = await safeFetch(() => api.getAllTopics(orgId, topicsSearch, topicsPage, topicsSize), fallbackPaginated);
     setTopics(normalizePaginated(data, topicsSize));
     setTopicsLoading(false);
-  }, [topicsPage, topicsSize]);
+  }, [topicsSearch, topicsPage, topicsSize]);
 
   useEffect(() => {
     if (activeOrgId) {
@@ -277,22 +264,22 @@ const useAdminForumData = (activeOrgId) => {
   const handleBanPost = useCallback(async (postId) => {
     try {
       await api.banPost(postId);
-      await Promise.all([loadBannedPosts(), loadStatistics(), loadMergedModerationPosts()]);
+      await Promise.all([loadBannedPosts(), loadStatistics(), loadAllPosts()]);
       return true;
     } catch {
       return false;
     }
-  }, [loadBannedPosts, loadStatistics, loadMergedModerationPosts]);
+  }, [loadBannedPosts, loadStatistics, loadAllPosts]);
 
   const handleUnbanPost = useCallback(async (postId) => {
     try {
       await api.unbanPost(postId);
-      await Promise.all([loadBannedPosts(), loadStatistics(), loadMergedModerationPosts()]);
+      await Promise.all([loadBannedPosts(), loadStatistics(), loadAllPosts()]);
       return true;
     } catch {
       return false;
     }
-  }, [loadBannedPosts, loadStatistics, loadMergedModerationPosts]);
+  }, [loadBannedPosts, loadStatistics, loadAllPosts]);
 
   const handleDeletePost = useCallback(async (postId) => {
     try {
@@ -302,13 +289,13 @@ const useAdminForumData = (activeOrgId) => {
         loadBannedPosts(),
         loadYesterdayPosts(),
         loadReports(),
-        loadMergedModerationPosts(),
+        loadAllPosts(),
       ]);
       return true;
     } catch {
       return false;
     }
-  }, [loadStatistics, loadBannedPosts, loadYesterdayPosts, loadReports, loadMergedModerationPosts]);
+  }, [loadStatistics, loadBannedPosts, loadYesterdayPosts, loadReports, loadAllPosts]);
 
   const handleCreateCategory = useCallback(async (orgId, name, description, parentId) => {
     try {
@@ -378,23 +365,23 @@ const useAdminForumData = (activeOrgId) => {
         loadBannedPosts(),
         loadYesterdayPosts(),
         loadStatistics(),
-        loadMergedModerationPosts(),
+        loadAllPosts(),
       ]);
       return true;
     } catch {
       return false;
     }
-  }, [loadReports, loadBannedPosts, loadYesterdayPosts, loadStatistics, loadMergedModerationPosts]);
+  }, [loadReports, loadBannedPosts, loadYesterdayPosts, loadStatistics, loadAllPosts]);
 
   const handleUpdatePostVisibility = useCallback(async (postId, hidden, adminUserId) => {
     try {
       await api.updatePostVisibility(postId, { hidden, adminUserId });
-      await Promise.all([loadBannedPosts(), loadYesterdayPosts(), loadReports(), loadMergedModerationPosts()]);
+      await Promise.all([loadBannedPosts(), loadYesterdayPosts(), loadReports(), loadAllPosts()]);
       return true;
     } catch {
       return false;
     }
-  }, [loadBannedPosts, loadYesterdayPosts, loadReports, loadMergedModerationPosts]);
+  }, [loadBannedPosts, loadYesterdayPosts, loadReports, loadAllPosts]);
 
   const handleUpdateTopicLock = useCallback(async (topicId, locked, adminUserId) => {
     try {
@@ -428,7 +415,7 @@ const useAdminForumData = (activeOrgId) => {
           return;
         }
         await Promise.all([
-          loadMergedModerationPosts(),
+          loadAllPosts(),
           loadBannedPosts(),
           loadYesterdayPosts(),
           loadStatistics(),
@@ -439,7 +426,7 @@ const useAdminForumData = (activeOrgId) => {
         throw e;
       }
     },
-    [adminUserId, loadMergedModerationPosts, loadBannedPosts, loadYesterdayPosts, loadStatistics],
+    [adminUserId, loadAllPosts, loadBannedPosts, loadYesterdayPosts, loadStatistics],
   );
 
   return {
@@ -473,10 +460,15 @@ const useAdminForumData = (activeOrgId) => {
     setReportsPage,
 
     // All posts tab (API-backed)
-    allPosts: mergedModerationPosts,
+    allPosts,
+    postsPage,
+    setPostsPage,
+    postsSize,
+    setPostsSize,
     posts,
-    search,
-    setSearch,
+    postsSearch,
+    // setPostsSearch resets page to 0 to prevent stale-page bugs
+    setPostsSearch: (kw) => { setPostsSearch(kw); setPostsPage(0); },
     statusFilter,
     setStatusFilter,
     organizationFilter,
@@ -491,6 +483,9 @@ const useAdminForumData = (activeOrgId) => {
 
     // Topics
     topics,
+    topicsSearch,
+    // setTopicsSearch resets page to 0 to prevent stale-page bugs
+    setTopicsSearch: (kw) => { setTopicsSearch(kw); setTopicsPage(0); },
     topicsPage,
     setTopicsPage,
     topicsSize,

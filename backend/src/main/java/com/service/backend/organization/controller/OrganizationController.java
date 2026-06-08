@@ -18,7 +18,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import java.util.List;
+import com.service.backend.shared.annotations.PublicEndpoint;
 
+@PublicEndpoint
 @RestController
 @RequestMapping("/api/organizations")
 @RequiredArgsConstructor

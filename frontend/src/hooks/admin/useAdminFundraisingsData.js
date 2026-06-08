@@ -52,6 +52,12 @@ const useAdminFundraisingsData = (organizationId) => {
     setPage(0);
   }, [search]);
 
+  // Expose a direct way to set the query and reset page, useful when debouncing externally
+  const updateSearchQuery = useCallback((query) => {
+    setSearchQuery(query.trim());
+    setPage(0);
+  }, []);
+
   const loadFunds = useCallback(async () => {
     setLoading(true);
     setLoadError(false);
@@ -110,6 +116,7 @@ const useAdminFundraisingsData = (organizationId) => {
     search,
     setSearch,
     submitSearch,
+    updateSearchQuery,
     page,
     setPage,
     rowsPerPage,

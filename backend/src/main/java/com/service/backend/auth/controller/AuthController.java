@@ -31,7 +31,9 @@ import com.service.backend.shared.utils.JwtUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.annotations.PublicEndpoint;
 
+@PublicEndpoint
 @RestController
 @RequestMapping("/api/auth")
 @Validated
@@ -69,7 +71,7 @@ public class AuthController {
                 .switchIfEmpty(Mono.defer(() ->
                     authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
                 ))
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()));
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
     }
 
     /**
@@ -83,7 +85,7 @@ public class AuthController {
         String loginIp = extractRemoteAddress(exchange);
 
         return authService.loginWithGoogle(request.getIdToken(), request.getOrganizationId(), userAgent, loginIp)
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()));
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
     }
 
     /**
@@ -182,7 +184,9 @@ public class AuthController {
         return remoteAddress != null ? remoteAddress : "Unknown";
     }
 
-    private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId) {
+    private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId, boolean rememberMe) {
+        long refreshTokenExpirationMs = rememberMe ? 2592000000L : 604800000L; // 30 days vs 7 days
+
         if (organizationId == null) {
             // For admin login without organization, generate token with null orgId
             String accessToken = jwtUtils.generateAccessToken(
@@ -193,14 +197,14 @@ public class AuthController {
                     user.getAvatarUrl(),
                     null
             );
-            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null);
+            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null, refreshTokenExpirationMs);
 
             ResponseCookie refreshTokenCookie = ResponseCookie
                     .from("refreshToken", refreshToken)
                     .httpOnly(true)
                     // .secure(true) // turn on when in https
                     .path("/")
-                    .maxAge(Duration.ofDays(7))
+                    .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                     .sameSite("Lax")
                     .build();
 
@@ -225,14 +229,14 @@ public class AuthController {
                             user.getAvatarUrl(),
                             organizationId
                     );
-                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId);
+                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId, refreshTokenExpirationMs);
 
                     ResponseCookie refreshTokenCookie = ResponseCookie
                             .from("refreshToken", refreshToken)
                             .httpOnly(true)
                             // .secure(true) // turn on when in https
                             .path("/")
-                            .maxAge(Duration.ofDays(7))
+                            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                             .sameSite("Lax")
                             .build();
 

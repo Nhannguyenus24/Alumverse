@@ -131,11 +131,13 @@ export const useAuth = () => {
       return { ok: false, error: msg };
     }
     const organizationId = payload.organizationId ?? organizationIdFromStore;
+    const rememberMe = payload.rememberMe ?? false;
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/login', {
         ...parsed.data,
         organizationId,
+        rememberMe,
       });
       return applyAccessTokenToStore(data, 'Đăng nhập thất bại');
     } catch (err) {
@@ -146,7 +148,7 @@ export const useAuth = () => {
     }
   };
 
-  const loginWithGoogle = async (idToken) => {
+  const loginWithGoogle = async (idToken, rememberMe = false) => {
     if (!idToken || typeof idToken !== 'string') {
       const msg = 'Google ID token không hợp lệ';
       store.setError(msg);
@@ -164,6 +166,7 @@ export const useAuth = () => {
       const { data } = await apiClient.post('/auth/google-login', {
         idToken,
         organizationId: organizationIdFromStore,
+        rememberMe,
       });
       return applyAccessTokenToStore(data, 'Đăng nhập Google thất bại');
     } catch (err) {

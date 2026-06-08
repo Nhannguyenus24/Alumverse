@@ -22,6 +22,8 @@ import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.shared.service.FileUploadService;
+import com.service.backend.shared.service.OCRService;
+import reactor.core.scheduler.Schedulers;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -48,18 +50,28 @@ public class UserService {
     private final PeerVerificationRepository peerVerificationRepository;
     private final FileUploadService fileUploadService;
     private final NotificationService notificationService;
+    private final OCRService ocrService;
 
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
                 .flatMap(fileUrl -> {
-                    // member_id in verification_requests corresponds to user_id in users table according to AdminUserRepository.findAllVerificationRequests join
-                    // where "JOIN users u ON vr.member_id = u.id"
-                        return authRepository.insertVerificationRequest(
+                    return authRepository.insertVerificationRequest(
                             currentUserId.intValue(),
                             fileUrl,
                             request.getDocumentType() != null ? request.getDocumentType().getValue() : null
-                        ).then();
-                });
+                    ).doOnSuccess(requestId -> {
+                        if (requestId != null) {
+                            String localPath = fileUploadService.getLocalPath(fileUrl);
+                            if (localPath != null) {
+                                Mono.fromCallable(() -> ocrService.extractTextFromFile(localPath))
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .flatMap(text -> authRepository.updateAiSummary(requestId, text))
+                                        .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
+                                        .subscribe();
+                            }
+                        }
+                    });
+                }).then();
     }
 
     public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {

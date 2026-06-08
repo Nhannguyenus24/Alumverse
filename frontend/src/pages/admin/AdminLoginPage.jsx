@@ -43,7 +43,7 @@ const AdminLoginPage = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: false },
   });
 
   useEffect(() => {
@@ -54,7 +54,12 @@ const AdminLoginPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ email: data.email, password: data.password, organizationId });
+    const result = await login({ 
+      email: data.email, 
+      password: data.password, 
+      organizationId,
+      rememberMe: data.rememberMe 
+    });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập admin thành công.', { variant: 'success' });
 
@@ -194,7 +199,7 @@ const AdminLoginPage = () => {
 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <FormControlLabel
-                    control={<Checkbox size="small" />}
+                    control={<Checkbox size="small" {...register('rememberMe')} />}
                     label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
                   />
                   <Typography

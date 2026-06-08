@@ -200,7 +200,7 @@ export default function DonationPage() {
         <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 } }}>
           {isAdmin && (
             <Stack spacing={2} sx={{ width: { xs: "100%", md: 260 }, flexShrink: 0 }}>
-              <Sidebar items={DONATION_SIDEBAR_ITEMS} useRouting={false} value="list" onChange={(itemId) => { if (itemId === "create") navigate("/donations/create"); }} />
+              <Sidebar items={DONATION_SIDEBAR_ITEMS} useRouting={false} value="list" onChange={(itemId) => { if (itemId === "create") navigate("/post/donation"); }} />
             </Stack>
           )}
 
@@ -212,7 +212,7 @@ export default function DonationPage() {
                 </Typography>
 
                 {isAdmin && (
-                  <Button variant="contained" onClick={() => navigate("/donations/create")} sx={{ textTransform: "none", fontWeight: 700 }}>
+                  <Button variant="contained" onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
                     Mở quỹ quyên góp
                   </Button>
                 )}
