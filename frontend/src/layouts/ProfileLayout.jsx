@@ -11,6 +11,7 @@ const ProfileLayout = ({
   cover,
   onCoverChange,
   mentorId,
+  canBook = true,
   children,
 }) => {
 
@@ -50,6 +51,20 @@ const ProfileLayout = ({
           </>
         );
 
+      // ================= MENTEE OWN PROFILE =================
+      case 'menteeOwn':
+        return (
+          <>
+            <Button variant="outlined" onClick={() => onNavigate('/development/mentorship/mentee-signup')}>
+              Chỉnh sửa hồ sơ
+            </Button>
+
+            <Button variant="contained" color="secondary" onClick={() => onNavigate('/development/mentorship/signup')}>
+              Trở thành cố vấn
+            </Button>
+          </>
+        );
+
       // ================= MENTEE VIEWING MENTOR =================
       case 'mentee':
         return (
@@ -58,11 +73,11 @@ const ProfileLayout = ({
               Về trang Cố vấn
             </Button>
 
-            <Button variant="outlined">
-              Nhắn tin
-            </Button>
-
-            <Button variant="contained" onClick={() => onNavigate(`/development/mentorship/mentors/${mentorId ?? 1}/book`)}>
+            <Button
+              variant="contained"
+              disabled={!canBook}
+              onClick={canBook ? () => onNavigate(`/development/mentorship/mentors/${mentorId}/book`) : undefined}
+            >
               Đặt lịch hẹn
             </Button>
           </>
@@ -187,8 +202,8 @@ const ProfileLayout = ({
       {/* ================= MAIN ================= */}
       <Container maxWidth="lg" sx={{ mt: 6 }}>
         <Stack spacing={6}>
-          {/* TAB FILTER ALWAYS HERE */}
-          <TopTabFilter tabs={tabs} onNavigate={onNavigate} />
+          {/* TAB FILTER */}
+          {(tabs ?? []).length > 0 && <TopTabFilter tabs={tabs} onNavigate={onNavigate} />}
 
           {/* PAGE CONTENT */}
           {children}

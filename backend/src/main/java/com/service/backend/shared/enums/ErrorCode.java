@@ -75,6 +75,7 @@ public enum ErrorCode {
     SESSION_NOT_FOUND("Không tìm thấy buổi mentoring", 404),
     SESSION_ALREADY_CANCELLED("Buổi mentoring đã được hủy trước đó", 400),
     SESSION_NOT_COMPLETED("Buổi mentoring chưa hoàn thành", 400),
+    SESSION_SELF_BOOKING_NOT_ALLOWED("Bạn không thể đặt lịch với chính mình", 400),
     FEEDBACK_ALREADY_EXISTS("Đánh giá đã tồn tại", 409),
 
     // Forum module

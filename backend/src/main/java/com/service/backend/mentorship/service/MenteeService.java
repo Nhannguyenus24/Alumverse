@@ -2,6 +2,7 @@ package com.service.backend.mentorship.service;
 
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
+import com.service.backend.shared.entity.MentorshipReport;
 import com.service.backend.shared.entity.MenteeProfile;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.enums.MentorshipSessionType;
@@ -14,6 +15,7 @@ import com.service.backend.shared.entity.MentorExpertise;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -38,6 +40,9 @@ public class MenteeService {
     private final SessionFeedbackR2dbcRepository feedbackRepository;
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final MenteeProfileR2dbcRepository menteeProfileRepository;
+    private final MentorshipAccessService accessService;
+    private final NotificationService notificationService;
+    private final MentorshipReportR2dbcRepository reportRepository;
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
@@ -133,29 +138,46 @@ public class MenteeService {
 
     // ===================== BROWSE MENTORS =====================
 
+    private Mono<List<MentorProfileResponse>> applyBrowseAccessView(List<MentorProfileResponse> profiles) {
+        return accessService.isOrgVerifiedForMentorship()
+                .map(fullAccess -> profiles.stream()
+                        .map(p -> fullAccess ? p : p.asPreview())
+                        .toList());
+    }
+
+    private Mono<MentorProfileResponse> applyBrowseAccessView(MentorProfileResponse profile) {
+        return accessService.isOrgVerifiedForMentorship()
+                .map(fullAccess -> fullAccess ? profile : profile.asPreview());
+    }
+
     public Mono<PaginatedResponse<MentorProfileResponse>> getApprovedMentors(int page, int limit) {
         int offset = page * limit;
-        return profileRepository.findApprovedMentors(limit, offset)
-                .collectList()
-                .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countApprovedMentors())
-                        .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(profileRepository.findApprovedMentors(limit, offset)
+                        .collectList()
+                        .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
+                                .flatMap(this::applyBrowseAccessView)
+                                .zipWith(profileRepository.countApprovedMentors())
+                                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit))));
     }
 
     public Mono<MentorProfileResponse> getMentorProfile(Integer mentorMemberId) {
-        return profileRepository.findById(mentorMemberId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTOR_PROFILE_NOT_FOUND, "Mentor profile not found")))
-                .map(MentorProfileResponse::from)
-                .flatMap(this::attachProfileDisplay);
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .map(MentorProfileResponse::from)
+                        .flatMap(this::attachProfileDisplay)
+                        .flatMap(this::applyBrowseAccessView));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> searchMentors(String keyword, int page, int limit) {
         int offset = page * limit;
-        return profileRepository.searchMentorsWithName(keyword, limit, offset)
-                .collectList()
-                .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countSearchMentorsWithName(keyword))
-                        .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(profileRepository.searchMentorsWithName(keyword, limit, offset)
+                        .collectList()
+                        .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
+                                .flatMap(this::applyBrowseAccessView)
+                                .zipWith(profileRepository.countSearchMentorsWithName(keyword))
+                                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit))));
     }
 
     public Mono<PaginatedResponse<MentorProfileResponse>> filterMentors(
@@ -163,38 +185,47 @@ public class MenteeService {
             LocalDateTime availableFrom, LocalDateTime availableTo,
             int page, int limit) {
         int offset = page * limit;
-        return profileRepository
-                .filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset)
-                .collectList()
-                .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
-                        .zipWith(profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo))
-                        .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit)));
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(profileRepository
+                        .filterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo, limit, offset)
+                        .collectList()
+                        .flatMap(entities -> attachProfileDisplay(entities.stream().map(MentorProfileResponse::from).toList())
+                                .flatMap(this::applyBrowseAccessView)
+                                .zipWith(profileRepository.countFilterMentors(search, category, expertise, minRating, hasAvailability, availableFrom, availableTo))
+                                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, limit))));
     }
 
     public Mono<List<String>> getDistinctExpertiseTopics() {
-        return expertiseRepository.findDistinctTopics().collectList();
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(expertiseRepository.findDistinctTopics().collectList());
     }
 
     public Mono<List<String>> getDistinctExpertiseCategories() {
-        return expertiseRepository.findDistinctCategories().collectList();
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(expertiseRepository.findDistinctCategories().collectList());
     }
 
     public Mono<List<MentorExpertiseResponse>> getMentorExpertise(Integer mentorMemberId) {
-        return expertiseRepository.findByMentorMemberId(mentorMemberId)
-                .map(MentorExpertiseResponse::from)
-                .collectList();
+        return accessService.requireEmailVerifiedForMentorBrowse()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .thenMany(expertiseRepository.findByMentorMemberId(mentorMemberId))
+                        .map(MentorExpertiseResponse::from)
+                        .collectList());
     }
 
     public Mono<List<MentorAvailabilityResponse>> getMentorAvailableSlots(Integer mentorMemberId) {
-        return availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now())
-                .map(MentorAvailabilityResponse::from)
-                .collectList();
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .thenMany(availabilityRepository.findAvailableSlots(mentorMemberId, LocalDateTime.now()))
+                        .map(MentorAvailabilityResponse::from)
+                        .collectList());
     }
 
     // ===================== MENTEE PROFILE =====================
 
     public Mono<MenteeProfileResponse> createOrUpdateMyMenteeProfile(CreateMenteeProfileRequest request) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(currentMemberId().flatMap(memberId ->
                 menteeProfileRepository.findById(memberId)
                         .flatMap(existing -> {
                             existing.setMentoringGoal(request.getMentoringGoal());
@@ -216,7 +247,7 @@ public class MenteeService {
                                 .createdAt(LocalDateTime.now())
                                 .updatedAt(LocalDateTime.now())
                                 .build())))
-                        .map(MenteeProfileResponse::from));
+                        .map(MenteeProfileResponse::from)));
     }
 
     public Mono<MenteeProfileResponse> getMyMenteeProfile() {
@@ -229,37 +260,52 @@ public class MenteeService {
     // ===================== BOOK SESSION =====================
 
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
-        return currentMemberId().flatMap(memberId ->
-                menteeProfileRepository.findById(memberId)
-                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Bạn cần hoàn thiện hồ sơ Mentee trước khi đặt lịch")))
-                        .flatMap(menteeProfile -> {
-                            if (!Boolean.TRUE.equals(menteeProfile.getIsActive())) {
-                                return Mono.error(new ApplicationException(ErrorCode.MENTEE_PROFILE_NOT_FOUND, "Hồ sơ Mentee chưa được kích hoạt"));
-                            }
-                            return availabilityRepository.findById(request.getAvailabilityId())
-                                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability slot not found")))
-                                    .flatMap(availability -> {
-                                        if (Status.AVAILABLE != availability.getStatus()) {
-                                            return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "This time slot is no longer available"));
-                                        }
-
-                                        MentorshipSession session = MentorshipSession.builder()
-                                                .availabilityId(request.getAvailabilityId())
-                                                .menteeMemberId(memberId)
-                                                .status(Status.PENDING)
-                                                .bookingNote(request.getBookingNote())
-                                                .sessionType(MentorshipSessionType.valueOf(request.getSessionType().toUpperCase()))
-                                                .introduction(request.getIntroduction())
-                                                .description(request.getDescription())
-                                                .cvUrl(request.getCvUrl())
-                                                .createdAt(LocalDateTime.now())
-                                                .build();
-
-                                        return availabilityRepository.updateStatus(availability.getId(), Status.BOOKED.getValue())
-                                                .then(sessionRepository.save(session));
-                                    });
-                        })
-                        .flatMap(this::enrich));
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(currentMemberId().flatMap(memberId ->
+                        availabilityRepository.findById(request.getAvailabilityId())
+                                .switchIfEmpty(Mono.error(new ApplicationException(
+                                        ErrorCode.AVAILABILITY_NOT_FOUND, "Lịch trống không tồn tại")))
+                                .flatMap(availability -> {
+                                    // Block self-booking
+                                    if (memberId.equals(availability.getMentorMemberId())) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.SESSION_SELF_BOOKING_NOT_ALLOWED,
+                                                "Bạn không thể đặt lịch với chính mình"));
+                                    }
+                                    // Slot must still be available
+                                    if (Status.AVAILABLE != availability.getStatus()) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.AVAILABILITY_NOT_AVAILABLE,
+                                                "Lịch trống này đã có người đặt. Vui lòng chọn khung giờ khác"));
+                                    }
+                                    // Mentor must be APPROVED
+                                    return accessService
+                                            .requireApprovedMentorProfile(availability.getMentorMemberId())
+                                            .then(Mono.defer(() -> {
+                                                MentorshipSession session = MentorshipSession.builder()
+                                                        .availabilityId(request.getAvailabilityId())
+                                                        .menteeMemberId(memberId)
+                                                        .status(Status.CONFIRMED)
+                                                        .bookingNote(request.getBookingNote())
+                                                        .sessionType(MentorshipSessionType.valueOf(
+                                                                request.getSessionType().toUpperCase()))
+                                                        .introduction(request.getIntroduction())
+                                                        .description(request.getDescription())
+                                                        .cvUrl(request.getCvUrl())
+                                                        .createdAt(LocalDateTime.now())
+                                                        .build();
+                                        return availabilityRepository.updateStatus(
+                                                        availability.getId(), Status.BOOKED.getValue())
+                                                .then(sessionRepository.save(session))
+                                                .doOnNext(saved ->
+                                                        notificationService.createNotificationAsync(
+                                                                availability.getMentorMemberId(),
+                                                                "Lịch hẹn mới",
+                                                                "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi.",
+                                                                "/development/mentorship/dashboard"));
+                                            }));
+                                })
+                                .flatMap(this::enrich)));
     }
 
     // ===================== MY SESSIONS (Mentee view) =====================
@@ -293,18 +339,37 @@ public class MenteeService {
                 .flatMap(this::enrich);
     }
 
-    public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId) {
-        return sessionRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
-                .flatMap(session -> {
-                        if (Status.CANCELLED.equals(session.getStatus())) {
-                        return Mono.error(new ApplicationException(ErrorCode.SESSION_ALREADY_CANCELLED, "Session is already cancelled"));
-                    }
-                        return availabilityRepository.updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
-                            .then(sessionRepository.updateStatus(sessionId, Status.CANCELLED.getValue()))
-                            .then(sessionRepository.findById(sessionId));
-                })
-                .flatMap(this::enrich);
+    public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
+        return currentMemberId().flatMap(memberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (isCancelled(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring đã được hủy trước đó"));
+                            }
+                            if (!memberId.equals(session.getMenteeMemberId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
+                            }
+                            return availabilityRepository.updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
+                                    .then(sessionRepository.updateStatusWithCancelReason(
+                                            sessionId, Status.CANCELLED_BY_MENTEE.getValue(), cancelReason))
+                                    .then(availabilityRepository.findById(session.getAvailabilityId()))
+                                    .doOnNext(avail -> notificationService.createNotificationAsync(
+                                            avail.getMentorMemberId(),
+                                            "Lịch hẹn bị hủy",
+                                            "Người được cố vấn đã hủy một buổi hẹn với bạn. Khung giờ tương ứng đã được mở lại.",
+                                            "/development/mentorship/dashboard"))
+                                    .then(sessionRepository.findById(sessionId));
+                        })
+                        .flatMap(this::enrich));
+    }
+
+    private static boolean isCancelled(Status s) {
+        return Status.CANCELLED.equals(s)
+                || Status.CANCELLED_BY_MENTEE.equals(s)
+                || Status.CANCELLED_BY_MENTOR.equals(s);
     }
 
     // ===================== FEEDBACK =====================
@@ -332,19 +397,61 @@ public class MenteeService {
                                                 .createdAt(LocalDateTime.now())
                                                 .build();
 
-                                        return feedbackRepository.save(feedback);
+                                        return feedbackRepository.save(feedback)
+                                                .flatMap(savedFeedback ->
+                                                        availabilityRepository.findById(session.getAvailabilityId())
+                                                                .flatMap(avail ->
+                                                                        feedbackRepository.calculateAverageRating(avail.getMentorMemberId())
+                                                                                .defaultIfEmpty(BigDecimal.ZERO)
+                                                                                .flatMap(avg -> profileRepository.updateRatingAndIncrementSessions(
+                                                                                        avail.getMentorMemberId(), avg))
+                                                                                .doOnSuccess(ignored -> notificationService.createNotificationAsync(
+                                                                                        avail.getMentorMemberId(),
+                                                                                        "Bạn nhận được một đánh giá mới",
+                                                                                        "Một buổi cố vấn vừa được đánh giá " + request.getRating() + "/5 sao. Xem chi tiết phản hồi của bạn.",
+                                                                                        "/development/mentorship/dashboard")))
+                                                                .thenReturn(savedFeedback));
                                     });
                         })
                         .map(SessionFeedbackResponse::from));
     }
 
     public Mono<PaginatedResponse<SessionFeedbackResponse>> getMentorFeedbacks(Integer mentorMemberId, int page, int limit) {
-        return feedbackRepository.findPublicFeedbacksByMentorId(mentorMemberId, limit, page * limit)
-                .collectList()
-                .zipWith(feedbackRepository.countPublicFeedbacksByMentorId(mentorMemberId))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(accessService.requireApprovedMentorProfile(mentorMemberId)
+                        .then(feedbackRepository.findPublicFeedbacksByMentorId(mentorMemberId, limit, page * limit)
+                                .collectList()
+                                .zipWith(feedbackRepository.countPublicFeedbacksByMentorId(mentorMemberId))
+                                .map(tuple -> PaginatedResponse.of(
+                                        tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
+                                        tuple.getT2(), page, limit))));
+    }
+
+    // ===================== REPORT =====================
+
+    public Mono<Void> reportSession(Integer sessionId, CreateReportRequest request) {
+        return currentMemberId().flatMap(reporterMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Không tìm thấy buổi mentoring")))
+                        .flatMap(session -> {
+                            boolean isMentee = reporterMemberId.equals(session.getMenteeMemberId());
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> {
+                                        Integer reportedMemberId = isMentee
+                                                ? avail.getMentorMemberId()
+                                                : session.getMenteeMemberId();
+                                        MentorshipReport report = MentorshipReport.builder()
+                                                .sessionId(sessionId)
+                                                .reporterMemberId(reporterMemberId)
+                                                .reportedMemberId(reportedMemberId)
+                                                .reasonCategory(request.getReasonCategory())
+                                                .description(request.getDescription())
+                                                .status("PENDING")
+                                                .createdAt(java.time.LocalDateTime.now())
+                                                .build();
+                                        return reportRepository.save(report).then();
+                                    });
+                        }));
     }
 }

@@ -1131,12 +1131,17 @@ export const mentorshipApi = {
 		return apiClient.get(`${BASE_MENTEE}/sessions/${sessionId}`);
 	},
 
-	cancelSession(sessionId) {
-		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`);
+	cancelSession(sessionId, cancelReason) {
+		const params = cancelReason ? { cancelReason } : {};
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
 	createSessionFeedback(sessionId, payload) {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/feedback`, payload);
+	},
+
+	reportSession(sessionId, payload) {
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/report`, payload);
 	},
 
 	createMentorProfile(payload) {
@@ -1195,6 +1200,16 @@ export const mentorshipApi = {
 		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/status`, payload);
 	},
 
+	cancelMentorSession(sessionId, cancelReason) {
+		const params = cancelReason ? { cancelReason } : {};
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
+	},
+
+	postponeMentorSession(sessionId, reason) {
+		const params = reason ? { reason } : {};
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/postpone`, null, { params });
+	},
+
 	getMyMentorFeedbacks(page = 0, limit = 10) {
 		return apiClient.get(`${BASE_MENTOR}/feedbacks`, { params: { page, limit } });
 	},
@@ -1221,6 +1236,9 @@ export const {
 	getMenteeSessionById,
 	cancelSession,
 	createSessionFeedback,
+	reportSession,
+	cancelMentorSession,
+	postponeMentorSession,
 	createMentorProfile,
 	saveMentorProfileDraft,
 	updateMentorProfile,

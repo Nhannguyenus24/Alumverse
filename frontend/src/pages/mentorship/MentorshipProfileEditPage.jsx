@@ -30,12 +30,9 @@ import {
   useDeleteExpertise,
 } from '../../hooks/mentorship/useExpertiseMutations';
 import { useUploadImage } from '../../utils/imageUtils';
+import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
-const TOP_TABS = [
-  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
-  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
-  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
-];
+const TOP_TABS = MENTOR_PROFILE_TABS;
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';

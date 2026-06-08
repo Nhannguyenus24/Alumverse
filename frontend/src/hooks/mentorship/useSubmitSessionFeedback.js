@@ -1,16 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { cancelSession } from '../../utils/api';
+import { createSessionFeedback } from '../../utils/api';
 
-const callCancel = async ({ sessionId, cancelReason }) => {
-  const res = await cancelSession(sessionId, cancelReason);
-  return res?.data?.data ?? null;
-};
-
-export const useCancelMenteeSession = () => {
+export const useSubmitSessionFeedback = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: callCancel,
+    mutationFn: async ({ sessionId, rating, comment, isPublic = true }) => {
+      const res = await createSessionFeedback(sessionId, { rating, comment, isPublic });
+      return res?.data?.data ?? null;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mentorship'] });
     },
@@ -20,13 +18,12 @@ export const useCancelMenteeSession = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể hủy lịch hẹn'
+        'Không thể gửi đánh giá'
       : null;
 
   return {
-    cancelSession: mutation.mutateAsync,
+    submitFeedback: mutation.mutateAsync,
     isPending: mutation.isPending,
-    isError: mutation.isError,
     errorMessage,
   };
 };

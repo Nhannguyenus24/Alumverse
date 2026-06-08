@@ -39,12 +39,9 @@ import { useDeleteAvailability } from '../../hooks/mentorship/useDeleteAvailabil
 import { useUpdateAvailability } from '../../hooks/mentorship/useUpdateAvailability';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
 import { formatFixed } from '../../utils/numberFormatter';
+import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
-const TOP_TABS = [
-  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
-  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
-  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
-];
+const TOP_TABS = MENTOR_PROFILE_TABS;
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -286,12 +283,12 @@ const MentorshipYourCalendarPage = () => {
   };
 
   return (
-    <Page title="Cố vấn - Lịch cá nhân">
+    <Page title="Cố vấn - Lịch rảnh">
       <MentorshipProfileLayout user={user} cover={user.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
-              LỊCH CÁ NHÂN
+              LỊCH RẢNH
             </Typography>
           </Box>
 
