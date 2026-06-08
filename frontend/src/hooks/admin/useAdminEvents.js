@@ -16,12 +16,12 @@ const safeFetch = async (request, fallback) => {
   }
 };
 
-const useAdminEvents = () => {
+const useAdminEvents = (initialOrgId = 'ALL') => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [organizationFilter, setOrganizationFilter] = useState('ALL');
+  const [organizationFilter, setOrganizationFilter] = useState(initialOrgId);
   const [sortBy, setSortBy] = useState('startTime');
   const [sortOrder, setSortOrder] = useState('DESC');
 
@@ -29,6 +29,13 @@ const useAdminEvents = () => {
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState(fallbackStatistics);
   const [organizations, setOrganizations] = useState([]);
+
+  useEffect(() => {
+    if (initialOrgId) {
+      setOrganizationFilter(initialOrgId);
+      setPage(0);
+    }
+  }, [initialOrgId]);
 
   const loadOrganizations = useCallback(async () => {
     try {
@@ -52,26 +59,21 @@ const useAdminEvents = () => {
 
     if (trimmed.length > 0) {
       data = await safeFetch(
-        () => api.searchAllEvents(trimmed, page, rowsPerPage),
-        fallbackPage,
-      );
-    } else if (orgId) {
-      data = await safeFetch(
-        () => api.getEventsByOrganization(orgId, page, rowsPerPage),
+        () => api.searchAllEvents(trimmed, page, rowsPerPage, orgId),
         fallbackPage,
       );
     } else if (statusFilter === 'PUBLISHED') {
       data = await safeFetch(
-        () => api.getEventsByPublishStatus(true, page, rowsPerPage),
+        () => api.getEventsByPublishStatus(true, page, rowsPerPage, orgId),
         fallbackPage,
       );
     } else if (statusFilter === 'DRAFT') {
       data = await safeFetch(
-        () => api.getEventsByPublishStatus(false, page, rowsPerPage),
+        () => api.getEventsByPublishStatus(false, page, rowsPerPage, orgId),
         fallbackPage,
       );
     } else {
-      data = await safeFetch(() => api.getAllEvents(page, rowsPerPage), fallbackPage);
+      data = await safeFetch(() => api.getAllEvents(page, rowsPerPage, orgId), fallbackPage);
     }
     setPaged(data || fallbackPage);
     setLoading(false);

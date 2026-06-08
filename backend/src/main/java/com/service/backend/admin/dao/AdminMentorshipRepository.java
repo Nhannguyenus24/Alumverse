@@ -54,4 +54,64 @@ public interface AdminMentorshipRepository extends R2dbcRepository<MentorshipSes
 
     @Query("SELECT COUNT(*) FROM session_feedbacks")
     Mono<Long> countAllFeedbacks();
+
+    @Query("SELECT ms.* FROM mentorship_sessions ms " +
+           "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+           "JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "ORDER BY ms.created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<MentorshipSession> findSessionsByOrganization(@Param("organizationId") Integer organizationId,
+                                                        @Param("limit") int limit,
+                                                        @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM mentorship_sessions ms " +
+           "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+           "JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId")
+    Mono<Long> countSessionsByOrganization(@Param("organizationId") Integer organizationId);
+
+    @Query("SELECT ms.* FROM mentorship_sessions ms " +
+           "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+           "JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId AND ms.status = :status " +
+           "ORDER BY ms.created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<MentorshipSession> findSessionsByOrganizationAndStatus(@Param("organizationId") Integer organizationId,
+                                                                 @Param("status") String status,
+                                                                 @Param("limit") int limit,
+                                                                 @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM mentorship_sessions ms " +
+           "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+           "JOIN organization_members om ON ma.mentor_member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId AND ms.status = :status")
+    Mono<Long> countSessionsByOrganizationAndStatus(@Param("organizationId") Integer organizationId,
+                                                     @Param("status") String status);
+
+    @Query("SELECT mp.* FROM mentor_profiles mp " +
+           "JOIN organization_members om ON mp.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "ORDER BY mp.created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<MentorProfile> findMentorProfilesByOrganization(@Param("organizationId") Integer organizationId,
+                                                          @Param("limit") int limit,
+                                                          @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM mentor_profiles mp " +
+           "JOIN organization_members om ON mp.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId")
+    Mono<Long> countMentorProfilesByOrganization(@Param("organizationId") Integer organizationId);
+
+    @Query("SELECT mp.* FROM mentor_profiles mp " +
+           "JOIN organization_members om ON mp.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId AND mp.status = :status " +
+           "ORDER BY mp.created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<MentorProfile> findMentorProfilesByOrganizationAndStatus(@Param("organizationId") Integer organizationId,
+                                                                    @Param("status") String status,
+                                                                    @Param("limit") int limit,
+                                                                    @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM mentor_profiles mp " +
+           "JOIN organization_members om ON mp.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId AND mp.status = :status")
+    Mono<Long> countMentorProfilesByOrganizationAndStatus(@Param("organizationId") Integer organizationId,
+                                                           @Param("status") String status);
 }

@@ -34,10 +34,12 @@ export const useOrganization = ({ enabled = true } = {}) => {
     const isOrgSwitch = currentSlug && currentSlug !== slug;
     const isAuthenticated = !!useAuthStore.getState().token;
 
-    if (isOrgSwitch && isAuthenticated) {
+    const user = useAuthStore.getState().user;
+    const isAdmin = user?.role === 'ADMIN';
+
+    if (isOrgSwitch && isAuthenticated && !isAdmin) {
       // JWT is scoped to organizationId — switching orgs requires a fresh login.
-      // Fire-and-forget the logout API to clear the refresh token cookie, then
-      // reset local state and redirect regardless of network outcome.
+      // Global admins are exempt from this as they have system-wide access.
       apiClient.post('/auth/logout').finally(() => {
         useAuthStore.getState().reset();
         reset();

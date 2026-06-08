@@ -22,7 +22,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 
-const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
+const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs, organization }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -85,7 +85,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               Quản trị
             </MuiLink>
             
-            {breadcrumbs ? (
+            {breadcrumbs && (
               breadcrumbs.map((crumb, idx) => (
                 crumb.path || crumb.href ? (
                   <MuiLink
@@ -104,12 +104,26 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                   </Typography>
                 )
               ))
-            ) : (
-              <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
-                Bảng điều khiển
-              </Typography>
             )}
           </Breadcrumbs>
+
+          {organization && (
+            <Typography
+              variant="subtitle2"
+              sx={{
+                ml: 2,
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: 'primary.main',
+                fontWeight: 700,
+                display: { xs: 'none', md: 'block' }
+              }}
+            >
+              {organization.name}
+            </Typography>
+          )}
         </Stack>
 
         {/* Right Side: Profile Dropdown Only */}

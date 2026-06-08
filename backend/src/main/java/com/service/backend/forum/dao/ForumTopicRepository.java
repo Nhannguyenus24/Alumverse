@@ -120,5 +120,17 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "WHERE EXTRACT(MONTH FROM created_at) = :month " +
            "AND EXTRACT(YEAR FROM created_at) = :year")
     Mono<Long> countTopicsInMonth(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT * FROM forum_topics " +
+           "WHERE (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumTopic> findAllWithPagination(
+            @Param("keyword") String keyword,
+            @Param("limit") int limit,
+            @Param("offset") long offset);
+
+    @Query("SELECT COUNT(*) FROM forum_topics " +
+           "WHERE (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countAll(@Param("keyword") String keyword);
 }
 

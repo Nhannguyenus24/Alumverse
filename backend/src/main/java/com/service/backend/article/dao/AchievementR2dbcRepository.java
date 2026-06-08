@@ -52,4 +52,28 @@ public interface AchievementR2dbcRepository extends ReactiveCrudRepository<Achie
 
     @Query("SELECT COUNT(*) FROM achievements WHERE (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countSearchAchievements(String keyword);
+
+    @Query("SELECT a.* FROM achievements a " +
+           "JOIN organization_members om ON a.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "ORDER BY a.awarded_date DESC LIMIT :limit OFFSET :offset")
+    Flux<Achievement> findByOrganizationIdWithPagination(Integer organizationId, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM achievements a " +
+           "JOIN organization_members om ON a.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId")
+    Mono<Long> countByOrganizationId(Integer organizationId);
+
+    @Query("SELECT a.* FROM achievements a " +
+           "JOIN organization_members om ON a.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "AND LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "ORDER BY a.awarded_date DESC LIMIT :limit OFFSET :offset")
+    Flux<Achievement> searchByOrganizationAndTitle(Integer organizationId, String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM achievements a " +
+           "JOIN organization_members om ON a.member_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "AND LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countSearchByOrganizationAndTitle(Integer organizationId, String keyword);
 }

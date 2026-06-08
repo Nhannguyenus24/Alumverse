@@ -26,7 +26,19 @@ public class AuditService {
     }
 
     public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistories(int page, int size) {
+        return getLoginHistories(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistories(Integer organizationId, int page, int size) {
         int offset = page * size;
+        if (organizationId != null) {
+            return Mono.zip(
+                    auditRepository.findByOrganizationIdWithUserInfo(organizationId, size, offset).collectList(),
+                    auditRepository.countByOrganizationId(organizationId)
+            ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+             .doOnSuccess(r -> logger.info("getLoginHistories (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+             .doOnError(e -> logger.error("Error fetching login histories for org {}", organizationId, e));
+        }
         return Mono.zip(
                 auditRepository.findAllWithUserInfo(size, offset).collectList(),
                 auditRepository.countAll()

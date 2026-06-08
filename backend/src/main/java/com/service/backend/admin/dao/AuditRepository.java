@@ -66,4 +66,22 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
 
     @Query("SELECT COUNT(DISTINCT user_id) FROM user_login_histories WHERE login_at >= CURRENT_TIMESTAMP - INTERVAL '1 day'")
     Mono<Long> countDailyActive();
+
+    @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
+           "u.email, u.user_name " +
+           "FROM user_login_histories ulh " +
+           "INNER JOIN users u ON ulh.user_id = u.id " +
+           "INNER JOIN organization_members om ON ulh.user_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "ORDER BY ulh.login_at DESC " +
+           "LIMIT :limit OFFSET :offset")
+    Flux<LoginHistoryResponse> findByOrganizationIdWithUserInfo(
+            @Param("organizationId") Integer organizationId,
+            @Param("limit") int limit,
+            @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM user_login_histories ulh " +
+           "INNER JOIN organization_members om ON ulh.user_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId")
+    Mono<Long> countByOrganizationId(@Param("organizationId") Integer organizationId);
 }

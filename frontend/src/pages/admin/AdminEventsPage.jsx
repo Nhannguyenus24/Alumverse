@@ -46,6 +46,7 @@ import {
   ADMIN_STATUS_CHIP_SX,
 } from "../../constants/adminUiShared";
 import useAdminEvents from "../../hooks/admin/useAdminEvents";
+import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
@@ -74,6 +75,7 @@ const StatTile = ({ label, value }) => (
 
 const AdminEventsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { activeOrgId } = useAdminSystemContext();
   const {
     events,
     totalItems,
@@ -98,7 +100,7 @@ const AdminEventsPage = () => {
     unpublishEvent,
     deleteEvent,
     updateEvent,
-  } = useAdminEvents();
+  } = useAdminEvents(activeOrgId || 'ALL');
   const { setBreadcrumbs } = useOutletContext();
 
   const [searchTerm, setSearchTerm] = useState(search);

@@ -8,6 +8,7 @@ import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
 import { useAuth } from '../hooks/useAuth';
+import { useOrganization } from '../hooks/useOrganization';
 import Page from '../components/Page';
 
 const HEADER_HEIGHT = 70;
@@ -21,6 +22,7 @@ const AdminLayoutShell = () => {
   const theme = useTheme();
 
   const { slug } = useParams();
+  const { organization } = useOrganization({ enabled: !!slug });
   const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { user, logout } = useAuth();
@@ -72,6 +74,7 @@ const AdminLayoutShell = () => {
           user={user}
           onLogout={logout}
           breadcrumbs={breadcrumbs}
+          organization={organization}
         />
 
         <Box
