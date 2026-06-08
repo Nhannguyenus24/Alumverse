@@ -25,6 +25,7 @@ public class PublicEndpointConfig {
 
     @PostConstruct
     public void init() {
+        Set<String> logEntries = new HashSet<>();
         handlerMapping.getHandlerMethods().forEach((mapping, method) -> {
             boolean isPublic = method.hasMethodAnnotation(PublicEndpoint.class) || 
                              method.getBeanType().isAnnotationPresent(PublicEndpoint.class);
@@ -34,12 +35,23 @@ public class PublicEndpointConfig {
                         .map(PathPattern::getPatternString)
                         .collect(Collectors.toSet());
                 
-                log.info("Registered public endpoint patterns from {}: {}", 
-                    method.getBeanType().getSimpleName() + "#" + method.getMethod().getName(), 
-                    patterns);
-                annotatedPublicUrls.addAll(patterns);
+                Set<String> methods = mapping.getMethodsCondition().getMethods().stream()
+                        .map(Enum::name)
+                        .collect(Collectors.toSet());
+                
+                String methodsString = methods.isEmpty() ? "[ANY]" : methods.toString();
+                
+                patterns.forEach(pattern -> {
+                    logEntries.add(String.format("%-20s %s", methodsString, pattern));
+                    annotatedPublicUrls.add(pattern);
+                });
             }
         });
+        String formattedUrls = logEntries.stream()
+                .sorted()
+                .map(entry -> "  - " + entry)
+                .collect(Collectors.joining("\n"));
+        log.info("Registered {} public endpoint patterns:\n{}", annotatedPublicUrls.size(), formattedUrls);
     }
 
     public String[] getAnnotatedPublicUrlsArray() {
