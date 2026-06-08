@@ -41,6 +41,7 @@ import {
   ADMIN_STATUS_CHIP_SX,
 } from "../../constants/adminUiShared";
 import useAdminMentorship from "../../hooks/admin/useAdminMentorship";
+import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
@@ -103,6 +104,7 @@ const PersonCell = ({ name, email, fallback }) => (
 const AdminMentorshipPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
+  const { activeOrgId } = useAdminSystemContext();
   const {
     sessions,
     sessionTotal,
@@ -126,7 +128,7 @@ const AdminMentorshipPage = () => {
     setApprovalFilter,
     approveMentor,
     statistics,
-  } = useAdminMentorship();
+  } = useAdminMentorship(activeOrgId);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Cố vấn (Mentorship)', active: true }]);

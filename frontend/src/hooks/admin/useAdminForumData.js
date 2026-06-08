@@ -168,9 +168,9 @@ const useAdminForumData = (activeOrgId) => {
   /* ─── Load banned posts ─── */
 
   const loadBannedPosts = useCallback(async () => {
-    const data = await safeFetch(() => api.getBannedPosts(bannedPage, 10), fallbackPaginated);
+    const data = await safeFetch(() => api.getBannedPosts(bannedPage, 10, activeOrgId || null), fallbackPaginated);
     setBannedPosts(normalizePaginated(data, 10));
-  }, [bannedPage]);
+  }, [bannedPage, activeOrgId]);
 
   useEffect(() => {
     const timer = setTimeout(loadBannedPosts, 0);
@@ -181,11 +181,11 @@ const useAdminForumData = (activeOrgId) => {
 
   const loadYesterdayPosts = useCallback(async () => {
     const data = await safeFetch(
-      () => api.getNewPostsYesterdayPaginated(yesterdayPage, 10),
+      () => api.getNewPostsYesterdayPaginated(yesterdayPage, 10, activeOrgId || null),
       fallbackPaginated,
     );
     setYesterdayPosts(normalizePaginated(data, 10));
-  }, [yesterdayPage]);
+  }, [yesterdayPage, activeOrgId]);
 
   useEffect(() => {
     const timer = setTimeout(loadYesterdayPosts, 0);
@@ -193,9 +193,9 @@ const useAdminForumData = (activeOrgId) => {
   }, [loadYesterdayPosts]);
 
   const loadReports = useCallback(async () => {
-    const data = await safeFetch(() => api.getPendingReports(reportsPage, 10), fallbackPaginated);
+    const data = await safeFetch(() => api.getPendingReports(reportsPage, 10, activeOrgId || null), fallbackPaginated);
     setReports(normalizePaginated(data, 10));
-  }, [reportsPage]);
+  }, [reportsPage, activeOrgId]);
 
   useEffect(() => {
     const timer = setTimeout(loadReports, 0);
@@ -203,11 +203,11 @@ const useAdminForumData = (activeOrgId) => {
   }, [loadReports]);
 
   const loadAllPosts = useCallback(async () => {
-    const allPayload = await safeFetch(() => api.getAllPosts(postsSearch, postsPage, postsSize), fallbackPaginated);
+    const allPayload = await safeFetch(() => api.getAllPosts(postsSearch, postsPage, postsSize, activeOrgId || null), fallbackPaginated);
     const paginated = normalizePaginated(allPayload, postsSize);
     const normalized = paginated.content.map(normalizePostRowForAdmin).filter(Boolean);
     setAllPosts({ ...paginated, content: normalized });
-  }, [postsSearch, postsPage, postsSize]);
+  }, [postsSearch, postsPage, postsSize, activeOrgId]);
 
   useEffect(() => {
     const timer = setTimeout(loadAllPosts, 0);
@@ -219,11 +219,8 @@ const useAdminForumData = (activeOrgId) => {
     if (statusFilter !== 'ALL') {
       list = list.filter((post) => String(post.moderationStatus || '').toUpperCase() === statusFilter);
     }
-    if (organizationFilter !== 'ALL') {
-      list = list.filter((post) => Number(post.organizationId) === Number(organizationFilter));
-    }
     return list;
-  }, [allPosts, statusFilter, organizationFilter]);
+  }, [allPosts, statusFilter]);
 
   /* ─── Load categories ─── */
 

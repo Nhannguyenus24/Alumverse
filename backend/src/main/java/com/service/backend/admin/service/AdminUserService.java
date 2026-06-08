@@ -239,8 +239,20 @@ public class AdminUserService {
     }
 
     public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(String keyword, int page, int size) {
+        return getAllVerificationRequests(null, keyword, page, size);
+    }
+
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
+        if (organizationId != null) {
+            return Mono.zip(
+                    adminUserRepository.findAllVerificationRequestsByOrganization(organizationId, kw, size, offset).collectList(),
+                    adminUserRepository.countAllVerificationRequestsByOrganization(organizationId, kw)
+            ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+             .doOnSuccess(r -> logger.info("getAllVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+             .doOnError(e -> logger.error("Error fetching verification requests for org {}", organizationId, e));
+        }
         return Mono.zip(
                 adminUserRepository.findAllVerificationRequests(kw, size, offset).collectList(),
                 adminUserRepository.countAllVerificationRequests(kw)
@@ -250,8 +262,20 @@ public class AdminUserService {
     }
 
     public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(String keyword, int page, int size) {
+        return getPendingVerificationRequests(null, keyword, page, size);
+    }
+
+    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
+        if (organizationId != null) {
+            return Mono.zip(
+                    adminUserRepository.findPendingVerificationRequestsByOrganization(organizationId, kw, size, offset).collectList(),
+                    adminUserRepository.countPendingVerificationRequestsByOrganization(organizationId, kw)
+            ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+             .doOnSuccess(r -> logger.info("getPendingVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+             .doOnError(e -> logger.error("Error fetching pending verification requests for org {}", organizationId, e));
+        }
         return Mono.zip(
                 adminUserRepository.findPendingVerificationRequests(kw, size, offset).collectList(),
                 adminUserRepository.countPendingVerificationRequests(kw)
@@ -297,7 +321,25 @@ public class AdminUserService {
             String action,
             int page,
             int size) {
+        return getAdminActionLogs(null, adminUserId, targetUserId, action, page, size);
+    }
+
+    public Mono<PaginatedResponse<AdminAuditLog>> getAdminActionLogs(
+            Integer organizationId,
+            Integer adminUserId,
+            Integer targetUserId,
+            String action,
+            int page,
+            int size) {
         int offset = page * size;
+        if (organizationId != null) {
+            return Mono.zip(
+                    adminAuditLogRepository.findAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action, size, offset).collectList(),
+                    adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action))
+                    .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                    .doOnSuccess(r -> logger.info("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(e -> logger.error("Error fetching admin action logs for org {}", organizationId, e));
+        }
         return Mono.zip(
                 adminAuditLogRepository.findAdminActionLogs(adminUserId, targetUserId, action, size, offset).collectList(),
                 adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action))

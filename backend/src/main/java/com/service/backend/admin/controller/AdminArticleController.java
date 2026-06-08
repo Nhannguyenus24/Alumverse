@@ -41,69 +41,76 @@ public class AdminArticleController {
     @Operation(summary = "Get all news across organizations")
     @GetMapping("/news")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> getAllNews(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllNews(keyword, page, limit)
+        return adminArticleService.getAllNews(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("News retrieved successfully", response)));
     }
 
     @Operation(summary = "Get all alumni posts across organizations")
     @GetMapping("/alumni-posts")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getAllAlumniPosts(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllAlumniPosts(keyword, page, limit)
+        return adminArticleService.getAllAlumniPosts(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Alumni posts retrieved successfully", response)));
     }
 
     @Operation(summary = "Get all achievements across organizations")
     @GetMapping("/achievements")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getAllAchievements(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllAchievements(keyword, page, limit)
+        return adminArticleService.getAllAchievements(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Achievements retrieved successfully", response)));
     }
 
     @Operation(summary = "Get all jobs across organizations")
     @GetMapping("/jobs")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getAllJobs(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllJobs(keyword, page, limit)
+        return adminArticleService.getAllJobs(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Jobs retrieved successfully", response)));
     }
 
     @Operation(summary = "Get all learning resources across organizations")
     @GetMapping("/learning-resources")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<LearningResourceResponse>>>> getAllLearningResources(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllLearningResources(keyword, page, limit)
+        return adminArticleService.getAllLearningResources(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Learning resources retrieved successfully", response)));
     }
 
     @Operation(summary = "Get all events across organizations")
     @GetMapping("/events")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getAllEvents(
+            @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminEventService.getAllEvents(page, limit)
+        return adminEventService.getAllEvents(organizationId, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Events retrieved successfully", response)));
     }
 
     @Operation(summary = "Get all funds across organizations")
     @GetMapping("/funds")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundListItemResponse>>>> getAllFunds(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllFunds(keyword, page, limit)
+        return adminArticleService.getAllFunds(organizationId, keyword, page, limit)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Funds retrieved successfully", response)));
     }
 

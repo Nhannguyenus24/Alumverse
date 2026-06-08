@@ -39,52 +39,43 @@ public class AdminEventController {
         this.adminEventService = adminEventService;
     }
 
-    @Operation(summary = "List all events across organizations (paginated)")
+    @Operation(summary = "List all events, optionally filtered by organization (paginated)")
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getAllEvents(
+            @RequestParam(required = false) Long organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.getAllEvents(page, size)
+        return adminEventService.getAllEvents(organizationId, page, size)
                 .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved all events", paginated)));
     }
 
-    @Operation(summary = "List events by organization (paginated)")
-    @GetMapping("/organization/{organizationId}")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getEventsByOrganization(
-            @PathVariable @Min(value = 1, message = "Organization ID must be greater than 0") Long organizationId,
-            @Parameter(example = "0")
-            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
-            @Parameter(example = "10")
-            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.getEventsByOrganization(organizationId, page, size)
-                .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events for organization", paginated)));
-    }
-
-    @Operation(summary = "Search all events by keyword")
+    @Operation(summary = "Search all events by keyword, optionally filtered by organization")
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> searchAllEvents(
             @Parameter(example = "Hội thảo AI")
             @RequestParam @NotBlank(message = "Keyword is required") String keyword,
+            @RequestParam(required = false) Long organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.searchAllEvents(keyword, page, size)
+        return adminEventService.searchAllEvents(organizationId, keyword, page, size)
                 .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Search results retrieved", paginated)));
     }
 
-    @Operation(summary = "Filter events by publish status")
+    @Operation(summary = "Filter events by publish status, optionally filtered by organization")
     @GetMapping("/by-status")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getEventsByPublishStatus(
             @Parameter(example = "true")
             @RequestParam Boolean isPublished,
+            @RequestParam(required = false) Long organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.getEventsByPublishStatus(isPublished, page, size)
+        return adminEventService.getEventsByPublishStatus(organizationId, isPublished, page, size)
                 .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events by publish status", paginated)));
     }
 

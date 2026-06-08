@@ -171,8 +171,10 @@ export const {
 } = adminOrganizationApi;
 
 export const adminAuditApi = {
-	getLoginHistory(page = 0, size = 50) {
-		return apiClient.get('/admin/audit/login-history', { params: { page, size } });
+	getLoginHistory(page = 0, size = 50, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get('/admin/audit/login-history', { params });
 	},
 
 	getLoginHistoryByUser(userId, page = 0, size = 50) {
@@ -233,8 +235,11 @@ export const adminUserApi = {
 		return apiClient.post(`${BASE_ADMIN_USERS}/admins`, body);
 	},
 
-	getVerificationRequests(pendingOnly = false, page = 0, size = 20, keyword = '') {
-		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params: { pendingOnly, page, size, keyword } });
+	getVerificationRequests(pendingOnly = false, page = 0, size = 20, keyword = '', organizationId = null) {
+		const params = { pendingOnly, page, size };
+		if (keyword) params.keyword = keyword;
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params });
 	},
 
 	getUserVerificationRequests(userId) {
@@ -276,8 +281,10 @@ export const adminMentorshipApi = {
 		return unwrap(response);
 	},
 
-	getSessionsByStatus(status, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/sessions/by-status`, { params: { status, page, size } });
+	getSessionsByStatus(status, page = 0, size = 10, organizationId = null) {
+		const params = { status, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/sessions/by-status`, { params });
 	},
 
 	getSessionById(sessionId) {
@@ -292,12 +299,16 @@ export const adminMentorshipApi = {
 		return apiClient.delete(`${BASE_ADMIN_MENTORSHIP}/sessions/${sessionId}`);
 	},
 
-	getAllMentorProfiles(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors`, { params: { page, size } });
+	getAllMentorProfiles(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors`, { params });
 	},
 
-	getMentorProfilesByApproval(isApproved, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-approval`, { params: { isApproved, page, size } });
+	getMentorProfilesByApproval(isApproved, page = 0, size = 10, organizationId = null) {
+		const params = { isApproved, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-approval`, { params });
 	},
 
 	approveMentor(memberId) {
@@ -613,20 +624,26 @@ export const eventApi = {
 };
 
 export const adminEventApi = {
-	getAllEvents(page = 0, size = 10) {
-		return apiClient.get(BASE_ADMIN_EVENTS, { params: { page, size } });
+	getAllEvents(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(BASE_ADMIN_EVENTS, { params });
 	},
 
 	getEventsByOrganization(organizationId, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/organization/${organizationId}`, { params: { page, size } });
+		return apiClient.get(BASE_ADMIN_EVENTS, { params: { page, size, organizationId } });
 	},
 
-	searchAllEvents(keyword, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params: { keyword, page, size } });
+	searchAllEvents(keyword, page = 0, size = 10, organizationId = null) {
+		const params = { keyword, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params });
 	},
 
-	getEventsByPublishStatus(isPublished, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params: { isPublished, page, size } });
+	getEventsByPublishStatus(isPublished, page = 0, size = 10, organizationId = null) {
+		const params = { isPublished, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params });
 	},
 
 	getEventById(eventId) {
@@ -724,10 +741,10 @@ export const {
 	searchAllEvents,
 	getEventsByPublishStatus,
 	getEventById,
-	updateEvent: updateAdminEvent,
-	deleteEvent: deleteAdminEvent,
-	publishEvent: publishAdminEvent,
-	unpublishEvent: unpublishAdminEvent,
+	updateEvent,
+	deleteEvent,
+	publishEvent,
+	unpublishEvent,
 	getTicketsByEvent,
 	getTicketsByEventAndStatus,
 	cancelTicket,
@@ -764,17 +781,22 @@ export const adminForumApi = {
 		return apiClient.get(`${BASE_ADMIN_FORUM}/statistics/timeline`, { params: { year } });
 	},
 
-	getNewPostsYesterdayPaginated(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params: { page, size } });
+	getNewPostsYesterdayPaginated(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params });
 	},
 
-	getBannedPosts(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params: { page, size } });
+	getBannedPosts(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params });
 	},
 
-	getAllPosts(keyword = '', page = 0, size = 20) {
+	getAllPosts(keyword = '', page = 0, size = 20, organizationId = null) {
 		const params = { page, size };
 		if (keyword) params.keyword = keyword;
+		if (organizationId) params.organizationId = organizationId;
 		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params });
 	},
 
@@ -790,8 +812,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/posts/${postId}`);
 	},
 
-	getPendingReports(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params: { page, size } });
+	getPendingReports(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params });
 	},
 
 	reviewReport(reportId, payload) {

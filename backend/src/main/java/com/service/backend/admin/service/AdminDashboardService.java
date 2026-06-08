@@ -82,13 +82,25 @@ public class AdminDashboardService {
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(int page, int size) {
+        return getActivities(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(Integer organizationId, int page, int size) {
         int limit = size;
         int offset = page * size;
 
-        Flux<ActivityItemDTO> items = adminAuditLogRepository.findAdminActionLogs(null, null, null, limit, offset)
-                .map(this::toDto);
+        Flux<ActivityItemDTO> items;
+        Mono<Long> total;
 
-        Mono<Long> total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
+        if (organizationId != null) {
+            items = adminAuditLogRepository.findAdminActionLogsByOrganization(organizationId, null, null, null, limit, offset)
+                    .map(this::toDto);
+            total = adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, null, null, null);
+        } else {
+            items = adminAuditLogRepository.findAdminActionLogs(null, null, null, limit, offset)
+                    .map(this::toDto);
+            total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
+        }
 
         return items.collectList()
                 .zipWith(total)

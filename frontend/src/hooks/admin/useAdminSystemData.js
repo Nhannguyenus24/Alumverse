@@ -124,13 +124,14 @@ const useAdminSystemData = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    const orgParam = activeOrgId ? { organizationId: activeOrgId } : {};
 
     const [metrics, activitiesPayload, users, organizations, rawLoginLogs, loginStats] = await Promise.all([
       fetchSafe(() => apiClient.get('/admin/dashboard/metrics'), emptyMetrics),
-      fetchSafe(() => apiClient.get('/admin/dashboard/activities', { params: { page: 0, size: 200 } }), []),
+      fetchSafe(() => apiClient.get('/admin/dashboard/activities', { params: { page: 0, size: 200, ...orgParam } }), []),
       fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 20 } }), []),
       fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 20 } }), []),
-      fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20 } }), null),
+      fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20, ...orgParam } }), null),
       fetchSafe(() => apiClient.get('/admin/audit/login-history/stats'), { dailyStats: [] }),
     ]);
 
@@ -154,7 +155,7 @@ const useAdminSystemData = () => {
     });
 
     setLoading(false);
-  }, []);
+  }, [activeOrgId]);
 
   useEffect(() => {
     const timer = setTimeout(loadData, 0);

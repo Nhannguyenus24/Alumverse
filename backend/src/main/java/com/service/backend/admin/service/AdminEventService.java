@@ -53,7 +53,19 @@ public class AdminEventService {
     }
 
     public Mono<PaginatedResponse<Event>> getAllEvents(int page, int size) {
+        return getAllEvents(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<Event>> getAllEvents(Long organizationId, int page, int size) {
         int offset = page * size;
+        if (organizationId != null) {
+            return adminEventRepository.findEventsByOrganization(organizationId, size, offset)
+                    .collectList()
+                    .zipWith(adminEventRepository.countEventsByOrganization(organizationId))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                    .doOnSuccess(r -> log.info("getAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching events for org {}", organizationId, error));
+        }
         return adminEventRepository.findAllEventsWithPagination(size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countAllEvents())
@@ -73,7 +85,19 @@ public class AdminEventService {
     }
 
     public Mono<PaginatedResponse<Event>> searchAllEvents(String keyword, int page, int size) {
+        return searchAllEvents(null, keyword, page, size);
+    }
+
+    public Mono<PaginatedResponse<Event>> searchAllEvents(Long organizationId, String keyword, int page, int size) {
         int offset = page * size;
+        if (organizationId != null) {
+            return adminEventRepository.searchEventsByOrganization(organizationId, keyword, size, offset)
+                    .collectList()
+                    .zipWith(adminEventRepository.countSearchEventsByOrganization(organizationId, keyword))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                    .doOnSuccess(r -> log.info("searchAllEvents (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error searching events for org {}", organizationId, error));
+        }
         return adminEventRepository.searchAllEvents(keyword, size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countSearchAllEvents(keyword))
@@ -83,7 +107,19 @@ public class AdminEventService {
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByPublishStatus(Boolean isPublished, int page, int size) {
+        return getEventsByPublishStatus(null, isPublished, page, size);
+    }
+
+    public Mono<PaginatedResponse<Event>> getEventsByPublishStatus(Long organizationId, Boolean isPublished, int page, int size) {
         int offset = page * size;
+        if (organizationId != null) {
+            return adminEventRepository.findEventsByOrganizationAndPublishStatus(organizationId, isPublished, size, offset)
+                    .collectList()
+                    .zipWith(adminEventRepository.countEventsByOrganizationAndPublishStatus(organizationId, isPublished))
+                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                    .doOnSuccess(r -> log.info("getEventsByPublishStatus (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching events by status for org {}", organizationId, error));
+        }
         return adminEventRepository.findEventsByPublishStatus(isPublished, size, offset)
                 .collectList()
                 .zipWith(adminEventRepository.countEventsByPublishStatus(isPublished))

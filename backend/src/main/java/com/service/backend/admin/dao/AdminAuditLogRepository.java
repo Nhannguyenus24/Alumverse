@@ -76,4 +76,32 @@ public interface AdminAuditLogRepository extends R2dbcRepository<AdminAuditLog, 
             @Param("adminUserId") Integer adminUserId,
             @Param("targetUserId") Integer targetUserId,
             @Param("action") String action);
+
+    @Query("SELECT aal.* FROM admin_audit_logs aal " +
+           "JOIN organization_members om ON aal.target_user_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "AND (:adminUserId IS NULL OR aal.admin_user_id = :adminUserId) " +
+           "AND (:targetUserId IS NULL OR aal.target_user_id = :targetUserId) " +
+           "AND (:action IS NULL OR aal.action = :action) " +
+           "ORDER BY aal.created_at DESC " +
+           "LIMIT :limit OFFSET :offset")
+    Flux<AdminAuditLog> findAdminActionLogsByOrganization(
+            @Param("organizationId") Integer organizationId,
+            @Param("adminUserId") Integer adminUserId,
+            @Param("targetUserId") Integer targetUserId,
+            @Param("action") String action,
+            @Param("limit") int limit,
+            @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM admin_audit_logs aal " +
+           "JOIN organization_members om ON aal.target_user_id = om.user_id " +
+           "WHERE om.organization_id = :organizationId " +
+           "AND (:adminUserId IS NULL OR aal.admin_user_id = :adminUserId) " +
+           "AND (:targetUserId IS NULL OR aal.target_user_id = :targetUserId) " +
+           "AND (:action IS NULL OR aal.action = :action)")
+    Mono<Long> countAdminActionLogsByOrganization(
+            @Param("organizationId") Integer organizationId,
+            @Param("adminUserId") Integer adminUserId,
+            @Param("targetUserId") Integer targetUserId,
+            @Param("action") String action);
 }
