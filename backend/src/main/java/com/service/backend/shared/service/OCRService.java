@@ -145,17 +145,23 @@ public class OCRService {
         String pdfFilePath = "src/main/resources/tessdata/sample_document.pdf";
 
         try {
-            System.out.println("--- TXT Output ---");
-            System.out.println(ocrService.extractTextFromFile(txtFilePath));
+            StringBuilder sb = new StringBuilder();
 
-            System.out.println("\n--- PNG Output ---");
-            System.out.println(ocrService.extractTextFromFile(pngFilePath));
+            sb.append("--- TXT Output ---\n");
+            sb.append(ocrService.extractTextFromFile(txtFilePath)).append("\n");
 
-            System.out.println("\n--- JPG Output ---");
-            System.out.println(ocrService.extractTextFromFile(jpgFilePath));
+            sb.append("\n--- PNG Output ---\n");
+            sb.append(ocrService.extractTextFromFile(pngFilePath)).append("\n");
 
-            System.out.println("\n--- PDF Output ---");
-            System.out.println(ocrService.extractTextFromFile(pdfFilePath));
+            sb.append("\n--- JPG Output ---\n");
+            sb.append(ocrService.extractTextFromFile(jpgFilePath)).append("\n");
+
+            sb.append("\n--- PDF Output ---\n");
+            sb.append(ocrService.extractTextFromFile(pdfFilePath)).append("\n");
+
+            Path outputPath = Paths.get("src/main/resources/tessdata/output.txt");
+            Files.writeString(outputPath, sb.toString(), StandardCharsets.UTF_8);
+            System.out.println("Da ghi tat ca ket qua ra file: " + outputPath.toAbsolutePath());
         } catch (Exception e) {
             e.printStackTrace();
         }
