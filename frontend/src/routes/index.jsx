@@ -97,9 +97,6 @@ const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFu
 const AdminFundReceivingInfosPage = Loadable(lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")));
 const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
 
-const CreateDonationPage = Loadable(
-  lazy(() => import("../pages/admin/CreateDonationPage")),
-);
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
 );
