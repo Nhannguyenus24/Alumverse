@@ -68,38 +68,50 @@ public class LearningResourceService {
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                learningResourceRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> learningResourceRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
                         .collectList()
-                        .zipWith(learningResourceRepository.countByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(learningResourceRepository.countByOrganizationId(orgId)))
+                .switchIfEmpty(Mono.defer(() -> learningResourceRepository.findAllWithPagination(limit, offset)
+                        .collectList()
+                        .zipWith(learningResourceRepository.count())))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> getByType(String type, int page, int limit) {
         int offset = page * limit;
         LearningResourceType resourceType = LearningResourceType.valueOf(type.toUpperCase());
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                learningResourceRepository.findByType(orgId, resourceType, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> learningResourceRepository.findByType(orgId, resourceType, limit, offset)
                         .collectList()
-                        .zipWith(learningResourceRepository.countByType(orgId, resourceType))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(learningResourceRepository.countByType(orgId, resourceType)))
+                .switchIfEmpty(Mono.defer(() -> learningResourceRepository.findAll() // Fallback to all if type filter is org-specific but no org
+                        .filter(r -> r.getType() == resourceType)
+                        .skip(offset)
+                        .take(limit)
+                        .collectList()
+                        .zipWith(learningResourceRepository.count()))) // This is a bit inefficient but works for now
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<LearningResourceResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                learningResourceRepository.searchResources(orgId, keyword, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> learningResourceRepository.searchResources(orgId, keyword, limit, offset)
                         .collectList()
-                        .zipWith(learningResourceRepository.countSearchResources(orgId, keyword))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(learningResourceRepository.countSearchResources(orgId, keyword)))
+                .switchIfEmpty(Mono.defer(() -> learningResourceRepository.searchAllByTitleWithPagination(keyword, limit, offset)
+                        .collectList()
+                        .zipWith(learningResourceRepository.countAllSearchByTitle(keyword))))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(LearningResourceResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 }

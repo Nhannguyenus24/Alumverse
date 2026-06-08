@@ -18,7 +18,7 @@ public final class SecurityUtils {
     private static Mono<Authentication> getAuthentication() {
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not authenticated")));
+                .filter(auth -> auth != null && auth.isAuthenticated());
     }
 
     public static Mono<Long> getCurrentUserId() {
@@ -33,18 +33,19 @@ public final class SecurityUtils {
                     if (details instanceof Integer orgId) {
                         return Mono.just(orgId);
                     }
-                    return Mono.error(new RuntimeException("No organization id in authentication context"));
+                    return Mono.empty();
                 });
     }
 
     public static Mono<String> getCurrentUserRole() {
         return getAuthentication()
-                .map(auth -> auth.getAuthorities().stream()
+                .flatMap(auth -> auth.getAuthorities().stream()
                         .map(GrantedAuthority::getAuthority)
                         .filter(a -> a.startsWith("ROLE_"))
                         .map(a -> a.substring(5))
                         .findFirst()
-                        .orElseThrow(() -> new RuntimeException("No role found")));
+                        .map(Mono::just)
+                        .orElse(Mono.empty()));
     }
 
     public static Mono<Boolean> hasRole(String role) {

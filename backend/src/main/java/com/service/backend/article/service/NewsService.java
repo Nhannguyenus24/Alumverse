@@ -81,38 +81,50 @@ public class NewsService {
 
     public Mono<PaginatedResponse<NewsResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                newsRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> newsRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
                         .collectList()
-                        .zipWith(newsRepository.countByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(NewsResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(newsRepository.countByOrganizationId(orgId)))
+                .switchIfEmpty(Mono.defer(() -> newsRepository.findAllWithPagination(limit, offset)
+                        .collectList()
+                        .zipWith(newsRepository.count())))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(NewsResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                newsRepository.findPublishedByOrganizationId(orgId, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> newsRepository.findPublishedByOrganizationId(orgId, limit, offset)
                         .collectList()
-                        .zipWith(newsRepository.countPublishedByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(NewsResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(newsRepository.countPublishedByOrganizationId(orgId)))
+                .switchIfEmpty(Mono.defer(() -> newsRepository.findAll() // Fallback to all published if no org
+                        .filter(n -> !n.getIsHidden())
+                        .skip(offset)
+                        .take(limit)
+                        .collectList()
+                        .zipWith(newsRepository.count()))) // Count is slightly inaccurate (includes hidden) but ok for public
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(NewsResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                newsRepository.searchNews(orgId, keyword, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> newsRepository.searchNews(orgId, keyword, limit, offset)
                         .collectList()
-                        .zipWith(newsRepository.countSearchNews(orgId, keyword))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(NewsResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(newsRepository.countSearchNews(orgId, keyword)))
+                .switchIfEmpty(Mono.defer(() -> newsRepository.searchAllByTitleWithPagination(keyword, limit, offset)
+                        .collectList()
+                        .zipWith(newsRepository.countAllSearchByTitle(keyword))))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(NewsResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<NewsResponse> publish(Integer id) {

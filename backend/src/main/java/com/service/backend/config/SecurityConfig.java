@@ -82,13 +82,13 @@ public class SecurityConfig {
 
         return (exchange, chain) -> publicMatcher.matches(exchange)
                 .flatMap(matchResult -> {
-                    if (matchResult.isMatch()) {
-                        return chain.filter(exchange);
-                    }
-
                     String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+                    boolean isPublic = matchResult.isMatch();
 
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        if (isPublic) {
+                            return chain.filter(exchange);
+                        }
                         return unauthenticatedResponse(exchange, "Request is not authenticated", "UNAUTHORIZED");
                     }
 
@@ -100,6 +100,7 @@ public class SecurityConfig {
                         Integer organizationId = jwtUtils.getOrganizationIdFromToken(token);
 
                         if (userId == null || userRole == null) {
+                            if (isPublic) return chain.filter(exchange);
                             return Mono.error(new RuntimeException("Invalid token: missing user ID or role"));
                         }
 
@@ -113,6 +114,9 @@ public class SecurityConfig {
                                 .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 
                     } catch (RuntimeException e) {
+                        if (isPublic) {
+                            return chain.filter(exchange);
+                        }
                         String message = e.getMessage();
                         String errorCode = "INVALID_TOKEN";
 

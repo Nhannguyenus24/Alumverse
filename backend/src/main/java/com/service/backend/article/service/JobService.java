@@ -80,51 +80,63 @@ public class JobService {
 
     public Mono<PaginatedResponse<JobResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                jobRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> jobRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
                         .collectList()
-                        .zipWith(jobRepository.countByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(JobResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(jobRepository.countByOrganizationId(orgId)))
+                .switchIfEmpty(Mono.defer(() -> jobRepository.findAllWithPagination(limit, offset)
+                        .collectList()
+                        .zipWith(jobRepository.count())))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(JobResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getActive(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                jobRepository.findActiveByOrganizationId(orgId, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> jobRepository.findActiveByOrganizationId(orgId, limit, offset)
                         .collectList()
-                        .zipWith(jobRepository.countActiveByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(JobResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(jobRepository.countActiveByOrganizationId(orgId)))
+                .switchIfEmpty(Mono.defer(() -> jobRepository.findAllActiveWithPagination(limit, offset)
+                        .collectList()
+                        .zipWith(jobRepository.countAllActive())))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(JobResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<JobResponse>> getOpenJobs(int page, int limit) {
         int offset = page * limit;
         LocalDate today = LocalDate.now();
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                jobRepository.findOpenJobs(orgId, today, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> jobRepository.findOpenJobs(orgId, today, limit, offset)
                         .collectList()
-                        .zipWith(jobRepository.countOpenJobs(orgId, today))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(JobResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(jobRepository.countOpenJobs(orgId, today)))
+                .switchIfEmpty(Mono.defer(() -> jobRepository.findAllOpenJobsWithPagination(today, limit, offset)
+                        .collectList()
+                        .zipWith(jobRepository.countAllOpenJobs(today))))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(JobResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<PaginatedResponse<JobResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                jobRepository.searchJobs(orgId, keyword, limit, offset)
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> jobRepository.searchJobs(orgId, keyword, limit, offset)
                         .collectList()
-                        .zipWith(jobRepository.countSearchJobs(orgId, keyword))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(JobResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                        .zipWith(jobRepository.countSearchJobs(orgId, keyword)))
+                .switchIfEmpty(Mono.defer(() -> jobRepository.searchAllByTitleWithPagination(keyword, limit, offset)
+                        .collectList()
+                        .zipWith(jobRepository.countAllSearchByTitle(keyword))))
+                .map(tuple -> PaginatedResponse.of(
+                        tuple.getT1().stream().map(JobResponse::from).toList(),
+                        tuple.getT2(), page, limit
+                ));
     }
 
     public Mono<JobResponse> activate(Integer id) {
