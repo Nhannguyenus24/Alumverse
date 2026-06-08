@@ -25,6 +25,7 @@ public interface IEventRepository {
 
     // Event Search & Filter
     Mono<PaginatedResponse<Event>> findUpcomingEvents(Long organizationId, int page, int limit);
+    Mono<PaginatedResponse<Event>> findUpcomingEvents(int page, int limit);
     Mono<PaginatedResponse<Event>> findPastEvents(Long organizationId, int page, int limit);
     Mono<PaginatedResponse<Event>> searchEvents(Long organizationId, String keyword, int page, int limit);
 

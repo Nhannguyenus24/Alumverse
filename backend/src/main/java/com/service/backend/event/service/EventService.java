@@ -9,8 +9,10 @@ import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,6 +23,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EventService {
 
     private final IEventRepository eventRepository;
@@ -107,7 +110,13 @@ public class EventService {
     }
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(Long organizationId, int page, int limit) {
-        return eventRepository.findUpcomingEvents(organizationId, page, limit);
+        return eventRepository.findUpcomingEvents(organizationId, page, limit)
+                .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())));
+    }
+
+    public Mono<PaginatedResponse<Event>> getUpcomingEvents(int page, int limit) {
+        return eventRepository.findUpcomingEvents(page, limit)
+                .doOnNext(res -> log.info("Fetched {} upcoming events globally: {}", res.getItems().size(), JsonUtils.toJson(res.getItems())));
     }
 
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
