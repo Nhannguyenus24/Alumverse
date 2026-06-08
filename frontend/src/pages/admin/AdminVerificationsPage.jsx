@@ -31,11 +31,13 @@ import Iconify from '../../components/Iconify';
 import { getVerificationRequests, reviewVerificationRequest } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const AdminVerificationsPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
+  const { activeOrgId } = useAdminSystemContext();
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -67,7 +69,7 @@ const AdminVerificationsPage = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery);
+      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery, activeOrgId || null);
       const data = res?.data?.data || {};
       setRequests(data.items || []);
       setTotalCount(data.totalElements || 0);
@@ -80,7 +82,7 @@ const AdminVerificationsPage = () => {
 
   useEffect(() => {
     void fetchRequests();
-  }, [page, rowsPerPage, pendingOnly, searchQuery]);
+  }, [page, rowsPerPage, pendingOnly, searchQuery, activeOrgId]);
 
   const handleReview = (request) => {
     setSelectedRequest(request);

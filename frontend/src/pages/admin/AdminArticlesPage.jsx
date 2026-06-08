@@ -18,6 +18,7 @@ import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import { ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
+import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -40,13 +41,14 @@ const createdOf = (a) => a.createdAt || a.created_at || a.timeStarted || a.event
 const AdminArticlesPage = () => {
   const { setBreadcrumbs } = useOutletContext();
   const navigate = useOrgNavigate();
+  const { activeOrgId } = useAdminSystemContext();
   const {
     channel, setChannel,
     articles, totalItems, loading,
     page, setPage,
     rowsPerPage, setRowsPerPage,
     search: backendSearch, setSearch: setBackendSearch,
-  } = useAdminArticles('news');
+  } = useAdminArticles('news', activeOrgId);
 
   const [searchTerm, setSearchTerm] = useState(backendSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);

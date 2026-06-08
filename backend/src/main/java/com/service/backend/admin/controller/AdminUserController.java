@@ -69,19 +69,6 @@ public class AdminUserController {
     }
     
     /**
-     * Get users by organization with pagination
-     */
-    @GetMapping("/organization/{organizationId}")
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<UserResponse>>>> getUsersByOrganization(
-            @PathVariable Integer organizationId,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return adminUserService.getUsersByOrganization(organizationId, page, size)
-                .map(pagedResponse -> ResponseEntity.ok(
-                        new ApiResponse<>("Users fetched successfully", pagedResponse)));
-    }
-    
-    /**
      * Get user by ID
      */
     @GetMapping("/{userId}")
@@ -182,17 +169,18 @@ public class AdminUserController {
     }
 
     /**
-     * Get all verification requests with optional pending-only filter
+     * Get all verification requests with optional pending-only and organization filters
      */
     @GetMapping("/verification-requests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getVerificationRequests(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "false") boolean pendingOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
         Mono<PaginatedResponse<VerificationRequestResponse>> source = pendingOnly
-                ? adminUserService.getPendingVerificationRequests(keyword, page, size)
-                : adminUserService.getAllVerificationRequests(keyword, page, size);
+                ? adminUserService.getPendingVerificationRequests(organizationId, keyword, page, size)
+                : adminUserService.getAllVerificationRequests(organizationId, keyword, page, size);
         return source
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Verification requests fetched successfully", data)));
@@ -290,11 +278,12 @@ public class AdminUserController {
 
     @GetMapping("/alumni/verification-requests")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<VerificationRequestResponse>>>> getAlumniVerificationRequests(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "true") boolean pendingOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return getVerificationRequests(keyword, pendingOnly, page, size);
+        return getVerificationRequests(organizationId, keyword, pendingOnly, page, size);
     }
 
     @PutMapping("/alumni/verification-requests/{requestId}")
@@ -323,12 +312,13 @@ public class AdminUserController {
      */
     @GetMapping("/admin-actions")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminAuditLog>>>> getAdminActionLogs(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(required = false) Integer adminUserId,
             @RequestParam(required = false) Integer targetUserId,
             @RequestParam(required = false) String action,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return adminUserService.getAdminActionLogs(adminUserId, targetUserId, action, page, size)
+        return adminUserService.getAdminActionLogs(organizationId, adminUserId, targetUserId, action, page, size)
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Admin action logs fetched successfully", data)));
     }

@@ -31,9 +31,10 @@ public class AdminDashboardController {
 
     @GetMapping("/activities")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ActivityItemDTO>>>> getActivities(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return dashboardService.getActivities(page, size)
+        return dashboardService.getActivities(organizationId, page, size)
                 .map(res -> ResponseEntity.ok(new ApiResponse<>("Activities fetched", res)));
     }
 }

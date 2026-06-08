@@ -34,7 +34,7 @@ const normalizePage = (raw) => {
   return fallbackPage;
 };
 
-const useAdminArticles = (initialChannel = 'news') => {
+const useAdminArticles = (initialChannel = 'news', organizationId = null) => {
   const [channel, setChannel] = useState(initialChannel);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -48,13 +48,14 @@ const useAdminArticles = (initialChannel = 'news') => {
     setLoading(true);
     const params = { page, limit: rowsPerPage };
     if (search && search.trim() !== '') params.keyword = search.trim();
+    if (organizationId) params.organizationId = organizationId;
     const data = await safeFetch(
       () => apiClient.get(url, { params }),
       fallbackPage,
     );
     setPaged(normalizePage(data));
     setLoading(false);
-  }, [channel, page, rowsPerPage, search]);
+  }, [channel, page, rowsPerPage, search, organizationId]);
 
   useEffect(() => {
     const timer = setTimeout(loadArticles, 0);
