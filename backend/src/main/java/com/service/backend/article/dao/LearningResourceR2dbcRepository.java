@@ -17,10 +17,10 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
 
-    @Query("SELECT * FROM learning_resources ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM learning_resources ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findAllWithPagination(int limit, int offset);
 
-    @Query("SELECT * FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> searchAllByTitleWithPagination(String keyword, int limit, int offset);
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")

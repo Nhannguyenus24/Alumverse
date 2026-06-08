@@ -19,10 +19,10 @@ public interface JobR2dbcRepository extends ReactiveCrudRepository<Job, Integer>
     @Query("SELECT COUNT(*) FROM jobs WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
 
-    @Query("SELECT * FROM jobs ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM jobs ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Job> findAllWithPagination(int limit, int offset);
 
-    @Query("SELECT * FROM jobs WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM jobs WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<Job> searchAllByTitleWithPagination(String keyword, int limit, int offset);
 
     @Query("SELECT COUNT(*) FROM jobs WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
@@ -59,4 +59,13 @@ public interface JobR2dbcRepository extends ReactiveCrudRepository<Job, Integer>
 
     @Query("SELECT COUNT(*) FROM jobs WHERE created_at >= :since")
     Mono<Long> countSince(java.time.LocalDateTime since);
+
+    @Query("SELECT * FROM jobs WHERE is_active = true ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<Job> findAllActiveWithPagination(int limit, int offset);
+
+    @Query("SELECT * FROM jobs WHERE is_active = true AND (deadline IS NULL OR deadline >= :today) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<Job> findAllOpenJobsWithPagination(LocalDate today, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM jobs WHERE is_active = true AND (deadline IS NULL OR deadline >= :today)")
+    Mono<Long> countAllOpenJobs(LocalDate today);
 }
