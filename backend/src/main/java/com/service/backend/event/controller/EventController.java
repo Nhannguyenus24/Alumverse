@@ -83,11 +83,13 @@ public class EventController {
     @PublicEndpoint
     @GetMapping("/upcoming")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<Event>>>> getUpcomingEvents(
-            @RequestParam Long organizationId,
+            @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return eventService.getUpcomingEvents(organizationId, page, limit)
-                .map(e -> ResponseEntity.ok(new ApiResponse<>("Upcoming events retrieved successfully", e)));
+        Mono<PaginatedResponse<Event>> result = organizationId != null
+                ? eventService.getUpcomingEvents(organizationId, page, limit)
+                : eventService.getUpcomingEvents(page, limit);
+        return result.map(e -> ResponseEntity.ok(new ApiResponse<>("Upcoming events retrieved successfully", e)));
     }
 
     @PublicEndpoint

@@ -94,6 +94,16 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
+    public Mono<PaginatedResponse<Event>> findUpcomingEvents(int page, int limit) {
+        int offset = page * limit;
+        LocalDateTime now = LocalDateTime.now();
+        return eventRepo.findAllUpcomingEvents(now, limit, offset)
+                .collectList()
+                .zipWith(eventRepo.countAllUpcomingEvents(now))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    @Override
     public Mono<PaginatedResponse<Event>> findPastEvents(Long organizationId, int page, int limit) {
         int offset = page * limit;
         LocalDateTime now = LocalDateTime.now();
