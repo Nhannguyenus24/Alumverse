@@ -17,8 +17,19 @@ public class CreateOrganizationMemberRequest {
     @NotNull(message = "Organization ID is required")
     private Integer organizationId;
     
-    @NotNull(message = "User ID is required")
     private Integer userId;
+
+    private String email;
+
+    private String userName;
+
+    private String fullName;
+
+    private String role;
+
+    private String avatarUrl;
+
+    private String password;
 
     private List<Integer> graduatedYear;
 

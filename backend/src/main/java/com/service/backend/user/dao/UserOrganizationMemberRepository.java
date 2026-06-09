@@ -51,4 +51,13 @@ public interface UserOrganizationMemberRepository extends R2dbcRepository<Organi
             WHERE user_id = :userId
             """)
     Mono<Integer> incrementVerificationLevelByUserId(@Param("userId") Integer userId);
+
+    @Modifying
+    @Query("""
+            UPDATE organization_members
+            SET verification_level = :level,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = :userId
+            """)
+    Mono<Integer> updateVerificationLevel(@Param("userId") Integer userId, @Param("level") Integer level);
 }

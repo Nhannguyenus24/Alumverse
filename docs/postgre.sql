@@ -61,7 +61,7 @@ CREATE TABLE "organization_members" (
   "major" jsonb,
   "faculty" jsonb,
   "department" jsonb,
-  "verification_level" integer DEFAULT 0,
+  "verification_level" integer DEFAULT 0,  -- 0: unverified, 1: requested, 2: accepted
   "is_trusted_verifier" boolean DEFAULT false,
   "status" text DEFAULT 'ACTIVE',
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,

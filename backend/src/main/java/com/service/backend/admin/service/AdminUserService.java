@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.enums.UserRole;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.user.dao.UserOrganizationMemberRepository;
@@ -111,38 +112,98 @@ public class AdminUserService {
     }
 
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId,
+                               String email, String userName, String fullName, String role, String avatarUrl,
+                               String password,
                                List<Integer> graduatedYear, List<String> graduationStatus,
                                List<String> program, List<String> major,
                                                    Integer verificationLevel, String status) {
-        String upperStatus = status == null ? null : status.toUpperCase();
+        String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
         String graduationStatusJson = JsonUtils.toJson(graduationStatus);
         String programJson = JsonUtils.toJson(program);
         String majorJson = JsonUtils.toJson(major);
 
-        return adminUserRepository.existsOrganizationMemberByUserId(userId)
-            .flatMap(exists -> exists
-                ? adminUserRepository.updateOrganizationMemberByUserId(
-                    organizationId,
-                    userId,
-                    graduatedYearJson,
-                    graduationStatusJson,
-                    programJson,
-                    majorJson,
-                    verificationLevel,
-                    upperStatus)
-                : adminUserRepository.createOrganizationMember(
-                    organizationId,
-                    userId,
-                    graduatedYearJson,
-                    graduationStatusJson,
-                    programJson,
-                    majorJson,
-                    verificationLevel,
-                    upperStatus))
+        Mono<Integer> userIdMono;
+
+        if (userId != null) {
+            userIdMono = adminUserRepository.findById(userId)
+                    .flatMap(user -> {
+                        if (StringUtils.hasText(email)) user.setEmail(email);
+                        if (StringUtils.hasText(userName)) user.setUserName(userName);
+                        if (StringUtils.hasText(role)) {
+                            try {
+                                user.setRole(UserRole.valueOf(role.toUpperCase()));
+                            } catch (IllegalArgumentException e) {
+                                logger.warn("Invalid role provided: {}", role);
+                            }
+                        }
+                        if (StringUtils.hasText(avatarUrl)) user.setAvatarUrl(avatarUrl);
+                        if (StringUtils.hasText(password)) user.setPasswordHash(passwordEncoder.encode(password));
+                        user.setUpdatedAt(LocalDateTime.now());
+                        return adminUserRepository.save(user);
+                    })
+                    .map(User::getId)
+                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)));
+        } else {
+            userIdMono = adminUserRepository.existsByEmailOrUserName(email, userName)
+                    .flatMap(exists -> {
+                        if (exists) {
+                            return Mono.error(new ApplicationException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED));
+                        }
+                        UserRole userRole = UserRole.ALUMNI;
+                        if (StringUtils.hasText(role)) {
+                            try {
+                                userRole = UserRole.valueOf(role.toUpperCase());
+                            } catch (IllegalArgumentException e) {
+                                logger.warn("Invalid role provided for new user: {}, defaulting to ALUMNI", role);
+                            }
+                        }
+                        String finalPassword = StringUtils.hasText(password) ? password : "Alumni2026@";
+                        User newUser = User.builder()
+                                .email(email)
+                                .userName(userName)
+                                .passwordHash(passwordEncoder.encode(finalPassword))
+                                .role(userRole)
+                                .status(Status.ACTIVE)
+                                .avatarUrl(avatarUrl)
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+                        return adminUserRepository.save(newUser).map(User::getId);
+                    });
+        }
+
+        return userIdMono.flatMap(actualUserId -> {
+            Mono<Void> fullNameMono = Mono.empty();
+            if (StringUtils.hasText(fullName)) {
+                fullNameMono = adminUserRepository.upsertGlobalProfileFullName(actualUserId, fullName.trim()).then();
+            }
+
+            return fullNameMono.then(adminUserRepository.existsOrganizationMemberByUserId(actualUserId)
+                .flatMap(exists -> exists
+                    ? adminUserRepository.updateOrganizationMemberByUserId(
+                        organizationId,
+                        actualUserId,
+                        graduatedYearJson,
+                        graduationStatusJson,
+                        programJson,
+                        majorJson,
+                        verificationLevel,
+                        upperStatus)
+                    : adminUserRepository.createOrganizationMember(
+                        organizationId,
+                        actualUserId,
+                        graduatedYearJson,
+                        graduationStatusJson,
+                        programJson,
+                        majorJson,
+                        verificationLevel,
+                        upperStatus))
                 .map(count -> count > 0)
-                .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", userId, organizationId, success))
-                .doOnError(error -> logger.error("Error adding user {} to organization {}", userId, organizationId, error));
+                .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
+                .doOnError(error -> logger.error("Error adding user {} to organization {}", actualUserId, organizationId, error))
+            );
+        });
     }
 
     public Mono<UserResponse> getUserById(Integer userId) {

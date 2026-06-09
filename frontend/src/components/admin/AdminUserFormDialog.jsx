@@ -22,7 +22,7 @@ const defaultEmptyForm = {
   userName: '',
   fullName: '',
   password: '',
-  role: 'ADMIN',
+  role: 'ALUMNI',
   status: 'ACTIVE',
   organizationId: '',
 };
@@ -63,7 +63,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           organizationId: user.organizationId ?? firstOrganizationId,
         });
       } else {
-        setForm({ ...defaultEmptyForm, role: 'ADMIN', organizationId: firstOrganizationId });
+        setForm({ ...defaultEmptyForm, role: 'ALUMNI', organizationId: firstOrganizationId });
       }
       setErrors({});
     }, 0);
@@ -88,13 +88,10 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     if (!form.fullName.trim()) {
       next.fullName = 'Vui lòng nhập họ tên';
     }
-    if (mode === 'create' && !form.password) {
-      next.password = 'Vui lòng nhập mật khẩu';
-    }
-    if (mode === 'edit' && form.password && form.password.length < 8) {
+    if (mode === 'create' && form.password && form.password.length < 8) {
       next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
-    if (mode === 'create' && form.password && form.password.length < 8) {
+    if (mode === 'edit' && form.password && form.password.length < 8) {
       next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
     }
     setErrors(next);
@@ -118,12 +115,12 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       email: form.email,
       userName: form.userName,
       fullName: form.fullName,
-      role: mode === 'create' ? 'ADMIN' : form.role,
+      role: form.role,
       status: form.status,
       organizationId: Number(form.organizationId),
       organizationName: org?.name ?? '',
     };
-    if (mode === 'create' || (mode === 'edit' && form.password)) {
+    if (form.password) {
       payload.password = form.password;
     }
     try {
@@ -180,7 +177,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label={mode === 'edit' ? 'Mật khẩu mới (tùy chọn)' : 'Mật khẩu'}
+          label={mode === 'edit' ? 'Mật khẩu mới (tùy chọn)' : 'Mật khẩu (mặc định: Alumni2026@)'}
           type={showPassword ? 'text' : 'password'}
           value={form.password}
           onChange={handleChange('password')}
@@ -190,7 +187,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
               ? undefined
               : mode === 'edit'
                 ? 'Để trống nếu không muốn đổi mật khẩu'
-                : undefined
+                : 'Để trống để dùng mật khẩu mặc định Alumni2026@'
           }
           fullWidth
           autoComplete="new-password"
@@ -232,11 +229,10 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             label="Vai trò"
             value={form.role}
             onChange={handleChange('role')}
-            disabled={mode === 'create'}
             fullWidth
             slotProps={{ inputLabel: inputLabelSlotProps }}
           >
-            {(mode === 'create' ? ['ADMIN'] : USER_ROLES).map((role) => (
+            {USER_ROLES.map((role) => (
               <MenuItem key={role} value={role}>
                 {role}
               </MenuItem>

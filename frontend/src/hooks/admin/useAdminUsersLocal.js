@@ -77,32 +77,20 @@ const useAdminUsersLocal = () => {
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   const createUser = useCallback(async (payload) => {
-    if (String(payload?.role || '').toUpperCase() !== 'ADMIN') {
-      enqueueSnackbar(
-        'Only ADMIN accounts can be created here. Use public sign-up for STUDENT, ALUMNI, STAFF, or GUEST.',
-        { variant: 'warning' },
-      );
-      throw new Error('CREATE_ROLE');
-    }
-    if (!payload?.password) {
-      enqueueSnackbar('Password is required.', { variant: 'error' });
-      throw new Error('CREATE_PASSWORD');
-    }
     try {
-      await adminUserApi.createAdminAccount({
+      await adminUserApi.addOrganizationMember({
         email: String(payload.email || '').trim(),
-        fullName: String(payload.fullName || '').trim(),
         userName: String(payload.userName || '').trim(),
-        password: payload.password,
+        fullName: String(payload.fullName || '').trim(),
+        role: payload.role,
+        status: payload.status,
         organizationId: Number(payload.organizationId),
+        password: payload.password,
       });
-      enqueueSnackbar('Admin account created.', { variant: 'success' });
+      enqueueSnackbar('User account created and added to organization.', { variant: 'success' });
       await loadUsers();
     } catch (e) {
-      if (e?.message === 'CREATE_ROLE' || e?.message === 'CREATE_PASSWORD') {
-        throw e;
-      }
-      const msg = e?.response?.data?.message || 'Failed to create admin.';
+      const msg = e?.response?.data?.message || 'Failed to create user.';
       enqueueSnackbar(msg, { variant: 'error' });
       throw e;
     }
