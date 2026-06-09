@@ -1,5 +1,6 @@
 package com.service.backend.fundraising.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
@@ -489,6 +490,7 @@ public class FundService {
                 });
     }
 
+    @Transactional
     public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();

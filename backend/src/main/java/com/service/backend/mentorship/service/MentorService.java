@@ -1,5 +1,6 @@
 package com.service.backend.mentorship.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
 import com.service.backend.shared.entity.MentorAvailability;
@@ -359,6 +360,7 @@ public class MentorService {
                         this::enrichAll));
     }
 
+    @Transactional
     public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
         return currentMemberId().flatMap(mentorMemberId ->
                 sessionRepository.findById(sessionId)
@@ -392,6 +394,7 @@ public class MentorService {
                         .flatMap(this::enrich));
     }
 
+    @Transactional
     public Mono<MentorshipSessionResponse> postponeSession(Integer sessionId, String reason) {
         return currentMemberId().flatMap(mentorMemberId ->
                 sessionRepository.findById(sessionId)
@@ -429,6 +432,7 @@ public class MentorService {
                         .flatMap(this::enrich));
     }
 
+    @Transactional
     public Mono<MentorshipSessionResponse> updateSessionStatus(Integer sessionId, UpdateSessionStatusRequest request) {
         return currentMemberId().flatMap(mentorMemberId ->
                 sessionRepository.findById(sessionId)
