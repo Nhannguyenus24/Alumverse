@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { GoogleReCaptchaProvider, GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
+import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
@@ -121,135 +121,133 @@ const LoginPage = () => {
       title="Đăng nhập"
       meta={<meta name="description" content="Đăng nhập vào hệ thống" />}
     >
-      <GoogleReCaptchaProvider type="v2-checkbox" siteKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
-          sx={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            gap: { xs: 1.5, sm: 2 },
-          }}
+      <Box
+        component="form"
+        onSubmit={handleSubmit(onSubmit)}
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'stretch',
+          gap: { xs: 1.5, sm: 2 },
+        }}
+      >
+        <Typography
+          variant="h5"
+          fontWeight={700}
+          color="primary.main"
+          textAlign="center"
+          sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
+          Đăng nhập
+        </Typography>
+
+        <Input
+          label="Email"
+          placeholder="email@example.com"
+          // type="email"
+          error={!!errors.email}
+          helperText={errors.email?.message}
+          {...register('email')}
+        />
+        <Input
+          label="Mật khẩu"
+          placeholder="••••••••"
+          type="password"
+          error={!!errors.password}
+          helperText={errors.password?.message}
+          {...register('password')}
+        />
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+          <FormControlLabel
+            control={<Checkbox size="small" color="primary" {...register('rememberMe')} />}
+            label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
+          />
           <Typography
-            variant="h5"
-            fontWeight={700}
+            component={Link}
+            to={toOrgPath('/auth/forgot-password')}
+            variant="body2"
             color="primary.main"
-            textAlign="center"
-            sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
+            sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
           >
-            Đăng nhập
-          </Typography>
-
-          <Input
-            label="Email"
-            placeholder="email@example.com"
-            // type="email"
-            error={!!errors.email}
-            helperText={errors.email?.message}
-            {...register('email')}
-          />
-          <Input
-            label="Mật khẩu"
-            placeholder="••••••••"
-            type="password"
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            {...register('password')}
-          />
-
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-            <FormControlLabel
-              control={<Checkbox size="small" color="primary" {...register('rememberMe')} />}
-              label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
-            />
-            <Typography
-              component={Link}
-              to={toOrgPath('/auth/forgot-password')}
-              variant="body2"
-              color="primary.main"
-              sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
-            >
-              Quên mật khẩu?
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-            <GoogleReCaptchaCheckbox
-              onChange={handleRecaptchaChange}
-              onExpired={handleRecaptchaExpired}
-              onError={handleRecaptchaError}
-            />
-            {errors.recaptchaToken && (
-              <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
-                {errors.recaptchaToken.message}
-              </Typography>
-            )}
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            size="large"
-            disabled={loading}
-            sx={{ mt: 1 }}
-          >
-            {loading ? 'Đang xử lý...' : 'Đăng nhập'}
-          </Button>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-            <Divider sx={{ flex: 1 }} />
-            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-              hoặc tiếp tục với
-            </Typography>
-            <Divider sx={{ flex: 1 }} />
-          </Box>
-
-          {googleClientId ? (
-            <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                useOneTap={false}
-                size="large"
-                text="signin_with"
-                locale="vi"
-                width="100%"
-              />
-            </Box>
-          ) : (
-            <Button
-              type="button"
-              variant="outlined"
-              fullWidth
-              size="large"
-              startIcon={<GoogleIcon />}
-              disabled
-              sx={{ textTransform: 'none', borderColor: 'divider' }}
-            >
-              Google chưa được cấu hình
-            </Button>
-          )}
-
-          <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-            Bạn chưa có tài khoản?{' '}
-            <Typography
-              component={Link}
-              to={toOrgPath('/auth/register')}
-              variant="body2"
-              color="primary.main"
-              fontWeight={600}
-              sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-            >
-              Đăng ký ngay!
-            </Typography>
+            Quên mật khẩu?
           </Typography>
         </Box>
-      </GoogleReCaptchaProvider>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+          <GoogleReCaptchaCheckbox
+            onChange={handleRecaptchaChange}
+            onExpired={handleRecaptchaExpired}
+            onError={handleRecaptchaError}
+          />
+          {errors.recaptchaToken && (
+            <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
+              {errors.recaptchaToken.message}
+            </Typography>
+          )}
+        </Box>
+
+        <Button
+          type="submit"
+          variant="contained"
+          color="primary"
+          fullWidth
+          size="large"
+          disabled={loading}
+          sx={{ mt: 1 }}
+        >
+          {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+        </Button>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+          <Divider sx={{ flex: 1 }} />
+          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            hoặc tiếp tục với
+          </Typography>
+          <Divider sx={{ flex: 1 }} />
+        </Box>
+
+        {googleClientId ? (
+          <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              size="large"
+              text="signin_with"
+              locale="vi"
+              width="100%"
+            />
+          </Box>
+        ) : (
+          <Button
+            type="button"
+            variant="outlined"
+            fullWidth
+            size="large"
+            startIcon={<GoogleIcon />}
+            disabled
+            sx={{ textTransform: 'none', borderColor: 'divider' }}
+          >
+            Google chưa được cấu hình
+          </Button>
+        )}
+
+        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
+          Bạn chưa có tài khoản?{' '}
+          <Typography
+            component={Link}
+            to={toOrgPath('/auth/register')}
+            variant="body2"
+            color="primary.main"
+            fontWeight={600}
+            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+          >
+            Đăng ký ngay!
+          </Typography>
+        </Typography>
+      </Box>
     </Page>
   );
 };
