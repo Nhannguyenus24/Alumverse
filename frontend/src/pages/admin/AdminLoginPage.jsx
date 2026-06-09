@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { GoogleReCaptchaProvider, GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, Navigate } from 'react-router';
 import { useSnackbar } from 'notistack';
@@ -40,10 +41,12 @@ const AdminLoginPage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', rememberMe: false },
+    defaultValues: { email: '', password: '', rememberMe: false, recaptchaToken: '' },
   });
 
   useEffect(() => {
@@ -52,13 +55,27 @@ const AdminLoginPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const handleRecaptchaChange = useCallback((token) => {
+    setValue('recaptchaToken', token);
+    if (token) clearErrors('recaptchaToken');
+  }, [setValue, clearErrors]);
+
+  const handleRecaptchaExpired = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
+
+  const handleRecaptchaError = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
+
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ 
-      email: data.email, 
-      password: data.password, 
+    const result = await login({
+      email: data.email,
+      password: data.password,
       organizationId,
-      rememberMe: data.rememberMe 
+      rememberMe: data.rememberMe,
+      recaptchaToken: data.recaptchaToken
     });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập admin thành công.', { variant: 'success' });
@@ -176,73 +193,88 @@ const AdminLoginPage = () => {
                 Chỉ dành cho Quản trị viên và Điều phối viên.
               </Alert>
 
-              <Box
-                component="form"
-                onSubmit={handleSubmit(onSubmit)}
-                sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
-              >
-                <Input
-                  label="Email Admin"
-                  placeholder="admin@example.com"
-                  error={!!errors.email}
-                  helperText={errors.email?.message}
-                  {...register('email')}
-                />
-                <Input
-                  label="Mật khẩu"
-                  placeholder="••••••••"
-                  type="password"
-                  error={!!errors.password}
-                  helperText={errors.password?.message}
-                  {...register('password')}
-                />
-
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <FormControlLabel
-                    control={<Checkbox size="small" {...register('rememberMe')} />}
-                    label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
-                  />
-                  <Typography
-                    component={Link}
-                    to="/auth/forgot-password"
-                    variant="body2"
-                    color="primary.main"
-                    sx={{
-                      textDecoration: 'none',
-                      fontWeight: 600,
-                      '&:hover': { textDecoration: 'underline' }
-                    }}
-                  >
-                    Quên mật khẩu?
-                  </Typography>
-                </Box>
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  disabled={loading}
+              <GoogleReCaptchaProvider type="v2-checkbox" siteKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}>
+                <Box
+                  component="form"
+                  onSubmit={handleSubmit(onSubmit)}
+                  sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
                 >
-                  {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
-                </Button>
+                  <Input
+                    label="Email Admin"
+                    placeholder="admin@example.com"
+                    error={!!errors.email}
+                    helperText={errors.email?.message}
+                    {...register('email')}
+                  />
+                  <Input
+                    label="Mật khẩu"
+                    placeholder="••••••••"
+                    type="password"
+                    error={!!errors.password}
+                    helperText={errors.password?.message}
+                    {...register('password')}
+                  />
 
-                <Box sx={{ mt: 1.5, textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Bạn không có quyền quản trị?{' '}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <FormControlLabel
+                      control={<Checkbox size="small" {...register('rememberMe')} />}
+                      label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
+                    />
                     <Typography
                       component={Link}
-                      to="/"
+                      to="/auth/forgot-password"
                       variant="body2"
                       color="primary.main"
-                      fontWeight={600}
-                      sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                      sx={{
+                        textDecoration: 'none',
+                        fontWeight: 600,
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
                     >
-                      Quay lại trang chủ
+                      Quên mật khẩu?
                     </Typography>
-                  </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                    <GoogleReCaptchaCheckbox
+                      onChange={handleRecaptchaChange}
+                      onExpired={handleRecaptchaExpired}
+                      onError={handleRecaptchaError}
+                    />
+                    {errors.recaptchaToken && (
+                      <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
+                        {errors.recaptchaToken.message}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    disabled={loading}
+                  >
+                    {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
+                  </Button>
+
+                  <Box sx={{ mt: 1.5, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Bạn không có quyền quản trị?{' '}
+                      <Typography
+                        component={Link}
+                        to="/"
+                        variant="body2"
+                        color="primary.main"
+                        fontWeight={600}
+                        sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                      >
+                        Quay lại trang chủ
+                      </Typography>
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
+              </GoogleReCaptchaProvider>
             </Box>
           </Box>
         </Box>

@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import io.swagger.v3.oas.annotations.Parameter;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.auth.service.RecaptchaService;
 import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.GoogleLoginRequest;
 import com.service.backend.auth.dto.LoginRequest;
@@ -40,10 +43,12 @@ import com.service.backend.shared.annotations.PublicEndpoint;
 public class AuthController {
     private final AuthService authService;
     private final JwtUtils jwtUtils;
+    private final RecaptchaService recaptchaService;
 
-    public AuthController(AuthService authService, JwtUtils jwtUtils) {
+    public AuthController(AuthService authService, JwtUtils jwtUtils, RecaptchaService recaptchaService) {
         this.authService = authService;
         this.jwtUtils = jwtUtils;
+        this.recaptchaService = recaptchaService;
     }
 
     /**
@@ -67,11 +72,17 @@ public class AuthController {
         String userAgent = extractUserAgent(exchange);
         String loginIp = extractRemoteAddress(exchange);
 
-        return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
-                .switchIfEmpty(Mono.defer(() ->
-                    authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
-                ))
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
+        return recaptchaService.verifyRecaptcha(request.getRecaptchaToken())
+                .flatMap(isValid -> {
+                    if (!isValid) {
+                        return Mono.error(new ApplicationException(ErrorCode.RECAPTCHA_VERIFICATION_FAILED));
+                    }
+                    return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
+                            .switchIfEmpty(Mono.defer(() ->
+                                authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
+                            ))
+                            .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
+                });
     }
 
     /**
