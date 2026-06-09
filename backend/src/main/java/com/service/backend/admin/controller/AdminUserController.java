@@ -213,6 +213,12 @@ public class AdminUserController {
         return adminUserService.createOrganizationMember(
                         request.getOrganizationId(),
                         request.getUserId(),
+                        request.getEmail(),
+                        request.getUserName(),
+                        request.getFullName(),
+                        request.getRole(),
+                        request.getAvatarUrl(),
+                        request.getPassword(),
                         request.getGraduatedYear(),
                         request.getGraduationStatus(),
                         request.getProgram(),
