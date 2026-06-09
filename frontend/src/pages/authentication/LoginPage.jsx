@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
@@ -28,19 +30,35 @@ const LoginPage = () => {
     register,
     handleSubmit,
     getValues,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', rememberMe: false },
+    defaultValues: { email: '', password: '', rememberMe: false, recaptchaToken: '' },
   });
+
+  const handleRecaptchaChange = useCallback((token) => {
+    setValue('recaptchaToken', token);
+    if (token) clearErrors('recaptchaToken');
+  }, [setValue, clearErrors]);
+
+  const handleRecaptchaExpired = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
+
+  const handleRecaptchaError = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
 
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ 
-      email: data.email, 
-      password: data.password, 
+    const result = await login({
+      email: data.email,
+      password: data.password,
       organizationId,
-      rememberMe: data.rememberMe 
+      rememberMe: data.rememberMe,
+      recaptchaToken: data.recaptchaToken
     });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
@@ -157,6 +175,19 @@ const LoginPage = () => {
           </Typography>
         </Box>
 
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+          <GoogleReCaptchaCheckbox
+            onChange={handleRecaptchaChange}
+            onExpired={handleRecaptchaExpired}
+            onError={handleRecaptchaError}
+          />
+          {errors.recaptchaToken && (
+            <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
+              {errors.recaptchaToken.message}
+            </Typography>
+          )}
+        </Box>
+
         <Button
           type="submit"
           variant="contained"
@@ -183,7 +214,7 @@ const LoginPage = () => {
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               useOneTap={false}
-              size="large"         
+              size="large"
               text="signin_with"
               locale="vi"
               width="100%"

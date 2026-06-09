@@ -30,4 +30,7 @@ public class LoginRequest {
 
     @Schema(example = "true")
     private boolean rememberMe;
+
+    @NotBlank(message = "Recaptcha token is required")
+    private String recaptchaToken;
 }
