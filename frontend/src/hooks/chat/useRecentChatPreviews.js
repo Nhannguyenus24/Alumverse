@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 
 import { chatApi } from '../../utils/api';
 
-export function useRecentChatPreviews() {
+export function useRecentChatPreviews({ enabled = true } = {}) {
   const query = useQuery({
     queryKey: ['recentChatPreviews'],
     queryFn: () => chatApi.getRecentPreviews(),
+    enabled,
   });
 
   const errorMessage =
