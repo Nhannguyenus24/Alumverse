@@ -12,6 +12,7 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.AdminAuditLog;
+import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,9 +103,7 @@ public class AdminDashboardService {
             total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
         }
 
-        return items.collectList()
-                .zipWith(total)
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+        return PaginationHelper.paginate(items, total, page, size)
                 .flatMap(m -> cacheUtils.putWithTtl("admin:activities", "page:" + page, m, Duration.ofMinutes(1)).thenReturn(m))
                 .doOnSuccess(r -> log.info("getActivities result: {}", JsonUtils.toJson(r)));
     }

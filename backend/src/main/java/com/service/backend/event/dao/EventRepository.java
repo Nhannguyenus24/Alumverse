@@ -4,6 +4,7 @@ import com.service.backend.shared.entity.*;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.event.dto.EventStatisticsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -63,10 +64,12 @@ public class EventRepository implements IEventRepository {
     @Override
     public Mono<PaginatedResponse<Event>> findEventsByOrganization(Long organizationId, int page, int limit) {
         int offset = page * limit;
-        return eventRepo.findByOrganizationIdWithPagination(organizationId, limit, offset)
-                .collectList()
-                .zipWith(eventRepo.countByOrganizationId(organizationId))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+        return PaginationHelper.paginate(
+                eventRepo.findByOrganizationIdWithPagination(organizationId, limit, offset).collectList(),
+                eventRepo.countByOrganizationId(organizationId),
+                page,
+                limit
+        );
     }
 
     // ─── Publishing ───────────────────────────────────────────────────────────
@@ -87,39 +90,47 @@ public class EventRepository implements IEventRepository {
     public Mono<PaginatedResponse<Event>> findUpcomingEvents(Long organizationId, int page, int limit) {
         int offset = page * limit;
         LocalDateTime now = LocalDateTime.now();
-        return eventRepo.findUpcomingEvents(organizationId, now, limit, offset)
-                .collectList()
-                .zipWith(eventRepo.countUpcomingEvents(organizationId, now))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+        return PaginationHelper.paginate(
+                eventRepo.findUpcomingEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countUpcomingEvents(organizationId, now),
+                page,
+                limit
+        );
     }
 
     @Override
     public Mono<PaginatedResponse<Event>> findUpcomingEvents(int page, int limit) {
         int offset = page * limit;
         LocalDateTime now = LocalDateTime.now();
-        return eventRepo.findAllUpcomingEvents(now, limit, offset)
-                .collectList()
-                .zipWith(eventRepo.countAllUpcomingEvents(now))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+        return PaginationHelper.paginate(
+                eventRepo.findAllUpcomingEvents(now, limit, offset).collectList(),
+                eventRepo.countAllUpcomingEvents(now),
+                page,
+                limit
+        );
     }
 
     @Override
     public Mono<PaginatedResponse<Event>> findPastEvents(Long organizationId, int page, int limit) {
         int offset = page * limit;
         LocalDateTime now = LocalDateTime.now();
-        return eventRepo.findPastEvents(organizationId, now, limit, offset)
-                .collectList()
-                .zipWith(eventRepo.countPastEvents(organizationId, now))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+        return PaginationHelper.paginate(
+                eventRepo.findPastEvents(organizationId, now, limit, offset).collectList(),
+                eventRepo.countPastEvents(organizationId, now),
+                page,
+                limit
+        );
     }
 
     @Override
     public Mono<PaginatedResponse<Event>> searchEvents(Long organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
-        return eventRepo.searchEvents(organizationId, keyword, limit, offset)
-                .collectList()
-                .zipWith(eventRepo.countSearchEvents(organizationId, keyword))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+        return PaginationHelper.paginate(
+                eventRepo.searchEvents(organizationId, keyword, limit, offset).collectList(),
+                eventRepo.countSearchEvents(organizationId, keyword),
+                page,
+                limit
+        );
     }
 
     // ─── Interest ─────────────────────────────────────────────────────────────

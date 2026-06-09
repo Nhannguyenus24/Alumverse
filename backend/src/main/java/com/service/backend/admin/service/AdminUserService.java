@@ -25,6 +25,7 @@ import com.service.backend.admin.dto.UserResponse;
 import com.service.backend.admin.dto.VerificationRequestResponse;
 import com.service.backend.admin.dto.VerificationStatisticsDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.shared.entity.User;
 import com.service.backend.shared.entity.AdminAuditLog;
@@ -51,13 +52,12 @@ public class AdminUserService {
 
     public Mono<PaginatedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
         int offset = page * size;
-        Mono<Long> totalCount = adminUserRepository.countUsersByOrganization(organizationId);
-
-        return Mono.zip(
+        return PaginationHelper.paginate(
                         adminUserRepository.findUsersByOrganizationWithPagination(organizationId, size, offset).collectList(),
-                        totalCount)
-                .flatMap(tuple -> enrichUserResponses(tuple.getT1())
-                        .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
+                        adminUserRepository.countUsersByOrganization(organizationId),
+                        page,
+                        size,
+                        this::enrichUserResponses)
                 .doOnSuccess(r -> logger.info("getUsersByOrganization result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Error fetching users for organization: {}", organizationId, error));
     }
@@ -68,13 +68,12 @@ public class AdminUserService {
         String roleParam = (role != null && !role.equals("ALL")) ? role : null;
         String statusParam = (status != null && !status.equals("ALL")) ? status.toUpperCase() : null;
 
-        Mono<Long> totalCount = adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId);
-
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 adminUserRepository.findUsersWithFilters(searchParam, roleParam, statusParam, organizationId, size, offset).collectList(),
-                totalCount)
-                .flatMap(tuple -> enrichUserResponses(tuple.getT1())
-                        .map(items -> PaginatedResponse.of(items, tuple.getT2(), page, size)))
+                adminUserRepository.countUsersWithFilters(searchParam, roleParam, statusParam, organizationId),
+                page,
+                size,
+                this::enrichUserResponses)
                 .doOnSuccess(r -> logger.info("getAllUsers result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Error fetching users with filters", error));
     }
@@ -307,17 +306,21 @@ public class AdminUserService {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
         if (organizationId != null) {
-            return Mono.zip(
+            return PaginationHelper.paginate(
                     adminUserRepository.findAllVerificationRequestsByOrganization(organizationId, kw, size, offset).collectList(),
-                    adminUserRepository.countAllVerificationRequestsByOrganization(organizationId, kw)
-            ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                    adminUserRepository.countAllVerificationRequestsByOrganization(organizationId, kw),
+                    page,
+                    size
+            )
              .doOnSuccess(r -> logger.info("getAllVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
              .doOnError(e -> logger.error("Error fetching verification requests for org {}", organizationId, e));
         }
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 adminUserRepository.findAllVerificationRequests(kw, size, offset).collectList(),
-                adminUserRepository.countAllVerificationRequests(kw)
-        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                adminUserRepository.countAllVerificationRequests(kw),
+                page,
+                size
+        )
          .doOnSuccess(r -> logger.info("getAllVerificationRequests result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests", e));
     }
@@ -330,17 +333,21 @@ public class AdminUserService {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
         if (organizationId != null) {
-            return Mono.zip(
+            return PaginationHelper.paginate(
                     adminUserRepository.findPendingVerificationRequestsByOrganization(organizationId, kw, size, offset).collectList(),
-                    adminUserRepository.countPendingVerificationRequestsByOrganization(organizationId, kw)
-            ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                    adminUserRepository.countPendingVerificationRequestsByOrganization(organizationId, kw),
+                    page,
+                    size
+            )
              .doOnSuccess(r -> logger.info("getPendingVerificationRequests (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
              .doOnError(e -> logger.error("Error fetching pending verification requests for org {}", organizationId, e));
         }
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 adminUserRepository.findPendingVerificationRequests(kw, size, offset).collectList(),
-                adminUserRepository.countPendingVerificationRequests(kw)
-        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                adminUserRepository.countPendingVerificationRequests(kw),
+                page,
+                size
+        )
          .doOnSuccess(r -> logger.info("getPendingVerificationRequests result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching pending verification requests", e));
     }
@@ -394,17 +401,19 @@ public class AdminUserService {
             int size) {
         int offset = page * size;
         if (organizationId != null) {
-            return Mono.zip(
+            return PaginationHelper.paginate(
                     adminAuditLogRepository.findAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action, size, offset).collectList(),
-                    adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action))
-                    .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                    adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, adminUserId, targetUserId, action),
+                    page,
+                    size)
                     .doOnSuccess(r -> logger.info("getAdminActionLogs (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
                     .doOnError(e -> logger.error("Error fetching admin action logs for org {}", organizationId, e));
         }
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 adminAuditLogRepository.findAdminActionLogs(adminUserId, targetUserId, action, size, offset).collectList(),
-                adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                adminAuditLogRepository.countAdminActionLogs(adminUserId, targetUserId, action),
+                page,
+                size)
                 .doOnSuccess(r -> logger.info("getAdminActionLogs result: {}", JsonUtils.toJson(r)))
                 .doOnError(e -> logger.error("Error fetching admin action logs", e));
     }
