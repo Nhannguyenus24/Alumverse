@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
-import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -156,16 +156,21 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <MenuItem
-                onClick={() => {
-                  handleCloseActionMenu();
-                  onReply?.(reply);
-                }}
-              >
-                <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                Trả lời
-              </MenuItem>
-              {canEdit && (
+              <Tooltip title={!memberId ? "Phải đăng nhập mới có thể bình luận" : ""} placement="left" arrow>
+                <span>
+                  <MenuItem
+                    disabled={!memberId}
+                    onClick={() => {
+                      handleCloseActionMenu();
+                      onReply?.(reply);
+                    }}
+                  >
+                    <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                    Trả lời
+                  </MenuItem>
+                </span>
+              </Tooltip>
+          {canEdit && (
                 <MenuItem
                   onClick={() => {
                     handleCloseActionMenu();
@@ -308,7 +313,7 @@ const ForumAlumniThreadPage = () => {
     return Number.isNaN(id) ? null : id;
   }, [threadId]);
 
-  const { user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
@@ -834,21 +839,26 @@ const ForumAlumniThreadPage = () => {
                       >
                         Sửa
                       </Button>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                        onClick={() => {
-                          editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-                          const input = editorRef.current?.querySelector?.('textarea');
-                          input?.focus?.();
-                        }}
-                        sx={{ whiteSpace: 'nowrap' }}
-                      >
-                        Trả lời
-                      </Button>
+                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                        <span>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                            onClick={() => {
+                              editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                              const input = editorRef.current?.querySelector?.('textarea');
+                              input?.focus?.();
+                            }}
+                            disabled={!isAuthenticated}
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
+                            Trả lời
+                          </Button>
+                        </span>
+                      </Tooltip>
                       <Button
                         fullWidth
                         variant="contained"
@@ -895,19 +905,24 @@ const ForumAlumniThreadPage = () => {
                       >
                         {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
                       </Button>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                        onClick={() => {
-                          editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-                          const input = editorRef.current?.querySelector?.('textarea');
-                          input?.focus?.();
-                        }}
-                      >
-                        Trả lời
-                      </Button>
+                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                            onClick={() => {
+                              editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                              const input = editorRef.current?.querySelector?.('textarea');
+                              input?.focus?.();
+                            }}
+                            disabled={!isAuthenticated}
+                          >
+                            Trả lời
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   )}
                 </Box>
@@ -1103,25 +1118,34 @@ const ForumAlumniThreadPage = () => {
                         </Typography>
                       </Box>
                     ) : null}
-                    <WYSIWYG
-                      value={editorValue}
-                      onChange={setEditorValue}
-                    />
+                    <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow placement="top">
+                      <Box>
+                        <WYSIWYG
+                          value={editorValue}
+                          onChange={setEditorValue}
+                          readOnly={!isAuthenticated}
+                        />
+                      </Box>
+                    </Tooltip>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSubmit}
-                        disabled={
-                          createPending ||
-                          answerPending ||
-                          !topicId ||
-                          !user?.id ||
-                          !stripHtml(editorValue ?? '')
-                        }
-                      >
-                        {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
-                      </Button>
+                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleSubmit}
+                            disabled={
+                              createPending ||
+                              answerPending ||
+                              !topicId ||
+                              !user?.id ||
+                              !stripHtml(editorValue ?? '')
+                            }
+                          >
+                            {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   </Box>
                 </Box>
