@@ -30,6 +30,7 @@ import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.dto.UpdateForumPostRequest;
@@ -134,11 +135,11 @@ public class ForumService {
 
     public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumTopicRepository.findByCategoryIdWithPagination(categoryId, keyword, size, offset)
-                .concatMap(this::convertToTopicDTOWithPostCount)
-                .collectList()
-                .zipWith(forumTopicRepository.countByCategoryId(categoryId, keyword))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+        return PaginationHelper.paginate(
+                forumTopicRepository.findByCategoryIdWithPagination(categoryId, keyword, size, offset)
+                        .concatMap(this::convertToTopicDTOWithPostCount),
+                forumTopicRepository.countByCategoryId(categoryId, keyword),
+                page, size)
                 .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} result: {}", keyword,  JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
@@ -217,18 +218,15 @@ public class ForumService {
                     .collect(Collectors.toSet())
                 : Mono.just(new HashSet<>());
 
-        return Mono.zip(postsMono, countMono, likedPostIdsMono)
-                .map(tuple -> {
-                    var posts = tuple.getT1();
-                    var totalItems = tuple.getT2();
-                    var likedPostIds = tuple.getT3();
-
-                    var postDTOs = posts.stream()
-                            .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
-                            .collect(Collectors.toList());
-
-                    return PaginatedResponse.of(postDTOs, totalItems, page, size);
-                })
+        return likedPostIdsMono.flatMap(likedPostIds ->
+                PaginationHelper.paginate(
+                        postsMono,
+                        countMono,
+                        page,
+                        size,
+                        posts -> Mono.just(posts.stream()
+                                .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
+                                .collect(Collectors.toList()))))
                 .doOnSuccess(result -> log.info("findPostsByTopicId result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }

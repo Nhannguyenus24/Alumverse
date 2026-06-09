@@ -11,6 +11,7 @@ import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 import org.springframework.r2dbc.core.DatabaseClient;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
@@ -338,24 +339,24 @@ public class MentorService {
     public Mono<PaginatedResponse<MentorshipSessionResponse>> getMySessions(int page, int limit) {
         int offset = page * limit;
         return currentMemberId().flatMap(memberId ->
-                sessionRepository.findByMentorMemberId(memberId, limit, offset)
-                        .collectList()
-                        .flatMap(list -> enrichAll(list)
-                                .zipWith(sessionRepository.countByMentorMemberId(memberId))
-                                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
-                        ));
+                PaginationHelper.paginate(
+                        sessionRepository.findByMentorMemberId(memberId, limit, offset),
+                        sessionRepository.countByMentorMemberId(memberId),
+                        page,
+                        limit,
+                        this::enrichAll));
     }
 
     public Mono<PaginatedResponse<MentorshipSessionResponse>> filterMySessions(
             LocalDate date, String menteeName, int page, int limit) {
         int offset = page * limit;
         return currentMemberId().flatMap(memberId ->
-                sessionRepository.filterSessionsByMentor(memberId, date, menteeName, limit, offset)
-                        .collectList()
-                        .flatMap(list -> enrichAll(list)
-                                .zipWith(sessionRepository.countFilterSessionsByMentor(memberId, date, menteeName))
-                                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
-                        ));
+                PaginationHelper.paginate(
+                        sessionRepository.filterSessionsByMentor(memberId, date, menteeName, limit, offset),
+                        sessionRepository.countFilterSessionsByMentor(memberId, date, menteeName),
+                        page,
+                        limit,
+                        this::enrichAll));
     }
 
     public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
@@ -457,12 +458,9 @@ public class MentorService {
 
     public Mono<PaginatedResponse<SessionFeedbackResponse>> getMyFeedbacks(int page, int limit) {
         return currentMemberId().flatMap(memberId ->
-                feedbackRepository.findPublicFeedbacksByMentorId(memberId, limit, page * limit)
-                        .collectList()
-                        .zipWith(feedbackRepository.countPublicFeedbacksByMentorId(memberId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                PaginationHelper.paginate(
+                        feedbackRepository.findPublicFeedbacksByMentorId(memberId, limit, page * limit).map(SessionFeedbackResponse::from),
+                        feedbackRepository.countPublicFeedbacksByMentorId(memberId),
+                        page, limit));
     }
 }
