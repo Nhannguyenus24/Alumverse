@@ -17,6 +17,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.enums.ChatRole;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.PaginationHelper;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -108,7 +109,7 @@ public class ChatService {
                 .flatMapMany(Flux::fromIterable)
                 .concatMap(group -> buildPrivateChatListItem(group, memberId))
                 .collectList()
-                .map(list -> {
+                .flatMap(list -> {
                     list.sort(Comparator.comparing(
                             (PrivateChatListItemResponse item) ->
                                     item.getLastMessageAt() != null ? item.getLastMessageAt() : item.getUpdatedAt()
@@ -121,10 +122,7 @@ public class ChatService {
                                                   item.getPeerUserName().toLowerCase().contains(text.toLowerCase()))
                                   .toList();
 
-                    long total = filtered.size();
-                    int fromIndex = Math.min(page * size, (int) total);
-                    int toIndex = Math.min(fromIndex + size, (int) total);
-                    return PaginatedResponse.of(filtered.subList(fromIndex, toIndex), total, page, size);
+                    return PaginationHelper.paginateList(filtered, page, size);
                 });
     }
 
@@ -204,7 +202,7 @@ public class ChatService {
                 .flatMapMany(Flux::fromIterable)
                 .concatMap(this::buildGroupChatListItem)
                 .collectList()
-                .map(list -> {
+                .flatMap(list -> {
                     list.sort(Comparator.comparing(
                             (GroupChatListItemResponse item) ->
                                     item.getLastMessageAt() != null ? item.getLastMessageAt() : item.getUpdatedAt()
@@ -217,10 +215,7 @@ public class ChatService {
                                                   item.getTitle().toLowerCase().contains(text.toLowerCase()))
                                   .toList();
 
-                    long total = filtered.size();
-                    int fromIndex = Math.min(page * size, (int) total);
-                    int toIndex = Math.min(fromIndex + size, (int) total);
-                    return PaginatedResponse.of(filtered.subList(fromIndex, toIndex), total, page, size);
+                    return PaginationHelper.paginateList(filtered, page, size);
                 });
     }
 
@@ -504,12 +499,11 @@ public class ChatService {
                 .switchIfEmpty(Mono.error(new ApplicationException(
                         ErrorCode.CHAT_USER_NOT_GROUP_MEMBER,
                         "Current user is not a member of this chat group")))
-                .flatMap(ignored -> Mono.zip(
+                .flatMap(ignored -> PaginationHelper.paginate(
+                        chatGroupMemberRepository.findMembersByGroupIdWithProfile(groupId, namePattern, limit, offset),
                         chatGroupMemberRepository.countMembersByGroupIdWithNameFilter(groupId, namePattern),
-                        chatGroupMemberRepository
-                                .findMembersByGroupIdWithProfile(groupId, namePattern, limit, offset)
-                                .collectList()))
-                .map(tuple -> PaginatedResponse.of(tuple.getT2(), tuple.getT1(), page, limit));
+                        page,
+                        limit));
     }
 
     private static String toContainsPattern(String text) {

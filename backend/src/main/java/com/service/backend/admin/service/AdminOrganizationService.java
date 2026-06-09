@@ -28,6 +28,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import reactor.core.publisher.Flux;
 
 import lombok.RequiredArgsConstructor;
@@ -47,10 +48,12 @@ public class AdminOrganizationService {
         int offset = page * size;
         String searchParam = (search != null && !search.trim().isEmpty()) ? "%" + search.trim() + "%" : null;
 
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 organizationRepository.findAllWithFilters(searchParam, offset, size).collectList(),
-                organizationRepository.countWithFilters(searchParam)
-        ).map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                organizationRepository.countWithFilters(searchParam),
+                page,
+                size
+        )
         .doOnSuccess(r -> logger.info("getAllOrganizations result: {}", JsonUtils.toJson(r)))
         .doOnError(error -> logger.error("Failed to fetch organizations - search: {}, page: {}, size: {}", search, page, size, error));
     }
@@ -152,10 +155,12 @@ public class AdminOrganizationService {
 
     public Mono<PaginatedResponse<SchoolFeedback>> getSchoolFeedbacks(Integer organizationId, int page, int size) {
         int offset = page * size;
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 schoolFeedbackRepository.findByOrganizationIdWithPagination(organizationId, offset, size).collectList(),
-                schoolFeedbackRepository.countByOrganizationId(organizationId)
-        ).map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+                schoolFeedbackRepository.countByOrganizationId(organizationId),
+                page,
+                size
+        )
                 .doOnSuccess(r -> logger.info("getSchoolFeedbacks result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch school feedbacks", error));
     }

@@ -5,6 +5,7 @@ import com.service.backend.admin.dto.LoginHistoryResponse;
 import com.service.backend.admin.dto.SuspiciousLoginInfo;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,27 +33,33 @@ public class AuditService {
     public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistories(Integer organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
-            return Mono.zip(
+            return PaginationHelper.paginate(
                     auditRepository.findByOrganizationIdWithUserInfo(organizationId, size, offset).collectList(),
-                    auditRepository.countByOrganizationId(organizationId)
-            ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                    auditRepository.countByOrganizationId(organizationId),
+                    page,
+                    size
+            )
              .doOnSuccess(r -> logger.info("getLoginHistories (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
              .doOnError(e -> logger.error("Error fetching login histories for org {}", organizationId, e));
         }
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 auditRepository.findAllWithUserInfo(size, offset).collectList(),
-                auditRepository.countAll()
-        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                auditRepository.countAll(),
+                page,
+                size
+        )
          .doOnSuccess(r -> logger.info("getLoginHistories result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching login histories", e));
     }
 
     public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistoriesByUser(Integer userId, int page, int size) {
         int offset = page * size;
-        return Mono.zip(
+        return PaginationHelper.paginate(
                 auditRepository.findByUserIdWithUserInfo(userId, size, offset).collectList(),
-                auditRepository.countByUserId(userId)
-        ).map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+                auditRepository.countByUserId(userId),
+                page,
+                size
+        )
          .doOnSuccess(r -> logger.info("getLoginHistoriesByUser result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching login histories for user {}", userId, e));
     }
