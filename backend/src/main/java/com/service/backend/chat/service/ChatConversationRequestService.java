@@ -9,7 +9,7 @@ import com.service.backend.chat.dto.ConversationRequestLatestMessageResponse;
 import com.service.backend.chat.dto.ConversationRequestSearchItemResponse;
 import com.service.backend.chat.dto.RespondConversationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.entity.ChatConversationRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.shared.entity.ChatGroupMember;
@@ -363,11 +363,11 @@ public class ChatConversationRequestService {
         Mono<Long> totalMono = chatConversationRequestRepository.countIncomingRequests(
                 currentUserId, fullNamePattern, statusFilter);
 
-        return chatConversationRequestRepository
-                .searchIncomingRequests(currentUserId, fullNamePattern, statusFilter, size, offset)
-                .collectList()
-                .zipWith(totalMono)
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+        return PaginationHelper.paginate(
+                chatConversationRequestRepository.searchIncomingRequests(currentUserId, fullNamePattern, statusFilter, size, offset),
+                totalMono,
+                page,
+                size);
     }
 
     private static String toFullNameContainsPattern(String raw) {

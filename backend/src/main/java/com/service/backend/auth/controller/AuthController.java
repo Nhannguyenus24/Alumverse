@@ -210,7 +210,7 @@ public class AuthController {
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
-                    .verificationLevel(1) // Default for system admin (non-zero)
+                    .verificationLevel(4) // Default for system admin (non-zero)
                     .build();
 
             return Mono.just(ResponseEntity.ok()

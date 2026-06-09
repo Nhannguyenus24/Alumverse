@@ -9,6 +9,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -82,49 +83,44 @@ public class AlumniPostService {
     public Mono<PaginatedResponse<AlumniPostResponse>> getAll(int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> alumniPostRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
-                        .collectList()
-                        .zipWith(alumniPostRepository.countByOrganizationId(orgId)))
-                .switchIfEmpty(Mono.defer(() -> alumniPostRepository.findAllWithPagination(limit, offset)
-                        .collectList()
-                        .zipWith(alumniPostRepository.count())))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AlumniPostResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        alumniPostRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(AlumniPostResponse::from),
+                        alumniPostRepository.countByOrganizationId(orgId),
+                        page, limit))
+                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
+                        alumniPostRepository.findAllWithPagination(limit, offset).map(AlumniPostResponse::from),
+                        alumniPostRepository.count(),
+                        page, limit)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> getPublished(int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> alumniPostRepository.findPublishedByOrganizationId(orgId, limit, offset)
-                        .collectList()
-                        .zipWith(alumniPostRepository.countPublishedByOrganizationId(orgId)))
-                .switchIfEmpty(Mono.defer(() -> alumniPostRepository.findAll() // Fallback to all published if no org
-                        .filter(p -> !p.getIsHidden())
-                        .skip(offset)
-                        .take(limit)
-                        .collectList()
-                        .zipWith(alumniPostRepository.count())))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AlumniPostResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        alumniPostRepository.findPublishedByOrganizationId(orgId, limit, offset).map(AlumniPostResponse::from),
+                        alumniPostRepository.countPublishedByOrganizationId(orgId),
+                        page, limit))
+                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
+                        alumniPostRepository.findAll()
+                                .filter(p -> !p.getIsHidden())
+                                .skip(offset)
+                                .take(limit)
+                                .map(AlumniPostResponse::from),
+                        alumniPostRepository.count(),
+                        page, limit)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
         return SecurityUtils.getCurrentOrganizationId()
-                .flatMap(orgId -> alumniPostRepository.searchAlumniPosts(orgId, keyword, limit, offset)
-                        .collectList()
-                        .zipWith(alumniPostRepository.countSearchAlumniPosts(orgId, keyword)))
-                .switchIfEmpty(Mono.defer(() -> alumniPostRepository.searchAllByTitleWithPagination(keyword, limit, offset)
-                        .collectList()
-                        .zipWith(alumniPostRepository.countAllSearchByTitle(keyword))))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AlumniPostResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        alumniPostRepository.searchAlumniPosts(orgId, keyword, limit, offset).map(AlumniPostResponse::from),
+                        alumniPostRepository.countSearchAlumniPosts(orgId, keyword),
+                        page, limit))
+                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
+                        alumniPostRepository.searchAllByTitleWithPagination(keyword, limit, offset).map(AlumniPostResponse::from),
+                        alumniPostRepository.countAllSearchByTitle(keyword),
+                        page, limit)));
     }
 
     public Mono<AlumniPostResponse> publish(Integer id) {
