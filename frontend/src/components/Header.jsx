@@ -24,8 +24,9 @@ const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
 
 const VERIFICATION_LABELS = {
   0: 'Guest',
-  1: 'Student',
+  1: 'Verifying',
   2: 'Alumni',
+  3: 'Student',
 };
 
 const NAV_ITEMS = [

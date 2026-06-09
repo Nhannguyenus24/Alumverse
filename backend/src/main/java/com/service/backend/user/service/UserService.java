@@ -71,7 +71,8 @@ public class UserService {
                             }
                         }
                     });
-                }).then();
+                }).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevel(currentUserId.intValue(), 1))
+                .then();
     }
 
     public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {
@@ -103,7 +104,8 @@ public class UserService {
                                                         "/profile/" + targetMember.getUserId()
                                                 );
                                             }
-                                        });
+                                        })
+                                        .then(userOrganizationMemberRepository.updateVerificationLevel(targetMember.getUserId(), 1));
                             });
                 })
                 .then();
