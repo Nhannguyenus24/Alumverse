@@ -1,5 +1,6 @@
 package com.service.backend.user.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -52,6 +53,7 @@ public class UserService {
     private final NotificationService notificationService;
     private final OCRService ocrService;
 
+    @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
                 .flatMap(fileUrl -> {
@@ -75,6 +77,7 @@ public class UserService {
                 .then();
     }
 
+    @Transactional
     public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
@@ -135,6 +138,7 @@ public class UserService {
                 .then();
     }
 
+    @Transactional
     public Mono<Void> directVerify(Long currentUserId, Integer organizationId, Integer targetUserId) {
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
@@ -255,6 +259,7 @@ public class UserService {
                 .doOnSuccess(r -> logger.info("updateMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
+    @Transactional
     public Mono<Void> updateMyProfile(Long currentUserId, UpdateMyProfileRequest request) {
         Integer userId = currentUserId.intValue();
 

@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import com.service.backend.shared.enums.ErrorCode;
@@ -110,6 +111,7 @@ public class AdminUserService {
                 .doOnError(error -> logger.error("Error fetching peer verifications for user: {}", userId, error));
     }
 
+    @Transactional
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId,
                                String email, String userName, String fullName, String role, String avatarUrl,
                                String password,
@@ -418,6 +420,7 @@ public class AdminUserService {
                 .doOnError(e -> logger.error("Error fetching admin action logs", e));
     }
 
+    @Transactional
     public Mono<Boolean> resetPasswordByAdmin(Integer userId, AdminResetPasswordRequest request, Integer adminUserId) {
         String encodedPassword = passwordEncoder.encode(request.getNewPassword());
         return adminUserRepository.resetPasswordByAdmin(userId, encodedPassword)
@@ -451,6 +454,7 @@ public class AdminUserService {
                 });
     }
 
+    @Transactional
     public Mono<Boolean> createAdminAccount(CreateAdminRequest request) {
         return adminUserRepository.existsByEmailOrUserName(request.getEmail(), request.getUserName())
                 .flatMap(exists -> {

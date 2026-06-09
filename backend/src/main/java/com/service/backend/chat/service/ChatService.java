@@ -1,5 +1,6 @@
 package com.service.backend.chat.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
@@ -341,6 +342,7 @@ public class ChatService {
      * - other members are added as 'member'
      * NOTE: If memberIds.size() == 2, caller should use private chat API instead.
      */
+    @Transactional
     public Mono<ChatGroup> createGroupChat(Long creatorMemberId, String title, List<Long> memberIds) {
         if (creatorMemberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Creator member ID must not be null"));
@@ -567,6 +569,7 @@ public class ChatService {
      *   - If there are other members: transfer ownership to earliest joined non-owner.
      *   - If no other members: delete group and all messages.
      */
+    @Transactional
     public Mono<Void> leaveGroup(Long groupId, Long memberId) {
         if (groupId == null || memberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID and member ID must not be null"));
@@ -611,6 +614,7 @@ public class ChatService {
     /**
      * Delete a group entirely (owner only).
      */
+    @Transactional
     public Mono<Void> deleteGroup(Long groupId, Long requesterId) {
         if (groupId == null || requesterId == null) {
             return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Group ID and requester ID must not be null"));

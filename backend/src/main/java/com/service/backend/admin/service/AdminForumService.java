@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -245,6 +246,7 @@ public class AdminForumService {
 
     // ========== DELETE TOPIC ==========
 
+    @Transactional
     public Mono<Void> deleteForumTopic(Integer topicId) {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))

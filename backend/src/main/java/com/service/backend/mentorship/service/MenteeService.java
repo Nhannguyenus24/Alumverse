@@ -1,5 +1,6 @@
 package com.service.backend.mentorship.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
 import com.service.backend.shared.entity.MentorshipReport;
@@ -223,6 +224,7 @@ public class MenteeService {
 
     // ===================== MENTEE PROFILE =====================
 
+    @Transactional
     public Mono<MenteeProfileResponse> createOrUpdateMyMenteeProfile(CreateMenteeProfileRequest request) {
         return accessService.requireOrgVerifiedForMentorship()
                 .then(currentMemberId().flatMap(memberId ->
@@ -259,6 +261,7 @@ public class MenteeService {
 
     // ===================== BOOK SESSION =====================
 
+    @Transactional
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
         return accessService.requireOrgVerifiedForMentorship()
                 .then(currentMemberId().flatMap(memberId ->
@@ -339,6 +342,7 @@ public class MenteeService {
                 .flatMap(this::enrich);
     }
 
+    @Transactional
     public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
         return currentMemberId().flatMap(memberId ->
                 sessionRepository.findById(sessionId)
@@ -374,6 +378,7 @@ public class MenteeService {
 
     // ===================== FEEDBACK =====================
 
+    @Transactional
     public Mono<SessionFeedbackResponse> createFeedback(Integer sessionId, CreateFeedbackRequest request) {
         return currentMemberId().flatMap(memberId ->
                 sessionRepository.findById(sessionId)

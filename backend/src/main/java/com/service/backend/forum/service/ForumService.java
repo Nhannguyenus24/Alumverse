@@ -1,5 +1,6 @@
 package com.service.backend.forum.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -293,6 +294,7 @@ public class ForumService {
                 .doOnError(error -> log.error("Error updating forum post ID: {}", id, error));
     }
 
+    @Transactional
     public Mono<Void> deletePost(Integer id) {
         return forumPostRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
@@ -324,6 +326,7 @@ public class ForumService {
 
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
+    @Transactional
     public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
         return forumPostRepository.findById(request.getPostId())
                 .switchIfEmpty(Mono.defer(() -> {
@@ -373,6 +376,7 @@ public class ForumService {
 
     // ========== SUBSCRIPTION METHODS ==========
 
+    @Transactional
     public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request) {
         return forumTopicRepository.findById(request.getTopicId())
                 .switchIfEmpty(Mono.defer(() -> {
