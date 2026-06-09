@@ -62,6 +62,25 @@ public class PaginationHelper {
     }
 
     /**
+     * Paginates a Flux of items with an asynchronous mapper and a Mono of the total count.
+     *
+     * @param itemsFlux the Flux of items to paginate
+     * @param total     the Mono of the total count of items
+     * @param page      the current page number (0-indexed)
+     * @param size      the number of items per page
+     * @param mapper    asynchronous mapper function to enrich/transform items
+     * @param <T>       the original type of the items
+     * @param <R>       the result type of the items
+     * @return a Mono containing the PaginatedResponse of R
+     */
+    public static <T, R> Mono<PaginatedResponse<R>> paginate(Flux<T> itemsFlux, Mono<Long> total, int page, int size, Function<List<T>, Mono<List<R>>> mapper) {
+        return itemsFlux.collectList()
+                .flatMap(mapper)
+                .zipWith(total)
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+    }
+
+    /**
      * Paginates a full list in-memory.
      *
      * @param list the full list of items
