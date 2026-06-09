@@ -1,25 +1,31 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
+import SearchIcon from '@mui/icons-material/Search';
 import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import Breadcrumb from '../../components/Breadcrumb';
+import { useAuth } from '../../hooks/useAuth';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
 import { useForumTopics } from '../../hooks/forum/useForumTopics';
 import { useNotification } from '../../hooks/useNotification';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const CAREER_CATEGORY_ID = 1;
 
 const ForumAlumniCareerPage = () => {
   const navigate = useOrgNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const { organization } = useOrganization();
   const { showError } = useNotification();
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const debouncedKeyword = useDebounce(searchKeyword, 500);
   const hasShownTopicsErrorRef = useRef(false);
   const organizationId = organization?.id ?? null;
   const { categories } = useForumCategories(organizationId);
@@ -46,7 +52,7 @@ const ForumAlumniCareerPage = () => {
     return 'all';
   }, [location.state?.selectedFilterId]);
 
-  const { topics, isPending, isError } = useForumTopics(CAREER_CATEGORY_ID, 0, 20);
+  const { topics, isPending, isError } = useForumTopics(CAREER_CATEGORY_ID, debouncedKeyword, 0, 20);
 
   useEffect(() => {
     if (isError) {
@@ -159,20 +165,40 @@ const ForumAlumniCareerPage = () => {
                     sx={{
                       display: 'flex',
                       flexDirection: { xs: 'column', sm: 'row' },
-                      gap: 1,
+                      alignItems: 'center',
+                      gap: 2,
                       width: { xs: '100%', sm: 'auto' },
                     }}
                   >
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() =>
-                        navigate('/forum/alumni/career/create-topic')
-                      }
-                      sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
-                    >
-                      Tạo bài đăng
-                    </Button>
+                    <TextField
+                      size="small"
+                      placeholder="Tìm kiếm chủ đề..."
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      sx={{ width: { xs: '100%', sm: 260 } }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <SearchIcon fontSize="small" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể tạo bài đăng" : ""} arrow>
+                      <span>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() =>
+                            navigate('/forum/alumni/career/create-topic')
+                          }
+                          disabled={!isAuthenticated}
+                          sx={{ minWidth: { xs: '100%', sm: 'auto' }, height: 40 }}
+                        >
+                          Tạo bài đăng
+                        </Button>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </Box>
               </Box>
@@ -200,6 +226,24 @@ const ForumAlumniCareerPage = () => {
                     }}
                   >
                     <Typography color="text.secondary">Không thể tải danh sách chủ đề.</Typography>
+                  </Box>
+                )}
+                {!isPending && !isError && topics.length === 0 && (
+                  <Box
+                    sx={{
+                      px: { xs: 1.5, sm: 2, md: 3 },
+                      py: { xs: 4, md: 6 },
+                      borderTop: 1,
+                      borderColor: 'divider',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+                      {debouncedKeyword ? `Không tìm thấy chủ đề nào cho "${debouncedKeyword}"` : "Chưa có chủ đề nào trong danh mục này."}
+                    </Typography>
                   </Box>
                 )}
                 {topics.map((topic) => (
@@ -367,4 +411,3 @@ const ForumAlumniCareerPage = () => {
 };
 
 export default ForumAlumniCareerPage;
-
