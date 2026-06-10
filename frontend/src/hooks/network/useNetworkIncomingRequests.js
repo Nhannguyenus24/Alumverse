@@ -15,6 +15,7 @@ export function useNetworkIncomingRequests({ appliedFullName, status, page, page
         size: pageSize,
       }),
     keepPreviousData: true,
+    refetchOnMount: 'always',
   });
 
   return {

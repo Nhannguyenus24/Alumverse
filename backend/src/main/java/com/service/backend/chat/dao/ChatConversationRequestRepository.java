@@ -41,6 +41,7 @@ public interface ChatConversationRequestRepository extends ReactiveCrudRepositor
 
     String SEARCH_WHERE = """
             WHERE ccr.target_member_id = :currentUserId
+              AND ccr.status <> 'ACCEPTED'
               AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
               AND (:status IS NULL OR ccr.status = :status)
             """;

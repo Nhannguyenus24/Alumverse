@@ -12,10 +12,12 @@ import NetworkSectionLayout from '../../components/network/NetworkSectionLayout'
 import SearchBar from '../../components/SearchBar';
 import NetworkSearchMemberCard from '../../components/network/NetworkSearchMemberCard';
 import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import DynamicFilterBar from '../../components/DynamicFilterBar';
 import { useNetworkMembers } from '../../hooks/network/useNetworkMembers';
 import { useCheckConversationRequestStatus } from '../../hooks/network/useCheckConversationRequestStatus';
+import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
 
 const FILTERS = [
@@ -50,9 +52,14 @@ const NetworkPage = () => {
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [isMessageDrawerOpen, setIsMessageDrawerOpen] = useState(false);
   const [checkingUserId, setCheckingUserId] = useState(null);
+  const [blockTarget, setBlockTarget] = useState(null);
 
   const { showError } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
+  const { blockUser, isBlocking } = useBlockUser({
+    targetMemberId: blockTarget?.userId ?? null,
+    onSuccess: () => setBlockTarget(null),
+  });
 
   const { items, totalPage, isPending, isFetching, isError, errorMessage } = useNetworkMembers({
     appliedFullName,
@@ -181,7 +188,9 @@ const NetworkPage = () => {
               program={member.program}
               major={member.major}
               onMessage={() => handleOpenMessage(member)}
+              onBlock={() => setBlockTarget(member)}
               isMessageLoading={checkingUserId === member.userId}
+              isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
             />
           ))}
         </Box>
@@ -213,6 +222,18 @@ const NetworkPage = () => {
         onClose={handleCloseMessage}
         peer={messagePeer}
         connectionStatus={connectionStatus}
+      />
+
+      <ConfirmDialog
+        open={Boolean(blockTarget)}
+        title="Chặn người dùng"
+        message={`Bạn có chắc muốn chặn ${blockTarget?.fullName ?? 'người dùng này'}? Bạn sẽ không thể gửi tin nhắn cho họ.`}
+        confirmText="Chặn"
+        cancelText="Hủy"
+        confirmColor="primary"
+        loading={isBlocking}
+        onConfirm={() => blockUser()}
+        onCancel={() => setBlockTarget(null)}
       />
     </NetworkSectionLayout>
   );

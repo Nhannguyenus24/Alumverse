@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import apiClient, { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from '../utils/axios';
 import { userFromAccessToken, isTokenExpired, getSecondsUntilExpire } from '../utils/jwt';
 import {
@@ -16,6 +17,7 @@ function getFirstZodMessage(error) {
 }
 
 export const useAuth = () => {
+  const queryClient = useQueryClient();
   const store = useAuthStore();
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error, verificationLevel } = store;
@@ -303,6 +305,7 @@ export const useAuth = () => {
     try {
       await apiClient.post('/auth/logout');
     } finally {
+      queryClient.clear();
       store.reset();
     }
   };
