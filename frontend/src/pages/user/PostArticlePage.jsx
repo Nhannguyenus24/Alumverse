@@ -18,6 +18,7 @@ const PostArticlePage = () => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
+  const [url, setUrl] = useState('');
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
 
@@ -42,6 +43,7 @@ const PostArticlePage = () => {
         title: title.trim(),
         content: content.trim(),
         thumbnailBase64,
+        url: url.trim() || null,
       };
 
       const result = await createNews(payload);
@@ -96,6 +98,8 @@ const PostArticlePage = () => {
               setContent={setContent}
               topic={topic}
               setTopic={setTopic}
+              url={url}
+              setUrl={setUrl}
             />
 
             {/* Action Buttons */}

@@ -254,6 +254,7 @@ CREATE TABLE "news" (
   "content" text,
   "thumbnail_url" text,
   "topic" text,
+  "url" text,
   "is_hidden" boolean,
   "published_at" timestamp
 );
@@ -267,6 +268,7 @@ CREATE TABLE "alumni_posts" (
   "content" text,
   "thumbnail_url" text,
   "topic" text,
+  "url" text,
   "is_hidden" boolean,
   "published_at" timestamp
 );

@@ -22,10 +22,12 @@ const PostArticleForm = ({
   channelLabel, 
   title, 
   setTitle, 
-  content, 
-  setContent, 
-  topic, 
+  content,
+  setContent,
+  topic,
   setTopic,
+  url,
+  setUrl,
   donationData = {},
   handleDonationInputChange,
   eventData = {},
@@ -274,6 +276,16 @@ const PostArticleForm = ({
       <Box sx={{ mt: 2 }}>
         <WYSIWYG value={content} onChange={setContent} placeholder="Bắt đầu viết nội dung tại đây..." height={400} />
       </Box>
+
+      <TextField
+        fullWidth
+        type="url"
+        label="Link minh chứng (URL)"
+        placeholder="https://example.com/nguon-bai-viet"
+        helperText="Đường dẫn để chứng minh nội dung bài viết là thật (không bắt buộc)."
+        value={url ?? ''}
+        onChange={(e) => setUrl(e.target.value)}
+      />
     </Stack>
   );
 };

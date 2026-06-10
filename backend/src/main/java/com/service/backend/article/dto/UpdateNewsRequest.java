@@ -30,4 +30,8 @@ public class UpdateNewsRequest {
     private String thumbnailBase64;
 
     private String topic;
+
+    /** Optional proof/source link for the post. */
+    @URL
+    private String url;
 }
