@@ -7,6 +7,7 @@ export function useGroupMembers(groupId, { enabled = true } = {}) {
     queryKey: ['chat', 'group-members', groupId],
     queryFn: () => chatApi.getGroupMembers(groupId),
     enabled: Boolean(groupId) && enabled,
+    refetchOnMount: 'always',
   });
 
   const data = query.data;

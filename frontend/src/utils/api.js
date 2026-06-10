@@ -411,6 +411,42 @@ export const chatApi = {
 		const response = await apiClient.delete(`/chat/groups/${groupId}/leave`);
 		return unwrap(response);
 	},
+
+	async blockUser(targetMemberId) {
+		const response = await apiClient.post(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async unblockUser(targetMemberId) {
+		const response = await apiClient.delete(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async getBlockStatus(targetMemberId) {
+		const response = await apiClient.get(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async searchConnections({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/connections/search', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async searchBlockedMembers({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/blocks', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async getBlockList({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/blocks', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
 };
 
 export const {

@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { networkApi } from '../../utils/api';
+import { chatApi } from '../../utils/api';
 
-function buildSearchParams({ appliedFullName, filters, page, pageSize }) {
+function buildSearchParams({ appliedFullName, page, pageSize }) {
   const params = {
     page: Math.max(0, page - 1),
     size: pageSize,
@@ -13,34 +13,20 @@ function buildSearchParams({ appliedFullName, filters, page, pageSize }) {
     params.fullName = name;
   }
 
-  if (!filters?.all) {
-    const program = filters.program || '';
-    if (program) {
-      params.program = program;
-    }
-
-    const major = filters.major || '';
-    if (major) {
-      params.major = major;
-    }
-  }
-
   return params;
 }
 
-export function useNetworkMembers({ appliedFullName, filters, page, pageSize, enabled = true }) {
-  const params = buildSearchParams({ appliedFullName, filters, page, pageSize });
+export function useBlockedMembers({ appliedFullName, page, pageSize, enabled = true }) {
+  const params = buildSearchParams({ appliedFullName, page, pageSize });
 
   const query = useQuery({
     queryKey: [
-      'networkMembers',
+      'blockedMembers',
       params.fullName ?? '',
-      params.program ?? '',
-      params.major ?? '',
       params.page,
       params.size,
     ],
-    queryFn: () => networkApi.searchMembers(params),
+    queryFn: () => chatApi.searchBlockedMembers(params),
     enabled,
     refetchOnMount: 'always',
   });
@@ -54,7 +40,7 @@ export function useNetworkMembers({ appliedFullName, filters, page, pageSize, en
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải danh sách thành viên.'
+        'Không thể tải danh sách người đã chặn.'
       : null;
 
   return {

@@ -28,6 +28,11 @@ public interface NetworkMemberSearchRepository
             WHERE om.organization_id = :organizationId
               AND om.status = 'ACTIVE'
               AND u.id <> :currentUserId
+              AND NOT EXISTS (
+                SELECT 1 FROM user_blocks ub
+                WHERE (ub.blocker_member_id = :currentUserId AND ub.blocked_member_id = u.id)
+                   OR (ub.blocker_member_id = u.id AND ub.blocked_member_id = :currentUserId)
+              )
               AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
               AND (:programJson IS NULL OR om.program @> CAST(:programJson AS jsonb))
               AND (:majorJson IS NULL OR om.major @> CAST(:majorJson AS jsonb))

@@ -5,6 +5,7 @@ import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
+import com.service.backend.chat.dto.BlockPairFlags;
 import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
@@ -36,17 +37,20 @@ public class ChatService {
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final AuthRepository authRepository;
+    private final UserBlockService userBlockService;
 
     public ChatService(
         ChatGroupRepository cGRepo,
         ChatGroupMemberRepository cGMRepo,
         ChatMessageRepository cMRepo,
-        AuthRepository authRepository
+        AuthRepository authRepository,
+        UserBlockService userBlockService
     ) {
         this.chatGroupMemberRepository = cGMRepo;
         this.chatGroupRepository = cGRepo;
         this.chatMessageRepository = cMRepo;
         this.authRepository = authRepository;
+        this.userBlockService = userBlockService;
     }
 
 
@@ -138,18 +142,15 @@ public class ChatService {
                             .orElse(null);
 
                     if (peerId == null) {
-                        return Mono.just(new PrivateChatListItemResponse(
-                                group.getId(),
-                                group.getType(),
-                                group.getTitle(),
-                                group.getCreatedBy(),
-                                group.getCreatedAt(),
-                                group.getUpdatedAt(),
+                        return Mono.just(buildPrivateChatListItemResponse(
+                                group,
                                 null,
                                 "Unknown",
                                 null,
                                 null,
-                                null
+                                null,
+                                false,
+                                false
                         ));
                     }
 
@@ -161,36 +162,60 @@ public class ChatService {
                             .map(user -> new PeerInfo(user.getUserName(), user.getAvatarUrl()))
                             .switchIfEmpty(Mono.just(new PeerInfo("User " + finalPeerId, null)));
 
-                    return peerInfoMono.flatMap(peerInfo ->
-                            chatMessageRepository.findLastByGroupId(group.getId())
-                                    .map(msg -> new PrivateChatListItemResponse(
-                                            group.getId(),
-                                            group.getType(),
-                                            group.getTitle(),
-                                            group.getCreatedBy(),
-                                            group.getCreatedAt(),
-                                            group.getUpdatedAt(),
-                                            finalPeerId,
-                                            peerInfo.userName(),
-                                            peerInfo.avatarUrl(),
-                                            msg.getContent(),
-                                            msg.getCreatedAt()
-                                    ))
-                                    .switchIfEmpty(Mono.just(new PrivateChatListItemResponse(
-                                            group.getId(),
-                                            group.getType(),
-                                            group.getTitle(),
-                                            group.getCreatedBy(),
-                                            group.getCreatedAt(),
-                                            group.getUpdatedAt(),
-                                            finalPeerId,
-                                            peerInfo.userName(),
-                                            peerInfo.avatarUrl(),
-                                            null,
-                                            null
-                                    )))
-                    );
+                    Mono<BlockPairFlags> blockFlagsMono =
+                            userBlockService.getBlockFlagsBetween(currentMemberId, finalPeerId);
+
+                    return Mono.zip(peerInfoMono, blockFlagsMono)
+                            .flatMap(tuple -> {
+                                PeerInfo peerInfo = tuple.getT1();
+                                BlockPairFlags flags = tuple.getT2();
+
+                                return chatMessageRepository.findLastByGroupId(group.getId())
+                                        .map(msg -> buildPrivateChatListItemResponse(
+                                                group,
+                                                finalPeerId,
+                                                peerInfo.userName(),
+                                                peerInfo.avatarUrl(),
+                                                msg.getContent(),
+                                                msg.getCreatedAt(),
+                                                flags.isBlockedByMe(),
+                                                flags.isBlockedByPeer()))
+                                        .switchIfEmpty(Mono.just(buildPrivateChatListItemResponse(
+                                                group,
+                                                finalPeerId,
+                                                peerInfo.userName(),
+                                                peerInfo.avatarUrl(),
+                                                null,
+                                                null,
+                                                flags.isBlockedByMe(),
+                                                flags.isBlockedByPeer())));
+                            });
                 });
+    }
+
+    private PrivateChatListItemResponse buildPrivateChatListItemResponse(
+            ChatGroup group,
+            Long peerMemberId,
+            String peerUserName,
+            String peerAvatarUrl,
+            String lastMessagePreview,
+            LocalDateTime lastMessageAt,
+            boolean blockedByMe,
+            boolean blockedByPeer) {
+        return new PrivateChatListItemResponse(
+                group.getId(),
+                group.getType(),
+                group.getTitle(),
+                group.getCreatedBy(),
+                group.getCreatedAt(),
+                group.getUpdatedAt(),
+                peerMemberId,
+                peerUserName,
+                peerAvatarUrl,
+                lastMessagePreview,
+                lastMessageAt,
+                blockedByMe,
+                blockedByPeer);
     }
 
     public Mono<PaginatedResponse<GroupChatListItemResponse>> getListGroupChatsWithSummary(
@@ -301,6 +326,9 @@ public class ChatService {
                         return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Sender is not a member of this chat group"));
                     }
 
+                    return userBlockService.assertSenderCanSendMessage(senderMemberId, groupId);
+                })
+                .flatMap(ignored -> {
                     LocalDateTime now = LocalDateTime.now();
                     String finalMessageType = messageType != null ? messageType : "TEXT";
                     String finalMetadata = metadata != null ? metadata : "null";
