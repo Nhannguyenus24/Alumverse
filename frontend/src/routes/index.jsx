@@ -143,6 +143,9 @@ const NetworkPage = Loadable(
 const NetworkIncomingRequestsPage = Loadable(
   lazy(() => import("../pages/network/NetworkIncomingRequestsPage")),
 );
+const NetworkConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkConnectionsPage")),
+);
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
 );
@@ -360,6 +363,10 @@ export const router = createBrowserRouter([
           {
             path: "requests",
             element: <NetworkIncomingRequestsPage />,
+          },
+          {
+            path: "connections",
+            element: <NetworkConnectionsPage />,
           },
         ],
       },

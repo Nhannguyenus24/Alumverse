@@ -1,27 +1,34 @@
-import { Avatar, Box, Button, Card, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Stack,
+  Typography,
+} from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import { alpha } from '@mui/material/styles';
-
 import IconButtonMenu from '../IconButtonMenu';
+import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { formatAcademicValue } from './networkCardUtils';
 
-/**
- * Card hiển thị một thành viên trong tab Tìm kiếm Network.
- * Dữ liệu: global_profiles (fullName), users (avatar), organization_members (program, major).
- */
-const NetworkSearchMemberCard = ({
-  avatar,
-  fullName,
-  program,
-  major,
-  onMessage,
+const NetworkConnectionCard = ({
+  connection,
+  enableBlock = true,
   onBlock,
-  isDemo = false,
-  isMessageLoading = false,
   isBlockLoading = false,
 }) => {
-  const displayName = fullName || 'N/A';
-  const programLabel = formatAcademicValue(program, '—');
-  const majorLabel = formatAcademicValue(major, 'N/A');
+  const navigate = useOrgNavigate();
+  const displayName = connection.fullName || 'N/A';
+  const programLabel = formatAcademicValue(connection.program, '—');
+  const majorLabel = formatAcademicValue(connection.major, 'N/A');
+
+  const handleMessage = () => {
+    navigate('/chat');
+  };
 
   return (
     <Card
@@ -29,7 +36,7 @@ const NetworkSearchMemberCard = ({
         p: 3,
         borderRadius: 2,
         border: '1px solid',
-        borderColor: isDemo ? 'primary.light' : 'divider',
+        borderColor: 'divider',
         boxShadow: 'none',
         textAlign: 'center',
         display: 'flex',
@@ -40,18 +47,18 @@ const NetworkSearchMemberCard = ({
         '&:hover': { transform: 'translateY(-4px)' },
       }}
     >
-      {onBlock ? (
+      {enableBlock ? (
         <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
           <IconButtonMenu
-            menuId={`network-member-card-menu-${fullName}`}
-            buttonAriaLabel="Tùy chọn thành viên"
+            menuId={`network-connection-card-menu-${connection.peerMemberId}`}
+            buttonAriaLabel="Tùy chọn kết nối"
           >
             {({ close }) => (
               <MenuItem
                 disabled={isBlockLoading}
                 onClick={() => {
                   close();
-                  onBlock();
+                  onBlock?.();
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36 }}>
@@ -65,12 +72,13 @@ const NetworkSearchMemberCard = ({
       ) : null}
 
       <Stack spacing={1.5} alignItems="center">
-        <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
+        <Avatar src={connection.avatarUrl} sx={{ width: 80, height: 80 }} />
 
         <Box sx={{ width: '100%' }}>
           <Typography fontWeight={700} variant="subtitle1" sx={{ lineHeight: 1.3 }}>
             {displayName}
           </Typography>
+
           <Box
             sx={(theme) => ({
               mt: 1.25,
@@ -101,44 +109,11 @@ const NetworkSearchMemberCard = ({
         </Box>
       </Stack>
 
-      <Button
-        variant="contained"
-        sx={{ mt: 3 }}
-        fullWidth
-        type="button"
-        onClick={onMessage}
-        disabled={!onMessage || isMessageLoading}
-      >
-        {isMessageLoading ? (
-          <CircularProgress size={22} color="inherit" />
-        ) : (
-          'Nhắn tin'
-        )}
+      <Button variant="contained" sx={{ mt: 3 }} fullWidth type="button" onClick={handleMessage}>
+        Nhắn tin
       </Button>
     </Card>
   );
 };
 
-function formatAcademicValue(value, fallback) {
-  if (Array.isArray(value)) {
-    const items = value.filter(Boolean);
-    return items.length > 0 ? items.join(' · ') : fallback;
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        const items = parsed.filter(Boolean);
-        return items.length > 0 ? items.join(' · ') : fallback;
-      }
-    } catch {
-      return value;
-    }
-    return value;
-  }
-
-  return fallback;
-}
-
-export default NetworkSearchMemberCard;
+export default NetworkConnectionCard;

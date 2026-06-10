@@ -46,7 +46,7 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
           },
         }}
       >
-        <MessagesPreviewPanel onClose={handleClose} />
+        {open ? <MessagesPreviewPanel onClose={handleClose} /> : null}
       </Menu>
     </>
   );

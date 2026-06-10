@@ -6,7 +6,7 @@ INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "a
 ('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
 ('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '90 days', NOW()),
 ('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '60 days', NOW()),
-('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
+('nguyen.van.a@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'nguyenvana', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
 ('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '30 days', NOW()),
 ('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '20 days', NOW()),
 ('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '10 days', NOW()),
@@ -405,6 +405,13 @@ INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message
 (8, 6, 'Mình có slide về EXPLAIN ANALYZE, share vào nhóm nha.', 'TEXT', NULL, NOW() - INTERVAL '18 hours', NULL, NULL),
 (8, 4, 'Em đang làm bài lab, mai hỏi thêm ạ!', 'TEXT', NULL, NOW() - INTERVAL '15 minutes', NULL, NULL);
 
+-- ============= CHAT CONVERSATION REQUESTS DATA =============
+-- Seed cho 4 private chat group đã có tin nhắn; status ACCEPTED, cooldown_until NULL
+INSERT INTO "chat_conversation_requests" ("member_low_id", "member_high_id", "requester_member_id", "target_member_id", "chat_group_id", "last_request_message_id", "cooldown_until", "status", "created_at", "updated_at") VALUES
+(2, 4, 2, 4, 1, 1, NULL, 'ACCEPTED', NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days'),
+(2, 11, 11, 2, 4, 6, NULL, 'ACCEPTED', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+(6, 11, 11, 6, 6, 14, NULL, 'ACCEPTED', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days'),
+(4, 11, 4, 11, 7, 19, NULL, 'ACCEPTED', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
 
 -- ============= FORUM CATEGORIES DATA =============
 INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES

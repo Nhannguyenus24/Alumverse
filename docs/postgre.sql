@@ -572,6 +572,15 @@ CREATE TABLE "chat_conversation_requests" (
 
 CREATE UNIQUE INDEX ON "chat_conversation_requests" ("member_low_id", "member_high_id");
 
+CREATE TABLE "user_blocks" (
+  "id" BIGSERIAL PRIMARY KEY,
+  "blocker_member_id" integer NOT NULL,
+  "blocked_member_id" integer NOT NULL,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX ON "user_blocks" ("blocker_member_id", "blocked_member_id");
+
 CREATE UNIQUE INDEX ON "chat_group_members" ("group_id", "member_id");
 
 CREATE UNIQUE INDEX ON "peer_verifications" ("target_member_id", "verifier_member_id");
@@ -726,6 +735,10 @@ ALTER TABLE "forum_poll_votes" ADD FOREIGN KEY ("poll_id") REFERENCES "forum_pol
 ALTER TABLE "forum_poll_votes" ADD FOREIGN KEY ("poll_option_id") REFERENCES "forum_poll_options" ("id");
 
 ALTER TABLE "forum_poll_votes" ADD FOREIGN KEY ("member_id") REFERENCES "organization_members" ("user_id");
+
+ALTER TABLE "user_blocks" ADD FOREIGN KEY ("blocker_member_id") REFERENCES "organization_members" ("user_id");
+
+ALTER TABLE "user_blocks" ADD FOREIGN KEY ("blocked_member_id") REFERENCES "organization_members" ("user_id");
 
 ALTER TABLE "admin_audit_logs" ADD FOREIGN KEY ("admin_user_id") REFERENCES "users" ("id");
 

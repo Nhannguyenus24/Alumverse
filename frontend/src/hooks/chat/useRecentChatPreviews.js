@@ -7,6 +7,7 @@ export function useRecentChatPreviews({ enabled = true } = {}) {
     queryKey: ['recentChatPreviews'],
     queryFn: () => chatApi.getRecentPreviews(),
     enabled,
+    refetchOnMount: 'always',
   });
 
   const errorMessage =

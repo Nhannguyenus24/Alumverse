@@ -1,0 +1,36 @@
+package com.service.backend.chat.controller;
+
+import com.service.backend.chat.dto.ConnectionSearchItemResponse;
+import com.service.backend.chat.service.ConnectionSearchService;
+import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.dto.PaginatedResponse;
+import jakarta.validation.constraints.Min;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
+
+@RestController
+@RequestMapping("/api/chat/connections")
+@Validated
+@RequiredArgsConstructor
+public class ConnectionSearchController {
+
+    private final ConnectionSearchService connectionSearchService;
+
+    @GetMapping("/search")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ConnectionSearchItemResponse>>>> searchConnections(
+            @RequestParam(required = false) String fullName,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "5") @Min(1) int size) {
+
+        return connectionSearchService
+                .searchConnections(fullName, page, size)
+                .map(result -> ResponseEntity.ok(
+                        new ApiResponse<>("Connections retrieved successfully", result)));
+    }
+}
