@@ -1,6 +1,7 @@
 package com.service.backend.admin.controller;
 
 import com.service.backend.admin.dto.LoginHistoryResponse;
+import com.service.backend.admin.dto.SuspiciousLoginInfo;
 import com.service.backend.admin.service.AuditService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -30,13 +31,14 @@ public class AuditController {
     }
 
     /**
-     * Get all login histories with pagination
+     * Get all login histories with pagination, optionally filtered by organization
      */
     @GetMapping("/login-history")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<LoginHistoryResponse>>>> getLoginHistories(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return auditService.getLoginHistories(page, size)
+        return auditService.getLoginHistories(organizationId, page, size)
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Login histories fetched successfully", data)));
     }
@@ -68,7 +70,7 @@ public class AuditController {
      * Get users with logins from more than 3 distinct IPs in the last 7 days
      */
     @GetMapping("/login-history/suspicious")
-    public Mono<ResponseEntity<ApiResponse<List<Object>>>> getSuspiciousLogins() {
+    public Mono<ResponseEntity<ApiResponse<List<SuspiciousLoginInfo>>>> getSuspiciousLogins() {
         return auditService.getSuspiciousLogins()
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Suspicious logins fetched successfully", data)));

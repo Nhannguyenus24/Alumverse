@@ -6,6 +6,7 @@ import com.service.backend.article.dto.JobResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.service.JobService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -48,6 +49,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Job deleted successfully", null)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<JobResponse>>> getById(@PathVariable @Min(1) Integer id) {
         return jobService.getById(id)
@@ -55,6 +57,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Job retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -64,6 +67,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Jobs retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/active")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getActive(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -73,6 +77,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Active jobs retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/open")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> getOpenJobs(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -82,6 +87,7 @@ public class JobController {
                         .ok(new ApiResponse<>("Open jobs retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<JobResponse>>>> search(
             @RequestParam @NotBlank String keyword,

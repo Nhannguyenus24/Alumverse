@@ -171,8 +171,10 @@ export const {
 } = adminOrganizationApi;
 
 export const adminAuditApi = {
-	getLoginHistory(page = 0, size = 50) {
-		return apiClient.get('/admin/audit/login-history', { params: { page, size } });
+	getLoginHistory(page = 0, size = 50, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get('/admin/audit/login-history', { params });
 	},
 
 	getLoginHistoryByUser(userId, page = 0, size = 50) {
@@ -233,8 +235,11 @@ export const adminUserApi = {
 		return apiClient.post(`${BASE_ADMIN_USERS}/admins`, body);
 	},
 
-	getVerificationRequests(pendingOnly = false, page = 0, size = 20) {
-		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params: { pendingOnly, page, size } });
+	getVerificationRequests(pendingOnly = false, page = 0, size = 20, keyword = '', organizationId = null) {
+		const params = { pendingOnly, page, size };
+		if (keyword) params.keyword = keyword;
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_USERS}/verification-requests`, { params });
 	},
 
 	getUserVerificationRequests(userId) {
@@ -252,10 +257,6 @@ export const adminUserApi = {
 	getUserActivity(userId) {
 		return apiClient.get(`${BASE_ADMIN_USERS}/${userId}/activity`);
 	},
-
-	resetPasswordByAdmin(userId, payload) {
-		return apiClient.post(`${BASE_ADMIN_USERS}/${userId}/reset-password`, payload);
-	},
 };
 
 export const {
@@ -272,7 +273,6 @@ export const {
 	reviewVerificationRequest,
 	addOrganizationMember,
 	getUserActivity,
-	resetPasswordByAdmin,
 } = adminUserApi;
 
 export const adminMentorshipApi = {
@@ -281,8 +281,10 @@ export const adminMentorshipApi = {
 		return unwrap(response);
 	},
 
-	getSessionsByStatus(status, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/sessions/by-status`, { params: { status, page, size } });
+	getSessionsByStatus(status, page = 0, size = 10, organizationId = null) {
+		const params = { status, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/sessions/by-status`, { params });
 	},
 
 	getSessionById(sessionId) {
@@ -297,12 +299,16 @@ export const adminMentorshipApi = {
 		return apiClient.delete(`${BASE_ADMIN_MENTORSHIP}/sessions/${sessionId}`);
 	},
 
-	getAllMentorProfiles(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors`, { params: { page, size } });
+	getAllMentorProfiles(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors`, { params });
 	},
 
-	getMentorProfilesByApproval(isApproved, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-approval`, { params: { isApproved, page, size } });
+	getMentorProfilesByApproval(isApproved, page = 0, size = 10, organizationId = null) {
+		const params = { isApproved, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_MENTORSHIP}/mentors/by-approval`, { params });
 	},
 
 	approveMentor(memberId) {
@@ -405,6 +411,42 @@ export const chatApi = {
 		const response = await apiClient.delete(`/chat/groups/${groupId}/leave`);
 		return unwrap(response);
 	},
+
+	async blockUser(targetMemberId) {
+		const response = await apiClient.post(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async unblockUser(targetMemberId) {
+		const response = await apiClient.delete(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async getBlockStatus(targetMemberId) {
+		const response = await apiClient.get(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async searchConnections({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/connections/search', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async searchBlockedMembers({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/blocks', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async getBlockList({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/blocks', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
 };
 
 export const {
@@ -475,6 +517,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async getUpcomingEvents(params = {}) {
+		const response = await apiClient.get('/events/upcoming', { params });
+		return unwrap(response);
+	},
+
 	async updateEvent(eventId, payload) {
 		const response = await apiClient.put(`/events/${eventId}`, payload);
 		return unwrap(response);
@@ -494,23 +541,150 @@ export const eventApi = {
 		const response = await apiClient.delete(`/events/${eventId}`);
 		return unwrap(response);
 	},
+
+	// ── Interest ─────────────────────────────────────────────────────────────
+	async addInterest(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/interest`);
+		return unwrap(response);
+	},
+
+	async removeInterest(eventId) {
+		const response = await apiClient.delete(`/events/${eventId}/interest`);
+		return unwrap(response);
+	},
+
+	async checkInterest(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/interest/check`);
+		return unwrap(response);
+	},
+
+	async checkRegistered(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/check-registered`);
+		return unwrap(response);
+	},
+
+	// ── Invitations ──────────────────────────────────────────────────────────
+	async inviteUsers(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/invitations`, payload);
+		return unwrap(response);
+	},
+
+	async confirmInvitation(token) {
+		const response = await apiClient.post('/events/invitations/confirm', null, { params: { token } });
+		return unwrap(response);
+	},
+
+	async getInvitations(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/invitations`, { params });
+		return unwrap(response);
+	},
+
+	// ── Register (user self-register) ─────────────────────────────────────
+	async registerForEvent(eventId, payload = {}) {
+		const response = await apiClient.post(`/events/${eventId}/register`, payload);
+		return unwrap(response);
+	},
+
+	// ── Approve / Reject ──────────────────────────────────────────────────
+	async approveTicket(ticketId) {
+		const response = await apiClient.post(`/events/tickets/${ticketId}/approve`);
+		return unwrap(response);
+	},
+
+	async rejectTicket(ticketId, payload = {}) {
+		const response = await apiClient.post(`/events/tickets/${ticketId}/reject`, payload);
+		return unwrap(response);
+	},
+
+	async bulkApproveTickets(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/bulk-approve`, payload);
+		return unwrap(response);
+	},
+
+	async approveAllPending(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/approve-all`);
+		return unwrap(response);
+	},
+
+	// ── Reminder emails ───────────────────────────────────────────────────
+	async sendReminders(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/reminders`, payload);
+		return unwrap(response);
+	},
+
+	async getEmailLogs(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/email-logs`, { params });
+		return unwrap(response);
+	},
+
+	// ── Ticket lifecycle ──────────────────────────────────────────────────
+	async sendIssuedTicketEmails(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/send-emails`);
+		return unwrap(response);
+	},
+
+	async activateTickets(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/activate`);
+		return unwrap(response);
+	},
+
+	async expireTickets(eventId) {
+		const response = await apiClient.post(`/events/${eventId}/tickets/expire`);
+		return unwrap(response);
+	},
+
+	async getTicketsByEvent(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/tickets`, { params });
+		return unwrap(response);
+	},
+
+	async getTicketsByStatus(eventId, status, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/tickets`, { params: { status, ...params } });
+		return unwrap(response);
+	},
+
+	async checkInTicket(ticketCode) {
+		const response = await apiClient.post(`/events/tickets/${ticketCode}/check-in`);
+		return unwrap(response);
+	},
+
+	async cancelTicketByCode(ticketCode) {
+		const response = await apiClient.post(`/events/tickets/${ticketCode}/cancel`);
+		return unwrap(response);
+	},
+
+	async getMyTickets(params = {}) {
+		const response = await apiClient.get('/events/my-tickets', { params });
+		return unwrap(response);
+	},
+
+	async getEventStatisticsById(eventId) {
+		const response = await apiClient.get(`/events/${eventId}/statistics`);
+		return unwrap(response);
+	},
 };
 
 export const adminEventApi = {
-	getAllEvents(page = 0, size = 10) {
-		return apiClient.get(BASE_ADMIN_EVENTS, { params: { page, size } });
+	getAllEvents(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(BASE_ADMIN_EVENTS, { params });
 	},
 
 	getEventsByOrganization(organizationId, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/organization/${organizationId}`, { params: { page, size } });
+		return apiClient.get(BASE_ADMIN_EVENTS, { params: { page, size, organizationId } });
 	},
 
-	searchAllEvents(keyword, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params: { keyword, page, size } });
+	searchAllEvents(keyword, page = 0, size = 10, organizationId = null) {
+		const params = { keyword, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params });
 	},
 
-	getEventsByPublishStatus(isPublished, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params: { isPublished, page, size } });
+	getEventsByPublishStatus(isPublished, page = 0, size = 10, organizationId = null) {
+		const params = { isPublished, page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params });
 	},
 
 	getEventById(eventId) {
@@ -537,8 +711,56 @@ export const adminEventApi = {
 		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/tickets`, { params: { page, size } });
 	},
 
+	getTicketsByEventAndStatus(eventId, status, page = 0, size = 10) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/tickets`, { params: { status, page, size } });
+	},
+
 	cancelTicket(ticketCode) {
 		return apiClient.post(`${BASE_ADMIN_EVENTS}/tickets/${ticketCode}/cancel`);
+	},
+
+	approveTicket(ticketId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/tickets/${ticketId}/approve`);
+	},
+
+	rejectTicket(ticketId, payload = {}) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/tickets/${ticketId}/reject`, payload);
+	},
+
+	bulkApproveTickets(eventId, payload) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/bulk-approve`, payload);
+	},
+
+	approveAllPending(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/approve-all`);
+	},
+
+	sendIssuedTicketEmails(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/send-emails`);
+	},
+
+	activateTickets(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/activate`);
+	},
+
+	expireTickets(eventId) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/tickets/expire`);
+	},
+
+	inviteUsers(eventId, payload) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/invitations`, payload);
+	},
+
+	getInvitations(eventId, page = 0, size = 10) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/invitations`, { params: { page, size } });
+	},
+
+	sendReminders(eventId, payload) {
+		return apiClient.post(`${BASE_ADMIN_EVENTS}/${eventId}/reminders`, payload);
+	},
+
+	getEmailLogs(eventId, page = 0, size = 10) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/email-logs`, { params: { page, size } });
 	},
 
 	getInterestsByEvent(eventId, page = 0, size = 10) {
@@ -548,6 +770,10 @@ export const adminEventApi = {
 	getEventStatistics() {
 		return apiClient.get(`${BASE_ADMIN_EVENTS}/statistics`);
 	},
+
+	getEventStatisticsById(eventId) {
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/${eventId}/statistics`);
+	},
 };
 
 export const {
@@ -556,14 +782,27 @@ export const {
 	searchAllEvents,
 	getEventsByPublishStatus,
 	getEventById,
-	updateEvent: updateAdminEvent,
-	deleteEvent: deleteAdminEvent,
-	publishEvent: publishAdminEvent,
-	unpublishEvent: unpublishAdminEvent,
+	updateEvent,
+	deleteEvent,
+	publishEvent,
+	unpublishEvent,
 	getTicketsByEvent,
+	getTicketsByEventAndStatus,
 	cancelTicket,
+	approveTicket,
+	rejectTicket,
+	bulkApproveTickets,
+	approveAllPending,
+	sendIssuedTicketEmails,
+	activateTickets,
+	expireTickets,
+	inviteUsers: inviteEventUsers,
+	getInvitations: getEventInvitations,
+	sendReminders,
+	getEmailLogs,
 	getInterestsByEvent,
 	getEventStatistics,
+	getEventStatisticsById,
 } = adminEventApi;
 
 export const adminForumApi = {
@@ -583,16 +822,23 @@ export const adminForumApi = {
 		return apiClient.get(`${BASE_ADMIN_FORUM}/statistics/timeline`, { params: { year } });
 	},
 
-	getNewPostsYesterdayPaginated(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params: { page, size } });
+	getNewPostsYesterdayPaginated(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params });
 	},
 
-	getBannedPosts(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params: { page, size } });
+	getBannedPosts(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params });
 	},
 
-	getAllPosts(page = 0, size = 20) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params: { page, size } });
+	getAllPosts(keyword = '', page = 0, size = 20, organizationId = null) {
+		const params = { page, size };
+		if (keyword) params.keyword = keyword;
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params });
 	},
 
 	banPost(postId) {
@@ -607,8 +853,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/posts/${postId}`);
 	},
 
-	getPendingReports(page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params: { page, size } });
+	getPendingReports(page = 0, size = 10, organizationId = null) {
+		const params = { page, size };
+		if (organizationId) params.organizationId = organizationId;
+		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params });
 	},
 
 	reviewReport(reportId, payload) {
@@ -643,8 +891,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/categories/${categoryId}`);
 	},
 
-	getAllTopics(organizationId, page = 0, size = 10) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params: { organizationId, page, size } });
+	getAllTopics(organizationId, keyword = '', page = 0, size = 10) {
+		const params = { organizationId, page, size };
+		if (keyword) params.keyword = keyword;
+		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params });
 	},
 
 	getTopicById(topicId) {
@@ -721,6 +971,21 @@ export const fundApi = {
 		return unwrap(response) ?? [];
 	},
 
+	async getFundReceivingInfos(params = {}) {
+		const response = await apiClient.get(`${BASE_FUND}/receiving-infos`, { params });
+		return unwrap(response);
+	},
+
+	async getSupportedBanks() {
+		const response = await apiClient.get(`${BASE_FUND}/banks`);
+		return unwrap(response);
+	},
+
+	async createFundReceivingInfo(payload) {
+		const response = await apiClient.post(`${BASE_FUND}/receiving-infos`, payload);
+		return unwrap(response);
+	},
+
 	async getFundDonationsByFundId(fundId, params = {}) {
 		const response = await apiClient.get(`/fund-donations/${fundId}`, { params });
 		return unwrap(response);
@@ -753,6 +1018,9 @@ export const {
 	getFundStatuses,
 	getFundStatistics,
 	getActiveFundReceivingInfos,
+	getFundReceivingInfos,
+	getSupportedBanks,
+	createFundReceivingInfo,
 	getFundDonationsByFundId,
 	createFundDonation,
 	createFund,
@@ -775,7 +1043,7 @@ export const userApi = {
 		const body = {
 			organizationId: Number(payload.organizationId),
 			userId: Number(userId),
-			graduatedYear: payload.graduatedYear ? Number(payload.graduatedYear) : null,
+			graduatedYear: payload.graduatedYear ? [Number(payload.graduatedYear)] : null,
 			graduationStatus: payload.graduationStatus ?? null,
 			program: payload.program ?? null,
 			major: payload.major ?? null,
@@ -928,12 +1196,17 @@ export const mentorshipApi = {
 		return apiClient.get(`${BASE_MENTEE}/sessions/${sessionId}`);
 	},
 
-	cancelSession(sessionId) {
-		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`);
+	cancelSession(sessionId, cancelReason) {
+		const params = cancelReason ? { cancelReason } : {};
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
 	createSessionFeedback(sessionId, payload) {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/feedback`, payload);
+	},
+
+	reportSession(sessionId, payload) {
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/report`, payload);
 	},
 
 	createMentorProfile(payload) {
@@ -992,6 +1265,16 @@ export const mentorshipApi = {
 		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/status`, payload);
 	},
 
+	cancelMentorSession(sessionId, cancelReason) {
+		const params = cancelReason ? { cancelReason } : {};
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
+	},
+
+	postponeMentorSession(sessionId, reason) {
+		const params = reason ? { reason } : {};
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/postpone`, null, { params });
+	},
+
 	getMyMentorFeedbacks(page = 0, limit = 10) {
 		return apiClient.get(`${BASE_MENTOR}/feedbacks`, { params: { page, limit } });
 	},
@@ -1018,6 +1301,9 @@ export const {
 	getMenteeSessionById,
 	cancelSession,
 	createSessionFeedback,
+	reportSession,
+	cancelMentorSession,
+	postponeMentorSession,
 	createMentorProfile,
 	saveMentorProfileDraft,
 	updateMentorProfile,

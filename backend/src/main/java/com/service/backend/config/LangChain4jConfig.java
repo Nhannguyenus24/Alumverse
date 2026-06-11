@@ -3,7 +3,6 @@ package com.service.backend.config;
 import com.service.backend.shared.dto.BatchModerationResponse;
 import com.service.backend.shared.service.ModerationService;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
-// Note: response schema classes removed because dependency package differs by version
 import dev.langchain4j.service.AiServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -21,11 +19,11 @@ public class LangChain4jConfig {
     @Value("${gemini.api.key}")
     private String geminiApiKey;
 
-        @Value("${gemini.model.name:gemini-1.5-flash}")
-        private String geminiModelName;
+    @Value("${gemini.model.name:gemini-1.5-flash}")
+    private String geminiModelName;
 
-        @Value("${gemini.model.temperature:0.0}")
-        private double geminiModelTemperature;
+    @Value("${gemini.model.temperature:0.0}")
+    private double geminiModelTemperature;
 
     @Bean
     public ModerationService moderationService() {

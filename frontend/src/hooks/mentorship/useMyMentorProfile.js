@@ -3,8 +3,14 @@ import { getMyMentorProfile } from '../../utils/api';
 import useAuthStore from '../../stores/authStore';
 
 const fetchMyProfile = async () => {
-  const res = await getMyMentorProfile();
-  return res?.data?.data ?? null;
+  try {
+    const res = await getMyMentorProfile();
+    return res?.data?.data ?? null;
+  } catch (err) {
+    // 404 = user has no mentor profile — treat as null, not an error
+    if (err?.response?.status === 404) return null;
+    throw err;
+  }
 };
 
 export const useMyMentorProfile = () => {
@@ -13,6 +19,7 @@ export const useMyMentorProfile = () => {
     queryKey: ['mentorship', 'mentor', 'me', 'profile'],
     queryFn: fetchMyProfile,
     retry: false,
+    staleTime: 5 * 60_000,
     enabled: isLoggedIn,
   });
 };

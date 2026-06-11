@@ -60,6 +60,7 @@ export const useBrowseMentors = ({
   availableTo = '',
   page = 0,
   limit = 9,
+  enabled = true,
 } = {}) =>
   useQuery({
     queryKey: [
@@ -89,5 +90,6 @@ export const useBrowseMentors = ({
         page,
         limit,
       }),
+    enabled,
     keepPreviousData: true,
   });

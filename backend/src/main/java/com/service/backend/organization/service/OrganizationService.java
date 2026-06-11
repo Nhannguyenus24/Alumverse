@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.service.backend.organization.dao.OrganizationIntroductionRepository;
 import com.service.backend.organization.dto.CreateSchoolFeedbackRequest;
+import com.service.backend.organization.dto.OrgIntroductionMemberResponse;
 import com.service.backend.organization.dto.OrganizationIntroductionResponse;
 import com.service.backend.organization.dto.TrustedVerifierResponse;
 import com.service.backend.shared.entity.OrganizationIntroduction;
@@ -76,17 +77,14 @@ public class OrganizationService {
                         .orgaId(orgaId)
                         .content(null)
                         .imageUrls(List.of())
+                        .leaders(List.of())
+                        .teamMembers(List.of())
                         .build()))
                 .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
-        List<String> urls = intro.getImageUrls() != null
-                ? JsonUtils.isJsonArray(intro.getImageUrls())
-                        ? JsonUtils.fromJsonToList(intro.getImageUrls(), String.class)
-                        : List.of()
-                : List.of();
         return OrganizationIntroductionResponse.builder()
                 .orgaId(intro.getOrgaId())
                 .content(intro.getContent())
@@ -94,8 +92,53 @@ public class OrganizationService {
                 .mission(intro.getMission())
                 .coreValues(intro.getCoreValues())
                 .bannerUrl(intro.getBannerUrl())
-                .imageUrls(urls)
+                .imageUrls(parseStringList(intro.getImageUrls()))
+                .leaders(parseMemberList(intro.getLeaders()))
+                .teamMembers(parseMemberList(intro.getTeamMembers()))
+                .leadersContent(intro.getLeadersContent())
+                .teamMembersContent(intro.getTeamMembersContent())
+                .updatedAt(intro.getUpdatedAt())
                 .build();
+    }
+
+    private List<String> parseStringList(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return List.of();
+        }
+        if (!JsonUtils.isJsonArray(json)) {
+            return List.of(json);
+        }
+        try {
+            return JsonUtils.fromJsonToList(json, String.class);
+        } catch (Exception e) {
+            logger.error("Failed to parse string list: {}", json, e);
+            return List.of();
+        }
+    }
+
+    private List<OrgIntroductionMemberResponse> parseMemberList(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return List.of();
+        }
+        if (!JsonUtils.isJsonArray(json)) {
+            return List.of(OrgIntroductionMemberResponse.builder()
+                    .name(json)
+                    .build());
+        }
+        try {
+            return JsonUtils.fromJsonToList(json, OrgIntroductionMemberResponse.class);
+        } catch (Exception e) {
+            // Fallback for list of strings
+            try {
+                List<String> strings = JsonUtils.fromJsonToList(json, String.class);
+                return strings.stream()
+                        .map(s -> OrgIntroductionMemberResponse.builder().name(s).build())
+                        .toList();
+            } catch (Exception ex) {
+                logger.error("Failed to parse member list: {}", json, ex);
+                return List.of();
+            }
+        }
     }
 
     public Mono<SchoolFeedback> createSchoolFeedback(Integer organizationId, CreateSchoolFeedbackRequest request) {

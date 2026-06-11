@@ -8,6 +8,7 @@ import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
 import { useAuth } from '../hooks/useAuth';
+import { useOrganization } from '../hooks/useOrganization';
 import Page from '../components/Page';
 
 const HEADER_HEIGHT = 70;
@@ -21,6 +22,7 @@ const AdminLayoutShell = () => {
   const theme = useTheme();
 
   const { slug } = useParams();
+  const { organization } = useOrganization({ enabled: !!slug });
   const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { user, logout } = useAuth();
@@ -37,21 +39,25 @@ const AdminLayoutShell = () => {
         bgcolor: alpha(theme.palette.background.default, 0.4),
       }}
     >
-      <AdminSidebar
-        variant="permanent"
-        adminBase={adminBase}
-        userRole={user?.role}
-        collapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
-
-      <AdminSidebar
-        variant="temporary"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        adminBase={adminBase}
-        userRole={user?.role}
-      />
+      {[
+        {
+          variant: 'permanent',
+          collapsed: isSidebarCollapsed,
+          onToggle: () => setIsSidebarCollapsed(!isSidebarCollapsed),
+        },
+        {
+          variant: 'temporary',
+          open: mobileOpen,
+          onClose: () => setMobileOpen(false),
+        },
+      ].map((sidebarProps) => (
+        <AdminSidebar
+          key={sidebarProps.variant}
+          adminBase={adminBase}
+          userRole={user?.role}
+          {...sidebarProps}
+        />
+      ))}
 
       <Box
         sx={{
@@ -72,6 +78,7 @@ const AdminLayoutShell = () => {
           user={user}
           onLogout={logout}
           breadcrumbs={breadcrumbs}
+          organization={organization}
         />
 
         <Box

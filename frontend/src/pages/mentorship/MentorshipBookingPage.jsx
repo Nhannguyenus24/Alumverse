@@ -100,7 +100,7 @@ const MentorshipBookingPage = () => {
 
         {submitSuccess && (
           <Alert severity="success" sx={{ mb: 3 }}>
-            Đã gửi yêu cầu đặt lịch thành công. Đang chuyển về trang Cố vấn...
+            Đặt lịch thành công! Buổi mentoring của bạn đã được xác nhận. Đang chuyển về trang Cố vấn...
           </Alert>
         )}
 

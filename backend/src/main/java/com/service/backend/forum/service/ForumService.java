@@ -1,5 +1,8 @@
 package com.service.backend.forum.service;
 
+import org.springframework.transaction.annotation.Transactional;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -7,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
 import lombok.RequiredArgsConstructor;
@@ -27,19 +31,24 @@ import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.dto.UpdateForumPostRequest;
+import com.service.backend.forum.dto.ForumTopicSubscriptionDTO;
+import com.service.backend.forum.dto.CreateForumTopicSubscriptionRequest;
 import com.service.backend.shared.entity.ForumCategory;
 import com.service.backend.shared.entity.ForumPost;
 import com.service.backend.shared.entity.ForumPostReaction;
 import com.service.backend.shared.entity.ForumPostReport;
 import com.service.backend.shared.entity.ForumTopic;
+import com.service.backend.shared.entity.ForumTopicSubscription;
 import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
 import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
+import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -54,6 +63,10 @@ public class ForumService {
     private final ForumPostRepository forumPostRepository;
     private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumPostReportRepository forumPostReportRepository;
+    private final ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
+    private final CacheUtils cacheUtils;
+
+    private static final String FORUM_RECENT_POSTS_CACHE = "forumRecentPosts";
 
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
@@ -121,14 +134,14 @@ public class ForumService {
                 .doOnError(error -> log.error("Error finding forum topic by title: {}", title, error));
     }
 
-    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, int page, int size) {
+    public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumTopicRepository.findByCategoryIdWithPagination(categoryId, size, offset)
-                .concatMap(this::convertToTopicDTOWithPostCount)
-                .collectList()
-                .zipWith(forumTopicRepository.countByCategoryId(categoryId))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
-                .doOnSuccess(result -> log.info("findTopicsByCategoryId result: {}", JsonUtils.toJson(result)))
+        return PaginationHelper.paginate(
+                forumTopicRepository.findByCategoryIdWithPagination(categoryId, keyword, size, offset)
+                        .concatMap(this::convertToTopicDTOWithPostCount),
+                forumTopicRepository.countByCategoryId(categoryId, keyword),
+                page, size)
+                .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} result: {}", keyword,  JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
     }
 
@@ -184,6 +197,15 @@ public class ForumService {
                 })
                 .subscribe();
 
+        if (memberId != null) {
+            forumTopicSubscriptionRepository.updateLastReadAt(topicId, memberId, java.time.LocalDateTime.now())
+                    .onErrorResume(error -> {
+                        log.warn("Failed to update last read at for topic ID: {}, member ID: {}", topicId, memberId, error);
+                        return Mono.empty();
+                    })
+                    .subscribe();
+        }
+
         long offset = (long) page * size;
 
         Mono<List<ForumPost>> postsMono = forumPostRepository
@@ -197,18 +219,15 @@ public class ForumService {
                     .collect(Collectors.toSet())
                 : Mono.just(new HashSet<>());
 
-        return Mono.zip(postsMono, countMono, likedPostIdsMono)
-                .map(tuple -> {
-                    var posts = tuple.getT1();
-                    var totalItems = tuple.getT2();
-                    var likedPostIds = tuple.getT3();
-
-                    var postDTOs = posts.stream()
-                            .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
-                            .collect(Collectors.toList());
-
-                    return PaginatedResponse.of(postDTOs, totalItems, page, size);
-                })
+        return likedPostIdsMono.flatMap(likedPostIds ->
+                PaginationHelper.paginate(
+                        postsMono,
+                        countMono,
+                        page,
+                        size,
+                        posts -> Mono.just(posts.stream()
+                                .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
+                                .collect(Collectors.toList()))))
                 .doOnSuccess(result -> log.info("findPostsByTopicId result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
@@ -239,6 +258,13 @@ public class ForumService {
 
                     return forumPostRepository.save(post);
                 })
+                .flatMap(post -> {
+                    String cacheKey = String.valueOf(post.getTopicId());
+                    LocalDateTime createdAt = post.getCreatedAt() != null
+                            ? post.getCreatedAt() : LocalDateTime.now();
+                    return cacheUtils.putWithTtl(FORUM_RECENT_POSTS_CACHE, cacheKey, createdAt, Duration.ofHours(4))
+                            .thenReturn(post);
+                })
                 .map(this::convertToPostDTO)
                 .doOnSuccess(result -> log.info("createPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum post for topic ID: {}", request.getTopicId(), error));
@@ -268,6 +294,7 @@ public class ForumService {
                 .doOnError(error -> log.error("Error updating forum post ID: {}", id, error));
     }
 
+    @Transactional
     public Mono<Void> deletePost(Integer id) {
         return forumPostRepository.findById(id)
                 .switchIfEmpty(Mono.defer(() -> {
@@ -299,6 +326,7 @@ public class ForumService {
 
     // ========== REACTION METHODS (LIKE/DISLIKE) ==========
 
+    @Transactional
     public Mono<ForumPostReactionDTO> reactToPost(CreateForumPostReactionRequest request) {
         return forumPostRepository.findById(request.getPostId())
                 .switchIfEmpty(Mono.defer(() -> {
@@ -346,6 +374,44 @@ public class ForumService {
                 .doOnError(error -> log.info("No reaction found for post ID: {} by member: {}", postId, memberId));
     }
 
+    // ========== SUBSCRIPTION METHODS ==========
+
+    @Transactional
+    public Mono<ForumTopicSubscriptionDTO> subscribeToTopic(CreateForumTopicSubscriptionRequest request) {
+        return forumTopicRepository.findById(request.getTopicId())
+                .switchIfEmpty(Mono.defer(() -> {
+                    log.error("Topic not found with ID: {}", request.getTopicId());
+                    return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
+                }))
+                .flatMap(topic -> forumTopicSubscriptionRepository.findByTopicIdAndMemberId(
+                            request.getTopicId(), request.getMemberId())
+                        .flatMap(existingSubscription -> {
+                            log.info("Removing existing subscription from topic ID: {}, member: {}",
+                                    request.getTopicId(), request.getMemberId());
+                            return forumTopicSubscriptionRepository.deleteByTopicIdAndMemberId(
+                                    request.getTopicId(), request.getMemberId())
+                                    .then(Mono.<ForumTopicSubscription>empty());
+                        })
+                        .switchIfEmpty(Mono.defer(() -> {
+                            log.info("Creating new subscription for topic ID: {}, member: {}",
+                                    request.getTopicId(), request.getMemberId());
+                            ForumTopicSubscription subscription = ForumTopicSubscription.builder()
+                                    .topicId(request.getTopicId())
+                                    .memberId(request.getMemberId())
+                                    .build();
+                            return forumTopicSubscriptionRepository.save(subscription);
+                        })))
+                .map(this::convertToSubscriptionDTO)
+                .doOnSuccess(result -> log.info("subscribeToTopic result: {}", JsonUtils.toJson(result)))
+                .doOnError(error -> log.error("Error toggling subscription for topic ID: {}", request.getTopicId(), error));
+    }
+
+    public Mono<Boolean> isSubscribed(Integer topicId, Integer memberId) {
+        return forumTopicSubscriptionRepository.findByTopicIdAndMemberId(topicId, memberId)
+                .map(s -> true)
+                .defaultIfEmpty(false);
+    }
+
     // Helper methods to convert entities to DTOs
     private Mono<ForumCategoryDTO> convertToCategoryDTOWithStats(ForumCategory category) {
         ForumCategoryDTO base = convertToCategoryDTO(category);
@@ -353,7 +419,7 @@ public class ForumService {
             return Mono.just(base);
         }
 
-        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId()).defaultIfEmpty(0L);
+        Mono<Long> topicCountMono = forumTopicRepository.countByCategoryId(category.getId(), null).defaultIfEmpty(0L);
         Mono<Long> participantCountMono = forumTopicRepository
                 .countDistinctParticipantsByCategoryId(category.getId())
                 .defaultIfEmpty(0L);
@@ -440,6 +506,17 @@ public class ForumService {
                 .postId(reaction.getPostId())
                 .memberId(reaction.getMemberId())
                 .createdAt(reaction.getCreatedAt())
+                .build();
+    }
+
+    private ForumTopicSubscriptionDTO convertToSubscriptionDTO(ForumTopicSubscription subscription) {
+        return ForumTopicSubscriptionDTO.builder()
+                .id(subscription.getId())
+                .topicId(subscription.getTopicId())
+                .memberId(subscription.getMemberId())
+                .lastReadAt(subscription.getLastReadAt())
+                .lastNotifiedAt(subscription.getLastNotifiedAt())
+                .createdAt(subscription.getCreatedAt())
                 .build();
     }
 }

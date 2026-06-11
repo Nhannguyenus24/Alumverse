@@ -16,7 +16,6 @@ import ChatAvatar from '../ChatAvatar';
 
 const STATUS_LABELS = {
   [CONVERSATION_REQUEST_STATUS.PENDING]: 'PENDING',
-  [CONVERSATION_REQUEST_STATUS.ACCEPTED]: 'ACCEPTED',
   [CONVERSATION_REQUEST_STATUS.REJECTED]: 'REJECTED',
 };
 
@@ -33,21 +32,16 @@ function getStatusChipSx(status) {
       };
     }
 
-    if (status === CONVERSATION_REQUEST_STATUS.ACCEPTED) {
+    if (status === CONVERSATION_REQUEST_STATUS.REJECTED) {
       return {
-        bgcolor: alpha(primary.main, 0.1),
-        color: primary.main,
-        border: `1px solid ${alpha(primary.main, 0.22)}`,
+        bgcolor: grey[200],
+        color: grey[700],
+        border: `1px solid ${grey[300]}`,
         fontWeight: 600,
       };
     }
 
-    return {
-      bgcolor: grey[200],
-      color: grey[700],
-      border: `1px solid ${grey[300]}`,
-      fontWeight: 600,
-    };
+    return null;
   };
 }
 
@@ -120,14 +114,18 @@ const NetworkIncomingRequestCard = ({
               <Typography fontWeight={700} noWrap sx={{ minWidth: 0 }}>
                 {request.fullName}
               </Typography>
-              <Chip
-                label={STATUS_LABELS[request.status] ?? request.status}
-                size="small"
-                sx={(theme) => ({
-                  flexShrink: 0,
-                  ...getStatusChipSx(request.status)(theme),
-                })}
-              />
+              {STATUS_LABELS[request.status] ? (
+                <Chip
+                  label={STATUS_LABELS[request.status]}
+                  size="small"
+                  sx={(theme) => {
+                    const chipSx = getStatusChipSx(request.status)?.(theme);
+                    return chipSx
+                      ? { flexShrink: 0, ...chipSx }
+                      : { flexShrink: 0 };
+                  }}
+                />
+              ) : null}
             </Stack>
 
             <Typography

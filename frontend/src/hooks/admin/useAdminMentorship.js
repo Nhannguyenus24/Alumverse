@@ -15,7 +15,7 @@ const safeFetch = async (request, fallback) => {
   }
 };
 
-const useAdminMentorship = () => {
+const useAdminMentorship = (organizationId = null) => {
 
   const [sessionPage, setSessionPage] = useState(0);
   const [sessionRowsPerPage, setSessionRowsPerPage] = useState(10);
@@ -33,28 +33,30 @@ const useAdminMentorship = () => {
 
   const loadSessions = useCallback(async () => {
     setSessionLoading(true);
+    const orgId = organizationId || null;
     const data = statusFilter === 'ALL'
-      ? await safeFetch(() => api.getAllSessions(sessionPage, sessionRowsPerPage), fallbackPage)
-      : await safeFetch(() => api.getSessionsByStatus(statusFilter, sessionPage, sessionRowsPerPage), fallbackPage);
+      ? await safeFetch(() => api.getAllSessions({ page: sessionPage, size: sessionRowsPerPage, ...(orgId ? { organizationId: orgId } : {}) }), fallbackPage)
+      : await safeFetch(() => api.getSessionsByStatus(statusFilter, sessionPage, sessionRowsPerPage, orgId), fallbackPage);
     setSessionPaged(data || fallbackPage);
     setSessionLoading(false);
-  }, [sessionPage, sessionRowsPerPage, statusFilter]);
+  }, [sessionPage, sessionRowsPerPage, statusFilter, organizationId]);
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
 
   const loadMentors = useCallback(async () => {
     setMentorLoading(true);
+    const orgId = organizationId || null;
     let data;
     if (approvalFilter === 'APPROVED') {
-      data = await safeFetch(() => api.getMentorProfilesByApproval(true, mentorPage, mentorRowsPerPage), fallbackPage);
+      data = await safeFetch(() => api.getMentorProfilesByApproval(true, mentorPage, mentorRowsPerPage, orgId), fallbackPage);
     } else if (approvalFilter === 'PENDING') {
-      data = await safeFetch(() => api.getMentorProfilesByApproval(false, mentorPage, mentorRowsPerPage), fallbackPage);
+      data = await safeFetch(() => api.getMentorProfilesByApproval(false, mentorPage, mentorRowsPerPage, orgId), fallbackPage);
     } else {
-      data = await safeFetch(() => api.getAllMentorProfiles(mentorPage, mentorRowsPerPage), fallbackPage);
+      data = await safeFetch(() => api.getAllMentorProfiles(mentorPage, mentorRowsPerPage, orgId), fallbackPage);
     }
     setMentorPaged(data || fallbackPage);
     setMentorLoading(false);
-  }, [mentorPage, mentorRowsPerPage, approvalFilter]);
+  }, [mentorPage, mentorRowsPerPage, approvalFilter, organizationId]);
 
   useEffect(() => { loadMentors(); }, [loadMentors]);
 

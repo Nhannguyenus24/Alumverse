@@ -21,17 +21,20 @@ import com.service.backend.forum.dto.CreateForumPostRequest;
 import com.service.backend.forum.dto.CreateForumTopicRequest;
 import com.service.backend.forum.dto.CreateForumPostReactionRequest;
 import com.service.backend.forum.dto.CreateForumPostReportRequest;
+import com.service.backend.forum.dto.CreateForumTopicSubscriptionRequest;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReactionDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
+import com.service.backend.forum.dto.ForumTopicSubscriptionDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
 import com.service.backend.forum.dto.UpdateForumTopicRequest;
 import com.service.backend.forum.dto.UpdateForumPostRequest;
 import com.service.backend.forum.service.ForumService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -51,6 +54,7 @@ public class ForumController {
     /**
      * Find all forum categories by organization id
      */
+    @PublicEndpoint
     @GetMapping("/category")
     public Mono<ResponseEntity<ApiResponse<List<ForumCategoryDTO>>>> getAllCategoriesByOrganization(
             @Parameter(example = "1")
@@ -63,6 +67,7 @@ public class ForumController {
     /**
      * Find forum category by id
      */
+    @PublicEndpoint
     @GetMapping("/category/{id}")
     public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> getCategoryById(
             @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer id) {
@@ -97,6 +102,7 @@ public class ForumController {
     /**
      * Find forum topic by title
      */
+    @PublicEndpoint
     @GetMapping("/topic/search")
     public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> getTopicByTitle(
             @Parameter(example = "Hỏi đáp về đăng ký môn học")
@@ -106,17 +112,20 @@ public class ForumController {
     }
 
     /**
-     * Find forum topics by category id with pagination
+     * Find forum topics by category id with pagination and keyword
      */
+    @PublicEndpoint
     @GetMapping("/topic")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumTopicDTO>>>> getTopicsByCategoryId(
             @Parameter(example = "2")
             @RequestParam Integer categoryId,
+            @Parameter(description = "Keyword to search topics by title")
+            @RequestParam(required = false) String keyword,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") int size) {
-        return forumService.findTopicsByCategoryId(categoryId, page, size)
+        return forumService.findTopicsByCategoryId(categoryId, keyword, page, size)
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Topics retrieved successfully", response)));
     }
 
@@ -141,11 +150,35 @@ public class ForumController {
                 .map(topic -> ResponseEntity.ok(new ApiResponse<>("Forum topic updated successfully", topic)));
     }
 
+    /**
+     * Subscribe or unsubscribe to a forum topic
+     */
+    @PostMapping("/topic/subscribe")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicSubscriptionDTO>>> subscribeToTopic(
+            @Valid @RequestBody CreateForumTopicSubscriptionRequest request) {
+        return forumService.subscribeToTopic(request)
+                .map(subscription -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Subscribed to topic successfully", subscription)))
+                .switchIfEmpty(Mono.just(ResponseEntity.ok(new ApiResponse<>("Unsubscribed from topic successfully", null))));
+    }
+
+    /**
+     * Check if a member is subscribed to a topic
+     */
+    @GetMapping("/topic/{topicId}/is-subscribed")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> isSubscribed(
+            @PathVariable @Min(value = 1, message = "Topic ID must be greater than 0") Integer topicId,
+            @RequestParam @NotNull(message = "Member ID is required") Integer memberId) {
+        return forumService.isSubscribed(topicId, memberId)
+                .map(isSubscribed -> ResponseEntity.ok(new ApiResponse<>("Subscription status retrieved successfully", isSubscribed)));
+    }
+
     // ========== POST ENDPOINTS ==========
 
     /**
      * Find forum posts by topic id with pagination
      */
+    @PublicEndpoint
     @GetMapping("/post")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> getPostsByTopicId(
             @Parameter(example = "10")
@@ -228,6 +261,7 @@ public class ForumController {
     /**
      * Get reaction counts for a post
      */
+    @PublicEndpoint
     @GetMapping("/post/{postId}/reactions/count")
     public Mono<ResponseEntity<ApiResponse<Map<String, Long>>>> getPostReactionCounts(
             @PathVariable @Min(value = 1, message = "Post ID must be greater than 0") Integer postId) {
@@ -249,4 +283,3 @@ public class ForumController {
                         new ApiResponse<>("No reaction found for this post", null))));
     }
 }
-

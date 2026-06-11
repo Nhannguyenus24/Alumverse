@@ -85,4 +85,30 @@ public interface AdminEventRepository extends R2dbcRepository<Event, Long> {
 
     @Query("SELECT * FROM events ORDER BY interested_count DESC, created_at DESC LIMIT :limit")
     Flux<Event> findTopEventsByInterest(@Param("limit") int limit);
+
+    @Query("SELECT * FROM events WHERE organization_id = :organizationId " +
+           "AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "   OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<Event> searchEventsByOrganization(@Param("organizationId") Long organizationId,
+                                           @Param("keyword") String keyword,
+                                           @Param("limit") int limit,
+                                           @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM events WHERE organization_id = :organizationId " +
+           "AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "   OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countSearchEventsByOrganization(@Param("organizationId") Long organizationId,
+                                               @Param("keyword") String keyword);
+
+    @Query("SELECT * FROM events WHERE organization_id = :organizationId AND is_published = :isPublished " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<Event> findEventsByOrganizationAndPublishStatus(@Param("organizationId") Long organizationId,
+                                                         @Param("isPublished") Boolean isPublished,
+                                                         @Param("limit") int limit,
+                                                         @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM events WHERE organization_id = :organizationId AND is_published = :isPublished")
+    Mono<Long> countEventsByOrganizationAndPublishStatus(@Param("organizationId") Long organizationId,
+                                                          @Param("isPublished") Boolean isPublished);
 }

@@ -24,13 +24,20 @@ const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
 
 const VERIFICATION_LABELS = {
   0: 'Guest',
-  1: 'Student',
+  1: 'Verifying',
   2: 'Alumni',
+  3: 'Student',
 };
 
 const NAV_ITEMS = [
   { label: 'Trang chủ', href: '/' },
-  { label: 'Giới thiệu', href: '/introduction' },
+  { label: 'Giới thiệu', href: '/introduction',
+    children: [
+      { label: 'Thông tin chung', href: '/introduction' },
+      { label: 'Ban lãnh đạo', href: '/introduction/leaders' },
+      { label: 'Đội ngũ', href: '/introduction/team' },
+    ]
+   },
   { label: 'Kết nối', href: '/search' },
   {
     label: 'Vinh danh', href: '/honors',

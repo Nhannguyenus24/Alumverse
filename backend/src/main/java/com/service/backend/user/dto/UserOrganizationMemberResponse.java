@@ -16,10 +16,13 @@ public class UserOrganizationMemberResponse {
     private Integer id;
     private Integer organizationId;
     private Integer userId;
+    private List<String> startedYear;
     private List<Integer> graduatedYear;
     private List<String> graduationStatus;
     private List<String> program;
     private List<String> major;
+    private List<String> faculty;
+    private List<String> department;
     private Integer verificationLevel;
     private Boolean isTrustedVerifier;
     private String status;

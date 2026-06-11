@@ -23,4 +23,7 @@ public class GoogleLoginRequest {
     @Min(value = 1, message = "Organization ID must be greater than 0")
     @Schema(example = "1")
     private Integer organizationId;
+
+    @Schema(example = "true")
+    private boolean rememberMe;
 }

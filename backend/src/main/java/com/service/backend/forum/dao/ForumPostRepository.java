@@ -83,11 +83,19 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     /**
      * Find all forum posts with pagination (admin moderation list).
      */
-    @Query("SELECT * FROM forum_posts ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_posts WHERE (:keyword IS NULL OR LOWER(content) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<ForumPost> findAllPostsWithPagination(
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") long offset
     );
+
+    /**
+     * Count all forum posts with keyword
+     */
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE (:keyword IS NULL OR LOWER(content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countAllPostsWithKeyword(@Param("keyword") String keyword);
 
     /**
      * Count all banned forum posts
@@ -173,6 +181,51 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "WHERE om.organization_id = :organizationId " +
            "AND fp.is_banned = false")
     Mono<Long> countActiveForumUsersByOrganization(@Param("organizationId") Integer organizationId);
+
+    @Query("SELECT fp.* FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId AND fp.is_banned = true " +
+           "ORDER BY fp.updated_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findBannedPostsByOrganizationWithPagination(@Param("organizationId") Integer organizationId,
+                                                                 @Param("limit") int limit,
+                                                                 @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId AND fp.is_banned = true")
+    Mono<Long> countBannedPostsByOrganization(@Param("organizationId") Integer organizationId);
+
+    @Query("SELECT fp.* FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId " +
+           "AND (:keyword IS NULL OR LOWER(fp.content) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY fp.created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findAllPostsByOrganizationWithPagination(@Param("organizationId") Integer organizationId,
+                                                              @Param("keyword") String keyword,
+                                                              @Param("limit") int limit,
+                                                              @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId " +
+           "AND (:keyword IS NULL OR LOWER(fp.content) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countAllPostsByOrganization(@Param("organizationId") Integer organizationId,
+                                           @Param("keyword") String keyword);
+
+    @Query("SELECT fp.* FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId " +
+           "AND DATE(fp.created_at) = CURRENT_DATE - INTERVAL '1 day' AND fp.is_banned = false " +
+           "ORDER BY fp.created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findPostsCreatedYesterdayByOrganizationWithPagination(@Param("organizationId") Integer organizationId,
+                                                                           @Param("limit") int limit,
+                                                                           @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId " +
+           "AND DATE(fp.created_at) = CURRENT_DATE - INTERVAL '1 day' AND fp.is_banned = false")
+    Mono<Long> countPostsCreatedYesterdayByOrganization(@Param("organizationId") Integer organizationId);
 
 }
 

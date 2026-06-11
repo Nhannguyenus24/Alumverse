@@ -137,6 +137,24 @@ public class MentorController {
                         .ok(new ApiResponse<>("Sessions retrieved successfully", response)));
     }
 
+    @PostMapping("/sessions/{sessionId}/cancel")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> cancelSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String cancelReason) {
+        return mentorService.cancelSession(sessionId, cancelReason)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Session cancelled successfully", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/postpone")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> postponeSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String reason) {
+        return mentorService.postponeSession(sessionId, reason)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Session postponed successfully", response)));
+    }
+
     @PutMapping("/sessions/{sessionId}/status")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> updateSessionStatus(
             @PathVariable @Min(1) Integer sessionId,

@@ -185,6 +185,60 @@ const useAdminEventsData = () => {
     }
   }, [loadEvents, loadStatistics]);
 
+  const inviteUsers = useCallback(async (eventId, payload) => {
+    try {
+      await eventApi.inviteUsers(eventId, payload);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const approveAllPending = useCallback(async (eventId) => {
+    try {
+      await eventApi.approveAllPending(eventId);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const sendIssuedTicketEmails = useCallback(async (eventId) => {
+    try {
+      await eventApi.sendIssuedTicketEmails(eventId);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const sendReminders = useCallback(async (eventId, payload) => {
+    try {
+      await eventApi.sendReminders(eventId, payload);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const activateTickets = useCallback(async (eventId) => {
+    try {
+      await eventApi.activateTickets(eventId);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const expireTickets = useCallback(async (eventId) => {
+    try {
+      await eventApi.expireTickets(eventId);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   return {
     events: pagedRows,
     totalItems: sortedRows.length,
@@ -213,6 +267,12 @@ const useAdminEventsData = () => {
     deleteEvent,
     updateStatus: async (id, status) => (status === 'PUBLISHED' ? publishEvent(id) : unpublishEvent(id)),
     deleteItem: deleteEvent,
+    inviteUsers,
+    approveAllPending,
+    sendIssuedTicketEmails,
+    sendReminders,
+    activateTickets,
+    expireTickets,
   };
 };
 

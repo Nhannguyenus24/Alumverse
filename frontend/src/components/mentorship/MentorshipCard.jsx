@@ -83,16 +83,16 @@ const MentorshipCard = ({
           variant="outlined"
           fullWidth
           onClick={onViewProfile}
-          sx={{ flex: 3, whiteSpace: 'nowrap' }}
+          sx={{ flex: 1, whiteSpace: 'nowrap' }}
         >
           Xem Profile
         </Button>
         {!canBook && bookDisabledReason ? (
           <Tooltip title={bookDisabledReason}>
-            <Box sx={{ flex: 2, display: 'flex' }}>{bookButton}</Box>
+            <Box sx={{ flex: 1, display: 'flex', minWidth: 0 }}>{bookButton}</Box>
           </Tooltip>
         ) : (
-          <Box sx={{ flex: 2, display: 'flex' }}>{bookButton}</Box>
+          <Box sx={{ flex: 1, display: 'flex', minWidth: 0 }}>{bookButton}</Box>
         )}
       </Stack>
     </Card>

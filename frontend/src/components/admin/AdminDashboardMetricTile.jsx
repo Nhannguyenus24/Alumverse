@@ -1,3 +1,4 @@
+import React from 'react';
 import { Box, Paper, Typography, alpha, useTheme } from '@mui/material';
 
 const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
@@ -60,4 +61,4 @@ const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
   );
 };
 
-export default AdminDashboardMetricTile;
+export default React.memo(AdminDashboardMetricTile);

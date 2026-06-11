@@ -18,6 +18,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,21 +56,43 @@ public class AdminMentorshipService {
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(int page, int size) {
+        return getAllSessions(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(Integer organizationId, int page, int size) {
         int offset = page * size;
-        return enrichSessions(adminMentorshipRepository.findAllSessions(size, offset))
-                .collectList()
-                .zipWith(adminMentorshipRepository.countAllSessions())
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        enrichSessions(adminMentorshipRepository.findSessionsByOrganization(organizationId, size, offset)),
+                        adminMentorshipRepository.countSessionsByOrganization(organizationId),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getAllSessions (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+        }
+        return PaginationHelper.paginate(
+                    enrichSessions(adminMentorshipRepository.findAllSessions(size, offset)),
+                    adminMentorshipRepository.countAllSessions(),
+                    page, size)
                 .doOnSuccess(r -> log.info("getAllSessions result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(String status, int page, int size) {
+        return getSessionsByStatus(null, status, page, size);
+    }
+
+    public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(Integer organizationId, String status, int page, int size) {
         int offset = page * size;
         String upperStatus = status == null ? null : status.toUpperCase();
-        return enrichSessions(adminMentorshipRepository.findSessionsByStatus(upperStatus, size, offset))
-                .collectList()
-            .zipWith(adminMentorshipRepository.countSessionsByStatus(upperStatus))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        enrichSessions(adminMentorshipRepository.findSessionsByOrganizationAndStatus(organizationId, upperStatus, size, offset)),
+                        adminMentorshipRepository.countSessionsByOrganizationAndStatus(organizationId, upperStatus),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getSessionsByStatus (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+        }
+        return PaginationHelper.paginate(
+                    enrichSessions(adminMentorshipRepository.findSessionsByStatus(upperStatus, size, offset)),
+                    adminMentorshipRepository.countSessionsByStatus(upperStatus),
+                    page, size)
                 .doOnSuccess(r -> log.info("getSessionsByStatus result: {}", JsonUtils.toJson(r)));
     }
 
@@ -97,21 +120,43 @@ public class AdminMentorshipService {
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(int page, int size) {
+        return getAllMentorProfiles(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(Integer organizationId, int page, int size) {
         int offset = page * size;
-        return enrichMentors(adminMentorshipRepository.findAllMentorProfiles(size, offset))
-                .collectList()
-                .zipWith(adminMentorshipRepository.countAllMentorProfiles())
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        enrichMentors(adminMentorshipRepository.findMentorProfilesByOrganization(organizationId, size, offset)),
+                        adminMentorshipRepository.countMentorProfilesByOrganization(organizationId),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getAllMentorProfiles (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+        }
+        return PaginationHelper.paginate(
+                    enrichMentors(adminMentorshipRepository.findAllMentorProfiles(size, offset)),
+                    adminMentorshipRepository.countAllMentorProfiles(),
+                    page, size)
                 .doOnSuccess(r -> log.info("getAllMentorProfiles result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(String status, int page, int size) {
+        return getMentorProfilesByStatus(null, status, page, size);
+    }
+
+    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(Integer organizationId, String status, int page, int size) {
         int offset = page * size;
         String upperStatus = status == null ? null : status.toUpperCase();
-        return enrichMentors(adminMentorshipRepository.findMentorProfilesByStatus(upperStatus, size, offset))
-                .collectList()
-            .zipWith(adminMentorshipRepository.countMentorProfilesByStatus(upperStatus))
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        enrichMentors(adminMentorshipRepository.findMentorProfilesByOrganizationAndStatus(organizationId, upperStatus, size, offset)),
+                        adminMentorshipRepository.countMentorProfilesByOrganizationAndStatus(organizationId, upperStatus),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getMentorProfilesByStatus (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+        }
+        return PaginationHelper.paginate(
+                    enrichMentors(adminMentorshipRepository.findMentorProfilesByStatus(upperStatus, size, offset)),
+                    adminMentorshipRepository.countMentorProfilesByStatus(upperStatus),
+                    page, size)
                 .doOnSuccess(r -> log.info("getMentorProfilesByStatus result: {}", JsonUtils.toJson(r)));
     }
 

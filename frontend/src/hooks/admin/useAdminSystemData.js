@@ -7,6 +7,14 @@ const emptyMetrics = {
   auditLogsCount: 0,
   activeOrganizations: 0,
   newUsersThisWeek: 0,
+  auditLogsCountToday: 0,
+  pendingVerifications: 0,
+  dailyActive: 0,
+  totalDonationsCount: 0,
+  donationsLast30Days: 0,
+  totalEvents: 0,
+  upcomingEvents: 0,
+  ticketsSold: 0,
 };
 
 const normalizeList = (payload) => {
@@ -45,19 +53,26 @@ const normalizeActivitiesPayload = (payload) => {
   return [];
 };
 
-const buildTimelineFromActivities = (items) => {
-  const byDay = new Map();
-  items.forEach((item) => {
-    const ts = item?.timestamp || item?.createdAt;
-    if (!ts) return;
-    const d = new Date(ts);
-    if (Number.isNaN(d.getTime())) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    byDay.set(key, (byDay.get(key) || 0) + 1);
-  });
-  return Array.from(byDay.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, count]) => ({ date, count }));
+const fmtDateDDMM = (isoStr) => {
+  const p = String(isoStr ?? '').slice(0, 10).split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}` : isoStr;
+};
+
+const toISODate = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+const buildLoginTimeline = (dailyStats) => {
+  const countByDate = new Map(
+    (dailyStats || []).map((d) => [String(d.date ?? '').slice(0, 10), Number(d.count ?? 0)])
+  );
+  const result = [];
+  for (let i = 6; i >= 0; i--) {
+    const day = new Date();
+    day.setDate(day.getDate() - i);
+    const key = toISODate(day);
+    result.push({ date: fmtDateDDMM(key), count: countByDate.get(key) ?? 0 });
+  }
+  return result;
 };
 
 const mapActivityToAuditLog = (item, usersById) => {
@@ -109,13 +124,15 @@ const useAdminSystemData = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    const orgParam = activeOrgId ? { organizationId: activeOrgId } : {};
 
-    const [metrics, activitiesPayload, users, organizations, rawLoginLogs] = await Promise.all([
+    const [metrics, activitiesPayload, users, organizations, rawLoginLogs, loginStats] = await Promise.all([
       fetchSafe(() => apiClient.get('/admin/dashboard/metrics'), emptyMetrics),
-      fetchSafe(() => apiClient.get('/admin/dashboard/activities', { params: { page: 0, size: 200 } }), []),
+      fetchSafe(() => apiClient.get('/admin/dashboard/activities', { params: { page: 0, size: 200, ...orgParam } }), []),
       fetchSafe(() => apiClient.get('/admin/users', { params: { page: 0, size: 20 } }), []),
       fetchSafe(() => apiClient.get('/admin/organizations', { params: { page: 0, size: 20 } }), []),
-      fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20 } }), null),
+      fetchSafe(() => apiClient.get('/admin/audit/login-history', { params: { page: 0, size: 20, ...orgParam } }), null),
+      fetchSafe(() => apiClient.get('/admin/audit/login-history/stats'), { dailyStats: [] }),
     ]);
 
     const normalizedUsers = normalizeList(users);
@@ -127,7 +144,7 @@ const useAdminSystemData = () => {
     const auditLogs = activities.length > 0
       ? activities.map((item) => mapActivityToAuditLog(item, usersById))
       : loginRows.map(mapLoginHistoryToAuditLog);
-    const timeline = buildTimelineFromActivities(activities);
+    const timeline = buildLoginTimeline(loginStats?.dailyStats);
 
     setState({
       metrics: metrics || emptyMetrics,
@@ -138,7 +155,7 @@ const useAdminSystemData = () => {
     });
 
     setLoading(false);
-  }, []);
+  }, [activeOrgId]);
 
   useEffect(() => {
     const timer = setTimeout(loadData, 0);
@@ -163,6 +180,7 @@ const useAdminSystemData = () => {
     activeOrgId,
     setActiveOrgId,
     activeOrganization,
+    reload: loadData,
     ...state,
   };
 };

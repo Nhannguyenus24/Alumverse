@@ -186,6 +186,22 @@ public class CacheUtils {
     }
 
     /**
+     * Get all keys from a specific cache
+     *
+     * @param cacheName Cache name
+     * @return Mono containing set of all keys in the cache
+     */
+    public Mono<java.util.Set<String>> getKeys(String cacheName) {
+        return Mono.fromCallable(() -> {
+            Cache<String, Object> cache = caches.get(cacheName);
+            if (cache != null) {
+                return cache.asMap().keySet();
+            }
+            return java.util.Collections.emptySet();
+        });
+    }
+
+    /**
      * Create a cache with specific configuration
      *
      * @param cacheName    Cache name

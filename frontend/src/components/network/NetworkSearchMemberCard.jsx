@@ -1,5 +1,8 @@
-import { Avatar, Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import { alpha } from '@mui/material/styles';
+
+import IconButtonMenu from '../IconButtonMenu';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
@@ -11,8 +14,10 @@ const NetworkSearchMemberCard = ({
   program,
   major,
   onMessage,
+  onBlock,
   isDemo = false,
   isMessageLoading = false,
+  isBlockLoading = false,
 }) => {
   const displayName = fullName || 'N/A';
   const programLabel = formatAcademicValue(program, '—');
@@ -31,9 +36,34 @@ const NetworkSearchMemberCard = ({
         flexDirection: 'column',
         justifyContent: 'space-between',
         transition: 'transform 0.2s',
+        position: 'relative',
         '&:hover': { transform: 'translateY(-4px)' },
       }}
     >
+      {onBlock ? (
+        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+          <IconButtonMenu
+            menuId={`network-member-card-menu-${fullName}`}
+            buttonAriaLabel="Tùy chọn thành viên"
+          >
+            {({ close }) => (
+              <MenuItem
+                disabled={isBlockLoading}
+                onClick={() => {
+                  close();
+                  onBlock();
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <BlockOutlinedIcon fontSize="small" color="primary" />
+                </ListItemIcon>
+                <ListItemText primary="Chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+              </MenuItem>
+            )}
+          </IconButtonMenu>
+        </Box>
+      ) : null}
+
       <Stack spacing={1.5} alignItems="center">
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 

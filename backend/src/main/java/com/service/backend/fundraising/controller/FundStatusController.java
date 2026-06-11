@@ -4,6 +4,7 @@ import com.service.backend.fundraising.dao.FundStatusR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundStatusRequest;
 import com.service.backend.shared.entity.FundStatus;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -39,6 +40,7 @@ public class FundStatusController {
                         .body(new ApiResponse<>("Fund status created successfully", created)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<List<FundStatus>>>> getAll() {
         return fundStatusRepository.findAll()
@@ -47,4 +49,3 @@ public class FundStatusController {
                         new ApiResponse<>("Fund statuses retrieved successfully", list)));
     }
 }
-

@@ -17,8 +17,14 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
 
-    @Query("SELECT * FROM learning_resources ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM learning_resources ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findAllWithPagination(int limit, int offset);
+
+    @Query("SELECT * FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<LearningResource> searchAllByTitleWithPagination(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM learning_resources WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countAllSearchByTitle(String keyword);
 
     @Query("SELECT * FROM learning_resources WHERE organization_id = :organizationId AND type = :type ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<LearningResource> findByType(Integer organizationId, LearningResourceType type, int limit, int offset);
@@ -31,4 +37,7 @@ public interface LearningResourceR2dbcRepository extends ReactiveCrudRepository<
 
     @Query("SELECT COUNT(*) FROM learning_resources WHERE organization_id = :organizationId AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countSearchResources(Integer organizationId, String keyword);
+
+    @Query("SELECT COUNT(*) FROM learning_resources WHERE created_at >= :since")
+    Mono<Long> countSince(java.time.LocalDateTime since);
 }

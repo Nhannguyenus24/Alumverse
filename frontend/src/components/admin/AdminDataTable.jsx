@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import {
   Box,
   Paper,
@@ -34,6 +34,7 @@ const AdminDataTable = ({
   onPageChange,
   onRowsPerPageChange,
   onSearchChange,
+  onSearchKeyDown,
   searchValue,
   searchPlaceholder = 'Tìm kiếm...',
   actions,
@@ -73,14 +74,19 @@ const AdminDataTable = ({
           justifyContent="space-between"
         >
           {/* Search */}
-          <SearchBar
-            value={searchValue}
-            onChange={onSearchChange}
-            placeholder={searchPlaceholder}
-            sx={{
-              maxWidth: { md: 400 },
-            }}
-          />
+          {onSearchChange ? (
+            <SearchBar
+              value={searchValue}
+              onChange={onSearchChange}
+              onKeyDown={onSearchKeyDown}
+              placeholder={searchPlaceholder}
+              sx={{
+                maxWidth: { md: 400 },
+              }}
+            />
+          ) : (
+            <Box sx={{ flex: 1 }} />
+          )}
 
           {/* Actions & Filters */}
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
@@ -224,4 +230,4 @@ const AdminDataTable = ({
   );
 };
 
-export default AdminDataTable;
+export default React.memo(AdminDataTable);

@@ -26,7 +26,6 @@ const STATUS_FILTERS = [
     multiple: false,
     options: [
       { value: 'PENDING', label: 'Đang chờ' },
-      { value: 'ACCEPTED', label: 'Đã chấp nhận' },
       { value: 'REJECTED', label: 'Đã từ chối' },
     ],
   },

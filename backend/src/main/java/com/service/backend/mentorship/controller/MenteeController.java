@@ -151,10 +151,19 @@ public class MenteeController {
 
     @PostMapping("/sessions/{sessionId}/cancel")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> cancelSession(
-            @PathVariable @Min(1) Integer sessionId) {
-        return menteeService.cancelSession(sessionId)
+            @PathVariable @Min(1) Integer sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String cancelReason) {
+        return menteeService.cancelSession(sessionId, cancelReason)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session cancelled successfully", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/report")
+    public Mono<ResponseEntity<ApiResponse<Void>>> reportSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @Valid @RequestBody CreateReportRequest request) {
+        return menteeService.reportSession(sessionId, request)
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Báo cáo đã được ghi nhận", null))));
     }
 
     @PostMapping("/sessions/{sessionId}/feedback")

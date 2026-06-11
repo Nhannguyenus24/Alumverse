@@ -23,4 +23,6 @@ public class PrivateChatListItemResponse {
     private String peerAvatarUrl;
     private String lastMessagePreview;
     private LocalDateTime lastMessageAt;
+    private boolean blockedByMe;
+    private boolean blockedByPeer;
 }

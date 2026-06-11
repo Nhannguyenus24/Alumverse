@@ -4,8 +4,13 @@ import { getMyMenteeProfile, saveMenteeProfile } from '../../utils/api';
 const MENTEE_PROFILE_KEY = ['mentorship', 'mentee', 'me', 'profile'];
 
 const fetchProfile = async () => {
-  const res = await getMyMenteeProfile();
-  return res?.data?.data ?? null;
+  try {
+    const res = await getMyMenteeProfile();
+    return res?.data?.data ?? null;
+  } catch (err) {
+    if (err?.response?.status === 404) return null;
+    throw err;
+  }
 };
 
 export const useMyMenteeProfile = () =>
@@ -13,6 +18,7 @@ export const useMyMenteeProfile = () =>
     queryKey: MENTEE_PROFILE_KEY,
     queryFn: fetchProfile,
     retry: false,
+    staleTime: 5 * 60_000,
   });
 
 const submit = async (payload) => {

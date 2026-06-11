@@ -35,6 +35,7 @@ public enum ErrorCode {
     GOOGLE_EMAIL_NOT_VERIFIED("Google email is not verified", 401),
     GOOGLE_ACCOUNT_EMAIL_MISSING("Google account email is missing", 401),
     GOOGLE_LOGIN_NOT_ALLOWED("Account is not allowed to login with Google", 403),
+    RECAPTCHA_VERIFICATION_FAILED("ReCAPTCHA verification failed", 401),
     INTERNAL_SERVER_ERROR("Internal server error", 500),
     BAD_REQUEST("Bad request", 400),
 
@@ -45,6 +46,13 @@ public enum ErrorCode {
     ALREADY_INTERESTED("Bạn đã đăng ký quan tâm sự kiện này", 409),
     TICKET_ALREADY_CANCELLED("Vé đã được hủy trước đó", 400),
     TICKET_ALREADY_CHECKED_IN("Vé đã được check-in", 400),
+    TICKET_NOT_ACTIVE("Vé chưa ở trạng thái Active để check-in", 400),
+    TICKET_NOT_PENDING("Vé không ở trạng thái chờ duyệt", 400),
+    TICKET_ALREADY_REGISTERED("Bạn đã đăng ký sự kiện này rồi", 409),
+    INVITATION_NOT_FOUND("Không tìm thấy lời mời", 404),
+    INVITATION_EXPIRED("Lời mời đã hết hạn", 400),
+    INVITATION_ALREADY_USED("Lời mời đã được sử dụng", 409),
+    NO_TICKETS_TO_ISSUE("Không có vé nào để phát hành", 400),
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức", 404),
@@ -68,6 +76,7 @@ public enum ErrorCode {
     SESSION_NOT_FOUND("Không tìm thấy buổi mentoring", 404),
     SESSION_ALREADY_CANCELLED("Buổi mentoring đã được hủy trước đó", 400),
     SESSION_NOT_COMPLETED("Buổi mentoring chưa hoàn thành", 400),
+    SESSION_SELF_BOOKING_NOT_ALLOWED("Bạn không thể đặt lịch với chính mình", 400),
     FEEDBACK_ALREADY_EXISTS("Đánh giá đã tồn tại", 409),
 
     // Forum module
@@ -100,8 +109,16 @@ public enum ErrorCode {
     CONVERSATION_REQUEST_ALREADY_PENDING("Yêu cầu kết nối đang chờ phản hồi từ phía kia", 409),
     CONVERSATION_REQUEST_ALREADY_ACCEPTED("Hai người đã kết nối với nhau rồi", 409),
     CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429),
+    CONVERSATION_REQUEST_SEARCH_STATUS_NOT_ALLOWED(
+            "Không thể lọc yêu cầu theo trạng thái ACCEPTED; vui lòng dùng tab Kết nối hiện tại",
+            400),
     CHAT_USER_NOT_GROUP_MEMBER("Bạn không phải thành viên của nhóm chat này", 403),
-    GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400);
+    GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400),
+    CANNOT_BLOCK_SELF("Bạn không thể chặn chính mình", 400),
+    USER_ALREADY_BLOCKED("Bạn đã chặn thành viên này rồi", 409),
+    USER_NOT_BLOCKED("Bạn chưa chặn thành viên này", 404),
+    USER_COMMUNICATION_BLOCKED("Bạn không thể giao tiếp khi đang có chặn hoạt động", 403),
+    USER_BLOCK_RELATIONSHIP_EXISTS("Đã tồn tại block giữa hai thành viên này", 403);
 
     private final String message;
     private final int status;

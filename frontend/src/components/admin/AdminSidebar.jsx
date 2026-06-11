@@ -23,6 +23,7 @@ import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
+import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -61,7 +62,8 @@ const NAV_GROUPS = (adminBase) => [
     items: [
       { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
       { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: 'Bài viết', role: 'ADMIN' },
-      { to: `${adminBase}/fundraising`, icon: <VolunteerActivismOutlinedIcon />, label: 'Quyên góp', role: 'ADMIN' },
+      { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: 'Quyên góp', role: 'ADMIN' },
+      { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: 'Tài khoản ngân hàng', role: 'ADMIN' },
     ],
   },
   {

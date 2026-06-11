@@ -20,6 +20,12 @@ public interface NewsR2dbcRepository extends ReactiveCrudRepository<News, Intege
     @Query("SELECT * FROM news ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<News> findAllWithPagination(int limit, int offset);
 
+    @Query("SELECT * FROM news WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<News> searchAllByTitleWithPagination(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM news WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countAllSearchByTitle(String keyword);
+
     @Query("SELECT * FROM news WHERE organization_id = :organizationId AND is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<News> findPublishedByOrganizationId(Integer organizationId, int limit, int offset);
 
@@ -41,4 +47,7 @@ public interface NewsR2dbcRepository extends ReactiveCrudRepository<News, Intege
     @Modifying
     @Query("UPDATE news SET is_hidden = true WHERE id = :id")
     Mono<Integer> hideNews(Integer id);
+
+    @Query("SELECT COUNT(*) FROM news WHERE published_at >= :since")
+    Mono<Long> countSince(java.time.LocalDateTime since);
 }

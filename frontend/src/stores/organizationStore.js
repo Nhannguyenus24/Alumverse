@@ -50,7 +50,6 @@ const useOrganizationStore = create((set) => ({
     }
 
     set((state) => ({
-      ...state,
       loading: true,
       error: null,
       statusCode: null,

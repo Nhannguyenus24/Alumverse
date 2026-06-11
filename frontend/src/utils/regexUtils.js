@@ -16,6 +16,8 @@ export const OTP_REGEX = /^[0-9]{6}$/;
 export const loginSchema = z.object({
   email: z.string().min(1, "Email hoặc mật khẩu không đúng"),
   password: z.string().min(1, "Email hoặc mật khẩu không đúng"),
+  rememberMe: z.boolean().optional(),
+  recaptchaToken: z.string().min(1, "Vui lòng xác nhận bạn không phải là người máy"),
 });
 
 /** Register: backend RegisterRequest — email, userName (studentId), fullName, password; UI: studentId, enrollmentYear (bắt buộc) */

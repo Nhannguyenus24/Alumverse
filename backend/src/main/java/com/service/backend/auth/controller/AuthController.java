@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ServerWebExchange;
 import io.swagger.v3.oas.annotations.Parameter;
+import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.auth.service.RecaptchaService;
 import com.service.backend.auth.dto.ChangePasswordRequest;
 import com.service.backend.auth.dto.GoogleLoginRequest;
 import com.service.backend.auth.dto.LoginRequest;
@@ -31,17 +34,21 @@ import com.service.backend.shared.utils.JwtUtils;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
+import com.service.backend.shared.annotations.PublicEndpoint;
 
+@PublicEndpoint
 @RestController
 @RequestMapping("/api/auth")
 @Validated
 public class AuthController {
     private final AuthService authService;
     private final JwtUtils jwtUtils;
+    private final RecaptchaService recaptchaService;
 
-    public AuthController(AuthService authService, JwtUtils jwtUtils) {
+    public AuthController(AuthService authService, JwtUtils jwtUtils, RecaptchaService recaptchaService) {
         this.authService = authService;
         this.jwtUtils = jwtUtils;
+        this.recaptchaService = recaptchaService;
     }
 
     /**
@@ -65,11 +72,17 @@ public class AuthController {
         String userAgent = extractUserAgent(exchange);
         String loginIp = extractRemoteAddress(exchange);
 
-        return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
-                .switchIfEmpty(Mono.defer(() ->
-                    authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
-                ))
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()));
+        return recaptchaService.verifyRecaptcha(request.getRecaptchaToken())
+                .flatMap(isValid -> {
+                    if (!isValid) {
+                        return Mono.error(new ApplicationException(ErrorCode.RECAPTCHA_VERIFICATION_FAILED));
+                    }
+                    return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
+                            .switchIfEmpty(Mono.defer(() ->
+                                authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
+                            ))
+                            .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
+                });
     }
 
     /**
@@ -83,7 +96,7 @@ public class AuthController {
         String loginIp = extractRemoteAddress(exchange);
 
         return authService.loginWithGoogle(request.getIdToken(), request.getOrganizationId(), userAgent, loginIp)
-                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId()));
+                .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
     }
 
     /**
@@ -182,7 +195,9 @@ public class AuthController {
         return remoteAddress != null ? remoteAddress : "Unknown";
     }
 
-    private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId) {
+    private Mono<ResponseEntity<ApiResponse<LoginResponse>>> buildLoginResponse(User user, Integer organizationId, boolean rememberMe) {
+        long refreshTokenExpirationMs = rememberMe ? 2592000000L : 604800000L; // 30 days vs 7 days
+
         if (organizationId == null) {
             // For admin login without organization, generate token with null orgId
             String accessToken = jwtUtils.generateAccessToken(
@@ -193,20 +208,20 @@ public class AuthController {
                     user.getAvatarUrl(),
                     null
             );
-            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null);
+            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), null, refreshTokenExpirationMs);
 
             ResponseCookie refreshTokenCookie = ResponseCookie
                     .from("refreshToken", refreshToken)
                     .httpOnly(true)
                     // .secure(true) // turn on when in https
                     .path("/")
-                    .maxAge(Duration.ofDays(7))
+                    .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                     .sameSite("Lax")
                     .build();
 
             LoginResponse loginResponse = LoginResponse.builder()
                     .accessToken(accessToken)
-                    .verificationLevel(1) // Default for system admin (non-zero)
+                    .verificationLevel(4) // Default for system admin (non-zero)
                     .build();
 
             return Mono.just(ResponseEntity.ok()
@@ -225,14 +240,14 @@ public class AuthController {
                             user.getAvatarUrl(),
                             organizationId
                     );
-                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId);
+                    String refreshToken = jwtUtils.generateRefreshToken(user.getId(), organizationId, refreshTokenExpirationMs);
 
                     ResponseCookie refreshTokenCookie = ResponseCookie
                             .from("refreshToken", refreshToken)
                             .httpOnly(true)
                             // .secure(true) // turn on when in https
                             .path("/")
-                            .maxAge(Duration.ofDays(7))
+                            .maxAge(Duration.ofMillis(refreshTokenExpirationMs))
                             .sameSite("Lax")
                             .build();
 

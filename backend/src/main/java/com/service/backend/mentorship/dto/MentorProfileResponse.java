@@ -62,4 +62,17 @@ public class MentorProfileResponse {
         this.avatarUrl = avatarUrl;
         return this;
     }
+
+    /** Strips booking-sensitive fields for level-1 preview browse. */
+    public MentorProfileResponse asPreview() {
+        this.defaultMeetingLink = null;
+        this.bookingWindowSettings = null;
+        this.extendedProfile = null;
+        this.reviewNote = null;
+        this.reviewedAt = null;
+        if (this.bio != null && this.bio.length() > 280) {
+            this.bio = this.bio.substring(0, 277) + "...";
+        }
+        return this;
+    }
 }

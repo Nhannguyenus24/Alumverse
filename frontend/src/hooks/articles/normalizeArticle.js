@@ -73,6 +73,10 @@ export const normalizeAchievement = (data) => {
     publishedAt: data.awardedDate,
     status: data.status,
     topic: data.topic,
+    memberName: data.memberName,
+    memberAvatar: data.memberAvatar,
+    memberJobTitle: data.memberJobTitle,
+    memberCompany: data.memberCompany,
   };
 };
 

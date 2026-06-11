@@ -2,6 +2,7 @@ import { Outlet, useLocation, useMatches, useParams } from "react-router";
 import { Box, Toolbar } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import FloatingChatActions from "../components/FloatingChatActions";
 import { getNormalizedPathname } from "../utils/pathUtils";
 
 const MainLayout = () => {
@@ -34,6 +35,8 @@ const MainLayout = () => {
       </Box>
 
       {!hideFooter && <Footer />}
+
+      <FloatingChatActions />
     </Box>
   );
 };

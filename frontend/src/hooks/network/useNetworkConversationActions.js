@@ -1,13 +1,18 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 
 import { chatApi } from '../../utils/api';
 
 export function useNetworkConversationActions(peerMemberId) {
+  const queryClient = useQueryClient();
   const { enqueueSnackbar } = useSnackbar();
 
   const sendMutation = useMutation({
     mutationFn: (body) => chatApi.createConversationRequest(peerMemberId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['incomingConversationRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['networkMembers'] });
+    },
     onError: (error) => {
       const msg =
         error?.response?.data?.message ?? error?.message ?? 'Không gửi được tin nhắn.';

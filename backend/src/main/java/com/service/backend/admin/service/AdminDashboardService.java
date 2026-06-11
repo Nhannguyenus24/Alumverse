@@ -12,6 +12,7 @@ import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.AdminAuditLog;
+import com.service.backend.shared.utils.PaginationHelper;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,8 @@ public class AdminDashboardService {
         Supplier<Mono<DashboardMetricsDTO>> supplier = () -> {
             Mono<Long> totalUsersMono = adminUserRepository.countAllUsers();
             Mono<Long> totalOrgsMono = adminOrganizationRepository.count();
-            Mono<Long> pendingVerifMono = adminUserRepository.countPendingVerificationRequests();
+            Mono<Long> pendingVerifMono = adminUserRepository.countPendingVerificationRequests(null);
+            Mono<Long> pendingPeerVerificationsMono = adminUserRepository.countPeerVerificationsByStatus("PENDING");
             Mono<Long> totalEventsMono = adminEventRepository.countAllEvents();
             Mono<Long> upcomingEventsMono = adminEventRepository.countUpcomingEvents(LocalDateTime.now());
             Mono<Long> ticketsSoldMono = adminEventRepository.countAllTickets();
@@ -81,17 +83,27 @@ public class AdminDashboardService {
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(int page, int size) {
+        return getActivities(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(Integer organizationId, int page, int size) {
         int limit = size;
         int offset = page * size;
 
-        Flux<ActivityItemDTO> items = adminAuditLogRepository.findAdminActionLogs(null, null, null, limit, offset)
-                .map(this::toDto);
+        Flux<ActivityItemDTO> items;
+        Mono<Long> total;
 
-        Mono<Long> total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
+        if (organizationId != null) {
+            items = adminAuditLogRepository.findAdminActionLogsByOrganization(organizationId, null, null, null, limit, offset)
+                    .map(this::toDto);
+            total = adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, null, null, null);
+        } else {
+            items = adminAuditLogRepository.findAdminActionLogs(null, null, null, limit, offset)
+                    .map(this::toDto);
+            total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
+        }
 
-        return items.collectList()
-                .zipWith(total)
-                .map(t -> PaginatedResponse.of(t.getT1(), t.getT2(), page, size))
+        return PaginationHelper.paginate(items, total, page, size)
                 .flatMap(m -> cacheUtils.putWithTtl("admin:activities", "page:" + page, m, Duration.ofMinutes(1)).thenReturn(m))
                 .doOnSuccess(r -> log.info("getActivities result: {}", JsonUtils.toJson(r)));
     }

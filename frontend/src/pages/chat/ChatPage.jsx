@@ -8,6 +8,7 @@ import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
 import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
+import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';
 
 function normalizeGroupChat(item) {
   return {
@@ -28,6 +29,8 @@ function normalizePrivateChat(item) {
     lastMessageAt: item.lastMessageAt ?? null,
     type: 'PRIVATE',
     peerMemberId: item.peerMemberId,
+    blockedByMe: Boolean(item.blockedByMe),
+    blockedByPeer: Boolean(item.blockedByPeer),
   };
 }
 
@@ -114,7 +117,7 @@ const ChatPage = () => {
   };
 
   const handleLeaveGroup = (leftGroupId) => {
-    queryClient.invalidateQueries({ queryKey: ['chat', 'groups'] });
+    invalidateChatListQueries(queryClient);
     if (activeChatId === leftGroupId) {
       setActiveChatId(null);
     }

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Box, Typography, useTheme, alpha } from '@mui/material';
 
 const AdminSectionPanel = ({ title, subtitle, action, children, sx }) => {
@@ -47,4 +48,4 @@ const AdminSectionPanel = ({ title, subtitle, action, children, sx }) => {
   );
 };
 
-export default AdminSectionPanel;
+export default React.memo(AdminSectionPanel);

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lời Mời Tham Gia Sự Kiện - Alumniverse</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 0; }
+        .container { background-color: white; max-width: 600px; margin: 20px auto; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #667eea; padding-bottom: 20px; }
+        .header h1 { color: #333; margin: 0; font-size: 24px; }
+        .header p { color: #666; font-size: 14px; margin: 5px 0 0 0; }
+        .event-box { background-color: #f0f7ff; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px; }
+        .event-box .event-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 12px; }
+        .event-detail { display: flex; margin: 8px 0; font-size: 14px; color: #555; }
+        .event-detail .label { color: #888; min-width: 100px; }
+        .action-button { text-align: center; margin: 30px 0; }
+        .action-button a { background-color: #667eea; color: white; padding: 14px 36px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px; }
+        .note { background-color: #fff3e0; border-left: 4px solid #ff9800; padding: 12px; margin: 15px 0; border-radius: 4px; font-size: 13px; color: #e65100; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Bạn được mời tham gia sự kiện!</h1>
+            <p>Hệ Thống Quản Lý Sinh Viên - Cựu Sinh Viên HCMUS</p>
+        </div>
+
+        <p style="color: #333; font-size: 14px; line-height: 1.6;">
+            Chúng tôi trân trọng kính mời bạn tham gia sự kiện sau:
+        </p>
+
+        <div class="event-box">
+            <div class="event-title" th:text="${eventTitle}">Tên sự kiện</div>
+            <div class="event-detail">
+                <span class="label">Địa điểm:</span>
+                <span th:text="${eventLocation}">Địa điểm</span>
+            </div>
+            <div class="event-detail">
+                <span class="label">Thời gian:</span>
+                <span th:text="${eventStartTime}">Thời gian</span>
+            </div>
+        </div>
+
+        <div class="action-button">
+            <a th:href="@{'/events/confirm?token=' + ${confirmToken}}">Xác nhận tham gia</a>
+        </div>
+
+        <div class="note">
+            Lời mời này có hiệu lực trong <strong>7 ngày</strong>. Sau thời hạn, link xác nhận sẽ không còn hợp lệ.
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 Alumniverse - Hệ Thống Alumni HCMUS. Tất cả quyền được bảo lưu.</p>
+            <p>Email này được gửi tự động. Vui lòng không trả lời trực tiếp.</p>
+        </div>
+    </div>
+</body>
+</html>

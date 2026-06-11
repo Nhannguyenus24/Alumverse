@@ -40,13 +40,10 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_URLS = {
             "/health",
-            "/api/auth/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
             "/webjars/**",
-            "/api/guest/**",
-            "/api/organizations/**",
             "/websocket-test.html",
             "/ws/chat",
             "/ws/chat/**",
@@ -56,53 +53,42 @@ public class SecurityConfig {
             "/*.png",
             "/*.ico",
             "/static/**",
-            "/api/funds/**",
-            "/api/fund-statuses",
-            "/api/fund-donations/**",
-            "/api/payment/**"
-    };
-
-    private static final String[] PUBLIC_GET_URLS = {
-            "/api/mentorship/mentee/mentors",
-            "/api/mentorship/mentee/mentors/**",
-            "/api/mentorship/mentee/expertise-topics",
-            "/api/mentorship/mentee/expertise-categories"
     };
 
     @Value("${app.cors.allowed-origin-patterns:}")
     private String extraOriginPatterns;
 
     @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, JwtUtils jwtUtils) {
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, JwtUtils jwtUtils, PublicEndpointConfig publicEndpointConfig) {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .addFilterAt(headerAuthenticationFilter(jwtUtils), SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterAt(headerAuthenticationFilter(jwtUtils, publicEndpointConfig), SecurityWebFiltersOrder.AUTHENTICATION)
                 .authorizeExchange(auth -> auth
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .pathMatchers(HttpMethod.GET, PUBLIC_GET_URLS).permitAll()
                         .pathMatchers(PUBLIC_URLS).permitAll()
+                        .pathMatchers(publicEndpointConfig.getAnnotatedPublicUrlsArray()).permitAll()
                         .anyExchange().authenticated());
 
         return http.build();
     }
 
-    private WebFilter headerAuthenticationFilter(JwtUtils jwtUtils) {
+    private WebFilter headerAuthenticationFilter(JwtUtils jwtUtils, PublicEndpointConfig publicEndpointConfig) {
         ServerWebExchangeMatcher publicMatcher = ServerWebExchangeMatchers.matchers(
                 ServerWebExchangeMatchers.pathMatchers(HttpMethod.OPTIONS, "/**"),
-                ServerWebExchangeMatchers.pathMatchers(HttpMethod.GET, PUBLIC_GET_URLS),
-                ServerWebExchangeMatchers.pathMatchers(PUBLIC_URLS)
+                ServerWebExchangeMatchers.pathMatchers(PUBLIC_URLS),
+                ServerWebExchangeMatchers.pathMatchers(publicEndpointConfig.getAnnotatedPublicUrlsArray())
         );
 
         return (exchange, chain) -> publicMatcher.matches(exchange)
                 .flatMap(matchResult -> {
-                    if (matchResult.isMatch()) {
-                        return chain.filter(exchange);
-                    }
-
                     String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+                    boolean isPublic = matchResult.isMatch();
 
                     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                        if (isPublic) {
+                            return chain.filter(exchange);
+                        }
                         return unauthenticatedResponse(exchange, "Request is not authenticated", "UNAUTHORIZED");
                     }
 
@@ -114,6 +100,7 @@ public class SecurityConfig {
                         Integer organizationId = jwtUtils.getOrganizationIdFromToken(token);
 
                         if (userId == null || userRole == null) {
+                            if (isPublic) return chain.filter(exchange);
                             return Mono.error(new RuntimeException("Invalid token: missing user ID or role"));
                         }
 
@@ -127,6 +114,9 @@ public class SecurityConfig {
                                 .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 
                     } catch (RuntimeException e) {
+                        if (isPublic) {
+                            return chain.filter(exchange);
+                        }
                         String message = e.getMessage();
                         String errorCode = "INVALID_TOKEN";
 
