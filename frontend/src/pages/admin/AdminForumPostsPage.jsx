@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -141,7 +141,7 @@ const AdminForumPostsPage = () => {
     }
   };
 
-  const columns = [
+  const columns = useMemo(() => [
     { id: 'id', label: 'ID', width: 60 },
     {
       id: 'author',
@@ -194,7 +194,7 @@ const AdminForumPostsPage = () => {
         </Stack>
       )
     }
-  ];
+  ], [handleBan, setForumDeletePost, setForumStatusMenu]);
 
   const stats = {
     total: allPosts?.totalElements ?? 0,
