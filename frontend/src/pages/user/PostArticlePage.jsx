@@ -19,6 +19,7 @@ const PostArticlePage = () => {
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
   const [url, setUrl] = useState('');
+<<<<<<< Updated upstream
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
 
@@ -29,6 +30,8 @@ const PostArticlePage = () => {
       setCoverPreview(URL.createObjectURL(file));
     }
   };
+=======
+>>>>>>> Stashed changes
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
@@ -38,7 +41,10 @@ const PostArticlePage = () => {
 
     try {
       const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
       const payload = {
         title: title.trim(),
         content: content.trim(),
@@ -55,6 +61,7 @@ const PostArticlePage = () => {
   };
 
   return (
+<<<<<<< Updated upstream
     <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
@@ -115,6 +122,29 @@ const PostArticlePage = () => {
         </Container>
       </Box>
     </Page>
+=======
+    <PostArticleShell
+      pageTitle="Đăng bài tin tức"
+      coverPreview={coverPreview}
+      onCoverChange={handleCoverUpload}
+      onCancel={() => navigate(-1)}
+      onSubmit={handleSubmit}
+      isPending={isPending}
+    >
+      <PostArticleForm
+        channel="news"
+        channelLabel="Tin tức"
+        title={title}
+        setTitle={setTitle}
+        content={content}
+        setContent={setContent}
+        topic={topic}
+        setTopic={setTopic}
+        url={url}
+        setUrl={setUrl}
+      />
+    </PostArticleShell>
+>>>>>>> Stashed changes
   );
 };
 
