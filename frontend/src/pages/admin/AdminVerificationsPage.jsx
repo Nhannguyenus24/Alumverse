@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
@@ -108,7 +108,7 @@ const AdminVerificationsPage = () => {
     }
   };
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       id: 'user',
       label: 'Người dùng',
@@ -196,7 +196,7 @@ const AdminVerificationsPage = () => {
         );
       }
     }
-  ];
+  ], [theme, handleReview, submitReview]);
 
   return (
     <Box>

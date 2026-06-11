@@ -3,9 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-import LocalActivityIcon from '@mui/icons-material/LocalActivity';
-import EventIcon from '@mui/icons-material/Event';
-import ArticleIcon from '@mui/icons-material/Article';
+import { ACTIVITIES_SIDEBAR } from '../../constants/activitiesNav';
 
 import Page from '../../components/Page';
 
@@ -22,11 +20,6 @@ import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 import { useAuth } from '../../hooks/useAuth';
 import { eventApi } from '../../utils/api';
 
-const SIDEBAR = [
-  { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
-  { id: '/activities/events', label: 'Sự kiện', icon: <EventIcon /> },
-  { id: '/activities/news', label: 'Tin tức', icon: <ArticleIcon /> },
-];
 
 const FILTERS = [
   {
@@ -131,7 +124,7 @@ const ActivitiesPage = () => {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={ACTIVITIES_SIDEBAR} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"

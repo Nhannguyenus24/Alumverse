@@ -39,21 +39,25 @@ const AdminLayoutShell = () => {
         bgcolor: alpha(theme.palette.background.default, 0.4),
       }}
     >
-      <AdminSidebar
-        variant="permanent"
-        adminBase={adminBase}
-        userRole={user?.role}
-        collapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
-
-      <AdminSidebar
-        variant="temporary"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        adminBase={adminBase}
-        userRole={user?.role}
-      />
+      {[
+        {
+          variant: 'permanent',
+          collapsed: isSidebarCollapsed,
+          onToggle: () => setIsSidebarCollapsed(!isSidebarCollapsed),
+        },
+        {
+          variant: 'temporary',
+          open: mobileOpen,
+          onClose: () => setMobileOpen(false),
+        },
+      ].map((sidebarProps) => (
+        <AdminSidebar
+          key={sidebarProps.variant}
+          adminBase={adminBase}
+          userRole={user?.role}
+          {...sidebarProps}
+        />
+      ))}
 
       <Box
         sx={{

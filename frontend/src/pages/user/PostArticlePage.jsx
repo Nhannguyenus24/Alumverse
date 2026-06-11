@@ -1,10 +1,7 @@
 import { useState } from 'react';
-
-import { Box, Button, Container, Typography } from '@mui/material';
-
-import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
-import CoverUpload from '../../components/CoverUpload';
+import PostArticleShell from '../../components/PostArticleShell';
+import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
@@ -14,10 +11,12 @@ const PostArticlePage = () => {
   const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
+  const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
+<<<<<<< Updated upstream
   const [url, setUrl] = useState('');
 <<<<<<< Updated upstream
   const [coverFile, setCoverFile] = useState(null);
@@ -38,7 +37,6 @@ const PostArticlePage = () => {
       showError('Vui lòng nhập tiêu đề và nội dung');
       return;
     }
-
     try {
       const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
 <<<<<<< Updated upstream
@@ -53,6 +51,9 @@ const PostArticlePage = () => {
       };
 
       const result = await createNews(payload);
+=======
+      const result = await createNews({ title: title.trim(), content: content.trim(), thumbnailBase64 });
+>>>>>>> Stashed changes
       showSuccess('Bài viết đã được đăng thành công!');
       navigate(`/article/news/${result.id}`);
     } catch (err) {
@@ -140,8 +141,6 @@ const PostArticlePage = () => {
         setContent={setContent}
         topic={topic}
         setTopic={setTopic}
-        url={url}
-        setUrl={setUrl}
       />
     </PostArticleShell>
 >>>>>>> Stashed changes
