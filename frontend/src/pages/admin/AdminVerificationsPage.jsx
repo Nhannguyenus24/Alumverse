@@ -37,7 +37,7 @@ const AdminVerificationsPage = () => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
-  const { activeOrgId } = useAdminSystemContext();
+  const { stableOrgId } = useAdminSystemContext();
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -69,7 +69,7 @@ const AdminVerificationsPage = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery, activeOrgId || null);
+      const res = await getVerificationRequests(pendingOnly, page, rowsPerPage, searchQuery, stableOrgId || null);
       const data = res?.data?.data || {};
       setRequests(data.items || []);
       setTotalCount(data.totalElements || 0);
@@ -82,7 +82,7 @@ const AdminVerificationsPage = () => {
 
   useEffect(() => {
     void fetchRequests();
-  }, [page, rowsPerPage, pendingOnly, searchQuery, activeOrgId]);
+  }, [page, rowsPerPage, pendingOnly, searchQuery, stableOrgId]);
 
   const handleReview = (request) => {
     setSelectedRequest(request);
@@ -234,6 +234,7 @@ const AdminVerificationsPage = () => {
             <MenuItem value="all">Tất cả</MenuItem>
           </TextField>
         }
+        loading={loading}
       />
 
       {/* Review Dialog */}

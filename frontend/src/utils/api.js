@@ -629,26 +629,26 @@ export const eventApi = {
 };
 
 export const adminEventApi = {
-	getAllEvents(page = 0, size = 10, organizationId = null) {
+	getAllEvents(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(BASE_ADMIN_EVENTS, { params });
+		return apiClient.get(BASE_ADMIN_EVENTS, { params, ...config });
 	},
 
 	getEventsByOrganization(organizationId, page = 0, size = 10) {
 		return apiClient.get(BASE_ADMIN_EVENTS, { params: { page, size, organizationId } });
 	},
 
-	searchAllEvents(keyword, page = 0, size = 10, organizationId = null) {
+	searchAllEvents(keyword, page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { keyword, page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params });
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params, ...config });
 	},
 
-	getEventsByPublishStatus(isPublished, page = 0, size = 10, organizationId = null) {
+	getEventsByPublishStatus(isPublished, page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { isPublished, page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params });
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params, ...config });
 	},
 
 	getEventById(eventId) {
@@ -786,23 +786,23 @@ export const adminForumApi = {
 		return apiClient.get(`${BASE_ADMIN_FORUM}/statistics/timeline`, { params: { year } });
 	},
 
-	getNewPostsYesterdayPaginated(page = 0, size = 10, organizationId = null) {
+	getNewPostsYesterdayPaginated(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params, ...config });
 	},
 
-	getBannedPosts(page = 0, size = 10, organizationId = null) {
+	getBannedPosts(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params, ...config });
 	},
 
-	getAllPosts(keyword = '', page = 0, size = 20, organizationId = null) {
+	getAllPosts(keyword = '', page = 0, size = 20, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (keyword) params.keyword = keyword;
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params, ...config });
 	},
 
 	banPost(postId) {
@@ -817,10 +817,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/posts/${postId}`);
 	},
 
-	getPendingReports(page = 0, size = 10, organizationId = null) {
+	getPendingReports(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params, ...config });
 	},
 
 	reviewReport(reportId, payload) {
@@ -831,8 +831,8 @@ export const adminForumApi = {
 		return apiClient.put(`${BASE_ADMIN_FORUM_V2}/posts/${postId}/visibility`, payload);
 	},
 
-	getAllCategories(organizationId) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/categories`, { params: { organizationId } });
+	getAllCategories(organizationId, config = {}) {
+		return apiClient.get(`${BASE_ADMIN_FORUM}/categories`, { params: { organizationId }, ...config });
 	},
 
 	getCategoryById(categoryId) {
@@ -855,10 +855,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/categories/${categoryId}`);
 	},
 
-	getAllTopics(organizationId, keyword = '', page = 0, size = 10) {
+	getAllTopics(organizationId, keyword = '', page = 0, size = 10, config = {}) {
 		const params = { organizationId, page, size };
 		if (keyword) params.keyword = keyword;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params, ...config });
 	},
 
 	getTopicById(topicId) {
@@ -910,8 +910,8 @@ export const {
 } = adminForumApi;
 
 export const fundApi = {
-	async getFunds(params = {}) {
-		const response = await apiClient.get(BASE_FUND, { params });
+	async getFunds(params = {}, config = {}) {
+		const response = await apiClient.get(BASE_FUND, { params, ...config });
 		return unwrap(response);
 	},
 

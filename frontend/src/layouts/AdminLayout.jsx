@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useParams } from 'react-router';
+import { Outlet, useParams, useLocation } from 'react-router';
 import { Box, useTheme, alpha } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -8,7 +8,6 @@ import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
 import { useAuth } from '../hooks/useAuth';
-import { useOrganization } from '../hooks/useOrganization';
 import Page from '../components/Page';
 
 const HEADER_HEIGHT = 70;
@@ -22,7 +21,6 @@ const AdminLayoutShell = () => {
   const theme = useTheme();
 
   const { slug } = useParams();
-  const { organization } = useOrganization({ enabled: !!slug });
   const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { user, logout } = useAuth();
@@ -74,7 +72,6 @@ const AdminLayoutShell = () => {
           user={user}
           onLogout={logout}
           breadcrumbs={breadcrumbs}
-          organization={organization}
         />
 
         <Box
@@ -98,9 +95,15 @@ const AdminLayoutShell = () => {
 };
 
 const AdminLayout = () => {
+  const location = useLocation();
   const system = useAdminSystemData();
-  const users = useAdminUsersLocal();
-  const forum = useAdminForumData(system.activeOrgId);
+  const isUsersPage = location.pathname.includes('/users');
+  const users = useAdminUsersLocal(system.stableOrgId, isUsersPage);
+
+  // Only load forum data when on forum pages — avoids firing 6 API calls
+  // unnecessarily when switching org while on Events / Users / etc.
+  const isForumPage = location.pathname.includes('/forum');
+  const forum = useAdminForumData(system.stableOrgId, isForumPage);
 
   return (
     <AdminProvider system={system} users={users} forum={forum}>

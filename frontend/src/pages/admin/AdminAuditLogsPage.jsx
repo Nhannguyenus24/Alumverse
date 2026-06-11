@@ -16,8 +16,6 @@ import {
   Stack,
   TextField,
   Typography,
-  alpha,
-  useTheme,
   Grid,
 } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -27,7 +25,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDataTable from '../../components/admin/AdminDataTable';
-import { useAdminSystemContext } from '../../stores/AdminStore';
+import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
 import { stringifyJson, truncateText } from '../../utils/stringUtils';
 
@@ -45,14 +43,13 @@ const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE'
 
 
 const AdminAuditLogsPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Nhật ký hệ thống', active: true }]);
   }, [setBreadcrumbs]);
-  const { loading, auditLogs } = useAdminSystemContext();
+  const { loading, auditLogs } = useAdminAuditLogsData();
 
   const [dateFrom, setDateFrom] = useState('');
   const [entityFilter, setEntityFilter] = useState([]);
