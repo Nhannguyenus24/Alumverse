@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import { useOutletContext } from "react-router";
 import { useDebounce } from "../../hooks/useDebounce";
-import { adminOrganizationApi } from "../../utils/api";
 import { useEffect } from "react";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -37,7 +36,7 @@ import { formatDate } from "../../utils/dateFormatter";
 
 const AdminForumTopicsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { activeOrgId } = useAdminSystemContext();
+  const { stableOrgId } = useAdminSystemContext();
   const {
     topics: topicsPaginated,
     topicsPage,
@@ -54,21 +53,9 @@ const AdminForumTopicsPage = () => {
     setTopicsSearch,
   } = useAdminForumContext();
   const { setBreadcrumbs } = useOutletContext();
-  const { setActiveOrgId } = useAdminSystemContext();
-  const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Chủ đề', active: true }]);
-
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
-        setOrganizations(data || []);
-      } catch (err) {
-        console.error("Failed to fetch organizations", err);
-      }
-    };
-    fetchOrgs();
   }, [setBreadcrumbs]);
 
   const { user } = useAuth();
@@ -210,7 +197,7 @@ const AdminForumTopicsPage = () => {
     }
     if (dialog.mode === "create") {
       const ok = await createTopic?.(
-        activeOrgId,
+        stableOrgId,
         form.categoryId,
         form.title,
         Number(user?.id),
@@ -273,29 +260,13 @@ const AdminForumTopicsPage = () => {
             nội dung.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            select
-            size="small"
-            label="Tổ chức"
-            value={activeOrgId || ""}
-            onChange={(e) => setActiveOrgId(e.target.value)}
-            sx={{ minWidth: 200 }}
-          >
-            {organizations.map((org) => (
-              <MenuItem key={org.id} value={org.id}>
-                {org.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            onClick={openCreate}
-          >
-            Tạo chủ đề
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreate}
+        >
+          Tạo chủ đề
+        </Button>
       </Box>
 
       <Box

@@ -33,7 +33,7 @@ import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import { useAdminSystemContext } from "../../stores/AdminStore";
-import { adminOrganizationApi, fundApi } from "../../utils/api";
+import { fundApi } from "../../utils/api";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import SearchIcon from "@mui/icons-material/Search";
 
@@ -49,42 +49,25 @@ const AdminFundraisingsPage = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
-  const { activeOrgId, setActiveOrgId, activeOrganization } = useAdminSystemContext();
-  const [organizations, setOrganizations] = useState([]);
+  const { stableOrgId, activeOrganization } = useAdminSystemContext();
 
-  const getOrgSlug = () =>
-    activeOrganization?.slug ||
-    organizations.find((o) => o.id === activeOrgId)?.slug ||
-    "hcmus";
+  const getOrgSlug = () => activeOrganization?.slug || "hcmus";
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: "Quản lý gây quỹ", active: true }]);
-
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
-        setOrganizations(data || []);
-      } catch (err) {
-        console.error("Failed to fetch organizations", err);
-      }
-    };
-
-    fetchOrgs();
   }, [setBreadcrumbs]);
 
   const {
     fundraisings,
     filteredCount,
-    search,
     setSearch,
-    submitSearch,
     updateSearchQuery,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     updateStatus,
-  } = useAdminFundraisingsData(activeOrgId);
+  } = useAdminFundraisingsData(stableOrgId);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -306,29 +289,13 @@ const AdminFundraisingsPage = () => {
             sinh viên.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            select
-            size="small"
-            label="Tổ chức"
-            value={activeOrgId || ""}
-            onChange={(e) => setActiveOrgId(e.target.value)}
-            sx={{ minWidth: 200 }}
-          >
-            {organizations.map((org) => (
-              <MenuItem key={org.id} value={org.id}>
-                {org.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            onClick={() => navigate(`/${getOrgSlug()}/post/donation`)}
-          >
-            Tạo chiến dịch
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={() => navigate(`/${getOrgSlug()}/post/donation`)}
+        >
+          Tạo chiến dịch
+        </Button>
       </Box>
 
       <Box

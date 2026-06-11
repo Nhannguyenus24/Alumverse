@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { useSnackbar } from 'notistack';
 import {
   Box,
   Button,
