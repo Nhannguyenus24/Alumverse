@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import {
   Box,
   Paper,
@@ -230,4 +230,4 @@ const AdminDataTable = ({
   );
 };
 
-export default AdminDataTable;
+export default React.memo(AdminDataTable);

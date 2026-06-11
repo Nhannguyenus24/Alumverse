@@ -1,10 +1,7 @@
 import { useState } from 'react';
-
-import { Box, Button, Container, Typography } from '@mui/material';
-
-import Page from '../../components/Page';
 import PostArticleForm from '../../components/PostArticleForm';
-import CoverUpload from '../../components/CoverUpload';
+import PostArticleShell from '../../components/PostArticleShell';
+import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
@@ -14,10 +11,12 @@ const PostArticlePage = () => {
   const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
+  const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [topic, setTopic] = useState('');
+<<<<<<< Updated upstream
   const [url, setUrl] = useState('');
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
@@ -29,15 +28,17 @@ const PostArticlePage = () => {
       setCoverPreview(URL.createObjectURL(file));
     }
   };
+=======
+>>>>>>> Stashed changes
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
       showError('Vui lòng nhập tiêu đề và nội dung');
       return;
     }
-
     try {
       const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+<<<<<<< Updated upstream
 
       const payload = {
         title: title.trim(),
@@ -47,6 +48,9 @@ const PostArticlePage = () => {
       };
 
       const result = await createNews(payload);
+=======
+      const result = await createNews({ title: title.trim(), content: content.trim(), thumbnailBase64 });
+>>>>>>> Stashed changes
       showSuccess('Bài viết đã được đăng thành công!');
       navigate(`/article/news/${result.id}`);
     } catch (err) {
@@ -55,6 +59,7 @@ const PostArticlePage = () => {
   };
 
   return (
+<<<<<<< Updated upstream
     <Page title="Đăng bài tin tức" meta={<meta name="description" content="Đăng bài tin tức - AlumVerse" />}>
       <Box sx={{ minHeight: '100vh' }}>
         {/* Cover Upload Section */}
@@ -115,6 +120,27 @@ const PostArticlePage = () => {
         </Container>
       </Box>
     </Page>
+=======
+    <PostArticleShell
+      pageTitle="Đăng bài tin tức"
+      coverPreview={coverPreview}
+      onCoverChange={handleCoverUpload}
+      onCancel={() => navigate(-1)}
+      onSubmit={handleSubmit}
+      isPending={isPending}
+    >
+      <PostArticleForm
+        channel="news"
+        channelLabel="Tin tức"
+        title={title}
+        setTitle={setTitle}
+        content={content}
+        setContent={setContent}
+        topic={topic}
+        setTopic={setTopic}
+      />
+    </PostArticleShell>
+>>>>>>> Stashed changes
   );
 };
 
