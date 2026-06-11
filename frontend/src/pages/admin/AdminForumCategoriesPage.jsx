@@ -23,7 +23,6 @@ import {
   Grid,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
-import { adminOrganizationApi } from '../../utils/api';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -142,7 +141,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
 
 const AdminForumCategoriesPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { activeOrgId, activeOrganization } = useAdminSystemContext();
+  const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const {
     categories,
     categoriesLoading,
@@ -152,25 +151,10 @@ const AdminForumCategoriesPage = () => {
   } = useAdminForumContext();
 
   const { setBreadcrumbs } = useOutletContext();
-  const { setActiveOrgId } = useAdminSystemContext();
-  const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Danh mục', active: true }]);
-    
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations();
-        setOrganizations(data || []);
-        if (data && data.length > 0 && !activeOrgId) {
-          setActiveOrgId(data[0].id);
-        }
-      } catch (err) {
-        console.error('Failed to fetch organizations', err);
-      }
-    };
-    fetchOrgs();
-  }, [setBreadcrumbs, activeOrgId, setActiveOrgId]);
+  }, [setBreadcrumbs]);
 
   const tree = useMemo(() => buildTree(categories), [categories]);
 
@@ -213,7 +197,7 @@ const AdminForumCategoriesPage = () => {
     }
     if (modal.mode === 'create') {
       const ok = await createCategory?.(
-        activeOrgId,
+        stableOrgId,
         form.name,
         form.description,
         form.parentId === '' ? null : Number(form.parentId),
@@ -256,27 +240,13 @@ const AdminForumCategoriesPage = () => {
             Cấu trúc phân cấp diễn đàn, quản lý các chuyên mục chính và chuyên mục con.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            select
-            size="small"
-            label="Tổ chức"
-            value={activeOrgId || ''}
-            onChange={(e) => setActiveOrgId(e.target.value)}
-            sx={{ minWidth: 200 }}
-          >
-            {organizations.map((org) => (
-              <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            onClick={openCreateRoot}
-          >
-            Thêm danh mục
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreateRoot}
+        >
+          Thêm danh mục
+        </Button>
       </Box>
 
       <Box
