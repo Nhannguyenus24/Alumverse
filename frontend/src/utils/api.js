@@ -1201,6 +1201,12 @@ export const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
+	respondReschedule(sessionId, accept) {
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/reschedule-response`, null, {
+			params: { accept },
+		});
+	},
+
 	createSessionFeedback(sessionId, payload) {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/feedback`, payload);
 	},
@@ -1270,9 +1276,12 @@ export const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
-	postponeMentorSession(sessionId, reason) {
-		const params = reason ? { reason } : {};
-		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/postpone`, null, { params });
+	postponeMentorSession(sessionId, { reason, proposedStartTime, proposedEndTime }) {
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/postpone`, {
+			reason,
+			proposedStartTime,
+			proposedEndTime,
+		});
 	},
 
 	getMyMentorFeedbacks(page = 0, limit = 10) {
@@ -1300,6 +1309,7 @@ export const {
 	getMyMenteeSessions,
 	getMenteeSessionById,
 	cancelSession,
+	respondReschedule,
 	createSessionFeedback,
 	reportSession,
 	cancelMentorSession,

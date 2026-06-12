@@ -50,6 +50,12 @@ public class MentorshipSession {
     @Column("cancel_reason")
     private String cancelReason;
 
+    @Column("proposed_start_time")
+    private LocalDateTime proposedStartTime;
+
+    @Column("proposed_end_time")
+    private LocalDateTime proposedEndTime;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

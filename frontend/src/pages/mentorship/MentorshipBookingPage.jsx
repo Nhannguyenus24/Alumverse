@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
+import dayjs from 'dayjs';
 
 import Page from '../../components/Page';
 import MentorshipSlotPicker from '../../components/mentorship/MentorshipSlotPicker';
@@ -233,7 +234,11 @@ const MentorshipBookingPage = () => {
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
                     Thời lượng
                   </Typography>
-                  <Typography fontWeight={600}>60 phút / buổi</Typography>
+                  <Typography fontWeight={600}>
+                    {selectedSlot
+                      ? `${dayjs(selectedSlot.endTime).diff(dayjs(selectedSlot.startTime), 'minute')} phút`
+                      : 'Tùy theo khung giờ bạn chọn'}
+                  </Typography>
                 </Box>
 
                 <Box sx={{ mt: 2 }}>

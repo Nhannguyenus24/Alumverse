@@ -13,6 +13,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import dayjs from 'dayjs';
 
 import StarIcon from '@mui/icons-material/Star';
 
@@ -48,6 +53,10 @@ const MentorshipDashboardPage = () => {
   const [reportPending, setReportPending] = useState(false);
   const [postponeTarget, setPostponeTarget] = useState(null);
   const [postponeReason, setPostponeReason] = useState('');
+  const [postponeDate, setPostponeDate] = useState(null);
+  const [postponeStart, setPostponeStart] = useState(null);
+  const [postponeEnd, setPostponeEnd] = useState(null);
+  const [postponeError, setPostponeError] = useState(null);
   const [postponePending, setPostponePending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
@@ -62,7 +71,7 @@ const MentorshipDashboardPage = () => {
   );
 
   const upcomingItems = useMemo(
-    () => items.filter((s) => s.status === 'CONFIRMED'),
+    () => items.filter((s) => s.status === 'CONFIRMED' || s.status === 'RESCHEDULE_PROPOSED'),
     [items],
   );
 
@@ -110,22 +119,60 @@ const MentorshipDashboardPage = () => {
   const openPostponeDialog = (session) => {
     setPostponeTarget(session);
     setPostponeReason('');
+    // Seed pickers from the current session time so the mentor only tweaks it.
+    const base = session.startTime ? dayjs(session.startTime) : null;
+    setPostponeDate(base);
+    setPostponeStart(base);
+    setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
+    setPostponeError(null);
   };
 
   const closePostponeDialog = () => {
     setPostponeTarget(null);
     setPostponeReason('');
+    setPostponeDate(null);
+    setPostponeStart(null);
+    setPostponeEnd(null);
+    setPostponeError(null);
   };
 
   const handleConfirmPostpone = async () => {
     if (!postponeTarget) return;
+    setPostponeError(null);
+    if (!postponeDate || !postponeStart || !postponeEnd) {
+      setPostponeError('Hãy chọn ngày, giờ bắt đầu và giờ kết thúc đề xuất.');
+      return;
+    }
+    // Combine the chosen date with the chosen start/end times.
+    const proposedStart = postponeDate
+      .hour(postponeStart.hour())
+      .minute(postponeStart.minute())
+      .second(0)
+      .millisecond(0);
+    const proposedEnd = postponeDate
+      .hour(postponeEnd.hour())
+      .minute(postponeEnd.minute())
+      .second(0)
+      .millisecond(0);
+    if (!proposedEnd.isAfter(proposedStart)) {
+      setPostponeError('Giờ kết thúc phải sau giờ bắt đầu.');
+      return;
+    }
+    if (!proposedStart.isAfter(dayjs())) {
+      setPostponeError('Giờ đề xuất phải nằm trong tương lai.');
+      return;
+    }
     setPostponePending(true);
     try {
-      await postponeMentorSession(postponeTarget.id, postponeReason.trim() || undefined);
+      await postponeMentorSession(postponeTarget.id, {
+        reason: postponeReason.trim() || undefined,
+        proposedStartTime: proposedStart.format('YYYY-MM-DDTHH:mm:ss'),
+        proposedEndTime: proposedEnd.format('YYYY-MM-DDTHH:mm:ss'),
+      });
       sessionsQuery.refetch?.();
       closePostponeDialog();
-    } catch {
-      /* silent */
+    } catch (err) {
+      setPostponeError(err?.response?.data?.message ?? 'Không gửi được đề nghị dời lịch.');
     } finally {
       setPostponePending(false);
     }
@@ -295,17 +342,43 @@ const MentorshipDashboardPage = () => {
         <DialogTitle>Đề nghị dời lịch</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Buổi hẹn hiện tại sẽ được mở lại để người được cố vấn chọn khung giờ khác phù hợp hơn.
-            Bạn có thể ghi chú lý do để họ nắm rõ.
+            Đề xuất một khung giờ mới cho buổi hẹn. Người được cố vấn sẽ nhận thông báo để
+            đồng ý dời lịch hoặc từ chối. Buổi hẹn vẫn được giữ cho tới khi họ phản hồi.
           </Typography>
-          <TextField
-            label="Lý do dời lịch (tùy chọn)"
-            value={postponeReason}
-            onChange={(e) => setPostponeReason(e.target.value)}
-            fullWidth
-            multiline
-            minRows={2}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Stack spacing={2} mt={1}>
+              <DatePicker
+                label="Ngày đề xuất"
+                value={postponeDate}
+                onChange={setPostponeDate}
+                minDate={dayjs()}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              <Stack direction="row" spacing={1}>
+                <TimePicker
+                  label="Bắt đầu"
+                  value={postponeStart}
+                  onChange={setPostponeStart}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+                <TimePicker
+                  label="Kết thúc"
+                  value={postponeEnd}
+                  onChange={setPostponeEnd}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+              </Stack>
+              <TextField
+                label="Lý do dời lịch (tùy chọn)"
+                value={postponeReason}
+                onChange={(e) => setPostponeReason(e.target.value)}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+              {postponeError && <Alert severity="error">{postponeError}</Alert>}
+            </Stack>
+          </LocalizationProvider>
         </DialogContent>
         <DialogActions>
           <Button onClick={closePostponeDialog} color="inherit">

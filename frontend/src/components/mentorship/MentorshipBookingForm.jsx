@@ -12,18 +12,13 @@ import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
+import dayjs from 'dayjs';
 
 const SESSION_OPTIONS = [
   { value: 'CAREER', label: 'Định hướng / Chia sẻ kinh nghiệm nghề nghiệp' },
   { value: 'ACADEMIC', label: 'Kinh nghiệm học tập / Học bổng / Nghiên cứu' },
   { value: 'SOFT_SKILLS', label: 'Kỹ năng mềm' },
 ];
-
-const formatHour = (hour) => {
-  const period = hour >= 12 ? 'PM' : 'AM';
-  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${display}:00${period}`;
-};
 
 const MentorshipBookingForm = ({
   slot,
@@ -67,12 +62,12 @@ const MentorshipBookingForm = ({
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Stack direction="row" spacing={1} alignItems="center">
             <EventAvailableOutlinedIcon fontSize="small" color="primary" />
-            <Typography>{slot.date.format('dddd, DD/MM/YYYY')}</Typography>
+            <Typography>{dayjs(slot.startTime).format('dddd, DD/MM/YYYY')}</Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
             <AccessTimeOutlinedIcon fontSize="small" color="primary" />
             <Typography>
-              {formatHour(slot.hour)} – {formatHour(slot.hour + 1)}
+              {dayjs(slot.startTime).format('HH:mm')} – {dayjs(slot.endTime).format('HH:mm')}
             </Typography>
           </Stack>
         </Stack>

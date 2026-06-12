@@ -149,8 +149,8 @@ public class MentorController {
     @PostMapping("/sessions/{sessionId}/postpone")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> postponeSession(
             @PathVariable @Min(1) Integer sessionId,
-            @org.springframework.web.bind.annotation.RequestParam(required = false) String reason) {
-        return mentorService.postponeSession(sessionId, reason)
+            @Valid @RequestBody PostponeSessionRequest request) {
+        return mentorService.postponeSession(sessionId, request)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session postponed successfully", response)));
     }

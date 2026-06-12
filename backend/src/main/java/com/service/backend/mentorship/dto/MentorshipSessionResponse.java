@@ -26,6 +26,8 @@ public class MentorshipSessionResponse {
     private String description;
     private String cvUrl;
     private String cancelReason;
+    private LocalDateTime proposedStartTime;
+    private LocalDateTime proposedEndTime;
     private LocalDateTime createdAt;
 
     // ===== Enriched from mentor_availabilities (optional, populated when looked up) =====
@@ -52,6 +54,8 @@ public class MentorshipSessionResponse {
                 .description(session.getDescription())
                 .cvUrl(session.getCvUrl())
                 .cancelReason(session.getCancelReason())
+                .proposedStartTime(session.getProposedStartTime())
+                .proposedEndTime(session.getProposedEndTime())
                 .createdAt(session.getCreatedAt())
                 .build();
     }
