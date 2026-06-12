@@ -26,9 +26,9 @@ import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions'
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
 import { useSubmitSessionFeedback } from '../../hooks/mentorship/useSubmitSessionFeedback';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
-import { reportSession } from '../../utils/api';
+import { reportSession, respondReschedule } from '../../utils/api';
 
-const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED']);
+const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'RESCHEDULE_PROPOSED']);
 const CANCELLED_STATUSES = new Set(['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'REJECTED']);
 
 const TAB_FILTERS = [
@@ -55,8 +55,10 @@ const MentorshipMyBookingsPage = () => {
   const [feedbackComment, setFeedbackComment] = useState('');
   const [feedbackPublic, setFeedbackPublic] = useState(true);
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [rescheduleResponsePending, setRescheduleResponsePending] = useState(false);
   const [reportSuccess, setReportSuccess] = useState('');
   const [feedbackSuccess, setFeedbackSuccess] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const sessionsQuery = useMyMenteeSessions({ page, limit: PAGE_SIZE });
   const cancelMutation = useCancelMenteeSession();
@@ -153,6 +155,19 @@ const MentorshipMyBookingsPage = () => {
   const openRescheduleDialog = (session) => setRescheduleTarget(session);
   const closeRescheduleDialog = () => setRescheduleTarget(null);
 
+  const handleRescheduleResponse = async (session, accept) => {
+    setActionError('');
+    setRescheduleResponsePending(true);
+    try {
+      await respondReschedule(session.id, accept);
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không phản hồi được đề nghị dời lịch.');
+    } finally {
+      setRescheduleResponsePending(false);
+    }
+  };
+
   const handleConfirmReschedule = async () => {
     if (!rescheduleTarget) return;
     const mentorId = rescheduleTarget.mentorMemberId;
@@ -194,6 +209,12 @@ const MentorshipMyBookingsPage = () => {
         {cancelMutation.errorMessage && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {cancelMutation.errorMessage}
+          </Alert>
+        )}
+
+        {actionError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>
+            {actionError}
           </Alert>
         )}
 
@@ -260,6 +281,8 @@ const MentorshipMyBookingsPage = () => {
                 onReport={openReportDialog}
                 onFeedback={openFeedbackDialog}
                 onReschedule={openRescheduleDialog}
+                onRescheduleResponse={handleRescheduleResponse}
+                rescheduleResponsePending={rescheduleResponsePending}
               />
             ))}
           </Stack>

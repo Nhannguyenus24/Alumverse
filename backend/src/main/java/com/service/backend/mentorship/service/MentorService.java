@@ -395,16 +395,27 @@ public class MentorService {
     }
 
     @Transactional
-    public Mono<MentorshipSessionResponse> postponeSession(Integer sessionId, String reason) {
+    public Mono<MentorshipSessionResponse> postponeSession(Integer sessionId, PostponeSessionRequest request) {
+        LocalDateTime proposedStart = request.getProposedStartTime();
+        LocalDateTime proposedEnd = request.getProposedEndTime();
+        if (proposedStart == null || proposedEnd == null) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.AVAILABILITY_INVALID_RANGE, "Cần đề xuất giờ bắt đầu và kết thúc mới"));
+        }
+        if (!proposedEnd.isAfter(proposedStart)) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.AVAILABILITY_INVALID_RANGE, "Giờ kết thúc phải sau giờ bắt đầu"));
+        }
+        if (!proposedStart.isAfter(LocalDateTime.now())) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.AVAILABILITY_IN_PAST, "Giờ đề xuất phải nằm trong tương lai"));
+        }
         return currentMemberId().flatMap(mentorMemberId ->
                 sessionRepository.findById(sessionId)
                         .switchIfEmpty(Mono.error(new ApplicationException(
                                 ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
                         .flatMap(session -> {
-                            if (Status.CANCELLED.equals(session.getStatus())
-                                    || Status.CANCELLED_BY_MENTEE.equals(session.getStatus())
-                                    || Status.CANCELLED_BY_MENTOR.equals(session.getStatus())
-                                    || Status.COMPLETED.equals(session.getStatus())) {
+                            if (!Status.CONFIRMED.equals(session.getStatus())) {
                                 return Mono.error(new ApplicationException(
                                         ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring không thể dời lịch ở trạng thái hiện tại"));
                             }
@@ -414,18 +425,25 @@ public class MentorService {
                                             return Mono.error(new ApplicationException(
                                                     ErrorCode.FORBIDDEN, "Bạn không có quyền dời buổi mentoring này"));
                                         }
-                                        String note = (reason == null || reason.isBlank())
+                                        String note = (request.getReason() == null || request.getReason().isBlank())
                                                 ? "Cố vấn đề nghị dời buổi hẹn"
-                                                : "Cố vấn đề nghị dời buổi hẹn: " + reason;
-                                        return availabilityRepository
-                                                .updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
-                                                .then(sessionRepository.updateStatusWithCancelReason(
-                                                        sessionId, Status.CANCELLED_BY_MENTOR.getValue(), note))
+                                                : "Cố vấn đề nghị dời buổi hẹn: " + request.getReason();
+                                        // Validate the proposed time does not clash with the mentor's other
+                                        // slots (excluding the current slot, which will be moved on accept).
+                                        return availabilityRepository.countOverlapping(
+                                                        mentorMemberId, proposedStart, proposedEnd, avail.getId())
+                                                .flatMap(count -> count > 0
+                                                        ? Mono.<Integer>error(new ApplicationException(
+                                                                ErrorCode.AVAILABILITY_OVERLAP,
+                                                                "Giờ đề xuất trùng với một lịch trống khác của bạn"))
+                                                        : sessionRepository.proposeReschedule(
+                                                                sessionId, Status.RESCHEDULE_PROPOSED.getValue(),
+                                                                note, proposedStart, proposedEnd))
                                                 .doOnNext(rows -> notificationService.createNotificationAsync(
                                                         session.getMenteeMemberId(),
                                                         "Cố vấn đề nghị dời lịch hẹn",
-                                                        "Cố vấn mong muốn dời buổi hẹn sang thời gian khác. Vui lòng chọn khung giờ mới phù hợp với bạn.",
-                                                        "/development/mentorship/mentors/" + mentorMemberId))
+                                                        "Cố vấn đề xuất một khung giờ mới cho buổi hẹn. Vui lòng xem và phản hồi đồng ý hoặc từ chối.",
+                                                        "/development/mentorship/my-bookings"))
                                                 .then(sessionRepository.findById(sessionId));
                                     });
                         })

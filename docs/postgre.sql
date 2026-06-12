@@ -221,6 +221,8 @@ CREATE TABLE "mentorship_sessions" (
   "description" text,
   "cv_url" text,
   "cancel_reason" text,
+  "proposed_start_time" timestamp,
+  "proposed_end_time" timestamp,
   "created_at" timestamp
 );
 

@@ -25,6 +25,7 @@ const STATUS_COLOR = {
   CANCELLED: 'default',
   CANCELLED_BY_MENTEE: 'default',
   CANCELLED_BY_MENTOR: 'warning',
+  RESCHEDULE_PROPOSED: 'warning',
   REJECTED: 'error',
   REPORTED: 'warning',
 };
@@ -36,6 +37,7 @@ const STATUS_LABEL = {
   CANCELLED: 'Đã hủy',
   CANCELLED_BY_MENTEE: 'Đã hủy',
   CANCELLED_BY_MENTOR: 'Cố vấn đã hủy',
+  RESCHEDULE_PROPOSED: 'Đề nghị dời lịch',
   REJECTED: 'Bị từ chối',
   REPORTED: 'Đang xử lý',
 };
@@ -56,14 +58,20 @@ const MentorshipBookingItem = ({
   onFeedback,
   onReschedule,
   onPostpone,
+  onRescheduleResponse,
+  rescheduleResponsePending = false,
 }) => {
   const range = formatRange(session.startTime, session.endTime);
+  const proposedRange = formatRange(session.proposedStartTime, session.proposedEndTime);
   const terminalStatuses = ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'REJECTED'];
-  const canCancel = onCancel && !terminalStatuses.includes(session.status);
+  const isRescheduleProposed = session.status === 'RESCHEDULE_PROPOSED';
+  // Hide cancel while a reschedule proposal is pending — mentee responds via accept/reject instead.
+  const canCancel = onCancel && !terminalStatuses.includes(session.status) && !isRescheduleProposed;
   const canReport = onReport && ['CONFIRMED', 'COMPLETED'].includes(session.status);
   const canFeedback = onFeedback && session.status === 'COMPLETED';
   const canReschedule = onReschedule && session.status === 'CONFIRMED';
   const canPostpone = onPostpone && session.status === 'CONFIRMED';
+  const canRespondReschedule = onRescheduleResponse && view === 'mentee' && isRescheduleProposed;
 
   const counterpartName =
     view === 'mentor'
@@ -135,6 +143,24 @@ const MentorshipBookingItem = ({
           </Box>
         )}
 
+        {isRescheduleProposed && (
+          <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'warning.lighter', border: '1px dashed', borderColor: 'warning.main' }}>
+            <Typography variant="caption" color="text.secondary" display="block">
+              {view === 'mentee' ? 'Cố vấn đề xuất dời sang' : 'Bạn đã đề xuất dời sang'}
+            </Typography>
+            {proposedRange && (
+              <Typography variant="body2" fontWeight={600} color="warning.dark">
+                {proposedRange}
+              </Typography>
+            )}
+            {session.cancelReason && (
+              <Typography variant="body2" color="text.secondary" mt={0.5}>
+                {session.cancelReason}
+              </Typography>
+            )}
+          </Box>
+        )}
+
         {session.cvUrl && (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <DescriptionOutlinedIcon fontSize="small" color="action" />
@@ -167,8 +193,30 @@ const MentorshipBookingItem = ({
           </Stack>
         )}
 
-        {(canCancel || canReport || canFeedback || canReschedule || canPostpone) && (
+        {(canCancel || canReport || canFeedback || canReschedule || canPostpone || canRespondReschedule) && (
           <Stack direction="row" justifyContent="flex-end" spacing={1} flexWrap="wrap" useFlexGap>
+            {canRespondReschedule && (
+              <>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="success"
+                  disabled={rescheduleResponsePending}
+                  onClick={() => onRescheduleResponse(session, true)}
+                >
+                  Đồng ý dời lịch
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  disabled={rescheduleResponsePending}
+                  onClick={() => onRescheduleResponse(session, false)}
+                >
+                  Từ chối
+                </Button>
+              </>
+            )}
             {canReschedule && (
               <Button size="small" variant="outlined" onClick={() => onReschedule(session)}>
                 Đề xuất đổi lịch
