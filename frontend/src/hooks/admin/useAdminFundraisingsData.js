@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { fundApi } from '../../utils/api';
 
 const normalizeFundStatus = (value) => {
@@ -58,9 +58,16 @@ const useAdminFundraisingsData = (organizationId) => {
     setPage(0);
   }, []);
 
+  const abortRef = useRef(null);
+
   const loadFunds = useCallback(async () => {
     setLoading(true);
     setLoadError(false);
+    
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const config = { signal: abortRef.current.signal };
+
     try {
       const params = {
         page,
@@ -73,16 +80,22 @@ const useAdminFundraisingsData = (organizationId) => {
         params.q = searchQuery;
       }
 
-      const payload = await fundApi.getFunds(params);
-      const { items, totalItem } = extractPagedFunds(payload);
-      setFundraisings(items.map(mapFundRow));
-      setTotalCount(totalItem);
-    } catch {
-      setFundraisings([]);
-      setTotalCount(0);
-      setLoadError(true);
+      const payload = await fundApi.getFunds(params, config);
+      if (!config.signal.aborted) {
+        const { items, totalItem } = extractPagedFunds(payload);
+        setFundraisings(items.map(mapFundRow));
+        setTotalCount(totalItem);
+      }
+    } catch (err) {
+      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+        setFundraisings([]);
+        setTotalCount(0);
+        setLoadError(true);
+      }
     } finally {
-      setLoading(false);
+      if (!config.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [organizationId, page, rowsPerPage, searchQuery]);
 

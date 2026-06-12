@@ -75,19 +75,16 @@ const StatTile = ({ label, value }) => (
 
 const AdminEventsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { activeOrgId } = useAdminSystemContext();
+  const { stableOrgId } = useAdminSystemContext();
   const {
     events,
     totalItems,
     statistics,
     organizations,
-    loading,
     search,
     setSearch,
     statusFilter,
     setStatusFilter,
-    organizationFilter,
-    setOrganizationFilter,
     sortBy,
     setSortBy,
     sortOrder,
@@ -100,7 +97,7 @@ const AdminEventsPage = () => {
     unpublishEvent,
     deleteEvent,
     updateEvent,
-  } = useAdminEvents(activeOrgId || 'ALL');
+  } = useAdminEvents(stableOrgId || 'ALL');
   const { setBreadcrumbs } = useOutletContext();
 
   const [searchTerm, setSearchTerm] = useState(search);
@@ -403,24 +400,6 @@ const AdminEventsPage = () => {
                 {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
                   <MenuItem key={opt.value} value={opt.value}>
                     {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="Tổ chức"
-                value={organizationFilter}
-                onChange={(e) => {
-                  setOrganizationFilter(e.target.value);
-                  setPage(0);
-                }}
-                sx={{ minWidth: 180 }}
-              >
-                <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
-                {(organizations || []).map((org) => (
-                  <MenuItem key={org.id} value={String(org.id)}>
-                    {org.name}
                   </MenuItem>
                 ))}
               </TextField>

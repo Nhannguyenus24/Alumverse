@@ -370,6 +370,54 @@ public class MenteeService {
                         .flatMap(this::enrich));
     }
 
+    @Transactional
+    public Mono<MentorshipSessionResponse> respondToReschedule(Integer sessionId, boolean accept) {
+        return currentMemberId().flatMap(memberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (!Status.RESCHEDULE_PROPOSED.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED,
+                                        "Buổi mentoring này không có đề nghị dời lịch đang chờ"));
+                            }
+                            if (!memberId.equals(session.getMenteeMemberId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN, "Bạn không có quyền phản hồi buổi mentoring này"));
+                            }
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> accept
+                                            ? acceptReschedule(session, avail)
+                                            : rejectReschedule(session, avail))
+                                    .then(sessionRepository.findById(sessionId));
+                        })
+                        .flatMap(this::enrich));
+    }
+
+    private Mono<?> acceptReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
+        // Move the existing slot to the proposed time and reconfirm the session.
+        return availabilityRepository.updateTimes(
+                        avail.getId(), session.getProposedStartTime(), session.getProposedEndTime())
+                .then(sessionRepository.clearProposalWithStatus(session.getId(), Status.CONFIRMED.getValue()))
+                .doOnNext(rows -> notificationService.createNotificationAsync(
+                        avail.getMentorMemberId(),
+                        "Lịch hẹn đã được dời",
+                        "Người được cố vấn đã đồng ý dời buổi hẹn sang khung giờ bạn đề xuất.",
+                        "/development/mentorship/dashboard"));
+    }
+
+    private Mono<?> rejectReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
+        // Reject: cancel the session and reopen the original slot.
+        return availabilityRepository.updateStatus(avail.getId(), Status.AVAILABLE.getValue())
+                .then(sessionRepository.clearProposalWithStatus(session.getId(), Status.CANCELLED_BY_MENTEE.getValue()))
+                .doOnNext(rows -> notificationService.createNotificationAsync(
+                        avail.getMentorMemberId(),
+                        "Đề nghị dời lịch bị từ chối",
+                        "Người được cố vấn đã từ chối đề nghị dời lịch và buổi hẹn đã bị hủy.",
+                        "/development/mentorship/dashboard"));
+    }
+
     private static boolean isCancelled(Status s) {
         return Status.CANCELLED.equals(s)
                 || Status.CANCELLED_BY_MENTEE.equals(s)
