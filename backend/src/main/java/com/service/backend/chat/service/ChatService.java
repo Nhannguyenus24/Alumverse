@@ -326,21 +326,19 @@ public class ChatService {
                         return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Sender is not a member of this chat group"));
                     }
 
-                    return userBlockService.assertSenderCanSendMessage(senderMemberId, groupId);
-                })
-                .flatMap(ignored -> {
                     LocalDateTime now = LocalDateTime.now();
                     String finalMessageType = messageType != null ? messageType : "TEXT";
                     String finalMetadata = metadata != null ? metadata : "null";
 
-                    return chatMessageRepository.insertMessage(
-                            groupId,
-                            senderMemberId,
-                            content,
-                            finalMessageType,
-                            finalMetadata,
-                            now
-                    );
+                    return userBlockService.assertSenderCanSendMessage(senderMemberId, groupId)
+                            .then(chatMessageRepository.insertMessage(
+                                    groupId,
+                                    senderMemberId,
+                                    content,
+                                    finalMessageType,
+                                    finalMetadata,
+                                    now
+                            ));
                 });
     }
 
