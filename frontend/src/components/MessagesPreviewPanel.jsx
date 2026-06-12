@@ -109,6 +109,7 @@ export default function MessagesPreviewPanel({
               avatarUrl={chat.avatarUrl}
               name={chat.name}
               size={44}
+              variant={chat.type === 'GROUP' ? 'group' : 'user'}
             />
             <Box sx={{ minWidth: 0, flex: 1 }}>
               <Box
