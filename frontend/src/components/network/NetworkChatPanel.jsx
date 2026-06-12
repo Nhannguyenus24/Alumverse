@@ -17,9 +17,10 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
 import SendIcon from '@mui/icons-material/Send';
-import MoodIcon from '@mui/icons-material/Mood';
 
 import Scrollbar from '../Scrollbar';
+import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
+import { insertTextAtInputSelection } from '../../utils/insertTextAtInputSelection';
 import ConfirmDialog from '../ConfirmDialog';
 import IconButtonMenu from '../IconButtonMenu';
 import GroupMembersDrawer from './GroupMembersDrawer';
@@ -40,6 +41,7 @@ const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const [draft, setDraft] = useState('');
+  const draftInputRef = useRef(null);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
   const token = useAuthStore((state) => state.token ?? null);
@@ -174,6 +176,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
     event.preventDefault();
     handleSend();
   }, [handleSend]);
+
+  const handleEmojiSelect = useCallback((emoji) => {
+    insertTextAtInputSelection(draftInputRef, setDraft, emoji);
+  }, []);
 
   return (
     <Box
@@ -387,7 +393,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
                       color: isOwn ? 'primary.contrastText' : 'text.primary',
                     }}
                   >
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                       {msg.content}
                     </Typography>
                   </Box>
@@ -433,6 +439,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
             fullWidth
             multiline
             maxRows={4}
+            inputRef={draftInputRef}
             placeholder={
               isMessagingBlocked
                 ? 'Không thể gửi tin nhắn...'
@@ -449,9 +456,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton size="small" aria-label="Emoji" edge="end" disabled={isInputDisabled}>
-                    <MoodIcon />
-                  </IconButton>
+                  <ChatEmojiPickerButton
+                    disabled={isInputDisabled}
+                    onEmojiSelect={handleEmojiSelect}
+                  />
                 </InputAdornment>
               ),
             }}
