@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import * as api from '../../utils/api';
 import { organizationApi } from '../../utils/api';
 
@@ -11,7 +11,10 @@ const safeFetch = async (request, fallback) => {
   try {
     const data = extractData(await request());
     return data ?? fallback;
-  } catch {
+  } catch (err) {
+    if (err.name === 'CanceledError' || err.name === 'AbortError') {
+      throw err;
+    }
     return fallback;
   }
 };
@@ -51,32 +54,47 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
     return () => clearTimeout(timer);
   }, [loadOrganizations]);
 
+  const abortRef = useRef(null);
+
   const loadEvents = useCallback(async () => {
     setLoading(true);
     let data;
     const trimmed = search.trim();
     const orgId = organizationFilter !== 'ALL' ? Number(organizationFilter) : null;
 
-    if (trimmed.length > 0) {
-      data = await safeFetch(
-        () => api.searchAllEvents(trimmed, page, rowsPerPage, orgId),
-        fallbackPage,
-      );
-    } else if (statusFilter === 'PUBLISHED') {
-      data = await safeFetch(
-        () => api.getEventsByPublishStatus(true, page, rowsPerPage, orgId),
-        fallbackPage,
-      );
-    } else if (statusFilter === 'DRAFT') {
-      data = await safeFetch(
-        () => api.getEventsByPublishStatus(false, page, rowsPerPage, orgId),
-        fallbackPage,
-      );
-    } else {
-      data = await safeFetch(() => api.getAllEvents(page, rowsPerPage, orgId), fallbackPage);
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+    const config = { signal: abortRef.current.signal };
+
+    try {
+      if (trimmed.length > 0) {
+        data = await safeFetch(
+          () => api.searchAllEvents(trimmed, page, rowsPerPage, orgId, config),
+          fallbackPage,
+        );
+      } else if (statusFilter === 'PUBLISHED') {
+        data = await safeFetch(
+          () => api.getEventsByPublishStatus(true, page, rowsPerPage, orgId, config),
+          fallbackPage,
+        );
+      } else if (statusFilter === 'DRAFT') {
+        data = await safeFetch(
+          () => api.getEventsByPublishStatus(false, page, rowsPerPage, orgId, config),
+          fallbackPage,
+        );
+      } else {
+        data = await safeFetch(() => api.getAllEvents(page, rowsPerPage, orgId, config), fallbackPage);
+      }
+      if (!config.signal.aborted) {
+        setPaged(data || fallbackPage);
+        setLoading(false);
+      }
+    } catch (err) {
+      if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+        setPaged(fallbackPage);
+        setLoading(false);
+      }
     }
-    setPaged(data || fallbackPage);
-    setLoading(false);
   }, [page, rowsPerPage, search, statusFilter, organizationFilter]);
 
   useEffect(() => {

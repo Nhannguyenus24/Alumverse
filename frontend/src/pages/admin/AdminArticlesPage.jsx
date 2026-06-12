@@ -41,14 +41,14 @@ const createdOf = (a) => a.createdAt || a.created_at || a.timeStarted || a.event
 const AdminArticlesPage = () => {
   const { setBreadcrumbs } = useOutletContext();
   const navigate = useOrgNavigate();
-  const { activeOrgId } = useAdminSystemContext();
+  const { stableOrgId } = useAdminSystemContext();
   const {
     channel, setChannel,
     articles, totalItems, loading,
     page, setPage,
     rowsPerPage, setRowsPerPage,
     search: backendSearch, setSearch: setBackendSearch,
-  } = useAdminArticles('news', activeOrgId);
+  } = useAdminArticles('news', stableOrgId);
 
   const [searchTerm, setSearchTerm] = useState(backendSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);

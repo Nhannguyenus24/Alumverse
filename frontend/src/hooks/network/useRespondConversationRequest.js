@@ -10,6 +10,9 @@ export function useRespondConversationRequest({ onSuccess, onError } = {}) {
       chatApi.respondToConversationRequest(requestId, status),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['incomingConversationRequests'] });
+      if (variables.status === 'ACCEPTED') {
+        queryClient.invalidateQueries({ queryKey: ['networkConnections'] });
+      }
       onSuccess?.(data, variables);
     },
     onError: (error, variables) => {

@@ -95,6 +95,14 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
 
     @Query("SELECT COUNT(id) FROM chat_group_members WHERE group_id = :groupId")
     Mono<Long> countMembersByGroupId(Long groupId);
+
+    @Modifying
+    @Query("""
+            INSERT INTO chat_group_members (group_id, member_id, role, joined_at)
+            VALUES (:groupId, :memberId, 'MEMBER', CURRENT_TIMESTAMP)
+            ON CONFLICT (group_id, member_id) DO NOTHING
+            """)
+    Mono<Void> insertMemberIfNotExists(Long groupId, Long memberId);
 }
 
 

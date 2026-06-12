@@ -35,7 +35,9 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PeopleIcon from '@mui/icons-material/People';
 import Page from '../../components/Page';
+import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
 import useAuthStore from '../../stores/authStore';
@@ -140,6 +142,7 @@ export default function SettingPage() {
       { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
       { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
       { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
+      { id: 'connections', label: 'Kết nối', icon: <PeopleIcon /> },
       { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
     ];
 
@@ -852,6 +855,10 @@ const renderPersonalSettings = () => (
     </Box>
   );
 
+  const renderConnectionsSettings = () => (
+    <NetworkConnectionsPanel variant="embedded" enableBlock />
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'personal':
@@ -860,6 +867,8 @@ const renderPersonalSettings = () => (
         return renderAccountSettings();
       case 'notification':
         return renderNotificationSettings();
+      case 'connections':
+        return renderConnectionsSettings();
       case 'advisor':
         return renderAdvisorSettings();
       case 'verification':

@@ -143,6 +143,9 @@ const NetworkPage = Loadable(
 const NetworkIncomingRequestsPage = Loadable(
   lazy(() => import("../pages/network/NetworkIncomingRequestsPage")),
 );
+const NetworkConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkConnectionsPage")),
+);
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
 );
@@ -192,20 +195,11 @@ const MenteeSignupPage = Loadable(
 const PostArticlePage = Loadable(
   lazy(() => import("../pages/user/PostArticlePage")),
 );
-const PostArticleAlumniPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleAlumniPage")),
+const PostArticleGenericPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleGenericPage")),
 );
 const PostArticleEventPage = Loadable(
   lazy(() => import("../pages/user/PostArticleEventPage")),
-);
-const PostArticleAchievementPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleAchievementPage")),
-);
-const PostArticleJobPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleJobPage")),
-);
-const PostArticleLearningPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleLearningPage")),
 );
 const PostArticleDonationPage = Loadable(
   lazy(() => import("../pages/user/PostArticleDonationPage")),
@@ -361,6 +355,10 @@ export const router = createBrowserRouter([
             path: "requests",
             element: <NetworkIncomingRequestsPage />,
           },
+          {
+            path: "connections",
+            element: <NetworkConnectionsPage />,
+          },
         ],
       },
       {
@@ -398,24 +396,12 @@ export const router = createBrowserRouter([
         element: <PostArticlePage />,
       },
       {
-        path: "post/alumni",
-        element: <PostArticleAlumniPage />,
-      },
-      {
         path: "post/event",
         element: <PostArticleEventPage />,
       },
       {
-        path: "post/achievement",
-        element: <PostArticleAchievementPage />,
-      },
-      {
-        path: "post/job",
-        element: <PostArticleJobPage />,
-      },
-      {
-        path: "post/learning",
-        element: <PostArticleLearningPage />,
+        path: "post/:channel",
+        element: <PostArticleGenericPage />,
       },
       {
         path: "post/donation",

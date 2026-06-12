@@ -104,7 +104,7 @@ const PersonCell = ({ name, email, fallback }) => (
 const AdminMentorshipPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
-  const { activeOrgId } = useAdminSystemContext();
+  const { stableOrgId } = useAdminSystemContext();
   const {
     sessions,
     sessionTotal,
@@ -128,7 +128,7 @@ const AdminMentorshipPage = () => {
     setApprovalFilter,
     approveMentor,
     statistics,
-  } = useAdminMentorship(activeOrgId);
+  } = useAdminMentorship(stableOrgId);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Cố vấn (Mentorship)', active: true }]);

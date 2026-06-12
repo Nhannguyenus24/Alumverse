@@ -1,3 +1,4 @@
+import React from 'react';
 import Chip from '@mui/material/Chip';
 import { resolveAdminStatusChip } from '../../constants/adminStatusDisplay';
 
@@ -39,4 +40,4 @@ const AdminStatusChip = ({
   );
 };
 
-export default AdminStatusChip;
+export default React.memo(AdminStatusChip);
