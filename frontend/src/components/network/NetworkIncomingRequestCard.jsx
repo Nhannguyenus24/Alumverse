@@ -1,9 +1,7 @@
 import {
-  Avatar,
   Box,
   Button,
   Card,
-  Chip,
   CircularProgress,
   Stack,
   Typography,
@@ -14,37 +12,6 @@ import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequest
 import { formatDateTime } from '../../utils/dateFormatter';
 import ChatAvatar from '../ChatAvatar';
 
-const STATUS_LABELS = {
-  [CONVERSATION_REQUEST_STATUS.PENDING]: 'PENDING',
-  [CONVERSATION_REQUEST_STATUS.REJECTED]: 'REJECTED',
-};
-
-function getStatusChipSx(status) {
-  return (theme) => {
-    const { primary, grey } = theme.palette;
-
-    if (status === CONVERSATION_REQUEST_STATUS.PENDING) {
-      return {
-        bgcolor: primary.lighter,
-        color: primary.dark,
-        border: `1px solid ${alpha(primary.main, 0.18)}`,
-        fontWeight: 600,
-      };
-    }
-
-    if (status === CONVERSATION_REQUEST_STATUS.REJECTED) {
-      return {
-        bgcolor: grey[200],
-        color: grey[700],
-        border: `1px solid ${grey[300]}`,
-        fontWeight: 600,
-      };
-    }
-
-    return null;
-  };
-}
-
 const NetworkIncomingRequestCard = ({
   request,
   onViewDetail,
@@ -54,7 +21,6 @@ const NetworkIncomingRequestCard = ({
 }) => {
   const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
-  const avatarSrc = request.avatarUrl?.trim();
 
   const handleCardClick = () => {
     onViewDetail?.(request);
@@ -104,29 +70,9 @@ const NetworkIncomingRequestCard = ({
           <ChatAvatar avatarUrl={request.avatarUrl} name={request.fullName} size={56} />
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-              spacing={1}
-              sx={{ mb: 0.5 }}
-            >
-              <Typography fontWeight={700} noWrap sx={{ minWidth: 0 }}>
-                {request.fullName}
-              </Typography>
-              {STATUS_LABELS[request.status] ? (
-                <Chip
-                  label={STATUS_LABELS[request.status]}
-                  size="small"
-                  sx={(theme) => {
-                    const chipSx = getStatusChipSx(request.status)?.(theme);
-                    return chipSx
-                      ? { flexShrink: 0, ...chipSx }
-                      : { flexShrink: 0 };
-                  }}
-                />
-              ) : null}
-            </Stack>
+            <Typography fontWeight={700} noWrap sx={{ minWidth: 0, lineHeight: 1.3 }}>
+              {request.fullName}
+            </Typography>
 
             <Typography
               variant="body2"
@@ -136,13 +82,15 @@ const NetworkIncomingRequestCard = ({
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
-                mb: 0.75,
+                mt: 0.25,
+                mb: 0.25,
+                lineHeight: 1.35,
               }}
             >
               {previewMessage || 'Không có tin nhắn.'}
             </Typography>
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
               Gửi lúc {formatDateTime(request.messageCreatedAt)}
             </Typography>
           </Box>
