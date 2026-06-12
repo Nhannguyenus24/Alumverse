@@ -188,29 +188,28 @@ INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience",
 (8, 'Technical Entrepreneurship', 5, 'Product-market fit, scaling', 'Entrepreneurship', 'Tech'),
 (5, 'Deep Learning', 3, 'Các kỹ thuật xây dựng và tối ưu mô hình mạng nơ-ron.', 'Technical', 'AI');
 
--- ============= MENTOR AVAILABILITIES DATA =============
 INSERT INTO "mentor_availabilities" ("mentor_member_id", "start_time", "end_time", "status") VALUES
-(2, NOW() + INTERVAL '5 days 10:00', NOW() + INTERVAL '5 days 11:00', 'AVAILABLE'),
-(2, NOW() + INTERVAL '7 days 14:00', NOW() + INTERVAL '7 days 15:00', 'AVAILABLE'),
+(2, NOW() + INTERVAL '5 days 10:00', NOW() + INTERVAL '5 days 11:30', 'AVAILABLE'),
+(2, NOW() + INTERVAL '7 days 14:00', NOW() + INTERVAL '7 days 16:00', 'AVAILABLE'),
 (2, NOW() + INTERVAL '10 days 16:00', NOW() + INTERVAL '10 days 17:00', 'BOOKED'),
-(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 11 hours', 'AVAILABLE'),
+(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 10 hours 30 minutes', 'AVAILABLE'),
 (2, NOW() + INTERVAL '2 days 14 hours', NOW() + INTERVAL '2 days 15 hours', 'AVAILABLE'),
-(3, NOW() + INTERVAL '4 days 09:00', NOW() + INTERVAL '4 days 10:00', 'AVAILABLE'),
+(3, NOW() + INTERVAL '4 days 09:00', NOW() + INTERVAL '4 days 10:30', 'AVAILABLE'),
 (3, NOW() + INTERVAL '6 days 13:00', NOW() + INTERVAL '6 days 14:00', 'AVAILABLE'),
 (3, NOW() + INTERVAL '1 day 9 hours', NOW() + INTERVAL '1 day 10 hours', 'AVAILABLE'),
 (6, NOW() + INTERVAL '3 days 11:00', NOW() + INTERVAL '3 days 12:00', 'BOOKED'),
-(6, NOW() + INTERVAL '8 days 15:00', NOW() + INTERVAL '8 days 16:00', 'AVAILABLE'),
+(6, NOW() + INTERVAL '8 days 15:00', NOW() + INTERVAL '8 days 16:30', 'AVAILABLE'),
 (7, NOW() + INTERVAL '5 days 13:00', NOW() + INTERVAL '5 days 14:00', 'AVAILABLE'),
-(8, NOW() + INTERVAL '6 days 10:00', NOW() + INTERVAL '6 days 11:00', 'AVAILABLE'),
+(8, NOW() + INTERVAL '6 days 10:00', NOW() + INTERVAL '6 days 12:00', 'AVAILABLE'),
 (5, NOW() + INTERVAL '3 days 19 hours', NOW() + INTERVAL '3 days 20 hours', 'AVAILABLE');
 
 -- ============= MENTORSHIP SESSIONS DATA =============
-INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "introduction", "description", "created_at") VALUES
-(3, 4, 'COMPLETED', 'Discussed web development best practices', 'https://zoom.us/j/123456789', 'TECHNICAL', 'Em muốn học về React Hooks.', 'Buổi học về các React Hooks cơ bản và nâng cao.', NOW() - INTERVAL '5 days'),
-(3, 9, 'SCHEDULED', 'First mentoring session', 'https://zoom.us/j/987654321', 'TECHNICAL', 'Em muốn hỏi về Spring Boot.', 'Lộ trình học Spring Boot cho người mới bắt đầu.', NOW() - INTERVAL '2 days'),
-(6, 5, 'COMPLETED', 'Career guidance and job search strategy', 'https://meet.google.com/abc-defg-hij', 'CAREER', 'Định hướng sự nghiệp.', 'Cách viết CV và chuẩn bị phỏng vấn.', NOW() - INTERVAL '10 days'),
-(1, 4, 'CONFIRMED', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'CAREER_ADVICE', 'Phỏng vấn Big Tech.', 'Chia sẻ kinh nghiệm phỏng vấn tại các công ty lớn.', NOW() - INTERVAL '1 day'),
-(13, 12, 'PENDING', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'GENERAL_INFO', 'Quy trình Product.', 'Tìm hiểu về văn hóa và quy trình làm việc tại VNG.', NOW());
+INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "introduction", "description", "cancel_reason", "proposed_start_time", "proposed_end_time", "created_at") VALUES
+(3, 4, 'COMPLETED', 'Discussed web development best practices', 'https://zoom.us/j/123456789', 'ACADEMIC', 'Em muốn học về React Hooks.', 'Buổi học về các React Hooks cơ bản và nâng cao.', NULL, NULL, NULL, NOW() - INTERVAL '5 days'),
+(3, 9, 'CONFIRMED', 'First mentoring session', 'https://zoom.us/j/987654321', 'ACADEMIC', 'Em muốn hỏi về Spring Boot.', 'Lộ trình học Spring Boot cho người mới bắt đầu.', NULL, NULL, NULL, NOW() - INTERVAL '2 days'),
+(6, 5, 'COMPLETED', 'Career guidance and job search strategy', 'https://meet.google.com/abc-defg-hij', 'CAREER', 'Định hướng sự nghiệp.', 'Cách viết CV và chuẩn bị phỏng vấn.', NULL, NULL, NULL, NOW() - INTERVAL '10 days'),
+(1, 4, 'CONFIRMED', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'CAREER', 'Phỏng vấn Big Tech.', 'Chia sẻ kinh nghiệm phỏng vấn tại các công ty lớn.', NULL, NULL, NULL, NOW() - INTERVAL '1 day'),
+(13, 12, 'RESCHEDULE_PROPOSED', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'CAREER', 'Quy trình Product.', 'Tìm hiểu về văn hóa và quy trình làm việc tại VNG.', 'Cố vấn đề nghị dời buổi hẹn: Trùng lịch công tác, mong em thông cảm.', NOW() + INTERVAL '9 days 10:00', NOW() + INTERVAL '9 days 11:00', NOW());
 
 -- ============= SESSION FEEDBACKS DATA =============
 INSERT INTO "session_feedbacks" ("session_id", "mentee_member_id", "rating", "comment", "is_public", "created_at") VALUES

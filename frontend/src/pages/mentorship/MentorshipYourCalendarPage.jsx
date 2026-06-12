@@ -108,8 +108,8 @@ const MentorshipYourCalendarPage = () => {
   const [submitMessage, setSubmitMessage] = useState(null);
 
   const [repeatWeekly, setRepeatWeekly] = useState(false);
-  const [startTime, setStartTime] = useState(dayjs().hour(13).minute(0));
-  const [endTime, setEndTime] = useState(dayjs().hour(14).minute(0));
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
   const [singleDate, setSingleDate] = useState(dayjs());
   const [startDate, setStartDate] = useState(dayjs());
   const [endDate, setEndDate] = useState(dayjs().add(1, 'month'));
@@ -205,6 +205,10 @@ const MentorshipYourCalendarPage = () => {
     setSubmitMessage(null);
     try {
       const today = dayjs();
+      if (!startTime || !endTime) {
+        setSubmitMessage({ severity: 'error', text: 'Hãy chọn giờ bắt đầu và giờ kết thúc.' });
+        return;
+      }
       let dates = [];
       if (repeatWeekly) {
         if (selectedDays.length === 0) {

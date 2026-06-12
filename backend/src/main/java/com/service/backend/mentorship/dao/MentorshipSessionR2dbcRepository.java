@@ -93,6 +93,17 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("UPDATE mentorship_sessions SET meeting_link = :meetingLink WHERE id = :id")
     Mono<Integer> updateMeetingLink(Integer id, String meetingLink);
 
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, cancel_reason = :reason, " +
+            "proposed_start_time = :proposedStart, proposed_end_time = :proposedEnd WHERE id = :id")
+    Mono<Integer> proposeReschedule(Integer id, String status, String reason,
+                                    java.time.LocalDateTime proposedStart, java.time.LocalDateTime proposedEnd);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, " +
+            "proposed_start_time = NULL, proposed_end_time = NULL WHERE id = :id")
+    Mono<Integer> clearProposalWithStatus(Integer id, String status);
+
     @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status NOT IN ('REJECTED','CANCELLED','CANCELLED_BY_MENTEE','CANCELLED_BY_MENTOR')")
     Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
 

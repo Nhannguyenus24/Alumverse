@@ -10,9 +10,10 @@ const fetchSlots = async (mentorMemberId) => {
 /**
  * Returns:
  *   slots: raw [{ id, mentorMemberId, startTime, endTime, status }, ...]
- *   availabilityMap: { "YYYY-MM-DD": { [hour]: availabilityId } }
+ *   availabilityMap: { "YYYY-MM-DD": [{ id, startTime, endTime }, ...] }
  *
- * Each slot is normalised to a single hour key based on its startTime.
+ * Slots keep their real start/end times (no rounding to whole hours), so a
+ * mentor can offer slots of any duration and the picker renders them faithfully.
  */
 export const useMentorAvailability = (mentorMemberId) => {
   const query = useQuery({
@@ -27,11 +28,15 @@ export const useMentorAvailability = (mentorMemberId) => {
     const start = dayjs(slot.startTime);
     if (!start.isValid()) return acc;
     const dateKey = start.format('YYYY-MM-DD');
-    const hour = start.hour();
-    if (!acc[dateKey]) acc[dateKey] = {};
-    acc[dateKey][hour] = slot.id;
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push({ id: slot.id, startTime: slot.startTime, endTime: slot.endTime });
     return acc;
   }, {});
+
+  // Keep each day's slots sorted by start time for stable rendering.
+  Object.values(availabilityMap).forEach((daySlots) =>
+    daySlots.sort((a, b) => dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf()),
+  );
 
   return { ...query, slots, availabilityMap };
 };

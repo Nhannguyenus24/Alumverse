@@ -158,6 +158,16 @@ public class MenteeController {
                         .ok(new ApiResponse<>("Session cancelled successfully", response)));
     }
 
+    @PostMapping("/sessions/{sessionId}/reschedule-response")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> respondToReschedule(
+            @PathVariable @Min(1) Integer sessionId,
+            @RequestParam boolean accept) {
+        return menteeService.respondToReschedule(sessionId, accept)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>(
+                                accept ? "Đã đồng ý dời lịch" : "Đã từ chối đề nghị dời lịch", response)));
+    }
+
     @PostMapping("/sessions/{sessionId}/report")
     public Mono<ResponseEntity<ApiResponse<Void>>> reportSession(
             @PathVariable @Min(1) Integer sessionId,
