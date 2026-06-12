@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import {
   Box,
   Button,
@@ -12,18 +13,18 @@ import { formatDateTime } from '../utils/dateFormatter';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import { useRecentChatPreviews } from '../hooks/chat/useRecentChatPreviews';
 
-export const MESSAGES_PREVIEW_MENU_PAPER_SX = {
-  width: 360,
-  maxHeight: 480,
-  overflow: 'hidden',
-  display: 'flex',
-  flexDirection: 'column',
-  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)',
-};
-
-export default function MessagesPreviewPanel({ onClose, queryEnabled = true }) {
+export default function MessagesPreviewPanel({
+  onClose,
+  queryEnabled = true,
+  onContentReady,
+}) {
   const navigate = useOrgNavigate();
   const { previews, isPending, isError } = useRecentChatPreviews({ enabled: queryEnabled });
+
+  useEffect(() => {
+    if (!queryEnabled || isPending) return;
+    onContentReady?.();
+  }, [queryEnabled, isPending, previews.length, isError, onContentReady]);
 
   const goToChat = () => {
     onClose?.();
@@ -31,7 +32,15 @@ export default function MessagesPreviewPanel({ onClose, queryEnabled = true }) {
   };
 
   return (
-    <>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        overflow: 'hidden',
+      }}
+    >
       <Box
         sx={{
           display: 'flex',
@@ -49,7 +58,7 @@ export default function MessagesPreviewPanel({ onClose, queryEnabled = true }) {
 
       <Divider />
 
-      <Scrollbar sx={{ flex: 1, minHeight: 0, maxHeight: 320 }}>
+      <Scrollbar sx={{ flex: 1, minHeight: 0 }}>
         {isPending && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
             <CircularProgress size={24} />
@@ -142,6 +151,6 @@ export default function MessagesPreviewPanel({ onClose, queryEnabled = true }) {
           Xem tất cả
         </Button>
       </Box>
-    </>
+    </Box>
   );
 }
