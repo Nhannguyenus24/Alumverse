@@ -4,13 +4,14 @@ import {
   AppBar, Toolbar, Box, Typography,
   Button, IconButton, Drawer, List, 
   ListItemButton, ListItemText, Collapse, 
-  Divider, useTheme, useMediaQuery
+  Divider, useTheme, useMediaQuery, alpha
 } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
+import Iconify from './Iconify';
 import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
@@ -268,57 +269,91 @@ const Header = () => {
         <Box
           sx={{
             position: 'fixed',
-            top: appBarMinHeight,
-            left: 0,
-            right: 0,
-            px: { xs: 1.5, sm: 2, md: 3 },
-            pt: 1,
+            top: { xs: 72, md: 80 },
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: { xs: 'calc(100% - 32px)', sm: 'max-content' },
+            maxWidth: '640px',
             zIndex: theme.zIndex.appBar + 2,
             pointerEvents: 'none',
+            animation: 'slideDownFade 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
+            '@keyframes slideDownFade': {
+              '0%': { opacity: 0, transform: 'translate(-50%, -20px)' },
+              '100%': { opacity: 1, transform: 'translate(-50%, 0)' }
+            }
           }}
         >
           <Box
             sx={{
               pointerEvents: 'auto',
-              position: 'relative',
-              borderRadius: 1,
-              px: { xs: 1.5, sm: 2 },
-              py: { xs: 1.25, sm: 1.5, md: 1.75 },
+              borderRadius: 3,
+              px: { xs: 2, sm: 2.5 },
+              py: { xs: 1.5, sm: 1.5 },
               display: 'flex',
-              alignItems: { xs: 'flex-start', sm: 'center' },
+              alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 1.5,
-              bgcolor: isAdmin ? 'rgba(255,255,255,0.1)' : 'warning.main',
-              color: isAdmin ? 'primary.contrastText' : 'warning.contrastText',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+              bgcolor: (theme) => alpha(theme.palette.background.paper, 0.85),
+              backdropFilter: 'blur(12px)',
+              color: 'text.primary',
               border: '1px solid',
-              borderColor: isAdmin ? 'rgba(255,255,255,0.18)' : 'warning.main',
-              boxShadow: 3,
+              borderColor: 'divider',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
             }}
           >
-            <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.35 }}>
-                Tài khoản đang ở chế độ Guest
-              </Typography>
-              <Typography variant="caption" sx={{ display: 'block', mt: 0.25, lineHeight: 1.35 }}>
-                Hoàn tất xác thực để mở khóa đầy đủ tính năng và nhận vai trò phù hợp.
-              </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, width: '100%' }}>
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  width: 40, 
+                  height: 40, 
+                  borderRadius: '50%', 
+                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.12),
+                  color: 'warning.dark',
+                  flexShrink: 0
+                }}
+              >
+                <Iconify icon="eva:shield-outline" width={24} height={24} />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle2" fontWeight={700} color="text.primary" sx={{ lineHeight: 1.35 }}>
+                  Tài khoản đang ở chế độ Guest
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.35 }}>
+                  Hoàn tất xác thực để mở khóa đầy đủ tính năng và nhận vai trò phù hợp.
+                </Typography>
+              </Box>
             </Box>
 
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            <Box 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1, 
+                flexShrink: 0, 
+                borderLeft: { xs: 'none', sm: '1px solid' }, 
+                borderTop: { xs: '1px solid', sm: 'none' },
+                borderColor: 'divider', 
+                pl: { xs: 0, sm: 2 },
+                pt: { xs: 1.5, sm: 0 },
+                width: { xs: '100%', sm: 'auto' },
+                justifyContent: { xs: 'flex-end', sm: 'flex-start' }
+              }}
+            >
               <Button
-                variant="contained"
+                variant="text"
                 size="small"
                 onClick={() => navigate('/organization-registration')}
+                endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
                 sx={{
-                  position: 'relative',
-                  zIndex: theme.zIndex.appBar + 3,
-                  flexShrink: 0,
+                  fontWeight: 600,
                   whiteSpace: 'nowrap',
-                  bgcolor: isAdmin ? '#FFFFFF' : 'warning.dark',
-                  color: isAdmin ? 'primary.main' : '#FFFFFF',
-                  '&:hover': {
-                    bgcolor: isAdmin ? '#f5f5f5' : 'warning.dark',
-                  },
+                  color: 'warning.dark',
+                  '&:hover': { bgcolor: (theme) => alpha(theme.palette.warning.main, 0.08) },
+                  px: 1.5
                 }}
               >
                 Xác thực ngay
@@ -328,11 +363,7 @@ const Header = () => {
                 size="small"
                 aria-label="Ẩn banner xác thực"
                 onClick={() => setShowVerificationBanner(false)}
-                sx={{
-                  color: isAdmin ? 'primary.contrastText' : 'warning.contrastText',
-                  bgcolor: 'transparent',
-                  alignSelf: 'flex-start',
-                }}
+                sx={{ color: 'text.secondary' }}
               >
                 <CloseIcon fontSize="small" />
               </IconButton>
