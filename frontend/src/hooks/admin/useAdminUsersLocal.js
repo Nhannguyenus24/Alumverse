@@ -269,7 +269,7 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     }
   }, [loadUsers]);
 
-  return {
+  return useMemo(() => ({
     loading,
     allUsers,
     totalCount,
@@ -297,7 +297,11 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     banUser,
     unbanUser,
     reloadUsers: loadUsers,
-  };
+  }), [
+    loading, allUsers, totalCount, pagedUsers, sortedUsers,
+    search, roleFilter, statusFilter, sortBy, sortOrder, page, rowsPerPage,
+    createUser, updateUser, updateUserStatus, deleteUser, banUser, unbanUser, loadUsers
+  ]);
 };
 
 export default useAdminUsersLocal;

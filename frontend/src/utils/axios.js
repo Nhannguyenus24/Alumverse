@@ -23,6 +23,7 @@ const refreshClient = axios.create({
 // --- Refresh Token State ---
 let isRefreshing = false;
 let failedQueue = [];
+let refreshPromise = null;
 
 /**
  * Resolve or reject every request waiting in the queue
@@ -77,22 +78,33 @@ const forceLogout = () => {
 };
 
 /**
- * Calls refresh-token API and returns the new session data (throws if it fails)
+ * Calls refresh-token API and returns the new session data (throws if it fails).
+ * Uses a promise lock to prevent multiple concurrent refresh requests.
  */
 export async function refreshSessionAccessToken() {
-  try {
-    const res = await refreshClient.post('/auth/refresh');
-    const data = res?.data?.data; // { accessToken, verificationLevel }
-
-    if (!data?.accessToken || typeof data.accessToken !== 'string') {
-      throw new Error('Invalid access token received from refresh API');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Failed to refresh session access token:', error.response?.data || error.message);
-    throw error;
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  refreshPromise = (async () => {
+    try {
+      const res = await refreshClient.post('/auth/refresh');
+      const data = res?.data?.data; // { accessToken, verificationLevel }
+
+      if (!data?.accessToken || typeof data.accessToken !== 'string') {
+        throw new Error('Invalid access token received from refresh API');
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Failed to refresh session access token:', error.response?.data || error.message);
+      throw error;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
 }
 
 /** Updates token, user and verification level in the store from response data. */

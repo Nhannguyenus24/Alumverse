@@ -68,7 +68,7 @@ const useAdminSystemData = () => {
     return state.organizations.find((o) => o.id === activeOrgId) || null;
   }, [activeOrgId, state.organizations]);
 
-  return {
+  return useMemo(() => ({
     loading,
     activeOrgId,    // Immediate — for header dropdown display
     stableOrgId,    // Debounced 350ms — use this as query param in all data hooks
@@ -76,7 +76,7 @@ const useAdminSystemData = () => {
     activeOrganization,
     reload: loadData,
     ...state,
-  };
+  }), [loading, activeOrgId, stableOrgId, activeOrganization, loadData, state]);
 };
 
 export default useAdminSystemData;
