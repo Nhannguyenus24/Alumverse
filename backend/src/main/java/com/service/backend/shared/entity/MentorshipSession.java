@@ -56,6 +56,18 @@ public class MentorshipSession {
     @Column("proposed_end_time")
     private LocalDateTime proposedEndTime;
 
+    @Column("mentor_joined_at")
+    private LocalDateTime mentorJoinedAt;
+
+    @Column("mentee_joined_at")
+    private LocalDateTime menteeJoinedAt;
+
+    @Column("started_at")
+    private LocalDateTime startedAt;
+
+    @Column("ended_at")
+    private LocalDateTime endedAt;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

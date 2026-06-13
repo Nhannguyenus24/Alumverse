@@ -24,6 +24,7 @@ import java.util.List;
 public class MentorController {
 
     private final MentorService mentorService;
+    private final com.service.backend.mentorship.service.MentorshipSessionService sessionService;
 
     @PostMapping("/profile")
     public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> createProfile(
@@ -162,6 +163,14 @@ public class MentorController {
         return mentorService.updateSessionStatus(sessionId, request)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session status updated successfully", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/join")
+    public Mono<ResponseEntity<ApiResponse<JoinSessionResponse>>> joinSession(
+            @PathVariable @Min(1) Integer sessionId) {
+        return sessionService.joinSession(sessionId, true)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Tham gia buổi mentoring thành công", response)));
     }
 
     @GetMapping("/feedbacks")

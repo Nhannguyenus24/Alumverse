@@ -107,4 +107,24 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status NOT IN ('REJECTED','CANCELLED','CANCELLED_BY_MENTEE','CANCELLED_BY_MENTOR')")
     Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
 
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, started_at = COALESCE(started_at, :now), " +
+            "mentor_joined_at = CASE WHEN :isMentor THEN COALESCE(mentor_joined_at, :now) ELSE mentor_joined_at END, " +
+            "mentee_joined_at = CASE WHEN :isMentor THEN mentee_joined_at ELSE COALESCE(mentee_joined_at, :now) END " +
+            "WHERE id = :id")
+    Mono<Integer> markJoined(Integer id, String status, boolean isMentor, java.time.LocalDateTime now);
+
+    @Query("SELECT ms.* FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "WHERE ms.status IN ('CONFIRMED','IN_PROGRESS') AND ma.end_time < :now")
+    Flux<MentorshipSession> findEndedCandidates(java.time.LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, ended_at = :now WHERE id = :id")
+    Mono<Integer> closeSession(Integer id, String status, java.time.LocalDateTime now);
+
+    @Query("SELECT ma.start_time, ma.end_time, ma.mentor_member_id FROM mentor_availabilities ma " +
+            "JOIN mentorship_sessions ms ON ms.availability_id = ma.id WHERE ms.id = :sessionId")
+    Mono<SessionWindowProjection> findWindowBySessionId(Integer sessionId);
+
 }
