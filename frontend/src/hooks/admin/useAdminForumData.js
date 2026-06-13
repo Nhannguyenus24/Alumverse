@@ -506,7 +506,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     [adminUserId, loadAllPosts, loadBannedPosts, loadYesterdayPosts, loadStatistics],
   );
 
-  return {
+  return useMemo(() => ({
     loading,
 
     // Statistics
@@ -586,7 +586,18 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
 
     // Reload
     reloadStatistics: loadStatistics,
-  };
+  }), [
+    loading, statistics, topContributors, organizationEngagement, monthlyTimeline,
+    contributorMonth, contributorYear, timelineYear,
+    bannedPosts, bannedPage, yesterdayPosts, yesterdayPage, reports, reportsPage,
+    allPosts, postsPage, postsSize, posts, postsSearch, statusFilter, organizationFilter,
+    updatePostStatus, handleDeletePost,
+    categories, categoriesLoading, activeOrgId, loadCategories,
+    topics, topicsSearch, topicsPage, topicsSize, topicsLoading, loadTopics,
+    handleBanPost, handleUnbanPost, handleCreateCategory, handleUpdateCategory, handleDeleteCategory,
+    handleCreateTopic, handleUpdateTopic, handleDeleteTopic, handleReviewReport,
+    handleUpdatePostVisibility, handleUpdateTopicLock, loadStatistics
+  ]);
 };
 
 export default useAdminForumData;

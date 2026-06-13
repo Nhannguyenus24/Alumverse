@@ -681,6 +681,20 @@ public class FundService {
         };
     }
 
+    public Mono<PaginatedResponse<FundDonationListItemResponse>> getDonationsByDonorMemberId(
+            Integer donorMemberId,
+            int page,
+            int limit
+    ) {
+        int offset = page * limit;
+        return PaginationHelper.paginate(
+                fundDonationsRepository.findByDonorMemberIdWithPagination(donorMemberId, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection),
+                fundDonationsRepository.countByDonorMemberId(donorMemberId),
+                page, limit)
+                .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(FundService.class).info("getDonationsByDonorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
+    }
+
     public Mono<FundStatisticsResponse> getFundStatistics() {
         LocalDateTime now = LocalDateTime.now();
         Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();

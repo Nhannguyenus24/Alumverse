@@ -34,6 +34,7 @@ public enum Status {
     ISSUED("ISSUED"),
     USED("USED"),
     EXPIRED("EXPIRED"),
+    SCHEDULED("SCHEDULED"),
     DECLINED("DECLINED");
 
     private final String value;
