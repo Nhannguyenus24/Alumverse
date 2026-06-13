@@ -51,5 +51,18 @@ public class FundDonationsController {
                 ));
     }
 
+    @PublicEndpoint
+    @GetMapping("/user/{userId}")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundDonationListItemResponse>>>> getByUserId(
+            @PathVariable @Min(1) Integer userId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit
+    ) {
+        return fundService.getDonationsByDonorMemberId(userId, page, limit)
+                .map(response -> ResponseEntity.ok(
+                        new ApiResponse<>("Fund donations by user retrieved successfully", response)
+                ));
+    }
+
     
 }

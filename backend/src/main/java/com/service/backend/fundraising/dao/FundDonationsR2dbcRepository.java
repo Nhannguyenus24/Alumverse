@@ -39,6 +39,31 @@ public interface FundDonationsR2dbcRepository extends ReactiveCrudRepository<Fun
     @Query("SELECT COUNT(*) FROM fund_donations WHERE fund_id = :fundId")
     Mono<Long> countByFundId(Long fundId);
 
+    @Query("""
+            SELECT
+              fd.id AS id,
+              fd.fund_id AS fund_id,
+              fd.donor_member_id AS donor_member_id,
+              fd.donor_name AS donor_name,
+              fd.amount AS amount,
+              fd.address AS address,
+              fd.phone AS phone,
+              fd.email AS email,
+              fd.message AS message,
+              fd.status AS status,
+              fd.created_at AS created_at,
+              u.avatar_url AS avatar_url
+            FROM fund_donations fd
+            LEFT JOIN users u ON u.id = fd.donor_member_id
+            WHERE fd.donor_member_id = :donorMemberId
+            ORDER BY fd.id DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<FundDonationListProjection> findByDonorMemberIdWithPagination(Integer donorMemberId, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM fund_donations WHERE donor_member_id = :donorMemberId")
+    Mono<Long> countByDonorMemberId(Integer donorMemberId);
+
     @Query("SELECT COUNT(*) FROM fund_donations WHERE status = 'SUCCESS'")
     Mono<Long> countAll();
 
