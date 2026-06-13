@@ -146,6 +146,9 @@ const NetworkIncomingRequestsPage = Loadable(
 const NetworkConnectionsPage = Loadable(
   lazy(() => import("../pages/network/NetworkConnectionsPage")),
 );
+const NetworkRestrictedConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkRestrictedConnectionsPage")),
+);
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
 );
@@ -358,6 +361,10 @@ export const router = createBrowserRouter([
           {
             path: "connections",
             element: <NetworkConnectionsPage />,
+          },
+          {
+            path: "restricted-connections",
+            element: <NetworkRestrictedConnectionsPage />,
           },
         ],
       },

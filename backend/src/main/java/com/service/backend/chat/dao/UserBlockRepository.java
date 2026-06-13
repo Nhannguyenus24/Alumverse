@@ -1,5 +1,6 @@
 package com.service.backend.chat.dao;
 
+import com.service.backend.chat.dto.BlockedMemberInGroupItemResponse;
 import com.service.backend.chat.dto.BlockedMemberItemResponse;
 import com.service.backend.shared.entity.UserBlock;
 import org.springframework.data.r2dbc.repository.Modifying;
@@ -54,6 +55,19 @@ public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, L
               AND cgm.group_id = :groupId
             """)
     Mono<Long> countSenderBlockedByMembersInGroup(Long senderMemberId, Long groupId);
+
+    @Query("""
+            SELECT ub.blocked_member_id AS member_id,
+                   gp.full_name AS full_name
+            FROM user_blocks ub
+            INNER JOIN chat_group_members cgm
+                ON cgm.member_id = ub.blocked_member_id
+               AND cgm.group_id = :groupId
+            LEFT JOIN global_profiles gp ON gp.user_id = ub.blocked_member_id
+            WHERE ub.blocker_member_id = :blockerMemberId
+            ORDER BY ub.created_at DESC
+            """)
+    Flux<BlockedMemberInGroupItemResponse> findBlockedMembersInGroupByBlocker(Long blockerMemberId, Long groupId);
 
     @Modifying
     @Query("""

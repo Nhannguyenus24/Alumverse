@@ -84,12 +84,8 @@ const NetworkBlockedMembersSection = () => {
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            sm: '1fr 1fr',
-            md: '1fr 1fr 1fr',
-          },
-          gap: 3,
+          gridTemplateColumns: '1fr',
+          gap: 2,
           opacity: isFetching ? 0.6 : 1,
           transition: 'opacity 0.2s',
         }}
@@ -110,9 +106,6 @@ const NetworkBlockedMembersSection = () => {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h4" fontWeight={700}>
-        Người đã chặn
-      </Typography>
 
       <SearchBar
         value={searchInput}

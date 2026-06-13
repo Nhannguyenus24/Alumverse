@@ -16,4 +16,5 @@ public class RecentChatPreviewResponse {
     private String avatarUrl;
     private String preview;
     private LocalDateTime updatedAt;
+    private String type;
 }

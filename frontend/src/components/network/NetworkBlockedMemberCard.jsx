@@ -20,43 +20,53 @@ const NetworkBlockedMemberCard = ({
   return (
     <Card
       sx={{
-        p: 3,
+        p: 2,
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
         boxShadow: 'none',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
         transition: 'transform 0.2s',
-        '&:hover': { transform: 'translateY(-4px)' },
+        '&:hover': { transform: 'translateY(-2px)' },
       }}
     >
-      <Stack spacing={1.5} alignItems="center">
-        <Avatar src={member.avatarUrl} sx={{ width: 80, height: 80 }} />
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={{ xs: 1.5, sm: 2 }}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        justifyContent="space-between"
+      >
+        <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Avatar src={member.avatarUrl} sx={{ width: 56, height: 56, flexShrink: 0 }} />
 
-        <Box sx={{ width: '100%' }}>
-          <Typography fontWeight={700} variant="subtitle1" sx={{ lineHeight: 1.3 }}>
-            {displayName}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-            Chặn lúc {formatDateTime(member.blockedAt, 'Không rõ')}
-          </Typography>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography fontWeight={700} variant="subtitle1" noWrap sx={{ lineHeight: 1.3 }}>
+              {displayName}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              noWrap
+              sx={{ display: 'block', mt: 0.25, lineHeight: 1.3 }}
+            >
+              Chặn lúc {formatDateTime(member.blockedAt, 'Không rõ')}
+            </Typography>
+          </Box>
+        </Stack>
+
+        <Box sx={{ flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'auto' } }}>
+          <Button
+            variant="outlined"
+            color="inherit"
+            size="small"
+            type="button"
+            onClick={onUnblock}
+            disabled={isUnblockLoading}
+            sx={{ minWidth: 100 }}
+          >
+            {isUnblockLoading ? <CircularProgress size={16} color="inherit" /> : 'Bỏ chặn'}
+          </Button>
         </Box>
       </Stack>
-
-      <Button
-        variant="outlined"
-        color="inherit"
-        sx={{ mt: 3 }}
-        fullWidth
-        type="button"
-        onClick={onUnblock}
-        disabled={isUnblockLoading}
-      >
-        {isUnblockLoading ? <CircularProgress size={22} color="inherit" /> : 'Bỏ chặn'}
-      </Button>
     </Card>
   );
 };

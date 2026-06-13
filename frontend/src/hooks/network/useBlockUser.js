@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 
 import { chatApi } from '../../utils/api';
+import { invalidateGroupBlockedMembersQueries } from '../chat/invalidateChatQueries';
 
 export function useBlockStatus(targetMemberId) {
   return useQuery({
@@ -23,6 +24,7 @@ export function useBlockUser({ targetMemberId, onSuccess } = {}) {
     queryClient.invalidateQueries({ queryKey: ['blockedMembers'] });
     queryClient.invalidateQueries({ queryKey: ['privateChatList'] });
     queryClient.invalidateQueries({ queryKey: ['recentChatPreviews'] });
+    invalidateGroupBlockedMembersQueries(queryClient);
   };
 
   const blockMutation = useMutation({
