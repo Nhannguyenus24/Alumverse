@@ -13,7 +13,7 @@ function getWsUrl() {
  * - LEAVE_GROUP { groupId }
  * - SEND_MESSAGE { groupId, content, messageType?, metadata? }
  * Receives:
- * - MESSAGE_CREATED { payload: {...} }
+ * - MESSAGE_CREATED { payload: { id, groupId, senderMemberId, senderFullName, senderAvatarUrl, content, ... } }
  * - ERROR { message }
  */
 export function useChatWebSocket({ token, onEvent }) {

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.service.backend.shared.entity.ChatMessage;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.service.ChatService;
+import com.service.backend.shared.dao.UserDisplayInfo;
+import com.service.backend.shared.dao.UserDisplayInfoRepository;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.JwtUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final ChatService chatService;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
+    private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final JwtUtils jwtUtils;
 
     // Map: sessionId -> memberId
@@ -38,9 +41,14 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     // Map: groupId -> Set of WebSocketSession
     private final Map<Long, Set<WebSocketSession>> groupToSessions = new ConcurrentHashMap<>();
 
-    public ChatWebSocketHandler(ChatService chatService, ChatGroupMemberRepository chatGroupMemberRepository, JwtUtils jwtUtils) {
+    public ChatWebSocketHandler(
+            ChatService chatService,
+            ChatGroupMemberRepository chatGroupMemberRepository,
+            UserDisplayInfoRepository userDisplayInfoRepository,
+            JwtUtils jwtUtils) {
         this.chatService = chatService;
         this.chatGroupMemberRepository = chatGroupMemberRepository;
+        this.userDisplayInfoRepository = userDisplayInfoRepository;
         this.jwtUtils = jwtUtils;
     }
 
@@ -161,9 +169,12 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String metadata = json.has("metadata") ? json.get("metadata").toString() : null;
 
         return chatService.sendMessage(groupId, memberId, content, messageType, metadata)
-                .flatMap(savedMessage -> {
-                    return broadcastMessage(groupId, savedMessage);
-                })
+                .flatMap(savedMessage -> userDisplayInfoRepository
+                        .findByUserId(savedMessage.getSenderMemberId().intValue())
+                        .defaultIfEmpty(UserDisplayInfo.builder()
+                                .userId(savedMessage.getSenderMemberId().intValue())
+                                .build())
+                        .flatMap(senderInfo -> broadcastMessage(groupId, savedMessage, senderInfo)))
                 .onErrorResume(error -> {
                     log.error("Error sending message", error);
                     return sendError(session, "Failed to send message: " + error.getMessage());
@@ -184,7 +195,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         )));
     }
 
-    private Mono<Void> broadcastMessage(Long groupId, ChatMessage message) {
+    private Mono<Void> broadcastMessage(Long groupId, ChatMessage message, UserDisplayInfo senderInfo) {
         Set<WebSocketSession> sessions = groupToSessions.get(groupId);
         if (sessions == null || sessions.isEmpty()) {
             return Mono.empty();
@@ -198,6 +209,8 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         payload.put("id", message.getId());
         payload.put("groupId", message.getGroupId());
         payload.put("senderMemberId", message.getSenderMemberId());
+        payload.put("senderFullName", senderInfo.getFullName());
+        payload.put("senderAvatarUrl", senderInfo.getAvatarUrl());
         payload.put("content", message.getContent());
         payload.put("messageType", message.getMessageType());
         payload.put("metadata", metadataPayload);
