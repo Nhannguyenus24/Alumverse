@@ -130,10 +130,19 @@ Frontend uses these fields to disable input and show banners — no extra round-
 
 ### 4.4 Send Message Guard
 
-In `ChatService.sendMessage()`, check **before** persisting:
+Block guard applies to **PRIVATE chats only**. Multi-member **GROUP** chats allow sending even when block relationships exist between members in the same group.
 
-1. Sender has blocked any member in this group, **or**
-2. Any member in this group has blocked the sender
+In `ChatService.sendMessage()`:
+
+| Chat type | Block guard |
+|-----------|-------------|
+| `PRIVATE` | Enforce `assertSenderCanSendMessage()` before insert |
+| `GROUP`   | Skip block guard — allow send in both directions |
+
+**PRIVATE guard** checks before persisting:
+
+1. Sender has blocked any member in this private chat, **or**
+2. Any member in this private chat has blocked the sender
 
 ```sql
 -- Sender blocked someone in group
@@ -151,13 +160,43 @@ WHERE ub.blocked_member_id = :senderMemberId
 LIMIT 1;
 ```
 
-→ `403 USER_COMMUNICATION_BLOCKED`
+→ `403 USER_COMMUNICATION_BLOCKED` (PRIVATE only)
 
-### 4.5 Network search exclusion
+### 4.5 Group chat — blocked members context API
+
+When the user opens a **GROUP** chat, frontend calls:
+
+`GET /api/chat/groups/{groupId}/blocked-members-context`
+
+Returns members **blocked by the current user** who are **still in the group**, plus the current user's role (`OWNER` | `MEMBER`):
+
+```sql
+SELECT ub.blocked_member_id, gp.full_name
+FROM user_blocks ub
+INNER JOIN chat_group_members cgm
+    ON cgm.member_id = ub.blocked_member_id
+   AND cgm.group_id = :groupId
+LEFT JOIN global_profiles gp ON gp.user_id = ub.blocked_member_id
+WHERE ub.blocker_member_id = :currentMemberId
+ORDER BY ub.created_at DESC
+```
+
+Frontend shows an **info banner** (does not disable input):
+
+- Lists blocked member names (e.g. *"A, B và 1 người khác"*)
+- **Owner** (`role === 'OWNER'`): suggests kick or leave via member drawer (⋯)
+- **Member**: suggests leave via member drawer
+- Button opens `GroupMembersDrawer`
+
+Invalidate React Query key `['chat', 'group-blocked-members']` after block/unblock/kick/leave — no window-focus refetch.
+
+**Accepted (phase 1):** Messages from blocked users still appear in group history; no per-message filtering yet.
+
+### 4.6 Network search exclusion
 
 Members with any active block between them are excluded from network directory search (bidirectional `NOT EXISTS` on `user_blocks`).
 
-### 4.6 Transaction handling
+### 4.7 Transaction handling
 
 Block/unblock only writes to `user_blocks` (single-table operation). `@Transactional` still wraps the service method for consistency.
 
@@ -186,6 +225,12 @@ Block/unblock only writes to `user_blocks` (single-table operation). `@Transacti
 **After unblock:**
 - Input re-enabled; banners removed; messaging resumes
 
+**GROUP chat — user has blocked member(s) still in the group:**
+- Input **enabled**; user can send messages in the group
+- Info banner lists blocked names + action hint (kick/leave via member drawer)
+- Kick removes member from group; block row in `user_blocks` remains (PRIVATE chat still blocked)
+- Invalidate blocked-members query after block/unblock/kick/leave
+
 ### 5.3 API calls
 
 ```
@@ -194,6 +239,7 @@ unblockUser(targetMemberId)    → DELETE /api/chat/blocks/:targetMemberId
 getBlockStatus(targetMemberId) → GET   /api/chat/blocks/:targetMemberId
 getBlockList()                 → GET   /api/chat/blocks
 listPrivateChats()             → GET   /api/chat/private/list  (includes blockedByMe / blockedByPeer)
+getGroupBlockedMembersContext  → GET   /api/chat/groups/:groupId/blocked-members-context
 ```
 
 ---
@@ -209,6 +255,9 @@ listPrivateChats()             → GET   /api/chat/private/list  (includes block
 | A blocks B multiple times | `409 USER_ALREADY_BLOCKED` |
 | A unblocks B | Delete row; messaging restored immediately |
 | Network search | Blocked pairs excluded bidirectionally |
+| A blocks B, both in same GROUP chat | GROUP: can still send; info banner shown. PRIVATE: send blocked |
+| Owner kicks blocked member from GROUP | Member leaves group; banner updates; block on PRIVATE unchanged |
+| Multiple blocked members in GROUP | Banner: *"A, B và N người khác"* |
 
 ---
 
@@ -217,3 +266,4 @@ listPrivateChats()             → GET   /api/chat/private/list  (includes block
 - Admin-level forced block
 - Block expiry / temporary blocks
 - Notification suppression for blocked users
+- Hiding blocked users' messages in GROUP chat history (phase 2)

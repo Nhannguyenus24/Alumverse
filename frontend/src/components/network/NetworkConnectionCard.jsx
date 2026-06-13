@@ -10,10 +10,13 @@ import {
   Typography,
 } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import { alpha } from '@mui/material/styles';
+
 import IconButtonMenu from '../IconButtonMenu';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { truncateText } from '../../utils/stringUtils';
 import { formatAcademicValue } from './networkCardUtils';
+
+const SUBTITLE_MAX_LEN = 72;
 
 const NetworkConnectionCard = ({
   connection,
@@ -25,6 +28,8 @@ const NetworkConnectionCard = ({
   const displayName = connection.fullName || 'N/A';
   const programLabel = formatAcademicValue(connection.program, '—');
   const majorLabel = formatAcademicValue(connection.major, 'N/A');
+  const subtitleFull = `${programLabel} · ${majorLabel}`;
+  const subtitleDisplay = truncateText(subtitleFull, SUBTITLE_MAX_LEN, subtitleFull);
 
   const handleMessage = () => {
     navigate('/chat');
@@ -33,85 +38,83 @@ const NetworkConnectionCard = ({
   return (
     <Card
       sx={{
-        p: 3,
+        p: 2,
         borderRadius: 2,
         border: '1px solid',
         borderColor: 'divider',
         boxShadow: 'none',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
         transition: 'transform 0.2s',
-        position: 'relative',
-        '&:hover': { transform: 'translateY(-4px)' },
+        '&:hover': { transform: 'translateY(-2px)' },
       }}
     >
-      {enableBlock ? (
-        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
-          <IconButtonMenu
-            menuId={`network-connection-card-menu-${connection.peerMemberId}`}
-            buttonAriaLabel="Tùy chọn kết nối"
-          >
-            {({ close }) => (
-              <MenuItem
-                disabled={isBlockLoading}
-                onClick={() => {
-                  close();
-                  onBlock?.();
-                }}
-              >
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  <BlockOutlinedIcon fontSize="small" color="primary" />
-                </ListItemIcon>
-                <ListItemText primary="Chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
-              </MenuItem>
-            )}
-          </IconButtonMenu>
-        </Box>
-      ) : null}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={{ xs: 1.5, sm: 2 }}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
+        justifyContent="space-between"
+      >
+        <Stack direction="row" spacing={1.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Avatar src={connection.avatarUrl} sx={{ width: 56, height: 56, flexShrink: 0 }} />
 
-      <Stack spacing={1.5} alignItems="center">
-        <Avatar src={connection.avatarUrl} sx={{ width: 80, height: 80 }} />
-
-        <Box sx={{ width: '100%' }}>
-          <Typography fontWeight={700} variant="subtitle1" sx={{ lineHeight: 1.3 }}>
-            {displayName}
-          </Typography>
-
-          <Box
-            sx={(theme) => ({
-              mt: 1.25,
-              width: '100%',
-              px: 1.25,
-              py: 1.25,
-              borderRadius: 1.5,
-              bgcolor: alpha(theme.palette.primary.main, 0.08),
-              border: '1px solid',
-              borderColor: alpha(theme.palette.primary.main, 0.18),
-            })}
-          >
-            <Stack spacing={0.75} alignItems="center">
-              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
-                Program:{' '}
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {programLabel}
-                </Box>
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
-                Major:{' '}
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {majorLabel}
-                </Box>
-              </Typography>
-            </Stack>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography fontWeight={700} variant="subtitle1" noWrap sx={{ lineHeight: 1.3 }}>
+              {displayName}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              noWrap
+              title={subtitleFull}
+              sx={{ display: 'block', mt: 0.25, lineHeight: 1.3 }}
+            >
+              {subtitleDisplay}
+            </Typography>
           </Box>
-        </Box>
-      </Stack>
+        </Stack>
 
-      <Button variant="contained" sx={{ mt: 3 }} fullWidth type="button" onClick={handleMessage}>
-        Nhắn tin
-      </Button>
+        <Stack
+          direction="row"
+          spacing={0.5}
+          alignItems="center"
+          justifyContent={{ xs: 'flex-end', sm: 'flex-start' }}
+          sx={{ flexShrink: 0 }}
+        >
+          <Button
+            variant="contained"
+            size="small"
+            type="button"
+            onClick={handleMessage}
+            sx={{ minWidth: 100 }}
+          >
+            Nhắn tin
+          </Button>
+
+          {enableBlock ? (
+            <IconButtonMenu
+              menuId={`network-connection-card-menu-${connection.peerMemberId}`}
+              buttonAriaLabel="Tùy chọn kết nối"
+            >
+              {({ close }) => (
+                <MenuItem
+                  disabled={isBlockLoading}
+                  onClick={() => {
+                    close();
+                    onBlock?.();
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <BlockOutlinedIcon fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Chặn người dùng"
+                    primaryTypographyProps={{ variant: 'body2' }}
+                  />
+                </MenuItem>
+              )}
+            </IconButtonMenu>
+          ) : null}
+        </Stack>
+      </Stack>
     </Card>
   );
 };

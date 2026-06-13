@@ -362,6 +362,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async getGroupBlockedMembersContext(groupId) {
+		const response = await apiClient.get(`/chat/groups/${groupId}/blocked-members-context`);
+		return unwrap(response);
+	},
+
 	async getConversationRequestStatus(targetMemberId) {
 		const response = await apiClient.get('/chat/conversation-requests/connection-status', {
 			params: { targetMemberId },

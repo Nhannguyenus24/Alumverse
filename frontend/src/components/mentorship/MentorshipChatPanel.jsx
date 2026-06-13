@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useSnackbar } from "notistack";
 import {
   Avatar,
@@ -14,7 +14,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import SendIcon from "@mui/icons-material/Send";
-import MoodIcon from "@mui/icons-material/Mood";
+
+import ChatEmojiPickerButton from "../ChatEmojiPickerButton";
+import { insertTextAtInputSelection } from "../../utils/insertTextAtInputSelection";
 
 const CHAT_INDEX = "/development/mentorship/chat";
 
@@ -48,6 +50,14 @@ export default function MentorshipChatPanel({
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const listErrorShownRef = useRef(false);
+  const draftInputRef = useRef(null);
+
+  const handleEmojiSelect = useCallback(
+    (emoji) => {
+      insertTextAtInputSelection(draftInputRef, setDraft, emoji);
+    },
+    [setDraft],
+  );
   const theme = useTheme();
   const paper = theme.palette.background.paper;
   const bg = theme.palette.background.default;
@@ -388,7 +398,7 @@ export default function MentorshipChatPanel({
                   >
                     <Typography
                       variant="body2"
-                      sx={{ wordBreak: "break-word" }}
+                      sx={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
                     >
                       {msg.body}
                     </Typography>
@@ -424,6 +434,7 @@ export default function MentorshipChatPanel({
                 fullWidth
                 multiline
                 maxRows={4}
+                inputRef={draftInputRef}
                 placeholder="Aa"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
@@ -438,9 +449,10 @@ export default function MentorshipChatPanel({
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <IconButton size="small" aria-label="Emoji" edge="end">
-                        <MoodIcon />
-                      </IconButton>
+                      <ChatEmojiPickerButton
+                        disabled={!token || activeChatId == null}
+                        onEmojiSelect={handleEmojiSelect}
+                      />
                     </InputAdornment>
                   ),
                 }}
