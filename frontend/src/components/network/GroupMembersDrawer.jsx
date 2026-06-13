@@ -31,7 +31,7 @@ import ChatAvatar from '../ChatAvatar';
 import Scrollbar from '../Scrollbar';
 import AddGroupMemberDialog from '../AddGroupMemberDialog';
 import { useGroupMembers } from '../../hooks/chat/useGroupMembers';
-import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';
+import { invalidateChatListQueries, invalidateGroupBlockedMembersQueries } from '../../hooks/chat/invalidateChatQueries';
 import { chatApi } from '../../utils/api';
 
 const MAX_GROUP_SIZE = 10;
@@ -88,6 +88,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chat', 'group-members', groupId] });
       invalidateChatListQueries(queryClient);
+      invalidateGroupBlockedMembersQueries(queryClient);
       setKickTarget(null);
     },
   });
@@ -96,6 +97,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
     mutationFn: (gId) => chatApi.leaveGroup(gId),
     onSuccess: () => {
       invalidateChatListQueries(queryClient);
+      invalidateGroupBlockedMembersQueries(queryClient);
       setLeaveDialogOpen(false);
       onClose();
       if (onLeaveSuccess) onLeaveSuccess(groupId);

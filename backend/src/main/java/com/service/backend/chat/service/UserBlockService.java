@@ -3,6 +3,7 @@ package com.service.backend.chat.service;
 import com.service.backend.chat.dao.UserBlockRepository;
 import com.service.backend.chat.dto.BlockPairFlags;
 import com.service.backend.chat.dto.BlockStatusResponse;
+import com.service.backend.chat.dto.BlockedMemberInGroupItemResponse;
 import com.service.backend.chat.dto.BlockedMemberItemResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.entity.UserBlock;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
@@ -157,6 +159,12 @@ public class UserBlockService {
                     }
                     return Mono.empty();
                 });
+    }
+
+    public Flux<BlockedMemberInGroupItemResponse> findBlockedMembersInGroupByBlocker(
+            Long blockerMemberId,
+            Long groupId) {
+        return userBlockRepository.findBlockedMembersInGroupByBlocker(blockerMemberId, groupId);
     }
 
     private Mono<Void> validateBlockRequest(Long blockerMemberId, Long targetMemberId, Integer organizationId) {

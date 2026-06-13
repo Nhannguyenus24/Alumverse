@@ -25,10 +25,12 @@ import ConfirmDialog from '../ConfirmDialog';
 import IconButtonMenu from '../IconButtonMenu';
 import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
+import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
+import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -48,6 +50,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const currentUserId = useAuthStore((state) => state.user?.id ?? null);
 
   const isPrivateChat = activeChat?.type === 'PRIVATE';
+  const isGroupChat = activeChat?.type === 'GROUP';
   const peerMemberId = isPrivateChat ? activeChat?.peerMemberId ?? null : null;
   const blockedByMe = Boolean(activeChat?.blockedByMe);
   const blockedByPeer = Boolean(activeChat?.blockedByPeer);
@@ -61,6 +64,18 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage } = useChatMessages(
     activeChat?.id ?? null,
   );
+
+  const {
+    blockedMembers: blockedMembersInGroup,
+    isOwner: isGroupOwner,
+    hasBlockedMembersInGroup,
+  } = useGroupBlockedMembersContext(activeChat?.id ?? null, {
+    enabled: isGroupChat && activeChat?.id != null,
+  });
+
+  const groupBlockedBannerMessage = hasBlockedMembersInGroup
+    ? buildGroupBlockedMembersBannerMessage(blockedMembersInGroup, isGroupOwner)
+    : null;
 
   // --- WebSocket ---
   const appendMessageRef = useRef(appendMessage);
@@ -301,6 +316,32 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
       {isPrivateChat && blockedByPeer ? (
         <Alert severity="info" sx={{ borderRadius: 0 }}>
           Bạn không thể nhắn tin cho {activeChat?.name}.
+        </Alert>
+      ) : null}
+
+      {isGroupChat && groupBlockedBannerMessage ? (
+        <Alert
+          severity="info"
+          sx={{
+            borderRadius: 0,
+            alignItems: 'center',
+            bgcolor: 'primary.lighter',
+            color: 'primary.dark',
+            '& .MuiAlert-icon': { color: 'primary.main' },
+            '& .MuiAlert-message': { flex: 1 },
+          }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setMembersDrawerOpen(true)}
+              sx={{ fontWeight: 700, textTransform: 'none', whiteSpace: 'nowrap' }}
+            >
+              Kiểm tra setting
+            </Button>
+          }
+        >
+          {groupBlockedBannerMessage}
         </Alert>
       ) : null}
 

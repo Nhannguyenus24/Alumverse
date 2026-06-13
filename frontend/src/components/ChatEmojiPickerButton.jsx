@@ -1,8 +1,7 @@
-import { lazy, Suspense, useState } from 'react';
-import { CircularProgress, IconButton, Popover } from '@mui/material';
+import { useState } from 'react';
+import { IconButton, Popover } from '@mui/material';
 import MoodIcon from '@mui/icons-material/Mood';
-
-const EmojiPicker = lazy(() => import('emoji-picker-react'));
+import EmojiPicker from 'emoji-picker-react';
 
 function ChatEmojiPickerButton({ disabled = false, onEmojiSelect }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -46,20 +45,11 @@ function ChatEmojiPickerButton({ disabled = false, onEmojiSelect }) {
           },
         }}
       >
-        <Suspense
-          fallback={
-            <CircularProgress
-              size={28}
-              sx={{ display: 'block', m: 4 }}
-            />
-          }
-        >
-          <EmojiPicker
-            onEmojiClick={handleEmojiClick}
-            width={320}
-            height={400}
-          />
-        </Suspense>
+        <EmojiPicker
+          onEmojiClick={handleEmojiClick}
+          width={320}
+          height={400}
+        />
       </Popover>
     </>
   );
