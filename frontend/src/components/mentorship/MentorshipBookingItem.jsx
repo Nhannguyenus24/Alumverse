@@ -10,7 +10,10 @@ import {
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import dayjs from 'dayjs';
+
+const JOIN_EARLY_MINUTES = 15;
 
 const SESSION_TYPE_LABEL = {
   CAREER: 'Định hướng nghề nghiệp',
@@ -21,7 +24,9 @@ const SESSION_TYPE_LABEL = {
 const STATUS_COLOR = {
   PENDING: 'warning',
   CONFIRMED: 'info',
+  IN_PROGRESS: 'primary',
   COMPLETED: 'success',
+  EXPIRED: 'default',
   CANCELLED: 'default',
   CANCELLED_BY_MENTEE: 'default',
   CANCELLED_BY_MENTOR: 'warning',
@@ -33,7 +38,9 @@ const STATUS_COLOR = {
 const STATUS_LABEL = {
   PENDING: 'Chờ xác nhận',
   CONFIRMED: 'Đã xác nhận',
+  IN_PROGRESS: 'Đang diễn ra',
   COMPLETED: 'Đã hoàn thành',
+  EXPIRED: 'Không diễn ra',
   CANCELLED: 'Đã hủy',
   CANCELLED_BY_MENTEE: 'Đã hủy',
   CANCELLED_BY_MENTOR: 'Cố vấn đã hủy',
@@ -60,18 +67,32 @@ const MentorshipBookingItem = ({
   onPostpone,
   onRescheduleResponse,
   rescheduleResponsePending = false,
+  onJoin,
+  joinPending = false,
 }) => {
   const range = formatRange(session.startTime, session.endTime);
   const proposedRange = formatRange(session.proposedStartTime, session.proposedEndTime);
-  const terminalStatuses = ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'REJECTED'];
+  const terminalStatuses = ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'EXPIRED', 'REJECTED'];
   const isRescheduleProposed = session.status === 'RESCHEDULE_PROPOSED';
   // Hide cancel while a reschedule proposal is pending — mentee responds via accept/reject instead.
   const canCancel = onCancel && !terminalStatuses.includes(session.status) && !isRescheduleProposed;
-  const canReport = onReport && ['CONFIRMED', 'COMPLETED'].includes(session.status);
+  // Report only for sessions that happened (COMPLETED) or no-showed (EXPIRED), and not already reported.
+  const canReport = onReport && ['COMPLETED', 'EXPIRED'].includes(session.status) && !session.reported;
   const canFeedback = onFeedback && session.status === 'COMPLETED';
   const canReschedule = onReschedule && session.status === 'CONFIRMED';
   const canPostpone = onPostpone && session.status === 'CONFIRMED';
   const canRespondReschedule = onRescheduleResponse && view === 'mentee' && isRescheduleProposed;
+
+  const now = dayjs();
+  const start = session.startTime ? dayjs(session.startTime) : null;
+  const end = session.endTime ? dayjs(session.endTime) : null;
+  const inJoinWindow =
+    start?.isValid() &&
+    end?.isValid() &&
+    !now.isBefore(start.subtract(JOIN_EARLY_MINUTES, 'minute')) &&
+    !now.isAfter(end);
+  const canJoin =
+    onJoin && ['CONFIRMED', 'IN_PROGRESS'].includes(session.status) && inJoinWindow;
 
   const counterpartName =
     view === 'mentor'
@@ -193,8 +214,20 @@ const MentorshipBookingItem = ({
           </Stack>
         )}
 
-        {(canCancel || canReport || canFeedback || canReschedule || canPostpone || canRespondReschedule) && (
+        {(canJoin || canCancel || canReport || canFeedback || canReschedule || canPostpone || canRespondReschedule) && (
           <Stack direction="row" justifyContent="flex-end" spacing={1} flexWrap="wrap" useFlexGap>
+            {canJoin && (
+              <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                startIcon={<VideocamOutlinedIcon />}
+                disabled={joinPending}
+                onClick={() => onJoin(session)}
+              >
+                Tham gia
+              </Button>
+            )}
             {canRespondReschedule && (
               <>
                 <Button

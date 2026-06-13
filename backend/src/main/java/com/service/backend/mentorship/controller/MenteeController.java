@@ -27,6 +27,7 @@ import java.util.List;
 public class MenteeController {
 
     private final MenteeService menteeService;
+    private final com.service.backend.mentorship.service.MentorshipSessionService sessionService;
 
     @GetMapping("/mentors")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> getApprovedMentors(
@@ -166,6 +167,14 @@ public class MenteeController {
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>(
                                 accept ? "Đã đồng ý dời lịch" : "Đã từ chối đề nghị dời lịch", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/join")
+    public Mono<ResponseEntity<ApiResponse<JoinSessionResponse>>> joinSession(
+            @PathVariable @Min(1) Integer sessionId) {
+        return sessionService.joinSession(sessionId, false)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Tham gia buổi mentoring thành công", response)));
     }
 
     @PostMapping("/sessions/{sessionId}/report")

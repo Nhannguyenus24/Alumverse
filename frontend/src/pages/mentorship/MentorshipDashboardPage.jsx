@@ -9,6 +9,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -30,9 +31,11 @@ import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions'
 import { useUpdateSessionStatus } from '../../hooks/mentorship/useUpdateSessionStatus';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
+import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
 import { cancelMentorSession, postponeMentorSession, reportSession } from '../../utils/api';
+import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
 const TOP_TABS = MENTOR_PROFILE_TABS;
@@ -63,6 +66,8 @@ const MentorshipDashboardPage = () => {
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
   const updateMutation = useUpdateSessionStatus();
+  const joinMutation = useJoinSession();
+  const [actionError, setActionError] = useState('');
 
   const items = useMemo(() => sessionsQuery.data?.items ?? [], [sessionsQuery.data]);
   const feedbacks = useMemo(
@@ -71,7 +76,15 @@ const MentorshipDashboardPage = () => {
   );
 
   const upcomingItems = useMemo(
-    () => items.filter((s) => s.status === 'CONFIRMED' || s.status === 'RESCHEDULE_PROPOSED'),
+    () =>
+      items.filter(
+        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
+      ),
+    [items],
+  );
+
+  const pastItems = useMemo(
+    () => items.filter((s) => s.status === 'COMPLETED' || s.status === 'EXPIRED'),
     [items],
   );
 
@@ -89,6 +102,15 @@ const MentorshipDashboardPage = () => {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
+    }
+  };
+
+  const handleJoin = async (session) => {
+    setActionError('');
+    try {
+      await joinMutation.joinSession({ sessionId: session.id, asMentor: true });
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
     }
   };
 
@@ -190,17 +212,23 @@ const MentorshipDashboardPage = () => {
     setReportDescription('');
   };
 
+  const isOtherReason = reportCategory === 'OTHER';
+  const reportDescTooShort = isOtherReason && reportDescription.trim().length < 10;
+  const reportInvalid = !reportCategory || reportDescTooShort;
+
   const handleConfirmReport = async () => {
-    if (!reportTarget || !reportCategory.trim()) return;
+    if (!reportTarget || reportInvalid) return;
+    setActionError('');
     setReportPending(true);
     try {
       await reportSession(reportTarget.id, {
-        reasonCategory: reportCategory.trim(),
+        reasonCategory: reportCategory,
         description: reportDescription.trim() || undefined,
       });
       closeReportDialog();
-    } catch {
-      /* silent */
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không gửi được báo cáo.');
     } finally {
       setReportPending(false);
     }
@@ -262,6 +290,12 @@ const MentorshipDashboardPage = () => {
             <Alert severity="error">{updateMutation.errorMessage}</Alert>
           )}
 
+          {actionError && (
+            <Alert severity="error" onClose={() => setActionError('')}>
+              {actionError}
+            </Alert>
+          )}
+
           {sessionsQuery.isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress />
@@ -283,19 +317,40 @@ const MentorshipDashboardPage = () => {
                           view="mentor"
                           onCancel={openCancelDialog}
                           cancelDisabled={cancelPending}
-                          onReport={openReportDialog}
                           onPostpone={openPostponeDialog}
+                          onJoin={handleJoin}
+                          joinPending={joinMutation.isPending}
                         />
-                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => callUpdate(session.id, 'COMPLETED')}
-                          >
-                            Đánh dấu hoàn tất
-                          </Button>
-                        </Stack>
+                        {(session.status === 'CONFIRMED' || session.status === 'IN_PROGRESS') && (
+                          <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              onClick={() => callUpdate(session.id, 'COMPLETED')}
+                            >
+                              Đánh dấu hoàn tất
+                            </Button>
+                          </Stack>
+                        )}
                       </Box>
+                    ))}
+                  </Stack>
+                )}
+              </Section>
+
+              {/* ĐÃ QUA */}
+              <Section title={`Đã qua (${pastItems.length})`}>
+                {pastItems.length === 0 ? (
+                  <EmptyState message="Chưa có buổi tư vấn nào đã diễn ra." />
+                ) : (
+                  <Stack spacing={2}>
+                    {pastItems.map((session) => (
+                      <MentorshipBookingItem
+                        key={session.id}
+                        session={session}
+                        view="mentor"
+                        onReport={openReportDialog}
+                      />
                     ))}
                   </Stack>
                 )}
@@ -397,19 +452,31 @@ const MentorshipDashboardPage = () => {
             Mô tả vấn đề trong buổi mentoring. Đội quản trị sẽ xem xét và xử lý.
           </Typography>
           <TextField
+            select
             label="Lý do báo cáo *"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
             fullWidth
             sx={{ mb: 2 }}
-          />
+          >
+            {reasonsForStatus(reportTarget?.status).map((r) => (
+              <MenuItem key={r.value} value={r.value}>
+                {r.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
-            label="Mô tả thêm (tùy chọn)"
+            label={isOtherReason ? 'Mô tả chi tiết *' : 'Mô tả thêm (tùy chọn)'}
             value={reportDescription}
             onChange={(e) => setReportDescription(e.target.value)}
             fullWidth
             multiline
             minRows={2}
+            required={isOtherReason}
+            error={reportDescTooShort}
+            helperText={
+              isOtherReason ? 'Bắt buộc nhập tối thiểu 10 ký tự khi chọn "Khác".' : undefined
+            }
           />
         </DialogContent>
         <DialogActions>
@@ -420,7 +487,7 @@ const MentorshipDashboardPage = () => {
             onClick={handleConfirmReport}
             color="warning"
             variant="contained"
-            disabled={reportPending || !reportCategory.trim()}
+            disabled={reportPending || reportInvalid}
           >
             Gửi báo cáo
           </Button>
