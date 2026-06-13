@@ -9,7 +9,9 @@ import {
   Avatar,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
@@ -181,7 +183,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
 
         <MenuItem
           component={Link}
-          to={toOrgPath('/settings')}
+          to={toOrgPath('/profile')}
           onClick={handleClose}
           sx={{
             borderTop: "none",
@@ -201,7 +203,19 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           <ConfirmationNumberOutlinedIcon fontSize="small" />
           <Typography variant="body2">Vé của tôi</Typography>
         </MenuItem>
-
+        <MenuItem
+          component={Link}
+          to={toOrgPath('/settings')}
+          onClick={handleClose}
+          sx={{
+            borderTop: "none",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <SettingsIcon fontSize="small" />
+          <Typography variant="body2">Cài đặt</Typography>
+        </MenuItem>
         {isGuestVerificationLevel && (
           <MenuItem
             component={Link}
@@ -214,7 +228,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
               color: "warning.dark",
             }}
           >
-            <PersonIcon fontSize="small" />
+            <VerifiedUserIcon fontSize="small" />
             <Typography variant="body2">Xác thực tài khoản</Typography>
           </MenuItem>
         )}
