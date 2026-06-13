@@ -182,9 +182,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const handleSend = useCallback(() => {
     const text = draft.trim();
     if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
-    wsSendMessage({ groupId: activeChat.id, content: text });
+    wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat?.id, isOpen, isMessagingBlocked, wsSendMessage]);
+  }, [draft, activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, wsSendMessage]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;

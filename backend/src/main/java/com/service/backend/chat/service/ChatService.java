@@ -314,41 +314,31 @@ public class ChatService {
                                          Long senderMemberId,
                                          String content,
                                          String messageType,
-                                         String metadata) {
+                                         String metadata,
+                                         String chatType) {
         if (groupId == null || senderMemberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Group ID and sender ID must not be null"));
         }
 
-        return chatGroupRepository.findById(groupId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Chat group not found")))
-                .flatMap(group -> chatGroupMemberRepository.findByGroupId(groupId)
-                        .filter(member -> senderMemberId.equals(member.getMemberId()))
-                        .hasElements()
-                        .flatMap(isMember -> {
-                            if (!isMember) {
-                                return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Sender is not a member of this chat group"));
-                            }
+        LocalDateTime now = LocalDateTime.now();
+        String finalMessageType = messageType != null ? messageType : "TEXT";
+        String finalMetadata = metadata != null ? metadata : "null";
 
-                            LocalDateTime now = LocalDateTime.now();
-                            String finalMessageType = messageType != null ? messageType : "TEXT";
-                            String finalMetadata = metadata != null ? metadata : "null";
+        Mono<ChatMessage> insertMessage = chatMessageRepository.insertMessage(
+                groupId,
+                senderMemberId,
+                content,
+                finalMessageType,
+                finalMetadata,
+                now
+        );
 
-                            Mono<ChatMessage> insertMessage = chatMessageRepository.insertMessage(
-                                    groupId,
-                                    senderMemberId,
-                                    content,
-                                    finalMessageType,
-                                    finalMetadata,
-                                    now
-                            );
+        if (ChatType.PRIVATE.getValue().equals(chatType)) {
+            return userBlockService.assertSenderCanSendMessage(senderMemberId, groupId)
+                    .then(insertMessage);
+        }
 
-                            if (ChatType.PRIVATE.equals(group.getType())) {
-                                return userBlockService.assertSenderCanSendMessage(senderMemberId, groupId)
-                                        .then(insertMessage);
-                            }
-
-                            return insertMessage;
-                        }));
+        return insertMessage;
     }
 
     public Mono<GroupBlockedMembersContextResponse> getGroupBlockedMembersContext(

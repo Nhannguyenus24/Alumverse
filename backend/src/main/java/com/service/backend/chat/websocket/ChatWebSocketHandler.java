@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * WebSocket handler for real-time chat functionality.
- * Handles JOIN_GROUP, SEND_MESSAGE, LEAVE_GROUP events.
+ * Handles JOIN_GROUP, SEND_MESSAGE (groupId, content, chatType), LEAVE_GROUP events.
  */
 @Slf4j
 @Component
@@ -167,10 +167,11 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String content = json.get("content").asText();
         String messageType = json.has("messageType") ? json.get("messageType").asText() : "TEXT";
         String metadata = json.has("metadata") ? json.get("metadata").toString() : null;
+        String chatType = json.has("chatType") ? json.get("chatType").asText() : null;
 
-        return chatService.sendMessage(groupId, memberId, content, messageType, metadata)
+        return chatService.sendMessage(groupId, memberId, content, messageType, metadata, chatType)
                 .flatMap(savedMessage -> userDisplayInfoRepository
-                        .findByUserId(savedMessage.getSenderMemberId().intValue())
+                        .findByUserId(savedMessage.getSenderMemberId().intValue()) // N + 1 query cho nay ne, co thoi gian thi sua
                         .defaultIfEmpty(UserDisplayInfo.builder()
                                 .userId(savedMessage.getSenderMemberId().intValue())
                                 .build())
