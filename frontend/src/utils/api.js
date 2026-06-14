@@ -168,7 +168,7 @@ export const adminAuditApi = {
 };
 
 export const {
-	ByUser,
+	getLoginHistoryByUser,
 } = adminAuditApi;
 
 export const adminUserApi = {
