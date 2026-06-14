@@ -17,7 +17,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.enums.Status;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > Achievements", description = "API endpoints for student and alumni achievements")
 @RestController
 @RequestMapping("/api/articles/achievements")
 @RequiredArgsConstructor

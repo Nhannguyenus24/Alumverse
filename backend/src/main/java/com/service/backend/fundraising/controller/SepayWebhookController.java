@@ -10,7 +10,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Payments > Webhooks", description = "API endpoints for Sepay payment webhooks")
 @RestController
 @RequestMapping("/api/payment/sepay")
 @RequiredArgsConstructor

@@ -37,7 +37,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Users > Profile", description = "API endpoints for user profile management")
 @RestController
 @RequestMapping("/api/users/me")
 @Validated

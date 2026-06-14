@@ -40,7 +40,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Forum > Discussions", description = "API endpoints for forum discussions and threads")
 @RestController
 @RequestMapping("/api/forum")
 @Validated

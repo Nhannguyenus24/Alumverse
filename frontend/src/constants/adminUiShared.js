@@ -7,7 +7,7 @@ export const ADMIN_FILTER_BAR_SX = {
   alignItems: { xs: 'stretch', md: 'center' },
 };
 
-export const ADMIN_PRIMARY_ACTION_BUTTON_SX = {
+const ADMIN_PRIMARY_ACTION_BUTTON_SX = {
   textTransform: 'none',
   fontWeight: 700,
 };
@@ -18,7 +18,7 @@ export const ADMIN_STATUS_CHIP_SX = {
   justifyContent: 'center',
 };
 
-export const formatStatusLabel = (status) =>
+const formatStatusLabel = (status) =>
   String(status || '')
     .toLowerCase()
     .split('_')

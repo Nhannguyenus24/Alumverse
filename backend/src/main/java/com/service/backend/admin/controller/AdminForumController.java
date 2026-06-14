@@ -40,10 +40,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.Valid;
 import reactor.core.publisher.Mono;
 
+@Tag(name = "Admin > Forum", description = "API endpoints for managing forums by administrators")
 @RestController
 @RequestMapping("/api/admin/forum")
 @Validated
-@Tag(name = "Admin Forum Management", description = "Admin APIs for forum moderation and management")
 public class AdminForumController {
     
     private final AdminForumService adminForumService;

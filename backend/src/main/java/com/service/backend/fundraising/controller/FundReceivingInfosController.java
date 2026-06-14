@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Fundraising > Funds", description = "API endpoints for fund receiving information")
 @RestController
 @RequestMapping("/api/funds/receiving-infos")
 @RequiredArgsConstructor

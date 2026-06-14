@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Admin > Dashboard", description = "API endpoints for admin dashboard metrics and statistics")
 @RestController
 @RequestMapping("/api/admin/dashboard")
 public class AdminDashboardController {

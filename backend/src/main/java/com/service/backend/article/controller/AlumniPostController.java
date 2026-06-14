@@ -16,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > Alumni Posts", description = "API endpoints for posts created by alumni")
 @RestController
 @RequestMapping("/api/articles/alumni-posts")
 @RequiredArgsConstructor

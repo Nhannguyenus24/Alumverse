@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Fundraising > Statuses", description = "API endpoints for fund status updates")
 @RestController
 @RequestMapping("/api/fund-statuses")
 @RequiredArgsConstructor

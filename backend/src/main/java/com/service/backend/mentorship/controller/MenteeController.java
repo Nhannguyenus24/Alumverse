@@ -19,7 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Mentorship > Mentees", description = "API endpoints for mentee profile and activities")
 @RestController
 @RequestMapping("/api/mentorship/mentee")
 @RequiredArgsConstructor
