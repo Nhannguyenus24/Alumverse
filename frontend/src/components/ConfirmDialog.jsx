@@ -44,7 +44,10 @@ const ConfirmDialog = ({
 				</DialogContentText>
 			</DialogContent>
 			<DialogActions>
-				<Button onClick={handleCancel} disabled={loading}>
+				<Button variant="outlined"
+						color="secondary"
+						onClick={handleCancel}
+						disabled={loading}>
 					{cancelText}
 				</Button>
 				<Button

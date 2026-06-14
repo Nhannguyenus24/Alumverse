@@ -323,7 +323,7 @@ const Header = () => {
           <Box
             sx={{
               pointerEvents: 'auto',
-              borderRadius: 3,
+              borderRadius: 1,
               px: { xs: 2, sm: 2.5 },
               py: { xs: 1.5, sm: 1.5 },
               display: 'flex',
@@ -525,13 +525,13 @@ const Header = () => {
             </Box>
           ) : (
             <>
-                    <Button component={Link} to={toOrgPath('/auth/register')} variant="outlined"
-                      fullWidth onClick={closeDrawer}
+              <Button component={Link} to={toOrgPath('/auth/register')} variant="outlined"
+                fullWidth onClick={closeDrawer}
               >
                 Đăng ký
               </Button>
-                    <Button component={Link} to={toOrgPath('/auth/login')} variant="contained"
-                      fullWidth onClick={closeDrawer}
+              <Button component={Link} to={toOrgPath('/auth/login')} variant="contained"
+                fullWidth onClick={closeDrawer}
               >
                 Đăng nhập
               </Button>
