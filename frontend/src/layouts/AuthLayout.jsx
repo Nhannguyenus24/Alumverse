@@ -1,8 +1,11 @@
 import { Outlet } from 'react-router';
 import { Box } from '@mui/material';
 import Logo from '../components/Logo';
+import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const AuthLayout = () => {
+  const navigate = useOrgNavigate();
+
   return (
     <Box
       sx={{
@@ -26,6 +29,7 @@ const AuthLayout = () => {
         }}
       >
         <Box
+          onClick={() => navigate('/')}
           sx={{
             position: 'absolute',
             top: 0,
@@ -34,6 +38,7 @@ const AuthLayout = () => {
             pl: { xs: 2, sm: 2.5, md: 3 },
             pr: 2,
             zIndex: 1,
+            cursor: 'pointer',
           }}
         >
           <Logo

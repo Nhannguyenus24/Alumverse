@@ -20,6 +20,7 @@ import { eventApi } from "../../utils/api";
 import useOrganizationStore from "../../stores/organizationStore";
 import Logo from "../../components/Logo";
 import FitBot from "../../components/FitBot";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
 const HERO_BG = "/home_page/home_page.png";
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
@@ -29,28 +30,28 @@ const EXPLORE_ITEMS = [
     iconSrc: "/icons/ho_tro_tu_van.svg",
     title: "Hỗ trợ & Tư vấn",
     description: "Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.",
+    path: "/development/mentorship",
   },
   {
     iconSrc: "/icons/ket_noi_csv.svg",
     title: "Kết nối cựu sinh viên",
     description:
       "Kết nối cộng đồng cựu sinh viên, chia sẻ kiến thức và kinh nghiệm.",
+    path: "/forum",
   },
   {
     iconSrc: "/icons/tim_kiem_csv.svg",
     title: "Tìm kiếm cựu sinh viên",
     description: "Dễ dàng tìm kiếm và kết nối với cựu sinh viên.",
+    path: "/search",
   },
   {
     iconSrc: "/icons/su_kien_hoi_thao.svg",
     title: "Sự kiện & Hội thảo",
     description: "Tham gia sự kiện mở rộng mối quan hệ và cơ hội nghề nghiệp.",
+    path: "/activities/events",
   },
 ];
-
-
-
-
 
 const PARTNER_LOGOS = [
   { name: "VNG", src: "/company_logo/vng.png" },
@@ -69,6 +70,7 @@ const HomePage = () => {
   const { slug } = useParams();
   const { achievements } = usePublishedAchievements(0, 5);
   const [events, setEvents] = useState([]);
+  const navigate = useOrgNavigate();
 
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 
@@ -165,8 +167,7 @@ const HomePage = () => {
               </Typography>
               <Box sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
                 <Button
-                  component={Link}
-                  to="/introduction"
+                  onClick={() => navigate("/introduction")}
                   variant="outlined"
                   size="large"
                   sx={{
@@ -223,7 +224,7 @@ const HomePage = () => {
             sx={{ alignItems: "stretch" }}
           >
             {EXPLORE_ITEMS.map((item) => {
-              const { iconSrc, title, description } = item;
+              const { iconSrc, title, description, path } = item;
               return (
                 <Box
                   key={item.title}
@@ -235,6 +236,7 @@ const HomePage = () => {
                   }}
                 >
                 <Card
+                  onClick={() => navigate(path)}
                   elevation={0}
                   sx={{
                     border: 1,
@@ -247,6 +249,7 @@ const HomePage = () => {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
+                    cursor: "pointer",
                     "&:hover": {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     },
