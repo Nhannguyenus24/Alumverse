@@ -35,8 +35,10 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @PublicEndpoint
+@Tag(name = "Auth", description = "API endpoints for user authentication and authorization")
 @RestController
 @RequestMapping("/api/auth")
 @Validated

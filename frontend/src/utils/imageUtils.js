@@ -1,11 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 import apiClient from "./axios";
 
-export const IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024;
+const IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024;
 
-export const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
+const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
 
-export const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"];
+const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"];
 
 export const IMAGE_ACCEPT = "image/jpeg,image/png,.jpg,.jpeg,.png";
 
@@ -63,7 +63,7 @@ export const fileToBase64 = (file) =>
  * @param {string} base64String 
  * @returns {Promise<string|null>} The uploaded image URL or null.
  */
-export const uploadImageBase64 = async (base64String) => {
+const uploadImageBase64 = async (base64String) => {
   const res = await apiClient.post("/images/upload", { base64String });
   return res?.data?.data ?? null;
 };

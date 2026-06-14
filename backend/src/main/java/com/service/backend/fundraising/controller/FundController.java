@@ -21,8 +21,10 @@ import reactor.core.publisher.Mono;
 import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.shared.dto.DataWithWarnings;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @PublicEndpoint
+@Tag(name = "Fundraising > Funds", description = "API endpoints for viewing and managing fundraising funds")
 @RestController
 @RequestMapping("/api/funds")
 @RequiredArgsConstructor

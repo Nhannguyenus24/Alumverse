@@ -43,6 +43,6 @@ export function formatCurrency(value) {
  * @param {number|string} value - The value to format.
  * @returns {string} The formatted string (e.g., "1.000.000 VND").
  */
-export function formatVND(value) {
+function formatVND(value) {
   return `${formatCurrency(value)} VND`;
 }

@@ -33,7 +33,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Chat > General", description = "API endpoints for real-time messaging and general chat")
 @RestController
 @RequestMapping("/api/chat")
 @Validated

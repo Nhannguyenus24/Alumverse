@@ -21,10 +21,10 @@ import java.util.List;
 import com.service.backend.shared.annotations.PublicEndpoint;
 
 @PublicEndpoint
+@Tag(name = "Organizations", description = "API endpoints for public organization directory")
 @RestController
 @RequestMapping("/api/organizations")
 @RequiredArgsConstructor
-@Tag(name = "Organizations", description = "Public APIs for organization information")
 public class OrganizationController {
     private final OrganizationService organizationService;
 

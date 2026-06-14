@@ -4,13 +4,13 @@ import dayjs from "dayjs";
 // --- Regex Patterns ---
 
 /** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
-export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
 /** Username: 3–50 chars, letters, numbers, dots, underscores, hyphens */
-export const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
+const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
 
 /** OTP: exactly 6 digits */
-export const OTP_REGEX = /^[0-9]{6}$/;
+const OTP_REGEX = /^[0-9]{6}$/;
 
 /** Login: backend LoginRequest — email (or username), password */
 export const loginSchema = z.object({

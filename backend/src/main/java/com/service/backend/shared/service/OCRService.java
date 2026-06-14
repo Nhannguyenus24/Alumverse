@@ -131,39 +131,4 @@ public class OCRService {
         }
         return "";
     }
-
-    /**
-     * Example main method to demonstrate usage.
-     */
-    public static void main(String[] args) {
-        OCRService ocrService = new OCRService();
-        
-        // Uncomment and set your valid paths to test
-        String txtFilePath = "src/main/resources/tessdata/sample.txt";
-        String pngFilePath = "src/main/resources/tessdata/sample_image.png";
-        String jpgFilePath = "src/main/resources/tessdata/sample_image.jpg";
-        String pdfFilePath = "src/main/resources/tessdata/sample_document.pdf";
-
-        try {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("--- TXT Output ---\n");
-            sb.append(ocrService.extractTextFromFile(txtFilePath)).append("\n");
-
-            sb.append("\n--- PNG Output ---\n");
-            sb.append(ocrService.extractTextFromFile(pngFilePath)).append("\n");
-
-            sb.append("\n--- JPG Output ---\n");
-            sb.append(ocrService.extractTextFromFile(jpgFilePath)).append("\n");
-
-            sb.append("\n--- PDF Output ---\n");
-            sb.append(ocrService.extractTextFromFile(pdfFilePath)).append("\n");
-
-            Path outputPath = Paths.get("src/main/resources/tessdata/output.txt");
-            Files.writeString(outputPath, sb.toString(), StandardCharsets.UTF_8);
-            System.out.println("Da ghi tat ca ket qua ra file: " + outputPath.toAbsolutePath());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 }

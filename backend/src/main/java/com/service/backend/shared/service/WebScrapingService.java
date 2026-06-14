@@ -57,30 +57,4 @@ public class WebScrapingService {
             throw new IllegalArgumentException("Invalid URL: " + e.getMessage(), e);
         }
     }
-
-    /**
-     * Example main method to demonstrate usage.
-     */
-    public static void main(String[] args) {
-        WebScrapingService scrapingService = new WebScrapingService();
-        
-        // Example URL to scrape (You can change this to any valid URL)
-        String testUrl = "https://tuyensinh.hcmus.edu.vn/lich-su-hinh-thanh-va-phat-trien/";
-        // Another example: "https://vi.wikipedia.org/wiki/Java_(ngôn_ngữ_lập_trình)"
-
-        try {
-            System.out.println("Bắt đầu cào dữ liệu từ: " + testUrl);
-            String scrapedText = scrapingService.scrapeDataFromUrl(testUrl);
-            
-            // Write the output to a file to avoid console encoding issues with Vietnamese
-            Path outputPath = Paths.get("src/main/resources/tessdata/scraping_output.txt");
-            Files.createDirectories(outputPath.getParent());
-            Files.writeString(outputPath, scrapedText, StandardCharsets.UTF_8);
-            
-            System.out.println("Đã ghi toàn bộ dữ liệu cào được ra file: " + outputPath.toAbsolutePath());
-        } catch (Exception e) {
-            System.err.println("Đã xảy ra lỗi khi cào dữ liệu!");
-            e.printStackTrace();
-        }
-    }
 }

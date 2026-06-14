@@ -21,7 +21,7 @@ export const formatAccountStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
-export const formatOrganizationStatusLabel = (status) => {
+const formatOrganizationStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
     ACTIVE: 'Active',
@@ -30,7 +30,7 @@ export const formatOrganizationStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
-export const formatAuditStatusLabel = (status) => {
+const formatAuditStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
     SUCCESS: 'Success',
@@ -40,7 +40,7 @@ export const formatAuditStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
-export const formatForumStatusLabel = (status) => {
+const formatForumStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
 
   const map = {
@@ -53,7 +53,7 @@ export const formatForumStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
-export const formatFeedbackStatusLabel = (status) => {
+const formatFeedbackStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
 
   const map = {
