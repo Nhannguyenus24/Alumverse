@@ -15,8 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 
+@Tag(name = "Fundraising > Donations", description = "API endpoints for managing fund donations")
 @RestController
 @RequestMapping("/api/fund-donations")
 @RequiredArgsConstructor

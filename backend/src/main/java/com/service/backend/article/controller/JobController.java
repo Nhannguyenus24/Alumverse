@@ -16,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > Jobs", description = "API endpoints for job postings and recruitment")
 @RestController
 @RequestMapping("/api/articles/jobs")
 @RequiredArgsConstructor

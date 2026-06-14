@@ -16,7 +16,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Mentorship > Mentors", description = "API endpoints for mentor profile and activities")
 @RestController
 @RequestMapping("/api/mentorship/mentor")
 @RequiredArgsConstructor

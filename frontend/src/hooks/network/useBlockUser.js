@@ -4,7 +4,7 @@ import { useSnackbar } from 'notistack';
 import { chatApi } from '../../utils/api';
 import { invalidateGroupBlockedMembersQueries } from '../chat/invalidateChatQueries';
 
-export function useBlockStatus(targetMemberId) {
+function useBlockStatus(targetMemberId) {
   return useQuery({
     queryKey: ['chat', 'block-status', targetMemberId],
     queryFn: () => chatApi.getBlockStatus(targetMemberId),

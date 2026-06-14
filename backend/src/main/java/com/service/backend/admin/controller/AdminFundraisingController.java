@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Admin > Fundraising", description = "API endpoints for managing fundraising campaigns by administrators")
 @RestController
 @RequestMapping("/api/admin/fundraising")
 @Validated
