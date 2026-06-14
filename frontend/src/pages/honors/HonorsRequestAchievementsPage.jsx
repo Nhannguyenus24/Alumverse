@@ -10,13 +10,16 @@ import {
 } from '@mui/material';
 
 import Page from '../../components/Page';
+import WYSIWYG from '../../components/WYSIWYG';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const RequestAchievementsPage = () => {
   const navigate = useOrgNavigate();
 
+  const [image, setImage] = useState(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [proofLink, setProofLink] = useState('');
 
   const handleCancel = () => {
     navigate('/honors');
@@ -24,6 +27,13 @@ const RequestAchievementsPage = () => {
 
   const handleSubmit = () => {
     navigate('/honors');
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
+    }
   };
 
   return (
@@ -99,14 +109,37 @@ const RequestAchievementsPage = () => {
               />
 
             {/* CONTENT INPUT */}
+              <Box sx={{ pb: { xs: 8, md: 4 } }}>
+                <WYSIWYG
+                  value={content}
+                  onChange={setContent}
+                  placeholder="Write something"
+                  height={400}
+                />
+              </Box>
+
+              {/* PROOF LINK INPUT */}
               <TextField
                 fullWidth
-                multiline
-                minRows={6}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write something"
+                variant="outlined"
+                value={proofLink}
+                onChange={(e) => setProofLink(e.target.value)}
+                placeholder="Link minh chứng"
+                
               />
+
+              {/* IMAGE UPLOAD */}
+              <Box>
+                <Button variant="outlined" component="label">
+                  Tải ảnh lên
+                  <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+                </Button>
+                {image && (
+                  <Box sx={{ mt: 2 }}>
+                    <img src={image} alt="Preview" style={{ maxWidth: '100%', maxHeight: 200, borderRadius: 8 }} />
+                  </Box>
+                )}
+              </Box>
 
               {/* ACTION BUTTONS */}
               <Box
