@@ -71,12 +71,14 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         console.error("Failed to mark notification as read:", error);
       }
     }
-    if (notification.link) {
+    const targetLink = notification.link || "";
+    
+    if (targetLink) {
       handleClose();
-      if (/^https?:\/\//i.test(notification.link)) {
-        window.open(notification.link, "_blank", "noopener,noreferrer");
+      if (/^https?:\/\//i.test(targetLink)) {
+        window.open(targetLink, "_blank", "noopener,noreferrer");
       } else {
-        navigate(notification.link);
+        navigate(targetLink);
       }
     }
   };
