@@ -14,6 +14,7 @@ import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 
@@ -46,6 +47,7 @@ const FILTERS = [
 
 const HonorsAlumniPage = () => {
   const navigate = useOrgNavigate();
+  const { isAuthenticated } = useAuth();
 
   const { articles } = usePublishedAlumniPosts(0, 12);
 
@@ -98,12 +100,14 @@ const HonorsAlumniPage = () => {
                     CỰU SINH VIÊN
                   </Typography>
 
-                  <Button
-                    variant="contained"
-                    onClick={() => navigate('/honors/request-achievements')}
-                  >
-                    Gửi đơn xét thành tựu
-                  </Button>
+                  {isAuthenticated && (
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/honors/request-achievements')}
+                    >
+                      Gửi đơn xét thành tựu
+                    </Button>
+                  )}
                 </Box>
 
                 <Typography color="text.secondary">
