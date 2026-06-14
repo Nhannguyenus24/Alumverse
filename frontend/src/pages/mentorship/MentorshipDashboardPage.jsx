@@ -34,7 +34,12 @@ import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedback
 import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
-import { cancelMentorSession, postponeMentorSession, reportSession } from '../../utils/api';
+import {
+  cancelMentorSession,
+  postponeMentorSession,
+  reportSession,
+  updateMentorSessionMeetingLink,
+} from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
@@ -61,6 +66,10 @@ const MentorshipDashboardPage = () => {
   const [postponeEnd, setPostponeEnd] = useState(null);
   const [postponeError, setPostponeError] = useState(null);
   const [postponePending, setPostponePending] = useState(false);
+  const [linkTarget, setLinkTarget] = useState(null);
+  const [linkValue, setLinkValue] = useState('');
+  const [linkError, setLinkError] = useState(null);
+  const [linkPending, setLinkPending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
@@ -200,6 +209,36 @@ const MentorshipDashboardPage = () => {
     }
   };
 
+  const openLinkDialog = (session) => {
+    setLinkTarget(session);
+    setLinkValue(session.meetingLink ?? '');
+    setLinkError(null);
+  };
+  const closeLinkDialog = () => {
+    setLinkTarget(null);
+    setLinkValue('');
+    setLinkError(null);
+  };
+  const handleConfirmLink = async () => {
+    if (!linkTarget) return;
+    const value = linkValue.trim();
+    if (!value) {
+      setLinkError('Vui lòng nhập link tham gia.');
+      return;
+    }
+    setLinkPending(true);
+    setLinkError(null);
+    try {
+      await updateMentorSessionMeetingLink(linkTarget.id, value);
+      sessionsQuery.refetch?.();
+      closeLinkDialog();
+    } catch (err) {
+      setLinkError(err?.response?.data?.message ?? 'Không cập nhật được link tham gia.');
+    } finally {
+      setLinkPending(false);
+    }
+  };
+
   const openReportDialog = (session) => {
     setReportTarget(session);
     setReportCategory('');
@@ -320,6 +359,8 @@ const MentorshipDashboardPage = () => {
                           onPostpone={openPostponeDialog}
                           onJoin={handleJoin}
                           joinPending={joinMutation.isPending}
+                          onSetMeetingLink={openLinkDialog}
+                          mentorHasDefaultLink={Boolean(profile?.defaultMeetingLink)}
                         />
                         {(session.status === 'CONFIRMED' || session.status === 'IN_PROGRESS') && (
                           <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
@@ -522,6 +563,37 @@ const MentorshipDashboardPage = () => {
             disabled={cancelPending}
           >
             Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(linkTarget)} onClose={closeLinkDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{linkTarget?.meetingLink ? 'Sửa link tham gia' : 'Thêm link tham gia'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Dán link phòng họp (Google Meet, Zoom...) cho buổi hẹn này. Người được cố vấn sẽ thấy link
+            và nhận thông báo.
+          </Typography>
+          <TextField
+            label="Link tham gia"
+            value={linkValue}
+            onChange={(e) => setLinkValue(e.target.value)}
+            fullWidth
+            placeholder="https://meet.google.com/..."
+            autoFocus
+          />
+          {linkError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {linkError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLinkDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmLink} variant="contained" disabled={linkPending}>
+            {linkPending ? 'Đang lưu...' : 'Lưu link'}
           </Button>
         </DialogActions>
       </Dialog>

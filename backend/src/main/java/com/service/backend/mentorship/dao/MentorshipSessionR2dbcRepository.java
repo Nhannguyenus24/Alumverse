@@ -127,4 +127,22 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
             "JOIN mentorship_sessions ms ON ms.availability_id = ma.id WHERE ms.id = :sessionId")
     Mono<SessionWindowProjection> findWindowBySessionId(Integer sessionId);
 
+    // ===================== Meeting-link reminders =====================
+
+    @Query("SELECT ms.id AS session_id, ma.mentor_member_id AS mentor_member_id, ma.start_time AS start_time " +
+            "FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "LEFT JOIN mentor_profiles mp ON ma.mentor_member_id = mp.member_id " +
+            "WHERE ms.status = 'CONFIRMED' " +
+            "AND ms.meeting_link_reminded_at IS NULL " +
+            "AND (ms.meeting_link IS NULL OR ms.meeting_link = '') " +
+            "AND (mp.default_meeting_link IS NULL OR mp.default_meeting_link = '') " +
+            "AND ma.start_time > :now AND ma.start_time <= :until")
+    Flux<MeetingLinkReminderProjection> findMissingMeetingLinkCandidates(
+            java.time.LocalDateTime now, java.time.LocalDateTime until);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET meeting_link_reminded_at = :now WHERE id = :id")
+    Mono<Integer> markMeetingLinkReminded(Integer id, java.time.LocalDateTime now);
+
 }

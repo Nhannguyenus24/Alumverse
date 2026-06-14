@@ -25,7 +25,7 @@ export const MENTOR_PROFILE_TABS = [
   { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
   { label: 'Tổng quan', path: '/development/mentorship/dashboard' },
   { label: 'Lịch rảnh', path: '/development/mentorship/calendar' },
-  { label: 'Buổi hẹn của tôi', path: '/development/mentorship/my-bookings' },
+  { label: 'Lịch hẹn của tôi', path: '/development/mentorship/my-bookings' },
 ];
 
 /** Tabs for a mentee's personal workspace. */
