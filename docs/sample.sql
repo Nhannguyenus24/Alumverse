@@ -568,35 +568,6 @@ INSERT INTO "verification_requests" ("member_id", "document_url", "document_type
 (9, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'Student ID for AI verification', 'PENDING', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
 (10, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'DIPLOMA', 'Diploma document scan', 'REJECTED', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
 
--- ============= POLL DATA =============
-INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
-(1, 1, 2, 'Best Programming Language for 2026?', 'Vote for your favorite programming language for upcoming projects', false, true, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
-(2, 1, 3, 'When is the best time for next meetup?', 'Help us schedule the next alumni meetup', false, true, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
-
--- Add options for polls
-INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "created_at", "updated_at") VALUES
-(1, 'Python', 5, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
-(1, 'JavaScript/TypeScript', 8, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
-(1, 'Java', 4, NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days'),
-(1, 'Go', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days'),
-(1, 'Rust', 6, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 day'),
-(2, 'Weekend (Saturday or Sunday)', 12, NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
-(2, 'Weekday Evening (after work)', 8, NOW() - INTERVAL '2 days', NOW()),
-(2, 'Weekday Lunch (12-2pm)', 3, NOW() - INTERVAL '2 days', NOW()),
-(2, 'No preference', 5, NOW() - INTERVAL '2 days', NOW());
-
--- Sample poll votes
-INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "created_at") VALUES
-(1, 2, 4, NOW() - INTERVAL '4 days'),
-(1, 2, 6, NOW() - INTERVAL '3 days'),
-(1, 1, 9, NOW() - INTERVAL '2 days'),
-(1, 5, 2, NOW() - INTERVAL '1 day'),
-(1, 1, 5, NOW()),
-(2, 1, 2, NOW() - INTERVAL '2 days'),
-(2, 1, 4, NOW() - INTERVAL '1 day'),
-(2, 2, 6, NOW() - INTERVAL '1 day'),
-(2, 1, 8, NOW());
-
 -- ============= SCHOOL FEEDBACKS DATA =============
 INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email", "subject", "ai_summary", "content", "created_at", "is_read") VALUES
 (1, 'Nguyễn Minh Khang', '0908123456', 'khang.nguyen@example.com', 'Góp ý về lịch workshop', 'Student suggests earlier announcement of workshop schedules.', 'Mong trường công bố lịch workshop sớm hơn để sinh viên chủ động đăng ký.', NOW() - INTERVAL '4 days', false),
