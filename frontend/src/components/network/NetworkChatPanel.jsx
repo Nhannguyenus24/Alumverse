@@ -17,17 +17,20 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
 import SendIcon from '@mui/icons-material/Send';
-import MoodIcon from '@mui/icons-material/Mood';
 
 import Scrollbar from '../Scrollbar';
+import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
+import { insertTextAtInputSelection } from '../../utils/insertTextAtInputSelection';
 import ConfirmDialog from '../ConfirmDialog';
 import IconButtonMenu from '../IconButtonMenu';
 import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
+import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
+import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -40,12 +43,14 @@ const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const [draft, setDraft] = useState('');
+  const draftInputRef = useRef(null);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
   const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
   const token = useAuthStore((state) => state.token ?? null);
   const currentUserId = useAuthStore((state) => state.user?.id ?? null);
 
   const isPrivateChat = activeChat?.type === 'PRIVATE';
+  const isGroupChat = activeChat?.type === 'GROUP';
   const peerMemberId = isPrivateChat ? activeChat?.peerMemberId ?? null : null;
   const blockedByMe = Boolean(activeChat?.blockedByMe);
   const blockedByPeer = Boolean(activeChat?.blockedByPeer);
@@ -60,6 +65,18 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
     activeChat?.id ?? null,
   );
 
+  const {
+    blockedMembers: blockedMembersInGroup,
+    isOwner: isGroupOwner,
+    hasBlockedMembersInGroup,
+  } = useGroupBlockedMembersContext(activeChat?.id ?? null, {
+    enabled: isGroupChat && activeChat?.id != null,
+  });
+
+  const groupBlockedBannerMessage = hasBlockedMembersInGroup
+    ? buildGroupBlockedMembersBannerMessage(blockedMembersInGroup, isGroupOwner)
+    : null;
+
   // --- WebSocket ---
   const appendMessageRef = useRef(appendMessage);
   useEffect(() => { appendMessageRef.current = appendMessage; }, [appendMessage]);
@@ -71,8 +88,8 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
       id: p.id,
       groupId: p.groupId,
       senderMemberId: p.senderMemberId,
-      senderFullName: null,
-      senderAvatarUrl: null,
+      senderFullName: p.senderFullName ?? null,
+      senderAvatarUrl: p.senderAvatarUrl ?? null,
       content: p.content,
       messageType: p.messageType,
       metadata: p.metadata,
@@ -165,15 +182,19 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const handleSend = useCallback(() => {
     const text = draft.trim();
     if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
-    wsSendMessage({ groupId: activeChat.id, content: text });
+    wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat?.id, isOpen, isMessagingBlocked, wsSendMessage]);
+  }, [draft, activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, wsSendMessage]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
     handleSend();
   }, [handleSend]);
+
+  const handleEmojiSelect = useCallback((emoji) => {
+    insertTextAtInputSelection(draftInputRef, setDraft, emoji);
+  }, []);
 
   return (
     <Box
@@ -298,6 +319,32 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
         </Alert>
       ) : null}
 
+      {isGroupChat && groupBlockedBannerMessage ? (
+        <Alert
+          severity="info"
+          sx={{
+            borderRadius: 0,
+            alignItems: 'center',
+            bgcolor: 'primary.lighter',
+            color: 'primary.dark',
+            '& .MuiAlert-icon': { color: 'primary.main' },
+            '& .MuiAlert-message': { flex: 1 },
+          }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setMembersDrawerOpen(true)}
+              sx={{ fontWeight: 700, textTransform: 'none', whiteSpace: 'nowrap' }}
+            >
+              Kiểm tra setting
+            </Button>
+          }
+        >
+          {groupBlockedBannerMessage}
+        </Alert>
+      ) : null}
+
       <GroupMembersDrawer
         open={membersDrawerOpen}
         onClose={() => setMembersDrawerOpen(false)}
@@ -387,7 +434,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
                       color: isOwn ? 'primary.contrastText' : 'text.primary',
                     }}
                   >
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                       {msg.content}
                     </Typography>
                   </Box>
@@ -433,6 +480,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
             fullWidth
             multiline
             maxRows={4}
+            inputRef={draftInputRef}
             placeholder={
               isMessagingBlocked
                 ? 'Không thể gửi tin nhắn...'
@@ -449,9 +497,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton size="small" aria-label="Emoji" edge="end" disabled={isInputDisabled}>
-                    <MoodIcon />
-                  </IconButton>
+                  <ChatEmojiPickerButton
+                    disabled={isInputDisabled}
+                    onEmojiSelect={handleEmojiSelect}
+                  />
                 </InputAdornment>
               ),
             }}

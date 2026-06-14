@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  MenuItem,
   Stack,
   Switch,
   Tab,
@@ -25,16 +26,19 @@ import MentorshipBookingItem from '../../components/mentorship/MentorshipBooking
 import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions';
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
 import { useSubmitSessionFeedback } from '../../hooks/mentorship/useSubmitSessionFeedback';
+import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { reportSession, respondReschedule } from '../../utils/api';
+import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 
-const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'RESCHEDULE_PROPOSED']);
+const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_PROPOSED']);
+const PAST_STATUSES = new Set(['COMPLETED', 'EXPIRED']);
 const CANCELLED_STATUSES = new Set(['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'REJECTED']);
 
 const TAB_FILTERS = [
   { key: 'all', label: 'Tất cả', match: () => true },
   { key: 'upcoming', label: 'Sắp tới', match: (s) => ACTIVE_STATUSES.has(s.status) },
-  { key: 'completed', label: 'Đã hoàn thành', match: (s) => s.status === 'COMPLETED' },
+  { key: 'past', label: 'Đã qua', match: (s) => PAST_STATUSES.has(s.status) },
   { key: 'cancelled', label: 'Đã hủy / từ chối', match: (s) => CANCELLED_STATUSES.has(s.status) },
 ];
 
@@ -63,6 +67,16 @@ const MentorshipMyBookingsPage = () => {
   const sessionsQuery = useMyMenteeSessions({ page, limit: PAGE_SIZE });
   const cancelMutation = useCancelMenteeSession();
   const feedbackMutation = useSubmitSessionFeedback();
+  const joinMutation = useJoinSession();
+
+  const handleJoin = async (session) => {
+    setActionError('');
+    try {
+      await joinMutation.joinSession({ sessionId: session.id, asMentor: false });
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
+    }
+  };
 
   const paginated = sessionsQuery.data;
   const items = useMemo(() => paginated?.items ?? [], [paginated?.items]);
@@ -104,18 +118,24 @@ const MentorshipMyBookingsPage = () => {
     setReportDescription('');
   };
 
+  const isOtherReason = reportCategory === 'OTHER';
+  const reportDescTooShort = isOtherReason && reportDescription.trim().length < 10;
+  const reportInvalid = !reportCategory || reportDescTooShort;
+
   const handleConfirmReport = async () => {
-    if (!reportTarget || !reportCategory.trim()) return;
+    if (!reportTarget || reportInvalid) return;
+    setActionError('');
     setReportPending(true);
     try {
       await reportSession(reportTarget.id, {
-        reasonCategory: reportCategory.trim(),
+        reasonCategory: reportCategory,
         description: reportDescription.trim() || undefined,
       });
       setReportSuccess('Đã gửi báo cáo. Đội quản trị sẽ xem xét và phản hồi.');
       closeReportDialog();
-    } catch {
-      /* silent fail — improve later */
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không gửi được báo cáo.');
     } finally {
       setReportPending(false);
     }
@@ -283,6 +303,8 @@ const MentorshipMyBookingsPage = () => {
                 onReschedule={openRescheduleDialog}
                 onRescheduleResponse={handleRescheduleResponse}
                 rescheduleResponsePending={rescheduleResponsePending}
+                onJoin={handleJoin}
+                joinPending={joinMutation.isPending}
               />
             ))}
           </Stack>
@@ -319,20 +341,33 @@ const MentorshipMyBookingsPage = () => {
             Mô tả vấn đề bạn gặp phải trong buổi mentoring này. Đội quản trị sẽ xem xét và xử lý.
           </Typography>
           <TextField
+            select
             label="Lý do báo cáo *"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
             fullWidth
             sx={{ mb: 2 }}
-            placeholder="Ví dụ: Không đến đúng giờ, Nội dung không phù hợp..."
-          />
+          >
+            {reasonsForStatus(reportTarget?.status).map((r) => (
+              <MenuItem key={r.value} value={r.value}>
+                {r.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
-            label="Mô tả thêm (tùy chọn)"
+            label={isOtherReason ? 'Mô tả chi tiết *' : 'Mô tả thêm (tùy chọn)'}
             value={reportDescription}
             onChange={(e) => setReportDescription(e.target.value)}
             fullWidth
             multiline
             minRows={2}
+            required={isOtherReason}
+            error={reportDescTooShort}
+            helperText={
+              isOtherReason
+                ? 'Bắt buộc nhập tối thiểu 10 ký tự khi chọn "Khác".'
+                : undefined
+            }
             placeholder="Mô tả chi tiết sự việc..."
           />
         </DialogContent>
@@ -344,7 +379,7 @@ const MentorshipMyBookingsPage = () => {
             onClick={handleConfirmReport}
             color="warning"
             variant="contained"
-            disabled={reportPending || !reportCategory.trim()}
+            disabled={reportPending || reportInvalid}
           >
             Gửi báo cáo
           </Button>

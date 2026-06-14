@@ -183,6 +183,14 @@ public class UserService {
                 .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
     }
 
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
+        return userProfileRepository.findProfileByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + userId))))
+                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
+    }
+
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
         Integer userId = currentUserId.intValue();
 

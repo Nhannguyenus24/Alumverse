@@ -20,7 +20,8 @@ import { useLocation } from 'react-router';
 
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
-import MessagesPreviewPanel, { MESSAGES_PREVIEW_MENU_PAPER_SX } from './MessagesPreviewPanel';
+import MessagesPreviewPanel from './MessagesPreviewPanel';
+import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
 
 const pulse = keyframes`
   0%, 100% {
@@ -89,6 +90,7 @@ export default function ChatFloatingButton() {
   const [showLoginPanel, setShowLoginPanel] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
+  const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mb: 1.5 });
 
   const handleClick = (event) => {
     if (isAuthenticated) {
@@ -139,20 +141,15 @@ export default function ChatFloatingButton() {
           anchorEl={anchorEl}
           open={menuOpen}
           onClose={handleCloseMenu}
+          actions={menuActionsRef}
           anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
           transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          slotProps={{
-            paper: {
-              sx: {
-                ...MESSAGES_PREVIEW_MENU_PAPER_SX,
-                mb: 1.5,
-              },
-            },
-          }}
+          slotProps={slotProps}
         >
           <MessagesPreviewPanel
             onClose={handleCloseMenu}
             queryEnabled={menuOpen}
+            onContentReady={updateMenuPosition}
           />
         </Menu>
       )}

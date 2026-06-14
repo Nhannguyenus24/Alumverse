@@ -379,8 +379,11 @@ public class MentorService {
                                             return Mono.error(new ApplicationException(
                                                     ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
                                         }
+                                        boolean slotPast = avail.getEndTime() == null
+                                                || avail.getEndTime().isBefore(LocalDateTime.now());
+                                        String slotStatus = (slotPast ? Status.EXPIRED : Status.AVAILABLE).getValue();
                                         return availabilityRepository
-                                                .updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
+                                                .updateStatus(session.getAvailabilityId(), slotStatus)
                                                 .then(sessionRepository.updateStatusWithCancelReason(
                                                         sessionId, Status.CANCELLED_BY_MENTOR.getValue(), cancelReason))
                                                 .doOnNext(rows -> notificationService.createNotificationAsync(

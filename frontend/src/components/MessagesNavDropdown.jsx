@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { IconButton, Menu } from '@mui/material';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 
-import MessagesPreviewPanel, { MESSAGES_PREVIEW_MENU_PAPER_SX } from './MessagesPreviewPanel';
+import MessagesPreviewPanel from './MessagesPreviewPanel';
+import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
 
 const MessagesNavDropdown = ({ headerTextColor }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const { menuActionsRef, slotProps, updateMenuPosition } = useMessagesPreviewMenu({ mt: 3 });
 
   const handleOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -35,18 +37,16 @@ const MessagesNavDropdown = ({ headerTextColor }) => {
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
+        actions={menuActionsRef}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            sx: {
-              ...MESSAGES_PREVIEW_MENU_PAPER_SX,
-              mt: 3,
-            },
-          },
-        }}
+        slotProps={slotProps}
       >
-        {open ? <MessagesPreviewPanel onClose={handleClose} /> : null}
+        <MessagesPreviewPanel
+          onClose={handleClose}
+          queryEnabled={open}
+          onContentReady={updateMenuPosition}
+        />
       </Menu>
     </>
   );

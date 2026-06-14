@@ -11,9 +11,9 @@ function getWsUrl() {
  * Backend protocol expects JSON events:
  * - JOIN_GROUP { groupId }
  * - LEAVE_GROUP { groupId }
- * - SEND_MESSAGE { groupId, content, messageType?, metadata? }
+ * - SEND_MESSAGE { groupId, content, chatType?, messageType?, metadata? }
  * Receives:
- * - MESSAGE_CREATED { payload: {...} }
+ * - MESSAGE_CREATED { payload: { id, groupId, senderMemberId, senderFullName, senderAvatarUrl, content, ... } }
  * - ERROR { message }
  */
 export function useChatWebSocket({ token, onEvent }) {
@@ -157,13 +157,14 @@ export function useChatWebSocket({ token, onEvent }) {
   );
 
   const sendMessage = useCallback(
-    ({ groupId, content, messageType = "TEXT", metadata = null }) => {
+    ({ groupId, content, chatType, messageType = "TEXT", metadata = null }) => {
       if (groupId == null) return false;
       if (!content || typeof content !== "string") return false;
       return sendJson({
         type: "SEND_MESSAGE",
         groupId: Number(groupId),
         content,
+        chatType,
         messageType,
         metadata,
       });

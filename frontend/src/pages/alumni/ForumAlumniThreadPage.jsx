@@ -10,6 +10,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -28,6 +29,7 @@ import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
 import { useSubscribeToTopic } from '../../hooks/forum/useSubscribeToTopic';
 import { useForumTopicSubscriptionStatus } from '../../hooks/forum/useForumTopicSubscriptionStatus';
+import { useReportForumPost } from '../../hooks/forum/useReportForumPost';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -36,9 +38,10 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { toPlainText } from '../../utils/stringUtils';
+import ReportPostDialog from '../../components/forum/ReportPostDialog';
 
-const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
-  const { showError } = useNotification();
+const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
+  const { showError, showSuccess } = useNotification();
   const reactErrShownRef = useRef(false);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
@@ -194,6 +197,18 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                   Xóa
                 </MenuItem>
               )}
+              {!isOwn && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseActionMenu();
+                    onReport?.(reply);
+                  }}
+                  sx={{ color: 'warning.main' }}
+                >
+                  <FlagOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                  Báo cáo
+                </MenuItem>
+              )}
             </Menu>
           </>
         </Box>
@@ -283,12 +298,24 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                 {likesDisplay}
               </Typography>
             </Button>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                Chia sẻ
-              </Typography>
-            </Box>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => {
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                  showSuccess('Đã sao chép liên kết');
+                });
+              }}
+              sx={{ minWidth: 0, p: 0, color: 'text.secondary', textTransform: 'none' }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary">
+                  Chia sẻ
+                </Typography>
+              </Box>
+            </Button>
           </Box>
           <Box />
         </Box>
@@ -307,7 +334,7 @@ const FALLBACK_THREAD = {
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
   const navigate = useOrgNavigate();
-  const { threadId } = useParams();
+  const { threadId, pageId } = useParams();
   const topicId = useMemo(() => {
     const id = parseInt(threadId, 10);
     return Number.isNaN(id) ? null : id;
@@ -327,7 +354,12 @@ const ForumAlumniThreadPage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [postToReport, setPostToReport] = useState(null);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = parseInt(pageId, 10);
+    return !isNaN(p) && p > 0 ? p - 1 : 0;
+  });
 
   const organizationId = organization?.id ?? null;
   const { categories } = useForumCategories(organizationId);
@@ -364,14 +396,19 @@ const ForumAlumniThreadPage = () => {
   } = useUpdateForumTopic();
   const { isSubscribed, isPending: subStatusPending } = useForumTopicSubscriptionStatus(topicId, memberId);
   const { toggleSubscription, isPending: subTogglePending } = useSubscribeToTopic();
+  const { reportPost, isPending: reportPending } = useReportForumPost();
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCurrentPage(0);
-  }, [topicId]);
+    const p = parseInt(pageId, 10);
+    if (!isNaN(p) && p > 0) {
+      setCurrentPage(p - 1);
+    } else {
+      setCurrentPage(0);
+    }
+  }, [pageId]);
 
   useEffect(() => {
     if (!pageInfo?.totalPage || pageInfo.totalPage <= 0) return;
@@ -397,11 +434,11 @@ const ForumAlumniThreadPage = () => {
     const firstPost = posts?.[0] ?? null;
 
     const authorFromPost = firstPost?.authorMemberId
-      ? `Thành viên #${firstPost.authorMemberId}`
+      ? (String(firstPost.authorMemberId) === String(user?.id) ? 'Tôi' : `Thành viên #${firstPost.authorMemberId}`)
       : null;
     const authorFromTopic =
       topicSummary?.createdByMemberId != null
-        ? `Thành viên #${topicSummary.createdByMemberId}`
+        ? (String(topicSummary.createdByMemberId) === String(user?.id) ? 'Tôi' : `Thành viên #${topicSummary.createdByMemberId}`)
         : null;
 
     const createdFromPost = firstPost?.createdAt ? formatDateTime(firstPost.createdAt, '—') : null;
@@ -413,20 +450,23 @@ const ForumAlumniThreadPage = () => {
       role: 'Alumni',
       createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
     };
-  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride]);
+  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride, user?.id]);
 
   const replies = useMemo(
     () =>
-      (posts ?? []).map((post) => ({
-        id: post.id,
-        answerToPostId: post.answerToPostId ?? null,
-        authorMemberId: post.authorMemberId ?? null,
-        authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
-        role: 'Alumni',
-        createdAt: formatDateTime(post.createdAt, '—'),
-        content: post.content ?? '',
-      })),
-    [posts]
+      (posts ?? []).map((post) => {
+        const isOwn = post.authorMemberId != null && String(post.authorMemberId) === String(user?.id);
+        return {
+          id: post.id,
+          answerToPostId: post.answerToPostId ?? null,
+          authorMemberId: post.authorMemberId ?? null,
+          authorName: isOwn ? 'Tôi' : `Thành viên #${post.authorMemberId ?? '—'}`,
+          role: 'Alumni',
+          createdAt: formatDateTime(post.createdAt, '—'),
+          content: post.content ?? '',
+        };
+      }),
+    [posts, user?.id]
   );
 
   const replyMap = useMemo(() => {
@@ -483,6 +523,35 @@ const ForumAlumniThreadPage = () => {
     setIsConfirmDeleteOpen(false);
     setPostToDelete(null);
   }, [deletePending]);
+
+  const handleReportPost = useCallback((reply) => {
+    if (!reply?.id) return;
+    setPostToReport(reply);
+    setIsReportOpen(true);
+  }, []);
+
+  const handleCloseReport = useCallback(() => {
+    if (reportPending) return;
+    setIsReportOpen(false);
+    setPostToReport(null);
+  }, [reportPending]);
+
+  const handleConfirmReport = async ({ reason, description }) => {
+    if (!postToReport?.id || !user?.id) return;
+    try {
+      await reportPost({
+        id: postToReport.id,
+        reporterMemberId: user.id,
+        reason,
+        description,
+      });
+      showSuccess('Gửi báo cáo thành công.');
+      setIsReportOpen(false);
+      setPostToReport(null);
+    } catch (err) {
+      showError(err?.response?.data?.message ?? err?.message ?? 'Không thể gửi báo cáo.');
+    }
+  };
 
   const handleEditPost = useCallback((reply) => {
     if (!reply?.id) return;
@@ -625,6 +694,15 @@ const ForumAlumniThreadPage = () => {
         showSuccess('Đăng bài viết thành công.');
       }
       setEditorValue('');
+      
+      // Jump to the last page to see the new post
+      if (pageInfo) {
+        const newTotal = pageInfo.totalItem + 1;
+        const newLastPage = Math.max(0, Math.ceil(newTotal / pageInfo.pageSize) - 1);
+        if (currentPage !== newLastPage) {
+          navigate(`/forum/alumni/career/${threadId}/page/${newLastPage + 1}`, { state: location.state });
+        }
+      }
     } catch (err) {
       const message =
         err?.response?.data?.message ??
@@ -671,9 +749,10 @@ const ForumAlumniThreadPage = () => {
   );
 
   const handlePaginationChange = useCallback((_, nextPage) => {
-    setCurrentPage(nextPage - 1);
+    setReplyTo(null);
+    navigate(`/forum/alumni/career/${threadId}/page/${nextPage}`, { state: location.state });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [navigate, threadId, location.state]);
 
   const selectedFilterId = useMemo(() => {
     const allFilterIds = filters.map((f) => f.id);
@@ -988,6 +1067,7 @@ const ForumAlumniThreadPage = () => {
                       onReply={handleReply}
                       onDelete={handleDeletePost}
                       onEdit={handleEditPost}
+                      onReport={handleReportPost}
                       isDeleting={deletePending}
                       parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
                     />
@@ -1064,7 +1144,7 @@ const ForumAlumniThreadPage = () => {
                     </Box>
                     <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
                       <Typography variant="body2" fontWeight={600}>
-                        {user?.userName ?? 'User'}
+                        Tôi
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {(user?.role ?? 'Student').toString().toLowerCase()}
@@ -1114,7 +1194,7 @@ const ForumAlumniThreadPage = () => {
                             WebkitBoxOrient: 'vertical',
                           }}
                         >
-                          {replyTo.content || '—'}
+                          {stripHtml(replyTo.content) || '—'}
                         </Typography>
                       </Box>
                     ) : null}
@@ -1212,6 +1292,12 @@ const ForumAlumniThreadPage = () => {
         loading={deletePending}
         onConfirm={handleConfirmDeletePost}
         onCancel={handleCloseConfirmDelete}
+      />
+      <ReportPostDialog
+        open={isReportOpen}
+        onClose={handleCloseReport}
+        onConfirm={handleConfirmReport}
+        isPending={reportPending}
       />
     </Page>
   );
