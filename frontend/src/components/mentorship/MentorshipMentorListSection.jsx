@@ -109,12 +109,21 @@ const MentorshipMentorListSection = () => {
       navigate('/settings/account');
       return;
     }
+    if (!access.hasJoinedMentorship) {
+      enqueueSnackbar('Bạn cần đăng ký trở thành mentee hoặc cố vấn trước khi đặt lịch.', {
+        variant: 'warning',
+      });
+      navigate('/development/mentorship/mentee-signup');
+      return;
+    }
     navigate(`/development/mentorship/mentors/${mentorMemberId}/book`);
   };
 
   const bookDisabledReason = !access.canUseMentorship
     ? 'Cần xác minh học vấn để đặt lịch'
-    : undefined;
+    : !access.hasJoinedMentorship
+      ? 'Cần đăng ký mentee/cố vấn để đặt lịch'
+      : undefined;
 
   return (
     <Stack spacing={3}>
@@ -184,7 +193,7 @@ const MentorshipMentorListSection = () => {
                 tags={(mentor.expertiseTopics ?? []).slice(0, 3)}
                 onViewProfile={() => handleViewProfile(mentor.memberId)}
                 onBook={() => handleBook(mentor.memberId)}
-                canBook={access.canUseMentorship && !isOwnCard}
+                canBook={access.canUseMentorship && access.hasJoinedMentorship && !isOwnCard}
                 bookDisabledReason={isOwnCard ? 'Đây là hồ sơ của bạn' : bookDisabledReason}
               />
             );

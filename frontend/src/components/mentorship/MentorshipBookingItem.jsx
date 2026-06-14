@@ -11,6 +11,7 @@ import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
+import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import dayjs from 'dayjs';
 
 const JOIN_EARLY_MINUTES = 15;
@@ -69,6 +70,8 @@ const MentorshipBookingItem = ({
   rescheduleResponsePending = false,
   onJoin,
   joinPending = false,
+  onSetMeetingLink,
+  mentorHasDefaultLink = false,
 }) => {
   const range = formatRange(session.startTime, session.endTime);
   const proposedRange = formatRange(session.proposedStartTime, session.proposedEndTime);
@@ -93,6 +96,13 @@ const MentorshipBookingItem = ({
     !now.isAfter(end);
   const canJoin =
     onJoin && ['CONFIRMED', 'IN_PROGRESS'].includes(session.status) && inJoinWindow;
+  const canSetMeetingLink =
+    onSetMeetingLink && view === 'mentor' && ['CONFIRMED', 'IN_PROGRESS'].includes(session.status);
+  const missingMeetingLink =
+    view === 'mentor' &&
+    ['CONFIRMED', 'IN_PROGRESS'].includes(session.status) &&
+    !session.meetingLink &&
+    !mentorHasDefaultLink;
 
   const counterpartName =
     view === 'mentor'
@@ -214,7 +224,27 @@ const MentorshipBookingItem = ({
           </Stack>
         )}
 
-        {(canJoin || canCancel || canReport || canFeedback || canReschedule || canPostpone || canRespondReschedule) && (
+        {missingMeetingLink && (
+          <Stack
+            direction="row"
+            spacing={0.75}
+            alignItems="center"
+            sx={{
+              p: 1,
+              borderRadius: 1,
+              bgcolor: 'warning.lighter',
+              border: '1px dashed',
+              borderColor: 'warning.main',
+            }}
+          >
+            <WarningAmberOutlinedIcon fontSize="small" color="warning" />
+            <Typography variant="body2" color="warning.dark">
+              Buổi này chưa có link tham gia — hãy thêm link họp trước khi buổi bắt đầu.
+            </Typography>
+          </Stack>
+        )}
+
+        {(canJoin || canSetMeetingLink || canCancel || canReport || canFeedback || canReschedule || canPostpone || canRespondReschedule) && (
           <Stack direction="row" justifyContent="flex-end" spacing={1} flexWrap="wrap" useFlexGap>
             {canJoin && (
               <Button
@@ -226,6 +256,17 @@ const MentorshipBookingItem = ({
                 onClick={() => onJoin(session)}
               >
                 Tham gia
+              </Button>
+            )}
+            {canSetMeetingLink && (
+              <Button
+                size="small"
+                variant="outlined"
+                color={session.meetingLink ? 'inherit' : 'warning'}
+                startIcon={<LinkOutlinedIcon />}
+                onClick={() => onSetMeetingLink(session)}
+              >
+                {session.meetingLink ? 'Sửa link họp' : 'Thêm link họp'}
               </Button>
             )}
             {canRespondReschedule && (

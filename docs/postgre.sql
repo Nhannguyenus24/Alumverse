@@ -227,6 +227,7 @@ CREATE TABLE "mentorship_sessions" (
   "mentee_joined_at" timestamp,
   "started_at" timestamp,
   "ended_at" timestamp,
+  "meeting_link_reminded_at" timestamp,
   "created_at" timestamp
 );
 
