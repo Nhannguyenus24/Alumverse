@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import {
   Alert,
@@ -209,16 +209,16 @@ const UnifiedProfileEditPage = () => {
     }
   };
 
-  const addExperienceRow = () => setExperiences((list) => [...list, emptyExperience()]);
-  const updateExperienceRow = (idx, field, value) =>
-    setExperiences((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
-  const removeExperienceRow = (idx) =>
-    setExperiences((list) => list.filter((_, i) => i !== idx));
+  const addExperienceRow = useCallback(() => setExperiences((list) => [...list, emptyExperience()]), []);
+  const updateExperienceRow = useCallback((idx, field, value) =>
+    setExperiences((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeExperienceRow = useCallback((idx) =>
+    setExperiences((list) => list.filter((_, i) => i !== idx)), []);
 
-  const addEducationRow = () => setEducations((list) => [...list, emptyEducation()]);
-  const updateEducationRow = (idx, field, value) =>
-    setEducations((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
-  const removeEducationRow = (idx) => setEducations((list) => list.filter((_, i) => i !== idx));
+  const addEducationRow = useCallback(() => setEducations((list) => [...list, emptyEducation()]), []);
+  const updateEducationRow = useCallback((idx, field, value) =>
+    setEducations((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeEducationRow = useCallback((idx) => setEducations((list) => list.filter((_, i) => i !== idx)), []);
 
   const startEditExpertise = (item) => {
     setEditingExpertiseId(item.id);

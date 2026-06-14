@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Autocomplete,
   Box,
@@ -118,7 +118,7 @@ const normalizeIntegerList = (value) =>
     .filter((item) => Number.isInteger(item));
 
 export default function SettingPage() {
-  useAuthStore();
+  // Unused full store subscription removed to prevent massive re-renders
   const { showSuccess, showError, showWarning } = useNotification();
   const { organization } = useOrganization();
   const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
@@ -304,39 +304,39 @@ export default function SettingPage() {
     }
   }, [activeTab, organizationId, isTrustedVerifier]);
 
-  const handleFormChange = (e) => {
+  const handleFormChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-  };
+  }, []);
 
-  const handleNotificationChange = (e) => {
+  const handleNotificationChange = useCallback((e) => {
     const { name, checked } = e.target;
     setNotificationSettings((prev) => ({
       ...prev,
       [name]: checked,
     }));
-  };
+  }, []);
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = useCallback((e) => {
     const { name, value } = e.target;
     setPasswordForm((prev) => ({
       ...prev,
       [name]: value,
     }));
-  };
+  }, []);
 
-  const handleEducationChange = (index, field, value) => {
+  const handleEducationChange = useCallback((index, field, value) => {
     setFormData((prev) => {
       const newEducations = [...prev.educations];
       newEducations[index] = { ...newEducations[index], [field]: value };
       return { ...prev, educations: newEducations };
     });
-  };
+  }, []);
 
-  const addEducation = () => {
+  const addEducation = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
       educations: [
@@ -352,9 +352,9 @@ export default function SettingPage() {
         },
       ],
     }));
-  };
+  }, []);
 
-  const removeEducation = (index) => {
+  const removeEducation = useCallback((index) => {
     setFormData((prev) => {
       const newEducations = prev.educations.filter((_, i) => i !== index);
       if (newEducations.length === 0) {
@@ -370,7 +370,7 @@ export default function SettingPage() {
       }
       return { ...prev, educations: newEducations };
     });
-  };
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!organizationId) {
