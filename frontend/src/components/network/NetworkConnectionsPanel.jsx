@@ -9,7 +9,7 @@ const NetworkConnectionsPanel = ({ variant = 'page', enableBlock = true }) => {
   return (
     <Stack spacing={4}>
       {variant === 'page' ? (
-        <Stack spacing={1}>
+        <Stack spacing={2}>
           <Typography
             variant="h1"
             fontWeight={800}
