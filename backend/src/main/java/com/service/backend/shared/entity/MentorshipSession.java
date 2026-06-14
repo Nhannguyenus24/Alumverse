@@ -68,6 +68,9 @@ public class MentorshipSession {
     @Column("ended_at")
     private LocalDateTime endedAt;
 
+    @Column("meeting_link_reminded_at")
+    private LocalDateTime meetingLinkRemindedAt;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

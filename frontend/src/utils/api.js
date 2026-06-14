@@ -1202,6 +1202,10 @@ export const mentorshipApi = {
 		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/status`, payload);
 	},
 
+	updateSessionMeetingLink(sessionId, meetingLink) {
+		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/meeting-link`, { meetingLink });
+	},
+
 	cancelMentorSession(sessionId, cancelReason) {
 		const params = cancelReason ? { cancelReason } : {};
 		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
@@ -1264,6 +1268,7 @@ export const {
 	updateMyAvailability,
 	getMyMentorSessions,
 	updateSessionStatus: updateMentorSessionStatus,
+	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
 	uploadCvFile,
 } = mentorshipApi;

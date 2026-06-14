@@ -167,6 +167,15 @@ public class MentorController {
                         .ok(new ApiResponse<>("Session status updated successfully", response)));
     }
 
+    @PutMapping("/sessions/{sessionId}/meeting-link")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> updateSessionMeetingLink(
+            @PathVariable @Min(1) Integer sessionId,
+            @Valid @RequestBody UpdateMeetingLinkRequest request) {
+        return mentorService.updateSessionMeetingLink(sessionId, request.getMeetingLink())
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Cập nhật link tham gia thành công", response)));
+    }
+
     @PostMapping("/sessions/{sessionId}/join")
     public Mono<ResponseEntity<ApiResponse<JoinSessionResponse>>> joinSession(
             @PathVariable @Min(1) Integer sessionId) {

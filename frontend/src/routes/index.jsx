@@ -9,6 +9,7 @@ import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
+import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -537,9 +538,9 @@ export const router = createBrowserRouter([
               {
                 path: "mentors/:mentorId/book",
                 element: (
-                  <MentorshipFullAccessGate>
+                  <MentorshipBookingGate>
                     <MentorshipBookingPage />
-                  </MentorshipFullAccessGate>
+                  </MentorshipBookingGate>
                 ),
               },
               {
