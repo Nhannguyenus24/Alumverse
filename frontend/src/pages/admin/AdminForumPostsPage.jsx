@@ -36,7 +36,7 @@ import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPo
 import { useAdminForumContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateTime } from '../../utils/dateFormatter';
-import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
+import { forumModerationLabel, truncateText, toPlainText } from '../../utils/stringUtils';
 
 const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
 
@@ -84,7 +84,7 @@ const AdminForumPostsPage = () => {
       ID: p.id,
       'Tác giả': p.authorName,
       'Chủ đề': p.topicTitle,
-      'Nội dung': p.content,
+      'Nội dung': toPlainText(p.content),
       'Trạng thái': forumModerationLabel(p.moderationStatus),
       'Tổ chức': p.organizationName || '-',
       'Ngày đăng': formatDateTime(p.postedAt)
@@ -136,7 +136,7 @@ const AdminForumPostsPage = () => {
       )
     },
     { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
-    { id: 'content', label: 'Nội dung', render: (val) => truncateText(val, 50) },
+    { id: 'content', label: 'Nội dung', render: (val) => truncateText(toPlainText(val), 50) },
     {
       id: 'moderationStatus',
       label: 'Trạng thái',
