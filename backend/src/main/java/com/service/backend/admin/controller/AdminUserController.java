@@ -40,7 +40,9 @@ import jakarta.validation.constraints.Min;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Admin > Users", description = "API endpoints for managing users by administrators")
 @RestController
 @RequestMapping("/api/admin/users")
 @Validated

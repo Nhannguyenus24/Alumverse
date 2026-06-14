@@ -24,7 +24,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Chat > Requests", description = "API endpoints for managing chat conversation requests")
 @RestController
 @RequestMapping("/api/chat/conversation-requests")
 @Validated

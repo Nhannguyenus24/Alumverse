@@ -1,6 +1,6 @@
 const MAX_NAMES_SHOWN = 2;
 
-export function formatBlockedMemberNames(members, maxShown = MAX_NAMES_SHOWN) {
+function formatBlockedMemberNames(members, maxShown = MAX_NAMES_SHOWN) {
   if (!members?.length) return '';
 
   const names = members.map((member) => member.fullName?.trim() || `User ${member.memberId}`);

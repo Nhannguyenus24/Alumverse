@@ -4,7 +4,7 @@
  * @param {string} token - JWT access token
  * @returns {{ sub?: number, email?: string, userName?: string, avatarUrl?: string } | null}
  */
-export function decodeJwtPayload(token) {
+function decodeJwtPayload(token) {
   if (!token || typeof token !== 'string') return null;
   try {
     const parts = token.split('.');

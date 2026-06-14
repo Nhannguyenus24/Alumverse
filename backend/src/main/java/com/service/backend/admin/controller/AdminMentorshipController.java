@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+@Tag(name = "Admin > Mentorship", description = "API endpoints for managing mentorship programs by administrators")
 @RestController
 @RequestMapping("/api/admin/mentorship")
 @Validated
-@Tag(name = "Admin Mentorship Management", description = "Admin APIs for mentorship session and mentor profile moderation")
 public class AdminMentorshipController {
 
     private final AdminMentorshipService adminMentorshipService;

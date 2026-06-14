@@ -17,10 +17,10 @@ import org.springframework.web.bind.annotation.*;
  * - POST /api/images/upload: Upload Base64 image and convert to WebP
  * </p>
  */
+@Tag(name = "System > Images", description = "API endpoints for handling image uploads and processing")
 @RestController
 @RequestMapping("/api/images")
 @RequiredArgsConstructor
-@Tag(name = "Image Management", description = "API for managing and uploading images")
 public class ImageController {
 
     private final ImageService imageService;

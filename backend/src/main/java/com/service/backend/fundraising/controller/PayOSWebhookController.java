@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import vn.payos.PayOS;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Payments > Webhooks", description = "API endpoints for PayOS payment webhooks")
 @RestController
 @RequestMapping("/api/payment/payos")
 @RequiredArgsConstructor

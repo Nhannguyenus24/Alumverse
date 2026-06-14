@@ -17,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Events", description = "API endpoints for viewing and joining events")
 @RestController
 @RequestMapping("/api/events")
 @RequiredArgsConstructor

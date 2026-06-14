@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
 
-export const getUserAlumniPosts = async (userId, page = 0, limit = 10) => {
+const getUserAlumniPosts = async (userId, page = 0, limit = 10) => {
   const res = await apiClient.get(`/articles/alumni-posts/user/${userId}`, {
     params: { page, limit }
   });

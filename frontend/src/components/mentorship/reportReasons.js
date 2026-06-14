@@ -1,4 +1,4 @@
-export const REPORT_REASONS = [
+const REPORT_REASONS = [
   { value: 'NO_SHOW', label: 'Đối phương không tham gia / vắng mặt', statuses: ['EXPIRED', 'COMPLETED'] },
   { value: 'LATE_OR_LEFT_EARLY', label: 'Đến trễ nhiều / rời buổi sớm', statuses: ['COMPLETED'] },
   { value: 'INAPPROPRIATE_BEHAVIOR', label: 'Hành vi, ngôn từ không phù hợp / quấy rối', statuses: ['COMPLETED'] },

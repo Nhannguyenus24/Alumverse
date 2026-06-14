@@ -43,9 +43,6 @@ export const organizationApi = {
 };
 
 export const {
-	getOrganizationBySlug,
-	getAllOrganizations,
-	createSchoolFeedback,
 	getIntroduction,
 } = organizationApi;
 
@@ -148,27 +145,7 @@ export const adminOrganizationApi = {
 	},
 };
 
-export const {
-	getOrganizations,
-	getOrganizationById,
-	createOrganization,
-	updateOrganization,
-	deleteOrganization,
-	upsertIntroduction,
-	getSchoolFeedbacks,
-	markSchoolFeedbackAsRead,
-	getFeaturesConfig,
-	updateFeaturesConfig,
-	toggleFeature,
-	getPrograms,
-	addProgram,
-	updateProgram,
-	removeProgram,
-	getMajors,
-	addMajor,
-	updateMajor,
-	removeMajor,
-} = adminOrganizationApi;
+
 
 export const adminAuditApi = {
 	getLoginHistory(page = 0, size = 50, organizationId = null) {
@@ -191,10 +168,7 @@ export const adminAuditApi = {
 };
 
 export const {
-	getLoginHistory: getAdminLoginHistory,
-	getLoginHistoryByUser,
-	getLoginStats,
-	getSuspiciousLogins,
+	ByUser,
 } = adminAuditApi;
 
 export const adminUserApi = {
@@ -261,15 +235,11 @@ export const adminUserApi = {
 
 export const {
 	getUsers,
-	getUserById,
-	getUsersByOrganization,
 	banUser,
 	unbanUser,
 	deleteUser,
 	updateUser,
-	createAdminAccount,
 	getVerificationRequests,
-	getUserVerificationRequests,
 	reviewVerificationRequest,
 	addOrganizationMember,
 	getUserActivity,
@@ -323,7 +293,6 @@ export const adminMentorshipApi = {
 export const {
 	getAllSessions,
 	getSessionsByStatus,
-	getSessionById,
 	updateSessionStatus,
 	deleteSession,
 	getAllMentorProfiles,
@@ -454,18 +423,7 @@ export const chatApi = {
 	},
 };
 
-export const {
-	listGroupChats,
-	listPrivateChats,
-	getMessages,
-	getConversationRequestStatus,
-	createConversationRequest,
-	getRecentPreviews,
-	searchIncomingRequests,
-	respondToConversationRequest,
-	createGroupChat,
-	getGroupMembers,
-} = chatApi;
+
 
 export const eventApi = {
 	async createEvent(payload) {
@@ -783,10 +741,8 @@ export const adminEventApi = {
 
 export const {
 	getAllEvents,
-	getEventsByOrganization,
 	searchAllEvents,
 	getEventsByPublishStatus,
-	getEventById,
 	updateEvent,
 	deleteEvent,
 	publishEvent,
@@ -796,18 +752,10 @@ export const {
 	cancelTicket,
 	approveTicket,
 	rejectTicket,
-	bulkApproveTickets,
 	approveAllPending,
 	sendIssuedTicketEmails,
-	activateTickets,
-	expireTickets,
-	inviteUsers: inviteEventUsers,
-	getInvitations: getEventInvitations,
-	sendReminders,
-	getEmailLogs,
 	getInterestsByEvent,
 	getEventStatistics,
-	getEventStatisticsById,
 } = adminEventApi;
 
 export const adminForumApi = {
@@ -938,12 +886,10 @@ export const {
 	reviewReport,
 	updatePostVisibility,
 	getAllCategories,
-	getCategoryById,
 	createCategory,
 	updateCategory,
 	deleteCategory,
 	getAllTopics,
-	getTopicById,
 	createTopic,
 	updateTopic,
 	deleteTopic,
@@ -1017,21 +963,7 @@ export const fundApi = {
 	},
 };
 
-export const {
-	getFunds,
-	getFundDetail,
-	getFundStatuses,
-	getFundStatistics,
-	getActiveFundReceivingInfos,
-	getFundReceivingInfos,
-	getSupportedBanks,
-	createFundReceivingInfo,
-	getFundDonationsByFundId,
-	createFundDonation,
-	createFund,
-	updateFund,
-	closeFund,
-} = fundApi;
+
 
 export const networkApi = {
 	async searchMembers(params = {}) {
@@ -1040,7 +972,7 @@ export const networkApi = {
 	},
 };
 
-export const { searchMembers } = networkApi;
+
 
 export const userApi = {
 	joinOrganization(payload) {
@@ -1132,17 +1064,7 @@ export const userSettingsApi = {
 	},
 };
 
-export const {
-	getProfile,
-	getOrganizationMember,
-	getNotificationSettings,
-	updateProfile,
-	updateNotificationSettings,
-	changePassword,
-	getLoginHistory,
-	getPendingPeerVerifications,
-	acceptPeerVerification,
-} = userSettingsApi;
+
 
 export const mentorshipApi = {
 	saveMenteeProfile(payload) {
@@ -1320,7 +1242,6 @@ export const {
 	getMentorFeedbacks,
 	bookSession,
 	getMyMenteeSessions,
-	getMenteeSessionById,
 	cancelSession,
 	respondReschedule,
 	createSessionFeedback,
@@ -1369,29 +1290,5 @@ export const notificationApi = {
 	},
 };
 
-export const {
-	getNotifications,
-	markAsRead,
-	deleteNotification,
-	deleteAllNotifications,
-} = notificationApi;
 
-export const api = {
-	organizationApi,
-	adminOrganizationApi,
-	adminAuditApi,
-	adminUserApi,
-	adminMentorshipApi,
-	chatApi,
-	eventApi,
-	adminEventApi,
-	adminForumApi,
-	fundApi,
-	networkApi,
-	userApi,
-	userSettingsApi,
-	mentorshipApi,
-	notificationApi,
-};
 
-export default api;

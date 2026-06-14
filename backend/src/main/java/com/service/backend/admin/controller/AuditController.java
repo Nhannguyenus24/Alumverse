@@ -18,7 +18,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Admin > Audit", description = "API endpoints for viewing system audit logs")
 @RestController
 @RequestMapping("/api/admin/audit")
 @Validated
