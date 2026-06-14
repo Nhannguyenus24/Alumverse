@@ -1,5 +1,6 @@
 package com.service.backend.fundraising.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
@@ -18,10 +19,12 @@ import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.BanksPayloadDto;
 import com.service.backend.fundraising.dto.BankInfoDto;
+import com.service.backend.fundraising.dto.SupportedBanksResponse;
 import com.service.backend.shared.entity.Funds;
 import com.service.backend.shared.entity.FundReceivingInfos;
 import com.service.backend.shared.entity.FundDonations;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
@@ -101,28 +104,73 @@ public class FundService {
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
-        FundReceivingInfos fundReceivingInfos = FundReceivingInfos.builder()
-                .accountNumber(request.getAccountNumber())
-                .accountName(request.getAccountName())
-                .bankName(request.getBankName())
-                .isActive(false)
-                .build();
+        String bankCode = request.getBankName() == null ? "" : request.getBankName().trim();
 
-        return fundReceivingInfosRepository
-                .existsByBankNameAndAccountNumber(request.getBankName(), request.getAccountNumber())
-                .flatMap(exists -> {
-                    if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new ApplicationException(
-                                ErrorCode.RESOURCES_DUPLICATE,
-                                "Fund receiving info already exists for bankName + accountNumber"));
-                    }
-                    return fundReceivingInfosRepository.save(fundReceivingInfos);
-                });
+        return validateSupportedBankCode(bankCode)
+                .then(Mono.defer(() -> {
+                    FundReceivingInfos fundReceivingInfos = FundReceivingInfos.builder()
+                            .accountNumber(request.getAccountNumber().trim())
+                            .accountName(request.getAccountName().trim())
+                            .bankName(bankCode)
+                            .isActive(true)
+                            .build();
+
+                    return fundReceivingInfosRepository
+                            .existsByBankNameAndAccountNumber(bankCode, request.getAccountNumber().trim())
+                            .flatMap(exists -> {
+                                if (Boolean.TRUE.equals(exists)) {
+                                    return Mono.error(new ApplicationException(
+                                            ErrorCode.RESOURCES_DUPLICATE,
+                                            "Fund receiving info already exists for bankName + accountNumber"));
+                                }
+                                return fundReceivingInfosRepository.save(fundReceivingInfos);
+                            });
+                }));
     }
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
         return fundReceivingInfosRepository.findAll()
                 .filter(FundReceivingInfos::isActive);
+    }
+
+    public Mono<PaginatedResponse<FundReceivingInfos>> getActiveFundReceivingInfos(int page, int limit, String keyword) {
+        int offset = page * limit;
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+        String kw = hasKeyword ? keyword.trim() : null;
+
+        Mono<Long> countMono = hasKeyword
+                ? fundReceivingInfosRepository.countActiveByKeyword(kw)
+                : fundReceivingInfosRepository.countActive();
+
+        Flux<FundReceivingInfos> dataFlux = hasKeyword
+                ? fundReceivingInfosRepository.findActivePageByKeyword(kw, limit, offset)
+                : fundReceivingInfosRepository.findActivePage(limit, offset);
+
+        return PaginationHelper.paginate(dataFlux, countMono, page, limit);
+    }
+
+    public Mono<SupportedBanksResponse> getSupportedBanksResponse() {
+        return getSupportedBanks()
+                .map(banks -> SupportedBanksResponse.builder()
+                        .message("Chỉ các ngân hàng sau được hỗ trợ cho quyên góp qua Sepay.")
+                        .banks(banks)
+                        .build());
+    }
+
+    private Mono<Void> validateSupportedBankCode(String bankCode) {
+        if (bankCode.isBlank()) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Bank code is required"));
+        }
+
+        return getSupportedBanks()
+                .flatMap(banks -> banks.stream()
+                        .anyMatch(bank -> isBankMatched(bank, bankCode))
+                        ? Mono.empty()
+                        : Mono.error(new ApplicationException(
+                                ErrorCode.RESOURCES_NOT_FOUND,
+                                "Bank is not supported: " + bankCode)));
     }
 
     public Mono<PaginatedResponse<Funds>> getFunds(int page, int limit, String keyword) {
@@ -138,14 +186,7 @@ public class FundService {
                 ? fundR2dbcRepository.countSearchFunds(trimmedKeyword)
                 : fundR2dbcRepository.countAll();
 
-        return dataFlux.collectList()
-                .zipWith(countMono)
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1(),
-                        tuple.getT2(),
-                        page,
-                        limit
-                ));
+        return PaginationHelper.paginate(dataFlux, countMono, page, limit);
     }
 
     public Mono<DataWithWarnings<PaginatedResponse<FundListItemResponse>>> getFundsForList(FundFilterRequest req) {
@@ -262,27 +303,22 @@ public class FundService {
                 amtMax
         );
 
-        return data.collectList()
-                .zipWith(count)
-                .map(tuple -> {
-                    PaginatedResponse<FundListItemResponse> paged = PaginatedResponse.of(
-                            tuple.getT1().stream().map(FundListItemResponse::from).toList(),
-                            tuple.getT2(),
-                            page,
-                            limit
-                    );
-                    return new DataWithWarnings<>(paged, warnings);
-                });
+        return PaginationHelper.paginate(
+                data.map(FundListItemResponse::from),
+                count,
+                page,
+                limit
+        ).map(paged -> new DataWithWarnings<>(paged, warnings));
     }
 
     public Mono<PaginatedResponse<FundListItemResponse>> getFundsForList(int page, int limit, String keyword) {
         return getFunds(page, limit, keyword)
-                .map(paged -> PaginatedResponse.of(
-                        paged.getItems().stream().map(FundListItemResponse::from).toList(),
-                        paged.getTotalItem(),
-                        paged.getCurrentPage(),
-                        paged.getPageSize()
-                ));
+                .flatMap(paged -> {
+                    List<FundListItemResponse> items = paged.getItems().stream()
+                            .map(FundListItemResponse::from)
+                            .toList();
+                    return PaginationHelper.paginate(items, paged.getTotalItem(), paged.getCurrentPage(), paged.getPageSize());
+                });
     }
 
     public Mono<FundDetailResponse> getFundDetail(Long fundId) {
@@ -331,15 +367,12 @@ public class FundService {
 
     public Mono<PaginatedResponse<FundListItemResponse>> getFundsByStatusId(int page, int limit, Integer statusId) {
         int offset = page * limit;
-        return fundR2dbcRepository.findByStatusIdWithPagination(statusId, limit, offset)
-                .collectList()
-                .zipWith(fundR2dbcRepository.countByStatusId(statusId))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(FundListItemResponse::from).toList(),
-                        tuple.getT2(),
-                        page,
-                        limit
-                ));
+        return PaginationHelper.paginate(
+                fundR2dbcRepository.findByStatusIdWithPagination(statusId, limit, offset).map(FundListItemResponse::from),
+                fundR2dbcRepository.countByStatusId(statusId),
+                page,
+                limit
+        );
     }
 
     public Mono<Funds> updateFund(Long fundId, UpdateFundRequest request) {
@@ -457,16 +490,20 @@ public class FundService {
                 });
     }
 
+    @Transactional
     public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();
+        String resolvedDonorName = (request.getDonorName() != null && !request.getDonorName().isBlank())
+                ? request.getDonorName()
+                : "Ẩn danh";
 
         // khi guest ko dang nhap ma donate thi field donorMemberId la null
         if (donorMemberId == null) {
             FundDonations donation = FundDonations.builder()
                     .fundId(fundId)
                     .donorMemberId(null)
-                    .donorName(request.getDonorName())
+                    .donorName(resolvedDonorName)
                     .amount(request.getAmount())
                     .address(request.getAddress())
                     .phone(request.getPhone())
@@ -488,7 +525,7 @@ public class FundService {
                     FundDonations donation = FundDonations.builder()
                             .fundId(fundId)
                             .donorMemberId(donorMemberId)
-                            .donorName(request.getDonorName())
+                            .donorName(resolvedDonorName)
                             .amount(request.getAmount())
                             .address(request.getAddress())
                             .phone(request.getPhone())
@@ -608,56 +645,54 @@ public class FundService {
         boolean hasSearch = searchBy != null && !searchBy.isBlank() && keyword != null && !keyword.isBlank();
 
         if (!hasSearch) {
-            Flux<FundDonationListItemResponse> data = fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset)
-                    .map(FundDonationListItemResponse::fromProjection);
-            Mono<Long> count = fundDonationsRepository.countByFundId(fundId);
-            return data.collectList().zipWith(count)
-                    .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+            return PaginationHelper.paginate(
+                    fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.countByFundId(fundId),
+                    page,
+                    limit);
         }
 
         String normalized = keyword.trim();
-        switch (searchBy) {
-            case "name": {
-                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset)
-                        .map(FundDonationListItemResponse::fromProjection);
-                Mono<Long> count = fundDonationsRepository.countSearchByDonorName(fundId, normalized);
-                return data.collectList().zipWith(count)
-                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-            }
-            case "phone": {
-                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset)
-                        .map(FundDonationListItemResponse::fromProjection);
-                Mono<Long> count = fundDonationsRepository.countSearchByPhone(fundId, normalized);
-                return data.collectList().zipWith(count)
-                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-            }
-            case "address": {
-                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset)
-                        .map(FundDonationListItemResponse::fromProjection);
-                Mono<Long> count = fundDonationsRepository.countSearchByAddress(fundId, normalized);
-                return data.collectList().zipWith(count)
-                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-            }
-            case "message": {
-                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset)
-                        .map(FundDonationListItemResponse::fromProjection);
-                Mono<Long> count = fundDonationsRepository.countSearchByMessage(fundId, normalized);
-                return data.collectList().zipWith(count)
-                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-            }
-            case "email": {
-                Flux<FundDonationListItemResponse> data = fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset)
-                        .map(FundDonationListItemResponse::fromProjection);
-                Mono<Long> count = fundDonationsRepository.countSearchByEmail(fundId, normalized);
-                return data.collectList().zipWith(count)
-                        .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
-            }
-            default:
-                return Mono.error(new ApplicationException(
-                        ErrorCode.RESOURCES_NOT_FOUND,
-                        "Unsupported searchBy value"
-                ));
-        }
+        return switch (searchBy) {
+            case "name" -> PaginationHelper.paginate(
+                    fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.countSearchByDonorName(fundId, normalized),
+                    page, limit);
+            case "phone" -> PaginationHelper.paginate(
+                    fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.countSearchByPhone(fundId, normalized),
+                    page, limit);
+            case "address" -> PaginationHelper.paginate(
+                    fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.countSearchByAddress(fundId, normalized),
+                    page, limit);
+            case "message" -> PaginationHelper.paginate(
+                    fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.countSearchByMessage(fundId, normalized),
+                    page, limit);
+            case "email" -> PaginationHelper.paginate(
+                    fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.countSearchByEmail(fundId, normalized),
+                    page, limit);
+            default -> Mono.error(new ApplicationException(
+                    ErrorCode.RESOURCES_NOT_FOUND,
+                    "Unsupported searchBy value"
+            ));
+        };
+    }
+
+    public Mono<PaginatedResponse<FundDonationListItemResponse>> getDonationsByDonorMemberId(
+            Integer donorMemberId,
+            int page,
+            int limit
+    ) {
+        int offset = page * limit;
+        return PaginationHelper.paginate(
+                fundDonationsRepository.findByDonorMemberIdWithPagination(donorMemberId, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection),
+                fundDonationsRepository.countByDonorMemberId(donorMemberId),
+                page, limit)
+                .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(FundService.class).info("getDonationsByDonorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
     }
 
     public Mono<FundStatisticsResponse> getFundStatistics() {

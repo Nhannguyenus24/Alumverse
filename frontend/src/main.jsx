@@ -4,6 +4,7 @@ import { RouterProvider } from 'react-router/dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
 import { router } from './routes';
 import NotistackProvider from './components/NotistackProvider';
 import ThemeProvider from './theme';
@@ -23,9 +24,10 @@ const queryClient = new QueryClient({
 });
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const App = () => {
-  const appContent = (
+  let appContent = (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <NotistackProvider>
@@ -34,6 +36,14 @@ const App = () => {
       </QueryClientProvider>
     </ThemeProvider>
   );
+
+  if (recaptchaSiteKey) {
+    appContent = (
+      <GoogleReCaptchaProvider type="v2-checkbox" siteKey={recaptchaSiteKey}>
+        {appContent}
+      </GoogleReCaptchaProvider>
+    );
+  }
 
   return (
     <HelmetProvider>

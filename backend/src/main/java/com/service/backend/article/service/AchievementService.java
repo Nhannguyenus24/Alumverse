@@ -10,13 +10,17 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AchievementService {
 
     private final AchievementR2dbcRepository achievementRepository;
@@ -72,24 +76,20 @@ public class AchievementService {
 
     public Mono<PaginatedResponse<AchievementResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return achievementRepository.findAllWithPagination(limit, offset)
-                .collectList()
-                .zipWith(achievementRepository.countAll())
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return PaginationHelper.paginate(
+                achievementRepository.findAllWithPagination(limit, offset).map(AchievementResponse::from),
+                achievementRepository.countAll(),
+                page, limit
+        );
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getByMemberId(Integer memberId, int page, int limit) {
         int offset = page * limit;
-        return achievementRepository.findByMemberId(memberId, limit, offset)
-                .collectList()
-                .zipWith(achievementRepository.countByMemberId(memberId))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return PaginationHelper.paginate(
+                achievementRepository.findByMemberId(memberId, limit, offset).map(AchievementResponse::from),
+                achievementRepository.countByMemberId(memberId),
+                page, limit
+        );
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getMyAchievements(int page, int limit) {
@@ -99,23 +99,21 @@ public class AchievementService {
 
         public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
         int offset = page * limit;
-        return achievementRepository.findByStatus(status, limit, offset)
-                .collectList()
-                .zipWith(achievementRepository.countByStatus(status))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
+        return PaginationHelper.paginate(
+                achievementRepository.findDetailsByStatus(status, limit, offset)
+                        .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
+                        .map(AchievementResponse::from),
+                achievementRepository.countByStatus(status),
+                page, limit
+        );
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return achievementRepository.searchAchievements(keyword, limit, offset)
-                .collectList()
-                .zipWith(achievementRepository.countSearchAchievements(keyword))
-                .map(tuple -> PaginatedResponse.of(
-                        tuple.getT1().stream().map(AchievementResponse::from).toList(),
-                        tuple.getT2(), page, limit
-                ));
-        }
+        return PaginationHelper.paginate(
+                achievementRepository.searchAchievements(keyword, limit, offset).map(AchievementResponse::from),
+                achievementRepository.countSearchAchievements(keyword),
+                page, limit
+        );
+    }
 }

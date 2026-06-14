@@ -39,12 +39,9 @@ import { useDeleteAvailability } from '../../hooks/mentorship/useDeleteAvailabil
 import { useUpdateAvailability } from '../../hooks/mentorship/useUpdateAvailability';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
 import { formatFixed } from '../../utils/numberFormatter';
+import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
-const TOP_TABS = [
-  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
-  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
-  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
-];
+const TOP_TABS = MENTOR_PROFILE_TABS;
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -111,8 +108,8 @@ const MentorshipYourCalendarPage = () => {
   const [submitMessage, setSubmitMessage] = useState(null);
 
   const [repeatWeekly, setRepeatWeekly] = useState(false);
-  const [startTime, setStartTime] = useState(dayjs().hour(13).minute(0));
-  const [endTime, setEndTime] = useState(dayjs().hour(14).minute(0));
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
   const [singleDate, setSingleDate] = useState(dayjs());
   const [startDate, setStartDate] = useState(dayjs());
   const [endDate, setEndDate] = useState(dayjs().add(1, 'month'));
@@ -208,6 +205,10 @@ const MentorshipYourCalendarPage = () => {
     setSubmitMessage(null);
     try {
       const today = dayjs();
+      if (!startTime || !endTime) {
+        setSubmitMessage({ severity: 'error', text: 'Hãy chọn giờ bắt đầu và giờ kết thúc.' });
+        return;
+      }
       let dates = [];
       if (repeatWeekly) {
         if (selectedDays.length === 0) {
@@ -286,12 +287,12 @@ const MentorshipYourCalendarPage = () => {
   };
 
   return (
-    <Page title="Cố vấn - Lịch cá nhân">
+    <Page title="Cố vấn - Lịch rảnh">
       <MentorshipProfileLayout user={user} cover={user.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
-              LỊCH CÁ NHÂN
+              LỊCH RẢNH
             </Typography>
           </Box>
 

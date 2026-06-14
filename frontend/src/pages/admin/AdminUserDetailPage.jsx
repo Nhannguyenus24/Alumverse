@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
-import { useSnackbar } from 'notistack';
 import {
   Avatar,
   Box,
@@ -33,9 +32,9 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { useAdminUsersContext, useAdminSystemContext } from '../../stores/AdminStore';
-import { useAuth } from '../../hooks/useAuth';
-import { getLoginHistoryByUser, getUserActivity, resetPasswordByAdmin, adminOrganizationApi } from '../../utils/api';
+import { useAdminUsersContext } from '../../stores/AdminStore';
+import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
+import { getLoginHistoryByUser, getUserActivity, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUserDetailPage = () => {
@@ -45,9 +44,7 @@ const AdminUserDetailPage = () => {
   const slugMatchExact = useMatch('/:slug/admin');
   const slugMatch = slugMatchWildcard ?? slugMatchExact;
   const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
-  const { enqueueSnackbar } = useSnackbar();
-  const { user: currentUser } = useAuth();
-  const { auditLogs } = useAdminSystemContext();
+  const { auditLogs } = useAdminAuditLogsData();
   const { setBreadcrumbs } = useOutletContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
   const user = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);
@@ -220,12 +217,12 @@ const AdminUserDetailPage = () => {
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
-              <Button variant="outlined" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
+              <Button variant="outlined" color="secondary" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
                 Sửa thông tin
               </Button>
               {user.status === 'BANNED' ? (
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   color="success"
                   size="small"
                   startIcon={<LockOpenOutlinedIcon />}
@@ -238,48 +235,21 @@ const AdminUserDetailPage = () => {
                   }}
                   sx={{ textTransform: 'none' }}
                 >
-                  Unban
+                  Bỏ chặn
                 </Button>
               ) : (
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   color="warning"
                   size="small"
                   startIcon={<BlockOutlinedIcon />}
                   onClick={() => setBanOpen(true)}
                   sx={{ textTransform: 'none' }}
                 >
-                  Ban
+                  Chặn
                 </Button>
               )}
-              <Button
-                variant="outlined"
-                size="small"
-                sx={{ textTransform: 'none' }}
-                onClick={async () => {
-                  const nextPassword = window.prompt('Nhập mật khẩu tạm thời mới (tối thiểu 8 ký tự):', '');
-                  if (!nextPassword) return;
-                  if (nextPassword.length < 8) {
-                    enqueueSnackbar('Mật khẩu phải có ít nhất 8 ký tự.', { variant: 'warning' });
-                    return;
-                  }
-                  try {
-                    await resetPasswordByAdmin(user.id, {
-                      newPassword: nextPassword,
-                      adminUserId: Number(currentUser?.id),
-                      reason: 'Hỗ trợ đặt lại mật khẩu từ trang chi tiết quản trị',
-                    });
-                    enqueueSnackbar('Đặt lại mật khẩu thành công.', { variant: 'success' });
-                  } catch (error) {
-                    enqueueSnackbar(error?.response?.data?.message || 'Lỗi khi đặt lại mật khẩu.', {
-                      variant: 'error',
-                    });
-                  }
-                }}
-              >
-                Đặt lại mật khẩu
-              </Button>
-              <Button variant="outlined" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
+              <Button variant="contained" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
                 Xóa tài khoản
               </Button>
             </Box>

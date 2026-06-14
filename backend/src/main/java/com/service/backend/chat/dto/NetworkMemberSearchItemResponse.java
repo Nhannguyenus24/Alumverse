@@ -15,6 +15,5 @@ public class NetworkMemberSearchItemResponse {
     private String fullName;
     private String program;
     private String major;
-    private Integer startYear;
     private String avatarUrl;
 }

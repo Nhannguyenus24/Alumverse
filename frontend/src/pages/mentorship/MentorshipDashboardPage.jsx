@@ -5,9 +5,20 @@ import {
   Button,
   Card,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  MenuItem,
   Stack,
+  TextField,
   Typography,
 } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import dayjs from 'dayjs';
 
 import StarIcon from '@mui/icons-material/Star';
 
@@ -20,14 +31,14 @@ import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions'
 import { useUpdateSessionStatus } from '../../hooks/mentorship/useUpdateSessionStatus';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
+import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
+import { cancelMentorSession, postponeMentorSession, reportSession } from '../../utils/api';
+import { reasonsForStatus } from '../../components/mentorship/reportReasons';
+import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
-const TOP_TABS = [
-  { label: 'Trang cá nhân', path: '/development/mentorship/profile' },
-  { label: 'Dashboard', path: '/development/mentorship/dashboard' },
-  { label: 'Lịch cá nhân', path: '/development/mentorship/calendar' },
-];
+const TOP_TABS = MENTOR_PROFILE_TABS;
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -36,12 +47,27 @@ const PAGE_SIZE = 50;
 
 const MentorshipDashboardPage = () => {
   const navigate = useOrgNavigate();
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelPending, setCancelPending] = useState(false);
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportCategory, setReportCategory] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportPending, setReportPending] = useState(false);
+  const [postponeTarget, setPostponeTarget] = useState(null);
+  const [postponeReason, setPostponeReason] = useState('');
+  const [postponeDate, setPostponeDate] = useState(null);
+  const [postponeStart, setPostponeStart] = useState(null);
+  const [postponeEnd, setPostponeEnd] = useState(null);
+  const [postponeError, setPostponeError] = useState(null);
+  const [postponePending, setPostponePending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
   const updateMutation = useUpdateSessionStatus();
-  const [updatingId, setUpdatingId] = useState(null);
+  const joinMutation = useJoinSession();
+  const [actionError, setActionError] = useState('');
 
   const items = useMemo(() => sessionsQuery.data?.items ?? [], [sessionsQuery.data]);
   const feedbacks = useMemo(
@@ -49,32 +75,162 @@ const MentorshipDashboardPage = () => {
     [feedbacksQuery.data],
   );
 
-  const pendingItems = useMemo(
-    () => items.filter((s) => s.status === 'Pending'),
+  const upcomingItems = useMemo(
+    () =>
+      items.filter(
+        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
+      ),
     [items],
   );
-  const upcomingItems = useMemo(
-    () => items.filter((s) => s.status === 'Confirmed'),
+
+  const pastItems = useMemo(
+    () => items.filter((s) => s.status === 'COMPLETED' || s.status === 'EXPIRED'),
     [items],
   );
 
   const stats = useMemo(() => {
-    const completed = items.filter((s) => s.status === 'Completed').length;
+    const completed = items.filter((s) => s.status === 'COMPLETED').length;
     return [
       { value: items.length, label: 'lượt đặt' },
-      { value: pendingItems.length, label: 'chờ duyệt' },
+      { value: upcomingItems.length, label: 'sắp tới' },
       { value: completed, label: 'đã hoàn thành' },
     ];
-  }, [items, pendingItems]);
+  }, [items, upcomingItems]);
 
   const callUpdate = async (sessionId, status) => {
-    setUpdatingId(sessionId);
     try {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
+    }
+  };
+
+  const handleJoin = async (session) => {
+    setActionError('');
+    try {
+      await joinMutation.joinSession({ sessionId: session.id, asMentor: true });
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
+    }
+  };
+
+  const openCancelDialog = (session) => {
+    setCancelTarget(session);
+    setCancelReason('');
+  };
+
+  const closeCancelDialog = () => {
+    setCancelTarget(null);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
+    setCancelPending(true);
+    try {
+      await cancelMentorSession(cancelTarget.id, cancelReason.trim() || undefined);
+      sessionsQuery.refetch?.();
+      closeCancelDialog();
+    } catch {
+      /* silent */
     } finally {
-      setUpdatingId(null);
+      setCancelPending(false);
+    }
+  };
+
+  const openPostponeDialog = (session) => {
+    setPostponeTarget(session);
+    setPostponeReason('');
+    // Seed pickers from the current session time so the mentor only tweaks it.
+    const base = session.startTime ? dayjs(session.startTime) : null;
+    setPostponeDate(base);
+    setPostponeStart(base);
+    setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
+    setPostponeError(null);
+  };
+
+  const closePostponeDialog = () => {
+    setPostponeTarget(null);
+    setPostponeReason('');
+    setPostponeDate(null);
+    setPostponeStart(null);
+    setPostponeEnd(null);
+    setPostponeError(null);
+  };
+
+  const handleConfirmPostpone = async () => {
+    if (!postponeTarget) return;
+    setPostponeError(null);
+    if (!postponeDate || !postponeStart || !postponeEnd) {
+      setPostponeError('Hãy chọn ngày, giờ bắt đầu và giờ kết thúc đề xuất.');
+      return;
+    }
+    // Combine the chosen date with the chosen start/end times.
+    const proposedStart = postponeDate
+      .hour(postponeStart.hour())
+      .minute(postponeStart.minute())
+      .second(0)
+      .millisecond(0);
+    const proposedEnd = postponeDate
+      .hour(postponeEnd.hour())
+      .minute(postponeEnd.minute())
+      .second(0)
+      .millisecond(0);
+    if (!proposedEnd.isAfter(proposedStart)) {
+      setPostponeError('Giờ kết thúc phải sau giờ bắt đầu.');
+      return;
+    }
+    if (!proposedStart.isAfter(dayjs())) {
+      setPostponeError('Giờ đề xuất phải nằm trong tương lai.');
+      return;
+    }
+    setPostponePending(true);
+    try {
+      await postponeMentorSession(postponeTarget.id, {
+        reason: postponeReason.trim() || undefined,
+        proposedStartTime: proposedStart.format('YYYY-MM-DDTHH:mm:ss'),
+        proposedEndTime: proposedEnd.format('YYYY-MM-DDTHH:mm:ss'),
+      });
+      sessionsQuery.refetch?.();
+      closePostponeDialog();
+    } catch (err) {
+      setPostponeError(err?.response?.data?.message ?? 'Không gửi được đề nghị dời lịch.');
+    } finally {
+      setPostponePending(false);
+    }
+  };
+
+  const openReportDialog = (session) => {
+    setReportTarget(session);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const closeReportDialog = () => {
+    setReportTarget(null);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const isOtherReason = reportCategory === 'OTHER';
+  const reportDescTooShort = isOtherReason && reportDescription.trim().length < 10;
+  const reportInvalid = !reportCategory || reportDescTooShort;
+
+  const handleConfirmReport = async () => {
+    if (!reportTarget || reportInvalid) return;
+    setActionError('');
+    setReportPending(true);
+    try {
+      await reportSession(reportTarget.id, {
+        reasonCategory: reportCategory,
+        description: reportDescription.trim() || undefined,
+      });
+      closeReportDialog();
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không gửi được báo cáo.');
+    } finally {
+      setReportPending(false);
     }
   };
 
@@ -92,7 +248,7 @@ const MentorshipDashboardPage = () => {
   const ratingAvg = formatRating(profile?.ratingAvg);
 
   return (
-    <Page title="Cố vấn - Dashboard">
+    <Page title="Cố vấn - Tổng quan">
       <MentorshipProfileLayout
         user={user}
         cover={user.cover}
@@ -102,7 +258,7 @@ const MentorshipDashboardPage = () => {
       >
         <Stack spacing={4}>
           <Typography variant="h2" fontWeight={800} color="primary.main">
-            DASHBOARD
+            TỔNG QUAN
           </Typography>
 
           {/* STATS */}
@@ -134,6 +290,12 @@ const MentorshipDashboardPage = () => {
             <Alert severity="error">{updateMutation.errorMessage}</Alert>
           )}
 
+          {actionError && (
+            <Alert severity="error" onClose={() => setActionError('')}>
+              {actionError}
+            </Alert>
+          )}
+
           {sessionsQuery.isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress />
@@ -142,25 +304,6 @@ const MentorshipDashboardPage = () => {
             <Alert severity="error">Không tải được danh sách buổi tư vấn.</Alert>
           ) : (
             <>
-              {/* YÊU CẦU CHỜ DUYỆT */}
-              <Section title={`Yêu cầu chờ duyệt (${pendingItems.length})`}>
-                {pendingItems.length === 0 ? (
-                  <EmptyState message="Chưa có yêu cầu nào đang chờ bạn duyệt." />
-                ) : (
-                  <Stack spacing={2}>
-                    {pendingItems.map((session) => (
-                      <PendingRequestCard
-                        key={session.id}
-                        session={session}
-                        onAccept={() => callUpdate(session.id, 'Confirmed')}
-                        onReject={() => callUpdate(session.id, 'Rejected')}
-                        loading={updatingId === session.id}
-                      />
-                    ))}
-                  </Stack>
-                )}
-              </Section>
-
               {/* LỊCH SẮP TỚI */}
               <Section title={`Lịch sắp tới (${upcomingItems.length})`}>
                 {upcomingItems.length === 0 ? (
@@ -168,7 +311,46 @@ const MentorshipDashboardPage = () => {
                 ) : (
                   <Stack spacing={2}>
                     {upcomingItems.map((session) => (
-                      <MentorshipBookingItem key={session.id} session={session} view="mentor" />
+                      <Box key={session.id}>
+                        <MentorshipBookingItem
+                          session={session}
+                          view="mentor"
+                          onCancel={openCancelDialog}
+                          cancelDisabled={cancelPending}
+                          onPostpone={openPostponeDialog}
+                          onJoin={handleJoin}
+                          joinPending={joinMutation.isPending}
+                        />
+                        {(session.status === 'CONFIRMED' || session.status === 'IN_PROGRESS') && (
+                          <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              onClick={() => callUpdate(session.id, 'COMPLETED')}
+                            >
+                              Đánh dấu hoàn tất
+                            </Button>
+                          </Stack>
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+              </Section>
+
+              {/* ĐÃ QUA */}
+              <Section title={`Đã qua (${pastItems.length})`}>
+                {pastItems.length === 0 ? (
+                  <EmptyState message="Chưa có buổi tư vấn nào đã diễn ra." />
+                ) : (
+                  <Stack spacing={2}>
+                    {pastItems.map((session) => (
+                      <MentorshipBookingItem
+                        key={session.id}
+                        session={session}
+                        view="mentor"
+                        onReport={openReportDialog}
+                      />
                     ))}
                   </Stack>
                 )}
@@ -210,6 +392,139 @@ const MentorshipDashboardPage = () => {
           </Section>
         </Stack>
       </MentorshipProfileLayout>
+
+      <Dialog open={Boolean(postponeTarget)} onClose={closePostponeDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Đề nghị dời lịch</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Đề xuất một khung giờ mới cho buổi hẹn. Người được cố vấn sẽ nhận thông báo để
+            đồng ý dời lịch hoặc từ chối. Buổi hẹn vẫn được giữ cho tới khi họ phản hồi.
+          </Typography>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Stack spacing={2} mt={1}>
+              <DatePicker
+                label="Ngày đề xuất"
+                value={postponeDate}
+                onChange={setPostponeDate}
+                minDate={dayjs()}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              <Stack direction="row" spacing={1}>
+                <TimePicker
+                  label="Bắt đầu"
+                  value={postponeStart}
+                  onChange={setPostponeStart}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+                <TimePicker
+                  label="Kết thúc"
+                  value={postponeEnd}
+                  onChange={setPostponeEnd}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+              </Stack>
+              <TextField
+                label="Lý do dời lịch (tùy chọn)"
+                value={postponeReason}
+                onChange={(e) => setPostponeReason(e.target.value)}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+              {postponeError && <Alert severity="error">{postponeError}</Alert>}
+            </Stack>
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closePostponeDialog} color="inherit">
+            Đóng
+          </Button>
+          <Button onClick={handleConfirmPostpone} variant="contained" disabled={postponePending}>
+            {postponePending ? 'Đang gửi...' : 'Gửi đề nghị'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(reportTarget)} onClose={closeReportDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Báo cáo sự cố</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Mô tả vấn đề trong buổi mentoring. Đội quản trị sẽ xem xét và xử lý.
+          </Typography>
+          <TextField
+            select
+            label="Lý do báo cáo *"
+            value={reportCategory}
+            onChange={(e) => setReportCategory(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            {reasonsForStatus(reportTarget?.status).map((r) => (
+              <MenuItem key={r.value} value={r.value}>
+                {r.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label={isOtherReason ? 'Mô tả chi tiết *' : 'Mô tả thêm (tùy chọn)'}
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            required={isOtherReason}
+            error={reportDescTooShort}
+            helperText={
+              isOtherReason ? 'Bắt buộc nhập tối thiểu 10 ký tự khi chọn "Khác".' : undefined
+            }
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReportDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmReport}
+            color="warning"
+            variant="contained"
+            disabled={reportPending || reportInvalid}
+          >
+            Gửi báo cáo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cancel dialog */}
+      <Dialog open={Boolean(cancelTarget)} onClose={closeCancelDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Hủy lịch hẹn</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Lý do hủy sẽ được thông báo đến mentee.
+          </Typography>
+          <TextField
+            label="Lý do hủy (tùy chọn)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Ví dụ: Bận công việc đột xuất..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCancelDialog} color="inherit">
+            Quay lại
+          </Button>
+          <Button
+            onClick={handleConfirmCancel}
+            color="error"
+            variant="contained"
+            disabled={cancelPending}
+          >
+            Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Page>
   );
 };
@@ -232,20 +547,6 @@ const EmptyState = ({ message }) => (
       {message}
     </Typography>
   </Card>
-);
-
-const PendingRequestCard = ({ session, onAccept, onReject, loading }) => (
-  <Box>
-    <MentorshipBookingItem session={session} view="mentor" />
-    <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 1 }}>
-      <Button variant="outlined" color="error" disabled={loading} onClick={onReject}>
-        Từ chối
-      </Button>
-      <Button variant="contained" disabled={loading} onClick={onAccept}>
-        Chấp nhận
-      </Button>
-    </Stack>
-  </Box>
 );
 
 export default MentorshipDashboardPage;

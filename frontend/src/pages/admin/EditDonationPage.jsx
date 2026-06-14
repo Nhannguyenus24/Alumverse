@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import {
   Box,
   Button,
   Card,
+  CircularProgress,
   Container,
   FormControl,
   FormHelperText,
@@ -25,16 +26,22 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
+import WYSIWYG from "../../components/WYSIWYG";
 import { fundApi } from "../../utils/api";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
+import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
+
+const isEmptyHtml = (html) => {
+  if (!html || typeof html !== "string") return true;
+  const stripped = html.replace(/<[^>]*>/g, "").trim();
+  return stripped.length === 0;
+};
 
 const toSafeNumber = (value, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
-
-const formatCurrency = (value) => `${toSafeNumber(value, 0).toLocaleString("vi-VN")} VND`;
 
 const getFundPhase = (startDate, endDate, now) => {
   if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) return "invalid";
@@ -49,16 +56,14 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
     .object({
       name: z.string().trim().min(1, "Vui lòng nhập tên quỹ"),
       managerName: z.string().trim().min(1, "Vui lòng nhập tên người quản lí"),
-      logoUrl: z
-        .string()
-        .trim()
-        .refine((value) => value === "" || z.string().url().safeParse(value).success, "Logo URL không hợp lệ"),
       descriptionShort: z
         .string()
         .trim()
         .min(1, "Vui lòng nhập mô tả ngắn")
-        .max(100, "Mô tả ngắn tối đa 100 kí tự"),
-      descriptionFull: z.string().trim().min(1, "Vui lòng nhập mô tả đầy đủ"),
+        .max(100, "Mô tả ngắn tối đa 100 ký tự"),
+      descriptionFull: z
+        .string()
+        .refine((value) => !isEmptyHtml(value), "Vui lòng nhập mô tả đầy đủ"),
       targetAmount: z.coerce.number({ message: "Mục tiêu quỹ phải là số" }).positive("Mục tiêu quỹ phải lớn hơn 0"),
       fundReceivingInfoId: z.coerce.number().int().positive("Vui lòng chọn tài khoản nhận quỹ"),
       statusId: z.coerce.number().int().positive("Vui lòng chọn trạng thái"),
@@ -134,25 +139,20 @@ export default function EditDonationPage() {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams();
+  const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
   const [statusOptions, setStatusOptions] = useState([]);
   const [receivingOptions, setReceivingOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const logoInputRef = useRef(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
 
   const now = useMemo(() => dayjs(), []);
   const minAllowedTime = useMemo(() => now.add(10, "minute"), [now]);
   const [donationDetail, setDonationDetail] = useState(() => ({
-    id,
     name: "",
-    managerName: "",
     logoUrl: "",
-    descriptionShort: "",
-    descriptionFull: "",
     targetAmount: 0,
-    currentAmount: 0,
-    donorCount: 0,
-    fundReceivingInfoId: "",
-    statusId: "",
-    statusName: "",
     startDate: now,
     endDate: now.add(1, "day"),
   }));
@@ -185,7 +185,6 @@ export default function EditDonationPage() {
     defaultValues: {
       name: "",
       managerName: "",
-      logoUrl: "",
       descriptionShort: "",
       descriptionFull: "",
       targetAmount: 0,
@@ -195,6 +194,29 @@ export default function EditDonationPage() {
       endDate: now.add(1, "day"),
     },
   });
+
+  const pickImageFile = (file, onValid, inputEl) => {
+    const result = validateImageFile(file);
+    if (!result.valid) {
+      enqueueSnackbar(result.message, { variant: "warning" });
+      if (inputEl) inputEl.value = "";
+      return;
+    }
+    onValid(file);
+  };
+
+  const handleLogoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    pickImageFile(
+      file,
+      (f) => {
+        setLogoFile(f);
+        setLogoPreview(URL.createObjectURL(f));
+      },
+      e.target,
+    );
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -218,18 +240,9 @@ export default function EditDonationPage() {
         const startDate = detail?.timeStarted ? dayjs(detail.timeStarted) : null;
         const endDate = detail?.timeEnded ? dayjs(detail.timeEnded) : null;
         const normalizedDetail = {
-          id: detail?.id ?? id,
           name: detail?.name ?? "",
-          managerName: detail?.managerName ?? "",
           logoUrl: detail?.logoUrl ?? "",
-          descriptionShort: detail?.descriptionShort ?? "",
-          descriptionFull: detail?.descriptionFull ?? "",
           targetAmount: toSafeNumber(detail?.targetAmount, 0),
-          currentAmount: toSafeNumber(detail?.currentAmount, 0),
-          donorCount: toSafeNumber(detail?.donorCount, 0),
-          fundReceivingInfoId: detail?.fundReceivingInfo?.id ?? "",
-          statusId: matchedStatus?.id ?? "",
-          statusName: detail?.statusName ?? "",
           startDate: startDate && startDate.isValid() ? startDate : now,
           endDate: endDate && endDate.isValid() ? endDate : now.add(1, "day"),
         };
@@ -237,15 +250,16 @@ export default function EditDonationPage() {
         setStatusOptions(resolvedStatuses);
         setReceivingOptions(resolvedReceivingInfos);
         setDonationDetail(normalizedDetail);
+        setLogoFile(null);
+        setLogoPreview(normalizedDetail.logoUrl || null);
         reset({
           name: normalizedDetail.name,
-          managerName: normalizedDetail.managerName,
-          logoUrl: normalizedDetail.logoUrl,
-          descriptionShort: normalizedDetail.descriptionShort,
-          descriptionFull: normalizedDetail.descriptionFull,
+          managerName: detail?.managerName ?? "",
+          descriptionShort: detail?.descriptionShort ?? "",
+          descriptionFull: detail?.descriptionFull ?? "",
           targetAmount: normalizedDetail.targetAmount,
-          fundReceivingInfoId: normalizedDetail.fundReceivingInfoId,
-          statusId: normalizedDetail.statusId,
+          fundReceivingInfoId: detail?.fundReceivingInfo?.id ?? "",
+          statusId: matchedStatus?.id ?? "",
           startDate: normalizedDetail.startDate,
           endDate: normalizedDetail.endDate,
         });
@@ -274,17 +288,6 @@ export default function EditDonationPage() {
     };
   }, [enqueueSnackbar, id, now, reset]);
 
-  const selectedReceivingInfo = useMemo(
-    () => receivingOptions.find((option) => Number(option.id) === Number(donationDetail.fundReceivingInfoId)),
-    [donationDetail.fundReceivingInfoId, receivingOptions]
-  );
-  const progress = Math.min(
-    100,
-    Math.round(
-      (toSafeNumber(donationDetail.currentAmount, 0) / Math.max(toSafeNumber(donationDetail.targetAmount, 1), 1)) * 100
-    )
-  );
-
   const disableAllFields = phase === "ended";
   const disableStartDate = disableAllFields || phase === "active";
   const disableEndDate = disableAllFields;
@@ -305,20 +308,25 @@ export default function EditDonationPage() {
       enqueueSnackbar("Quỹ đã kết thúc, không thể chỉnh sửa.", { variant: "warning" });
       return;
     }
-    const payload = {
-      name: values.name?.trim(),
-      managerName: values.managerName?.trim(),
-      logoUrl: values.logoUrl?.trim() || null,
-      description_short: values.descriptionShort?.trim(),
-      description_full: values.descriptionFull?.trim(),
-      targetAmount: Number(values.targetAmount),
-      fundReceivingInfoId: Number(values.fundReceivingInfoId),
-      statusId: Number(values.statusId),
-      timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
-      timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
-    };
 
     try {
+      const logoUrl = logoFile
+        ? await uploadLogo(logoFile)
+        : donationDetail.logoUrl?.trim() || null;
+
+      const payload = {
+        name: values.name?.trim(),
+        managerName: values.managerName?.trim(),
+        logoUrl,
+        description_short: values.descriptionShort?.trim(),
+        description_full: values.descriptionFull,
+        targetAmount: Number(values.targetAmount),
+        fundReceivingInfoId: Number(values.fundReceivingInfoId),
+        statusId: Number(values.statusId),
+        timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
+        timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
+      };
+
       await fundApi.updateFund(id, payload);
       enqueueSnackbar("Cập nhật quỹ thành công.", { variant: "success" });
       navigate(`/donations/${id}`);
@@ -328,6 +336,8 @@ export default function EditDonationPage() {
       });
     }
   };
+
+  const isBusy = isSubmitting || isUploadingLogo;
 
   return (
     <Page title="Chỉnh sửa quỹ quyên góp" meta={<meta name="description" content="Chỉnh sửa quỹ quyên góp" />}>
@@ -363,113 +373,8 @@ export default function EditDonationPage() {
 
           {isLoading && <LinearProgress sx={{ mb: 2.2 }} />}
 
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 5 }}>
-              <Card sx={{ borderRadius: 3, p: 3, height: "100%", boxShadow: "0 10px 26px rgba(15, 58, 122, 0.08)" }}>
-                <Box sx={{ textAlign: "center", mb: 2.2 }}>
-                  <Box
-                    component="img"
-                    src={donationDetail.logoUrl}
-                    alt={donationDetail.name}
-                    sx={{
-                      width: 122,
-                      height: 122,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      boxShadow: "0 6px 18px rgba(17, 67, 142, 0.2)",
-                    }}
-                  />
-                  <Typography sx={{ mt: 1.8, fontWeight: 800, color: "#102f5a", fontSize: "1.45rem" }}>{donationDetail.name}</Typography>
-                  <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.92rem" }}>
-                    Người quản lí: {donationDetail.managerName}
-                  </Typography>
-                  <Typography sx={{ mt: 0.6, color: "#4f678d", fontSize: "0.9rem", lineHeight: 1.55 }}>
-                    Tài khoản nhận quỹ:
-                    <br />
-                    {selectedReceivingInfo
-                      ? `${selectedReceivingInfo.bankName} - ${selectedReceivingInfo.accountName} - ${selectedReceivingInfo.accountNumber}`
-                      : "Chưa chọn"}
-                  </Typography>
-                </Box>
-
-                <Box
-                  sx={{
-                    display: "inline-flex",
-                    px: 1.2,
-                    py: 0.45,
-                    borderRadius: 99,
-                    fontSize: "0.78rem",
-                    fontWeight: 700,
-                    color: "#0f4b72",
-                    backgroundColor: "#e0f2fe",
-                    border: "1px solid #7dd3fc",
-                    width: "fit-content",
-                  }}
-                >
-                  {donationDetail.statusName || statusOptions.find((option) => Number(option.id) === Number(donationDetail.statusId))?.name || "Chưa có trạng thái"}
-                </Box>
-
-                <Typography sx={{ mt: 1.4, color: "#5f78a4", fontSize: "0.9rem" }}>
-                  {dayjs(donationDetail.startDate).format("DD/MM/YYYY HH:mm")} - {dayjs(donationDetail.endDate).format("DD/MM/YYYY HH:mm")}
-                </Typography>
-
-                <Typography sx={{ mt: 1.1, color: "#2f4b75", fontWeight: 700, fontSize: "0.84rem" }}>
-                  {formatCurrency(donationDetail.currentAmount)} / {formatCurrency(donationDetail.targetAmount)}
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={progress}
-                  sx={{
-                    mt: 0.8,
-                    height: 28,
-                    borderRadius: 999,
-                    backgroundColor: "#e4e7ef",
-                    "& .MuiLinearProgress-bar": {
-                      borderRadius: 999,
-                      backgroundColor: "#123b7a",
-                    },
-                  }}
-                />
-
-                <Typography sx={{ mt: 1.4, color: "#102f59", fontWeight: 800, fontSize: "1.3rem" }}>
-                  {toSafeNumber(donationDetail.donorCount, 0).toLocaleString("vi-VN")}
-                </Typography>
-                <Typography sx={{ color: "#5f78a4", fontSize: "0.9rem" }}>lượt quyên góp</Typography>
-
-                <Typography sx={{ mt: 1.8, color: "#2d4873", fontWeight: 700 }}>Mô tả ngắn</Typography>
-                <Box
-                  sx={{
-                    mt: 0.8,
-                    borderRadius: 2,
-                    backgroundColor: "#f7f9fc",
-                    border: "1px solid #e0e7f3",
-                    p: 1.2,
-                  }}
-                >
-                  <Typography sx={{ color: "#4b6083", fontSize: "0.95rem", lineHeight: 1.7 }}>
-                    {donationDetail.descriptionShort || "Chưa có mô tả ngắn"}
-                  </Typography>
-                </Box>
-
-                <Typography sx={{ mt: 1.8, color: "#2d4873", fontWeight: 700 }}>Mô tả đầy đủ</Typography>
-                <Box
-                  sx={{
-                    mt: 0.8,
-                    maxHeight: 260,
-                    overflowY: "auto",
-                    borderRadius: 2,
-                    backgroundColor: "#f7f9fc",
-                    border: "1px solid #e0e7f3",
-                    p: 1.2,
-                  }}
-                >
-                  <Typography sx={{ color: "#4b6083", fontSize: "0.95rem", lineHeight: 1.7 }}>{donationDetail.descriptionFull}</Typography>
-                </Box>
-              </Card>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 7 }}>
-              <Card sx={{ borderRadius: 3, p: 3, boxShadow: "0 10px 26px rgba(15, 58, 122, 0.08)" }}>
+          <Box sx={{ maxWidth: 800, mx: "auto" }}>
+            <Card sx={{ borderRadius: 3, p: 3, boxShadow: "0 10px 26px rgba(15, 58, 122, 0.08)" }}>
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                     <Grid container spacing={2}>
@@ -488,15 +393,61 @@ export default function EditDonationPage() {
                         />
                       </Grid>
                       <Grid size={12}>
-                        <TextField fullWidth label="Logo URL" InputLabelProps={{ shrink: true }} {...register("logoUrl")} disabled={disableAllFields} error={!!errors.logoUrl} helperText={errors.logoUrl?.message} />
+                        <Typography
+                          variant="body2"
+                          sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
+                        >
+                          Logo quỹ (tuỳ chọn)
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                          Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.
+                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                          {logoPreview && (
+                            <Box
+                              component="img"
+                              src={logoPreview}
+                              alt="Logo preview"
+                              sx={{
+                                width: 72,
+                                height: 72,
+                                borderRadius: 2,
+                                objectFit: "cover",
+                                border: "1px solid",
+                                borderColor: "divider",
+                                flexShrink: 0,
+                              }}
+                            />
+                          )}
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <input
+                              ref={logoInputRef}
+                              type="file"
+                              accept={IMAGE_ACCEPT}
+                              style={{ display: "none" }}
+                              onChange={handleLogoChange}
+                              disabled={disableAllFields}
+                            />
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => logoInputRef.current?.click()}
+                              disabled={disableAllFields}
+                              sx={{ textTransform: "none" }}
+                            >
+                              {logoPreview ? "Đổi ảnh logo" : "Chọn ảnh logo"}
+                            </Button>
+                          </Stack>
+                        </Box>
                       </Grid>
                       <Grid size={12}>
                         <TextField
                           fullWidth
                           multiline
                           minRows={2}
-                          label="Mô tả ngắn"
+                          label="Mô tả ngắn (tối đa 100 ký tự)"
                           InputLabelProps={{ shrink: true }}
+                          inputProps={{ maxLength: 100 }}
                           {...register("descriptionShort")}
                           disabled={disableAllFields}
                           error={!!errors.descriptionShort}
@@ -504,17 +455,34 @@ export default function EditDonationPage() {
                         />
                       </Grid>
                       <Grid size={12}>
-                        <TextField
-                          fullWidth
-                          multiline
-                          minRows={5}
-                          label="Mô tả đầy đủ"
-                          InputLabelProps={{ shrink: true }}
-                          {...register("descriptionFull")}
-                          disabled={disableAllFields}
-                          error={!!errors.descriptionFull}
-                          helperText={errors.descriptionFull?.message}
+                        <Typography
+                          variant="body2"
+                          sx={{ mb: 1, fontWeight: 600, color: "text.secondary" }}
+                        >
+                          Mô tả đầy đủ
+                        </Typography>
+                        <Controller
+                          name="descriptionFull"
+                          control={control}
+                          render={({ field }) => (
+                            <WYSIWYG
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder="Nhập mô tả chi tiết về quỹ quyên góp..."
+                              height={320}
+                              readOnly={disableAllFields}
+                            />
+                          )}
                         />
+                        {errors.descriptionFull && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            sx={{ mt: 0.5, display: "block" }}
+                          >
+                            {errors.descriptionFull.message}
+                          </Typography>
+                        )}
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
@@ -624,18 +592,23 @@ export default function EditDonationPage() {
                     </Grid>
 
                     <Stack direction="row" justifyContent="flex-end" spacing={1.2} sx={{ mt: 2.5 }}>
-                      <Button variant="outlined" onClick={() => navigate(`/donations/${id}`)} sx={{ textTransform: "none", px: 2.6 }}>
+                      <Button variant="outlined" onClick={() => navigate(-1)} sx={{ textTransform: "none", px: 2.6 }}>
                         Hủy
                       </Button>
-                      <Button type="submit" variant="contained" disabled={isSubmitting || disableAllFields} sx={{ textTransform: "none", px: 2.6 }}>
-                        Lưu thay đổi
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isBusy || disableAllFields}
+                        startIcon={isUploadingLogo ? <CircularProgress size={16} color="inherit" /> : null}
+                        sx={{ textTransform: "none", px: 2.6 }}
+                      >
+                        {isUploadingLogo ? "Đang tải ảnh..." : isBusy ? "Đang lưu..." : "Lưu thay đổi"}
                       </Button>
                     </Stack>
                   </Box>
                 </LocalizationProvider>
-              </Card>
-            </Grid>
-          </Grid>
+            </Card>
+          </Box>
         </Container>
       </Box>
     </Page>

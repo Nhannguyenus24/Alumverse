@@ -8,10 +8,12 @@ import {
   Typography,
 } from '@mui/material';
 import EventOutlinedIcon from '@mui/icons-material/EventOutlined';
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import LinkOutlinedIcon from '@mui/icons-material/LinkOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import VideocamOutlinedIcon from '@mui/icons-material/VideocamOutlined';
 import dayjs from 'dayjs';
+
+const JOIN_EARLY_MINUTES = 15;
 
 const SESSION_TYPE_LABEL = {
   CAREER: 'Định hướng nghề nghiệp',
@@ -20,19 +22,31 @@ const SESSION_TYPE_LABEL = {
 };
 
 const STATUS_COLOR = {
-  Pending: 'warning',
-  Confirmed: 'info',
-  Completed: 'success',
-  Cancelled: 'default',
-  Rejected: 'error',
+  PENDING: 'warning',
+  CONFIRMED: 'info',
+  IN_PROGRESS: 'primary',
+  COMPLETED: 'success',
+  EXPIRED: 'default',
+  CANCELLED: 'default',
+  CANCELLED_BY_MENTEE: 'default',
+  CANCELLED_BY_MENTOR: 'warning',
+  RESCHEDULE_PROPOSED: 'warning',
+  REJECTED: 'error',
+  REPORTED: 'warning',
 };
 
 const STATUS_LABEL = {
-  Pending: 'Chờ duyệt',
-  Confirmed: 'Đã duyệt',
-  Completed: 'Đã hoàn thành',
-  Cancelled: 'Đã hủy',
-  Rejected: 'Bị từ chối',
+  PENDING: 'Chờ xác nhận',
+  CONFIRMED: 'Đã xác nhận',
+  IN_PROGRESS: 'Đang diễn ra',
+  COMPLETED: 'Đã hoàn thành',
+  EXPIRED: 'Không diễn ra',
+  CANCELLED: 'Đã hủy',
+  CANCELLED_BY_MENTEE: 'Đã hủy',
+  CANCELLED_BY_MENTOR: 'Cố vấn đã hủy',
+  RESCHEDULE_PROPOSED: 'Đề nghị dời lịch',
+  REJECTED: 'Bị từ chối',
+  REPORTED: 'Đang xử lý',
 };
 
 const formatRange = (start, end) => {
@@ -42,12 +56,44 @@ const formatRange = (start, end) => {
   return `${s.format('dddd, DD/MM/YYYY')} • ${s.format('HH:mm')} – ${e.format('HH:mm')}`;
 };
 
-const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view = 'mentee' }) => {
+const MentorshipBookingItem = ({
+  session,
+  onCancel,
+  cancelDisabled = false,
+  view = 'mentee',
+  onReport,
+  onFeedback,
+  onReschedule,
+  onPostpone,
+  onRescheduleResponse,
+  rescheduleResponsePending = false,
+  onJoin,
+  joinPending = false,
+}) => {
   const range = formatRange(session.startTime, session.endTime);
-  const canCancel =
-    onCancel && session.status !== 'Cancelled' && session.status !== 'Completed' && session.status !== 'Rejected';
+  const proposedRange = formatRange(session.proposedStartTime, session.proposedEndTime);
+  const terminalStatuses = ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'EXPIRED', 'REJECTED'];
+  const isRescheduleProposed = session.status === 'RESCHEDULE_PROPOSED';
+  // Hide cancel while a reschedule proposal is pending — mentee responds via accept/reject instead.
+  const canCancel = onCancel && !terminalStatuses.includes(session.status) && !isRescheduleProposed;
+  // Report only for sessions that happened (COMPLETED) or no-showed (EXPIRED), and not already reported.
+  const canReport = onReport && ['COMPLETED', 'EXPIRED'].includes(session.status) && !session.reported;
+  const canFeedback = onFeedback && session.status === 'COMPLETED';
+  const canReschedule = onReschedule && session.status === 'CONFIRMED';
+  const canPostpone = onPostpone && session.status === 'CONFIRMED';
+  const canRespondReschedule = onRescheduleResponse && view === 'mentee' && isRescheduleProposed;
 
-  // 'mentee' view → show mentor info; 'mentor' view → show mentee info
+  const now = dayjs();
+  const start = session.startTime ? dayjs(session.startTime) : null;
+  const end = session.endTime ? dayjs(session.endTime) : null;
+  const inJoinWindow =
+    start?.isValid() &&
+    end?.isValid() &&
+    !now.isBefore(start.subtract(JOIN_EARLY_MINUTES, 'minute')) &&
+    !now.isAfter(end);
+  const canJoin =
+    onJoin && ['CONFIRMED', 'IN_PROGRESS'].includes(session.status) && inJoinWindow;
+
   const counterpartName =
     view === 'mentor'
       ? session.menteeName ?? (session.menteeMemberId ? `Mentee #${session.menteeMemberId}` : `Booking #${session.id}`)
@@ -109,6 +155,33 @@ const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view
           </Box>
         )}
 
+        {session.cancelReason && ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR'].includes(session.status) && (
+          <Box>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Lý do hủy
+            </Typography>
+            <Typography variant="body2" color="error.main">{session.cancelReason}</Typography>
+          </Box>
+        )}
+
+        {isRescheduleProposed && (
+          <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'warning.lighter', border: '1px dashed', borderColor: 'warning.main' }}>
+            <Typography variant="caption" color="text.secondary" display="block">
+              {view === 'mentee' ? 'Cố vấn đề xuất dời sang' : 'Bạn đã đề xuất dời sang'}
+            </Typography>
+            {proposedRange && (
+              <Typography variant="body2" fontWeight={600} color="warning.dark">
+                {proposedRange}
+              </Typography>
+            )}
+            {session.cancelReason && (
+              <Typography variant="body2" color="text.secondary" mt={0.5}>
+                {session.cancelReason}
+              </Typography>
+            )}
+          </Box>
+        )}
+
         {session.cvUrl && (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <DescriptionOutlinedIcon fontSize="small" color="action" />
@@ -141,17 +214,78 @@ const MentorshipBookingItem = ({ session, onCancel, cancelDisabled = false, view
           </Stack>
         )}
 
-        {canCancel && (
-          <Stack direction="row" justifyContent="flex-end">
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              disabled={cancelDisabled}
-              onClick={() => onCancel(session)}
-            >
-              Hủy lịch
-            </Button>
+        {(canJoin || canCancel || canReport || canFeedback || canReschedule || canPostpone || canRespondReschedule) && (
+          <Stack direction="row" justifyContent="flex-end" spacing={1} flexWrap="wrap" useFlexGap>
+            {canJoin && (
+              <Button
+                size="small"
+                variant="contained"
+                color="primary"
+                startIcon={<VideocamOutlinedIcon />}
+                disabled={joinPending}
+                onClick={() => onJoin(session)}
+              >
+                Tham gia
+              </Button>
+            )}
+            {canRespondReschedule && (
+              <>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="success"
+                  disabled={rescheduleResponsePending}
+                  onClick={() => onRescheduleResponse(session, true)}
+                >
+                  Đồng ý dời lịch
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  disabled={rescheduleResponsePending}
+                  onClick={() => onRescheduleResponse(session, false)}
+                >
+                  Từ chối
+                </Button>
+              </>
+            )}
+            {canReschedule && (
+              <Button size="small" variant="outlined" onClick={() => onReschedule(session)}>
+                Đề xuất đổi lịch
+              </Button>
+            )}
+            {canPostpone && (
+              <Button size="small" variant="outlined" onClick={() => onPostpone(session)}>
+                Đề nghị dời lịch
+              </Button>
+            )}
+            {canFeedback && (
+              <Button size="small" variant="contained" onClick={() => onFeedback(session)}>
+                Đánh giá buổi cố vấn
+              </Button>
+            )}
+            {canReport && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="warning"
+                onClick={() => onReport(session)}
+              >
+                Báo cáo sự cố
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                disabled={cancelDisabled}
+                onClick={() => onCancel(session)}
+              >
+                Hủy lịch
+              </Button>
+            )}
           </Stack>
         )}
       </Stack>

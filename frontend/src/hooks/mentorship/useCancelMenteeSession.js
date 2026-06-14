@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { cancelSession } from '../../utils/api';
 
-const callCancel = async (sessionId) => {
-  const res = await cancelSession(sessionId);
+const callCancel = async ({ sessionId, cancelReason }) => {
+  const res = await cancelSession(sessionId, cancelReason);
   return res?.data?.data ?? null;
 };
 

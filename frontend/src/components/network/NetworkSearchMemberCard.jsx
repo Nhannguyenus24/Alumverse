@@ -1,24 +1,25 @@
-import { Avatar, Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import { alpha } from '@mui/material/styles';
+
+import IconButtonMenu from '../IconButtonMenu';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
- * Dữ liệu khớp nguồn DB: global_profiles (fullName), users (userName),
- * academic_records.startYear (khóa), organization_members (program, major).
- * `onMessage`: tùy chọn — gắn khi có luồng nhắn tin (chưa truyền thì bấm không làm gì).
+ * Dữ liệu: global_profiles (fullName), users (avatar), organization_members (program, major).
  */
 const NetworkSearchMemberCard = ({
   avatar,
   fullName,
-  startYear,
   program,
   major,
   onMessage,
+  onBlock,
   isDemo = false,
   isMessageLoading = false,
+  isBlockLoading = false,
 }) => {
   const displayName = fullName || 'N/A';
-  const cohortLabel = startYear != null && startYear !== '' ? startYear : 'N/A';
   const programLabel = formatAcademicValue(program, '—');
   const majorLabel = formatAcademicValue(major, 'N/A');
 
@@ -35,9 +36,34 @@ const NetworkSearchMemberCard = ({
         flexDirection: 'column',
         justifyContent: 'space-between',
         transition: 'transform 0.2s',
+        position: 'relative',
         '&:hover': { transform: 'translateY(-4px)' },
       }}
     >
+      {onBlock ? (
+        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+          <IconButtonMenu
+            menuId={`network-member-card-menu-${fullName}`}
+            buttonAriaLabel="Tùy chọn thành viên"
+          >
+            {({ close }) => (
+              <MenuItem
+                disabled={isBlockLoading}
+                onClick={() => {
+                  close();
+                  onBlock();
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  <BlockOutlinedIcon fontSize="small" color="primary" />
+                </ListItemIcon>
+                <ListItemText primary="Chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+              </MenuItem>
+            )}
+          </IconButtonMenu>
+        </Box>
+      ) : null}
+
       <Stack spacing={1.5} alignItems="center">
         <Avatar src={avatar} sx={{ width: 80, height: 80 }} />
 
@@ -58,12 +84,6 @@ const NetworkSearchMemberCard = ({
             })}
           >
             <Stack spacing={0.75} alignItems="center">
-              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
-                Khóa:{' '}
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {cohortLabel}
-                </Box>
-              </Typography>
               <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
                 Program:{' '}
                 <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>

@@ -7,15 +7,15 @@ const AdminUsersContext = createContext(null);
 const AdminForumContext = createContext(null);
 
 // --- Providers ---
-export const AdminSystemProvider = ({ value, children }) => (
+const AdminSystemProvider = ({ value, children }) => (
   <AdminSystemContext.Provider value={value}>{children}</AdminSystemContext.Provider>
 );
 
-export const AdminUsersProvider = ({ value, children }) => (
+const AdminUsersProvider = ({ value, children }) => (
   <AdminUsersContext.Provider value={value}>{children}</AdminUsersContext.Provider>
 );
 
-export const AdminForumProvider = ({ value, children }) => (
+const AdminForumProvider = ({ value, children }) => (
   <AdminForumContext.Provider value={value}>{children}</AdminForumContext.Provider>
 );
 

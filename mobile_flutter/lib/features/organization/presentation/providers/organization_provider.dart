@@ -1,0 +1,48 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/config/env.dart';
+import '../../../../core/storage/secure_storage.dart';
+import '../../data/models/organization.dart';
+import '../../data/repositories/organization_repository.dart';
+
+final organizationStateProvider =
+    AsyncNotifierProvider<OrganizationNotifier, Organization?>(
+        OrganizationNotifier.new);
+
+class OrganizationNotifier extends AsyncNotifier<Organization?> {
+  @override
+  Future<Organization?> build() async {
+    final storage = ref.read(secureStorageProvider);
+    // Use the saved slug, or fall back to the default tenant so the app boots
+    // straight into the organization without a picker (matches the web client).
+    final saved = await storage.readOrganizationSlug();
+    final slug = (saved != null && saved.isNotEmpty)
+        ? saved
+        : Env.defaultOrganizationSlug;
+    try {
+      final org = await ref
+          .read(organizationRepositoryProvider)
+          .getOrganizationBySlug(slug);
+      await storage.writeOrganizationSlug(slug);
+      return org;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> fetchOrganization(String slug) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final org = await ref
+          .read(organizationRepositoryProvider)
+          .getOrganizationBySlug(slug);
+      await ref.read(secureStorageProvider).writeOrganizationSlug(slug);
+      return org;
+    });
+  }
+
+  void reset() {
+    ref.read(secureStorageProvider).writeOrganizationSlug('');
+    state = const AsyncData(null);
+  }
+}

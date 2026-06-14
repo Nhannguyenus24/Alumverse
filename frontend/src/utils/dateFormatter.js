@@ -11,7 +11,7 @@ const toValidDate = (value) => {
 /**
  * Native implementation of formatDate.
  */
-export const formatDateNative = (value, fallback = '-') => {
+const formatDateNative = (value, fallback = '-') => {
   const date = toValidDate(value);
   if (!date) return fallback;
   return date.toLocaleDateString(DEFAULT_LOCALE, {
@@ -36,7 +36,7 @@ export const formatDate = (value, formatStr = "DD/MM/YYYY") => {
 /**
  * Native implementation of formatDateTime.
  */
-export const formatDateTimeNative = (value, fallback = '-') => {
+const formatDateTimeNative = (value, fallback = '-') => {
   const date = toValidDate(value);
   if (!date) return fallback;
   return date.toLocaleString(DEFAULT_LOCALE, {

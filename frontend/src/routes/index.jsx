@@ -8,6 +8,7 @@ import PublicRoute from "./PublicRoute";
 import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
+import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -63,8 +64,7 @@ const ForumAlumniCreateTopicPage = Loadable(
   lazy(() => import("../pages/alumni/ForumAlumniCreateTopicPage")),
 );
 
-const ArticlePage = Loadable(
-  lazy(() => import("../pages/alumni/ArticlePage")));
+const ArticlePage = Loadable(lazy(() => import("../pages/alumni/ArticlePage")));
 
 const MyProfilePage = Loadable(
   lazy(() => import("../pages/user/MyProfilePage")),
@@ -73,28 +73,64 @@ const MyProfileEditPage = Loadable(
   lazy(() => import("../pages/user/MyProfileEditPage")),
 );
 
+const MyTicketsPage = Loadable(
+  lazy(() => import("../pages/user/MyTicketsPage")),
+);
+
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
-const AdminLoginPage = Loadable(lazy(() => import("../pages/admin/AdminLoginPage")));
-const AdminDashboardPage = Loadable(lazy(() => import("../pages/admin/AdminDashboardPage")));
-const AdminUsersListPage = Loadable(lazy(() => import("../pages/admin/AdminUsersListPage")));
-const AdminUserDetailPage = Loadable(lazy(() => import("../pages/admin/AdminUserDetailPage")));
-const AdminForumPostsPage = Loadable(lazy(() => import("../pages/admin/AdminForumPostsPage")));
-const AdminForumTopicsPage = Loadable(lazy(() => import("../pages/admin/AdminForumTopicsPage")));
-const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/AdminForumCategoriesPage")));
-const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
-const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
-const AdminSchoolFeedbackPage = Loadable(lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")));
-const AdminVerificationsPage = Loadable(lazy(() => import("../pages/admin/AdminVerificationsPage")));
-const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
-const AdminArticlesPage = Loadable(lazy(() => import("../pages/admin/AdminArticlesPage")));
-const AdminEditArticlePage = Loadable(lazy(() => import("../pages/admin/AdminEditArticlePage")));
-const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
-const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
-
-const CreateDonationPage = Loadable(
-  lazy(() => import("../pages/admin/CreateDonationPage")),
+const AdminLoginPage = Loadable(
+  lazy(() => import("../pages/admin/AdminLoginPage")),
 );
+const AdminDashboardPage = Loadable(
+  lazy(() => import("../pages/admin/AdminDashboardPage")),
+);
+const AdminUsersListPage = Loadable(
+  lazy(() => import("../pages/admin/AdminUsersListPage")),
+);
+const AdminUserDetailPage = Loadable(
+  lazy(() => import("../pages/admin/AdminUserDetailPage")),
+);
+const AdminForumPostsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumPostsPage")),
+);
+const AdminForumTopicsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumTopicsPage")),
+);
+const AdminForumCategoriesPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumCategoriesPage")),
+);
+const AdminOrganizationsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminOrganizationsPage")),
+);
+const AdminEventsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminEventsPage")),
+);
+const AdminSchoolFeedbackPage = Loadable(
+  lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")),
+);
+const AdminVerificationsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminVerificationsPage")),
+);
+const AdminMentorshipPage = Loadable(
+  lazy(() => import("../pages/admin/AdminMentorshipPage")),
+);
+const AdminArticlesPage = Loadable(
+  lazy(() => import("../pages/admin/AdminArticlesPage")),
+);
+const AdminEditArticlePage = Loadable(
+  lazy(() => import("../pages/admin/AdminEditArticlePage")),
+);
+const AdminFundraisingsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminFundraisingsPage")),
+);
+const AdminFundReceivingInfosPage = Loadable(
+  lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")),
+);
+const AdminAuditLogsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminAuditLogsPage")),
+);
+
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
 );
@@ -111,9 +147,7 @@ const DonationDetailPage = Loadable(
 );
 
 // Honors pages
-const HonorsPage = Loadable(
-  lazy(() => import("../pages/honors/HonorsPage"))
-);
+const HonorsPage = Loadable(lazy(() => import("../pages/honors/HonorsPage")));
 const HonorsAlumniPage = Loadable(
   lazy(() => import("../pages/honors/HonorsAlumniPage")),
 );
@@ -140,6 +174,12 @@ const NetworkPage = Loadable(
 const NetworkIncomingRequestsPage = Loadable(
   lazy(() => import("../pages/network/NetworkIncomingRequestsPage")),
 );
+const NetworkConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkConnectionsPage")),
+);
+const NetworkRestrictedConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkRestrictedConnectionsPage")),
+);
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
 );
@@ -159,13 +199,6 @@ const DevelopmentJobsPage = Loadable(
 const MentorshipPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipPage")),
 );
-const MentorshipProfilePage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipProfilePage")),
-);
-const MentorshipProfileEditPage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipProfileEditPage")),
-);
-
 const MentorshipDashboardPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipDashboardPage")),
 );
@@ -181,9 +214,6 @@ const MentorshipMyBookingsPage = Loadable(
 const MentorshipSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipSignupPage")),
 );
-const MentorshipPublicProfilePage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipPublicProfilePage")),
-);
 const MenteeSignupPage = Loadable(
   lazy(() => import("../pages/mentorship/MenteeSignupPage")),
 );
@@ -192,20 +222,11 @@ const MenteeSignupPage = Loadable(
 const PostArticlePage = Loadable(
   lazy(() => import("../pages/user/PostArticlePage")),
 );
-const PostArticleAlumniPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleAlumniPage")),
+const PostArticleGenericPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleGenericPage")),
 );
 const PostArticleEventPage = Loadable(
   lazy(() => import("../pages/user/PostArticleEventPage")),
-);
-const PostArticleAchievementPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleAchievementPage")),
-);
-const PostArticleJobPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleJobPage")),
-);
-const PostArticleLearningPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleLearningPage")),
 );
 const PostArticleDonationPage = Loadable(
   lazy(() => import("../pages/user/PostArticleDonationPage")),
@@ -244,7 +265,20 @@ export const router = createBrowserRouter([
       },
       {
         path: "introduction",
-        element: <IntroducePage />,
+        children: [
+          {
+            index: true,
+            element: <IntroducePage />,
+          },
+          {
+            path: "leaders",
+            element: <IntroducePage />,
+          },
+          {
+            path: "team",
+            element: <IntroducePage />,
+          },
+        ],
       },
       {
         path: "forum",
@@ -269,12 +303,7 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: "create-post",
-                    element: (
-                      <Navigate
-                        to="../create-topic"
-                        replace
-                      />
-                    ),
+                    element: <Navigate to="../create-topic" replace />,
                   },
                   {
                     path: "create-topic",
@@ -282,6 +311,10 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: ":threadId",
+                    element: <ForumAlumniThreadPage />,
+                  },
+                  {
+                    path: ":threadId/page/:pageId",
                     element: <ForumAlumniThreadPage />,
                   },
                 ],
@@ -329,7 +362,7 @@ export const router = createBrowserRouter([
           {
             path: "news",
             element: <ActivitiesNewsPage />,
-          }
+          },
         ],
       },
       {
@@ -347,6 +380,14 @@ export const router = createBrowserRouter([
           {
             path: "requests",
             element: <NetworkIncomingRequestsPage />,
+          },
+          {
+            path: "connections",
+            element: <NetworkConnectionsPage />,
+          },
+          {
+            path: "restricted-connections",
+            element: <NetworkRestrictedConnectionsPage />,
           },
         ],
       },
@@ -369,6 +410,19 @@ export const router = createBrowserRouter([
             path: "edit",
             element: <MyProfileEditPage />,
           },
+          {
+            path: ":id",
+            element: <MyProfilePage />,
+          },
+        ],
+      },
+      {
+        path: "my-tickets",
+        children: [
+          {
+            index: true,
+            element: <MyTicketsPage />,
+          },
         ],
       },
       {
@@ -376,28 +430,20 @@ export const router = createBrowserRouter([
         element: <PostArticlePage />,
       },
       {
-        path: "post/alumni",
-        element: <PostArticleAlumniPage />,
-      },
-      {
         path: "post/event",
         element: <PostArticleEventPage />,
       },
       {
-        path: "post/achievement",
-        element: <PostArticleAchievementPage />,
-      },
-      {
-        path: "post/job",
-        element: <PostArticleJobPage />,
-      },
-      {
-        path: "post/learning",
-        element: <PostArticleLearningPage />,
+        path: "post/:channel",
+        element: <PostArticleGenericPage />,
       },
       {
         path: "post/donation",
-        element: <PostArticleDonationPage />,
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <PostArticleDonationPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "article/:channel/:id",
@@ -444,11 +490,11 @@ export const router = createBrowserRouter([
             element: <DevelopmentPage />,
           },
           {
-            path: 'academics',
+            path: "academics",
             element: <DevelopmentAcademicsPage />,
           },
           {
-            path: 'jobs',
+            path: "jobs",
             element: <DevelopmentJobsPage />,
           },
           {
@@ -460,6 +506,10 @@ export const router = createBrowserRouter([
                 handle: { hideFooter: true },
               },
               {
+                path: "browse",
+                element: <Navigate to=".." replace />,
+              },
+              {
                 path: "dashboard",
                 element: <MentorshipDashboardPage />,
               },
@@ -468,12 +518,12 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    element: <MentorshipProfilePage />,
+                    element: <MyProfilePage />,
                   },
                   {
                     path: "edit",
-                    element: <MentorshipProfileEditPage />,
-                  }
+                    element: <MyProfileEditPage />,
+                  },
                 ],
               },
               {
@@ -482,23 +532,39 @@ export const router = createBrowserRouter([
               },
               {
                 path: "mentors/:mentorId",
-                element: <MentorshipPublicProfilePage />,
+                element: <MyProfilePage />,
               },
               {
                 path: "mentors/:mentorId/book",
-                element: <MentorshipBookingPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MentorshipBookingPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
               {
                 path: "my-bookings",
-                element: <MentorshipMyBookingsPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MentorshipMyBookingsPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
               {
                 path: "signup",
-                element: <MentorshipSignupPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MentorshipSignupPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
               {
                 path: "mentee-signup",
-                element: <MenteeSignupPage />,
+                element: (
+                  <MentorshipFullAccessGate>
+                    <MenteeSignupPage />
+                  </MentorshipFullAccessGate>
+                ),
               },
             ],
           },
@@ -605,6 +671,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "fundraising/bank-accounts",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminFundReceivingInfosPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "article",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
@@ -636,14 +710,6 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <DonationPage />,
-          },
-          {
-            path: "create",
-            element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
-                <CreateDonationPage />
-              </ProtectedRoute>
-            ),
           },
           {
             path: ":id/edit",
@@ -816,6 +882,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminFundraisingsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "fundraising/bank-accounts",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminFundReceivingInfosPage />
           </ProtectedRoute>
         ),
       },

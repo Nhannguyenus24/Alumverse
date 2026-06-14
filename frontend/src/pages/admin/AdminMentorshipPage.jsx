@@ -36,11 +36,12 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import AdminSectionPanel from "../../components/admin/AdminSectionPanel";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
+import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
-  ADMIN_FILTER_BAR_SX,
   ADMIN_STATUS_CHIP_SX,
 } from "../../constants/adminUiShared";
 import useAdminMentorship from "../../hooks/admin/useAdminMentorship";
+import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
@@ -103,6 +104,7 @@ const PersonCell = ({ name, email, fallback }) => (
 const AdminMentorshipPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
+  const { stableOrgId } = useAdminSystemContext();
   const {
     sessions,
     sessionTotal,
@@ -126,7 +128,7 @@ const AdminMentorshipPage = () => {
     setApprovalFilter,
     approveMentor,
     statistics,
-  } = useAdminMentorship();
+  } = useAdminMentorship(stableOrgId);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Cố vấn (Mentorship)', active: true }]);
@@ -258,357 +260,278 @@ const AdminMentorshipPage = () => {
 
         {tab === "sessions" ? (
           <>
-            <Box sx={ADMIN_FILTER_BAR_SX}>
-              <TextField
-                select
-                size="small"
-                label="Trạng thái"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setSessionPage(0);
-                }}
-                sx={{ minWidth: 200 }}
-              >
-                {SESSION_STATUS_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
-
             {sessionLoading ? (
               <Stack alignItems="center" sx={{ py: 4 }}>
                 <CircularProgress size={28} />
               </Stack>
             ) : (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Cố vấn</TableCell>
-                    <TableCell>Người được cố vấn</TableCell>
-                    <TableCell>Trạng thái</TableCell>
-                    <TableCell>Loại</TableCell>
-                    <TableCell>Thời gian</TableCell>
-                    <TableCell>Ngày tạo</TableCell>
-                    <TableCell align="right">Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sessions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8}>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ py: 2 }}
-                        >
-                          Không có phiên hẹn nào khớp với bộ lọc.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    sessions.map((s) => {
+              <AdminDataTable
+                columns={[
+                  { id: "id", label: "ID" },
+                  {
+                    id: "mentor",
+                    label: "Cố vấn",
+                    render: (_, s) => (
+                      <PersonCell
+                        name={s.mentorName}
+                        email={s.mentorEmail}
+                        fallback={s.mentorMemberId ? `#${s.mentorMemberId}` : "-"}
+                      />
+                    ),
+                  },
+                  {
+                    id: "mentee",
+                    label: "Người được cố vấn",
+                    render: (_, s) => (
+                      <PersonCell
+                        name={s.menteeName}
+                        email={s.menteeEmail}
+                        fallback={s.menteeMemberId ? `#${s.menteeMemberId}` : "-"}
+                      />
+                    ),
+                  },
+                  {
+                    id: "status",
+                    label: "Trạng thái",
+                    render: (_, s) => {
                       const chip = statusChip(s.status);
-                      const isPending =
-                        String(s.status).toLowerCase() === "pending";
-                      const isCancellable = ["pending", "confirmed"].includes(
-                        String(s.status).toLowerCase(),
-                      );
                       return (
-                        <TableRow
-                          key={s.id}
-                          hover
-                          onClick={() => setDetailItem(s)}
-                          sx={{ cursor: "pointer" }}
-                        >
-                          <TableCell>{s.id}</TableCell>
-                          <TableCell>
-                            <PersonCell
-                              name={s.mentorName}
-                              email={s.mentorEmail}
-                              fallback={
-                                s.mentorMemberId ? `#${s.mentorMemberId}` : "-"
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <PersonCell
-                              name={s.menteeName}
-                              email={s.menteeEmail}
-                              fallback={
-                                s.menteeMemberId ? `#${s.menteeMemberId}` : "-"
-                              }
-                            />
-                          </TableCell>
-                          <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Chip
-                              size="small"
-                              color={chip.color}
-                              label={chip.label}
-                              sx={ADMIN_STATUS_CHIP_SX}
-                            />
-                          </TableCell>
-                          <TableCell>{s.sessionType || "-"}</TableCell>
-                          <TableCell>
-                            {s.startTime ? (
-                              <Typography variant="caption">
-                                {formatDateTime(s.startTime)}
-                                <br />→ {formatDateTime(s.endTime)}
-                              </Typography>
-                            ) : (
-                              "-"
-                            )}
-                          </TableCell>
-                          <TableCell>{formatDateTime(s.createdAt)}</TableCell>
-                          <TableCell
-                            align="right"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                gap: 0.5,
-                              }}
-                            >
-                              <Tooltip title="Xem">
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  onClick={() => setDetailItem(s)}
-                                >
-                                  <VisibilityOutlinedIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              {isPending && (
-                                <Tooltip title="Xác nhận">
-                                  <IconButton
-                                    size="small"
-                                    color="success"
-                                    onClick={() => handleConfirm(s)}
-                                  >
-                                    <DoneAllOutlinedIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                              {isCancellable && (
-                                <Tooltip title="Hủy">
-                                  <IconButton
-                                    size="small"
-                                    color="warning"
-                                    onClick={() => handleCancel(s)}
-                                  >
-                                    <CloseOutlinedIcon fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                              <Tooltip title="Xóa">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => setDeleteTarget(s)}
-                                >
-                                  <DeleteOutlineIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
+                        <Chip
+                          size="small"
+                          color={chip.color}
+                          label={chip.label}
+                          sx={ADMIN_STATUS_CHIP_SX}
+                        />
                       );
-                    })
-                  )}
-                </TableBody>
-              </Table>
+                    },
+                  },
+                  {
+                    id: "sessionType",
+                    label: "Loại",
+                    render: (_, s) => s.sessionType || "-",
+                  },
+                  {
+                    id: "time",
+                    label: "Thời gian",
+                    render: (_, s) =>
+                      s.startTime ? (
+                        <Typography variant="caption">
+                          {formatDateTime(s.startTime)}
+                          <br />→ {formatDateTime(s.endTime)}
+                        </Typography>
+                      ) : (
+                        "-"
+                      ),
+                  },
+                  {
+                    id: "createdAt",
+                    label: "Ngày tạo",
+                    render: (_, s) => formatDateTime(s.createdAt),
+                  },
+                  {
+                    id: "actions",
+                    label: "Thao tác",
+                    align: "right",
+                    render: (_, s) => {
+                      const isPending = String(s.status).toLowerCase() === "pending";
+                      const isCancellable = ["pending", "confirmed"].includes(String(s.status).toLowerCase());
+                      return (
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "flex-end",
+                            gap: 0.5,
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Tooltip title="Xem">
+                            <IconButton size="small" color="primary" onClick={() => setDetailItem(s)}>
+                              <VisibilityOutlinedIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          {isPending && (
+                            <Tooltip title="Xác nhận">
+                              <IconButton size="small" color="success" onClick={() => handleConfirm(s)}>
+                                <DoneAllOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {isCancellable && (
+                            <Tooltip title="Hủy">
+                              <IconButton size="small" color="warning" onClick={() => handleCancel(s)}>
+                                <CloseOutlinedIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          <Tooltip title="Xóa">
+                            <IconButton size="small" color="error" onClick={() => setDeleteTarget(s)}>
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      );
+                    },
+                  },
+                ]}
+                rows={sessions}
+                totalCount={sessionTotal}
+                page={sessionPage}
+                rowsPerPage={sessionRowsPerPage}
+                onPageChange={(_, p) => setSessionPage(p)}
+                onRowsPerPageChange={(e) => {
+                  setSessionRowsPerPage(Number(e.target.value));
+                  setSessionPage(0);
+                }}
+                onRowClick={(s) => setDetailItem(s)}
+                emptyMessage="Không có phiên hẹn nào khớp với bộ lọc."
+                filters={
+                  <TextField
+                    select
+                    size="small"
+                    label="Trạng thái"
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setStatusFilter(e.target.value);
+                      setSessionPage(0);
+                    }}
+                    sx={{ minWidth: 200 }}
+                  >
+                    {SESSION_STATUS_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                }
+              />
             )}
-
-            <TablePagination
-              component="div"
-              count={sessionTotal}
-              page={sessionPage}
-              rowsPerPage={sessionRowsPerPage}
-              onPageChange={(_, p) => setSessionPage(p)}
-              onRowsPerPageChange={(e) => {
-                setSessionRowsPerPage(Number(e.target.value));
-                setSessionPage(0);
-              }}
-              rowsPerPageOptions={[10, 20, 50]}
-            />
           </>
         ) : (
           <>
-            <Box sx={ADMIN_FILTER_BAR_SX}>
-              <TextField
-                select
-                size="small"
-                label="Phê duyệt"
-                value={approvalFilter}
-                onChange={(e) => {
-                  setApprovalFilter(e.target.value);
-                  setMentorPage(0);
-                }}
-                sx={{ minWidth: 200 }}
-              >
-                {APPROVAL_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Box>
-
             {mentorLoading ? (
               <Stack alignItems="center" sx={{ py: 4 }}>
                 <CircularProgress size={28} />
               </Stack>
             ) : (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Cố vấn</TableCell>
-                    <TableCell>Công việc / Công ty</TableCell>
-                    <TableCell>Đánh giá</TableCell>
-                    <TableCell align="right">Số phiên</TableCell>
-                    <TableCell>Phê duyệt</TableCell>
-                    <TableCell>Ngày tạo</TableCell>
-                    <TableCell align="right">Thao tác</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {mentors.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7}>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ py: 2 }}
-                        >
-                          Không có hồ sơ cố vấn nào khớp với bộ lọc.
+              <AdminDataTable
+                columns={[
+                  {
+                    id: "mentor",
+                    label: "Cố vấn",
+                    render: (_, m) => (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Avatar sx={{ width: 32, height: 32 }}>
+                          {(m.mentorName || "?").charAt(0).toUpperCase()}
+                        </Avatar>
+                        <PersonCell
+                          name={m.mentorName}
+                          email={m.mentorEmail}
+                          fallback={`#${m.memberId}`}
+                        />
+                      </Box>
+                    ),
+                  },
+                  {
+                    id: "job",
+                    label: "Công việc / Công ty",
+                    render: (_, m) => (
+                      <>
+                        <Typography variant="body2">{m.currentJobTitle || "-"}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {m.currentCompany || ""}
                         </Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    mentors.map((m) => (
-                      <TableRow
-                        key={m.memberId}
-                        hover
-                        onClick={() => setMentorDetail(m)}
-                        sx={{ cursor: "pointer" }}
-                      >
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Avatar sx={{ width: 32, height: 32 }}>
-                              {(m.mentorName || "?").charAt(0).toUpperCase()}
-                            </Avatar>
-                            <PersonCell
-                              name={m.mentorName}
-                              email={m.mentorEmail}
-                              fallback={`#${m.memberId}`}
-                            />
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {m.currentJobTitle || "-"}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {m.currentCompany || ""}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.5,
-                            }}
-                          >
-                            <Rating
-                              value={Number(m.ratingAvg) || 0}
-                              size="small"
-                              readOnly
-                              precision={0.1}
-                            />
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {Number(m.ratingAvg ?? 0).toFixed(1)}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell align="right">
-                          {m.totalSessions ?? 0}
-                        </TableCell>
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Chip
-                            size="small"
-                            color={m.isApproved ? "success" : "warning"}
-                            label={m.isApproved ? "Đã duyệt" : "Chờ duyệt"}
-                            sx={ADMIN_STATUS_CHIP_SX}
-                          />
-                        </TableCell>
-                        <TableCell>{formatDateTime(m.createdAt)}</TableCell>
-                        <TableCell
-                          align="right"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              gap: 0.5,
-                            }}
-                          >
-                            <Tooltip title="Xem">
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => setMentorDetail(m)}
-                              >
-                                <VisibilityOutlinedIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            {!m.isApproved && (
-                              <Tooltip title="Duyệt cố vấn">
-                                <IconButton
-                                  size="small"
-                                  color="success"
-                                  onClick={() => handleApprove(m)}
-                                >
-                                  <CheckCircleOutlineIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                      </>
+                    ),
+                  },
+                  {
+                    id: "rating",
+                    label: "Đánh giá",
+                    render: (_, m) => (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                        <Rating value={Number(m.ratingAvg) || 0} size="small" readOnly precision={0.1} />
+                        <Typography variant="caption" color="text.secondary">
+                          {Number(m.ratingAvg ?? 0).toFixed(1)}
+                        </Typography>
+                      </Box>
+                    ),
+                  },
+                  {
+                    id: "totalSessions",
+                    label: "Số phiên",
+                    align: "right",
+                    render: (_, m) => m.totalSessions ?? 0,
+                  },
+                  {
+                    id: "approval",
+                    label: "Phê duyệt",
+                    render: (_, m) => (
+                      <Chip
+                        size="small"
+                        color={m.isApproved ? "success" : "warning"}
+                        label={m.isApproved ? "Đã duyệt" : "Chờ duyệt"}
+                        sx={ADMIN_STATUS_CHIP_SX}
+                      />
+                    ),
+                  },
+                  {
+                    id: "createdAt",
+                    label: "Ngày tạo",
+                    render: (_, m) => formatDateTime(m.createdAt),
+                  },
+                  {
+                    id: "actions",
+                    label: "Thao tác",
+                    align: "right",
+                    render: (_, m) => (
+                      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+                        <Tooltip title="Xem">
+                          <IconButton size="small" color="primary" onClick={() => setMentorDetail(m)}>
+                            <VisibilityOutlinedIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        {!m.isApproved && (
+                          <Tooltip title="Duyệt cố vấn">
+                            <IconButton size="small" color="success" onClick={() => handleApprove(m)}>
+                              <CheckCircleOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    ),
+                  },
+                ]}
+                rows={mentors}
+                totalCount={mentorTotal}
+                page={mentorPage}
+                rowsPerPage={mentorRowsPerPage}
+                onPageChange={(_, p) => setMentorPage(p)}
+                onRowsPerPageChange={(e) => {
+                  setMentorRowsPerPage(Number(e.target.value));
+                  setMentorPage(0);
+                }}
+                onRowClick={(m) => setMentorDetail(m)}
+                emptyMessage="Không có hồ sơ cố vấn nào khớp với bộ lọc."
+                filters={
+                  <TextField
+                    select
+                    size="small"
+                    label="Phê duyệt"
+                    value={approvalFilter}
+                    onChange={(e) => {
+                      setApprovalFilter(e.target.value);
+                      setMentorPage(0);
+                    }}
+                    sx={{ minWidth: 200 }}
+                  >
+                    {APPROVAL_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                }
+              />
             )}
-
-            <TablePagination
-              component="div"
-              count={mentorTotal}
-              page={mentorPage}
-              rowsPerPage={mentorRowsPerPage}
-              onPageChange={(_, p) => setMentorPage(p)}
-              onRowsPerPageChange={(e) => {
-                setMentorRowsPerPage(Number(e.target.value));
-                setMentorPage(0);
-              }}
-              rowsPerPageOptions={[10, 20, 50]}
-            />
           </>
         )}
       </AdminSectionPanel>

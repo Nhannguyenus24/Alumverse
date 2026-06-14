@@ -1,19 +1,26 @@
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router";
 import {
   Box,
   Container,
   Stack,
   Typography,
+  Avatar,
   Button,
   Card,
   CardContent,
   CardMedia,
   useTheme,
   useMediaQuery,
+  
 } from "@mui/material";
 import Page from "../../components/Page";
+import { usePublishedAchievements } from "../../hooks/articles/usePublishedAchievements";
+import { eventApi } from "../../utils/api";
+import useOrganizationStore from "../../stores/organizationStore";
 import Logo from "../../components/Logo";
 import FitBot from "../../components/FitBot";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
 const HERO_BG = "/home_page/home_page.png";
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
@@ -23,42 +30,27 @@ const EXPLORE_ITEMS = [
     iconSrc: "/icons/ho_tro_tu_van.svg",
     title: "Hỗ trợ & Tư vấn",
     description: "Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.",
+    path: "/development/mentorship",
   },
   {
     iconSrc: "/icons/ket_noi_csv.svg",
     title: "Kết nối cựu sinh viên",
     description:
       "Kết nối cộng đồng cựu sinh viên, chia sẻ kiến thức và kinh nghiệm.",
+    path: "/forum",
   },
   {
     iconSrc: "/icons/tim_kiem_csv.svg",
     title: "Tìm kiếm cựu sinh viên",
     description: "Dễ dàng tìm kiếm và kết nối với cựu sinh viên.",
+    path: "/search",
   },
   {
     iconSrc: "/icons/su_kien_hoi_thao.svg",
     title: "Sự kiện & Hội thảo",
     description: "Tham gia sự kiện mở rộng mối quan hệ và cơ hội nghề nghiệp.",
+    path: "/activities/events",
   },
-];
-
-const PLACEHOLDER_NEWS = [
-  {
-    title: "Hội thảo kết nối doanh nghiệp 2026",
-    date: "15/01/2026",
-    image: null,
-  },
-  { title: "Ngày hội tuyển dụng FIT", date: "20/01/2026", image: null },
-  { title: "Gặp gỡ cựu sinh viên thành đạt", date: "25/01/2026", image: null },
-  { title: "Chương trình học bổng sinh viên", date: "01/02/2026", image: null },
-  { title: "Hội nghị khoa học công nghệ", date: "10/02/2026", image: null },
-  { title: "Lễ ký kết hợp tác doanh nghiệp", date: "15/02/2026", image: null },
-];
-
-const PLACEHOLDER_ALUMNI = [
-  { name: "Nguyễn Văn A", role: "Tech Lead, FPT Software" },
-  { name: "Trần Thị B", role: "Founder, Startup XYZ" },
-  { name: "Lê Văn C", role: "Giám đốc R&D, VNG" },
 ];
 
 const PARTNER_LOGOS = [
@@ -75,6 +67,26 @@ const PARTNER_LOGOS = [
 ];
 
 const HomePage = () => {
+  const { slug } = useParams();
+  const { achievements } = usePublishedAchievements(0, 5);
+  const [events, setEvents] = useState([]);
+  const navigate = useOrgNavigate();
+
+  const organizationId = useOrganizationStore((state) => state.organization?.id);
+
+  useEffect(() => {
+    if (!organizationId) return;
+    const fetchEvents = async () => {
+      try {
+        const data = await eventApi.getUpcomingEvents({ organizationId, limit: 6 });
+        setEvents(data?.items || []);
+      } catch (error) {
+        console.error("Failed to fetch events:", error);
+      }
+    };
+    fetchEvents();
+  }, [organizationId]);
+
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
@@ -155,8 +167,7 @@ const HomePage = () => {
               </Typography>
               <Box sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
                 <Button
-                  component={Link}
-                  to="/introduction"
+                  onClick={() => navigate("/introduction")}
                   variant="outlined"
                   size="large"
                   sx={{
@@ -213,7 +224,7 @@ const HomePage = () => {
             sx={{ alignItems: "stretch" }}
           >
             {EXPLORE_ITEMS.map((item) => {
-              const { iconSrc, title, description } = item;
+              const { iconSrc, title, description, path } = item;
               return (
                 <Box
                   key={item.title}
@@ -225,6 +236,7 @@ const HomePage = () => {
                   }}
                 >
                 <Card
+                  onClick={() => navigate(path)}
                   elevation={0}
                   sx={{
                     border: 1,
@@ -237,6 +249,7 @@ const HomePage = () => {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
+                    cursor: "pointer",
                     "&:hover": {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                     },
@@ -308,9 +321,9 @@ const HomePage = () => {
             useFlexGap
             spacing={{ xs: 2, sm: 3 }}
           >
-            {PLACEHOLDER_NEWS.map(({ title, date }) => (
+            {events.map((event) => (
               <Box
-                key={title}
+                key={event.id}
                 sx={{
                   flex: "1 1 100%",
                   minWidth: 0,
@@ -320,7 +333,7 @@ const HomePage = () => {
               >
               <Card
                 component={Link}
-                to="/activities/news"
+                to={`/${slug}/article/event/${event.id}`}
                 sx={{
                   textDecoration: "none",
                   color: "inherit",
@@ -332,21 +345,24 @@ const HomePage = () => {
               >
                 <CardMedia
                   component="div"
+                  image={event.bannerUrl}
                   sx={{
                     height: { xs: 140, sm: 160, md: 180 },
                     backgroundColor: "grey.200",
+                    backgroundSize: "cover",
                   }}
                 />
                 <CardContent sx={{ py: { xs: 1.5, md: 2 }, px: { xs: 1.5, md: 2 } }}>
                   <Typography
                     variant="subtitle1"
                     fontWeight={600}
+                    noWrap
                     sx={{ mb: 0.5, fontSize: { xs: "0.9375rem", md: "1rem" } }}
                   >
-                    {title}
+                    {event.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.8125rem", md: "0.875rem" } }}>
-                    {date}
+                    {new Date(event.startTime).toLocaleDateString("vi-VN")}
                   </Typography>
                 </CardContent>
               </Card>
@@ -375,12 +391,12 @@ const HomePage = () => {
             spacing={{ xs: 1.5, sm: 2, md: 4 }}
             sx={{ overflow: "hidden" }}
           >
-            {PLACEHOLDER_ALUMNI.map(({ name, role }) => (
+            {achievements.map((item) => (
               <Box
-                key={name}
+                key={item.id}
                 sx={{
                   flex: "1 1 0",
-                  minWidth: 0,
+                  minWidth: { xs: 160, sm: 200, md: 0 },
                 }}
               >
               <Card
@@ -392,27 +408,49 @@ const HomePage = () => {
                   textAlign: "center",
                   py: { xs: 2.5, md: 3 },
                   px: { xs: 1.5, md: 2 },
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
                 }}
               >
-                <Box
+                <Avatar
+                  src={item.memberAvatar}
                   sx={{
                     width: { xs: 64, md: 80 },
                     height: { xs: 64, md: 80 },
-                    borderRadius: "50%",
-                    bgcolor: "grey.300",
-                    mx: "auto",
                     mb: { xs: 1, md: 1.5 },
                   }}
-                />
+                >
+                  {item.memberName?.charAt(0)}
+                </Avatar>
                 <Typography
                   variant="subtitle1"
                   fontWeight={600}
-                  sx={{ mb: 0.5, fontSize: { xs: "0.9375rem", md: "1rem" } }}
+                  sx={{ 
+                    mb: 0.25, 
+                    fontSize: { xs: "0.9375rem", md: "1rem" },
+                    display: "-webkit-box",
+                    WebkitLineClamp: 1,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }}
                 >
-                  {name}
+                  {item.memberName || "Alumnus"}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.8125rem", md: "0.875rem" } }}>
-                  {role}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ 
+                    fontSize: { xs: "0.75rem", md: "0.8125rem" },
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                    minHeight: "2.5em",
+                  }}
+                >
+                  {item.memberJobTitle}{item.memberCompany ? `, ${item.memberCompany}` : ""}
                 </Typography>
               </Card>
               </Box>

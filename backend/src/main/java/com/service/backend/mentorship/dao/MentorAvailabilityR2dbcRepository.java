@@ -16,12 +16,20 @@ public interface MentorAvailabilityR2dbcRepository extends ReactiveCrudRepositor
     @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId ORDER BY start_time ASC")
     Flux<MentorAvailability> findByMentorMemberId(Integer mentorMemberId);
 
-    @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND status = 'Available' AND start_time > :now ORDER BY start_time ASC")
+    @Query("SELECT * FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND status = 'AVAILABLE' AND start_time > :now ORDER BY start_time ASC")
     Flux<MentorAvailability> findAvailableSlots(Integer mentorMemberId, LocalDateTime now);
 
     @Modifying
     @Query("UPDATE mentor_availabilities SET status = :status WHERE id = :id")
     Mono<Integer> updateStatus(Integer id, String status);
+
+    @Modifying
+    @Query("UPDATE mentor_availabilities SET start_time = :startTime, end_time = :endTime WHERE id = :id")
+    Mono<Integer> updateTimes(Integer id, LocalDateTime startTime, LocalDateTime endTime);
+
+    @Modifying
+    @Query("UPDATE mentor_availabilities SET status = 'EXPIRED' WHERE status = 'AVAILABLE' AND end_time < :now")
+    Mono<Integer> expireStaleAvailabilities(LocalDateTime now);
 
     @Query("DELETE FROM mentor_availabilities WHERE mentor_member_id = :mentorMemberId AND id = :id")
     Mono<Void> deleteByMentorMemberIdAndId(Integer mentorMemberId, Integer id);

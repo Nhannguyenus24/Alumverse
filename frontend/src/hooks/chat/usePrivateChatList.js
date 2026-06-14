@@ -11,6 +11,7 @@ export function usePrivateChatList({ searchQuery = '', page = 1, pageSize = DEFA
     queryKey: ['privateChatList', searchQuery, backendPage, pageSize],
     queryFn: () =>
       chatApi.listPrivateChats({ text: searchQuery, page: backendPage, size: pageSize }),
+    refetchOnMount: 'always',
   });
 
   const data = query.data;

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import apiClient, { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from '../utils/axios';
 import { userFromAccessToken, isTokenExpired, getSecondsUntilExpire } from '../utils/jwt';
 import {
@@ -16,6 +17,7 @@ function getFirstZodMessage(error) {
 }
 
 export const useAuth = () => {
+  const queryClient = useQueryClient();
   const store = useAuthStore();
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error, verificationLevel } = store;
@@ -131,11 +133,13 @@ export const useAuth = () => {
       return { ok: false, error: msg };
     }
     const organizationId = payload.organizationId ?? organizationIdFromStore;
+    const rememberMe = payload.rememberMe ?? false;
     setLoading(true);
     try {
       const { data } = await apiClient.post('/auth/login', {
         ...parsed.data,
         organizationId,
+        rememberMe,
       });
       return applyAccessTokenToStore(data, 'Đăng nhập thất bại');
     } catch (err) {
@@ -146,7 +150,7 @@ export const useAuth = () => {
     }
   };
 
-  const loginWithGoogle = async (idToken) => {
+  const loginWithGoogle = async (idToken, rememberMe = false) => {
     if (!idToken || typeof idToken !== 'string') {
       const msg = 'Google ID token không hợp lệ';
       store.setError(msg);
@@ -164,6 +168,7 @@ export const useAuth = () => {
       const { data } = await apiClient.post('/auth/google-login', {
         idToken,
         organizationId: organizationIdFromStore,
+        rememberMe,
       });
       return applyAccessTokenToStore(data, 'Đăng nhập Google thất bại');
     } catch (err) {
@@ -300,6 +305,7 @@ export const useAuth = () => {
     try {
       await apiClient.post('/auth/logout');
     } finally {
+      queryClient.clear();
       store.reset();
     }
   };

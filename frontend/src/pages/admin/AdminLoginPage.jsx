@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, Navigate } from 'react-router';
 import { useSnackbar } from 'notistack';
-import { GoogleLogin } from '@react-oauth/google';
 import {
   Box,
   Typography,
@@ -18,7 +18,6 @@ import {
   alpha,
   Alert,
 } from '@mui/material';
-import GoogleIcon from '@mui/icons-material/Google';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import SecurityIcon from '@mui/icons-material/Security';
 import LockIcon from '@mui/icons-material/Lock';
@@ -34,7 +33,7 @@ const AdminLoginPage = () => {
   const navigate = useOrgNavigate();
   const location = useLocation();
   const { enqueueSnackbar } = useSnackbar();
-  const { login, loginWithGoogle, isSubmitting: loading, setError, forgotPassword, isAuthenticated } = useAuth();
+  const { login, isSubmitting: loading, setError, forgotPassword, isAuthenticated } = useAuth();
   const organizationId = useOrganizationStore((state) => state.organization?.id);
 
   const redirectTo = location.state?.from?.pathname || '/admin';
@@ -42,10 +41,12 @@ const AdminLoginPage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: false, recaptchaToken: '' },
   });
 
   useEffect(() => {
@@ -54,9 +55,28 @@ const AdminLoginPage = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  const handleRecaptchaChange = useCallback((token) => {
+    setValue('recaptchaToken', token);
+    if (token) clearErrors('recaptchaToken');
+  }, [setValue, clearErrors]);
+
+  const handleRecaptchaExpired = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
+
+  const handleRecaptchaError = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
+
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ email: data.email, password: data.password, organizationId });
+    const result = await login({
+      email: data.email,
+      password: data.password,
+      organizationId,
+      rememberMe: data.rememberMe,
+      recaptchaToken: data.recaptchaToken
+    });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập admin thành công.', { variant: 'success' });
 
@@ -81,35 +101,6 @@ const AdminLoginPage = () => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    const idToken = credentialResponse?.credential;
-    if (!idToken) {
-      enqueueSnackbar('Không thể lấy Google token.', { variant: 'error' });
-      return;
-    }
-
-    setError(null);
-    const result = await loginWithGoogle(idToken);
-    if (result?.ok) {
-      enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
-
-      // Check if user has admin role
-      if (result?.data?.user?.role === 'ADMIN' || result?.data?.user?.role === 'MODERATOR') {
-        navigate(redirectTo, { replace: true });
-      } else {
-        enqueueSnackbar('Bạn không có quyền truy cập trang admin.', { variant: 'error' });
-        navigate('/', { replace: true });
-      }
-      return;
-    }
-
-    enqueueSnackbar(result?.error ?? 'Đăng nhập Google thất bại.', { variant: 'error' });
-  };
-
-  const handleGoogleError = () => {
-    enqueueSnackbar('Đăng nhập Google thất bại.', { variant: 'error' });
-  };
-
   return (
     <Page
       title="Admin Login"
@@ -127,12 +118,11 @@ const AdminLoginPage = () => {
         {/* Left Side: Login Form */}
         <Box
           sx={{
-            flex: { xs: '1 1 auto', md: '0 0 50%' },
-            width: { xs: '100%', md: '50%' },
-            minHeight: '100vh',
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
-            position: 'relative',
+            alignItems: 'stretch',
+            gap: { xs: 1.5, sm: 2 },
           }}
         >
           {/* Logo at Top Left */}
@@ -170,7 +160,6 @@ const AdminLoginPage = () => {
               justifyContent: 'center',
               px: { xs: 2, sm: 4, md: 6 },
               pt: { xs: 12, md: 0 },
-              pb: 4,
             }}
           >
             <Box sx={{ maxWidth: 420, width: '100%' }}>
@@ -183,14 +172,12 @@ const AdminLoginPage = () => {
                     width: 60,
                     height: 60,
                     borderRadius: 2,
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
-                    mb: 2,
+                    color: 'primary.main',
                   }}
                 >
                   <AdminPanelSettingsOutlinedIcon sx={{ fontSize: 36 }} />
                 </Box>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 1 }}>
+                <Typography variant="h3" fontWeight={700} color="primary.main" textAlign="center">
                   Admin Login
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -229,18 +216,35 @@ const AdminLoginPage = () => {
 
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <FormControlLabel
-                    control={<Checkbox size="small" />}
-                    label={<Typography variant="body2">Ghi nhớ</Typography>}
+                    control={<Checkbox size="small" {...register('rememberMe')} />}
+                    label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
                   />
                   <Typography
                     component={Link}
                     to="/auth/forgot-password"
                     variant="body2"
                     color="primary.main"
-                    sx={{ textDecoration: 'none', fontWeight: 600 }}
+                    sx={{
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      '&:hover': { textDecoration: 'underline' }
+                    }}
                   >
                     Quên mật khẩu?
                   </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                  <GoogleReCaptchaCheckbox
+                    onChange={handleRecaptchaChange}
+                    onExpired={handleRecaptchaExpired}
+                    onError={handleRecaptchaError}
+                  />
+                  {errors.recaptchaToken && (
+                    <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
+                      {errors.recaptchaToken.message}
+                    </Typography>
+                  )}
                 </Box>
 
                 <Button
@@ -249,34 +253,11 @@ const AdminLoginPage = () => {
                   fullWidth
                   size="large"
                   disabled={loading}
-                  sx={{
-                    py: 1.5,
-                    fontSize: '1rem',
-                    fontWeight: 700,
-                    textTransform: 'none',
-                    borderRadius: 2,
-                    boxShadow: (theme) => theme.customShadows?.primary,
-                  }}
                 >
                   {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
                 </Button>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, my: 1 }}>
-                  <Divider sx={{ flex: 1 }} />
-                  <Typography variant="caption" color="text.secondary">hoặc</Typography>
-                  <Divider sx={{ flex: 1 }} />
-                </Box>
-
-                <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={handleGoogleError}
-                    locale="vi"
-                    width="100%"
-                  />
-                </Box>
-
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Box sx={{ mt: 1.5, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
                     Bạn không có quyền quản trị?{' '}
                     <Typography
@@ -284,10 +265,10 @@ const AdminLoginPage = () => {
                       to="/"
                       variant="body2"
                       color="primary.main"
-                      fontWeight={700}
+                      fontWeight={600}
                       sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                     >
-                      Quay lại Trang chủ
+                      Quay lại trang chủ
                     </Typography>
                   </Typography>
                 </Box>
@@ -321,7 +302,7 @@ const AdminLoginPage = () => {
             sx={{
               position: 'absolute',
               inset: 0,
-              bgcolor: alpha(theme.palette.primary.dark, 0.4),
+              bgcolor: alpha(theme.palette.secondary.darker, 0.4),
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',

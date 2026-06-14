@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
-import LocalActivityIcon from '@mui/icons-material/LocalActivity';
-import EventIcon from '@mui/icons-material/Event';
-import ArticleIcon from '@mui/icons-material/Article';
+import { ACTIVITIES_SIDEBAR } from '../../constants/activitiesNav';
 
 import Page from '../../components/Page';
 
@@ -13,16 +13,13 @@ import SearchBar from '../../components/SearchBar';
 import ArticleEventCard from '../../components/articles/ArticleEventCard';
 import FeaturedArticleEventCard from '../../components/articles/FeaturedArticleEventCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
+import { useAuth } from '../../hooks/useAuth';
+import { eventApi } from '../../utils/api';
 
-
-const SIDEBAR = [
-  { id: '/activities', label: 'Hoạt động', icon: <LocalActivityIcon /> },
-  { id: '/activities/events', label: 'Sự kiện', icon: <EventIcon /> },
-  { id: '/activities/news', label: 'Tin tức', icon: <ArticleIcon /> },
-];
 
 const FILTERS = [
   {
@@ -72,13 +69,15 @@ const FILTERS = [
 
 const ActivitiesPage = () => {
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
 
   const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, 9);
   const { events: pastEvents } = usePublishedEvents('past', 0, 6);
 
-  const [filters, setFilters] = useState({
-    all: true,
-  });
+  const [filters, setFilters] = useState({ all: true });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [featured, ...upcomingRest] = upcomingEvents;
   const featuredCard = featured ? toEventCardShape(featured) : null;
@@ -88,6 +87,30 @@ const ActivitiesPage = () => {
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+
+  const handleEdit = (event) => {
+    navigate(`/activities/events/${event.id}/edit`);
+  };
+
+  const handleDelete = (event) => setDeleteTarget(event);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await eventApi.deleteEvent(deleteTarget.id);
+      queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
+      enqueueSnackbar('Đã xoá sự kiện.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -101,7 +124,7 @@ const ActivitiesPage = () => {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={ACTIVITIES_SIDEBAR} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -146,7 +169,12 @@ const ActivitiesPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
-                  <FeaturedArticleEventCard article={featuredCard} />
+                  <FeaturedArticleEventCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
                 </Box>
               )}
 
@@ -170,7 +198,12 @@ const ActivitiesPage = () => {
                   >
                     {upcomingCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(upcomingRest[i])}>
-                        <ArticleEventCard article={card} />
+                        <ArticleEventCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(upcomingRest[i])}
+                          onDelete={() => handleDelete(upcomingRest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -207,6 +240,15 @@ const ActivitiesPage = () => {
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá sự kiện"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };

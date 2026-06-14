@@ -6,6 +6,7 @@ import com.service.backend.article.dto.AchievementResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.service.AchievementService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -16,7 +17,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.enums.Status;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > Achievements", description = "API endpoints for student and alumni achievements")
 @RestController
 @RequestMapping("/api/articles/achievements")
 @RequiredArgsConstructor
@@ -49,6 +52,7 @@ public class AchievementController {
                         .ok(new ApiResponse<>("Achievement deleted successfully", null)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<AchievementResponse>>> getById(@PathVariable @Min(1) Integer id) {
         return achievementService.getById(id)
@@ -56,6 +60,7 @@ public class AchievementController {
                         .ok(new ApiResponse<>("Achievement retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -65,6 +70,7 @@ public class AchievementController {
                         .ok(new ApiResponse<>("Achievements retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/member/{memberId}")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getByMemberId(
             @PathVariable @Min(1) Integer memberId,
@@ -84,6 +90,7 @@ public class AchievementController {
                         .ok(new ApiResponse<>("My achievements retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/status/{status}")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> getByStatus(
             @PathVariable @NotBlank String status,
@@ -95,6 +102,7 @@ public class AchievementController {
                         .ok(new ApiResponse<>("Achievements by status retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AchievementResponse>>>> search(
             @RequestParam @NotBlank String keyword,

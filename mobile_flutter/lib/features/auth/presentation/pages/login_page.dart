@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../shared/widgets/logo.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/logo.dart';
+import '../../../organization/presentation/providers/organization_provider.dart';
 import '../providers/auth_provider.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -36,14 +37,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final auth = ref.read(authStateProvider);
     if (!mounted) return;
     auth.whenOrNull(
-      data: (user) {
-        if (user != null) context.go(RouteNames.home);
+      data: (state) {
+        if (state.isLoggedIn) context.go(RouteNames.home);
       },
-      error: (e, _) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
-      },
+      error: (e, _) => _showError(e),
+    );
+  }
+
+  void _showError(Object e) {
+    final message = e is Exception
+        ? e.toString().replaceFirst('Exception: ', '')
+        : e.toString();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
   }
 
@@ -51,6 +57,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final loading = authState.isLoading;
+    final orgName =
+        ref.watch(organizationStateProvider).valueOrNull?.name;
 
     return Scaffold(
       body: SafeArea(
@@ -62,7 +70,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Center(child: AlumverseLogo(size: 80)),
-                const SizedBox(height: 48),
+                const SizedBox(height: 32),
                 Text(
                   'Đăng nhập',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
@@ -71,22 +79,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                   textAlign: TextAlign.center,
                 ),
+                if (orgName != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    orgName,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
                 const SizedBox(height: 32),
                 TextFormField(
                   controller: _emailCtl,
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Email hoặc MSSV',
                     hintText: 'email@example.com',
-                    prefixIcon: Icon(Icons.email_outlined),
+                    prefixIcon: Icon(Icons.person_outline),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passCtl,
                   obscureText: _obscure,
-                  validator: Validators.password,
+                  validator: (v) =>
+                      Validators.required(v, field: 'Mật khẩu'),
+                  textInputAction: TextInputAction.done,
+                  onFieldSubmitted: (_) => loading ? null : _submit(),
                   decoration: InputDecoration(
                     labelText: 'Mật khẩu',
                     hintText: '••••••••',
@@ -106,7 +128,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     child: const Text('Quên mật khẩu?'),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: loading ? null : _submit,
                   style: ElevatedButton.styleFrom(
@@ -139,9 +161,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement Google Sign In
-                  },
+                  onPressed: loading
+                      ? null
+                      : () {
+                          // TODO: Google Sign-In — gọi google_sign_in để lấy
+                          // idToken rồi ref.read(authStateProvider.notifier)
+                          // .loginWithGoogle(idToken).
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Đăng nhập Google sắp ra mắt'),
+                            ),
+                          );
+                        },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
                   label: const Text('Tiếp tục với Google'),
                   style: OutlinedButton.styleFrom(
@@ -161,6 +192,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    ref.read(organizationStateProvider.notifier).reset();
+                  },
+                  child: const Text(
+                    'Đổi tổ chức',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ],
             ),

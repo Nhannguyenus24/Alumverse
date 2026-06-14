@@ -1,22 +1,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Avatar,
+  Alert,
   Box,
+  Button,
   CircularProgress,
   IconButton,
   InputAdornment,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
 import SendIcon from '@mui/icons-material/Send';
-import MoodIcon from '@mui/icons-material/Mood';
 
 import Scrollbar from '../Scrollbar';
+import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
+import { insertTextAtInputSelection } from '../../utils/insertTextAtInputSelection';
+import ConfirmDialog from '../ConfirmDialog';
+import IconButtonMenu from '../IconButtonMenu';
+import GroupMembersDrawer from './GroupMembersDrawer';
 import { useChatMessages } from '../../hooks/chat/useChatMessages';
+import { useGroupBlockedMembersContext } from '../../hooks/chat/useGroupBlockedMembersContext';
 import { useChatWebSocket } from '../../hooks/mentorship/useChatWebSocket';
+import { useBlockUser } from '../../hooks/network/useBlockUser';
 import useAuthStore from '../../stores/authStore';
 import ChatAvatar from '../ChatAvatar';
+import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlockedMemberNames';
 
 function formatTime(isoString) {
   if (!isoString) return '';
@@ -27,14 +41,41 @@ function formatTime(isoString) {
 
 const SCROLL_TOP_THRESHOLD = 8;
 
-const NetworkChatPanel = ({ activeChat }) => {
+const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
   const [draft, setDraft] = useState('');
+  const draftInputRef = useRef(null);
+  const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
   const token = useAuthStore((state) => state.token ?? null);
   const currentUserId = useAuthStore((state) => state.user?.id ?? null);
+
+  const isPrivateChat = activeChat?.type === 'PRIVATE';
+  const isGroupChat = activeChat?.type === 'GROUP';
+  const peerMemberId = isPrivateChat ? activeChat?.peerMemberId ?? null : null;
+  const blockedByMe = Boolean(activeChat?.blockedByMe);
+  const blockedByPeer = Boolean(activeChat?.blockedByPeer);
+  const isMessagingBlocked = blockedByMe || blockedByPeer;
+
+  const { blockUser, unblockUser, isPending: isBlockActionPending } = useBlockUser({
+    targetMemberId: peerMemberId,
+    onSuccess: () => setBlockConfirmOpen(false),
+  });
 
   const { messages, isLoading, isLoadingMore, hasMore, loadMore, appendMessage } = useChatMessages(
     activeChat?.id ?? null,
   );
+
+  const {
+    blockedMembers: blockedMembersInGroup,
+    isOwner: isGroupOwner,
+    hasBlockedMembersInGroup,
+  } = useGroupBlockedMembersContext(activeChat?.id ?? null, {
+    enabled: isGroupChat && activeChat?.id != null,
+  });
+
+  const groupBlockedBannerMessage = hasBlockedMembersInGroup
+    ? buildGroupBlockedMembersBannerMessage(blockedMembersInGroup, isGroupOwner)
+    : null;
 
   // --- WebSocket ---
   const appendMessageRef = useRef(appendMessage);
@@ -47,8 +88,8 @@ const NetworkChatPanel = ({ activeChat }) => {
       id: p.id,
       groupId: p.groupId,
       senderMemberId: p.senderMemberId,
-      senderFullName: null,
-      senderAvatarUrl: null,
+      senderFullName: p.senderFullName ?? null,
+      senderAvatarUrl: p.senderAvatarUrl ?? null,
       content: p.content,
       messageType: p.messageType,
       metadata: p.metadata,
@@ -76,6 +117,10 @@ const NetworkChatPanel = ({ activeChat }) => {
       wsActionsRef.current.joinGroup(currentGroupId);
     }
     prevGroupIdRef.current = currentGroupId;
+  }, [activeChat?.id]);
+
+  useEffect(() => {
+    setMembersDrawerOpen(false);
   }, [activeChat?.id]);
 
   // --- Scroll ---
@@ -132,18 +177,24 @@ const NetworkChatPanel = ({ activeChat }) => {
   }, [hasMore, isLoadingMore, loadMore]);
 
   // --- Send ---
+  const isInputDisabled = !isOpen || isMessagingBlocked;
+
   const handleSend = useCallback(() => {
     const text = draft.trim();
-    if (!text || !activeChat?.id || !isOpen) return;
-    wsSendMessage({ groupId: activeChat.id, content: text });
+    if (!text || !activeChat?.id || !isOpen || isMessagingBlocked) return;
+    wsSendMessage({ groupId: activeChat.id, content: text, chatType: activeChat?.type });
     setDraft('');
-  }, [draft, activeChat?.id, isOpen, wsSendMessage]);
+  }, [draft, activeChat?.id, activeChat?.type, isOpen, isMessagingBlocked, wsSendMessage]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key !== 'Enter' || event.shiftKey) return;
     event.preventDefault();
     handleSend();
   }, [handleSend]);
+
+  const handleEmojiSelect = useCallback((emoji) => {
+    insertTextAtInputSelection(draftInputRef, setDraft, emoji);
+  }, []);
 
   return (
     <Box
@@ -175,6 +226,7 @@ const NetworkChatPanel = ({ activeChat }) => {
             avatarUrl={activeChat?.avatarUrl}
             name={activeChat?.name}
             size={40}
+            variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
           />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
@@ -187,10 +239,120 @@ const NetworkChatPanel = ({ activeChat }) => {
             )}
           </Box>
         </Box>
-        <IconButton size="small" aria-label="More options">
-          <MoreHorizIcon />
-        </IconButton>
+        {isPrivateChat && !blockedByPeer ? (
+          <IconButtonMenu
+            menuId="network-chat-private-menu"
+            buttonAriaLabel="Tùy chọn cuộc trò chuyện"
+          >
+            {({ close }) => (
+              blockedByMe ? (
+                <MenuItem
+                  disabled={isBlockActionPending}
+                  onClick={() => {
+                    close();
+                    unblockUser();
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <LockOpenOutlinedIcon fontSize="small" color="success" />
+                  </ListItemIcon>
+                  <ListItemText primary="Bỏ chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+                </MenuItem>
+              ) : (
+                <MenuItem
+                  disabled={isBlockActionPending}
+                  onClick={() => {
+                    close();
+                    setBlockConfirmOpen(true);
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <BlockOutlinedIcon fontSize="small" color="primary" />
+                  </ListItemIcon>
+                  <ListItemText primary="Chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+                </MenuItem>
+              )
+            )}
+          </IconButtonMenu>
+        ) : isPrivateChat ? null : (
+          <IconButton
+            size="small"
+            aria-label="Xem thành viên nhóm"
+            disabled={activeChat?.type !== 'GROUP'}
+            onClick={() => setMembersDrawerOpen(true)}
+          >
+            <MoreHorizIcon />
+          </IconButton>
+        )}
       </Box>
+
+      {isPrivateChat && blockedByMe ? (
+        <Alert
+          severity="info"
+          sx={{
+            borderRadius: 0,
+            alignItems: 'center',
+            bgcolor: 'primary.lighter',
+            color: 'primary.dark',
+            '& .MuiAlert-icon': { color: 'primary.main' },
+            '& .MuiAlert-message': { flex: 1 },
+          }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => unblockUser()}
+              disabled={isBlockActionPending}
+              sx={{ fontWeight: 700, textTransform: 'none' }}
+            >
+              Bỏ chặn
+            </Button>
+          }
+        >
+          Bạn đã chặn {activeChat?.name}. Bạn không thể gửi tin nhắn cho họ.
+        </Alert>
+      ) : null}
+
+      {isPrivateChat && blockedByPeer ? (
+        <Alert severity="info" sx={{ borderRadius: 0 }}>
+          Bạn không thể nhắn tin cho {activeChat?.name}.
+        </Alert>
+      ) : null}
+
+      {isGroupChat && groupBlockedBannerMessage ? (
+        <Alert
+          severity="info"
+          sx={{
+            borderRadius: 0,
+            alignItems: 'center',
+            bgcolor: 'primary.lighter',
+            color: 'primary.dark',
+            '& .MuiAlert-icon': { color: 'primary.main' },
+            '& .MuiAlert-message': { flex: 1 },
+          }}
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => setMembersDrawerOpen(true)}
+              sx={{ fontWeight: 700, textTransform: 'none', whiteSpace: 'nowrap' }}
+            >
+              Kiểm tra setting
+            </Button>
+          }
+        >
+          {groupBlockedBannerMessage}
+        </Alert>
+      ) : null}
+
+      <GroupMembersDrawer
+        open={membersDrawerOpen}
+        onClose={() => setMembersDrawerOpen(false)}
+        groupId={activeChat?.type === 'GROUP' ? activeChat.id : null}
+        groupName={activeChat?.name}
+        currentUserId={currentUserId}
+        onLeaveSuccess={onLeaveGroup}
+      />
 
       {/* Message list */}
       <Scrollbar
@@ -272,7 +434,7 @@ const NetworkChatPanel = ({ activeChat }) => {
                       color: isOwn ? 'primary.contrastText' : 'text.primary',
                     }}
                   >
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                    <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                       {msg.content}
                     </Typography>
                   </Box>
@@ -303,31 +465,51 @@ const NetworkChatPanel = ({ activeChat }) => {
           gap: 1,
         }}
       >
-        <TextField
-          fullWidth
-          multiline
-          maxRows={4}
-          placeholder={isOpen ? 'Nhập tin nhắn...' : 'Đang kết nối...'}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={!isOpen}
-          variant="outlined"
-          size="small"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton size="small" aria-label="Emoji" edge="end" disabled={!isOpen}>
-                  <MoodIcon />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+        <Tooltip
+          title={
+            blockedByMe
+              ? 'Bạn đã chặn người dùng này. Bỏ chặn để gửi tin nhắn.'
+              : blockedByPeer
+                ? 'Bạn không thể nhắn tin cho người này.'
+                : ''
+          }
+          placement="top"
+          disableHoverListener={!isMessagingBlocked}
+        >
+          <TextField
+            fullWidth
+            multiline
+            maxRows={4}
+            inputRef={draftInputRef}
+            placeholder={
+              isMessagingBlocked
+                ? 'Không thể gửi tin nhắn...'
+                : isOpen
+                  ? 'Nhập tin nhắn...'
+                  : 'Đang kết nối...'
+            }
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={isInputDisabled}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <ChatEmojiPickerButton
+                    disabled={isInputDisabled}
+                    onEmojiSelect={handleEmojiSelect}
+                  />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Tooltip>
         <IconButton
           color="primary"
           aria-label="Send"
-          disabled={!isOpen || !draft.trim()}
+          disabled={isInputDisabled || !draft.trim()}
           onClick={handleSend}
           sx={{
             bgcolor: 'primary.main',
@@ -342,6 +524,18 @@ const NetworkChatPanel = ({ activeChat }) => {
           <SendIcon />
         </IconButton>
       </Box>
+
+      <ConfirmDialog
+        open={blockConfirmOpen}
+        title="Chặn người dùng"
+        message={`Bạn có chắc muốn chặn ${activeChat?.name ?? 'người dùng này'}? Bạn sẽ không thể gửi tin nhắn cho họ.`}
+        confirmText="Chặn"
+        cancelText="Hủy"
+        confirmColor="primary"
+        loading={isBlockActionPending}
+        onConfirm={() => blockUser()}
+        onCancel={() => setBlockConfirmOpen(false)}
+      />
     </Box>
   );
 };

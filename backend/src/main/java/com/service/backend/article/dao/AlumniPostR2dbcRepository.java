@@ -14,11 +14,23 @@ public interface AlumniPostR2dbcRepository extends ReactiveCrudRepository<Alumni
     @Query("SELECT * FROM alumni_posts WHERE organization_id = :organizationId ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<AlumniPost> findByOrganizationIdWithPagination(Integer organizationId, int limit, int offset);
 
+    @Query("SELECT * FROM alumni_posts WHERE author_member_id = :authorMemberId AND is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<AlumniPost> findByAuthorMemberIdWithPagination(Integer authorMemberId, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM alumni_posts WHERE author_member_id = :authorMemberId AND is_hidden = false")
+    Mono<Long> countByAuthorMemberId(Integer authorMemberId);
+
     @Query("SELECT COUNT(*) FROM alumni_posts WHERE organization_id = :organizationId")
     Mono<Long> countByOrganizationId(Integer organizationId);
 
     @Query("SELECT * FROM alumni_posts ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<AlumniPost> findAllWithPagination(int limit, int offset);
+
+    @Query("SELECT * FROM alumni_posts WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<AlumniPost> searchAllByTitleWithPagination(String keyword, int limit, int offset);
+
+    @Query("SELECT COUNT(*) FROM alumni_posts WHERE LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Mono<Long> countAllSearchByTitle(String keyword);
 
     @Query("SELECT * FROM alumni_posts WHERE organization_id = :organizationId AND is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<AlumniPost> findPublishedByOrganizationId(Integer organizationId, int limit, int offset);
@@ -41,4 +53,7 @@ public interface AlumniPostR2dbcRepository extends ReactiveCrudRepository<Alumni
     @Modifying
     @Query("UPDATE alumni_posts SET is_hidden = true WHERE id = :id")
     Mono<Integer> hideAlumniPost(Integer id);
+
+    @Query("SELECT COUNT(*) FROM alumni_posts WHERE published_at >= :since")
+    Mono<Long> countSince(java.time.LocalDateTime since);
 }

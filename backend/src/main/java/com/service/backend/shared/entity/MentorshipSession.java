@@ -47,6 +47,27 @@ public class MentorshipSession {
     @Column("cv_url")
     private String cvUrl;
 
+    @Column("cancel_reason")
+    private String cancelReason;
+
+    @Column("proposed_start_time")
+    private LocalDateTime proposedStartTime;
+
+    @Column("proposed_end_time")
+    private LocalDateTime proposedEndTime;
+
+    @Column("mentor_joined_at")
+    private LocalDateTime mentorJoinedAt;
+
+    @Column("mentee_joined_at")
+    private LocalDateTime menteeJoinedAt;
+
+    @Column("started_at")
+    private LocalDateTime startedAt;
+
+    @Column("ended_at")
+    private LocalDateTime endedAt;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

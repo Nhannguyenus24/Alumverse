@@ -4,25 +4,20 @@ import dayjs from "dayjs";
 // --- Regex Patterns ---
 
 /** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
-export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
 /** Username: 3–50 chars, letters, numbers, dots, underscores, hyphens */
-export const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
+const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
 
 /** OTP: exactly 6 digits */
-export const OTP_REGEX = /^[0-9]{6}$/;
-
-// --- Auth Schemas ---
-
-const passwordSchema = z
-  .string()
-  .min(1, 'Mật khẩu là bắt buộc')
-  .regex(PASSWORD_REGEX, 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)');
+const OTP_REGEX = /^[0-9]{6}$/;
 
 /** Login: backend LoginRequest — email (or username), password */
 export const loginSchema = z.object({
-  email: z.email("Email là bắt buộc"),
-  password: passwordSchema,
+  email: z.string().min(1, "Email hoặc mật khẩu không đúng"),
+  password: z.string().min(1, "Email hoặc mật khẩu không đúng"),
+  rememberMe: z.boolean().optional(),
+  recaptchaToken: z.string().min(1, "Vui lòng xác nhận bạn không phải là người máy"),
 });
 
 /** Register: backend RegisterRequest — email, userName (studentId), fullName, password; UI: studentId, enrollmentYear (bắt buộc) */

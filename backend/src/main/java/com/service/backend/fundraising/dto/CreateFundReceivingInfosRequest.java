@@ -25,8 +25,8 @@ public class CreateFundReceivingInfosRequest {
     private String accountName;
 
     @NotBlank
-    @Size(min = 3, max = 255)
-    @Schema(example = "VietcomBank")
+    @Size(min = 2, max = 20)
+    @Schema(description = "Bank code from banks.json", example = "MB")
     private String bankName;
 }
 

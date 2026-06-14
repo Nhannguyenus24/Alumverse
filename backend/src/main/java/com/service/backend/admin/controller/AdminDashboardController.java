@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Admin > Dashboard", description = "API endpoints for admin dashboard metrics and statistics")
 @RestController
 @RequestMapping("/api/admin/dashboard")
 public class AdminDashboardController {
@@ -31,9 +33,10 @@ public class AdminDashboardController {
 
     @GetMapping("/activities")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ActivityItemDTO>>>> getActivities(
+            @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return dashboardService.getActivities(page, size)
+        return dashboardService.getActivities(organizationId, page, size)
                 .map(res -> ResponseEntity.ok(new ApiResponse<>("Activities fetched", res)));
     }
 }

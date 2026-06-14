@@ -15,8 +15,8 @@ import {
   Grid,
   Stack,
 } from "@mui/material";
-import { useOutletContext } from "react-router";
-import { adminOrganizationApi } from "../../utils/api";
+import { useOutletContext, useParams } from "react-router";
+import { useDebounce } from "../../hooks/useDebounce";
 import { useEffect } from "react";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
@@ -36,7 +36,7 @@ import { formatDate } from "../../utils/dateFormatter";
 
 const AdminForumTopicsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { activeOrgId } = useAdminSystemContext();
+  const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const {
     topics: topicsPaginated,
     topicsPage,
@@ -49,36 +49,33 @@ const AdminForumTopicsPage = () => {
     updateTopic,
     deleteTopic,
     updateTopicLock,
+    topicsSearch,
+    setTopicsSearch,
   } = useAdminForumContext();
   const { setBreadcrumbs } = useOutletContext();
-  const { setActiveOrgId } = useAdminSystemContext();
-  const [organizations, setOrganizations] = useState([]);
+  const { slug } = useParams();
+  const orgSlug = slug || activeOrganization?.slug;
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Chủ đề', active: true }]);
-
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations({ page: 0, size: 200 });
-        setOrganizations(data || []);
-      } catch (err) {
-        console.error("Failed to fetch organizations", err);
-      }
-    };
-    fetchOrgs();
   }, [setBreadcrumbs]);
 
   const { user } = useAuth();
 
+  const [searchTerm, setSearchTerm] = useState(topicsSearch);
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  useEffect(() => {
+    setTopicsSearch(debouncedSearch);
+    setTopicsPage?.(0); // reset về trang đầu khi keyword thay đổi
+  }, [debouncedSearch, setTopicsSearch]);
+
   const topicsList = useMemo(() => {
     if (!topicsPaginated) return [];
-    if (Array.isArray(topicsPaginated)) return topicsPaginated;
     return topicsPaginated.content ?? [];
   }, [topicsPaginated]);
 
-  const totalElements = topicsPaginated?.totalElements ?? topicsList.length;
-
-  const [search, setSearch] = useState("");
+  const totalElements = topicsPaginated?.totalElements ?? 0;
   const [detailTopic, setDetailTopic] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [dialog, setDialog] = useState({
@@ -162,7 +159,7 @@ const AdminForumTopicsPage = () => {
           onClick={(e) => e.stopPropagation()}
         >
           <Tooltip title="Chi tiết">
-            <IconButton size="small" onClick={() => setDetailTopic(row)}>
+            <IconButton size="small" color="primary" onClick={() => setDetailTopic(row)}>
               <VisibilityOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
@@ -202,7 +199,7 @@ const AdminForumTopicsPage = () => {
     }
     if (dialog.mode === "create") {
       const ok = await createTopic?.(
-        activeOrgId,
+        stableOrgId,
         form.categoryId,
         form.title,
         Number(user?.id),
@@ -253,7 +250,7 @@ const AdminForumTopicsPage = () => {
         }}
       >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Chủ đề diễn đàn
           </Typography>
           <Typography
@@ -265,30 +262,13 @@ const AdminForumTopicsPage = () => {
             nội dung.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            select
-            size="small"
-            label="Tổ chức"
-            value={activeOrgId || ""}
-            onChange={(e) => setActiveOrgId(e.target.value)}
-            sx={{ minWidth: 200 }}
-          >
-            {organizations.map((org) => (
-              <MenuItem key={org.id} value={org.id}>
-                {org.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            onClick={openCreate}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: "none" }}
-          >
-            Tạo chủ đề
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreate}
+        >
+          Tạo chủ đề
+        </Button>
       </Box>
 
       <Box
@@ -338,10 +318,14 @@ const AdminForumTopicsPage = () => {
           setTopicsSize?.(Number(e.target.value));
           setTopicsPage?.(0);
         }}
-        onSearchChange={(v) => setSearch(v)}
-        searchValue={search}
+        onSearchChange={(v) => {
+          setSearchTerm(v);
+          setTopicsPage?.(0);
+        }}
+        searchValue={searchTerm}
         searchPlaceholder="Tìm kiếm tiêu đề..."
         loading={topicsLoading}
+        onRowClick={(row) => window.open(orgSlug ? `/${orgSlug}/forum/alumni/career/${row.id}` : `/forum/alumni/career/${row.id}`, "_blank")}
       />
 
       {/* Detail Dialog */}
@@ -384,7 +368,7 @@ const AdminForumTopicsPage = () => {
           <Button
             onClick={() => setDetailTopic(null)}
             variant="outlined"
-            sx={{ borderRadius: 2 }}
+            color="secondary"
           >
             Đóng
           </Button>
@@ -401,9 +385,7 @@ const AdminForumTopicsPage = () => {
         <DialogTitle sx={{ fontWeight: 700 }}>
           {dialog.mode === "create" ? "Tạo chủ đề mới" : "Chỉnh sửa chủ đề"}
         </DialogTitle>
-        <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}
-        >
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
           <TextField
             label="Tiêu đề"
             required
@@ -430,13 +412,12 @@ const AdminForumTopicsPage = () => {
           </TextField>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setDialog((d) => ({ ...d, open: false }))}>
+          <Button variant="outlined" color="secondary" onClick={() => setDialog((d) => ({ ...d, open: false }))}>
             Hủy
           </Button>
           <Button
             variant="contained"
             onClick={handleSave}
-            sx={{ borderRadius: 2 }}
           >
             Lưu
           </Button>

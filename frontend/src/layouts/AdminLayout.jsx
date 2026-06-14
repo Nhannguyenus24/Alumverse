@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useParams } from 'react-router';
+import { Outlet, useParams, useLocation } from 'react-router';
 import { Box, useTheme, alpha } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -37,21 +37,25 @@ const AdminLayoutShell = () => {
         bgcolor: alpha(theme.palette.background.default, 0.4),
       }}
     >
-      <AdminSidebar
-        variant="permanent"
-        adminBase={adminBase}
-        userRole={user?.role}
-        collapsed={isSidebarCollapsed}
-        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      />
-
-      <AdminSidebar
-        variant="temporary"
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        adminBase={adminBase}
-        userRole={user?.role}
-      />
+      {[
+        {
+          variant: 'permanent',
+          collapsed: isSidebarCollapsed,
+          onToggle: () => setIsSidebarCollapsed(!isSidebarCollapsed),
+        },
+        {
+          variant: 'temporary',
+          open: mobileOpen,
+          onClose: () => setMobileOpen(false),
+        },
+      ].map((sidebarProps) => (
+        <AdminSidebar
+          key={sidebarProps.variant}
+          adminBase={adminBase}
+          userRole={user?.role}
+          {...sidebarProps}
+        />
+      ))}
 
       <Box
         sx={{
@@ -95,9 +99,15 @@ const AdminLayoutShell = () => {
 };
 
 const AdminLayout = () => {
+  const location = useLocation();
   const system = useAdminSystemData();
-  const users = useAdminUsersLocal();
-  const forum = useAdminForumData(system.activeOrgId);
+  const isUsersPage = location.pathname.includes('/users');
+  const users = useAdminUsersLocal(system.stableOrgId, isUsersPage);
+
+  // Only load forum data when on forum pages — avoids firing 6 API calls
+  // unnecessarily when switching org while on Events / Users / etc.
+  const isForumPage = location.pathname.includes('/forum');
+  const forum = useAdminForumData(system.stableOrgId, isForumPage);
 
   return (
     <AdminProvider system={system} users={users} forum={forum}>

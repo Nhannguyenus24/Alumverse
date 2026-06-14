@@ -1,5 +1,6 @@
 package com.service.backend.auth.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.AbstractMap;
@@ -78,6 +79,7 @@ public class AuthService {
         this.secureRandom = new SecureRandom();
     }
 
+    @Transactional
     public Mono<Void> register(String email, String userName, String password, String fullName, Integer organizationId) {
         return authRepository.existsByEmailOrUserName(email, userName)
                 .flatMap(exists -> {

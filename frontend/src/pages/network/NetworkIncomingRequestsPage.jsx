@@ -16,7 +16,6 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import usePaginationScrollToTop from '../../hooks/usePaginationScrollToTop';
 import { useNetworkIncomingRequests } from '../../hooks/network/useNetworkIncomingRequests';
 import { useRespondConversationRequest } from '../../hooks/network/useRespondConversationRequest';
-import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
 import { useNotification } from '../../hooks/useNotification';
 
 const STATUS_FILTERS = [
@@ -27,7 +26,6 @@ const STATUS_FILTERS = [
     multiple: false,
     options: [
       { value: 'PENDING', label: 'Đang chờ' },
-      { value: 'ACCEPTED', label: 'Đã chấp nhận' },
       { value: 'REJECTED', label: 'Đã từ chối' },
     ],
   },
@@ -49,7 +47,6 @@ const NetworkIncomingRequestsPage = () => {
   const [pendingAction, setPendingAction] = useState(null);
 
   const { showSuccess, showError } = useNotification();
-  const currentMemberId = useNetworkCurrentMemberId();
 
   const { items, totalPage, isLoading, isError } = useNetworkIncomingRequests({
     appliedFullName,
@@ -252,7 +249,6 @@ const NetworkIncomingRequestsPage = () => {
         open={isDetailOpen}
         onClose={handleCloseDetail}
         request={detailRequest}
-        currentMemberId={currentMemberId}
       />
 
       <ConfirmDialog

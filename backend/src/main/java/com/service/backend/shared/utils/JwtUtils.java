@@ -54,11 +54,15 @@ public class JwtUtils {
     }
 
     public String generateRefreshToken(Integer userId, Integer organizationId) {
+        return generateRefreshToken(userId, organizationId, refreshTokenExpirationMs);
+    }
+
+    public String generateRefreshToken(Integer userId, Integer organizationId, long expirationMs) {
         Instant now = Instant.now();
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now.plusMillis(refreshTokenExpirationMs)));
+                .expirationTime(Date.from(now.plusMillis(expirationMs)));
         if (organizationId != null) {
             builder.claim("organizationId", organizationId);
         }

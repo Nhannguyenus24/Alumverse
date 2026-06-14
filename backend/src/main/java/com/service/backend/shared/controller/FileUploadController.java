@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+@Tag(name = "System > Files", description = "API endpoints for handling generic file uploads")
 @RestController
 @RequestMapping("/api/files")
 @RequiredArgsConstructor
-@Tag(name = "File Upload", description = "Generic document upload (PDF/DOC/DOCX)")
 public class FileUploadController {
 
     private final FileUploadService fileUploadService;

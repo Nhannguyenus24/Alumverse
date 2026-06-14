@@ -1,5 +1,6 @@
 package com.service.backend.mentorship.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
 import com.service.backend.shared.entity.MentorAvailability;
@@ -11,9 +12,11 @@ import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 import org.springframework.r2dbc.core.DatabaseClient;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -36,6 +39,8 @@ public class MentorService {
     private final SessionFeedbackR2dbcRepository feedbackRepository;
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final DatabaseClient databaseClient;
+    private final MentorshipAccessService accessService;
+    private final NotificationService notificationService;
 
     private Mono<Void> updateUserAvatar(Integer userId, String avatarUrl) {
         if (userId == null || avatarUrl == null || avatarUrl.isBlank()) return Mono.empty();
@@ -106,11 +111,13 @@ public class MentorService {
     // ===================== PROFILE =====================
 
     public Mono<MentorProfileResponse> createProfile(CreateMentorProfileRequest request) {
-        return saveProfile(request, Status.PENDING);
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(saveProfile(request, Status.PENDING));
     }
 
     public Mono<MentorProfileResponse> saveDraft(CreateMentorProfileRequest request) {
-        return saveProfile(request, Status.DRAFT);
+        return accessService.requireOrgVerifiedForMentorship()
+                .then(saveProfile(request, Status.DRAFT));
     }
 
     private Mono<MentorProfileResponse> saveProfile(CreateMentorProfileRequest request, Status targetStatus) {
@@ -251,23 +258,25 @@ public class MentorService {
     // ===================== AVAILABILITY =====================
 
     public Mono<MentorAvailabilityResponse> addAvailability(CreateAvailabilityRequest request) {
-        return currentMemberId().flatMap(memberId ->
-                validateSlot(memberId, request.getStartTime(), request.getEndTime(), null)
-                        .then(Mono.defer(() -> {
-                            MentorAvailability availability = MentorAvailability.builder()
-                                    .mentorMemberId(memberId)
-                                    .startTime(request.getStartTime())
-                                    .endTime(request.getEndTime())
-                                    .status(Status.AVAILABLE)
-                                    .build();
-                            return availabilityRepository.save(availability)
-                                    .map(MentorAvailabilityResponse::from);
-                        })));
+        return accessService.requireCurrentUserApprovedMentor()
+                .then(currentMemberId().flatMap(memberId ->
+                        validateSlot(memberId, request.getStartTime(), request.getEndTime(), null)
+                                .then(Mono.defer(() -> {
+                                    MentorAvailability availability = MentorAvailability.builder()
+                                            .mentorMemberId(memberId)
+                                            .startTime(request.getStartTime())
+                                            .endTime(request.getEndTime())
+                                            .status(Status.AVAILABLE)
+                                            .build();
+                                    return availabilityRepository.save(availability)
+                                            .map(MentorAvailabilityResponse::from);
+                                }))));
     }
 
     public Mono<MentorAvailabilityResponse> updateAvailability(Integer availabilityId,
                                                                CreateAvailabilityRequest request) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireCurrentUserApprovedMentor()
+                .then(currentMemberId().flatMap(memberId ->
                 availabilityRepository.findById(availabilityId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found")))
                         .flatMap(existing -> {
@@ -284,7 +293,7 @@ public class MentorService {
                                         return availabilityRepository.save(existing);
                                     }));
                         })
-                        .map(MentorAvailabilityResponse::from));
+                        .map(MentorAvailabilityResponse::from)));
     }
 
     private Mono<Void> validateSlot(Integer memberId, LocalDateTime startTime, LocalDateTime endTime, Integer excludeId) {
@@ -311,7 +320,8 @@ public class MentorService {
     }
 
     public Mono<Boolean> deleteAvailability(Integer availabilityId) {
-        return currentMemberId().flatMap(memberId ->
+        return accessService.requireCurrentUserApprovedMentor()
+                .then(currentMemberId().flatMap(memberId ->
                 availabilityRepository.findById(availabilityId)
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found with id: " + availabilityId)))
                         .flatMap(existing -> {
@@ -322,7 +332,7 @@ public class MentorService {
                                 return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
                             }
                             return availabilityRepository.deleteById(availabilityId).thenReturn(true);
-                        }));
+                        })));
     }
 
     // ===================== SESSIONS (Mentor view) =====================
@@ -330,51 +340,152 @@ public class MentorService {
     public Mono<PaginatedResponse<MentorshipSessionResponse>> getMySessions(int page, int limit) {
         int offset = page * limit;
         return currentMemberId().flatMap(memberId ->
-                sessionRepository.findByMentorMemberId(memberId, limit, offset)
-                        .collectList()
-                        .flatMap(list -> enrichAll(list)
-                                .zipWith(sessionRepository.countByMentorMemberId(memberId))
-                                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
-                        ));
+                PaginationHelper.paginate(
+                        sessionRepository.findByMentorMemberId(memberId, limit, offset),
+                        sessionRepository.countByMentorMemberId(memberId),
+                        page,
+                        limit,
+                        this::enrichAll));
     }
 
     public Mono<PaginatedResponse<MentorshipSessionResponse>> filterMySessions(
             LocalDate date, String menteeName, int page, int limit) {
         int offset = page * limit;
         return currentMemberId().flatMap(memberId ->
-                sessionRepository.filterSessionsByMentor(memberId, date, menteeName, limit, offset)
-                        .collectList()
-                        .flatMap(list -> enrichAll(list)
-                                .zipWith(sessionRepository.countFilterSessionsByMentor(memberId, date, menteeName))
-                                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit))
-                        ));
+                PaginationHelper.paginate(
+                        sessionRepository.filterSessionsByMentor(memberId, date, menteeName, limit, offset),
+                        sessionRepository.countFilterSessionsByMentor(memberId, date, menteeName),
+                        page,
+                        limit,
+                        this::enrichAll));
     }
 
-    public Mono<MentorshipSessionResponse> updateSessionStatus(Integer sessionId, UpdateSessionStatusRequest request) {
-        return sessionRepository.findById(sessionId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
-                .flatMap(session -> {
-                    Mono<Integer> updateStatus = sessionRepository.updateStatus(sessionId, request.getStatus());
-                    Mono<Integer> updateLink = request.getMeetingLink() != null
-                            ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
-                            : Mono.just(0);
+    @Transactional
+    public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (Status.CANCELLED.equals(session.getStatus())
+                                    || Status.CANCELLED_BY_MENTEE.equals(session.getStatus())
+                                    || Status.CANCELLED_BY_MENTOR.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring đã được hủy trước đó"));
+                            }
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> {
+                                        if (!mentorMemberId.equals(avail.getMentorMemberId())) {
+                                            return Mono.error(new ApplicationException(
+                                                    ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
+                                        }
+                                        boolean slotPast = avail.getEndTime() == null
+                                                || avail.getEndTime().isBefore(LocalDateTime.now());
+                                        String slotStatus = (slotPast ? Status.EXPIRED : Status.AVAILABLE).getValue();
+                                        return availabilityRepository
+                                                .updateStatus(session.getAvailabilityId(), slotStatus)
+                                                .then(sessionRepository.updateStatusWithCancelReason(
+                                                        sessionId, Status.CANCELLED_BY_MENTOR.getValue(), cancelReason))
+                                                .doOnNext(rows -> notificationService.createNotificationAsync(
+                                                        session.getMenteeMemberId(),
+                                                        "Lịch hẹn bị hủy",
+                                                        "Cố vấn đã hủy một buổi hẹn với bạn. Bạn có thể chọn một cố vấn hoặc khung giờ khác phù hợp hơn.",
+                                                        "/development/mentorship/my-bookings"))
+                                                .then(sessionRepository.findById(sessionId));
+                                    });
+                        })
+                        .flatMap(this::enrich));
+    }
 
-                    return updateStatus.then(updateLink)
-                            .then(sessionRepository.findById(sessionId));
-                })
-                .flatMap(this::enrich);
+    @Transactional
+    public Mono<MentorshipSessionResponse> postponeSession(Integer sessionId, PostponeSessionRequest request) {
+        LocalDateTime proposedStart = request.getProposedStartTime();
+        LocalDateTime proposedEnd = request.getProposedEndTime();
+        if (proposedStart == null || proposedEnd == null) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.AVAILABILITY_INVALID_RANGE, "Cần đề xuất giờ bắt đầu và kết thúc mới"));
+        }
+        if (!proposedEnd.isAfter(proposedStart)) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.AVAILABILITY_INVALID_RANGE, "Giờ kết thúc phải sau giờ bắt đầu"));
+        }
+        if (!proposedStart.isAfter(LocalDateTime.now())) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.AVAILABILITY_IN_PAST, "Giờ đề xuất phải nằm trong tương lai"));
+        }
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (!Status.CONFIRMED.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED, "Buổi mentoring không thể dời lịch ở trạng thái hiện tại"));
+                            }
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> {
+                                        if (!mentorMemberId.equals(avail.getMentorMemberId())) {
+                                            return Mono.error(new ApplicationException(
+                                                    ErrorCode.FORBIDDEN, "Bạn không có quyền dời buổi mentoring này"));
+                                        }
+                                        String note = (request.getReason() == null || request.getReason().isBlank())
+                                                ? "Cố vấn đề nghị dời buổi hẹn"
+                                                : "Cố vấn đề nghị dời buổi hẹn: " + request.getReason();
+                                        // Validate the proposed time does not clash with the mentor's other
+                                        // slots (excluding the current slot, which will be moved on accept).
+                                        return availabilityRepository.countOverlapping(
+                                                        mentorMemberId, proposedStart, proposedEnd, avail.getId())
+                                                .flatMap(count -> count > 0
+                                                        ? Mono.<Integer>error(new ApplicationException(
+                                                                ErrorCode.AVAILABILITY_OVERLAP,
+                                                                "Giờ đề xuất trùng với một lịch trống khác của bạn"))
+                                                        : sessionRepository.proposeReschedule(
+                                                                sessionId, Status.RESCHEDULE_PROPOSED.getValue(),
+                                                                note, proposedStart, proposedEnd))
+                                                .doOnNext(rows -> notificationService.createNotificationAsync(
+                                                        session.getMenteeMemberId(),
+                                                        "Cố vấn đề nghị dời lịch hẹn",
+                                                        "Cố vấn đề xuất một khung giờ mới cho buổi hẹn. Vui lòng xem và phản hồi đồng ý hoặc từ chối.",
+                                                        "/development/mentorship/my-bookings"))
+                                                .then(sessionRepository.findById(sessionId));
+                                    });
+                        })
+                        .flatMap(this::enrich));
+    }
+
+    @Transactional
+    public Mono<MentorshipSessionResponse> updateSessionStatus(Integer sessionId, UpdateSessionStatusRequest request) {
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            Mono<Integer> updateStatus = sessionRepository.updateStatus(sessionId, request.getStatus());
+                            Mono<Integer> updateLink = request.getMeetingLink() != null
+                                    ? sessionRepository.updateMeetingLink(sessionId, request.getMeetingLink())
+                                    : Mono.just(0);
+                            return updateStatus.then(updateLink)
+                                    .doOnNext(ignored -> {
+                                        if ("COMPLETED".equals(request.getStatus())) {
+                                            notificationService.createNotificationAsync(
+                                                    session.getMenteeMemberId(),
+                                                    "Buổi cố vấn đã hoàn tất",
+                                                    "Buổi cố vấn của bạn đã hoàn thành. Hãy dành chút thời gian để lại đánh giá cho cố vấn nhé!",
+                                                    "/development/mentorship/my-bookings");
+                                        }
+                                    })
+                                    .then(sessionRepository.findById(sessionId));
+                        })
+                        .flatMap(this::enrich));
     }
 
     // ===================== FEEDBACKS (Mentor view) =====================
 
     public Mono<PaginatedResponse<SessionFeedbackResponse>> getMyFeedbacks(int page, int limit) {
         return currentMemberId().flatMap(memberId ->
-                feedbackRepository.findPublicFeedbacksByMentorId(memberId, limit, page * limit)
-                        .collectList()
-                        .zipWith(feedbackRepository.countPublicFeedbacksByMentorId(memberId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(SessionFeedbackResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+                PaginationHelper.paginate(
+                        feedbackRepository.findPublicFeedbacksByMentorId(memberId, limit, page * limit).map(SessionFeedbackResponse::from),
+                        feedbackRepository.countPublicFeedbacksByMentorId(memberId),
+                        page, limit));
     }
 }

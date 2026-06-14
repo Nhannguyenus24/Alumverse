@@ -9,6 +9,7 @@ import com.service.backend.chat.dao.NetworkMemberSearchRepository;
 import com.service.backend.chat.dto.NetworkMemberSearchItemResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,6 @@ public class NetworkMemberSearchService {
             String fullName,
             String program,
             String major,
-            Integer startYear,
             int page,
             int size) {
 
@@ -48,22 +48,20 @@ public class NetworkMemberSearchService {
                             currentUserId,
                             fullNamePattern,
                             programJson,
-                            majorJson,
-                            startYear);
+                            majorJson);
 
-                    return networkMemberSearchRepository
-                            .searchMembers(
+                    return PaginationHelper.paginate(
+                            networkMemberSearchRepository.searchMembers(
                                     organizationId,
                                     currentUserId,
                                     fullNamePattern,
                                     programJson,
                                     majorJson,
-                                    startYear,
                                     size,
-                                    offset)
-                            .collectList()
-                            .zipWith(totalMono)
-                            .map(result -> PaginatedResponse.of(result.getT1(), result.getT2(), page, size));
+                                    offset),
+                            totalMono,
+                            page,
+                            size);
                 });
     }
 

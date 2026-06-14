@@ -18,11 +18,14 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Mono<ForumTopic> findByTitle(String title);
 
     /**
-     * Find forum topics by category id with pagination
+     * Find forum topics by category id with pagination and keyword
      */
-    @Query("SELECT * FROM forum_topics WHERE category_id = :categoryId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_topics WHERE category_id = :categoryId " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<ForumTopic> findByCategoryIdWithPagination(
             @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") long offset
     );
@@ -33,11 +36,14 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Flux<ForumTopic> findByOrganizationId(Integer organizationId);
 
     /**
-     * Find forum topics by organization id with pagination
+     * Find forum topics by organization id with pagination and keyword
      */
-    @Query("SELECT * FROM forum_topics WHERE organization_id = :organizationId ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    @Query("SELECT * FROM forum_topics WHERE organization_id = :organizationId " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
     Flux<ForumTopic> findByOrganizationIdWithPagination(
             @Param("organizationId") Integer organizationId,
+            @Param("keyword") String keyword,
             @Param("limit") int limit,
             @Param("offset") long offset
     );
@@ -50,9 +56,14 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Mono<Integer> incrementViewCount(@Param("id") Integer id);
 
     /**
-     * Count topics by category id
+     * Count topics by category id with keyword
      */
-    Mono<Long> countByCategoryId(Integer categoryId);
+    @Query("SELECT COUNT(*) FROM forum_topics WHERE category_id = :categoryId " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countByCategoryId(
+            @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword
+    );
 
     /**
      * Count distinct discussion participants in a category.
@@ -69,9 +80,14 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     Mono<Long> countDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
 
     /**
-     * Count topics by organization id
+     * Count topics by organization id with keyword
      */
-    Mono<Long> countByOrganizationId(Integer organizationId);
+    @Query("SELECT COUNT(*) FROM forum_topics WHERE organization_id = :organizationId " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countByOrganizationId(
+            @Param("organizationId") Integer organizationId,
+            @Param("keyword") String keyword
+    );
 
     // ========== STATISTICS QUERIES ==========
 
@@ -112,5 +128,17 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "WHERE EXTRACT(MONTH FROM created_at) = :month " +
            "AND EXTRACT(YEAR FROM created_at) = :year")
     Mono<Long> countTopicsInMonth(@Param("month") int month, @Param("year") int year);
+
+    @Query("SELECT * FROM forum_topics " +
+           "WHERE (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumTopic> findAllWithPagination(
+            @Param("keyword") String keyword,
+            @Param("limit") int limit,
+            @Param("offset") long offset);
+
+    @Query("SELECT COUNT(*) FROM forum_topics " +
+           "WHERE (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countAll(@Param("keyword") String keyword);
 }
 

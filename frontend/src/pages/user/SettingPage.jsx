@@ -31,9 +31,13 @@ import SecurityIcon from '@mui/icons-material/Security';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PeopleIcon from '@mui/icons-material/People';
 import Page from '../../components/Page';
+import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
 import useAuthStore from '../../stores/authStore';
@@ -138,6 +142,7 @@ export default function SettingPage() {
       { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
       { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
       { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
+      { id: 'connections', label: 'Kết nối', icon: <PeopleIcon /> },
       { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
     ];
 
@@ -155,12 +160,17 @@ export default function SettingPage() {
     phone: '',
     studentId: '',
     email: '',
-    faculty: '',
-    programs: [],
-    batch: '',
-    graduationYears: [],
-    specializations: [],
-    graduationStatuses: [],
+    educations: [
+      {
+        faculty: '',
+        department: '',
+        program: '',
+        startedYear: '',
+        graduatedYear: '',
+        major: '',
+        graduationStatus: '',
+      },
+    ],
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -215,6 +225,49 @@ export default function SettingPage() {
 
         setIsTrustedVerifier(member?.isTrustedVerifier ?? false);
 
+        const programs = normalizeAcademicList(member?.program);
+        const graduationYears = normalizeIntegerList(member?.graduatedYear).map(String);
+        const specializations = normalizeAcademicList(member?.major);
+        const graduationStatuses = normalizeAcademicList(member?.graduationStatus);
+        const startedYears = normalizeAcademicList(member?.startedYear);
+        const faculties = normalizeAcademicList(member?.faculty);
+        const departments = normalizeAcademicList(member?.department);
+
+        const maxLength = Math.max(
+          programs.length,
+          graduationYears.length,
+          specializations.length,
+          graduationStatuses.length,
+          startedYears.length,
+          faculties.length,
+          departments.length,
+        );
+
+        const educations = [];
+        for (let i = 0; i < maxLength; i += 1) {
+          educations.push({
+            program: programs[i] || '',
+            graduatedYear: graduationYears[i] || '',
+            major: specializations[i] || '',
+            graduationStatus: graduationStatuses[i] || '',
+            startedYear: startedYears[i] || '',
+            faculty: faculties[i] || '',
+            department: departments[i] || '',
+          });
+        }
+
+        if (educations.length === 0) {
+          educations.push({
+            faculty: '',
+            department: '',
+            program: '',
+            startedYear: '',
+            graduatedYear: '',
+            major: '',
+            graduationStatus: '',
+          });
+        }
+
         setFormData((prev) => ({
           ...prev,
           fullName: profile?.fullName ?? '',
@@ -223,10 +276,7 @@ export default function SettingPage() {
           phone: profile?.phone ?? '',
           studentId: profile?.userName ?? '',
           email: profile?.email ?? '',
-          programs: normalizeAcademicList(member?.program),
-          graduationYears: normalizeIntegerList(member?.graduatedYear).map(String),
-          specializations: normalizeAcademicList(member?.major),
-          graduationStatuses: normalizeAcademicList(member?.graduationStatus),
+          educations,
         }));
 
         setNotificationSettings((prev) => ({
@@ -278,6 +328,50 @@ export default function SettingPage() {
     }));
   };
 
+  const handleEducationChange = (index, field, value) => {
+    setFormData((prev) => {
+      const newEducations = [...prev.educations];
+      newEducations[index] = { ...newEducations[index], [field]: value };
+      return { ...prev, educations: newEducations };
+    });
+  };
+
+  const addEducation = () => {
+    setFormData((prev) => ({
+      ...prev,
+      educations: [
+        ...prev.educations,
+        {
+          faculty: '',
+          department: '',
+          program: '',
+          startedYear: '',
+          graduatedYear: '',
+          major: '',
+          graduationStatus: '',
+        },
+      ],
+    }));
+  };
+
+  const removeEducation = (index) => {
+    setFormData((prev) => {
+      const newEducations = prev.educations.filter((_, i) => i !== index);
+      if (newEducations.length === 0) {
+        newEducations.push({
+          faculty: '',
+          department: '',
+          program: '',
+          startedYear: '',
+          graduatedYear: '',
+          major: '',
+          graduationStatus: '',
+        });
+      }
+      return { ...prev, educations: newEducations };
+    });
+  };
+
   const handleSaveProfile = async () => {
     if (!organizationId) {
       showWarning('Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.');
@@ -285,18 +379,20 @@ export default function SettingPage() {
     }
 
     try {
-      await userSettingsApi.updateProfile({
+      const payload = {
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
-        program: formData.programs.length > 0 ? formData.programs : null,
-        graduatedYear:
-          normalizeIntegerList(formData.graduationYears).length > 0
-            ? normalizeIntegerList(formData.graduationYears)
-            : null,
-        graduationStatus: formData.graduationStatuses.length > 0 ? formData.graduationStatuses : null,
-        major: formData.specializations.length > 0 ? formData.specializations : null,
-      });
+        program: formData.educations.map((e) => e.program || ''),
+        startedYear: formData.educations.map((e) => e.startedYear || ''),
+        graduatedYear: formData.educations.map((e) => Number(e.graduatedYear) || 0),
+        graduationStatus: formData.educations.map((e) => e.graduationStatus || ''),
+        major: formData.educations.map((e) => e.major || ''),
+        faculty: formData.educations.map((e) => e.faculty || ''),
+        department: formData.educations.map((e) => e.department || ''),
+      };
+
+      await userSettingsApi.updateProfile(payload);
       showSuccess('Cập nhật thông tin cá nhân thành công.');
     } catch (error) {
       console.error('Failed to update profile', error);
@@ -409,94 +505,76 @@ const renderPersonalSettings = () => (
 
     {/* Thông tin học vấn */}
     <Box>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin học vấn</Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-        <TextField fullWidth label="Khoa/Bộ môn" name="faculty" value={formData.faculty} InputProps={{ readOnly: true }} />
-        <Autocomplete
-          multiple
-          freeSolo
-          options={organizationProgramOptions}
-          value={formData.programs}
-          onChange={(_e, value) =>
-            setFormData((prev) => ({
-              ...prev,
-              programs: value.map((item) => String(item ?? '').trim()).filter(Boolean),
-            }))
-          }
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip label={option} {...getTagProps({ index })} key={option} />
-            ))
-          }
-          renderInput={(params) => (
-            <TextField {...params} label="Chương trình đào tạo" placeholder="Thêm chương trình" />
-          )}
-        />
-
-        <TextField fullWidth label="Khoá" name="batch" value={formData.batch} InputProps={{ readOnly: true }} />
-        <Autocomplete
-          multiple
-          freeSolo
-          options={[]}
-          value={formData.graduationYears}
-          onChange={(_e, value) =>
-            setFormData((prev) => ({
-              ...prev,
-              graduationYears: value.map((item) => String(item ?? '').trim()).filter(Boolean),
-            }))
-          }
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip label={option} {...getTagProps({ index })} key={option} />
-            ))
-          }
-          renderInput={(params) => (
-            <TextField {...params} label="Năm tốt nghiệp" placeholder="Nhập từng năm" />
-          )}
-        />
-
-        <Autocomplete
-          multiple
-          freeSolo
-          options={organizationMajorOptions}
-          value={formData.specializations}
-          onChange={(_e, value) =>
-            setFormData((prev) => ({
-              ...prev,
-              specializations: value.map((item) => String(item ?? '').trim()).filter(Boolean),
-            }))
-          }
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip label={option} {...getTagProps({ index })} key={option} />
-            ))
-          }
-          renderInput={(params) => (
-            <TextField {...params} label="Chuyên ngành" placeholder="Thêm chuyên ngành" />
-          )}
-        />
-
-        <Autocomplete
-          multiple
-          freeSolo
-          options={['graduated', 'studying']}
-          value={formData.graduationStatuses}
-          onChange={(_e, value) =>
-            setFormData((prev) => ({
-              ...prev,
-              graduationStatuses: value.map((item) => String(item ?? '').trim()).filter(Boolean),
-            }))
-          }
-          renderTags={(value, getTagProps) =>
-            value.map((option, index) => (
-              <Chip label={option} {...getTagProps({ index })} key={option} />
-            ))
-          }
-          renderInput={(params) => (
-            <TextField {...params} label="Trạng thái tốt nghiệp" placeholder="Nhập hoặc chọn trạng thái" />
-          )}
-        />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" fontWeight="bold">Thông tin học vấn</Typography>
+        <Button startIcon={<AddIcon />} variant="outlined" onClick={addEducation}>Thêm học vấn</Button>
       </Box>
+      <Stack spacing={3}>
+        {formData.educations.map((edu, index) => (
+          <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'grey.50' }}>
+            {formData.educations.length > 1 && (
+              <IconButton
+                size="small"
+                color="error"
+                sx={{ position: 'absolute', top: 8, right: 8 }}
+                onClick={() => removeEducation(index)}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            )}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+              <TextField
+                fullWidth
+                label="Khoa"
+                value={edu.faculty}
+                onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Bộ môn"
+                value={edu.department}
+                onChange={(e) => handleEducationChange(index, 'department', e.target.value)}
+              />
+              <Autocomplete
+                freeSolo
+                options={organizationProgramOptions}
+                value={edu.program}
+                onInputChange={(_e, value) => handleEducationChange(index, 'program', value)}
+                onChange={(_e, value) => handleEducationChange(index, 'program', value || '')}
+                renderInput={(params) => <TextField {...params} label="Chương trình đào tạo" />}
+              />
+              <TextField
+                fullWidth
+                label="Khoá"
+                value={edu.startedYear}
+                onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)}
+              />
+              <TextField
+                fullWidth
+                label="Năm tốt nghiệp"
+                value={edu.graduatedYear}
+                onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)}
+              />
+              <Autocomplete
+                freeSolo
+                options={organizationMajorOptions}
+                value={edu.major}
+                onInputChange={(_e, value) => handleEducationChange(index, 'major', value)}
+                onChange={(_e, value) => handleEducationChange(index, 'major', value || '')}
+                renderInput={(params) => <TextField {...params} label="Chuyên ngành" />}
+              />
+              <Autocomplete
+                freeSolo
+                options={['Đã tốt nghiệp', 'Đang học']}
+                value={edu.graduationStatus}
+                onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)}
+                onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')}
+                renderInput={(params) => <TextField {...params} label="Trạng thái tốt nghiệp" />}
+              />
+            </Box>
+          </Card>
+        ))}
+      </Stack>
     </Box>
 
     {/* Actions */}
@@ -777,6 +855,10 @@ const renderPersonalSettings = () => (
     </Box>
   );
 
+  const renderConnectionsSettings = () => (
+    <NetworkConnectionsPanel variant="embedded" enableBlock />
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case 'personal':
@@ -785,6 +867,8 @@ const renderPersonalSettings = () => (
         return renderAccountSettings();
       case 'notification':
         return renderNotificationSettings();
+      case 'connections':
+        return renderConnectionsSettings();
       case 'advisor':
         return renderAdvisorSettings();
       case 'verification':

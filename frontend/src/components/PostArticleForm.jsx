@@ -1,12 +1,4 @@
-import {
-  Box,
-  Stack,
-  TextField,
-  Typography,
-  MenuItem,
-  Grid,
-  Button,
-} from '@mui/material';
+import { Box, Stack, TextField, Typography, MenuItem, Grid, Button } from '@mui/material';
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
@@ -23,24 +15,25 @@ const TOPICS_BY_CHANNEL = {
   job: ['Internship', 'Full-time', 'Part-time', 'Freelance', 'Referral nội bộ', 'Remote'],
 };
 
-const eventTypeOptions = [
-  { value: 'online', label: 'Online' },
-  { value: 'offline', label: 'Offline' },
-];
+const eventTypeOptions = [{ value: 'online', label: 'Online' }, { value: 'offline', label: 'Offline' }];
 
 const PostArticleForm = ({ 
   channel, 
   channelLabel, 
   title, 
   setTitle, 
-  content, 
-  setContent, 
-  topic, 
+  content,
+  setContent,
+  topic,
   setTopic,
+  url,
+  setUrl,
   donationData = {},
   handleDonationInputChange,
   eventData = {},
   handleEventInputChange,
+  registrationQuestions = [], // event
+  setRegistrationQuestions,   // event
 }) => {
   const { statuses: fundStatuses } = useFundStatuses();
   const { infos: fundReceivingInfos } = useFundReceivingInfos();
@@ -51,18 +44,47 @@ const PostArticleForm = ({
     label: `${i.bankName ?? ''} - ${i.accountName ?? ''} (${i.accountNumber ?? ''})`,
   }));
 
+  // Câu hỏi event
+  const addQuestion = () => {
+    setRegistrationQuestions((prev) => [
+      ...prev,
+      { id: Date.now(), question: "", type: "short_text", required: false, options: [""] },
+    ]);
+  };
+
+  const updateQuestion = (id, field, value) => {
+    setRegistrationQuestions((prev) => prev.map((q) => q.id === id ? { ...q, [field]: value } : q));
+  };
+
+  const removeQuestion = (id) => {
+    setRegistrationQuestions((prev) => prev.filter((q) => q.id !== id));
+  };
+
+  const updateOption = (questionId, optionIndex, value) => {
+    setRegistrationQuestions((prev) =>
+      prev.map((q) => {
+        if (q.id !== questionId) return q;
+        const newOptions = [...q.options];
+        newOptions[optionIndex] = value;
+        return { ...q, options: newOptions };
+      })
+    );
+  };
+
+  const addOption = (questionId) => {
+    setRegistrationQuestions((prev) =>
+      prev.map((q) => q.id === questionId ? { ...q, options: [...q.options, ""] } : q)
+    );
+  };
+
   return (
     <Stack spacing={3}>
-      
       <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
         <TextField
           fullWidth
           label="Kênh"
           value={channelLabel}
-          InputProps={{
-            readOnly: true,
-            sx: { fontWeight: 800, color: 'primary.main' }
-          }}
+          InputProps={{ readOnly: true, sx: { fontWeight: 800, color: 'primary.main' } }}
         />
 
         <TextField 
@@ -112,6 +134,7 @@ const PostArticleForm = ({
 
       {/* 2. LAYOUT SỰ KIỆN */}
       {channel === 'event' && (
+      <Box>
         <Box sx={{ backgroundColor: '#e3f2fd', borderRadius: 2, p: { xs: 2, sm: 3, md: 4 }, my: 2 }}>
           <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: 'primary.main' }}>
             Thông tin sự kiện
@@ -174,6 +197,65 @@ const PostArticleForm = ({
             </Box>
           </Box>
         </Box>
+
+        <Box sx={{ backgroundColor: "#fff8e1", borderRadius: 2, p: { xs: 2, sm: 3, md: 4 }, my: 2 }}>
+          <Typography variant="h6" fontWeight={700} color="primary.main" sx={{ mb: 3 }}>
+            Thông tin cung cấp
+          </Typography>
+
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Các câu hỏi sinh viên cần trả lời khi đăng ký tham gia sự kiện.
+          </Typography>
+
+          <Stack spacing={3}>
+            {registrationQuestions.map((q, index) => (
+              <Box key={q.id} sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+                <Stack spacing={2}>
+                  <TextField
+                    fullWidth
+                    label={`Câu hỏi ${index + 1}`}
+                    value={q.question}
+                    onChange={(e) => updateQuestion(q.id, "question", e.target.value)}
+                  />
+
+                  <Dropdown
+                    label="Loại câu hỏi"
+                    value={q.type}
+                    options={[{ value: "short_text", label: "Trả lời ngắn" }, { value: "single_choice", label: "Chọn một" }, { value: "multiple_choice", label: "Chọn nhiều" }]}
+                    onChange={(e) => updateQuestion(q.id, "type", e.target.value)}
+                  />
+
+                  {(q.type === "single_choice" || q.type === "multiple_choice") && (
+                    <Stack spacing={1}>
+                      {q.options.map((option, i) => (
+                        <TextField
+                          key={i}
+                          fullWidth
+                          label={`Lựa chọn ${i + 1}`}
+                          value={option}
+                          onChange={(e) => updateOption(q.id, i, e.target.value)}
+                        />
+                      ))}
+
+                      <Button variant="outlined" size="small" onClick={() => addOption(q.id)}>
+                        Thêm lựa chọn
+                      </Button>
+                    </Stack>
+                  )}
+
+                  <Button color="error" variant="outlined" onClick={() => removeQuestion(q.id)}>
+                    Xoá câu hỏi
+                  </Button>
+                </Stack>
+              </Box>
+            ))}
+
+            <Button variant="contained" onClick={addQuestion}>
+              Thêm câu hỏi
+            </Button>
+          </Stack>
+        </Box>
+      </Box>
       )}
 
       {/* 3. LAYOUT CỰU SINH VIÊN (Tinh giản như News) */}
@@ -194,6 +276,16 @@ const PostArticleForm = ({
       <Box sx={{ mt: 2 }}>
         <WYSIWYG value={content} onChange={setContent} placeholder="Bắt đầu viết nội dung tại đây..." height={400} />
       </Box>
+
+      <TextField
+        fullWidth
+        type="url"
+        label="Link minh chứng (URL)"
+        placeholder="https://example.com/nguon-bai-viet"
+        helperText="Đường dẫn để chứng minh nội dung bài viết là thật (không bắt buộc)."
+        value={url ?? ''}
+        onChange={(e) => setUrl(e.target.value)}
+      />
     </Stack>
   );
 };

@@ -23,7 +23,6 @@ import {
   Grid,
 } from '@mui/material';
 import { useOutletContext } from 'react-router';
-import { adminOrganizationApi } from '../../utils/api';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -142,7 +141,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
 
 const AdminForumCategoriesPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { activeOrgId, activeOrganization } = useAdminSystemContext();
+  const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const {
     categories,
     categoriesLoading,
@@ -152,25 +151,10 @@ const AdminForumCategoriesPage = () => {
   } = useAdminForumContext();
 
   const { setBreadcrumbs } = useOutletContext();
-  const { setActiveOrgId } = useAdminSystemContext();
-  const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Danh mục', active: true }]);
-    
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations();
-        setOrganizations(data || []);
-        if (data && data.length > 0 && !activeOrgId) {
-          setActiveOrgId(data[0].id);
-        }
-      } catch (err) {
-        console.error('Failed to fetch organizations', err);
-      }
-    };
-    fetchOrgs();
-  }, [setBreadcrumbs, activeOrgId, setActiveOrgId]);
+  }, [setBreadcrumbs]);
 
   const tree = useMemo(() => buildTree(categories), [categories]);
 
@@ -213,7 +197,7 @@ const AdminForumCategoriesPage = () => {
     }
     if (modal.mode === 'create') {
       const ok = await createCategory?.(
-        activeOrgId,
+        stableOrgId,
         form.name,
         form.description,
         form.parentId === '' ? null : Number(form.parentId),
@@ -249,35 +233,20 @@ const AdminForumCategoriesPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Danh mục diễn đàn
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
             Cấu trúc phân cấp diễn đàn, quản lý các chuyên mục chính và chuyên mục con.
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            select
-            size="small"
-            label="Tổ chức"
-            value={activeOrgId || ''}
-            onChange={(e) => setActiveOrgId(e.target.value)}
-            sx={{ minWidth: 200 }}
-          >
-            {organizations.map((org) => (
-              <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-            ))}
-          </TextField>
-          <Button
-            variant="contained"
-            startIcon={<AddOutlinedIcon />}
-            onClick={openCreateRoot}
-            sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
-          >
-            Thêm danh mục
-          </Button>
-        </Stack>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={openCreateRoot}
+        >
+          Thêm danh mục
+        </Button>
       </Box>
 
       <Box
@@ -316,7 +285,15 @@ const AdminForumCategoriesPage = () => {
         />
       </Box>
 
-      <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden' }}>
+      <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
+        <Box sx={{ display: 'flex', bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark', px: 2, py: 2 }}>
+          <Typography sx={{ flex: 1, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, pl: 6 }}>
+            Tên danh mục & Mô tả
+          </Typography>
+          <Typography sx={{ width: 120, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right', pr: 1 }}>
+            Thao tác
+          </Typography>
+        </Box>
         {categoriesLoading ? (
           <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Skeleton variant="rounded" height={60} />
@@ -353,7 +330,7 @@ const AdminForumCategoriesPage = () => {
         <DialogTitle sx={{ fontWeight: 700 }}>
           {modal.mode === 'create' ? 'Tạo danh mục mới' : 'Chỉnh sửa danh mục'}
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible', }} >
           <TextField
             label="Tên danh mục"
             required
@@ -390,8 +367,12 @@ const AdminForumCategoriesPage = () => {
           </TextField>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setModal(m => ({ ...m, open: false }))}>Hủy</Button>
-          <Button variant="contained" onClick={handleSave} sx={{ borderRadius: 2 }}>Lưu</Button>
+          <Button variant="outlined" color="secondary" onClick={() => setModal(m => ({ ...m, open: false }))}>
+            Hủy
+          </Button>
+          <Button variant="contained" onClick={handleSave}>
+            Lưu
+          </Button>
         </DialogActions>
       </Dialog>
 

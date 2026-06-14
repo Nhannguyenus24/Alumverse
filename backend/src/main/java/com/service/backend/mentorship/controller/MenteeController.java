@@ -19,7 +19,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Mentorship > Mentees", description = "API endpoints for mentee profile and activities")
 @RestController
 @RequestMapping("/api/mentorship/mentee")
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ import java.util.List;
 public class MenteeController {
 
     private final MenteeService menteeService;
+    private final com.service.backend.mentorship.service.MentorshipSessionService sessionService;
 
     @GetMapping("/mentors")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<MentorProfileResponse>>>> getApprovedMentors(
@@ -151,10 +154,37 @@ public class MenteeController {
 
     @PostMapping("/sessions/{sessionId}/cancel")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> cancelSession(
-            @PathVariable @Min(1) Integer sessionId) {
-        return menteeService.cancelSession(sessionId)
+            @PathVariable @Min(1) Integer sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String cancelReason) {
+        return menteeService.cancelSession(sessionId, cancelReason)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session cancelled successfully", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/reschedule-response")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> respondToReschedule(
+            @PathVariable @Min(1) Integer sessionId,
+            @RequestParam boolean accept) {
+        return menteeService.respondToReschedule(sessionId, accept)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>(
+                                accept ? "Đã đồng ý dời lịch" : "Đã từ chối đề nghị dời lịch", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/join")
+    public Mono<ResponseEntity<ApiResponse<JoinSessionResponse>>> joinSession(
+            @PathVariable @Min(1) Integer sessionId) {
+        return sessionService.joinSession(sessionId, false)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Tham gia buổi mentoring thành công", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/report")
+    public Mono<ResponseEntity<ApiResponse<Void>>> reportSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @Valid @RequestBody CreateReportRequest request) {
+        return menteeService.reportSession(sessionId, request)
+                .then(Mono.just(ResponseEntity.ok(new ApiResponse<Void>("Báo cáo đã được ghi nhận", null))));
     }
 
     @PostMapping("/sessions/{sessionId}/feedback")

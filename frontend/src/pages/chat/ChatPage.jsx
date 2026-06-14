@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Container, Stack, Typography } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
@@ -7,6 +8,7 @@ import NetworkChatSidebar from '../../components/network/NetworkChatSidebar';
 import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
+import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';
 
 function normalizeGroupChat(item) {
   return {
@@ -27,10 +29,13 @@ function normalizePrivateChat(item) {
     lastMessageAt: item.lastMessageAt ?? null,
     type: 'PRIVATE',
     peerMemberId: item.peerMemberId,
+    blockedByMe: Boolean(item.blockedByMe),
+    blockedByPeer: Boolean(item.blockedByPeer),
   };
 }
 
 const ChatPage = () => {
+  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -111,6 +116,13 @@ const ChatPage = () => {
     }
   };
 
+  const handleLeaveGroup = (leftGroupId) => {
+    invalidateChatListQueries(queryClient);
+    if (activeChatId === leftGroupId) {
+      setActiveChatId(null);
+    }
+  };
+
   return (
     <Page title="Chat">
       <Container maxWidth={false} disableGutters sx={{ pb: 3 }}>
@@ -180,7 +192,7 @@ const ChatPage = () => {
                   isPending={isPending}
                   isFetching={isFetching}
                 />
-                <NetworkChatPanel activeChat={activeChat} />
+                <NetworkChatPanel activeChat={activeChat} onLeaveGroup={handleLeaveGroup} />
               </Box>
             </Stack>
           </Box>

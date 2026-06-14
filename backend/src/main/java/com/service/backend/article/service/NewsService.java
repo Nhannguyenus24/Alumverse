@@ -9,6 +9,7 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class NewsService {
                                         .content(request.getContent())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
                                         .topic(request.getTopic())
+                                        .url(request.getUrl())
                                         .isHidden(true)
                                         .build();
 
@@ -56,6 +58,7 @@ public class NewsService {
                             existing.setContent(request.getContent());
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return newsRepository.save(existing);
                         }))
                 .map(NewsResponse::from);
@@ -81,38 +84,45 @@ public class NewsService {
 
     public Mono<PaginatedResponse<NewsResponse>> getAll(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                newsRepository.findByOrganizationIdWithPagination(orgId, limit, offset)
-                        .collectList()
-                        .zipWith(newsRepository.countByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(NewsResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        newsRepository.findByOrganizationIdWithPagination(orgId, limit, offset).map(NewsResponse::from),
+                        newsRepository.countByOrganizationId(orgId),
+                        page, limit))
+                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
+                        newsRepository.findAllWithPagination(limit, offset).map(NewsResponse::from),
+                        newsRepository.count(),
+                        page, limit)));
     }
 
     public Mono<PaginatedResponse<NewsResponse>> getPublished(int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                newsRepository.findPublishedByOrganizationId(orgId, limit, offset)
-                        .collectList()
-                        .zipWith(newsRepository.countPublishedByOrganizationId(orgId))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(NewsResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        newsRepository.findPublishedByOrganizationId(orgId, limit, offset).map(NewsResponse::from),
+                        newsRepository.countPublishedByOrganizationId(orgId),
+                        page, limit))
+                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
+                        newsRepository.findAll()
+                                .filter(n -> !n.getIsHidden())
+                                .skip(offset)
+                                .take(limit)
+                                .map(NewsResponse::from),
+                        newsRepository.count(),
+                        page, limit)));
     }
 
     public Mono<PaginatedResponse<NewsResponse>> search(String keyword, int page, int limit) {
         int offset = page * limit;
-        return SecurityUtils.getCurrentOrganizationId().flatMap(orgId ->
-                newsRepository.searchNews(orgId, keyword, limit, offset)
-                        .collectList()
-                        .zipWith(newsRepository.countSearchNews(orgId, keyword))
-                        .map(tuple -> PaginatedResponse.of(
-                                tuple.getT1().stream().map(NewsResponse::from).toList(),
-                                tuple.getT2(), page, limit
-                        )));
+        return SecurityUtils.getCurrentOrganizationId()
+                .flatMap(orgId -> PaginationHelper.paginate(
+                        newsRepository.searchNews(orgId, keyword, limit, offset).map(NewsResponse::from),
+                        newsRepository.countSearchNews(orgId, keyword),
+                        page, limit))
+                .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
+                        newsRepository.searchAllByTitleWithPagination(keyword, limit, offset).map(NewsResponse::from),
+                        newsRepository.countAllSearchByTitle(keyword),
+                        page, limit)));
     }
 
     public Mono<NewsResponse> publish(Integer id) {

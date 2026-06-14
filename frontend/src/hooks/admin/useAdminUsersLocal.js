@@ -15,7 +15,7 @@ const normalizeList = (payload) => {
   return [];
 };
 
-const useAdminUsersLocal = () => {
+const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -28,7 +28,6 @@ const useAdminUsersLocal = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [organizationFilter, setOrganizationFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
   const [page, setPage] = useState(0);
@@ -38,7 +37,7 @@ const useAdminUsersLocal = () => {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const orgId = organizationFilter === 'ALL' ? null : organizationFilter;
+      const orgId = stableOrgId || null;
       const res = await adminUserApi.getUsers(page, rowsPerPage, search, roleFilter, statusFilter, orgId);
       const payload = res?.data?.data;
       const items = normalizeList(payload);
@@ -50,11 +49,13 @@ const useAdminUsersLocal = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, search, roleFilter, statusFilter, organizationFilter]);
+  }, [page, rowsPerPage, search, roleFilter, statusFilter, stableOrgId]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    if (shouldFetch) {
+      loadUsers();
+    }
+  }, [loadUsers, shouldFetch]);
 
   // ── Merged view ───────────────────────────────────────────────────────────
   const allUsers = useMemo(() => {
@@ -77,32 +78,20 @@ const useAdminUsersLocal = () => {
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   const createUser = useCallback(async (payload) => {
-    if (String(payload?.role || '').toUpperCase() !== 'ADMIN') {
-      enqueueSnackbar(
-        'Only ADMIN accounts can be created here. Use public sign-up for STUDENT, ALUMNI, STAFF, or GUEST.',
-        { variant: 'warning' },
-      );
-      throw new Error('CREATE_ROLE');
-    }
-    if (!payload?.password) {
-      enqueueSnackbar('Password is required.', { variant: 'error' });
-      throw new Error('CREATE_PASSWORD');
-    }
     try {
-      await adminUserApi.createAdminAccount({
+      await adminUserApi.addOrganizationMember({
         email: String(payload.email || '').trim(),
-        fullName: String(payload.fullName || '').trim(),
         userName: String(payload.userName || '').trim(),
-        password: payload.password,
+        fullName: String(payload.fullName || '').trim(),
+        role: payload.role,
+        status: payload.status,
         organizationId: Number(payload.organizationId),
+        password: payload.password,
       });
-      enqueueSnackbar('Admin account created.', { variant: 'success' });
+      enqueueSnackbar('User account created and added to organization.', { variant: 'success' });
       await loadUsers();
     } catch (e) {
-      if (e?.message === 'CREATE_ROLE' || e?.message === 'CREATE_PASSWORD') {
-        throw e;
-      }
-      const msg = e?.response?.data?.message || 'Failed to create admin.';
+      const msg = e?.response?.data?.message || 'Failed to create user.';
       enqueueSnackbar(msg, { variant: 'error' });
       throw e;
     }
@@ -280,7 +269,7 @@ const useAdminUsersLocal = () => {
     }
   }, [loadUsers]);
 
-  return {
+  return useMemo(() => ({
     loading,
     allUsers,
     totalCount,
@@ -293,8 +282,6 @@ const useAdminUsersLocal = () => {
     setRoleFilter,
     statusFilter,
     setStatusFilter,
-    organizationFilter,
-    setOrganizationFilter,
     sortBy,
     setSortBy,
     sortOrder,
@@ -310,7 +297,11 @@ const useAdminUsersLocal = () => {
     banUser,
     unbanUser,
     reloadUsers: loadUsers,
-  };
+  }), [
+    loading, allUsers, totalCount, pagedUsers, sortedUsers,
+    search, roleFilter, statusFilter, sortBy, sortOrder, page, rowsPerPage,
+    createUser, updateUser, updateUserStatus, deleteUser, banUser, unbanUser, loadUsers
+  ]);
 };
 
 export default useAdminUsersLocal;

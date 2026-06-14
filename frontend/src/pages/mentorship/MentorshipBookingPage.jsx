@@ -16,6 +16,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
+import dayjs from 'dayjs';
 
 import Page from '../../components/Page';
 import MentorshipSlotPicker from '../../components/mentorship/MentorshipSlotPicker';
@@ -100,7 +101,7 @@ const MentorshipBookingPage = () => {
 
         {submitSuccess && (
           <Alert severity="success" sx={{ mb: 3 }}>
-            Đã gửi yêu cầu đặt lịch thành công. Đang chuyển về trang Cố vấn...
+            Đặt lịch thành công! Buổi mentoring của bạn đã được xác nhận. Đang chuyển về trang Cố vấn...
           </Alert>
         )}
 
@@ -233,7 +234,11 @@ const MentorshipBookingPage = () => {
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
                     Thời lượng
                   </Typography>
-                  <Typography fontWeight={600}>60 phút / buổi</Typography>
+                  <Typography fontWeight={600}>
+                    {selectedSlot
+                      ? `${dayjs(selectedSlot.endTime).diff(dayjs(selectedSlot.startTime), 'minute')} phút`
+                      : 'Tùy theo khung giờ bạn chọn'}
+                  </Typography>
                 </Box>
 
                 <Box sx={{ mt: 2 }}>

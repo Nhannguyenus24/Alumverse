@@ -5,24 +5,41 @@ import {
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  MenuItem,
   Stack,
+  Switch,
   Tab,
   Tabs,
+  TextField,
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import StarIcon from '@mui/icons-material/Star';
 
 import Page from '../../components/Page';
 import MentorshipBookingItem from '../../components/mentorship/MentorshipBookingItem';
 import { useMyMenteeSessions } from '../../hooks/mentorship/useMyMenteeSessions';
 import { useCancelMenteeSession } from '../../hooks/mentorship/useCancelMenteeSession';
+import { useSubmitSessionFeedback } from '../../hooks/mentorship/useSubmitSessionFeedback';
+import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { reportSession, respondReschedule } from '../../utils/api';
+import { reasonsForStatus } from '../../components/mentorship/reportReasons';
+
+const ACTIVE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'RESCHEDULE_PROPOSED']);
+const PAST_STATUSES = new Set(['COMPLETED', 'EXPIRED']);
+const CANCELLED_STATUSES = new Set(['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'REJECTED']);
 
 const TAB_FILTERS = [
   { key: 'all', label: 'Tất cả', match: () => true },
-  { key: 'upcoming', label: 'Sắp tới', match: (s) => s.status === 'Pending' || s.status === 'Confirmed' },
-  { key: 'completed', label: 'Đã hoàn thành', match: (s) => s.status === 'Completed' },
-  { key: 'cancelled', label: 'Đã hủy / từ chối', match: (s) => s.status === 'Cancelled' || s.status === 'Rejected' },
+  { key: 'upcoming', label: 'Sắp tới', match: (s) => ACTIVE_STATUSES.has(s.status) },
+  { key: 'past', label: 'Đã qua', match: (s) => PAST_STATUSES.has(s.status) },
+  { key: 'cancelled', label: 'Đã hủy / từ chối', match: (s) => CANCELLED_STATUSES.has(s.status) },
 ];
 
 const PAGE_SIZE = 10;
@@ -31,9 +48,35 @@ const MentorshipMyBookingsPage = () => {
   const navigate = useOrgNavigate();
   const [tabKey, setTabKey] = useState('all');
   const [page, setPage] = useState(0);
+  const [cancelTarget, setCancelTarget] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportCategory, setReportCategory] = useState('');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportPending, setReportPending] = useState(false);
+  const [feedbackTarget, setFeedbackTarget] = useState(null);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackPublic, setFeedbackPublic] = useState(true);
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [rescheduleResponsePending, setRescheduleResponsePending] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState('');
+  const [feedbackSuccess, setFeedbackSuccess] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const sessionsQuery = useMyMenteeSessions({ page, limit: PAGE_SIZE });
   const cancelMutation = useCancelMenteeSession();
+  const feedbackMutation = useSubmitSessionFeedback();
+  const joinMutation = useJoinSession();
+
+  const handleJoin = async (session) => {
+    setActionError('');
+    try {
+      await joinMutation.joinSession({ sessionId: session.id, asMentor: false });
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
+    }
+  };
 
   const paginated = sessionsQuery.data;
   const items = useMemo(() => paginated?.items ?? [], [paginated?.items]);
@@ -43,14 +86,124 @@ const MentorshipMyBookingsPage = () => {
     return items.filter(matcher);
   }, [items, tabKey]);
 
-  const handleCancel = async (session) => {
-     
-    const ok = window.confirm('Bạn chắc chắn muốn hủy lịch hẹn này?');
-    if (!ok) return;
+  const openCancelDialog = (session) => {
+    setCancelTarget(session);
+    setCancelReason('');
+  };
+
+  const closeCancelDialog = () => {
+    setCancelTarget(null);
+    setCancelReason('');
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget) return;
     try {
-      await cancelMutation.cancelSession(session.id);
+      await cancelMutation.cancelSession({ sessionId: cancelTarget.id, cancelReason: cancelReason.trim() || undefined });
+      closeCancelDialog();
     } catch {
       /* error surfaced via cancelMutation.errorMessage */
+    }
+  };
+
+  const openReportDialog = (session) => {
+    setReportTarget(session);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const closeReportDialog = () => {
+    setReportTarget(null);
+    setReportCategory('');
+    setReportDescription('');
+  };
+
+  const isOtherReason = reportCategory === 'OTHER';
+  const reportDescTooShort = isOtherReason && reportDescription.trim().length < 10;
+  const reportInvalid = !reportCategory || reportDescTooShort;
+
+  const handleConfirmReport = async () => {
+    if (!reportTarget || reportInvalid) return;
+    setActionError('');
+    setReportPending(true);
+    try {
+      await reportSession(reportTarget.id, {
+        reasonCategory: reportCategory,
+        description: reportDescription.trim() || undefined,
+      });
+      setReportSuccess('Đã gửi báo cáo. Đội quản trị sẽ xem xét và phản hồi.');
+      closeReportDialog();
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không gửi được báo cáo.');
+    } finally {
+      setReportPending(false);
+    }
+  };
+
+  const openFeedbackDialog = (session) => {
+    setFeedbackTarget(session);
+    setFeedbackRating(5);
+    setFeedbackComment('');
+    setFeedbackPublic(true);
+  };
+
+  const closeFeedbackDialog = () => {
+    setFeedbackTarget(null);
+    setFeedbackRating(5);
+    setFeedbackComment('');
+    setFeedbackPublic(true);
+  };
+
+  const handleConfirmFeedback = async () => {
+    if (!feedbackTarget) return;
+    try {
+      await feedbackMutation.submitFeedback({
+        sessionId: feedbackTarget.id,
+        rating: feedbackRating,
+        comment: feedbackComment.trim() || undefined,
+        isPublic: feedbackPublic,
+      });
+      setFeedbackSuccess('Cảm ơn bạn đã đánh giá buổi cố vấn!');
+      closeFeedbackDialog();
+      sessionsQuery.refetch?.();
+    } catch {
+      /* errorMessage from hook */
+    }
+  };
+
+  const openRescheduleDialog = (session) => setRescheduleTarget(session);
+  const closeRescheduleDialog = () => setRescheduleTarget(null);
+
+  const handleRescheduleResponse = async (session, accept) => {
+    setActionError('');
+    setRescheduleResponsePending(true);
+    try {
+      await respondReschedule(session.id, accept);
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không phản hồi được đề nghị dời lịch.');
+    } finally {
+      setRescheduleResponsePending(false);
+    }
+  };
+
+  const handleConfirmReschedule = async () => {
+    if (!rescheduleTarget) return;
+    const mentorId = rescheduleTarget.mentorMemberId;
+    try {
+      await cancelMutation.cancelSession({
+        sessionId: rescheduleTarget.id,
+        cancelReason: 'Mentee đề xuất đổi lịch — hủy để đặt khung giờ mới',
+      });
+      closeRescheduleDialog();
+      if (mentorId) {
+        navigate(`/development/mentorship/mentors/${mentorId}/book`);
+      } else {
+        navigate('/development/mentorship');
+      }
+    } catch {
+      /* cancelMutation.errorMessage */
     }
   };
 
@@ -76,6 +229,30 @@ const MentorshipMyBookingsPage = () => {
         {cancelMutation.errorMessage && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {cancelMutation.errorMessage}
+          </Alert>
+        )}
+
+        {actionError && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setActionError('')}>
+            {actionError}
+          </Alert>
+        )}
+
+        {feedbackMutation.errorMessage && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {feedbackMutation.errorMessage}
+          </Alert>
+        )}
+
+        {reportSuccess && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setReportSuccess('')}>
+            {reportSuccess}
+          </Alert>
+        )}
+
+        {feedbackSuccess && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setFeedbackSuccess('')}>
+            {feedbackSuccess}
           </Alert>
         )}
 
@@ -119,8 +296,15 @@ const MentorshipMyBookingsPage = () => {
               <MentorshipBookingItem
                 key={session.id}
                 session={session}
-                onCancel={handleCancel}
+                onCancel={openCancelDialog}
                 cancelDisabled={cancelMutation.isPending}
+                onReport={openReportDialog}
+                onFeedback={openFeedbackDialog}
+                onReschedule={openRescheduleDialog}
+                onRescheduleResponse={handleRescheduleResponse}
+                rescheduleResponsePending={rescheduleResponsePending}
+                onJoin={handleJoin}
+                joinPending={joinMutation.isPending}
               />
             ))}
           </Stack>
@@ -148,6 +332,174 @@ const MentorshipMyBookingsPage = () => {
           </Box>
         )}
       </Container>
+
+      {/* Report dialog */}
+      <Dialog open={Boolean(reportTarget)} onClose={closeReportDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Báo cáo sự cố</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Mô tả vấn đề bạn gặp phải trong buổi mentoring này. Đội quản trị sẽ xem xét và xử lý.
+          </Typography>
+          <TextField
+            select
+            label="Lý do báo cáo *"
+            value={reportCategory}
+            onChange={(e) => setReportCategory(e.target.value)}
+            fullWidth
+            sx={{ mb: 2 }}
+          >
+            {reasonsForStatus(reportTarget?.status).map((r) => (
+              <MenuItem key={r.value} value={r.value}>
+                {r.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label={isOtherReason ? 'Mô tả chi tiết *' : 'Mô tả thêm (tùy chọn)'}
+            value={reportDescription}
+            onChange={(e) => setReportDescription(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            required={isOtherReason}
+            error={reportDescTooShort}
+            helperText={
+              isOtherReason
+                ? 'Bắt buộc nhập tối thiểu 10 ký tự khi chọn "Khác".'
+                : undefined
+            }
+            placeholder="Mô tả chi tiết sự việc..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeReportDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmReport}
+            color="warning"
+            variant="contained"
+            disabled={reportPending || reportInvalid}
+          >
+            Gửi báo cáo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Feedback dialog */}
+      <Dialog open={Boolean(feedbackTarget)} onClose={closeFeedbackDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Đánh giá buổi cố vấn</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Chia sẻ trải nghiệm của bạn để giúp các mentee khác lựa chọn cố vấn phù hợp.
+          </Typography>
+          <Typography variant="subtitle2" mb={1}>
+            Đánh giá sao
+          </Typography>
+          <Stack direction="row" spacing={0.5} mb={2}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Button
+                key={star}
+                onClick={() => setFeedbackRating(star)}
+                sx={{ minWidth: 0, p: 0.5 }}
+              >
+                <StarIcon
+                  sx={{
+                    color: star <= feedbackRating ? 'warning.main' : 'action.disabled',
+                    fontSize: 32,
+                  }}
+                />
+              </Button>
+            ))}
+          </Stack>
+          <TextField
+            label="Nhận xét (tùy chọn)"
+            value={feedbackComment}
+            onChange={(e) => setFeedbackComment(e.target.value)}
+            fullWidth
+            multiline
+            minRows={3}
+            sx={{ mb: 1 }}
+            placeholder="Chia sẻ cảm nhận về buổi cố vấn..."
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={feedbackPublic}
+                onChange={(e) => setFeedbackPublic(e.target.checked)}
+              />
+            }
+            label="Hiển thị công khai trên hồ sơ cố vấn"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeFeedbackDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmFeedback}
+            variant="contained"
+            disabled={feedbackMutation.isPending}
+          >
+            Gửi đánh giá
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reschedule dialog */}
+      <Dialog open={Boolean(rescheduleTarget)} onClose={closeRescheduleDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Đề xuất đổi lịch</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Để đổi sang khung giờ khác, hệ thống sẽ hủy buổi hiện tại và chuyển bạn đến trang đặt lịch
+            mới với cùng cố vấn.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeRescheduleDialog} color="inherit">
+            Quay lại
+          </Button>
+          <Button
+            onClick={handleConfirmReschedule}
+            variant="contained"
+            disabled={cancelMutation.isPending}
+          >
+            Hủy và đặt lại
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cancel dialog */}
+      <Dialog open={Boolean(cancelTarget)} onClose={closeCancelDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Hủy lịch hẹn</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Bạn có chắc chắn muốn hủy lịch hẹn này không? Lý do hủy sẽ được gửi đến cố vấn.
+          </Typography>
+          <TextField
+            label="Lý do hủy (tùy chọn)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+            placeholder="Ví dụ: Bận công việc đột xuất..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeCancelDialog} color="inherit">
+            Quay lại
+          </Button>
+          <Button
+            onClick={handleConfirmCancel}
+            color="error"
+            variant="contained"
+            disabled={cancelMutation.isPending}
+          >
+            Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Page>
   );
 };

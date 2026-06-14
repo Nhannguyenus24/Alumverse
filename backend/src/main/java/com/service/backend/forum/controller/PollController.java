@@ -31,10 +31,10 @@ import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Mono;
 import org.springframework.web.server.ResponseStatusException;
 
+@Tag(name = "Forum > Polls", description = "API endpoints for forum polls and voting")
 @RestController
 @RequestMapping("/api/forum/poll")
 @Validated
-@Tag(name = "Forum Poll", description = "Poll management endpoints")
 public class PollController {
     private final PollService pollService;
 

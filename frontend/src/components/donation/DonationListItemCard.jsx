@@ -85,7 +85,7 @@ export default function DonationListItemCard({ item }) {
             Địa chỉ: {item.address || "--"}
           </Typography>
           <Typography sx={{ color: "#8c9ab2", fontSize: "0.78rem", mt: 0.45 }}>
-            {formatDateTime(item.createdAt)}
+            {formatDonationTimestamp(item.createdAt)}
           </Typography>
         </Box>
       </Stack>
@@ -99,7 +99,7 @@ export default function DonationListItemCard({ item }) {
           ml: 1,
         }}
       >
-        {formatVND(item.amount)}
+        {formatDonationAmount(item.amount)}
       </Typography>
     </Box>
   );

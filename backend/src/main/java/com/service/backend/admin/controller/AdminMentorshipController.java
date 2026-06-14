@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+@Tag(name = "Admin > Mentorship", description = "API endpoints for managing mentorship programs by administrators")
 @RestController
 @RequestMapping("/api/admin/mentorship")
 @Validated
-@Tag(name = "Admin Mentorship Management", description = "Admin APIs for mentorship session and mentor profile moderation")
 public class AdminMentorshipController {
 
     private final AdminMentorshipService adminMentorshipService;
@@ -39,27 +39,29 @@ public class AdminMentorshipController {
         this.adminMentorshipService = adminMentorshipService;
     }
 
-    @Operation(summary = "List all mentorship sessions across organizations")
+    @Operation(summary = "List all mentorship sessions, optionally filtered by organization")
     @GetMapping("/sessions")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorshipSessionDTO>>>> getAllSessions(
+            @RequestParam(required = false) Integer organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getAllSessions(page, size)
+        return adminMentorshipService.getAllSessions(organizationId, page, size)
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentorship sessions", p)));
     }
 
-    @Operation(summary = "Filter sessions by status (Pending/Confirmed/Completed/Cancelled/Rejected)")
+    @Operation(summary = "Filter sessions by status, optionally filtered by organization")
     @GetMapping("/sessions/by-status")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorshipSessionDTO>>>> getSessionsByStatus(
             @Parameter(example = "Pending")
             @RequestParam @NotBlank(message = "Status is required") String status,
+            @RequestParam(required = false) Integer organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getSessionsByStatus(status, page, size)
+        return adminMentorshipService.getSessionsByStatus(organizationId, status, page, size)
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved sessions by status", p)));
     }
 
@@ -89,27 +91,29 @@ public class AdminMentorshipController {
                 .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Session deleted successfully", null)));
     }
 
-    @Operation(summary = "List all mentor profiles")
+    @Operation(summary = "List all mentor profiles, optionally filtered by organization")
     @GetMapping("/mentors")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorProfileDTO>>>> getAllMentorProfiles(
+            @RequestParam(required = false) Integer organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getAllMentorProfiles(page, size)
+        return adminMentorshipService.getAllMentorProfiles(organizationId, page, size)
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentor profiles", p)));
     }
 
-    @Operation(summary = "Filter mentor profiles by status (DRAFT, PENDING, APPROVED, REJECTED, NEED_UPDATE)")
+    @Operation(summary = "Filter mentor profiles by status, optionally filtered by organization")
     @GetMapping("/mentors/by-status")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AdminMentorProfileDTO>>>> getMentorProfilesByStatus(
             @Parameter(example = "PENDING")
             @RequestParam String status,
+            @RequestParam(required = false) Integer organizationId,
             @Parameter(example = "0")
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getMentorProfilesByStatus(status, page, size)
+        return adminMentorshipService.getMentorProfilesByStatus(organizationId, status, page, size)
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentor profiles by status", p)));
     }
 

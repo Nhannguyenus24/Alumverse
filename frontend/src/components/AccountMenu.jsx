@@ -9,11 +9,15 @@ import {
   Avatar,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import { useAuth } from "../hooks/useAuth";
-import { useOrgPath } from '../hooks/useOrgNavigate';
+import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
+  const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [prevAvatarUrl, setPrevAvatarUrl] = useState(avatarUrl);
@@ -36,6 +40,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const handleLogout = async () => {
     handleClose();
     await logout();
+    navigate("/");
   };
 
   const avatarSx = {
@@ -117,7 +122,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
         slotProps={{
           paper: {
             sx: {
-              mt: 1.5,
+              mt: 2.5,
               minWidth: 260,
               bgcolor: "background.paper",
               color: "text.primary",
@@ -174,11 +179,11 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           </Box>
         </Box>
 
-        <Divider sx={{ borderColor: "divider", mx: 1.5 }} />
+        <Divider sx={{ borderColor: "divider" }} />
 
         <MenuItem
           component={Link}
-          to={toOrgPath('/settings')}
+          to={toOrgPath('/profile')}
           onClick={handleClose}
           sx={{
             borderTop: "none",
@@ -190,6 +195,27 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           <Typography variant="body2">Hồ sơ của tôi</Typography>
         </MenuItem>
 
+        <MenuItem
+          component={Link}
+          to={toOrgPath('/my-tickets')}
+          onClick={handleClose}
+        >
+          <ConfirmationNumberOutlinedIcon fontSize="small" />
+          <Typography variant="body2">Vé của tôi</Typography>
+        </MenuItem>
+        <MenuItem
+          component={Link}
+          to={toOrgPath('/settings')}
+          onClick={handleClose}
+          sx={{
+            borderTop: "none",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <SettingsIcon fontSize="small" />
+          <Typography variant="body2">Cài đặt</Typography>
+        </MenuItem>
         {isGuestVerificationLevel && (
           <MenuItem
             component={Link}
@@ -202,16 +228,15 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
               color: "warning.dark",
             }}
           >
-            <PersonIcon fontSize="small" />
+            <VerifiedUserIcon fontSize="small" />
             <Typography variant="body2">Xác thực tài khoản</Typography>
           </MenuItem>
         )}
 
-        <Divider sx={{ borderColor: "divider", mx: 1.5, my: 0.5 }} />
+        <Divider sx={{ borderColor: "divider" }} />
 
         <MenuItem
           onClick={handleLogout}
-          to="/auth/login"
           sx={{
             color: "error.main",
           }}

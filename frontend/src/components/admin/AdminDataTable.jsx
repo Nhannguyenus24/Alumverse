@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react';
+import React, { useState, Fragment } from 'react';
 import {
   Box,
   Paper,
@@ -19,7 +19,7 @@ import {
   Tooltip,
   Collapse,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import SearchBar from '../SearchBar';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -34,6 +34,7 @@ const AdminDataTable = ({
   onPageChange,
   onRowsPerPageChange,
   onSearchChange,
+  onSearchKeyDown,
   searchValue,
   searchPlaceholder = 'Tìm kiếm...',
   actions,
@@ -73,27 +74,19 @@ const AdminDataTable = ({
           justifyContent="space-between"
         >
           {/* Search */}
-          <TextField
-            size="small"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={searchPlaceholder}
-            sx={{ 
-              maxWidth: { md: 320 },
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: alpha(theme.palette.action.hover, 0.5),
-                '&:hover': { bgcolor: theme.palette.action.hover },
-              }
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
+          {onSearchChange ? (
+            <SearchBar
+              value={searchValue}
+              onChange={onSearchChange}
+              onKeyDown={onSearchKeyDown}
+              placeholder={searchPlaceholder}
+              sx={{
+                maxWidth: { md: 400 },
+              }}
+            />
+          ) : (
+            <Box sx={{ flex: 1 }} />
+          )}
 
           {/* Actions & Filters */}
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
@@ -130,15 +123,26 @@ const AdminDataTable = ({
         <Table stickyHeader size="medium">
           <TableHead>
             <TableRow>
-              {renderExpandableRow && <TableCell sx={{ width: 48, bgcolor: (t) => t.palette.mode === 'light' ? '#F4F6F8' : t.palette.background.default }} />}
+              {renderExpandableRow && (
+                <TableCell
+                  sx={{
+                    width: 48,
+                    bgcolor: (t) =>
+                      t.palette.mode === 'light'
+                        ? 'primary.main'
+                        : 'primary.dark',
+                    color: 'primary.contrastText',
+                  }}
+                />
+              )}
               {columns.map((column) => (
                 <TableCell
                   key={column.id}
                   align={column.align || 'left'}
                   sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? '#F4F6F8' : t.palette.background.default,
+                    bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
                     fontWeight: 700,
-                    color: 'text.secondary',
+                    color: 'primary.contrastText',
                     fontSize: 13,
                     py: 2,
                     textTransform: 'uppercase',
@@ -226,4 +230,4 @@ const AdminDataTable = ({
   );
 };
 
-export default AdminDataTable;
+export default React.memo(AdminDataTable);

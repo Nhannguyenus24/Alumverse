@@ -15,10 +15,12 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Network directory search (Kết nối) — members within the authenticated user's organization.
  */
+@Tag(name = "Chat > Network Search", description = "API endpoints for searching members within the network")
 @RestController
 @RequestMapping("/api/chat/network")
 @Validated
@@ -33,19 +35,17 @@ public class NetworkMemberSearchController {
      * @param fullName   optional; partial match on global_profiles.full_name
      * @param program    optional; partial match on organization_members.program
      * @param major      optional; partial match on organization_members.major
-     * @param startYear  optional; exact match on academic_records.start_year
      */
     @GetMapping("/members")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NetworkMemberSearchItemResponse>>>> searchMembers(
             @RequestParam(required = false) String fullName,
             @RequestParam(required = false) String program,
             @RequestParam(required = false) String major,
-            @RequestParam(required = false) Integer startYear,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "9") @Min(1) int size) {
 
         return this.networkMemberSearchService
-                .searchMembers(fullName, program, major, startYear, page, size)
+                .searchMembers(fullName, program, major, page, size)
                 .map(result -> ResponseEntity.ok(
                         new ApiResponse<>("Network members retrieved successfully", result)));
     }

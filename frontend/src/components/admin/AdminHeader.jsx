@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Link as RouterLink } from 'react-router';
 import {
   AppBar,
@@ -16,16 +16,23 @@ import {
   Link as MuiLink,
   alpha,
   useTheme,
+  Select,
+  FormControl,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  const [, startTransition] = useTransition();
+
+  const { organizations, activeOrgId, setActiveOrgId } = useAdminSystemContext();
 
   const handleOpenUserMenu = (event) => setAnchorEl(event.currentTarget);
   const handleCloseUserMenu = () => setAnchorEl(null);
@@ -38,6 +45,8 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
   const SIDEBAR_WIDTH = 280;
   const SIDEBAR_COLLAPSED_WIDTH = 88;
   const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
+
+  const showOrgSelector = organizations && organizations.length > 0;
 
   return (
     <AppBar
@@ -59,7 +68,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
     >
       <Toolbar sx={{ justifyContent: 'space-between', minHeight: 70 }}>
         {/* Left Side: Toggle (Mobile Only) & Breadcrumbs */}
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
           {/* Mobile Toggle */}
           <IconButton
             edge="start"
@@ -85,7 +94,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               Quản trị
             </MuiLink>
             
-            {breadcrumbs ? (
+            {breadcrumbs && (
               breadcrumbs.map((crumb, idx) => (
                 crumb.path || crumb.href ? (
                   <MuiLink
@@ -104,13 +113,82 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                   </Typography>
                 )
               ))
-            ) : (
-              <Typography color="text.primary" sx={{ fontSize: 14, fontWeight: 600 }}>
-                Bảng điều khiển
-              </Typography>
             )}
           </Breadcrumbs>
         </Stack>
+
+        {/* Center: Organization Selector */}
+        {showOrgSelector && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              mx: 2,
+              flexShrink: 0,
+            }}
+          >
+            <FormControl variant="standard" size="small" sx={{ minWidth: 160 }}>
+              <Select
+                value={activeOrgId || ''}
+                onChange={(e) => startTransition(() => setActiveOrgId(e.target.value))}
+                disableUnderline
+                id="admin-org-selector"
+                inputProps={{ 'aria-label': 'Chọn tổ chức' }}
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  '& .MuiSelect-select': {
+                    py: 0.5,
+                    px: 1,
+                    borderRadius: 1.5,
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    color: 'primary.main',
+                    '&:focus': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.12),
+                      borderRadius: 1.5,
+                    },
+                  },
+                  '& .MuiSelect-icon': {
+                    color: 'primary.main',
+                  },
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      mt: 1,
+                      borderRadius: 2,
+                      border: `1px solid ${theme.palette.divider}`,
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                      '& .MuiMenuItem-root': {
+                        fontSize: 13,
+                        fontWeight: 600,
+                        borderRadius: 1,
+                        mx: 0.5,
+                        my: 0.25,
+                        '&.Mui-selected': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: 'primary.main',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.15),
+                          },
+                        },
+                      },
+                    },
+                  },
+                }}
+              >
+                {organizations.map((org) => (
+                  <MenuItem key={org.id} value={org.id}>
+                    {org.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        )}
 
         {/* Right Side: Profile Dropdown Only */}
         <Stack direction="row" alignItems="center">

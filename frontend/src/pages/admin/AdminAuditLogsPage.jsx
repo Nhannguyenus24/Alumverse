@@ -16,8 +16,6 @@ import {
   Stack,
   TextField,
   Typography,
-  alpha,
-  useTheme,
   Grid,
 } from '@mui/material';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -27,7 +25,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDataTable from '../../components/admin/AdminDataTable';
-import { useAdminSystemContext } from '../../stores/AdminStore';
+import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { formatDateTimeWithSeconds } from '../../utils/dateFormatter';
 import { stringifyJson, truncateText } from '../../utils/stringUtils';
 
@@ -45,14 +43,13 @@ const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE'
 
 
 const AdminAuditLogsPage = () => {
-  const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Nhật ký hệ thống', active: true }]);
   }, [setBreadcrumbs]);
-  const { loading, auditLogs } = useAdminSystemContext();
+  const { loading, auditLogs } = useAdminAuditLogsData();
 
   const [dateFrom, setDateFrom] = useState('');
   const [entityFilter, setEntityFilter] = useState([]);
@@ -155,7 +152,7 @@ const AdminAuditLogsPage = () => {
   ];
 
   const renderExpandableRow = (log) => (
-    <Box sx={{ p: 2, bgcolor: alpha(theme.palette.action.hover, 0.3), borderRadius: 2 }}>
+    <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Thông tin yêu cầu</Typography>
@@ -228,7 +225,7 @@ const AdminAuditLogsPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Nhật ký hệ thống
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
@@ -239,7 +236,6 @@ const AdminAuditLogsPage = () => {
           variant="outlined"
           startIcon={<FileDownloadOutlinedIcon />}
           onClick={handleExportCsv}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
           Xuất dữ liệu
         </Button>

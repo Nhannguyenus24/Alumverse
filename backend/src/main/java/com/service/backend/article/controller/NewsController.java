@@ -6,6 +6,7 @@ import com.service.backend.article.dto.NewsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.article.service.NewsService;
 import com.service.backend.shared.dto.ApiResponse;
+import com.service.backend.shared.annotations.PublicEndpoint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -15,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > News", description = "API endpoints for campus and alumni news")
 @RestController
 @RequestMapping("/api/articles/news")
 @RequiredArgsConstructor
@@ -48,6 +51,7 @@ public class NewsController {
                         .ok(new ApiResponse<>("News deleted successfully", null)));
     }
 
+    @PublicEndpoint
     @GetMapping("/{id}")
     public Mono<ResponseEntity<ApiResponse<NewsResponse>>> getById(@PathVariable @Min(1) Integer id) {
         return newsService.getById(id)
@@ -55,6 +59,7 @@ public class NewsController {
                         .ok(new ApiResponse<>("News retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/slug/{slug}")
     public Mono<ResponseEntity<ApiResponse<NewsResponse>>> getBySlug(@PathVariable @NotBlank String slug) {
         return newsService.getBySlug(slug)
@@ -62,6 +67,7 @@ public class NewsController {
                         .ok(new ApiResponse<>("News retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> getAll(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -71,6 +77,7 @@ public class NewsController {
                         .ok(new ApiResponse<>("News retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/published")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> getPublished(
             @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -80,6 +87,7 @@ public class NewsController {
                         .ok(new ApiResponse<>("Published news retrieved successfully", response)));
     }
 
+    @PublicEndpoint
     @GetMapping("/search")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<NewsResponse>>>> search(
             @RequestParam @NotBlank String keyword,

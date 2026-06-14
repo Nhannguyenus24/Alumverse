@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { NavLink, useOutletContext } from 'react-router';
-import { Box, Button, Grid, Skeleton, Stack, Typography, alpha, useTheme } from '@mui/material';
+import {
+  Box, Button, IconButton, MenuItem, Select, Skeleton, Stack,
+  Tooltip, Typography, alpha, useTheme,
+} from '@mui/material';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
@@ -8,26 +11,61 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import MarkChatUnreadOutlinedIcon from '@mui/icons-material/MarkChatUnreadOutlined';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
+import RefreshOutlinedIcon from '@mui/icons-material/RefreshOutlined';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
 import AdminDashboardSections from '../../components/admin/AdminDashboardSections';
 import Chart from '../../components/Chart';
 import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } from '../../stores/AdminStore';
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
+import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';
 import { useAuth } from '../../hooks/useAuth';
+
+const INTERVALS = [
+  { value: '0', label: 'Không tự làm mới' },
+  { value: '1', label: 'Mỗi 1 phút' },
+  { value: '5', label: 'Mỗi 5 phút' },
+  { value: '15', label: 'Mỗi 15 phút' },
+];
 
 const AdminDashboardPage = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
-  const { loading, metrics, timeline, organizations } = useAdminSystemContext();
+  const { loading: systemLoading, organizations } = useAdminSystemContext();
+  const { loading: dashboardLoading, metrics, timeline, reload } = useAdminDashboardData();
+  const loading = systemLoading || dashboardLoading;
   const { allUsers } = useAdminUsersContext();
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
   const { setBreadcrumbs } = useOutletContext();
 
+  const [refreshInterval, setRefreshInterval] = useState('0');
+  const [sectionRefreshKey, setSectionRefreshKey] = useState(0);
+  const [lastRefreshed, setLastRefreshed] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const intervalRef = useRef(null);
+
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Dashboard', active: true }]);
   }, [setBreadcrumbs]);
+
+  const handleRefresh = useCallback(() => {
+    reload?.();
+    setSectionRefreshKey((k) => k + 1);
+    setLastRefreshed(new Date());
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  }, [reload]);
+
+  useEffect(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (refreshInterval === '0') return;
+    const ms = Number(refreshInterval) * 60 * 1000;
+    intervalRef.current = setInterval(handleRefresh, ms);
+    return () => clearInterval(intervalRef.current);
+  }, [refreshInterval, handleRefresh]);
 
   const chartData = Array.isArray(timeline) ? timeline : [];
   const totalUsers = metrics?.totalUsers ?? aggregates.user.totalUsers;
@@ -38,41 +76,92 @@ const AdminDashboardPage = () => {
     return (
       <Stack spacing={3}>
         <Skeleton variant="rounded" height={100} />
-        <Grid container spacing={3}>
-          {[1, 2, 3, 4].map((i) => (
-            <Grid item xs={12} sm={6} md={3} key={i}>
+        <Stack direction="row" flexWrap="wrap" spacing={3} useFlexGap>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Box key={i} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } }}>
               <Skeleton variant="rounded" height={140} />
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Stack>
         <Skeleton variant="rounded" height={400} />
       </Stack>
     );
   }
 
-  return (
-    <Box>
-      {/* Welcome Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -1 }}>
-          Chào mừng trở lại, {user?.fullName || user?.userName} 👋
-        </Typography>
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-          Đây là tổng quan về hoạt động của hệ thống HCMUS Alumni ngày hôm nay.
-        </Typography>
-      </Box>
+  const donationsLast30Days = metrics?.donationsLast30Days ?? 0;
+  const donationsFormatted = Number(donationsLast30Days).toLocaleString('vi-VN', {
+    style: 'currency', currency: 'VND', maximumFractionDigits: 0,
+  });
 
-      {/* Primary Metrics Grid */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 3,
-          mb: 4,
-          '& > *': {
-            flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' },
-          },
-        }}
+  return (
+    <Stack spacing={4}>
+      {/* Welcome Header + Refresh Controls */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        spacing={2}
+      >
+        <Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            Chào mừng trở lại, {user?.fullName || user?.userName}!
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            Đây là tổng quan về hoạt động của hệ thống AlumVerse ngày hôm nay.
+          </Typography>
+        </Box>
+
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+          {lastRefreshed && (
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+              {lastRefreshed.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </Typography>
+          )}
+          <Tooltip title="Làm mới ngay">
+            <IconButton
+              size="small"
+              onClick={handleRefresh}
+              sx={{
+                color: 'primary.main',
+                '& svg': {
+                  transition: 'transform 0.1s',
+                  animation: refreshing ? 'dashboardSpin 0.8s linear infinite' : 'none',
+                  '@keyframes dashboardSpin': {
+                    from: { transform: 'rotate(0deg)' },
+                    to: { transform: 'rotate(360deg)' },
+                  },
+                },
+              }}
+            >
+              <RefreshOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Select
+            value={refreshInterval}
+            onChange={(e) => setRefreshInterval(e.target.value)}
+            size="small"
+            sx={{
+              fontSize: 12, fontWeight: 700,
+              minWidth: 110,
+              '& .MuiSelect-select': { py: 0.75, px: 1.5 },
+            }}
+          >
+            {INTERVALS.map(({ value, label }) => (
+              <MenuItem key={value} value={value} sx={{ fontSize: 13, fontWeight: 600 }}>
+                {label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Stack>
+      </Stack>
+
+      {/* Primary Metrics */}
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        spacing={3}
+        useFlexGap
+        sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } } }}
       >
         <AdminDashboardMetricTile
           label="Tổng thành viên"
@@ -84,7 +173,6 @@ const AdminDashboardPage = () => {
           label="Bài viết chờ duyệt"
           value={pendingPosts}
           icon={<MarkChatUnreadOutlinedIcon />}
-          valueColor="warning.main"
           caption="Cần xử lý ngay"
         />
         <AdminDashboardMetricTile
@@ -99,22 +187,23 @@ const AdminDashboardPage = () => {
           icon={<TrendingUpIcon />}
           caption="Bản ghi mới hôm nay"
         />
-      </Box>
+        <AdminDashboardMetricTile
+          label="Chờ xác minh"
+          value={(metrics?.pendingVerifications || 0).toLocaleString()}
+          icon={<VerifiedUserOutlinedIcon />}
+          caption="Yêu cầu xác minh"
+        />
+        <AdminDashboardMetricTile
+          label="Quyên góp (30 ngày)"
+          value={donationsFormatted}
+          icon={<VolunteerActivismOutlinedIcon />}
+          caption={`${(metrics?.totalDonationsCount || 0).toLocaleString()} lượt`}
+        />
+      </Stack>
 
-      <Box
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 3,
-        }}
-      >
-        {/* Main Chart Section */}
-        <Box
-          sx={{
-            flex: { xs: '1 1 100%', lg: '3 1 0' },
-            minWidth: 0,
-          }}
-        >
+      {/* Main Chart + Sidebar */}
+      <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3}>
+        <Box flex={3} minWidth={0}>
           <Box
             sx={{
               p: 3,
@@ -126,8 +215,8 @@ const AdminDashboardPage = () => {
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 800 }}>Biểu đồ hoạt động</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>7 NGÀY GẦN NHẤT</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>Biểu đồ hoạt động</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>7 ngày qua</Typography>
             </Box>
             <Chart
               type="area"
@@ -140,20 +229,14 @@ const AdminDashboardPage = () => {
           </Box>
         </Box>
 
-        {/* Quick Actions Sidebar */}
-        <Box
-          sx={{
-            flex: { xs: '1 1 100%', lg: '1 1 0' },
-            minWidth: 0,
-          }}
-        >
+        <Box flex={1} minWidth={0}>
           <Stack spacing={3}>
             <Box
               sx={{
                 p: 3,
-                bgcolor: alpha(theme.palette.primary.main, 0.03),
+                bgcolor: 'background.paper',
                 borderRadius: 3,
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                border: `1px solid ${theme.palette.divider}`,
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>
@@ -163,10 +246,10 @@ const AdminDashboardPage = () => {
                 <Button
                   component={NavLink}
                   to="/admin/users"
-                  variant="contained"
+                  variant="outlined"
                   fullWidth
                   startIcon={<GroupsOutlinedIcon />}
-                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                   disabled={!isAdmin}
                 >
                   Quản lý người dùng
@@ -177,9 +260,9 @@ const AdminDashboardPage = () => {
                   variant="outlined"
                   fullWidth
                   startIcon={<ForumOutlinedIcon />}
-                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: 'background.paper' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                 >
-                  Duyệt bài viết Diễn đàn
+                  Duyệt bài viết diễn đàn
                 </Button>
                 <Button
                   component={NavLink}
@@ -187,7 +270,7 @@ const AdminDashboardPage = () => {
                   variant="outlined"
                   fullWidth
                   startIcon={<GavelOutlinedIcon />}
-                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 2, bgcolor: 'background.paper' }}
+                  sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                   disabled={!isAdmin}
                 >
                   Xem nhật ký hệ thống
@@ -195,33 +278,30 @@ const AdminDashboardPage = () => {
               </Stack>
             </Box>
 
-            {/* System Status or Recent Updates */}
             <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2 }}>Trạng thái hệ thống</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>Trạng thái hệ thống</Typography>
               <Stack spacing={2}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">Cơ sở dữ liệu</Typography>
-                  <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>ỔN ĐỊNH</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">Máy chủ Email</Typography>
-                  <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>ỔN ĐỊNH</Typography>
-                </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">Lưu trữ hình ảnh</Typography>
-                  <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>ỔN ĐỊNH</Typography>
-                </Box>
+                {[['Cơ sở dữ liệu'], ['Máy chủ Email'], ['Lưu trữ hình ảnh']].map(([label]) => (
+                  <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">{label}</Typography>
+                    <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>
+                      ỔN ĐỊNH
+                    </Typography>
+                  </Box>
+                ))}
               </Stack>
             </Box>
           </Stack>
         </Box>
-      </Box>
+      </Stack>
 
-      {/* Secondary Detailed Sections */}
-      <Box sx={{ mt: 4 }}>
-        <AdminDashboardSections aggregates={aggregates} forumStats={statistics} />
-      </Box>
-    </Box>
+      {/* Detailed Sections — key forces remount of all section hooks on refresh */}
+      <AdminDashboardSections
+        key={sectionRefreshKey}
+        aggregates={aggregates}
+        forumStats={statistics}
+      />
+    </Stack>
   );
 };
 

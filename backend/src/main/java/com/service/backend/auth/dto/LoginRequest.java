@@ -27,4 +27,10 @@ public class LoginRequest {
     @NotBlank(message = "Password is required")
     @Schema(example = "Student@2024")
     private String password;
+
+    @Schema(example = "true")
+    private boolean rememberMe;
+
+    @NotBlank(message = "Recaptcha token is required")
+    private String recaptchaToken;
 }

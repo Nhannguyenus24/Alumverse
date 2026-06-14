@@ -1,5 +1,6 @@
 package com.service.backend.user.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +23,8 @@ import com.service.backend.user.dao.PeerVerificationRepository;
 import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.shared.service.FileUploadService;
+import com.service.backend.shared.service.OCRService;
+import reactor.core.scheduler.Schedulers;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -48,20 +51,33 @@ public class UserService {
     private final PeerVerificationRepository peerVerificationRepository;
     private final FileUploadService fileUploadService;
     private final NotificationService notificationService;
+    private final OCRService ocrService;
 
+    @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
                 .flatMap(fileUrl -> {
-                    // member_id in verification_requests corresponds to user_id in users table according to AdminUserRepository.findAllVerificationRequests join
-                    // where "JOIN users u ON vr.member_id = u.id"
-                        return authRepository.insertVerificationRequest(
+                    return authRepository.insertVerificationRequest(
                             currentUserId.intValue(),
                             fileUrl,
                             request.getDocumentType() != null ? request.getDocumentType().getValue() : null
-                        ).then();
-                });
+                    ).doOnSuccess(requestId -> {
+                        if (requestId != null) {
+                            String localPath = fileUploadService.getLocalPath(fileUrl);
+                            if (localPath != null) {
+                                Mono.fromCallable(() -> ocrService.extractTextFromFile(localPath))
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .flatMap(text -> authRepository.updateAiSummary(requestId, text))
+                                        .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
+                                        .subscribe();
+                            }
+                        }
+                    });
+                }).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevel(currentUserId.intValue(), 1))
+                .then();
     }
 
+    @Transactional
     public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
@@ -87,10 +103,12 @@ public class UserService {
                                                 notificationService.createNotificationAsync(
                                                         verifierUserId,
                                                         "Yêu cầu xác thực đồng nghiệp",
-                                                        String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId())
+                                                        String.format("Người dùng %s đã gửi yêu cầu xác thực đồng nghiệp cho bạn.", targetMember.getUserId()),
+                                                        "/profile/" + targetMember.getUserId()
                                                 );
                                             }
-                                        });
+                                        })
+                                        .then(userOrganizationMemberRepository.updateVerificationLevel(targetMember.getUserId(), 1));
                             });
                 })
                 .then();
@@ -120,6 +138,7 @@ public class UserService {
                 .then();
     }
 
+    @Transactional
     public Mono<Void> directVerify(Long currentUserId, Integer organizationId, Integer targetUserId) {
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
@@ -162,6 +181,14 @@ public class UserService {
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + currentUserId))))
                 .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
+    }
+
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
+        return userProfileRepository.findProfileByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + userId))))
+                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
@@ -240,6 +267,7 @@ public class UserService {
                 .doOnSuccess(r -> logger.info("updateMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
+    @Transactional
     public Mono<Void> updateMyProfile(Long currentUserId, UpdateMyProfileRequest request) {
         Integer userId = currentUserId.intValue();
 
@@ -251,9 +279,12 @@ public class UserService {
                         request.getOrganizationId(),
                         userId,
                 JsonUtils.toJson(request.getProgram()),
+                JsonUtils.toJson(request.getStartedYear()),
                 JsonUtils.toJson(request.getGraduatedYear()),
                 JsonUtils.toJson(request.getGraduationStatus()),
-                JsonUtils.toJson(request.getMajor()))
+                JsonUtils.toJson(request.getMajor()),
+                JsonUtils.toJson(request.getFaculty()),
+                JsonUtils.toJson(request.getDepartment()))
                 .flatMap(updatedRows -> {
                     if (updatedRows == null || updatedRows <= 0) {
                         return Mono.error(new ApplicationException(ErrorCode.ORGANIZATION_MEMBER_NOT_FOUND));
@@ -302,10 +333,13 @@ public class UserService {
                 .id(member.getId())
                 .organizationId(member.getOrganizationId())
                 .userId(member.getUserId())
+                .startedYear(parseStringList(member.getStartedYear()))
                 .graduatedYear(parseIntegerList(member.getGraduatedYear()))
-                .graduationStatus(parseStringList(member.getGraduationStatus() != null ? member.getGraduationStatus().getValue() : null))
+                .graduationStatus(parseStringList(member.getGraduationStatus() != null ? member.getGraduationStatus() : null))
                 .program(parseStringList(member.getProgram()))
                 .major(parseStringList(member.getMajor()))
+                .faculty(parseStringList(member.getFaculty()))
+                .department(parseStringList(member.getDepartment()))
                 .verificationLevel(member.getVerificationLevel())
                 .isTrustedVerifier(member.getIsTrustedVerifier())
                 .status(member.getStatus() != null ? member.getStatus().getValue() : null)

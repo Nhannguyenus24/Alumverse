@@ -9,7 +9,7 @@ import com.service.backend.chat.dto.ConversationRequestLatestMessageResponse;
 import com.service.backend.chat.dto.ConversationRequestSearchItemResponse;
 import com.service.backend.chat.dto.RespondConversationRequestResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.entity.ChatConversationRequest;
 import com.service.backend.shared.entity.ChatGroup;
 import com.service.backend.shared.entity.ChatGroupMember;
@@ -41,6 +41,7 @@ public class ChatConversationRequestService {
     private final ChatMessageRepository chatMessageRepository;
     private final ChatGroupRepository chatGroupRepository;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
+    private final UserBlockService userBlockService;
 
     /**
      * Returns connection status and the current member's latest message in the request chat group.
@@ -204,6 +205,15 @@ public class ChatConversationRequestService {
                     "Cannot send a conversation request to yourself"));
         }
 
+        return userBlockService.assertCommunicationNotBlocked(currentMemberId, targetMemberId)
+                .then(createConversationRequestAfterBlockCheck(currentMemberId, targetMemberId, message));
+    }
+
+    private Mono<Long> createConversationRequestAfterBlockCheck(
+            Long currentMemberId,
+            Long targetMemberId,
+            String message) {
+
         long memberLowId = Math.min(currentMemberId, targetMemberId);
         long memberHighId = Math.max(currentMemberId, targetMemberId);
 
@@ -357,17 +367,23 @@ public class ChatConversationRequestService {
         String statusFilter = StringUtils.hasText(status) ? status.trim().toUpperCase() : null;
         int offset = page * size;
 
+        if (ConversationRequestStatus.ACCEPTED.name().equals(statusFilter)) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.CONVERSATION_REQUEST_SEARCH_STATUS_NOT_ALLOWED,
+                    "Searching by ACCEPTED status is not allowed; use /api/chat/connections/search instead"));
+        }
+
         log.info("Searching incoming conversation requests userId={} fullName={} status={} page={} size={}",
                 currentUserId, fullNamePattern != null, statusFilter, page, size);
 
         Mono<Long> totalMono = chatConversationRequestRepository.countIncomingRequests(
                 currentUserId, fullNamePattern, statusFilter);
 
-        return chatConversationRequestRepository
-                .searchIncomingRequests(currentUserId, fullNamePattern, statusFilter, size, offset)
-                .collectList()
-                .zipWith(totalMono)
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
+        return PaginationHelper.paginate(
+                chatConversationRequestRepository.searchIncomingRequests(currentUserId, fullNamePattern, statusFilter, size, offset),
+                totalMono,
+                page,
+                size);
     }
 
     private static String toFullNameContainsPattern(String raw) {

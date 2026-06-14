@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateSessionStatus } from '../../utils/api';
+import { updateMentorSessionStatus } from '../../utils/api';
 
 const callUpdate = async ({ sessionId, status, meetingLink }) => {
-  const res = await updateSessionStatus(sessionId, { status, meetingLink });
+  const res = await updateMentorSessionStatus(sessionId, { status, meetingLink });
   return res?.data?.data ?? null;
 };
 

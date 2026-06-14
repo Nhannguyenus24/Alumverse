@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useParams } from 'react-router';
-import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -10,6 +10,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import Breadcrumb from '../../components/Breadcrumb';
@@ -26,6 +27,9 @@ import { useReactToForumPost } from '../../hooks/forum/useReactToForumPost';
 import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
+import { useSubscribeToTopic } from '../../hooks/forum/useSubscribeToTopic';
+import { useForumTopicSubscriptionStatus } from '../../hooks/forum/useForumTopicSubscriptionStatus';
+import { useReportForumPost } from '../../hooks/forum/useReportForumPost';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -34,9 +38,10 @@ import ConfirmDialog from '../../components/ConfirmDialog';
 import WYSIWYG from '../../components/WYSIWYG';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { toPlainText } from '../../utils/stringUtils';
+import ReportPostDialog from '../../components/forum/ReportPostDialog';
 
-const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit }) => {
-  const { showError } = useNotification();
+const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
+  const { showError, showSuccess } = useNotification();
   const reactErrShownRef = useRef(false);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const { likes, isPending: likesPending, isError: likesError } = useForumPostReactionCount(reply.id);
@@ -154,16 +159,21 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <MenuItem
-                onClick={() => {
-                  handleCloseActionMenu();
-                  onReply?.(reply);
-                }}
-              >
-                <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                Trả lời
-              </MenuItem>
-              {canEdit && (
+              <Tooltip title={!memberId ? "Phải đăng nhập mới có thể bình luận" : ""} placement="left" arrow>
+                <span>
+                  <MenuItem
+                    disabled={!memberId}
+                    onClick={() => {
+                      handleCloseActionMenu();
+                      onReply?.(reply);
+                    }}
+                  >
+                    <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                    Trả lời
+                  </MenuItem>
+                </span>
+              </Tooltip>
+          {canEdit && (
                 <MenuItem
                   onClick={() => {
                     handleCloseActionMenu();
@@ -185,6 +195,18 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                 >
                   <DeleteOutlineOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
                   Xóa
+                </MenuItem>
+              )}
+              {!isOwn && (
+                <MenuItem
+                  onClick={() => {
+                    handleCloseActionMenu();
+                    onReport?.(reply);
+                  }}
+                  sx={{ color: 'warning.main' }}
+                >
+                  <FlagOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                  Báo cáo
                 </MenuItem>
               )}
             </Menu>
@@ -276,12 +298,24 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                 {likesDisplay}
               </Typography>
             </Button>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
-              <Typography variant="caption" color="text.secondary">
-                Chia sẻ
-              </Typography>
-            </Box>
+            <Button
+              size="small"
+              variant="text"
+              onClick={() => {
+                const url = window.location.href;
+                navigator.clipboard.writeText(url).then(() => {
+                  showSuccess('Đã sao chép liên kết');
+                });
+              }}
+              sx={{ minWidth: 0, p: 0, color: 'text.secondary', textTransform: 'none' }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+                <Typography variant="caption" color="text.secondary">
+                  Chia sẻ
+                </Typography>
+              </Box>
+            </Button>
           </Box>
           <Box />
         </Box>
@@ -300,13 +334,13 @@ const FALLBACK_THREAD = {
 const ForumAlumniThreadPage = () => {
   const location = useLocation();
   const navigate = useOrgNavigate();
-  const { threadId } = useParams();
+  const { threadId, pageId } = useParams();
   const topicId = useMemo(() => {
     const id = parseInt(threadId, 10);
     return Number.isNaN(id) ? null : id;
   }, [threadId]);
 
-  const { user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
   const [editorValue, setEditorValue] = useState('');
@@ -320,7 +354,12 @@ const ForumAlumniThreadPage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [postToReport, setPostToReport] = useState(null);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = parseInt(pageId, 10);
+    return !isNaN(p) && p > 0 ? p - 1 : 0;
+  });
 
   const organizationId = organization?.id ?? null;
   const { categories } = useForumCategories(organizationId);
@@ -355,14 +394,21 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
+  const { isSubscribed, isPending: subStatusPending } = useForumTopicSubscriptionStatus(topicId, memberId);
+  const { toggleSubscription, isPending: subTogglePending } = useSubscribeToTopic();
+  const { reportPost, isPending: reportPending } = useReportForumPost();
   const { showSuccess, showError, showWarning } = useNotification();
   const hasShownPostsErrorRef = useRef(false);
   const hasShownOpeningErrorRef = useRef(false);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCurrentPage(0);
-  }, [topicId]);
+    const p = parseInt(pageId, 10);
+    if (!isNaN(p) && p > 0) {
+      setCurrentPage(p - 1);
+    } else {
+      setCurrentPage(0);
+    }
+  }, [pageId]);
 
   useEffect(() => {
     if (!pageInfo?.totalPage || pageInfo.totalPage <= 0) return;
@@ -388,11 +434,11 @@ const ForumAlumniThreadPage = () => {
     const firstPost = posts?.[0] ?? null;
 
     const authorFromPost = firstPost?.authorMemberId
-      ? `Thành viên #${firstPost.authorMemberId}`
+      ? (String(firstPost.authorMemberId) === String(user?.id) ? 'Tôi' : `Thành viên #${firstPost.authorMemberId}`)
       : null;
     const authorFromTopic =
       topicSummary?.createdByMemberId != null
-        ? `Thành viên #${topicSummary.createdByMemberId}`
+        ? (String(topicSummary.createdByMemberId) === String(user?.id) ? 'Tôi' : `Thành viên #${topicSummary.createdByMemberId}`)
         : null;
 
     const createdFromPost = firstPost?.createdAt ? formatDateTime(firstPost.createdAt, '—') : null;
@@ -404,20 +450,23 @@ const ForumAlumniThreadPage = () => {
       role: 'Alumni',
       createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
     };
-  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride]);
+  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride, user?.id]);
 
   const replies = useMemo(
     () =>
-      (posts ?? []).map((post) => ({
-        id: post.id,
-        answerToPostId: post.answerToPostId ?? null,
-        authorMemberId: post.authorMemberId ?? null,
-        authorName: `Thành viên #${post.authorMemberId ?? '—'}`,
-        role: 'Alumni',
-        createdAt: formatDateTime(post.createdAt, '—'),
-        content: post.content ?? '',
-      })),
-    [posts]
+      (posts ?? []).map((post) => {
+        const isOwn = post.authorMemberId != null && String(post.authorMemberId) === String(user?.id);
+        return {
+          id: post.id,
+          answerToPostId: post.answerToPostId ?? null,
+          authorMemberId: post.authorMemberId ?? null,
+          authorName: isOwn ? 'Tôi' : `Thành viên #${post.authorMemberId ?? '—'}`,
+          role: 'Alumni',
+          createdAt: formatDateTime(post.createdAt, '—'),
+          content: post.content ?? '',
+        };
+      }),
+    [posts, user?.id]
   );
 
   const replyMap = useMemo(() => {
@@ -474,6 +523,35 @@ const ForumAlumniThreadPage = () => {
     setIsConfirmDeleteOpen(false);
     setPostToDelete(null);
   }, [deletePending]);
+
+  const handleReportPost = useCallback((reply) => {
+    if (!reply?.id) return;
+    setPostToReport(reply);
+    setIsReportOpen(true);
+  }, []);
+
+  const handleCloseReport = useCallback(() => {
+    if (reportPending) return;
+    setIsReportOpen(false);
+    setPostToReport(null);
+  }, [reportPending]);
+
+  const handleConfirmReport = async ({ reason, description }) => {
+    if (!postToReport?.id || !user?.id) return;
+    try {
+      await reportPost({
+        id: postToReport.id,
+        reporterMemberId: user.id,
+        reason,
+        description,
+      });
+      showSuccess('Gửi báo cáo thành công.');
+      setIsReportOpen(false);
+      setPostToReport(null);
+    } catch (err) {
+      showError(err?.response?.data?.message ?? err?.message ?? 'Không thể gửi báo cáo.');
+    }
+  };
 
   const handleEditPost = useCallback((reply) => {
     if (!reply?.id) return;
@@ -574,6 +652,19 @@ const ForumAlumniThreadPage = () => {
     }
   }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
 
+  const handleToggleSubscription = async () => {
+    if (!topicId || !memberId) {
+      showWarning('Vui lòng đăng nhập để thực hiện chức năng này.');
+      return;
+    }
+    try {
+      await toggleSubscription({ topicId, memberId });
+      showSuccess(isSubscribed ? 'Đã hủy theo dõi chủ đề.' : 'Đã theo dõi chủ đề.');
+    } catch (err) {
+      showError('Không thể thực hiện yêu cầu.');
+    }
+  };
+
   const filters = useMemo(() => {
     const parentCategories = (categories ?? []).filter((c) => c.parentId == null);
     return [
@@ -603,6 +694,15 @@ const ForumAlumniThreadPage = () => {
         showSuccess('Đăng bài viết thành công.');
       }
       setEditorValue('');
+      
+      // Jump to the last page to see the new post
+      if (pageInfo) {
+        const newTotal = pageInfo.totalItem + 1;
+        const newLastPage = Math.max(0, Math.ceil(newTotal / pageInfo.pageSize) - 1);
+        if (currentPage !== newLastPage) {
+          navigate(`/forum/alumni/career/${threadId}/page/${newLastPage + 1}`, { state: location.state });
+        }
+      }
     } catch (err) {
       const message =
         err?.response?.data?.message ??
@@ -649,9 +749,10 @@ const ForumAlumniThreadPage = () => {
   );
 
   const handlePaginationChange = useCallback((_, nextPage) => {
-    setCurrentPage(nextPage - 1);
+    setReplyTo(null);
+    navigate(`/forum/alumni/career/${threadId}/page/${nextPage}`, { state: location.state });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [navigate, threadId, location.state]);
 
   const selectedFilterId = useMemo(() => {
     const allFilterIds = filters.map((f) => f.id);
@@ -790,14 +891,16 @@ const ForumAlumniThreadPage = () => {
                         variant="contained"
                         size="small"
                         startIcon={<NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={handleToggleSubscription}
+                        disabled={subStatusPending || subTogglePending}
                         sx={{
-                          bgcolor: '#374151',
+                          bgcolor: isSubscribed ? 'primary.main' : '#374151',
                           color: 'white',
-                          '&:hover': { bgcolor: '#4B5563' },
+                          '&:hover': { bgcolor: isSubscribed ? 'primary.dark' : '#4B5563' },
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        Theo dõi
+                        {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
                       </Button>
                       <Button
                         fullWidth
@@ -815,21 +918,26 @@ const ForumAlumniThreadPage = () => {
                       >
                         Sửa
                       </Button>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                        onClick={() => {
-                          editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-                          const input = editorRef.current?.querySelector?.('textarea');
-                          input?.focus?.();
-                        }}
-                        sx={{ whiteSpace: 'nowrap' }}
-                      >
-                        Trả lời
-                      </Button>
+                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                        <span>
+                          <Button
+                            fullWidth
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                            onClick={() => {
+                              editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                              const input = editorRef.current?.querySelector?.('textarea');
+                              input?.focus?.();
+                            }}
+                            disabled={!isAuthenticated}
+                            sx={{ whiteSpace: 'nowrap' }}
+                          >
+                            Trả lời
+                          </Button>
+                        </span>
+                      </Tooltip>
                       <Button
                         fullWidth
                         variant="contained"
@@ -867,26 +975,33 @@ const ForumAlumniThreadPage = () => {
                       }}
                     >
                       <Button
-                        variant="outlined"
+                        variant={isSubscribed ? 'contained' : 'outlined'}
                         color="primary"
                         size="small"
                         startIcon={<NotificationsNoneOutlinedIcon sx={{ fontSize: 18 }} />}
+                        onClick={handleToggleSubscription}
+                        disabled={subStatusPending || subTogglePending}
                       >
-                        Theo dõi
+                        {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
                       </Button>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        size="small"
-                        startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                        onClick={() => {
-                          editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-                          const input = editorRef.current?.querySelector?.('textarea');
-                          input?.focus?.();
-                        }}
-                      >
-                        Trả lời
-                      </Button>
+                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            size="small"
+                            startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
+                            onClick={() => {
+                              editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+                              const input = editorRef.current?.querySelector?.('textarea');
+                              input?.focus?.();
+                            }}
+                            disabled={!isAuthenticated}
+                          >
+                            Trả lời
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   )}
                 </Box>
@@ -952,6 +1067,7 @@ const ForumAlumniThreadPage = () => {
                       onReply={handleReply}
                       onDelete={handleDeletePost}
                       onEdit={handleEditPost}
+                      onReport={handleReportPost}
                       isDeleting={deletePending}
                       parentPost={reply.answerToPostId ? replyMap.get(reply.answerToPostId) : null}
                     />
@@ -1028,7 +1144,7 @@ const ForumAlumniThreadPage = () => {
                     </Box>
                     <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
                       <Typography variant="body2" fontWeight={600}>
-                        {user?.userName ?? 'User'}
+                        Tôi
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {(user?.role ?? 'Student').toString().toLowerCase()}
@@ -1078,29 +1194,38 @@ const ForumAlumniThreadPage = () => {
                             WebkitBoxOrient: 'vertical',
                           }}
                         >
-                          {replyTo.content || '—'}
+                          {stripHtml(replyTo.content) || '—'}
                         </Typography>
                       </Box>
                     ) : null}
-                    <WYSIWYG
-                      value={editorValue}
-                      onChange={setEditorValue}
-                    />
+                    <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow placement="top">
+                      <Box>
+                        <WYSIWYG
+                          value={editorValue}
+                          onChange={setEditorValue}
+                          readOnly={!isAuthenticated}
+                        />
+                      </Box>
+                    </Tooltip>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSubmit}
-                        disabled={
-                          createPending ||
-                          answerPending ||
-                          !topicId ||
-                          !user?.id ||
-                          !stripHtml(editorValue ?? '')
-                        }
-                      >
-                        {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
-                      </Button>
+                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                        <span>
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={handleSubmit}
+                            disabled={
+                              createPending ||
+                              answerPending ||
+                              !topicId ||
+                              !user?.id ||
+                              !stripHtml(editorValue ?? '')
+                            }
+                          >
+                            {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
+                          </Button>
+                        </span>
+                      </Tooltip>
                     </Box>
                   </Box>
                 </Box>
@@ -1167,6 +1292,12 @@ const ForumAlumniThreadPage = () => {
         loading={deletePending}
         onConfirm={handleConfirmDeletePost}
         onCancel={handleCloseConfirmDelete}
+      />
+      <ReportPostDialog
+        open={isReportOpen}
+        onClose={handleCloseReport}
+        onConfirm={handleConfirmReport}
+        isPending={reportPending}
       />
     </Page>
   );

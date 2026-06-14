@@ -5,7 +5,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import dayjs from 'dayjs';
 
 const WEEK_DAY_LABELS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const WEEK_DAY_FULL_VI = ['CN', 'THỨ 2', 'THỨ 3', 'THỨ 4', 'THỨ 5', 'THỨ 6', 'THỨ 7'];
+const WEEK_DAY_FULL_VI = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
 const buildMiniCalendar = (anchor) => {
   const startOfMonth = anchor.startOf('month');
@@ -31,52 +31,47 @@ const buildMiniCalendar = (anchor) => {
 };
 
 /**
- * availabilityMap is { "YYYY-MM-DD": { [hour]: availabilityId } }.
- * Returns the availabilityId for the slot, or null if not bookable.
+ * availabilityMap is { "YYYY-MM-DD": [{ id, startTime, endTime }, ...] }.
+ * Returns the list of bookable slots for the given date (empty if none).
  */
-const getSlotAvailabilityId = (date, hour, availabilityMap) => {
+const getSlotsForDate = (date, availabilityMap) => {
   const key = date.format('YYYY-MM-DD');
-  const dayMap = availabilityMap[key];
-  if (!dayMap) return null;
-  return dayMap[hour] ?? null;
+  return availabilityMap[key] ?? [];
 };
 
-const DEFAULT_HOURS = Array.from({ length: 24 }, (_, i) => i);
+const formatSlotRange = (slot) => {
+  const start = dayjs(slot.startTime);
+  const end = dayjs(slot.endTime);
+  return `${start.format('HH:mm')} – ${end.format('HH:mm')}`;
+};
 
 const MentorshipSlotPicker = ({
   availabilityMap = {},
   selectedSlot,
   onSelectSlot,
-  hours = DEFAULT_HOURS,
   timezoneLabel = '(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh',
 }) => {
   const today = useMemo(() => dayjs().startOf('day'), []);
   const initialAnchor = useMemo(() => {
     const keys = Object.keys(availabilityMap)
-      .filter((k) => Object.keys(availabilityMap[k] ?? {}).length > 0)
+      .filter((k) => (availabilityMap[k] ?? []).length > 0)
       .sort();
     const firstFuture = keys.find((k) => !dayjs(k).isBefore(today));
     return firstFuture ? dayjs(firstFuture) : today;
   }, [availabilityMap, today]);
   const [anchorDate, setAnchorDate] = useState(initialAnchor);
-  const [weekStart, setWeekStart] = useState(initialAnchor);
+  const [selectedDate, setSelectedDate] = useState(initialAnchor);
 
   const calendarCells = useMemo(() => buildMiniCalendar(anchorDate), [anchorDate]);
 
-  const weekDates = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day')),
-    [weekStart],
+  const daySlots = useMemo(
+    () => getSlotsForDate(selectedDate, availabilityMap),
+    [selectedDate, availabilityMap],
   );
 
   const handlePickFromMini = (cellDate) => {
     setAnchorDate(cellDate);
-    setWeekStart(cellDate);
-  };
-
-  const formatHourLabel = (hour) => {
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-    return `${display}:00${period}`;
+    setSelectedDate(cellDate);
   };
 
   return (
@@ -138,11 +133,9 @@ const MentorshipSlotPicker = ({
               </Typography>
             ))}
             {calendarCells.map(({ date, inMonth }, i) => {
-              const dateKey = date.format('YYYY-MM-DD');
-              const dayMap = availabilityMap[dateKey];
-              const hasAny = Boolean(dayMap && Object.keys(dayMap).length);
+              const hasAny = getSlotsForDate(date, availabilityMap).length > 0;
               const isPast = date.isBefore(today);
-              const isSelected = date.isSame(weekStart, 'day');
+              const isSelected = date.isSame(selectedDate, 'day');
 
               const disabled = !inMonth || isPast || !hasAny;
 
@@ -176,101 +169,43 @@ const MentorshipSlotPicker = ({
           </Box>
         </Box>
 
-        {/* WEEK SLOT GRID */}
+        {/* SLOT LIST FOR SELECTED DAY */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" alignItems="center" gap={1} mb={1}>
-            <IconButton size="small" onClick={() => setWeekStart((d) => d.subtract(1, 'day'))}>
-              <ChevronLeftIcon fontSize="small" />
-            </IconButton>
-            <Box sx={{ flex: 1 }} />
-            <IconButton size="small" onClick={() => setWeekStart((d) => d.add(1, 'day'))}>
-              <ChevronRightIcon fontSize="small" />
-            </IconButton>
-          </Stack>
+          <Typography fontWeight={600} mb={1.5}>
+            {`${WEEK_DAY_FULL_VI[selectedDate.day()]}, ${selectedDate.format('DD/MM/YYYY')}`}
+          </Typography>
 
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-              gap: 1,
-              textAlign: 'center',
-              mb: 1,
-            }}
-          >
-            {weekDates.map((date) => {
-              const isToday = date.isSame(today, 'day');
-              return (
-                <Box key={date.toString()}>
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    {WEEK_DAY_FULL_VI[date.day()]}
-                  </Typography>
-                  <Box
-                    sx={{
-                      mx: 'auto',
-                      mt: 0.5,
-                      width: 32,
-                      height: 32,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '50%',
-                      bgcolor: isToday ? 'primary.main' : 'transparent',
-                      color: isToday ? 'common.white' : 'text.primary',
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
-                    {date.date()}
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
-              gap: 1,
-              maxHeight: 420,
-              overflowY: 'auto',
-              pr: 0.5,
-            }}
-          >
-            {hours.map((hour) =>
-              weekDates.map((date) => {
-                const availabilityId = getSlotAvailabilityId(date, hour, availabilityMap);
-                const available = availabilityId != null;
-                const isSelected =
-                  selectedSlot &&
-                  selectedSlot.date.isSame(date, 'day') &&
-                  selectedSlot.hour === hour;
-
-                if (!available) {
-                  return (
-                    <Box
-                      key={`${date.toString()}-${hour}`}
-                      sx={{
-                        height: 38,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'text.disabled',
-                      }}
-                    >
-                      —
-                    </Box>
-                  );
-                }
-
+          {daySlots.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+              Không có khung giờ trống trong ngày này. Hãy chọn ngày khác trên lịch.
+            </Typography>
+          ) : (
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)' },
+                gap: 1,
+                maxHeight: 420,
+                overflowY: 'auto',
+                pr: 0.5,
+              }}
+            >
+              {daySlots.map((slot) => {
+                const isSelected = selectedSlot?.availabilityId === slot.id;
                 return (
                   <Button
-                    key={`${date.toString()}-${hour}`}
+                    key={slot.id}
                     variant={isSelected ? 'contained' : 'outlined'}
                     size="small"
-                    onClick={() => onSelectSlot({ date, hour, availabilityId })}
+                    onClick={() =>
+                      onSelectSlot({
+                        availabilityId: slot.id,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                      })
+                    }
                     sx={{
-                      height: 38,
+                      height: 40,
                       borderRadius: 999,
                       fontWeight: 600,
                       fontSize: 13,
@@ -279,12 +214,12 @@ const MentorshipSlotPicker = ({
                       px: 1,
                     }}
                   >
-                    {formatHourLabel(hour)}
+                    {formatSlotRange(slot)}
                   </Button>
                 );
-              }),
-            )}
-          </Box>
+              })}
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

@@ -34,6 +34,9 @@ public class Notification {
     @Column("is_read")
     private Boolean isRead;
 
+    @Column("link")
+    private String link;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;

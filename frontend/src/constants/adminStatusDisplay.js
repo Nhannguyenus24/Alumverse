@@ -21,7 +21,7 @@ export const formatAccountStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
-export const formatOrganizationStatusLabel = (status) => {
+const formatOrganizationStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
     ACTIVE: 'Active',
@@ -30,7 +30,7 @@ export const formatOrganizationStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
-export const formatAuditStatusLabel = (status) => {
+const formatAuditStatusLabel = (status) => {
   const key = String(status || '').toUpperCase();
   const map = {
     SUCCESS: 'Success',
@@ -40,55 +40,88 @@ export const formatAuditStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
+const formatForumStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+
+  const map = {
+    PENDING: 'Pending',
+    FLAGGED: 'Flagged',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+  };
+
+  return map[key] || formatTitleCase(status);
+};
+
+const formatFeedbackStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+
+  const map = {
+    NEW: 'New',
+    READ: 'Read',
+  };
+
+  return map[key] || formatTitleCase(status);
+};
+
+const STATUS_COLORS = {
+  PENDING: 'info',
+
+  ACTIVE: 'success',
+  INACTIVE: 'warning',
+  BANNED: 'error',
+  SUSPENDED: 'warning',
+  DELETED: 'secondary',
+  DISABLED: 'tertiary',
+  UNVERIFIED: 'primary',
+
+  SUCCESS: 'success',
+  FAILED: 'error',
+
+  FLAGGED: 'warning',
+  APPROVED: 'success',
+  REJECTED: 'error',
+
+  NEW: 'primary',
+  READ: 'default',
+};
+
 /**
  * @param {string} status
  * @param {'account' | 'organization' | 'audit'} category
- * @returns {{ label: string, color: 'success' | 'error' | 'warning' | 'default' }}
  */
 export const resolveAdminStatusChip = (status, category) => {
   const key = String(status || '').toUpperCase();
 
-  if (category === 'account') {
-    if (key === 'ACTIVE') {
-      return { label: formatAccountStatusLabel(status), color: 'success' };
-    }
-    if (key === 'BANNED') {
-      return { label: formatAccountStatusLabel(status), color: 'error' };
-    }
-    if (key === 'INACTIVE' || key === 'SUSPENDED' || key === 'UNVERIFIED') {
-      return { label: formatAccountStatusLabel(status), color: 'warning' };
-    }
-    if (key === 'PENDING') {
-      return { label: formatAccountStatusLabel(status), color: 'info' };
-    }
-    if (key === 'DELETED' || key === 'DISABLED') {
-      return { label: formatAccountStatusLabel(status), color: 'default' };
-    }
-    return { label: formatAccountStatusLabel(status), color: 'default' };
+  let label;
+
+  switch (category) {
+    case 'account':
+      label = formatAccountStatusLabel(status);
+      break;
+
+    case 'organization':
+      label = formatOrganizationStatusLabel(status);
+      break;
+
+    case 'audit':
+      label = formatAuditStatusLabel(status);
+      break;
+
+    case 'forum':
+      label = formatForumStatusLabel(status);
+      break;
+
+    case 'feedback':
+      label = formatFeedbackStatusLabel(status);
+      break;
+
+    default:
+      label = formatTitleCase(status);
   }
 
-  if (category === 'organization') {
-    if (key === 'ACTIVE') {
-      return { label: formatOrganizationStatusLabel(status), color: 'success' };
-    }
-    if (key === 'INACTIVE') {
-      return { label: formatOrganizationStatusLabel(status), color: 'warning' };
-    }
-    return { label: formatOrganizationStatusLabel(status), color: 'default' };
-  }
-
-  if (category === 'audit') {
-    if (key === 'SUCCESS') {
-      return { label: formatAuditStatusLabel(status), color: 'success' };
-    }
-    if (key === 'FAILED') {
-      return { label: formatAuditStatusLabel(status), color: 'error' };
-    }
-    if (key === 'PENDING') {
-      return { label: formatAuditStatusLabel(status), color: 'warning' };
-    }
-    return { label: formatAuditStatusLabel(status), color: 'default' };
-  }
-
-  return { label: formatTitleCase(status), color: 'default' };
+  return {
+    label,
+    color: STATUS_COLORS[key] || 'default',
+  };
 };

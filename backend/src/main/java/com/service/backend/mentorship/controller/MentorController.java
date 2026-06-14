@@ -16,7 +16,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Mentorship > Mentors", description = "API endpoints for mentor profile and activities")
 @RestController
 @RequestMapping("/api/mentorship/mentor")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ import java.util.List;
 public class MentorController {
 
     private final MentorService mentorService;
+    private final com.service.backend.mentorship.service.MentorshipSessionService sessionService;
 
     @PostMapping("/profile")
     public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> createProfile(
@@ -137,6 +140,24 @@ public class MentorController {
                         .ok(new ApiResponse<>("Sessions retrieved successfully", response)));
     }
 
+    @PostMapping("/sessions/{sessionId}/cancel")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> cancelSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String cancelReason) {
+        return mentorService.cancelSession(sessionId, cancelReason)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Session cancelled successfully", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/postpone")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> postponeSession(
+            @PathVariable @Min(1) Integer sessionId,
+            @Valid @RequestBody PostponeSessionRequest request) {
+        return mentorService.postponeSession(sessionId, request)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Session postponed successfully", response)));
+    }
+
     @PutMapping("/sessions/{sessionId}/status")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> updateSessionStatus(
             @PathVariable @Min(1) Integer sessionId,
@@ -144,6 +165,14 @@ public class MentorController {
         return mentorService.updateSessionStatus(sessionId, request)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session status updated successfully", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/join")
+    public Mono<ResponseEntity<ApiResponse<JoinSessionResponse>>> joinSession(
+            @PathVariable @Min(1) Integer sessionId) {
+        return sessionService.joinSession(sessionId, true)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Tham gia buổi mentoring thành công", response)));
     }
 
     @GetMapping("/feedbacks")

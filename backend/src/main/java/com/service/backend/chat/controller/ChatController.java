@@ -1,15 +1,16 @@
 package com.service.backend.chat.controller;
 
 import com.service.backend.chat.dto.AddMembersRequest;
+import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
+import com.service.backend.chat.dto.GroupBlockedMembersContextResponse;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
 import com.service.backend.chat.dto.UpdateGroupRequest;
 import com.service.backend.shared.entity.ChatGroup;
-import com.service.backend.shared.entity.ChatGroupMember;
 import com.service.backend.chat.service.ChatService;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -29,11 +30,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Chat > General", description = "API endpoints for real-time messaging and general chat")
 @RestController
 @RequestMapping("/api/chat")
 @Validated
@@ -158,15 +160,33 @@ public class ChatController {
 
 
     /*
-        Get all member of a group ID 
+        Get all members of a group ID with profile info.
+        Only group members can access this endpoint.
     */
     @GetMapping("/groups/{groupId}/members")
-    public Mono<ResponseEntity<ApiResponse<List<ChatGroupMember>>>> getGroupMembers(
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ChatGroupMemberItemResponse>>>> getGroupMembers(
+            @PathVariable("groupId") @Min(1) Long groupId,
+            @RequestParam(required = false, defaultValue = "") String text,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentMemberId ->
+                        this.chatService.getGroupMembersWithProfile(groupId, currentMemberId, text, page, size))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Group members retrieved successfully", result)));
+    }
+
+    /*
+        Get members blocked by the current user who are still in this group chat.
+        Used by the group chat UI to show an informational banner.
+    */
+    @GetMapping("/groups/{groupId}/blocked-members-context")
+    public Mono<ResponseEntity<ApiResponse<GroupBlockedMembersContextResponse>>> getGroupBlockedMembersContext(
             @PathVariable("groupId") @Min(1) Long groupId) {
-        Flux<ChatGroupMember> membersFlux = this.chatService.getGroupMembers(groupId);
-        return membersFlux.collectList()
-                .map(members -> ResponseEntity
-                        .ok(new ApiResponse<>("Group members retrieved successfully", members)));
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentMemberId -> this.chatService.getGroupBlockedMembersContext(currentMemberId, groupId))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Group blocked members context retrieved successfully", result)));
     }
 
     /*

@@ -16,6 +16,9 @@ import {
   FormControlLabel
 } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import { fileToBase64 } from '../../utils/imageUtils';
+
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -76,7 +79,9 @@ useEffect(() => {
       ...formData,
       programs: formData.programs.split(',').map(s => s.trim()).filter(Boolean),
       majors: formData.majors.split(',').map(s => s.trim()).filter(Boolean),
-      featuresConfig: JSON.stringify(formData.featuresConfig),
+      featuresConfig: formData.featuresConfig && typeof formData.featuresConfig === 'object'
+        ? JSON.stringify(formData.featuresConfig)
+        : null,
     });
   };
 
@@ -104,20 +109,31 @@ useEffect(() => {
             >
               {!formData.logoUrl && <BusinessIcon sx={{ fontSize: 40, color: 'text.disabled' }} />}
             </Avatar>
+            <Button
+              component="label"
+              variant="outlined"
+              size="small"
+              startIcon={<CloudUploadIcon />}
+              sx={{ mt: 2, textTransform: 'none' }}
+            >
+              Tải logo lên
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const base64 = await fileToBase64(file);
+                    setFormData(prev => ({ ...prev, logoUrl: base64 }));
+                  }
+                }}
+              />
+            </Button>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              Xem trước logo tổ chức
+              Tải ảnh lên để chuyển đổi sang Base64
             </Typography>
           </Box>
-
-          <TextField
-            fullWidth
-            label="Logo URL"
-            name="logoUrl"
-            value={formData.logoUrl}
-            onChange={handleChange}
-            placeholder="https://example.com/logo.png"
-            helperText="Nhập URL logo tổ chức (định dạng PNG, SVG, JPG)"
-          />
 
           <TextField
             fullWidth
@@ -154,78 +170,15 @@ useEffect(() => {
               </TextField>
             </Grid>
           </Grid>
-
-          <Divider sx={{ my: 1 }}>
-            <Typography variant="caption" color="text.disabled" fontWeight={700}>DỮ LIỆU ĐÀO TẠO</Typography>
-          </Divider>
-          <TextField
-            fullWidth
-            label="Chương trình đào tạo"
-            name="programs"
-            value={formData.programs}
-            onChange={handleChange}
-            multiline
-            rows={2}
-            helperText="Các chương trình phân tách bằng dấu phẩy"
-          />
-          <TextField
-            fullWidth
-            label="Chuyên ngành"
-            name="majors"
-            value={formData.majors}
-            onChange={handleChange}
-            multiline
-            rows={2}
-            helperText="Các chuyên ngành phân tách bằng dấu phẩy"
-          />
-          <Divider sx={{ my: 1 }}>
-            <Typography variant="caption" color="text.disabled" fontWeight={700}>CẤU HÌNH TÍNH NĂNG</Typography>
-          </Divider>
-          
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-            {[
-              { key: 'mentorship', label: 'Cố vấn' },
-              { key: 'job', label: 'Việc làm' },
-              { key: 'fund', label: 'Gây quỹ' },
-              { key: 'events', label: 'Sự kiện' },
-              { key: 'forum', label: 'Diễn đàn' },
-            ].map((f) => (
-              <FormControlLabel
-                key={f.key}
-                control={
-                  <Switch
-                    checked={formData.featuresConfig[f.key] ?? true}
-                    onChange={(e) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        featuresConfig: {
-                          ...prev.featuresConfig,
-                          [f.key]: e.target.checked
-                        }
-                      }));
-                    }}
-                  />
-                }
-                label={<Typography variant="body2">{f.label}</Typography>}
-              />
-            ))}
-          </Box>
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}>
-          Hủy bỏ
+        <Button onClick={onClose} variant="outlined" color="secondary">
+          Huỷ
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 4,
-            borderRadius: 2,
-            boxShadow: (theme) => theme.customShadows?.primary,
-          }}
         >
           {organization ? 'Lưu thay đổi' : 'Tạo tổ chức'}
         </Button>

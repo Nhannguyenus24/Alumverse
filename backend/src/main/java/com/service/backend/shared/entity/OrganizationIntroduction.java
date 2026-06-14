@@ -37,6 +37,17 @@ public class OrganizationIntroduction {
     @Column("banner_url")
     private String bannerUrl;
 
+    private String leaders;
+    
+    @Column("team_members")
+    private String teamMembers;
+
+    @Column("leaders_content")
+    private String leadersContent;
+
+    @Column("team_members_content")
+    private String teamMembersContent;
+
     @LastModifiedDate
     @Column("updated_at")
     private LocalDateTime updatedAt;

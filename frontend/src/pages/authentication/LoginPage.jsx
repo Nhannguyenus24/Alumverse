@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
@@ -27,15 +29,37 @@ const LoginPage = () => {
   const {
     register,
     handleSubmit,
+    getValues,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', rememberMe: false, recaptchaToken: '' },
   });
+
+  const handleRecaptchaChange = useCallback((token) => {
+    setValue('recaptchaToken', token);
+    if (token) clearErrors('recaptchaToken');
+  }, [setValue, clearErrors]);
+
+  const handleRecaptchaExpired = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
+
+  const handleRecaptchaError = useCallback(() => {
+    setValue('recaptchaToken', '');
+  }, [setValue]);
 
   const onSubmit = async (data) => {
     setError(null);
-    const result = await login({ email: data.email, password: data.password, organizationId });
+    const result = await login({
+      email: data.email,
+      password: data.password,
+      organizationId,
+      rememberMe: data.rememberMe,
+      recaptchaToken: data.recaptchaToken
+    });
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
 
@@ -69,7 +93,7 @@ const LoginPage = () => {
     }
 
     setError(null);
-    const result = await loginWithGoogle(idToken);
+    const result = await loginWithGoogle(idToken, getValues('rememberMe'));
     if (result?.ok) {
       enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
 
@@ -111,7 +135,7 @@ const LoginPage = () => {
         <Typography
           variant="h5"
           fontWeight={700}
-          color="primary.dark"
+          color="primary.main"
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
@@ -137,7 +161,7 @@ const LoginPage = () => {
 
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
           <FormControlLabel
-            control={<Checkbox size="small" color="primary" />}
+            control={<Checkbox size="small" color="primary" {...register('rememberMe')} />}
             label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
           />
           <Typography
@@ -145,10 +169,23 @@ const LoginPage = () => {
             to={toOrgPath('/auth/forgot-password')}
             variant="body2"
             color="primary.main"
-            sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+            sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
           >
             Quên mật khẩu?
           </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+          <GoogleReCaptchaCheckbox
+            onChange={handleRecaptchaChange}
+            onExpired={handleRecaptchaExpired}
+            onError={handleRecaptchaError}
+          />
+          {errors.recaptchaToken && (
+            <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
+              {errors.recaptchaToken.message}
+            </Typography>
+          )}
         </Box>
 
         <Button
@@ -178,7 +215,6 @@ const LoginPage = () => {
               onError={handleGoogleError}
               useOneTap={false}
               size="large"
-              shape="pill"
               text="signin_with"
               locale="vi"
               width="100%"

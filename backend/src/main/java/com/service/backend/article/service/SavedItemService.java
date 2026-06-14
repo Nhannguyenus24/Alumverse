@@ -8,6 +8,7 @@ import com.service.backend.article.dto.SavedCheckResponse;
 import com.service.backend.article.dto.SavedItemResponse;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -67,13 +68,11 @@ public class SavedItemService {
         int offset = page * limit;
         return SecurityUtils.getCurrentUserId().flatMap(userId -> {
             Integer memberId = userId.intValue();
-            return savedItemRepository.findByMemberIdWithPagination(memberId, limit, offset)
-                    .collectList()
-                    .zipWith(savedItemRepository.countByMemberId(memberId))
-                    .map(tuple -> PaginatedResponse.of(
-                            tuple.getT1().stream().map(SavedItemResponse::from).toList(),
-                            tuple.getT2(), page, limit
-                    ));
+            return PaginationHelper.paginate(
+                    savedItemRepository.findByMemberIdWithPagination(memberId, limit, offset).map(SavedItemResponse::from),
+                    savedItemRepository.countByMemberId(memberId),
+                    page, limit
+            );
         });
     }
 
@@ -81,13 +80,11 @@ public class SavedItemService {
         int offset = page * limit;
         return SecurityUtils.getCurrentUserId().flatMap(userId -> {
             Integer memberId = userId.intValue();
-            return savedItemRepository.findByMemberIdAndItemType(memberId, itemType, limit, offset)
-                    .collectList()
-                    .zipWith(savedItemRepository.countByMemberIdAndItemType(memberId, itemType))
-                    .map(tuple -> PaginatedResponse.of(
-                            tuple.getT1().stream().map(SavedItemResponse::from).toList(),
-                            tuple.getT2(), page, limit
-                    ));
+            return PaginationHelper.paginate(
+                    savedItemRepository.findByMemberIdAndItemType(memberId, itemType, limit, offset).map(SavedItemResponse::from),
+                    savedItemRepository.countByMemberIdAndItemType(memberId, itemType),
+                    page, limit
+            );
         });
     }
 }

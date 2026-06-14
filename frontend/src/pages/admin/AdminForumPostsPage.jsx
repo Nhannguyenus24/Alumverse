@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -13,15 +13,11 @@ import {
   Stack,
   useTheme,
   Avatar,
-  Grid,
   Button,
 } from '@mui/material';
-import { useOutletContext } from 'react-router';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
-import { adminOrganizationApi } from '../../utils/api';
-import { useEffect } from 'react';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -40,7 +36,7 @@ import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPo
 import { useAdminForumContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateTime } from '../../utils/dateFormatter';
-import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
+import { forumModerationLabel, truncateText, toPlainText } from '../../utils/stringUtils';
 
 const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
 
@@ -49,58 +45,46 @@ const AdminForumPostsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const {
     posts,
+    postsPage,
+    setPostsPage,
+    postsSize,
+    setPostsSize,
+    allPosts,
+    postsSearch,
+    setPostsSearch,
     statusFilter,
     setStatusFilter,
-    search,
-    setSearch,
+    organizationFilter,
     updatePostStatus,
+    deletePostApi,
+    banPost: banPostApi,
+    unbanPost: unbanPostApi,
     bannedPosts,
     bannedPage,
     setBannedPage,
     yesterdayPosts,
     yesterdayPage,
     setYesterdayPage,
-    banPost: banPostApi,
-    unbanPost: unbanPostApi,
-    deletePostApi,
     reports,
     reportsPage,
     setReportsPage,
     reviewReport,
     updatePostVisibility,
-    organizationFilter,
-    setOrganizationFilter,
   } = useAdminForumContext();
-  const { setBreadcrumbs } = useOutletContext();
-  const [searchTerm, setSearchTerm] = useState(search);
+  const [searchTerm, setSearchTerm] = useState(postsSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);
-  const [organizations, setOrganizations] = useState([]);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Bài viết Diễn đàn', active: true }]);
-    
-    // Fetch organizations for filter
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations();
-        setOrganizations(data || []);
-      } catch (err) {
-        console.error('Failed to fetch organizations', err);
-      }
-    };
-    fetchOrgs();
-  }, [setBreadcrumbs]);
-
-  useEffect(() => {
-    setSearch(debouncedSearch);
-  }, [debouncedSearch, setSearch]);
+    setPostsSearch(debouncedSearch);
+    setPostsPage(0); // reset về trang đầu khi keyword thay đổi
+  }, [debouncedSearch, setPostsSearch]);
 
   const handleExport = () => {
     const exportData = posts.map(p => ({
       ID: p.id,
       'Tác giả': p.authorName,
       'Chủ đề': p.topicTitle,
-      'Nội dung': p.content,
+      'Nội dung': toPlainText(p.content),
       'Trạng thái': forumModerationLabel(p.moderationStatus),
       'Tổ chức': p.organizationName || '-',
       'Ngày đăng': formatDateTime(p.postedAt)
@@ -137,7 +121,8 @@ const AdminForumPostsPage = () => {
     }
   };
 
-  const columns = [
+  const columns = useMemo(() => [
+    { id: 'id', label: 'ID', width: 60 },
     {
       id: 'author',
       label: 'Tác giả',
@@ -151,8 +136,7 @@ const AdminForumPostsPage = () => {
       )
     },
     { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
-    { id: 'organizationName', label: 'Tổ chức', render: (val) => val || '-' },
-    { id: 'content', label: 'Nội dung', render: (val) => truncateText(val, 50) },
+    { id: 'content', label: 'Nội dung', render: (val) => truncateText(toPlainText(val), 50) },
     {
       id: 'moderationStatus',
       label: 'Trạng thái',
@@ -189,10 +173,10 @@ const AdminForumPostsPage = () => {
         </Stack>
       )
     }
-  ];
+  ], [handleBan, setForumDeletePost, setForumStatusMenu]);
 
   const stats = {
-    total: posts.length,
+    total: allPosts?.totalElements ?? 0,
     pending: posts.filter(p => p.moderationStatus === 'PENDING').length,
     reported: reports?.totalElements ?? 0,
     banned: bannedPosts?.totalElements ?? 0,
@@ -202,7 +186,7 @@ const AdminForumPostsPage = () => {
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: -1 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Kiểm duyệt diễn đàn
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
@@ -213,9 +197,8 @@ const AdminForumPostsPage = () => {
           variant="outlined"
           startIcon={<FileDownloadOutlinedIcon />}
           onClick={handleExport}
-          sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
         >
-          Xuất Excel
+          Xuất dữ liệu
         </Button>
       </Box>
 
@@ -258,8 +241,8 @@ const AdminForumPostsPage = () => {
       <Tabs
         value={activeTab}
         onChange={(_, v) => setActiveTab(v)}
-        sx={{ 
-          mb: 3, 
+        sx={{
+          mb: 3,
           '& .MuiTab-root': { textTransform: 'none', fontWeight: 700, fontSize: 15, minWidth: 100, py: 1.5 },
           borderBottom: 1,
           borderColor: 'divider'
@@ -275,26 +258,26 @@ const AdminForumPostsPage = () => {
         <AdminDataTable
           columns={columns}
           rows={posts}
-          totalCount={posts.length}
-          page={0}
-          rowsPerPage={100}
-          onSearchChange={(v) => setSearchTerm(v)}
+          totalCount={
+            (statusFilter !== 'ALL' || organizationFilter !== 'ALL')
+              ? posts.length  // filter phía client → chỉ hiển thị số dòng hiện tại
+              : allPosts?.totalElements || 0
+          }
+          page={postsPage}
+          rowsPerPage={postsSize}
+          onPageChange={(_, p) => setPostsPage(p)}
+          onRowsPerPageChange={(e) => {
+            setPostsSize(Number(e.target.value));
+            setPostsPage(0);
+          }}
+          onSearchChange={(v) => {
+            setSearchTerm(v);
+            setPostsPage(0);
+          }}
           searchValue={searchTerm}
+          searchPlaceholder="Tìm kiếm nội dung bài viết..."
           filters={
             <Stack direction="row" spacing={2}>
-              <TextField
-                select
-                size="small"
-                label="Tổ chức"
-                value={organizationFilter}
-                onChange={(e) => setOrganizationFilter(e.target.value)}
-                sx={{ minWidth: 200 }}
-              >
-                <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
-                {organizations.map((org) => (
-                  <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                ))}
-              </TextField>
               <TextField
                 select
                 size="small"
@@ -350,8 +333,8 @@ const AdminForumPostsPage = () => {
               render: (_, r) => (
                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                   <Tooltip title="Ẩn bài viết">
-                    <IconButton 
-                      size="small" 
+                    <IconButton
+                      size="small"
                       color="primary"
                       onClick={async () => {
                         const ok = await reviewReport(r.id, { decision: 'APPROVED', action: 'HIDE_POST', adminUserId });

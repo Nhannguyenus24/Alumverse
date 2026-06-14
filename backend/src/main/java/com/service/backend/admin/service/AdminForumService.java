@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.JsonUtils;
+import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -58,12 +60,25 @@ public class AdminForumService {
     }
 
     public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(int page, int size) {
+        return getNewForumPostsYesterdayWithPagination(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(Integer organizationId, int page, int size) {
         long offset = (long) page * size;
-        return forumPostRepository.findPostsCreatedYesterdayWithPagination(size, offset)
-                .concatMap(this::convertToPostDTO)
-                .collectList()
-                .zipWith(forumPostRepository.countPostsCreatedYesterday())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        forumPostRepository.findPostsCreatedYesterdayByOrganizationWithPagination(organizationId, size, (int) offset)
+                                .concatMap(this::convertToPostDTO),
+                        forumPostRepository.countPostsCreatedYesterdayByOrganization(organizationId),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching yesterday posts for org {}", organizationId, error));
+        }
+        return PaginationHelper.paginate(
+                    forumPostRepository.findPostsCreatedYesterdayWithPagination(size, offset)
+                            .concatMap(this::convertToPostDTO),
+                    forumPostRepository.countPostsCreatedYesterday(),
+                    page, size)
                 .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching paginated forum posts created yesterday", error));
     }
@@ -111,34 +126,73 @@ public class AdminForumService {
     }
 
     public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(int page, int size) {
+        return getBannedPostsWithPagination(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(Integer organizationId, int page, int size) {
         long offset = (long) page * size;
-        return forumPostRepository.findAllBannedPostsWithPagination(size, offset)
-                .concatMap(this::convertToPostDTO)
-                .collectList()
-                .zipWith(forumPostRepository.countByIsBannedTrue())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        forumPostRepository.findBannedPostsByOrganizationWithPagination(organizationId, size, (int) offset)
+                                .concatMap(this::convertToPostDTO),
+                        forumPostRepository.countBannedPostsByOrganization(organizationId),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getBannedPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching banned posts for org {}", organizationId, error));
+        }
+        return PaginationHelper.paginate(
+                    forumPostRepository.findAllBannedPostsWithPagination(size, offset)
+                            .concatMap(this::convertToPostDTO),
+                    forumPostRepository.countByIsBannedTrue(),
+                    page, size)
                 .doOnSuccess(r -> log.info("getBannedPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
 
-    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(int page, int size) {
+    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(String keyword, int page, int size) {
+        return getAllPostsWithPagination(null, keyword, page, size);
+    }
+
+    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(Integer organizationId, String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumPostRepository.findAllPostsWithPagination(size, offset)
-                .concatMap(this::convertToPostDTO)
-                .collectList()
-                .zipWith(forumPostRepository.count())
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
-                .doOnSuccess(r -> log.info("getAllPostsWithPagination result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> log.error("Error fetching all forum posts", error));
+        String kw = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        forumPostRepository.findAllPostsByOrganizationWithPagination(organizationId, kw, size, (int) offset)
+                                .concatMap(this::convertToPostDTO),
+                        forumPostRepository.countAllPostsByOrganization(organizationId, kw),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getAllPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching posts for org {}", organizationId, error));
+        }
+        return PaginationHelper.paginate(
+                    forumPostRepository.findAllPostsWithPagination(kw, size, offset)
+                            .concatMap(this::convertToPostDTO),
+                    forumPostRepository.countAllPostsWithKeyword(kw),
+                    page, size)
+                .doOnSuccess(r -> log.info("getAllPostsWithPagination result (keyword={}): {}", kw, JsonUtils.toJson(r)))
+                .doOnError(error -> log.error("Error fetching all forum posts with keyword={}", kw, error));
     }
 
     public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(int page, int size) {
+        return getPendingReports(null, page, size);
+    }
+
+    public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(Integer organizationId, int page, int size) {
         long offset = (long) page * size;
-        return forumPostReportRepository.findByStatusWithPagination(Status.PENDING, size, offset)
-                .map(this::convertToReportDTO)
-                .collectList()
-                .zipWith(forumPostReportRepository.countByStatus(Status.PENDING))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        forumPostReportRepository.findByOrganizationAndStatusWithPagination(organizationId, Status.PENDING, size, offset)
+                                .map(this::convertToReportDTO),
+                        forumPostReportRepository.countByOrganizationAndStatus(organizationId, Status.PENDING),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getPendingReports (org={}) result: {}", organizationId, JsonUtils.toJson(r)));
+        }
+        return PaginationHelper.paginate(
+                    forumPostReportRepository.findByStatusWithPagination(Status.PENDING, size, offset)
+                            .map(this::convertToReportDTO),
+                    forumPostReportRepository.countByStatus(Status.PENDING),
+                    page, size)
                 .doOnSuccess(r -> log.info("getPendingReports result: {}", JsonUtils.toJson(r)));
     }
 
@@ -192,6 +246,7 @@ public class AdminForumService {
 
     // ========== DELETE TOPIC ==========
 
+    @Transactional
     public Mono<Void> deleteForumTopic(Integer topicId) {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
@@ -263,15 +318,25 @@ public class AdminForumService {
     // ========== TOPIC MANAGEMENT ==========
 
     public Mono<PaginatedResponse<com.service.backend.forum.dto.ForumTopicDTO>> getAllTopicsByOrganization(
-            Integer organizationId, int page, int size) {
+            Integer organizationId, String keyword, int page, int size) {
         long offset = (long) page * size;
-        return forumTopicRepository.findByOrganizationIdWithPagination(organizationId, size, offset)
-                .concatMap(this::convertToTopicDTOWithPostCount)
-                .collectList()
-                .zipWith(forumTopicRepository.countByOrganizationId(organizationId))
-                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size))
-                .doOnSuccess(r -> log.info("getAllTopicsByOrganization result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> log.error("Error fetching topics for organization ID: {}", organizationId, error));
+        String kw = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        forumTopicRepository.findByOrganizationIdWithPagination(organizationId, kw, size, offset)
+                                .concatMap(this::convertToTopicDTOWithPostCount),
+                        forumTopicRepository.countByOrganizationId(organizationId, kw),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getAllTopicsByOrganization result (orgId={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching topics for organization ID: {} keyword={}", organizationId, kw, error));
+        }
+        return PaginationHelper.paginate(
+                    forumTopicRepository.findAllWithPagination(kw, size, offset)
+                            .concatMap(this::convertToTopicDTOWithPostCount),
+                    forumTopicRepository.countAll(kw),
+                    page, size)
+                .doOnSuccess(r -> log.info("getAllTopicsByOrganization (all orgs, keyword={}): {}", kw, JsonUtils.toJson(r)))
+                .doOnError(error -> log.error("Error fetching all topics keyword={}", kw, error));
     }
 
     public Mono<com.service.backend.forum.dto.ForumTopicDTO> getTopicById(Integer topicId) {
@@ -357,7 +422,7 @@ public class AdminForumService {
 
         Mono<ForumStatisticsDTO.CategorySummary> popularCategoryMono = forumTopicRepository.findCategoryIdWithMostPosts()
                 .flatMap(categoryId -> forumCategoryRepository.findById(categoryId)
-                        .zipWith(forumTopicRepository.countByCategoryId(categoryId))
+                        .zipWith(forumTopicRepository.countByCategoryId(categoryId, null))
                         .zipWith(forumPostRepository.countPostsByCategoryId(categoryId))
                         .map(tuple -> ForumStatisticsDTO.CategorySummary.builder()
                                 .categoryId(tuple.getT1().getT1().getId())
