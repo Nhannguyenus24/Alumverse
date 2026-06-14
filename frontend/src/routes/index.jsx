@@ -313,6 +313,10 @@ export const router = createBrowserRouter([
                     path: ":threadId",
                     element: <ForumAlumniThreadPage />,
                   },
+                  {
+                    path: ":threadId/page/:pageId",
+                    element: <ForumAlumniThreadPage />,
+                  },
                 ],
               },
             ],

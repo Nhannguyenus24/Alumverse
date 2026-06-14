@@ -15,7 +15,7 @@ import {
   Grid,
   Stack,
 } from "@mui/material";
-import { useOutletContext } from "react-router";
+import { useOutletContext, useParams } from "react-router";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useEffect } from "react";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
@@ -36,7 +36,7 @@ import { formatDate } from "../../utils/dateFormatter";
 
 const AdminForumTopicsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
-  const { stableOrgId } = useAdminSystemContext();
+  const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const {
     topics: topicsPaginated,
     topicsPage,
@@ -53,6 +53,8 @@ const AdminForumTopicsPage = () => {
     setTopicsSearch,
   } = useAdminForumContext();
   const { setBreadcrumbs } = useOutletContext();
+  const { slug } = useParams();
+  const orgSlug = slug || activeOrganization?.slug;
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: 'Chủ đề', active: true }]);
@@ -323,7 +325,7 @@ const AdminForumTopicsPage = () => {
         searchValue={searchTerm}
         searchPlaceholder="Tìm kiếm tiêu đề..."
         loading={topicsLoading}
-        onRowClick={(row) => window.open(`/forum/topic/${row.id}`, "_blank")}
+        onRowClick={(row) => window.open(orgSlug ? `/${orgSlug}/forum/alumni/career/${row.id}` : `/forum/alumni/career/${row.id}`, "_blank")}
       />
 
       {/* Detail Dialog */}
