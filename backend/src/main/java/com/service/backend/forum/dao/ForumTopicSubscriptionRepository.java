@@ -46,6 +46,13 @@ public interface ForumTopicSubscriptionRepository extends R2dbcRepository<ForumT
     Mono<Integer> updateLastNotifiedAt(Integer id, LocalDateTime lastNotifiedAt);
 
     /**
+     * Update last notified at for a batch of subscriptions
+     */
+    @Modifying
+    @Query("UPDATE forum_topic_subscriptions SET last_notified_at = :lastNotifiedAt WHERE id IN (:ids)")
+    Mono<Integer> updateLastNotifiedAtBatch(Collection<Integer> ids, LocalDateTime lastNotifiedAt);
+
+    /**
      * Full scan: find all subscriptions that have new posts since last read and last notified.
      * COALESCE falls back to s.created_at so new subscribers (null last_read_at / last_notified_at)
      * are included correctly without matching posts that predate their subscription.

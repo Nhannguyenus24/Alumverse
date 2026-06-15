@@ -53,6 +53,7 @@ public interface IEventRepository {
 
     Mono<EventTicket> findTicketByCode(String ticketCode);
     Mono<EventTicket> findTicketById(Long ticketId);
+    Flux<EventTicket> findTicketsByIds(Iterable<Long> ticketIds);
     Mono<PaginatedResponse<EventTicket>> findTicketsByEvent(Long eventId, int page, int limit);
     Mono<PaginatedResponse<EventTicket>> findTicketsByEventAndStatus(Long eventId, String status, int page, int limit);
     Mono<PaginatedResponse<EventTicket>> findTicketsByMember(Long memberId, int page, int limit);

@@ -34,6 +34,12 @@ public interface ForumPostReactionRepository extends R2dbcRepository<ForumPostRe
     Mono<Void> deleteByPostIdAndMemberId(Integer postId, Integer memberId);
     
     /**
+     * Delete all reactions for a specific topic
+     */
+    @Query("DELETE FROM forum_post_reactions WHERE post_id IN (SELECT id FROM forum_posts WHERE topic_id = :topicId)")
+    Mono<Void> deleteByTopicId(Integer topicId);
+    
+    /**
      * Delete all reactions for a post
      */
     Mono<Void> deleteByPostId(Integer postId);

@@ -260,14 +260,12 @@ public class AdminEventService {
         ).map(tuple -> new long[]{tuple.getT1(), tuple.getT2(), tuple.getT3(), tuple.getT4(), tuple.getT5()});
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByRegistrationMono =
-                adminEventRepository.findTopEventsByRegistration(5)
-                        .concatMap(this::toEventSummaryWithRegisteredCount)
+                adminEventRepository.findTopEventsByRegistrationSummary(5)
                         .collectList()
                         .defaultIfEmpty(Collections.emptyList());
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByInterestMono =
-                adminEventRepository.findTopEventsByInterest(5)
-                        .concatMap(this::toEventSummaryWithRegisteredCount)
+                adminEventRepository.findTopEventsByInterestSummary(5)
                         .collectList()
                         .defaultIfEmpty(Collections.emptyList());
 
@@ -288,22 +286,5 @@ public class AdminEventService {
                 .doOnError(error -> log.error("Error fetching event statistics", error));
     }
 
-    private Mono<EventStatisticsDTO.EventSummary> toEventSummaryWithRegisteredCount(Event event) {
-        return Flux.merge(
-                ticketRepo.countByEventIdAndStatus(event.getId(), STATUS_REGISTERED),
-                ticketRepo.countByEventIdAndStatus(event.getId(), STATUS_CHECKED_IN)
-        ).reduce(0L, Long::sum)
-                .defaultIfEmpty(0L)
-                .map(registeredCount -> EventStatisticsDTO.EventSummary.builder()
-                        .eventId(event.getId())
-                        .organizationId(event.getOrganizationId())
-                        .title(event.getTitle())
-                        .location(event.getLocation())
-                        .startTime(event.getStartTime())
-                        .endTime(event.getEndTime())
-                        .interestedCount(event.getInterestedCount())
-                        .registeredCount(registeredCount)
-                        .isPublished(event.getIsPublished())
-                        .build());
-    }
+
 }
