@@ -204,17 +204,6 @@ public class AuthService {
                 .doOnError(error -> logger.error("Password change error for user id: {}", userId, error));
     }
 
-    public Mono<List<Integer>> getOrganizationIdByUserId(Integer userId) {
-        return authRepository.getOrganizationIdByUserId(userId)
-                .collectList()
-                .doOnSuccess(ids -> logger.info("getOrganizationIdByUserId result: {}", JsonUtils.toJson(ids)))
-                .doOnError(error -> logger.error("Failed to get organization ID for user id: {}", userId, error));
-    }
-
-    public Mono<Boolean> existsOrganizationMembership(Integer userId, Integer organizationId) {
-        return authRepository.existsOrganizationMemberByUserIdAndOrgId(userId, organizationId);
-    }
-
     public Mono<Integer> getVerificationLevel(Integer userId, Integer organizationId) {
         return authRepository.getVerificationLevelByUserIdAndOrgId(userId, organizationId);
     }

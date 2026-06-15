@@ -1,5 +1,7 @@
 package com.service.backend.auth.service;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +37,7 @@ public class RecaptchaService {
                 .bodyToMono(RecaptchaResponse.class)
                 .map(response -> {
                     if (!response.isSuccess()) {
-                        logger.error("reCAPTCHA validation failed. Error codes: " + response.getErrorCodes());
+                        logger.error("reCAPTCHA validation failed. Error codes: {}", response.getErrorCodes());
                     }
                     return response.isSuccess();
                 })
@@ -45,25 +47,12 @@ public class RecaptchaService {
                 });
     }
 
+    @Setter
+    @Getter
     private static class RecaptchaResponse {
         private boolean success;
         @com.fasterxml.jackson.annotation.JsonProperty("error-codes")
         private java.util.List<String> errorCodes;
 
-        public boolean isSuccess() {
-            return success;
-        }
-
-        public void setSuccess(boolean success) {
-            this.success = success;
-        }
-
-        public java.util.List<String> getErrorCodes() {
-            return errorCodes;
-        }
-
-        public void setErrorCodes(java.util.List<String> errorCodes) {
-            this.errorCodes = errorCodes;
-        }
     }
 }
