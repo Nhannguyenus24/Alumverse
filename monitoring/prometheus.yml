@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'backend'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      # host.docker.internal giúp container lấy được localhost của máy host (nơi backend đang chạy ở cổng 8080)
+      - targets: ['host.docker.internal:8080']
