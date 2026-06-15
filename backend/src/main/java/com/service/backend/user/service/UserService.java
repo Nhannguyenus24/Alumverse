@@ -197,6 +197,14 @@ public class UserService {
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }
 
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
+        return userProfileRepository.findProfileByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + userId))))
+                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
+    }
+
     public Mono<List<UserLoginHistoryResponse>> getMyLoginHistory(Long currentUserId, int page, int limit) {
         int offset = page * limit;
         return userLoginHistoryRepository.findByUserIdOrderByLoginAtDesc(currentUserId.intValue(), limit, offset)
