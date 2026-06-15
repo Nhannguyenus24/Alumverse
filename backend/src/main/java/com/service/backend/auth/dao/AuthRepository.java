@@ -113,7 +113,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Returns the created user ID
      */
     @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", avatar_url, created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+           "VALUES (:email, :userName, :passwordHash, 'GUEST', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerGoogleUser(
             @Param("email") String email,
