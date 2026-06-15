@@ -110,113 +110,11 @@ public class ChatService {
         if (memberId == null) {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
         }
-
-        return getListChatGroupsByType(memberId, ChatType.PRIVATE.getValue())
-                .flatMapMany(Flux::fromIterable)
-                .concatMap(group -> buildPrivateChatListItem(group, memberId))
+        int offset = page * size;
+        return chatGroupRepository.findPrivateChatsWithSummary(memberId, text, size, offset)
                 .collectList()
-                .flatMap(list -> {
-                    list.sort(Comparator.comparing(
-                            (PrivateChatListItemResponse item) ->
-                                    item.getLastMessageAt() != null ? item.getLastMessageAt() : item.getUpdatedAt()
-                    ).reversed());
-
-                    List<PrivateChatListItemResponse> filtered = (text == null || text.isBlank())
-                            ? list
-                            : list.stream()
-                                  .filter(item -> item.getPeerUserName() != null &&
-                                                  item.getPeerUserName().toLowerCase().contains(text.toLowerCase()))
-                                  .toList();
-
-                    return PaginationHelper.paginateList(filtered, page, size);
-                });
-    }
-
-    private Mono<PrivateChatListItemResponse> buildPrivateChatListItem(ChatGroup group, Long currentMemberId) {
-        return chatGroupMemberRepository.findByGroupId(group.getId())
-                .map(ChatGroupMember::getMemberId)
-                .collectList()
-                .flatMap(memberIds -> {
-                    Long peerId = memberIds.stream()
-                            .filter(id -> !id.equals(currentMemberId))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (peerId == null) {
-                        return Mono.just(buildPrivateChatListItemResponse(
-                                group,
-                                null,
-                                "Unknown",
-                                null,
-                                null,
-                                null,
-                                false,
-                                false
-                        ));
-                    }
-
-                    Long finalPeerId = peerId;
-
-                    record PeerInfo(String userName, String avatarUrl) {}
-
-                    Mono<PeerInfo> peerInfoMono = authRepository.findById(finalPeerId.intValue())
-                            .map(user -> new PeerInfo(user.getUserName(), user.getAvatarUrl()))
-                            .switchIfEmpty(Mono.just(new PeerInfo("User " + finalPeerId, null)));
-
-                    Mono<BlockPairFlags> blockFlagsMono =
-                            userBlockService.getBlockFlagsBetween(currentMemberId, finalPeerId);
-
-                    return Mono.zip(peerInfoMono, blockFlagsMono)
-                            .flatMap(tuple -> {
-                                PeerInfo peerInfo = tuple.getT1();
-                                BlockPairFlags flags = tuple.getT2();
-
-                                return chatMessageRepository.findLastByGroupId(group.getId())
-                                        .map(msg -> buildPrivateChatListItemResponse(
-                                                group,
-                                                finalPeerId,
-                                                peerInfo.userName(),
-                                                peerInfo.avatarUrl(),
-                                                msg.getContent(),
-                                                msg.getCreatedAt(),
-                                                flags.isBlockedByMe(),
-                                                flags.isBlockedByPeer()))
-                                        .switchIfEmpty(Mono.just(buildPrivateChatListItemResponse(
-                                                group,
-                                                finalPeerId,
-                                                peerInfo.userName(),
-                                                peerInfo.avatarUrl(),
-                                                null,
-                                                null,
-                                                flags.isBlockedByMe(),
-                                                flags.isBlockedByPeer())));
-                            });
-                });
-    }
-
-    private PrivateChatListItemResponse buildPrivateChatListItemResponse(
-            ChatGroup group,
-            Long peerMemberId,
-            String peerUserName,
-            String peerAvatarUrl,
-            String lastMessagePreview,
-            LocalDateTime lastMessageAt,
-            boolean blockedByMe,
-            boolean blockedByPeer) {
-        return new PrivateChatListItemResponse(
-                group.getId(),
-                group.getType(),
-                group.getTitle(),
-                group.getCreatedBy(),
-                group.getCreatedAt(),
-                group.getUpdatedAt(),
-                peerMemberId,
-                peerUserName,
-                peerAvatarUrl,
-                lastMessagePreview,
-                lastMessageAt,
-                blockedByMe,
-                blockedByPeer);
+                .zipWith(chatGroupRepository.countPrivateChats(memberId, text))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
     }
 
     public Mono<PaginatedResponse<GroupChatListItemResponse>> getListGroupChatsWithSummary(
@@ -225,60 +123,12 @@ public class ChatService {
             return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
         }
 
-        return getListChatGroupsByType(memberId, ChatType.GROUP.getValue())
-                .flatMapMany(Flux::fromIterable)
-                .concatMap(this::buildGroupChatListItem)
+        int offset = page * size;
+        return chatGroupRepository.findGroupChatsWithSummary(memberId, text, size, offset)
                 .collectList()
-                .flatMap(list -> {
-                    list.sort(Comparator.comparing(
-                            (GroupChatListItemResponse item) ->
-                                    item.getLastMessageAt() != null ? item.getLastMessageAt() : item.getUpdatedAt()
-                    ).reversed());
-
-                    List<GroupChatListItemResponse> filtered = (text == null || text.isBlank())
-                            ? list
-                            : list.stream()
-                                  .filter(item -> item.getTitle() != null &&
-                                                  item.getTitle().toLowerCase().contains(text.toLowerCase()))
-                                  .toList();
-
-                    return PaginationHelper.paginateList(filtered, page, size);
-                });
+                .zipWith(chatGroupRepository.countGroupChats(memberId, text))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, size));
     }
-
-    private Mono<GroupChatListItemResponse> buildGroupChatListItem(ChatGroup group) {
-        Mono<Long> memberCountMono = chatGroupMemberRepository.findByGroupId(group.getId())
-                .count();
-
-        Mono<GroupChatListItemResponse> withLastMessage = memberCountMono.flatMap(count ->
-                chatMessageRepository.findLastByGroupId(group.getId())
-                        .map(msg -> new GroupChatListItemResponse(
-                                group.getId(),
-                                group.getType(),
-                                group.getTitle(),
-                                group.getCreatedBy(),
-                                group.getCreatedAt(),
-                                group.getUpdatedAt(),
-                                count,
-                                msg.getContent(),
-                                msg.getCreatedAt()
-                        ))
-                        .switchIfEmpty(Mono.just(new GroupChatListItemResponse(
-                                group.getId(),
-                                group.getType(),
-                                group.getTitle(),
-                                group.getCreatedBy(),
-                                group.getCreatedAt(),
-                                group.getUpdatedAt(),
-                                count,
-                                null,
-                                null
-                        )))
-        );
-
-        return withLastMessage;
-    }
-
     private Mono<ChatGroup> createPrivateChat(Long memberAId, Long memberBId) {
         ChatGroup newGroup = ChatGroup.builder()
                 .type(ChatType.PRIVATE)

@@ -53,8 +53,8 @@ public class EmailService {
 
             return message;
         })
-        .flatMap(message -> Mono.fromRunnable(() -> mailSender.send(message))
-            .subscribeOn(Schedulers.boundedElastic()))
+        .subscribeOn(Schedulers.boundedElastic())
+        .flatMap(message -> Mono.fromRunnable(() -> mailSender.send(message)))
         .doOnSuccess(v -> log.info("Email sent successfully to: {} with subject: {}", to, subject))
         .doOnError(e -> log.error("Failed to send email to: {}. Error: {}", to, e.getMessage(), e))
         .onErrorMap(MessagingException.class, e -> new RuntimeException("Failed to send email", e))

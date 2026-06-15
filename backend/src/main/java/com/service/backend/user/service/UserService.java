@@ -65,8 +65,7 @@ public class UserService {
                         if (requestId != null) {
                             String localPath = fileUploadService.getLocalPath(fileUrl);
                             if (localPath != null) {
-                                Mono.fromCallable(() -> ocrService.extractTextFromFile(localPath))
-                                        .subscribeOn(Schedulers.boundedElastic())
+                                ocrService.extractTextFromFile(localPath)
                                         .flatMap(text -> authRepository.updateAiSummary(requestId, text))
                                         .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
                                         .subscribe();

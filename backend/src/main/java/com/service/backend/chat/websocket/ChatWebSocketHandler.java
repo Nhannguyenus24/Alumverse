@@ -94,7 +94,8 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         }
 
         try {
-            Integer userId = jwtUtils.getUserIdFromToken(token);
+            com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(token);
+            Integer userId = Integer.valueOf(claims.getSubject());
             Long memberId = userId.longValue();
             log.info("Extracted memberId {} from WebSocket handshake token", memberId);
             return Mono.just(memberId);

@@ -48,8 +48,8 @@ public class ForumNotificationTask {
                             : forumTopicSubscriptionRepository.findSubscriptionsWithNewPostsInTopics(activeTopicIds);
                 })
                 .collectList()
-                .flatMapMany(subscriptions -> {
-                    if (subscriptions.isEmpty()) return Flux.empty();
+                .flatMap(subscriptions -> {
+                    if (subscriptions.isEmpty()) return Mono.empty();
 
                     Set<Integer> topicIds = subscriptions.stream()
                             .map(ForumTopicSubscription::getTopicId)
@@ -58,25 +58,25 @@ public class ForumNotificationTask {
                     // Batch load all topics in a single query instead of N individual findById calls
                     return forumTopicRepository.findAllById(topicIds)
                             .collectMap(ForumTopic::getId)
-                            .flatMapMany((Map<Integer, ForumTopic> topicMap) ->
-                                    Flux.fromIterable(subscriptions)
-                                            .flatMap(subscription -> {
-                                                ForumTopic topic = topicMap.get(subscription.getTopicId());
-                                                if (topic == null) return Mono.empty();
+                            .flatMap((Map<Integer, ForumTopic> topicMap) -> {
+                                java.util.List<Integer> subIdsToUpdate = new java.util.ArrayList<>();
+                                for (ForumTopicSubscription subscription : subscriptions) {
+                                    ForumTopic topic = topicMap.get(subscription.getTopicId());
+                                    if (topic != null) {
+                                        String title = "New updates in forum topic: " + topic.getTitle();
+                                        String message = "There are new comments in the topic you subscribed to. Check it out!";
+                                        String link = "/forum/topics/" + topic.getId();
 
-                                                String title = "New updates in forum topic: " + topic.getTitle();
-                                                String message = "There are new comments in the topic you subscribed to. Check it out!";
-                                                String link = "/forum/topics/" + topic.getId();
-
-                                                notificationService.createNotificationAsync(subscription.getMemberId(), title, message, link);
-
-                                                return forumTopicSubscriptionRepository
-                                                        .updateLastNotifiedAt(subscription.getId(), LocalDateTime.now());
-                                            })
-                            );
+                                        notificationService.createNotificationAsync(subscription.getMemberId(), title, message, link);
+                                        subIdsToUpdate.add(subscription.getId());
+                                    }
+                                }
+                                if (subIdsToUpdate.isEmpty()) return Mono.empty();
+                                return forumTopicSubscriptionRepository.updateLastNotifiedAtBatch(subIdsToUpdate, LocalDateTime.now());
+                            });
                 })
                 .doOnError(error -> log.error("Error in ForumNotificationTask", error))
-                .doOnComplete(() -> log.info("Finished ForumNotificationTask"))
+                .doOnSuccess(ignored -> log.info("Finished ForumNotificationTask"))
                 .subscribe();
     }
 }

@@ -89,25 +89,7 @@ public class JwtUtils {
         }
     }
 
-    public Integer getUserIdFromToken(String token) {
-        return Integer.valueOf(validateToken(token).getSubject());
-    }
 
-    public String getEmailFromToken(String token) {
-        return (String) validateToken(token).getClaim("email");
-    }
-
-    public String getRoleFromToken(String token) {
-        return (String) validateToken(token).getClaim("role");
-    }
-
-    public Integer getOrganizationIdFromToken(String token) {
-        Object orgId = validateToken(token).getClaim("organizationId");
-        if (orgId instanceof Number) {
-            return ((Number) orgId).intValue();
-        }
-        return null;
-    }
 
     private String signAndSerialize(JWTClaimsSet claimsSet) {
         try {
