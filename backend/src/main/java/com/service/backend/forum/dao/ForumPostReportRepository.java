@@ -10,6 +10,8 @@ import com.service.backend.shared.enums.Status;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.util.Collection;
+import com.service.backend.shared.dto.IdCountDTO;
 
 @Repository
 public interface ForumPostReportRepository extends R2dbcRepository<ForumPostReport, Long> {
@@ -19,6 +21,9 @@ public interface ForumPostReportRepository extends R2dbcRepository<ForumPostRepo
     Mono<Long> countByStatus(Status status);
 
     Mono<Long> countByPostId(Integer postId);
+
+    @Query("SELECT post_id as id, COUNT(*) as count FROM forum_post_reports WHERE post_id IN (:postIds) GROUP BY post_id")
+    Flux<IdCountDTO> countByPostIds(@Param("postIds") Collection<Integer> postIds);
 
     @Query("SELECT fpr.* FROM forum_post_reports fpr " +
            "JOIN forum_posts fp ON fpr.post_id = fp.id " +

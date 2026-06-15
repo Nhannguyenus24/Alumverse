@@ -103,38 +103,29 @@ public class ImageService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    /**
-     * Check if the image file already exists on the server.
-     *
-     * @param fileName name of the file to check (including extension)
-     * @return true if the file exists, false otherwise
-     */
-    public boolean imageExists(String fileName) {
-        try {
-            var filePath = Paths.get(uploadDir + fileName);
-            return Files.exists(filePath);
-        } catch (Exception e) {
-            return false;
-        }
+    public Mono<Boolean> imageExists(String fileName) {
+        return Mono.fromCallable(() -> {
+            try {
+                var filePath = Paths.get(uploadDir + fileName);
+                return Files.exists(filePath);
+            } catch (Exception e) {
+                return false;
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    /**
-     * Delete an image file from the server.
-     * (Consider carefully before deleting to avoid data loss)
-     *
-     * @param fileName name of the file to delete (including extension)
-     * @return true if deletion was successful, false otherwise
-     */
-    public boolean deleteImage(String fileName) {
-        try {
-            var filePath = Paths.get(uploadDir + fileName);
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
-                return true;
+    public Mono<Boolean> deleteImage(String fileName) {
+        return Mono.fromCallable(() -> {
+            try {
+                var filePath = Paths.get(uploadDir + fileName);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    return true;
+                }
+                return false;
+            } catch (Exception e) {
+                return false;
             }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 }

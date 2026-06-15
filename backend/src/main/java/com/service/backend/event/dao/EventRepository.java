@@ -257,6 +257,11 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
+    public Flux<EventTicket> findTicketsByIds(Iterable<Long> ticketIds) {
+        return ticketRepo.findAllById(ticketIds);
+    }
+
+    @Override
     public Mono<PaginatedResponse<EventTicket>> findTicketsByEvent(Long eventId, int page, int limit) {
         int offset = page * limit;
         return ticketRepo.findByEventIdWithPagination(eventId, limit, offset)

@@ -1,5 +1,6 @@
 package com.service.backend.admin.dao;
 
+import com.service.backend.admin.dto.EventStatisticsDTO;
 import com.service.backend.shared.entity.Event;
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
@@ -76,15 +77,19 @@ public interface AdminEventRepository extends R2dbcRepository<Event, Long> {
     @Query("SELECT COUNT(*) FROM event_interests")
     Mono<Long> countAllInterests();
 
-    @Query("SELECT e.* FROM events e " +
+    @Query("SELECT e.id as event_id, e.organization_id as organization_id, e.title as title, e.location as location, e.start_time as start_time, e.end_time as end_time, e.interested_count as interested_count, e.is_published as is_published, " +
+           "COUNT(t.id) as registered_count " +
+           "FROM events e " +
            "LEFT JOIN event_tickets t ON t.event_id = e.id AND t.status IN ('REGISTERED', 'CHECKED_IN') " +
            "GROUP BY e.id " +
-           "ORDER BY COUNT(t.id) DESC, e.created_at DESC " +
+           "ORDER BY registered_count DESC, e.created_at DESC " +
            "LIMIT :limit")
-    Flux<Event> findTopEventsByRegistration(@Param("limit") int limit);
+    Flux<EventStatisticsDTO.EventSummary> findTopEventsByRegistrationSummary(@Param("limit") int limit);
 
-    @Query("SELECT * FROM events ORDER BY interested_count DESC, created_at DESC LIMIT :limit")
-    Flux<Event> findTopEventsByInterest(@Param("limit") int limit);
+    @Query("SELECT e.id as event_id, e.organization_id as organization_id, e.title as title, e.location as location, e.start_time as start_time, e.end_time as end_time, e.interested_count as interested_count, e.is_published as is_published, " +
+           "(SELECT COUNT(t.id) FROM event_tickets t WHERE t.event_id = e.id AND t.status IN ('REGISTERED', 'CHECKED_IN')) as registered_count " +
+           "FROM events e ORDER BY e.interested_count DESC, e.created_at DESC LIMIT :limit")
+    Flux<EventStatisticsDTO.EventSummary> findTopEventsByInterestSummary(@Param("limit") int limit);
 
     @Query("SELECT * FROM events WHERE organization_id = :organizationId " +
            "AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
