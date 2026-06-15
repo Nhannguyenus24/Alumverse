@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
-import TopTabFilter from '../components/TopTabFilter';
+import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
 
 const ProfileLayout = ({
@@ -27,8 +27,8 @@ const ProfileLayout = ({
       { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
     ],
     mentorEdit: [
-      { label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile') },
-      { label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/development/mentorship/profile') },
+      //{ label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile') },
+      //{ label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/development/mentorship/profile') },
     ],
     menteeOwn: [
       { label: 'Chỉnh sửa hồ sơ', variant: 'outlined', onClick: () => onNavigate('/development/mentorship/mentee-signup') },
@@ -43,8 +43,8 @@ const ProfileLayout = ({
       { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
     ],
     userEdit: [
-      { label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile') },
-      { label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/profile') },
+      //{ label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile') },
+      //{ label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/profile') },
     ],
     userView: [
       { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
@@ -130,7 +130,10 @@ const ProfileLayout = ({
       <Container maxWidth="lg" sx={{ mt: 6 }}>
         <Stack spacing={6}>
           {/* TAB FILTER */}
-          {(tabs ?? []).length > 0 && <TopTabFilter tabs={tabs} onNavigate={onNavigate} />}
+          {(tabs?.length ?? 0) > 1 && (
+            <TopTabFilter tabs={tabs} onNavigate={onNavigate}
+            />
+          )}
 
           {/* PAGE CONTENT */}
           {children}

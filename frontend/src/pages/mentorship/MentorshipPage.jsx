@@ -18,6 +18,7 @@ import MentorshipMentorListSection from '../../components/mentorship/MentorshipM
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { MENTORSHIP_SIDEBAR, MENTORSHIP_STATS } from '../../constants/mentorshipNav';
+import StatsBanner from '../../components/StatsBanner'
 
 const BENEFITS = [
   {
@@ -58,32 +59,6 @@ const STEPS = [
   },
 ];
 
-const StatsBanner = () => (
-  <Box
-    sx={{
-      backgroundColor: 'primary.main',
-      borderRadius: 2,
-      px: { xs: 3, md: 6 },
-      py: { xs: 3, md: 4 },
-      display: 'grid',
-      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
-      gap: 3,
-      textAlign: 'center',
-    }}
-  >
-    {MENTORSHIP_STATS.map((item) => (
-      <Box key={item.label}>
-        <Typography variant="h2" fontWeight={700} color="common.white">
-          {item.value}
-        </Typography>
-        <Typography variant="body2" color="common.white" sx={{ opacity: 0.9 }}>
-          {item.label}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-);
-
 /** Full marketing landing — guest & level 0 only */
 const GuestLandingContent = () => {
   const access = useMentorshipAccessState();
@@ -118,7 +93,7 @@ const GuestLandingContent = () => {
         <MentorshipHubActions tone="onPrimary" />
       </Box>
 
-      <StatsBanner />
+      <StatsBanner items={MENTORSHIP_STATS} />
 
       <Box>
         <Typography variant="h4" fontWeight={700} mb={3}>
@@ -250,7 +225,7 @@ const HubContent = () => (
       </Typography>
     </Stack>
 
-    <StatsBanner />
+    <StatsBanner items={MENTORSHIP_STATS} />
     <MentorshipMentorListSection />
   </Stack>
 );
