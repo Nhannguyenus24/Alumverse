@@ -34,6 +34,7 @@ import com.service.backend.shared.entity.UserLoginHistory;
 import com.service.backend.shared.enums.Status;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import com.service.backend.user.service.NotificationService;
 
 @Service
 public class AuthService {
@@ -61,13 +62,15 @@ public class AuthService {
     private final WebClient googleApiClient;
     private final String googleClientId;
     private final SecureRandom secureRandom;
+    private final NotificationService notificationService;
 
     public AuthService(AuthRepository authRepository, PasswordEncoder passwordEncoder,
                       EmailService emailService, CacheUtils cacheUtils,
                       JwtUtils jwtUtils,
                       UserLoginHistoryRepository userLoginHistoryRepository,
                       WebClient.Builder webClientBuilder,
-                      @Value("${google.oauth.client-id:}") String googleClientId) {
+                      @Value("${google.oauth.client-id:}") String googleClientId,
+                      NotificationService notificationService) {
         this.authRepository = authRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -77,6 +80,7 @@ public class AuthService {
         this.googleApiClient = webClientBuilder.baseUrl("https://oauth2.googleapis.com").build();
         this.googleClientId = googleClientId == null ? "" : googleClientId.trim();
         this.secureRandom = new SecureRandom();
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -258,6 +262,102 @@ public class AuthService {
                 })
                 .doOnSuccess(v -> logger.info("verifyOtpAndActivate: email={} activated", email))
                 .doOnError(error -> logger.error("OTP verification failed for email: {}", email, error));
+    }
+
+    public Mono<Void> requestChangeEmailOtpOld(Integer userId) {
+        return authRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+                .flatMap(user -> {
+                    String email = user.getEmail();
+                    String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(OTP_MAX_VALUE));
+                    Map<String, Object> cacheData = new HashMap<>();
+                    cacheData.put(OTP_CACHE_OTP_FIELD, otp);
+                    cacheData.put(OTP_CACHE_USER_ID_FIELD, user.getId());
+                    
+                    return cacheUtils.putWithTtl("change_email_old", email, cacheData, OTP_TTL)
+                            .then(Mono.defer(() -> {
+                                Map<String, Object> variables = new HashMap<>();
+                                variables.put(OTP_CACHE_OTP_FIELD, otp);
+                                variables.put("email", email);
+                                return emailService.sendHtmlEmail(email, OTP_EMAIL_SUBJECT, OTP_EMAIL_TEMPLATE, variables);
+                            }))
+                            .doOnSuccess(v -> logger.info("requestChangeEmailOtpOld: OTP sent to old email={}", email));
+                });
+    }
+
+    public Mono<Void> verifyChangeEmailOtpOld(Integer userId, String otp) {
+        return authRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
+                .flatMap(user -> cacheUtils.get("change_email_old", user.getEmail())
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
+                        .flatMap(cachedData -> {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> cacheMap = (Map<String, Object>) cachedData;
+                            String cachedOtp = (String) cacheMap.get(OTP_CACHE_OTP_FIELD);
+                            if (!cachedOtp.equals(otp)) {
+                                return Mono.error(new ApplicationException(ErrorCode.INVALID_OTP));
+                            }
+                            return cacheUtils.putWithTtl("change_email_verified", String.valueOf(userId), "true", Duration.ofMinutes(15))
+                                    .then(cacheUtils.evict("change_email_old", user.getEmail()))
+                                    .doOnSuccess(v -> logger.info("verifyChangeEmailOtpOld: Old email verified for user={}", userId));
+                        }));
+    }
+
+    public Mono<Void> requestChangeEmailOtpNew(Integer userId, String newEmail) {
+        return authRepository.existsByEmail(newEmail)
+            .flatMap(exists -> {
+                if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
+                return cacheUtils.get("change_email_verified", String.valueOf(userId))
+                    .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.FORBIDDEN)))
+                    .flatMap(verified -> {
+                        String otp = String.format("%0" + OTP_LENGTH + "d", secureRandom.nextInt(OTP_MAX_VALUE));
+                        Map<String, Object> cacheData = new HashMap<>();
+                        cacheData.put(OTP_CACHE_OTP_FIELD, otp);
+                        cacheData.put(OTP_CACHE_USER_ID_FIELD, userId);
+                        cacheData.put("newEmail", newEmail);
+                        
+                        return cacheUtils.putWithTtl("change_email_new", String.valueOf(userId), cacheData, OTP_TTL)
+                                .then(Mono.defer(() -> {
+                                    Map<String, Object> variables = new HashMap<>();
+                                    variables.put(OTP_CACHE_OTP_FIELD, otp);
+                                    variables.put("email", newEmail);
+                                    return emailService.sendHtmlEmail(newEmail, OTP_EMAIL_SUBJECT, OTP_EMAIL_TEMPLATE, variables);
+                                }))
+                                .doOnSuccess(v -> logger.info("requestChangeEmailOtpNew: OTP sent to new email={}", newEmail));
+                    });
+            });
+    }
+
+    public Mono<Void> verifyChangeEmailOtpNew(Integer userId, String newEmail, String otp) {
+        return cacheUtils.get("change_email_new", String.valueOf(userId))
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.OTP_EXPIRED_NOT_FOUND)))
+                .flatMap(cachedData -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> cacheMap = (Map<String, Object>) cachedData;
+                    String cachedOtp = (String) cacheMap.get(OTP_CACHE_OTP_FIELD);
+                    String cachedNewEmail = (String) cacheMap.get("newEmail");
+                    if (!cachedOtp.equals(otp)) {
+                        return Mono.error(new ApplicationException(ErrorCode.INVALID_OTP));
+                    }
+                    if (!cachedNewEmail.equals(newEmail)) {
+                        return Mono.error(new ApplicationException(ErrorCode.BAD_REQUEST));
+                    }
+                    return authRepository.existsByEmail(newEmail)
+                        .flatMap(exists -> {
+                            if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
+                            return authRepository.updateEmailById(userId, newEmail)
+                                    .then(cacheUtils.evict("change_email_new", String.valueOf(userId)))
+                                    .then(cacheUtils.evict("change_email_verified", String.valueOf(userId)))
+                                    .doOnSuccess(v -> {
+                                        logger.info("verifyChangeEmailOtpNew: Email updated successfully for user={}", userId);
+                                        notificationService.createNotificationAsync(
+                                                userId,
+                                                "Đổi email thành công",
+                                                "Địa chỉ email của bạn đã được cập nhật thành " + newEmail
+                                        );
+                                    });
+                        });
+                });
     }
 
     public Mono<LoginResponse> refreshAccessToken(String refreshToken) {
