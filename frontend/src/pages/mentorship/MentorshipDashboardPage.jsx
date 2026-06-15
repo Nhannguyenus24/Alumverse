@@ -42,6 +42,7 @@ import {
 } from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
+import StatsBanner from '../../components/StatsBanner'
 
 const TOP_TABS = MENTOR_PROFILE_TABS;
 
@@ -301,29 +302,7 @@ const MentorshipDashboardPage = () => {
           </Typography>
 
           {/* STATS */}
-          <Box
-            sx={{
-              backgroundColor: 'primary.main',
-              borderRadius: 1,
-              px: { xs: 3, md: 6 },
-              py: { xs: 3, md: 4 },
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
-              gap: 3,
-              textAlign: 'center',
-            }}
-          >
-            {stats.map((item, i) => (
-              <Box key={i}>
-                <Typography variant="h2" fontWeight={700} color="common.white">
-                  {item.value}
-                </Typography>
-                <Typography variant="body2" color="common.white">
-                  {item.label}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+          <StatsBanner items={stats} />
 
           {updateMutation.errorMessage && (
             <Alert severity="error">{updateMutation.errorMessage}</Alert>

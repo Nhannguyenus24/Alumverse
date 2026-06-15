@@ -16,6 +16,7 @@ import DynamicFilterBar from "../../components/DynamicFilterBar";
 import ArticleDonationCard from "../../components/articles/ArticleDonationCard";
 import FeaturedArticleDonationCard from "../../components/articles/FeaturedArticleDonationCard";
 import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
+import StatsBanner from "../../components/StatsBanner";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
 const DEFAULT_FILTERS = { all: true, statusId: "", timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
@@ -223,14 +224,7 @@ export default function DonationPage() {
               </Typography>
 
               {isAdmin && (
-                <Box sx={{ backgroundColor: "primary.main", borderRadius: 2, px: { xs: 3, md: 6 }, py: { xs: 3, md: 4 }, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }, gap: 3, textAlign: "center" }}>
-                  {adminBannerItems.map((item) => (
-                    <Box key={item.label}>
-                      <Typography variant="h2" fontWeight={700} color="common.white">{item.value}</Typography>
-                      <Typography variant="body2" color="common.white" sx={{ opacity: 0.9 }}>{item.label}</Typography>
-                    </Box>
-                  ))}
-                </Box>
+                <StatsBanner items={adminBannerItems} />
               )}
 
               <DynamicFilterBar config={donationFilters} value={filters} onChange={handleFiltersChange} />
