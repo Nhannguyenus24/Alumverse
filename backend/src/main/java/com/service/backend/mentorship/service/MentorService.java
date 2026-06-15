@@ -479,6 +479,33 @@ public class MentorService {
                         .flatMap(this::enrich));
     }
 
+    @Transactional
+    public Mono<MentorshipSessionResponse> updateSessionMeetingLink(Integer sessionId, String meetingLink) {
+        if (meetingLink == null || meetingLink.isBlank()) {
+            return Mono.error(new ApplicationException(
+                    ErrorCode.BAD_REQUEST, "Link tham gia không được để trống"));
+        }
+        return currentMemberId().flatMap(mentorMemberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> availabilityRepository.findById(session.getAvailabilityId())
+                                .flatMap(avail -> {
+                                    if (!mentorMemberId.equals(avail.getMentorMemberId())) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.FORBIDDEN, "Bạn không có quyền cập nhật buổi mentoring này"));
+                                    }
+                                    return sessionRepository.updateMeetingLink(sessionId, meetingLink.trim())
+                                            .doOnNext(rows -> notificationService.createNotificationAsync(
+                                                    session.getMenteeMemberId(),
+                                                    "Đã có link tham gia buổi mentoring",
+                                                    "Cố vấn đã thêm link tham gia cho buổi hẹn của bạn. Hãy kiểm tra chi tiết buổi hẹn.",
+                                                    "/development/mentorship/my-bookings"))
+                                            .then(sessionRepository.findById(sessionId));
+                                }))
+                        .flatMap(this::enrich));
+    }
+
     // ===================== FEEDBACKS (Mentor view) =====================
 
     public Mono<PaginatedResponse<SessionFeedbackResponse>> getMyFeedbacks(int page, int limit) {

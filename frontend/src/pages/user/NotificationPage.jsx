@@ -11,8 +11,10 @@ import Page from "../../components/Page";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../../utils/dateFormatter";
 import { notificationApi } from "../../utils/api";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
 const NotificationPage = () => {
+  const navigate = useOrgNavigate();
   const [activeTab, setActiveTab] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,13 @@ const NotificationPage = () => {
         );
       } catch (error) {
         console.error("Failed to mark notification as read:", error);
+      }
+    }
+    if (notification.link) {
+      if (/^https?:\/\//i.test(notification.link)) {
+        window.open(notification.link, "_blank", "noopener,noreferrer");
+      } else {
+        navigate(notification.link);
       }
     }
   };

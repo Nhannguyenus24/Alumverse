@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
 import TopTabFilter from '../components/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
@@ -15,12 +16,12 @@ const ProfileLayout = ({
   children,
 }) => {
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (window.history.length > 1) { window.history.back(); }
     else { onNavigate('/'); }
-  };
+  }, [onNavigate]);
 
-  const BUTTON_CONFIG = {
+  const BUTTON_CONFIG = useMemo(() => ({
     mentor: [
       { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
       { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
@@ -49,7 +50,7 @@ const ProfileLayout = ({
       { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
       { label: 'Nhắn tin', variant: 'contained' },
     ],
-  };
+  }), [onNavigate, mentorId, canBook, handleBack]);
 
   const renderButtons = () =>
     (BUTTON_CONFIG[mode] ?? []).map(({ label, ...props }, i) => (

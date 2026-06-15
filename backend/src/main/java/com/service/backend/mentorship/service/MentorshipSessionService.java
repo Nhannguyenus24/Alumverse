@@ -100,9 +100,7 @@ public class MentorshipSessionService {
         String message = joinerIsMentor
                 ? "Cố vấn đã vào phòng họp. Hãy tham gia buổi mentoring ngay."
                 : "Người được cố vấn đã vào phòng họp. Hãy tham gia buổi mentoring ngay.";
-        String link = joinerIsMentor
-                ? "/development/mentorship/my-bookings"
-                : "/development/mentorship/dashboard";
-        notificationService.createNotificationAsync(recipientId, "Buổi mentoring đã bắt đầu", message, link);
+        notificationService.createNotificationAsync(recipientId, "Buổi mentoring đã bắt đầu", message,
+                "/development/mentorship/my-bookings");
     }
 }

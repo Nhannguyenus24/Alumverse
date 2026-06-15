@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import apiClient, { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from '../utils/axios';
 import { userFromAccessToken, isTokenExpired, getSecondsUntilExpire } from '../utils/jwt';
@@ -103,11 +103,11 @@ export const useAuth = () => {
     };
   }, [storageHydrated, token, user, authResolved]);
 
-  const setLoading = (value) => store.setLoading(value);
-  const setError = (message) => store.setError(message);
-  const clearError = () => store.setError(null);
+  const setLoading = useCallback((value) => store.setLoading(value), [store]);
+  const setError = useCallback((message) => store.setError(message), [store]);
+  const clearError = useCallback(() => store.setError(null), [store]);
 
-  const applyAccessTokenToStore = (responseData, fallbackMessage) => {
+  const applyAccessTokenToStore = useCallback((responseData, fallbackMessage) => {
     const accessToken = responseData?.data?.accessToken ?? null;
     const verificationLevel = responseData?.data?.verificationLevel ?? null;
     const authUser = userFromAccessToken(accessToken);
@@ -123,9 +123,9 @@ export const useAuth = () => {
       verificationLevel,
     });
     return { ok: true, data: { token: accessToken, user: authUser, verificationLevel } };
-  };
+  }, [store]);
 
-  const login = async (payload) => {
+  const login = useCallback(async (payload) => {
     const parsed = loginSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
@@ -148,9 +148,9 @@ export const useAuth = () => {
       store.setError(message);
       return { ok: false, error: message };
     }
-  };
+  }, [store, organizationIdFromStore, setLoading, applyAccessTokenToStore]);
 
-  const loginWithGoogle = async (idToken, rememberMe = false) => {
+  const loginWithGoogle = useCallback(async (idToken, rememberMe = false) => {
     if (!idToken || typeof idToken !== 'string') {
       const msg = 'Google ID token không hợp lệ';
       store.setError(msg);
@@ -177,9 +177,9 @@ export const useAuth = () => {
       store.setError(message);
       return { ok: false, error: message };
     }
-  };
+  }, [store, organizationIdFromStore, setLoading, applyAccessTokenToStore]);
 
-  const register = async (payload) => {
+  const register = useCallback(async (payload) => {
     const parsed = registerSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
@@ -216,9 +216,9 @@ export const useAuth = () => {
       store.setError(message);
       return { ok: false, error: message };
     }
-  };
+  }, [store, organizationIdFromStore, setLoading]);
 
-  const forgotPassword = async (payload) => {
+  const forgotPassword = useCallback(async (payload) => {
     const parsed = sendOtpSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
@@ -241,9 +241,9 @@ export const useAuth = () => {
       store.setError(message);
       return { ok: false, error: message };
     }
-  };
+  }, [store, setLoading]);
 
-  const verifySignupCode = async (payload) => {
+  const verifySignupCode = useCallback(async (payload) => {
     const parsed = verifyOtpSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
@@ -266,9 +266,9 @@ export const useAuth = () => {
       store.setError(message);
       return { ok: false, error: message };
     }
-  };
+  }, [store, setLoading]);
 
-  const resetPassword = async (payload) => {
+  const resetPassword = useCallback(async (payload) => {
     const parsed = changePasswordSchema.safeParse(payload);
     if (!parsed.success) {
       const msg = getFirstZodMessage(parsed.error);
@@ -299,20 +299,20 @@ export const useAuth = () => {
       store.setError(message);
       return { ok: false, error: message };
     }
-  };
+  }, [store, setLoading]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await apiClient.post('/auth/logout');
     } finally {
       queryClient.clear();
       store.reset();
     }
-  };
+  }, [queryClient, store]);
 
   const isBootLoading = !storageHydrated || !authResolved;
 
-  return {
+  return useMemo(() => ({
     isAuthenticated:
       storageHydrated &&
       authResolved &&
@@ -335,5 +335,8 @@ export const useAuth = () => {
     verifySignupCode,
     resetPassword,
     logout,
-  };
+  }), [
+    storageHydrated, authResolved, token, user, isBootLoading, loading, verificationLevel, error,
+    setError, clearError, login, loginWithGoogle, register, forgotPassword, verifySignupCode, resetPassword, logout
+  ]);
 };
