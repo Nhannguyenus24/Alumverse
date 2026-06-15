@@ -53,6 +53,7 @@ public class SecurityConfig {
             "/*.png",
             "/*.ico",
             "/static/**",
+            "/actuator/**",
     };
 
     @Value("${app.cors.allowed-origin-patterns:}")
