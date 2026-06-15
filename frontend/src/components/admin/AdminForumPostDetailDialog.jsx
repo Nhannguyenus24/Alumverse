@@ -82,9 +82,19 @@ const AdminForumPostDetailDialog = ({
           <Typography variant="caption" color="text.secondary">
             Nội dung
           </Typography>
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', mt: 0.5 }}>
-            {post.content || '-'}
-          </Typography>
+          {post.content ? (
+            <Box
+              sx={{
+                mt: 0.5,
+                typography: 'body2',
+                '& img': { maxWidth: '100%', height: 'auto' },
+                '& p': { m: 0, mb: 1 }
+              }}
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+          ) : (
+            <Typography variant="body2" sx={{ mt: 0.5 }}>-</Typography>
+          )}
         </Box>
 
         <Divider />

@@ -1,5 +1,6 @@
 package com.service.backend.mentorship.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.mentorship.dao.*;
 import com.service.backend.mentorship.dto.*;
 import com.service.backend.shared.entity.MentorshipReport;
@@ -47,6 +48,22 @@ public class MenteeService {
 
     private Mono<Integer> currentMemberId() {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
+    }
+
+    private Mono<Void> requireJoinedMentorship() {
+        return currentMemberId().flatMap(memberId ->
+                menteeProfileRepository.findById(memberId).hasElement()
+                        .zipWith(profileRepository.findById(memberId).hasElement())
+                        .flatMap(tuple -> {
+                            boolean hasMentee = tuple.getT1();
+                            boolean hasMentor = tuple.getT2();
+                            if (hasMentee || hasMentor) {
+                                return Mono.empty();
+                            }
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FORBIDDEN,
+                                    "Bạn cần đăng ký trở thành mentee hoặc cố vấn trước khi đặt lịch hẹn."));
+                        }));
     }
 
     private Mono<MentorshipSessionResponse> enrich(MentorshipSession session) {
@@ -223,6 +240,7 @@ public class MenteeService {
 
     // ===================== MENTEE PROFILE =====================
 
+    @Transactional
     public Mono<MenteeProfileResponse> createOrUpdateMyMenteeProfile(CreateMenteeProfileRequest request) {
         return accessService.requireOrgVerifiedForMentorship()
                 .then(currentMemberId().flatMap(memberId ->
@@ -259,29 +277,34 @@ public class MenteeService {
 
     // ===================== BOOK SESSION =====================
 
+    @Transactional
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
         return accessService.requireOrgVerifiedForMentorship()
+                .then(requireJoinedMentorship())
                 .then(currentMemberId().flatMap(memberId ->
                         availabilityRepository.findById(request.getAvailabilityId())
                                 .switchIfEmpty(Mono.error(new ApplicationException(
                                         ErrorCode.AVAILABILITY_NOT_FOUND, "Lịch trống không tồn tại")))
                                 .flatMap(availability -> {
-                                    // Block self-booking
                                     if (memberId.equals(availability.getMentorMemberId())) {
                                         return Mono.error(new ApplicationException(
                                                 ErrorCode.SESSION_SELF_BOOKING_NOT_ALLOWED,
                                                 "Bạn không thể đặt lịch với chính mình"));
                                     }
-                                    // Slot must still be available
                                     if (Status.AVAILABLE != availability.getStatus()) {
                                         return Mono.error(new ApplicationException(
                                                 ErrorCode.AVAILABILITY_NOT_AVAILABLE,
                                                 "Lịch trống này đã có người đặt. Vui lòng chọn khung giờ khác"));
                                     }
-                                    // Mentor must be APPROVED
+                                    if (availability.getStartTime() == null
+                                            || !availability.getStartTime().isAfter(LocalDateTime.now())) {
+                                        return Mono.error(new ApplicationException(
+                                                ErrorCode.AVAILABILITY_IN_PAST,
+                                                "Khung giờ này đã qua. Vui lòng chọn khung giờ khác"));
+                                    }
                                     return accessService
                                             .requireApprovedMentorProfile(availability.getMentorMemberId())
-                                            .then(Mono.defer(() -> {
+                                            .flatMap(mentorProfile -> {
                                                 MentorshipSession session = MentorshipSession.builder()
                                                         .availabilityId(request.getAvailabilityId())
                                                         .menteeMemberId(memberId)
@@ -294,6 +317,11 @@ public class MenteeService {
                                                         .cvUrl(request.getCvUrl())
                                                         .createdAt(LocalDateTime.now())
                                                         .build();
+                                                String defaultLink = mentorProfile.getDefaultMeetingLink();
+                                                boolean hasDefaultLink = defaultLink != null && !defaultLink.isBlank();
+                                                String message = hasDefaultLink
+                                                        ? "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi."
+                                                        : "Bạn vừa nhận được một lịch hẹn cố vấn mới, nhưng buổi này chưa có link tham gia. Hãy thêm link họp cho buổi trao đổi.";
                                         return availabilityRepository.updateStatus(
                                                         availability.getId(), Status.BOOKED.getValue())
                                                 .then(sessionRepository.save(session))
@@ -301,14 +329,13 @@ public class MenteeService {
                                                         notificationService.createNotificationAsync(
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
-                                                                "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi.",
-                                                                "/development/mentorship/dashboard"));
-                                            }));
+                                                                message,
+                                                                "/development/mentorship/my-bookings"));
+                                            });
                                 })
                                 .flatMap(this::enrich)));
     }
 
-    // ===================== MY SESSIONS (Mentee view) =====================
 
     public Mono<PaginatedResponse<MentorshipSessionResponse>> getMySessions(int page, int limit) {
         int offset = page * limit;
@@ -339,6 +366,7 @@ public class MenteeService {
                 .flatMap(this::enrich);
     }
 
+    @Transactional
     public Mono<MentorshipSessionResponse> cancelSession(Integer sessionId, String cancelReason) {
         return currentMemberId().flatMap(memberId ->
                 sessionRepository.findById(sessionId)
@@ -352,7 +380,9 @@ public class MenteeService {
                                 return Mono.error(new ApplicationException(
                                         ErrorCode.FORBIDDEN, "Bạn không có quyền hủy buổi mentoring này"));
                             }
-                            return availabilityRepository.updateStatus(session.getAvailabilityId(), Status.AVAILABLE.getValue())
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> availabilityRepository.updateStatus(
+                                            session.getAvailabilityId(), reopenStatusFor(avail)))
                                     .then(sessionRepository.updateStatusWithCancelReason(
                                             sessionId, Status.CANCELLED_BY_MENTEE.getValue(), cancelReason))
                                     .then(availabilityRepository.findById(session.getAvailabilityId()))
@@ -366,14 +396,67 @@ public class MenteeService {
                         .flatMap(this::enrich));
     }
 
+    @Transactional
+    public Mono<MentorshipSessionResponse> respondToReschedule(Integer sessionId, boolean accept) {
+        return currentMemberId().flatMap(memberId ->
+                sessionRepository.findById(sessionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(
+                                ErrorCode.SESSION_NOT_FOUND, "Session not found with id: " + sessionId)))
+                        .flatMap(session -> {
+                            if (!Status.RESCHEDULE_PROPOSED.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.SESSION_ALREADY_CANCELLED,
+                                        "Buổi mentoring này không có đề nghị dời lịch đang chờ"));
+                            }
+                            if (!memberId.equals(session.getMenteeMemberId())) {
+                                return Mono.error(new ApplicationException(
+                                        ErrorCode.FORBIDDEN, "Bạn không có quyền phản hồi buổi mentoring này"));
+                            }
+                            return availabilityRepository.findById(session.getAvailabilityId())
+                                    .flatMap(avail -> accept
+                                            ? acceptReschedule(session, avail)
+                                            : rejectReschedule(session, avail))
+                                    .then(sessionRepository.findById(sessionId));
+                        })
+                        .flatMap(this::enrich));
+    }
+
+    private Mono<?> acceptReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
+        // Move the existing slot to the proposed time and reconfirm the session.
+        return availabilityRepository.updateTimes(
+                        avail.getId(), session.getProposedStartTime(), session.getProposedEndTime())
+                .then(sessionRepository.clearProposalWithStatus(session.getId(), Status.CONFIRMED.getValue()))
+                .doOnNext(rows -> notificationService.createNotificationAsync(
+                        avail.getMentorMemberId(),
+                        "Lịch hẹn đã được dời",
+                        "Người được cố vấn đã đồng ý dời buổi hẹn sang khung giờ bạn đề xuất.",
+                        "/development/mentorship/dashboard"));
+    }
+
+    private Mono<?> rejectReschedule(MentorshipSession session, com.service.backend.shared.entity.MentorAvailability avail) {
+        return availabilityRepository.updateStatus(avail.getId(), Status.AVAILABLE.getValue())
+                .then(sessionRepository.clearProposalWithStatus(session.getId(), Status.CANCELLED_BY_MENTEE.getValue()))
+                .doOnNext(rows -> notificationService.createNotificationAsync(
+                        avail.getMentorMemberId(),
+                        "Đề nghị dời lịch bị từ chối",
+                        "Người được cố vấn đã từ chối đề nghị dời lịch và buổi hẹn đã bị hủy.",
+                        "/development/mentorship/dashboard"));
+    }
+
     private static boolean isCancelled(Status s) {
         return Status.CANCELLED.equals(s)
                 || Status.CANCELLED_BY_MENTEE.equals(s)
                 || Status.CANCELLED_BY_MENTOR.equals(s);
     }
 
+    private static String reopenStatusFor(com.service.backend.shared.entity.MentorAvailability avail) {
+        boolean past = avail.getEndTime() == null || avail.getEndTime().isBefore(LocalDateTime.now());
+        return (past ? Status.EXPIRED : Status.AVAILABLE).getValue();
+    }
+
     // ===================== FEEDBACK =====================
 
+    @Transactional
     public Mono<SessionFeedbackResponse> createFeedback(Integer sessionId, CreateFeedbackRequest request) {
         return currentMemberId().flatMap(memberId ->
                 sessionRepository.findById(sessionId)
@@ -428,27 +511,46 @@ public class MenteeService {
     // ===================== REPORT =====================
 
     public Mono<Void> reportSession(Integer sessionId, CreateReportRequest request) {
+        if (!com.service.backend.shared.enums.ReportReasonCategory.isValid(request.getReasonCategory())) {
+            return Mono.error(new ApplicationException(ErrorCode.REPORT_REASON_REQUIRED));
+        }
+        boolean isOther = com.service.backend.shared.enums.ReportReasonCategory.OTHER.getValue()
+                .equals(request.getReasonCategory());
+        if (isOther && (request.getDescription() == null || request.getDescription().trim().length() < 10)) {
+            return Mono.error(new ApplicationException(ErrorCode.REPORT_DESCRIPTION_REQUIRED));
+        }
         return currentMemberId().flatMap(reporterMemberId ->
                 sessionRepository.findById(sessionId)
                         .switchIfEmpty(Mono.error(new ApplicationException(
                                 ErrorCode.SESSION_NOT_FOUND, "Không tìm thấy buổi mentoring")))
                         .flatMap(session -> {
+                            if (!Status.COMPLETED.equals(session.getStatus())
+                                    && !Status.EXPIRED.equals(session.getStatus())) {
+                                return Mono.error(new ApplicationException(ErrorCode.REPORT_NOT_ALLOWED_STATUS));
+                            }
                             boolean isMentee = reporterMemberId.equals(session.getMenteeMemberId());
-                            return availabilityRepository.findById(session.getAvailabilityId())
-                                    .flatMap(avail -> {
-                                        Integer reportedMemberId = isMentee
-                                                ? avail.getMentorMemberId()
-                                                : session.getMenteeMemberId();
-                                        MentorshipReport report = MentorshipReport.builder()
-                                                .sessionId(sessionId)
-                                                .reporterMemberId(reporterMemberId)
-                                                .reportedMemberId(reportedMemberId)
-                                                .reasonCategory(request.getReasonCategory())
-                                                .description(request.getDescription())
-                                                .status("PENDING")
-                                                .createdAt(java.time.LocalDateTime.now())
-                                                .build();
-                                        return reportRepository.save(report).then();
+                            return reportRepository
+                                    .existsBySessionIdAndReporterMemberId(sessionId, reporterMemberId)
+                                    .flatMap(exists -> {
+                                        if (Boolean.TRUE.equals(exists)) {
+                                            return Mono.error(new ApplicationException(ErrorCode.REPORT_ALREADY_EXISTS));
+                                        }
+                                        return availabilityRepository.findById(session.getAvailabilityId())
+                                                .flatMap(avail -> {
+                                                    Integer reportedMemberId = isMentee
+                                                            ? avail.getMentorMemberId()
+                                                            : session.getMenteeMemberId();
+                                                    MentorshipReport report = MentorshipReport.builder()
+                                                            .sessionId(sessionId)
+                                                            .reporterMemberId(reporterMemberId)
+                                                            .reportedMemberId(reportedMemberId)
+                                                            .reasonCategory(request.getReasonCategory())
+                                                            .description(request.getDescription())
+                                                            .status("PENDING")
+                                                            .createdAt(LocalDateTime.now())
+                                                            .build();
+                                                    return reportRepository.save(report).then();
+                                                });
                                     });
                         }));
     }

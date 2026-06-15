@@ -1,5 +1,6 @@
 package com.service.backend.fundraising.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
@@ -489,6 +490,7 @@ public class FundService {
                 });
     }
 
+    @Transactional
     public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();
@@ -677,6 +679,20 @@ public class FundService {
                     "Unsupported searchBy value"
             ));
         };
+    }
+
+    public Mono<PaginatedResponse<FundDonationListItemResponse>> getDonationsByDonorMemberId(
+            Integer donorMemberId,
+            int page,
+            int limit
+    ) {
+        int offset = page * limit;
+        return PaginationHelper.paginate(
+                fundDonationsRepository.findByDonorMemberIdWithPagination(donorMemberId, limit, offset)
+                        .map(FundDonationListItemResponse::fromProjection),
+                fundDonationsRepository.countByDonorMemberId(donorMemberId),
+                page, limit)
+                .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(FundService.class).info("getDonationsByDonorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
     }
 
     public Mono<FundStatisticsResponse> getFundStatistics() {

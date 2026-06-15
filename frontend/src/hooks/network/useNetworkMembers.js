@@ -42,6 +42,7 @@ export function useNetworkMembers({ appliedFullName, filters, page, pageSize, en
     ],
     queryFn: () => networkApi.searchMembers(params),
     enabled,
+    refetchOnMount: 'always',
   });
 
   const data = query.data;

@@ -78,6 +78,14 @@ public enum ErrorCode {
     SESSION_NOT_COMPLETED("Buổi mentoring chưa hoàn thành", 400),
     SESSION_SELF_BOOKING_NOT_ALLOWED("Bạn không thể đặt lịch với chính mình", 400),
     FEEDBACK_ALREADY_EXISTS("Đánh giá đã tồn tại", 409),
+    SESSION_NOT_JOINABLE("Buổi mentoring không ở trạng thái có thể tham gia", 400),
+    JOIN_TOO_EARLY("Chưa đến giờ tham gia buổi mentoring", 400),
+    JOIN_WINDOW_CLOSED("Đã quá giờ tham gia buổi mentoring", 400),
+    MEETING_LINK_NOT_CONFIGURED("Cố vấn chưa cấu hình link tham gia cho buổi này", 400),
+    REPORT_NOT_ALLOWED_STATUS("Chỉ có thể báo cáo buổi đã hoàn thành hoặc không diễn ra", 400),
+    REPORT_ALREADY_EXISTS("Bạn đã báo cáo buổi mentoring này rồi", 409),
+    REPORT_REASON_REQUIRED("Vui lòng chọn lý do báo cáo hợp lệ", 400),
+    REPORT_DESCRIPTION_REQUIRED("Vui lòng nhập mô tả chi tiết (tối thiểu 10 ký tự)", 400),
 
     // Forum module
     FORUM_CATEGORY_NOT_FOUND("Không tìm thấy danh mục forum", 404),
@@ -109,8 +117,16 @@ public enum ErrorCode {
     CONVERSATION_REQUEST_ALREADY_PENDING("Yêu cầu kết nối đang chờ phản hồi từ phía kia", 409),
     CONVERSATION_REQUEST_ALREADY_ACCEPTED("Hai người đã kết nối với nhau rồi", 409),
     CONVERSATION_REQUEST_COOLDOWN_ACTIVE("Yêu cầu kết nối đã bị từ chối, vui lòng thử lại sau khi hết thời gian chờ", 429),
+    CONVERSATION_REQUEST_SEARCH_STATUS_NOT_ALLOWED(
+            "Không thể lọc yêu cầu theo trạng thái ACCEPTED; vui lòng dùng tab Kết nối hiện tại",
+            400),
     CHAT_USER_NOT_GROUP_MEMBER("Bạn không phải thành viên của nhóm chat này", 403),
-    GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400);
+    GROUP_MEMBER_LIMIT_EXCEEDED("Nhóm chat chỉ được phép tối đa 10 thành viên", 400),
+    CANNOT_BLOCK_SELF("Bạn không thể chặn chính mình", 400),
+    USER_ALREADY_BLOCKED("Bạn đã chặn thành viên này rồi", 409),
+    USER_NOT_BLOCKED("Bạn chưa chặn thành viên này", 404),
+    USER_COMMUNICATION_BLOCKED("Bạn không thể giao tiếp khi đang có chặn hoạt động", 403),
+    USER_BLOCK_RELATIONSHIP_EXISTS("Đã tồn tại block giữa hai thành viên này", 403);
 
     private final String message;
     private final int status;

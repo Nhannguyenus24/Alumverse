@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { Outlet, useLocation, useMatches, useParams } from "react-router";
 import { Box, Toolbar } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import FloatingChatActions from "../components/FloatingChatActions";
 import { getNormalizedPathname } from "../utils/pathUtils";
 
 const MainLayout = () => {
@@ -15,9 +17,14 @@ const MainLayout = () => {
 
   const isHomePage = normalizedPathname === "/";
 
+  const headerElement = useMemo(() => <Header />, []);
+  const footerElement = useMemo(() => <Footer />, []);
+  const floatingChatActionsElement = useMemo(() => <FloatingChatActions />, []);
+  const toolbarElement = useMemo(() => <Toolbar />, []);
+
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <Header />
+      {headerElement}
 
       <Box
         component="main"
@@ -28,12 +35,14 @@ const MainLayout = () => {
           minHeight: 0,
         }}
       >
-        {!isHomePage && <Toolbar />}
+        {!isHomePage && toolbarElement}
 
         <Outlet />
       </Box>
 
-      {!hideFooter && <Footer />}
+      {!hideFooter && footerElement}
+
+      {floatingChatActionsElement}
     </Box>
   );
 };

@@ -15,7 +15,7 @@ const normalizeList = (payload) => {
   return [];
 };
 
-const useAdminUsersLocal = () => {
+const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
   // ── Server-fetched users ──────────────────────────────────────────────────
   const [serverUsers, setServerUsers] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -28,7 +28,6 @@ const useAdminUsersLocal = () => {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [organizationFilter, setOrganizationFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
   const [page, setPage] = useState(0);
@@ -38,7 +37,7 @@ const useAdminUsersLocal = () => {
   const loadUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const orgId = organizationFilter === 'ALL' ? null : organizationFilter;
+      const orgId = stableOrgId || null;
       const res = await adminUserApi.getUsers(page, rowsPerPage, search, roleFilter, statusFilter, orgId);
       const payload = res?.data?.data;
       const items = normalizeList(payload);
@@ -50,11 +49,13 @@ const useAdminUsersLocal = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, search, roleFilter, statusFilter, organizationFilter]);
+  }, [page, rowsPerPage, search, roleFilter, statusFilter, stableOrgId]);
 
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    if (shouldFetch) {
+      loadUsers();
+    }
+  }, [loadUsers, shouldFetch]);
 
   // ── Merged view ───────────────────────────────────────────────────────────
   const allUsers = useMemo(() => {
@@ -268,7 +269,7 @@ const useAdminUsersLocal = () => {
     }
   }, [loadUsers]);
 
-  return {
+  return useMemo(() => ({
     loading,
     allUsers,
     totalCount,
@@ -281,8 +282,6 @@ const useAdminUsersLocal = () => {
     setRoleFilter,
     statusFilter,
     setStatusFilter,
-    organizationFilter,
-    setOrganizationFilter,
     sortBy,
     setSortBy,
     sortOrder,
@@ -298,7 +297,11 @@ const useAdminUsersLocal = () => {
     banUser,
     unbanUser,
     reloadUsers: loadUsers,
-  };
+  }), [
+    loading, allUsers, totalCount, pagedUsers, sortedUsers,
+    search, roleFilter, statusFilter, sortBy, sortOrder, page, rowsPerPage,
+    createUser, updateUser, updateUserStatus, deleteUser, banUser, unbanUser, loadUsers
+  ]);
 };
 
 export default useAdminUsersLocal;

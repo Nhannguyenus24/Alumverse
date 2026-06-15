@@ -53,6 +53,7 @@ public class SecurityConfig {
             "/*.png",
             "/*.ico",
             "/static/**",
+            "/actuator/**",
     };
 
     @Value("${app.cors.allowed-origin-patterns:}")
@@ -95,9 +96,11 @@ public class SecurityConfig {
                     String token = authHeader.substring(7);
 
                     try {
-                        Integer userId = jwtUtils.getUserIdFromToken(token);
-                        String userRole = jwtUtils.getRoleFromToken(token);
-                        Integer organizationId = jwtUtils.getOrganizationIdFromToken(token);
+                        com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(token);
+                        Integer userId = Integer.valueOf(claims.getSubject());
+                        String userRole = (String) claims.getClaim("role");
+                        Object orgIdClaim = claims.getClaim("organizationId");
+                        Integer organizationId = orgIdClaim instanceof Number ? ((Number) orgIdClaim).intValue() : null;
 
                         if (userId == null || userRole == null) {
                             if (isPublic) return chain.filter(exchange);

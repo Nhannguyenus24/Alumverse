@@ -21,8 +21,8 @@ const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonatio
 const DEFAULT_FILTERS = { all: true, statusId: "", timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
 
 const DONATION_SIDEBAR_ITEMS = [
-  { id: "list", label: "Danh sách quỹ", icon: <FormatListBulletedIcon /> },
-  { id: "create", label: "Mở thêm quỹ", icon: <AddCircleOutlineIcon /> },
+  { id: "list", label: "Quyên góp", icon: <FormatListBulletedIcon /> },
+  { id: "create", label: "Mở quỹ quyên góp", icon: <AddCircleOutlineIcon /> },
 ];
 
 function formatCurrency(value) {

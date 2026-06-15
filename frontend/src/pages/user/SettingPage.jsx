@@ -1,29 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  Autocomplete,
-  Box,
-  Card,
-  Container,
-  Chip,
-  TextField,
-  Typography,
-  Button,
-  MenuItem,
-  FormControlLabel,
-  Switch,
-  Divider,
-  Paper,
-  FormControl,
-  InputLabel,
-  Select,
-  Stack,
-  InputAdornment,
-  IconButton,
-  List,
-  ListItem,
-  ListItemText,
-  CircularProgress,
+  Autocomplete, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem, 
+  FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack, 
+  InputAdornment, IconButton, List, ListItem, ListItemText, CircularProgress,
 } from '@mui/material';
+import Avatar from '@mui/material/Avatar';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
@@ -35,100 +21,65 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PeopleIcon from '@mui/icons-material/People';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import DialogActions from '@mui/material/DialogActions';
+import Slider from '@mui/material/Slider';
+import Cropper from 'react-easy-crop';
 import Page from '../../components/Page';
+import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
 import { formatDateTime } from '../../utils/dateFormatter';
+import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
+import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
 
 const parseOrganizationOptions = (value) => {
-  if (!value) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item ?? '').trim())
-      .filter(Boolean);
-  }
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item ?? '').trim()).filter(Boolean);
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    if (!trimmed) {
-      return [];
-    }
-
+    if (!trimmed) return [];
     try {
       const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) => String(item ?? '').trim())
-          .filter(Boolean);
-      }
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
     } catch {
-      return trimmed
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean);
+      return trimmed.split(',').map((item) => item.trim()).filter(Boolean);
     }
   }
-
   return [];
 };
 
 const normalizeAcademicList = (value) => {
-  if (value == null) {
-    return [];
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => String(item ?? '').trim())
-      .filter(Boolean);
-  }
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item ?? '').trim()).filter(Boolean);
 
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    if (!trimmed) {
-      return [];
-    }
-
+    if (!trimmed) return [];
     try {
       const parsed = JSON.parse(trimmed);
-      if (Array.isArray(parsed)) {
-        return parsed
-          .map((item) => String(item ?? '').trim())
-          .filter(Boolean);
-      }
+      if (Array.isArray(parsed)) return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
     } catch {
       return [trimmed];
     }
   }
-
   return [String(value).trim()].filter(Boolean);
 };
 
-const normalizeIntegerList = (value) =>
-  normalizeAcademicList(value)
-    .map((item) => Number(item))
-    .filter((item) => Number.isInteger(item));
+const normalizeIntegerList = (value) => normalizeAcademicList(value).map((item) => Number(item)).filter((item) => Number.isInteger(item));
 
 export default function SettingPage() {
-  useAuthStore();
   const { showSuccess, showError, showWarning } = useNotification();
   const { organization } = useOrganization();
   const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
 
-  const organizationProgramOptions = useMemo(
-    () => parseOrganizationOptions(organization?.programs),
-    [organization?.programs],
-  );
-  const organizationMajorOptions = useMemo(
-    () => parseOrganizationOptions(organization?.majors),
-    [organization?.majors],
-  );
+  const organizationProgramOptions = useMemo(() => parseOrganizationOptions(organization?.programs), [organization?.programs]);
+  const organizationMajorOptions = useMemo(() => parseOrganizationOptions(organization?.majors), [organization?.majors]);
 
   const [activeTab, setActiveTab] = useState('personal');
   const [isTrustedVerifier, setIsTrustedVerifier] = useState(false);
@@ -140,62 +91,30 @@ export default function SettingPage() {
       { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
       { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
       { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
+      { id: 'connections', label: 'Kết nối', icon: <PeopleIcon /> },
       { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
     ];
-
-    if (isTrustedVerifier) {
-      items.push({ id: 'verification', label: 'Xác thực đồng nghiệp', icon: <GroupAddIcon /> });
-    }
-
+    if (isTrustedVerifier) items.push({ id: 'verification', label: 'Xác thực đồng nghiệp', icon: <GroupAddIcon /> });
     return items;
   }, [isTrustedVerifier]);
 
   const [formData, setFormData] = useState({
-    fullName: '',
-    gender: '',
-    birthDate: '',
-    phone: '',
-    studentId: '',
-    email: '',
-    educations: [
-      {
-        faculty: '',
-        department: '',
-        program: '',
-        startedYear: '',
-        graduatedYear: '',
-        major: '',
-        graduationStatus: '',
-      },
-    ],
+    fullName: '', gender: '', birthDate: '', phone: '', studentId: '', email: '',
+    educations: [{ faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' }],
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
-    forumReplyEnabled: true,
-    eventReminderEnabled: true,
-    newsEnabled: true,
-    emailEnabled: true,
-    pushEnabled: true,
+    forumReplyEnabled: true, eventReminderEnabled: true, newsEnabled: true, emailEnabled: true, pushEnabled: true,
   });
 
-  const [passwordForm, setPasswordForm] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
+  const [passwordForm, setPasswordForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loginHistory, setLoginHistory] = useState([]);
 
-  const getErrorMessage = (error, fallbackMessage) => {
-    return (
-      error?.response?.data?.message
-      || error?.response?.data?.error
-      || fallbackMessage
-    );
-  };
+  const getErrorMessage = (error, fallbackMessage) => error?.response?.data?.message || error?.response?.data?.error || fallbackMessage;
 
   const loadPendingRequests = async () => {
     if (!organizationId || !isTrustedVerifier) return;
@@ -209,6 +128,15 @@ export default function SettingPage() {
       setLoadingRequests(false);
     }
   };
+
+  // Nút navigate qua Organization Registration
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  // Edit avatar
+  const avatarCrop = useAvatarCrop();
+  // Tạo state edit mode
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [originalFormData, setOriginalFormData] = useState(null);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -231,38 +159,20 @@ export default function SettingPage() {
         const departments = normalizeAcademicList(member?.department);
 
         const maxLength = Math.max(
-          programs.length,
-          graduationYears.length,
-          specializations.length,
-          graduationStatuses.length,
-          startedYears.length,
-          faculties.length,
-          departments.length,
+          programs.length, graduationYears.length, specializations.length,
+          graduationStatuses.length, startedYears.length, faculties.length, departments.length,
         );
 
         const educations = [];
         for (let i = 0; i < maxLength; i += 1) {
           educations.push({
-            program: programs[i] || '',
-            graduatedYear: graduationYears[i] || '',
-            major: specializations[i] || '',
-            graduationStatus: graduationStatuses[i] || '',
-            startedYear: startedYears[i] || '',
-            faculty: faculties[i] || '',
-            department: departments[i] || '',
+            program: programs[i] || '', graduatedYear: graduationYears[i] || '', major: specializations[i] || '',
+            graduationStatus: graduationStatuses[i] || '', startedYear: startedYears[i] || '', faculty: faculties[i] || '', department: departments[i] || '',
           });
         }
 
         if (educations.length === 0) {
-          educations.push({
-            faculty: '',
-            department: '',
-            program: '',
-            startedYear: '',
-            graduatedYear: '',
-            major: '',
-            graduationStatus: '',
-          });
+          educations.push({ faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' });
         }
 
         setFormData((prev) => ({
@@ -301,73 +211,45 @@ export default function SettingPage() {
     }
   }, [activeTab, organizationId, isTrustedVerifier]);
 
-  const handleFormChange = (e) => {
+  const handleFormChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
-  const handleNotificationChange = (e) => {
+  const handleNotificationChange = useCallback((e) => {
     const { name, checked } = e.target;
-    setNotificationSettings((prev) => ({
-      ...prev,
-      [name]: checked,
-    }));
-  };
+    setNotificationSettings((prev) => ({ ...prev, [name]: checked }));
+  }, []);
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = useCallback((e) => {
     const { name, value } = e.target;
-    setPasswordForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
-  const handleEducationChange = (index, field, value) => {
+  const handleEducationChange = useCallback((index, field, value) => {
     setFormData((prev) => {
       const newEducations = [...prev.educations];
       newEducations[index] = { ...newEducations[index], [field]: value };
       return { ...prev, educations: newEducations };
     });
-  };
+  }, []);
 
-  const addEducation = () => {
+  const addEducation = useCallback(() => {
     setFormData((prev) => ({
       ...prev,
-      educations: [
-        ...prev.educations,
-        {
-          faculty: '',
-          department: '',
-          program: '',
-          startedYear: '',
-          graduatedYear: '',
-          major: '',
-          graduationStatus: '',
-        },
-      ],
+      educations: [...prev.educations, { faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' }],
     }));
-  };
+  }, []);
 
-  const removeEducation = (index) => {
+  const removeEducation = useCallback((index) => {
     setFormData((prev) => {
       const newEducations = prev.educations.filter((_, i) => i !== index);
       if (newEducations.length === 0) {
-        newEducations.push({
-          faculty: '',
-          department: '',
-          program: '',
-          startedYear: '',
-          graduatedYear: '',
-          major: '',
-          graduationStatus: '',
-        });
+        newEducations.push({ faculty: '', department: '', program: '', startedYear: '', graduatedYear: '', major: '', graduationStatus: '' });
       }
       return { ...prev, educations: newEducations };
     });
-  };
+  }, []);
 
   const handleSaveProfile = async () => {
     if (!organizationId) {
@@ -391,6 +273,10 @@ export default function SettingPage() {
 
       await userSettingsApi.updateProfile(payload);
       showSuccess('Cập nhật thông tin cá nhân thành công.');
+      
+      setOriginalFormData(null);
+      setIsEditMode(false);
+
     } catch (error) {
       console.error('Failed to update profile', error);
       showError(getErrorMessage(error, 'Cập nhật thông tin cá nhân thất bại.'));
@@ -418,10 +304,7 @@ export default function SettingPage() {
     }
 
     try {
-      await userSettingsApi.changePassword({
-        oldPassword: passwordForm.oldPassword,
-        newPassword: passwordForm.newPassword,
-      });
+      await userSettingsApi.changePassword({ oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword });
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
       showSuccess('Đổi mật khẩu thành công.');
     } catch (error) {
@@ -460,211 +343,117 @@ export default function SettingPage() {
     return `${browser} - ${os}`;
   };
 
-const renderPersonalSettings = () => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
-    {/* Avatar Row */}
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Box sx={{ width: 56, height: 56, borderRadius: '50%', bgcolor: 'primary.main', color: 'primary.contrastText',
-                   display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <PersonIcon fontSize="large" />
-        </Box>
-        <Box>
-          <Typography variant="h3" lineHeight={1}>{formData.fullName || 'User'}</Typography>
-          <Typography variant="body2" color="primary.main">Alumni {formData.studentId}</Typography>
-        </Box>
-      </Box>
-      <Button variant="outlined" startIcon={<EditIcon />}>Chỉnh sửa ảnh</Button>
-    </Box>
-
-    {/* Thông tin cơ bản */}
-    <Box>
-      <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin cơ bản</Typography>
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-        <TextField fullWidth label="Họ và tên" name="fullName" value={formData.fullName} InputProps={{ readOnly: true }} />
-        <FormControl fullWidth>
-          <InputLabel>Giới tính</InputLabel>
-          <Select name="gender" value={formData.gender} label="Giới tính" onChange={handleFormChange}>
-            <MenuItem value="male">Nam</MenuItem>
-            <MenuItem value="female">Nữ</MenuItem>
-            <MenuItem value="other">Khác</MenuItem>
-          </Select>
-        </FormControl>
-
-        <TextField fullWidth label="Ngày sinh" name="birthDate" type="date"
-          value={formData.birthDate} InputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
-        <TextField fullWidth label="Số điện thoại" name="phone" value={formData.phone} onChange={handleFormChange} />
-
-        <TextField fullWidth label="Mã số sinh viên" name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
-        <TextField fullWidth label="Email" name="email" type="email" value={formData.email} InputProps={{ readOnly: true }} />
-      </Box>
-    </Box>
-
-    {/* Thông tin học vấn */}
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4" fontWeight="bold">Thông tin học vấn</Typography>
-        <Button startIcon={<AddIcon />} variant="outlined" onClick={addEducation}>Thêm học vấn</Button>
-      </Box>
-      <Stack spacing={3}>
-        {formData.educations.map((edu, index) => (
-          <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'grey.50' }}>
-            {formData.educations.length > 1 && (
-              <IconButton
-                size="small"
-                color="error"
-                sx={{ position: 'absolute', top: 8, right: 8 }}
-                onClick={() => removeEducation(index)}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            )}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-              <TextField
-                fullWidth
-                label="Khoa"
-                value={edu.faculty}
-                onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)}
-              />
-              <TextField
-                fullWidth
-                label="Bộ môn"
-                value={edu.department}
-                onChange={(e) => handleEducationChange(index, 'department', e.target.value)}
-              />
-              <Autocomplete
-                freeSolo
-                options={organizationProgramOptions}
-                value={edu.program}
-                onInputChange={(_e, value) => handleEducationChange(index, 'program', value)}
-                onChange={(_e, value) => handleEducationChange(index, 'program', value || '')}
-                renderInput={(params) => <TextField {...params} label="Chương trình đào tạo" />}
-              />
-              <TextField
-                fullWidth
-                label="Khoá"
-                value={edu.startedYear}
-                onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)}
-              />
-              <TextField
-                fullWidth
-                label="Năm tốt nghiệp"
-                value={edu.graduatedYear}
-                onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)}
-              />
-              <Autocomplete
-                freeSolo
-                options={organizationMajorOptions}
-                value={edu.major}
-                onInputChange={(_e, value) => handleEducationChange(index, 'major', value)}
-                onChange={(_e, value) => handleEducationChange(index, 'major', value || '')}
-                renderInput={(params) => <TextField {...params} label="Chuyên ngành" />}
-              />
-              <Autocomplete
-                freeSolo
-                options={['Đã tốt nghiệp', 'Đang học']}
-                value={edu.graduationStatus}
-                onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)}
-                onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')}
-                renderInput={(params) => <TextField {...params} label="Trạng thái tốt nghiệp" />}
-              />
+  const renderPersonalSettings = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+      {/* Avatar Row */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ position: 'relative', width: 96, height: 96, borderRadius: '50%', overflow: 'hidden', cursor: isEditMode ? 'pointer' : 'default',
+               ...(isEditMode && { '&:hover .avatar-overlay': { opacity: 1, }, }), }}
+              onClick={() => { if (isEditMode) avatarCrop.setOpen(true);}}
+          >
+            <Avatar src={avatarCrop.avatarUrl} sx={{ width: '100%', height: '100%' }} />
+            <Box className="avatar-overlay" sx={{ position: 'absolute', inset: 0, bgcolor: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'center',
+                                                  justifyContent: 'center', opacity: 0, transition: '0.2s', pointerEvents: 'none', }}
+            >
+              <CameraAltIcon sx={{ color: 'white', fontSize: 32 }} />
             </Box>
-          </Card>
-        ))}
-      </Stack>
-    </Box>
+          </Box>
+          <Box>
+            <Typography variant="h3">{formData.fullName || 'User'}</Typography>
+            <Typography variant="body2" color="primary.main">Alumni {formData.studentId}</Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, }}>
+          {!isEditMode && (
+            <Button variant="contained" color="secondary" startIcon={<EditIcon />}
+              onClick={() => { setOriginalFormData(structuredClone(formData)); setIsEditMode(true) }}  
+            >
+              Sửa thông tin
+            </Button>
+          )}
+          {user?.role === 'GUEST' && (
+            <Button variant="contained" color="warning" startIcon={<ShieldOutlinedIcon />}
+                    onClick={() => navigate('/cs-hcmus/organization-registration')}
+            >
+              Xác thực tài khoản
+            </Button>
+          )}
+        </Box>
+      </Box>
 
-    {/* Actions */}
-    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-      <Button variant="outlined" color="inherit" sx={{ px: 4 }}>Huỷ</Button>
-      <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>Lưu thay đổi</Button>
+      {/* Thông tin cơ bản */}
+      <Box>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin cơ bản</Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+          <TextField fullWidth label="Họ và tên" name="fullName" value={formData.fullName} InputProps={{ readOnly: !isEditMode }} />
+          <FormControl fullWidth>
+            <InputLabel>Giới tính</InputLabel>
+            <Select name="gender" value={formData.gender} label="Giới tính" onChange={handleFormChange} disabled={!isEditMode}>
+              <MenuItem value="male">Nam</MenuItem>
+              <MenuItem value="female">Nữ</MenuItem>
+              <MenuItem value="other">Khác</MenuItem>
+            </Select>
+          </FormControl>
+          <TextField fullWidth label="Ngày sinh" name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} />
+          <TextField fullWidth label="Số điện thoại" name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth label="Mã số sinh viên" name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label="Email" name="email" type="email" value={formData.email} InputProps={{ readOnly: !isEditMode }} />
+        </Box>
+      </Box>
+
+      {/* Thông tin học vấn */}
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h4" fontWeight="bold">Thông tin học vấn</Typography>
+          {isEditMode && (
+            <Button startIcon={<AddIcon />} variant="outlined" onClick={addEducation}>Thêm học vấn</Button>
+          )}
+        </Box>
+        <Stack spacing={3}>
+          {formData.educations.map((edu, index) => (
+            <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'grey.50' }}>
+              {isEditMode && formData.educations.length > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                  <Typography variant="h5">Học vấn</Typography>
+                  <IconButton size="small" color="error" onClick={() => removeEducation(index)} sx={{ '&:hover': { bgcolor: 'error.lighter' } }}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              )}
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                <TextField fullWidth label="Khoa" value={edu.faculty} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
+                <TextField fullWidth label="Bộ môn" value={edu.department} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
+                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label="Chương trình đào tạo" />} />
+                <TextField fullWidth label="Khoá" value={edu.startedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
+                <TextField fullWidth label="Năm tốt nghiệp" value={edu.graduatedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
+                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label="Chuyên ngành" />} />
+                <Autocomplete freeSolo options={['Đã tốt nghiệp', 'Đang học']} value={edu.graduationStatus} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label="Trạng thái tốt nghiệp" />} />
+              </Box>
+            </Card>
+          ))}
+        </Stack>
+      </Box>
+
+      {/* Actions */}
+      {isEditMode && (
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Button variant="outlined" color="inherit" sx={{ px: 4 }} onClick={handleCancelEdit}>Huỷ</Button>
+          <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>Lưu thay đổi</Button>
+       </Box>
+      )}
     </Box>
-  </Box>
-);
+  );
 
   const renderAccountSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Change Password Section */}
       <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Đặt lại mật khẩu
-        </Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>Đặt lại mật khẩu</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
-          <TextField
-            fullWidth
-            name="oldPassword"
-            value={passwordForm.oldPassword}
-            onChange={handlePasswordChange}
-            label="Mật khẩu hiện tại"
-            type={showOldPassword ? 'text' : 'password'}
-            placeholder="Nhập mật khẩu hiện tại"
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={showOldPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                      onClick={() => setShowOldPassword((v) => !v)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      {showOldPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <TextField
-            fullWidth
-            name="newPassword"
-            value={passwordForm.newPassword}
-            onChange={handlePasswordChange}
-            label="Mật khẩu mới"
-            type={showNewPassword ? 'text' : 'password'}
-            placeholder="Nhập mật khẩu mới"
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                      onClick={() => setShowNewPassword((v) => !v)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
-          <TextField
-            fullWidth
-            name="confirmPassword"
-            value={passwordForm.confirmPassword}
-            onChange={handlePasswordChange}
-            label="Xác nhận mật khẩu"
-            type={showConfirmPassword ? 'text' : 'password'}
-            placeholder="Xác nhận mật khẩu"
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                      onClick={() => setShowConfirmPassword((v) => !v)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      edge="end"
-                    >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              },
-            }}
-          />
+          <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label="Mật khẩu hiện tại" type={showOldPassword ? 'text' : 'password'} placeholder="Nhập mật khẩu hiện tại" slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showOldPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowOldPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showOldPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
+          <TextField fullWidth name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} label="Mật khẩu mới" type={showNewPassword ? 'text' : 'password'} placeholder="Nhập mật khẩu mới" slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowNewPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showNewPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
+          <TextField fullWidth name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} label="Xác nhận mật khẩu" type={showConfirmPassword ? 'text' : 'password'} placeholder="Xác nhận mật khẩu" slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowConfirmPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showConfirmPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
         </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="contained" color="primary" onClick={handleChangePassword}>Cập nhật mật khẩu</Button>
@@ -676,28 +465,18 @@ const renderPersonalSettings = () => (
 
       {/* Logged In Devices Section */}
       <Box>
-        <Typography variant="h4" sx= {{ mb: 2 }}>
-          Thiết bị đã đăng nhập
-        </Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>Thiết bị đã đăng nhập</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {loginHistory.length === 0 && (
-            <Typography variant="body2" color="text.secondary">
-              Chưa có dữ liệu đăng nhập gần đây.
-            </Typography>
-          )}
-
+          {loginHistory.length === 0 && <Typography variant="body2" color="text.secondary">Chưa có dữ liệu đăng nhập gần đây.</Typography>}
           {loginHistory.map((entry, index) => (
-            <Box key={entry?.id ?? `${entry?.loginAt ?? 'history'}-${index}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5 }}>
+            <Box key={entry?.id ?? `${entry?.loginAt ?? 'history'}-${index}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5 }}>
               <Box>
                 <Typography variant="h5">{parseUserAgent(entry?.userAgent)}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   Lần cuối: {formatDateTime(entry?.loginAt, 'Không rõ thời gian')} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
                 </Typography>
               </Box>
-              <Button variant="outlined" color="inherit" size="small" disabled>
-                Theo dõi
-              </Button>
+              <Button variant="outlined" color="inherit" size="small" disabled>Theo dõi</Button>
             </Box>
           ))}
         </Box>
@@ -709,94 +488,31 @@ const renderPersonalSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Forum Notifications */}
       <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>
-          Thông báo theo backend
-        </Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>Thông báo theo backend</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                name="forumReplyEnabled"
-                checked={notificationSettings.forumReplyEnabled}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Có trả lời cho bài viết của bạn"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                name="eventReminderEnabled"
-                checked={notificationSettings.eventReminderEnabled}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Nhắc nhở sự kiện sắp tới"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                name="newsEnabled"
-                checked={notificationSettings.newsEnabled}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Tin tức mới"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                name="emailEnabled"
-                checked={notificationSettings.emailEnabled}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Cho phep thong bao qua email"
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                name="pushEnabled"
-                checked={notificationSettings.pushEnabled}
-                onChange={handleNotificationChange}
-              />
-            }
-            label="Cho phep thong bao day"
-          />
+          <FormControlLabel control={<Switch name="forumReplyEnabled" checked={notificationSettings.forumReplyEnabled} onChange={handleNotificationChange} />} label="Có trả lời cho bài viết của bạn" />
+          <FormControlLabel control={<Switch name="eventReminderEnabled" checked={notificationSettings.eventReminderEnabled} onChange={handleNotificationChange} />} label="Nhắc nhở sự kiện sắp tới" />
+          <FormControlLabel control={<Switch name="newsEnabled" checked={notificationSettings.newsEnabled} onChange={handleNotificationChange} />} label="Tin tức mới" />
+          <FormControlLabel control={<Switch name="emailEnabled" checked={notificationSettings.emailEnabled} onChange={handleNotificationChange} />} label="Cho phep thong bao qua email" />
+          <FormControlLabel control={<Switch name="pushEnabled" checked={notificationSettings.pushEnabled} onChange={handleNotificationChange} />} label="Cho phep thong bao day" />
         </Box>
       </Box>
 
       <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button variant="contained" color="primary" onClick={handleSaveNotificationSettings}>
-          Lưu thay đổi
-        </Button>
-        <Button variant="outlined" color="secondary">
-          Huỷ
-        </Button>
+        <Button variant="contained" color="primary" onClick={handleSaveNotificationSettings}>Lưu thay đổi</Button>
+        <Button variant="outlined" color="secondary">Huỷ</Button>
       </Box>
     </Box>
   );
 
   const renderAdvisorSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h4">
-        Thông tin cố vấn học tập
-      </Typography>
-
-      <Typography variant="body1" color="textSecondary">
-        Chưa có cố vấn được gán. Vui lòng liên hệ với bộ phận quản lý sinh viên để được gán cố vấn.
-      </Typography>
-
+      <Typography variant="h4">Thông tin cố vấn học tập</Typography>
+      <Typography variant="body1" color="textSecondary">Chưa có cố vấn được gán. Vui lòng liên hệ với bộ phận quản lý sinh viên để được gán cố vấn.</Typography>
       <Paper sx={{ p: 3, bgcolor: 'primary.light' }}>
-        <Typography variant="h5" sx={{ color: 'primary.main' }}>
-          Thông tin liên hệ
-        </Typography>
-        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2 }}>
-          Email: admin@hcmus.edu.vn
-        </Typography>
-        <Typography variant="body1" color="secondary.dark" display="block">
-          Điện thoại: 028 3821 4444
-        </Typography>
+        <Typography variant="h5" sx={{ color: 'primary.main' }}>Thông tin liên hệ</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2 }}>Email: admin@hcmus.edu.vn</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block">Điện thoại: 028 3821 4444</Typography>
       </Paper>
     </Box>
   );
@@ -804,14 +520,10 @@ const renderPersonalSettings = () => (
   const renderVerificationManagement = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Typography variant="h4">Quản lý xác thực đồng nghiệp</Typography>
-      <Typography variant="body1" color="textSecondary">
-        Đây là danh sách các yêu cầu xác thực đồng nghiệp đang chờ bạn xử lý.
-      </Typography>
+      <Typography variant="body1" color="textSecondary">Đây là danh sách các yêu cầu xác thực đồng nghiệp đang chờ bạn xử lý.</Typography>
 
       {loadingRequests ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-          <CircularProgress />
-        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
       ) : pendingRequests.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }}>
           <Typography color="textSecondary">Không có yêu cầu xác thực nào đang chờ.</Typography>
@@ -819,31 +531,14 @@ const renderPersonalSettings = () => (
       ) : (
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
           {pendingRequests.map((request) => (
-            <Paper
-              key={request.requestId}
-              variant="outlined"
-              sx={{ mb: 2, p: 2, '&:hover': { bgcolor: 'action.hover' } }}
-            >
+            <Paper key={request.requestId} variant="outlined" sx={{ mb: 2, p: 2, '&:hover': { bgcolor: 'action.hover' } }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                 <Stack spacing={0.5}>
-                  <Typography variant="h5" fontWeight="bold">
-                    {request.requesterName}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    ID người dùng: {request.requesterUserId}
-                  </Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    Ngày gửi: {formatDateTime(request.createdAt)}
-                  </Typography>
+                  <Typography variant="h5" fontWeight="bold">{request.requesterName}</Typography>
+                  <Typography variant="body2" color="textSecondary">ID người dùng: {request.requesterUserId}</Typography>
+                  <Typography variant="caption" color="textSecondary">Ngày gửi: {formatDateTime(request.createdAt)}</Typography>
                 </Stack>
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<CheckCircleIcon />}
-                  onClick={() => handleAcceptVerification(request.requestId)}
-                >
-                  Xác nhận
-                </Button>
+                <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleAcceptVerification(request.requestId)}>Xác nhận</Button>
               </Stack>
             </Paper>
           ))}
@@ -852,61 +547,64 @@ const renderPersonalSettings = () => (
     </Box>
   );
 
+  const renderConnectionsSettings = () => (
+    <NetworkConnectionsPanel variant="embedded" enableBlock />
+  );
+
   const renderContent = () => {
     switch (activeTab) {
-      case 'personal':
-        return renderPersonalSettings();
-      case 'account':
-        return renderAccountSettings();
-      case 'notification':
-        return renderNotificationSettings();
-      case 'advisor':
-        return renderAdvisorSettings();
-      case 'verification':
-        return renderVerificationManagement();
-      default:
-        return null;
+      case 'personal': return renderPersonalSettings();
+      case 'account': return renderAccountSettings();
+      case 'notification': return renderNotificationSettings();
+      case 'connections': return renderConnectionsSettings();
+      case 'advisor': return renderAdvisorSettings();
+      case 'verification': return renderVerificationManagement();
+      default: return null;
     }
   };
+  
+  const handleCancelEdit = useCallback(() => {
+    if (originalFormData) {
+      setFormData(originalFormData);
+    }
+    setIsEditMode(false);
+  }, [originalFormData]);
 
   return (
-    <Page
-      title="Cài đặt người dùng"
-      meta={
-        <meta
-          name="description"
-          content="Cài đặt người dùng - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
-        />
-      }
-    >
-      <Container maxWidth="xl"
-                 sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch',
-                       pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 2, sm: 3, lg: 6 }, }}>
-        <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
-          <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-            <Sidebar
-              items={menuItems}
-              value={activeTab}
-              onChange={setActiveTab}
-              useRouting={false}
-            />
-          </Stack>
-
-          {/* Right Content Area */}
-          <Stack spacing={2} sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 }}}>
-            <Stack gap={2}>
-              <Typography variant="h1" fontWeight={800} color="primary.main">
-                CÀI ĐẶT NGƯỜI DÙNG
-              </Typography>
+      <Page title="Cài đặt người dùng" meta={<meta name="description" content="Cài đặt người dùng - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM" />}>
+        <Container maxWidth="xl" sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 2, sm: 3, lg: 6 } }}>
+          <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
+            <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
+              <Sidebar items={menuItems} value={activeTab} onChange={setActiveTab} useRouting={false} />
             </Stack>
-            <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-                        border: 1, borderColor: 'divider', borderRadius: 1, backgroundColor: 'white' }}>
-              {/* Tab Content */}
-              {renderContent()}
-            </Card>
-          </Stack>
-        </Box>
-      </Container>
-    </Page>
+
+            {/* Right Content Area */}
+            <Stack spacing={2} sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
+              <Stack gap={2}>
+                <Typography variant="h1" fontWeight={800} color="primary.main">CÀI ĐẶT NGƯỜI DÙNG</Typography>
+              </Stack>
+              <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, backgroundColor: 'white' }}>
+                {/* Tab Content */}
+                {renderContent()}
+              </Card>
+            </Stack>
+          </Box>
+        </Container>
+
+        <AvatarUploadDialog
+          open={avatarCrop.open}
+          onClose={() => avatarCrop.setOpen(false)}
+          avatarPreview={avatarCrop.avatarPreview}
+          crop={avatarCrop.crop}
+          zoom={avatarCrop.zoom}
+          setCrop={avatarCrop.setCrop}
+          setZoom={avatarCrop.setZoom}
+          onCropComplete={(_, croppedPixels) =>
+            avatarCrop.setCroppedAreaPixels(croppedPixels)
+          }
+          onFileChange={avatarCrop.handleFileChange}
+          onSave={avatarCrop.handleSave}
+        />
+      </Page>
   );
 }

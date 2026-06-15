@@ -93,7 +93,56 @@ public interface MentorshipSessionR2dbcRepository extends ReactiveCrudRepository
     @Query("UPDATE mentorship_sessions SET meeting_link = :meetingLink WHERE id = :id")
     Mono<Integer> updateMeetingLink(Integer id, String meetingLink);
 
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, cancel_reason = :reason, " +
+            "proposed_start_time = :proposedStart, proposed_end_time = :proposedEnd WHERE id = :id")
+    Mono<Integer> proposeReschedule(Integer id, String status, String reason,
+                                    java.time.LocalDateTime proposedStart, java.time.LocalDateTime proposedEnd);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, " +
+            "proposed_start_time = NULL, proposed_end_time = NULL WHERE id = :id")
+    Mono<Integer> clearProposalWithStatus(Integer id, String status);
+
     @Query("SELECT * FROM mentorship_sessions WHERE availability_id = :availabilityId AND status NOT IN ('REJECTED','CANCELLED','CANCELLED_BY_MENTEE','CANCELLED_BY_MENTOR')")
     Flux<MentorshipSession> findActiveByAvailabilityId(Integer availabilityId);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, started_at = COALESCE(started_at, :now), " +
+            "mentor_joined_at = CASE WHEN :isMentor THEN COALESCE(mentor_joined_at, :now) ELSE mentor_joined_at END, " +
+            "mentee_joined_at = CASE WHEN :isMentor THEN mentee_joined_at ELSE COALESCE(mentee_joined_at, :now) END " +
+            "WHERE id = :id")
+    Mono<Integer> markJoined(Integer id, String status, boolean isMentor, java.time.LocalDateTime now);
+
+    @Query("SELECT ms.* FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "WHERE ms.status IN ('CONFIRMED','IN_PROGRESS') AND ma.end_time < :now")
+    Flux<MentorshipSession> findEndedCandidates(java.time.LocalDateTime now);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET status = :status, ended_at = :now WHERE id = :id")
+    Mono<Integer> closeSession(Integer id, String status, java.time.LocalDateTime now);
+
+    @Query("SELECT ma.start_time, ma.end_time, ma.mentor_member_id FROM mentor_availabilities ma " +
+            "JOIN mentorship_sessions ms ON ms.availability_id = ma.id WHERE ms.id = :sessionId")
+    Mono<SessionWindowProjection> findWindowBySessionId(Integer sessionId);
+
+    // ===================== Meeting-link reminders =====================
+
+    @Query("SELECT ms.id AS session_id, ma.mentor_member_id AS mentor_member_id, ma.start_time AS start_time " +
+            "FROM mentorship_sessions ms " +
+            "JOIN mentor_availabilities ma ON ms.availability_id = ma.id " +
+            "LEFT JOIN mentor_profiles mp ON ma.mentor_member_id = mp.member_id " +
+            "WHERE ms.status = 'CONFIRMED' " +
+            "AND ms.meeting_link_reminded_at IS NULL " +
+            "AND (ms.meeting_link IS NULL OR ms.meeting_link = '') " +
+            "AND (mp.default_meeting_link IS NULL OR mp.default_meeting_link = '') " +
+            "AND ma.start_time > :now AND ma.start_time <= :until")
+    Flux<MeetingLinkReminderProjection> findMissingMeetingLinkCandidates(
+            java.time.LocalDateTime now, java.time.LocalDateTime until);
+
+    @Modifying
+    @Query("UPDATE mentorship_sessions SET meeting_link_reminded_at = :now WHERE id = :id")
+    Mono<Integer> markMeetingLinkReminded(Integer id, java.time.LocalDateTime now);
 
 }

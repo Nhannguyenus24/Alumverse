@@ -43,9 +43,6 @@ export const organizationApi = {
 };
 
 export const {
-	getOrganizationBySlug,
-	getAllOrganizations,
-	createSchoolFeedback,
 	getIntroduction,
 } = organizationApi;
 
@@ -148,27 +145,7 @@ export const adminOrganizationApi = {
 	},
 };
 
-export const {
-	getOrganizations,
-	getOrganizationById,
-	createOrganization,
-	updateOrganization,
-	deleteOrganization,
-	upsertIntroduction,
-	getSchoolFeedbacks,
-	markSchoolFeedbackAsRead,
-	getFeaturesConfig,
-	updateFeaturesConfig,
-	toggleFeature,
-	getPrograms,
-	addProgram,
-	updateProgram,
-	removeProgram,
-	getMajors,
-	addMajor,
-	updateMajor,
-	removeMajor,
-} = adminOrganizationApi;
+
 
 export const adminAuditApi = {
 	getLoginHistory(page = 0, size = 50, organizationId = null) {
@@ -191,10 +168,7 @@ export const adminAuditApi = {
 };
 
 export const {
-	getLoginHistory: getAdminLoginHistory,
 	getLoginHistoryByUser,
-	getLoginStats,
-	getSuspiciousLogins,
 } = adminAuditApi;
 
 export const adminUserApi = {
@@ -261,15 +235,11 @@ export const adminUserApi = {
 
 export const {
 	getUsers,
-	getUserById,
-	getUsersByOrganization,
 	banUser,
 	unbanUser,
 	deleteUser,
 	updateUser,
-	createAdminAccount,
 	getVerificationRequests,
-	getUserVerificationRequests,
 	reviewVerificationRequest,
 	addOrganizationMember,
 	getUserActivity,
@@ -323,7 +293,6 @@ export const adminMentorshipApi = {
 export const {
 	getAllSessions,
 	getSessionsByStatus,
-	getSessionById,
 	updateSessionStatus,
 	deleteSession,
 	getAllMentorProfiles,
@@ -359,6 +328,11 @@ export const chatApi = {
 		const response = await apiClient.get(`/chat/groups/${groupId}/members`, {
 			params: { text, page, size },
 		});
+		return unwrap(response);
+	},
+
+	async getGroupBlockedMembersContext(groupId) {
+		const response = await apiClient.get(`/chat/groups/${groupId}/blocked-members-context`);
 		return unwrap(response);
 	},
 
@@ -411,20 +385,45 @@ export const chatApi = {
 		const response = await apiClient.delete(`/chat/groups/${groupId}/leave`);
 		return unwrap(response);
 	},
+
+	async blockUser(targetMemberId) {
+		const response = await apiClient.post(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async unblockUser(targetMemberId) {
+		const response = await apiClient.delete(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async getBlockStatus(targetMemberId) {
+		const response = await apiClient.get(`/chat/blocks/${targetMemberId}`);
+		return unwrap(response);
+	},
+
+	async searchConnections({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/connections/search', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async searchBlockedMembers({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/blocks', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
+
+	async getBlockList({ fullName, page = 0, size = 5 } = {}) {
+		const response = await apiClient.get('/chat/blocks', {
+			params: { fullName, page, size },
+		});
+		return unwrap(response);
+	},
 };
 
-export const {
-	listGroupChats,
-	listPrivateChats,
-	getMessages,
-	getConversationRequestStatus,
-	createConversationRequest,
-	getRecentPreviews,
-	searchIncomingRequests,
-	respondToConversationRequest,
-	createGroupChat,
-	getGroupMembers,
-} = chatApi;
+
 
 export const eventApi = {
 	async createEvent(payload) {
@@ -629,26 +628,26 @@ export const eventApi = {
 };
 
 export const adminEventApi = {
-	getAllEvents(page = 0, size = 10, organizationId = null) {
+	getAllEvents(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(BASE_ADMIN_EVENTS, { params });
+		return apiClient.get(BASE_ADMIN_EVENTS, { params, ...config });
 	},
 
 	getEventsByOrganization(organizationId, page = 0, size = 10) {
 		return apiClient.get(BASE_ADMIN_EVENTS, { params: { page, size, organizationId } });
 	},
 
-	searchAllEvents(keyword, page = 0, size = 10, organizationId = null) {
+	searchAllEvents(keyword, page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { keyword, page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params });
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/search`, { params, ...config });
 	},
 
-	getEventsByPublishStatus(isPublished, page = 0, size = 10, organizationId = null) {
+	getEventsByPublishStatus(isPublished, page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { isPublished, page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params });
+		return apiClient.get(`${BASE_ADMIN_EVENTS}/by-status`, { params, ...config });
 	},
 
 	getEventById(eventId) {
@@ -742,10 +741,8 @@ export const adminEventApi = {
 
 export const {
 	getAllEvents,
-	getEventsByOrganization,
 	searchAllEvents,
 	getEventsByPublishStatus,
-	getEventById,
 	updateEvent,
 	deleteEvent,
 	publishEvent,
@@ -755,18 +752,10 @@ export const {
 	cancelTicket,
 	approveTicket,
 	rejectTicket,
-	bulkApproveTickets,
 	approveAllPending,
 	sendIssuedTicketEmails,
-	activateTickets,
-	expireTickets,
-	inviteUsers: inviteEventUsers,
-	getInvitations: getEventInvitations,
-	sendReminders,
-	getEmailLogs,
 	getInterestsByEvent,
 	getEventStatistics,
-	getEventStatisticsById,
 } = adminEventApi;
 
 export const adminForumApi = {
@@ -786,23 +775,23 @@ export const adminForumApi = {
 		return apiClient.get(`${BASE_ADMIN_FORUM}/statistics/timeline`, { params: { year } });
 	},
 
-	getNewPostsYesterdayPaginated(page = 0, size = 10, organizationId = null) {
+	getNewPostsYesterdayPaginated(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/yesterday/paginated`, { params, ...config });
 	},
 
-	getBannedPosts(page = 0, size = 10, organizationId = null) {
+	getBannedPosts(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts/banned/list`, { params, ...config });
 	},
 
-	getAllPosts(keyword = '', page = 0, size = 20, organizationId = null) {
+	getAllPosts(keyword = '', page = 0, size = 20, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (keyword) params.keyword = keyword;
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/posts`, { params, ...config });
 	},
 
 	banPost(postId) {
@@ -817,10 +806,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/posts/${postId}`);
 	},
 
-	getPendingReports(page = 0, size = 10, organizationId = null) {
+	getPendingReports(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
-		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM_V2}/reports`, { params, ...config });
 	},
 
 	reviewReport(reportId, payload) {
@@ -831,8 +820,8 @@ export const adminForumApi = {
 		return apiClient.put(`${BASE_ADMIN_FORUM_V2}/posts/${postId}/visibility`, payload);
 	},
 
-	getAllCategories(organizationId) {
-		return apiClient.get(`${BASE_ADMIN_FORUM}/categories`, { params: { organizationId } });
+	getAllCategories(organizationId, config = {}) {
+		return apiClient.get(`${BASE_ADMIN_FORUM}/categories`, { params: { organizationId }, ...config });
 	},
 
 	getCategoryById(categoryId) {
@@ -855,10 +844,10 @@ export const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/categories/${categoryId}`);
 	},
 
-	getAllTopics(organizationId, keyword = '', page = 0, size = 10) {
+	getAllTopics(organizationId, keyword = '', page = 0, size = 10, config = {}) {
 		const params = { organizationId, page, size };
 		if (keyword) params.keyword = keyword;
-		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params });
+		return apiClient.get(`${BASE_ADMIN_FORUM}/topics`, { params, ...config });
 	},
 
 	getTopicById(topicId) {
@@ -897,12 +886,10 @@ export const {
 	reviewReport,
 	updatePostVisibility,
 	getAllCategories,
-	getCategoryById,
 	createCategory,
 	updateCategory,
 	deleteCategory,
 	getAllTopics,
-	getTopicById,
 	createTopic,
 	updateTopic,
 	deleteTopic,
@@ -910,8 +897,8 @@ export const {
 } = adminForumApi;
 
 export const fundApi = {
-	async getFunds(params = {}) {
-		const response = await apiClient.get(BASE_FUND, { params });
+	async getFunds(params = {}, config = {}) {
+		const response = await apiClient.get(BASE_FUND, { params, ...config });
 		return unwrap(response);
 	},
 
@@ -976,21 +963,7 @@ export const fundApi = {
 	},
 };
 
-export const {
-	getFunds,
-	getFundDetail,
-	getFundStatuses,
-	getFundStatistics,
-	getActiveFundReceivingInfos,
-	getFundReceivingInfos,
-	getSupportedBanks,
-	createFundReceivingInfo,
-	getFundDonationsByFundId,
-	createFundDonation,
-	createFund,
-	updateFund,
-	closeFund,
-} = fundApi;
+
 
 export const networkApi = {
 	async searchMembers(params = {}) {
@@ -999,7 +972,7 @@ export const networkApi = {
 	},
 };
 
-export const { searchMembers } = networkApi;
+
 
 export const userApi = {
 	joinOrganization(payload) {
@@ -1091,17 +1064,7 @@ export const userSettingsApi = {
 	},
 };
 
-export const {
-	getProfile,
-	getOrganizationMember,
-	getNotificationSettings,
-	updateProfile,
-	updateNotificationSettings,
-	changePassword,
-	getLoginHistory,
-	getPendingPeerVerifications,
-	acceptPeerVerification,
-} = userSettingsApi;
+
 
 export const mentorshipApi = {
 	saveMenteeProfile(payload) {
@@ -1165,12 +1128,22 @@ export const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
+	respondReschedule(sessionId, accept) {
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/reschedule-response`, null, {
+			params: { accept },
+		});
+	},
+
 	createSessionFeedback(sessionId, payload) {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/feedback`, payload);
 	},
 
 	reportSession(sessionId, payload) {
 		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/report`, payload);
+	},
+
+	joinMenteeSession(sessionId) {
+		return apiClient.post(`${BASE_MENTEE}/sessions/${sessionId}/join`);
 	},
 
 	createMentorProfile(payload) {
@@ -1229,14 +1202,25 @@ export const mentorshipApi = {
 		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/status`, payload);
 	},
 
+	updateSessionMeetingLink(sessionId, meetingLink) {
+		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/meeting-link`, { meetingLink });
+	},
+
 	cancelMentorSession(sessionId, cancelReason) {
 		const params = cancelReason ? { cancelReason } : {};
 		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
 	},
 
-	postponeMentorSession(sessionId, reason) {
-		const params = reason ? { reason } : {};
-		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/postpone`, null, { params });
+	joinMentorSession(sessionId) {
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/join`);
+	},
+
+	postponeMentorSession(sessionId, { reason, proposedStartTime, proposedEndTime }) {
+		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/postpone`, {
+			reason,
+			proposedStartTime,
+			proposedEndTime,
+		});
 	},
 
 	getMyMentorFeedbacks(page = 0, limit = 10) {
@@ -1262,10 +1246,12 @@ export const {
 	getMentorFeedbacks,
 	bookSession,
 	getMyMenteeSessions,
-	getMenteeSessionById,
 	cancelSession,
+	respondReschedule,
 	createSessionFeedback,
 	reportSession,
+	joinMenteeSession,
+	joinMentorSession,
 	cancelMentorSession,
 	postponeMentorSession,
 	createMentorProfile,
@@ -1282,6 +1268,7 @@ export const {
 	updateMyAvailability,
 	getMyMentorSessions,
 	updateSessionStatus: updateMentorSessionStatus,
+	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
 	uploadCvFile,
 } = mentorshipApi;
@@ -1308,29 +1295,5 @@ export const notificationApi = {
 	},
 };
 
-export const {
-	getNotifications,
-	markAsRead,
-	deleteNotification,
-	deleteAllNotifications,
-} = notificationApi;
 
-export const api = {
-	organizationApi,
-	adminOrganizationApi,
-	adminAuditApi,
-	adminUserApi,
-	adminMentorshipApi,
-	chatApi,
-	eventApi,
-	adminEventApi,
-	adminForumApi,
-	fundApi,
-	networkApi,
-	userApi,
-	userSettingsApi,
-	mentorshipApi,
-	notificationApi,
-};
 
-export default api;

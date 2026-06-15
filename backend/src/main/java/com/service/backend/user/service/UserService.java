@@ -1,5 +1,6 @@
 package com.service.backend.user.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -52,6 +53,7 @@ public class UserService {
     private final NotificationService notificationService;
     private final OCRService ocrService;
 
+    @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
                 .flatMap(fileUrl -> {
@@ -63,8 +65,7 @@ public class UserService {
                         if (requestId != null) {
                             String localPath = fileUploadService.getLocalPath(fileUrl);
                             if (localPath != null) {
-                                Mono.fromCallable(() -> ocrService.extractTextFromFile(localPath))
-                                        .subscribeOn(Schedulers.boundedElastic())
+                                ocrService.extractTextFromFile(localPath)
                                         .flatMap(text -> authRepository.updateAiSummary(requestId, text))
                                         .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
                                         .subscribe();
@@ -75,6 +76,7 @@ public class UserService {
                 .then();
     }
 
+    @Transactional
     public Mono<Void> requestPeerVerification(Long currentUserId, Integer organizationId, Integer verifierUserId) {
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
@@ -135,6 +137,7 @@ public class UserService {
                 .then();
     }
 
+    @Transactional
     public Mono<Void> directVerify(Long currentUserId, Integer organizationId, Integer targetUserId) {
         return Mono.zip(
                 userOrganizationMemberRepository.findByOrganizationIdAndUserId(organizationId, currentUserId.intValue()),
@@ -177,6 +180,14 @@ public class UserService {
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + currentUserId))))
                 .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
+    }
+
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
+        return userProfileRepository.findProfileByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + userId))))
+                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
@@ -255,6 +266,7 @@ public class UserService {
                 .doOnSuccess(r -> logger.info("updateMyNotificationSettings result: {}", JsonUtils.toJson(r)));
     }
 
+    @Transactional
     public Mono<Void> updateMyProfile(Long currentUserId, UpdateMyProfileRequest request) {
         Integer userId = currentUserId.intValue();
 

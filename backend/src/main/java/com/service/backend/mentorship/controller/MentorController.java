@@ -16,7 +16,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Mentorship > Mentors", description = "API endpoints for mentor profile and activities")
 @RestController
 @RequestMapping("/api/mentorship/mentor")
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ import java.util.List;
 public class MentorController {
 
     private final MentorService mentorService;
+    private final com.service.backend.mentorship.service.MentorshipSessionService sessionService;
 
     @PostMapping("/profile")
     public Mono<ResponseEntity<ApiResponse<MentorProfileResponse>>> createProfile(
@@ -149,8 +152,8 @@ public class MentorController {
     @PostMapping("/sessions/{sessionId}/postpone")
     public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> postponeSession(
             @PathVariable @Min(1) Integer sessionId,
-            @org.springframework.web.bind.annotation.RequestParam(required = false) String reason) {
-        return mentorService.postponeSession(sessionId, reason)
+            @Valid @RequestBody PostponeSessionRequest request) {
+        return mentorService.postponeSession(sessionId, request)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session postponed successfully", response)));
     }
@@ -162,6 +165,23 @@ public class MentorController {
         return mentorService.updateSessionStatus(sessionId, request)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Session status updated successfully", response)));
+    }
+
+    @PutMapping("/sessions/{sessionId}/meeting-link")
+    public Mono<ResponseEntity<ApiResponse<MentorshipSessionResponse>>> updateSessionMeetingLink(
+            @PathVariable @Min(1) Integer sessionId,
+            @Valid @RequestBody UpdateMeetingLinkRequest request) {
+        return mentorService.updateSessionMeetingLink(sessionId, request.getMeetingLink())
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Cập nhật link tham gia thành công", response)));
+    }
+
+    @PostMapping("/sessions/{sessionId}/join")
+    public Mono<ResponseEntity<ApiResponse<JoinSessionResponse>>> joinSession(
+            @PathVariable @Min(1) Integer sessionId) {
+        return sessionService.joinSession(sessionId, true)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Tham gia buổi mentoring thành công", response)));
     }
 
     @GetMapping("/feedbacks")

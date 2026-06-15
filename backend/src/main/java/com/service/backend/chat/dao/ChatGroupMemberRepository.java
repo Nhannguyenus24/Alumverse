@@ -40,7 +40,8 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
                 CASE WHEN cg.type = 'PRIVATE' THEN gp.full_name ELSE cg.title END      AS name,
                 CASE WHEN cg.type = 'PRIVATE' THEN u.avatar_url  ELSE NULL END         AS avatar_url,
                 lm.content                                                              AS preview,
-                lm.created_at                                                           AS updated_at
+                lm.created_at                                                           AS updated_at,
+                cg.type                                                                 AS type
             FROM chat_group_members my_cgm
             JOIN chat_groups cg ON cg.id = my_cgm.group_id
             JOIN LATERAL (
@@ -95,6 +96,14 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
 
     @Query("SELECT COUNT(id) FROM chat_group_members WHERE group_id = :groupId")
     Mono<Long> countMembersByGroupId(Long groupId);
+
+    @Modifying
+    @Query("""
+            INSERT INTO chat_group_members (group_id, member_id, role, joined_at)
+            VALUES (:groupId, :memberId, 'MEMBER', CURRENT_TIMESTAMP)
+            ON CONFLICT (group_id, member_id) DO NOTHING
+            """)
+    Mono<Void> insertMemberIfNotExists(Long groupId, Long memberId);
 }
 
 

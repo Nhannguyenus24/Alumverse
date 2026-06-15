@@ -22,6 +22,7 @@ public class NewsResponse {
     private String content;
     private String thumbnailUrl;
     private String topic;
+    private String url;
     private Boolean isHidden;
     private LocalDateTime publishedAt;
 
@@ -35,6 +36,7 @@ public class NewsResponse {
                 .content(news.getContent())
                 .thumbnailUrl(news.getThumbnailUrl())
                 .topic(news.getTopic())
+                .url(news.getUrl())
                 .isHidden(news.getIsHidden())
                 .publishedAt(news.getPublishedAt())
                 .build();

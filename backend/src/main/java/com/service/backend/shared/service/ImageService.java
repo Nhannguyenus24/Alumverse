@@ -9,8 +9,13 @@ import reactor.core.scheduler.Schedulers;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.UUID;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.Gauge;
+import jakarta.annotation.PostConstruct;
 
 
 @Service
@@ -30,6 +35,34 @@ public class ImageService {
     @Value("${image.domain:http://localhost/images/}")
     private String domain;
 
+    private final MeterRegistry meterRegistry;
+
+    public ImageService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    @PostConstruct
+    public void initMetrics() {
+        Gauge.builder("image.storage.size.bytes", this, ImageService::getImagesDirectorySize)
+             .description("Current total size of images stored by the backend")
+             .register(meterRegistry);
+    }
+
+    private double getImagesDirectorySize() {
+        try {
+            Path folder = Paths.get(uploadDir);
+            if (!Files.exists(folder)) return 0;
+            try (java.util.stream.Stream<Path> pathStream = Files.walk(folder)) {
+                return pathStream
+                        .filter(p -> p.toFile().isFile())
+                        .mapToLong(p -> p.toFile().length())
+                        .sum();
+            }
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     /**
      * Upload a Base64 image and convert to WebP format.
      *
@@ -38,6 +71,7 @@ public class ImageService {
      * @throws Exception if decoding, converting, or saving the file fails
      */
     public String uploadBase64Image(String base64String) throws Exception {
+        Timer.Sample sample = Timer.start(meterRegistry);
         try {
             // 1. Extract the Base64 header part if present (e.g.: data:image/png;base64,...)
             String pureBase64 = extractPureBase64(base64String);
@@ -58,6 +92,7 @@ public class ImageService {
                     .fromBytes(imageBytes)
                     .output(WebpWriter.DEFAULT, targetPath);
 
+            sample.stop(meterRegistry.timer("image.processing.time"));
             return domain + fileName;
 
         } catch (IllegalArgumentException e) {
@@ -103,38 +138,29 @@ public class ImageService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    /**
-     * Check if the image file already exists on the server.
-     *
-     * @param fileName name of the file to check (including extension)
-     * @return true if the file exists, false otherwise
-     */
-    public boolean imageExists(String fileName) {
-        try {
-            var filePath = Paths.get(uploadDir + fileName);
-            return Files.exists(filePath);
-        } catch (Exception e) {
-            return false;
-        }
+    public Mono<Boolean> imageExists(String fileName) {
+        return Mono.fromCallable(() -> {
+            try {
+                var filePath = Paths.get(uploadDir + fileName);
+                return Files.exists(filePath);
+            } catch (Exception e) {
+                return false;
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    /**
-     * Delete an image file from the server.
-     * (Consider carefully before deleting to avoid data loss)
-     *
-     * @param fileName name of the file to delete (including extension)
-     * @return true if deletion was successful, false otherwise
-     */
-    public boolean deleteImage(String fileName) {
-        try {
-            var filePath = Paths.get(uploadDir + fileName);
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
-                return true;
+    public Mono<Boolean> deleteImage(String fileName) {
+        return Mono.fromCallable(() -> {
+            try {
+                var filePath = Paths.get(uploadDir + fileName);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                    return true;
+                }
+                return false;
+            } catch (Exception e) {
+                return false;
             }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 }

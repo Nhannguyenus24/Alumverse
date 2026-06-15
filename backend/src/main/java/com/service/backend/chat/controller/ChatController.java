@@ -5,6 +5,7 @@ import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
 import com.service.backend.chat.dto.CreateGroupRequest;
+import com.service.backend.chat.dto.GroupBlockedMembersContextResponse;
 import com.service.backend.chat.dto.GroupChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatListItemResponse;
 import com.service.backend.chat.dto.PrivateChatRequest;
@@ -32,7 +33,9 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Chat > General", description = "API endpoints for real-time messaging and general chat")
 @RestController
 @RequestMapping("/api/chat")
 @Validated
@@ -171,6 +174,19 @@ public class ChatController {
                         this.chatService.getGroupMembersWithProfile(groupId, currentMemberId, text, page, size))
                 .map(result -> ResponseEntity
                         .ok(new ApiResponse<>("Group members retrieved successfully", result)));
+    }
+
+    /*
+        Get members blocked by the current user who are still in this group chat.
+        Used by the group chat UI to show an informational banner.
+    */
+    @GetMapping("/groups/{groupId}/blocked-members-context")
+    public Mono<ResponseEntity<ApiResponse<GroupBlockedMembersContextResponse>>> getGroupBlockedMembersContext(
+            @PathVariable("groupId") @Min(1) Long groupId) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentMemberId -> this.chatService.getGroupBlockedMembersContext(currentMemberId, groupId))
+                .map(result -> ResponseEntity
+                        .ok(new ApiResponse<>("Group blocked members context retrieved successfully", result)));
     }
 
     /*

@@ -16,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > Alumni Posts", description = "API endpoints for posts created by alumni")
 @RestController
 @RequestMapping("/api/articles/alumni-posts")
 @RequiredArgsConstructor
@@ -83,6 +85,17 @@ public class AlumniPostController {
         return alumniPostService.getPublished(page, limit)
                 .map(response -> ResponseEntity
                         .ok(new ApiResponse<>("Published alumni posts retrieved successfully", response)));
+    }
+
+    @PublicEndpoint
+    @GetMapping("/user/{userId}")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<AlumniPostResponse>>>> getByUserId(
+            @PathVariable @Min(1) Integer userId,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "10") @Min(1) int limit) {
+        return alumniPostService.getByAuthorMemberId(userId, page, limit)
+                .map(response -> ResponseEntity
+                        .ok(new ApiResponse<>("Alumni posts by user retrieved successfully", response)));
     }
 
     @PublicEndpoint

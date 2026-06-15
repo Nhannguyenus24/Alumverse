@@ -27,10 +27,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+@Tag(name = "Admin > Events", description = "API endpoints for managing events by administrators")
 @RestController
 @RequestMapping("/api/admin/events")
 @Validated
-@Tag(name = "Admin Event Management", description = "Admin APIs for cross-organization event moderation and management")
 public class AdminEventController {
 
     private final AdminEventService adminEventService;

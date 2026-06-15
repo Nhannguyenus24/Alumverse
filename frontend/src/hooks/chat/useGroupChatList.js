@@ -11,6 +11,7 @@ export function useGroupChatList({ searchQuery = '', page = 1 }) {
     queryKey: ['groupChatList', searchQuery, backendPage],
     queryFn: () =>
       chatApi.listGroupChats({ text: searchQuery, page: backendPage, size: BACKEND_PAGE_SIZE }),
+    refetchOnMount: 'always',
   });
 
   const data = query.data;

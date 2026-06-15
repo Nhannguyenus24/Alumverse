@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useNavigate as useRouterNavigate, useParams } from 'react-router';
 import useOrganizationStore from '../stores/organizationStore';
 
@@ -15,13 +16,13 @@ export const useOrgNavigate = () => {
   const routerNavigate = useRouterNavigate();
   const toOrgPath = useOrgPath();
 
-  return (path, options = {}) => {
+  return useCallback((path, options = {}) => {
     if (typeof path !== 'string') {
       return routerNavigate(path, options);
     }
 
     return routerNavigate(toOrgPath(path), options);
-  };
+  }, [routerNavigate, toOrgPath]);
 };
 
 export const useOrgPath = () => {
@@ -29,9 +30,10 @@ export const useOrgPath = () => {
   const currentSlug = useOrganizationStore((state) => state.currentSlug);
   const organizationSlug = useOrganizationStore((state) => state.organization?.slug);
   const slug = organizationSlug || currentSlug || routeSlug || null;
-  const globalPrefixes = ['/admin', '/404', '/api'];
 
-  return (path) => {
+  return useCallback((path) => {
+    const globalPrefixes = ['/admin', '/404', '/api'];
+    
     // If path is external/global, use as-is.
     if (
       path.startsWith('http://')
@@ -55,5 +57,5 @@ export const useOrgPath = () => {
     // Prepend slug to path
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
     return normalizedPath === '/' ? `/${slug}` : `/${slug}${normalizedPath}`;
-  };
+  }, [slug]);
 };

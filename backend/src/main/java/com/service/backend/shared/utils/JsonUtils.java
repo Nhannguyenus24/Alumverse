@@ -196,23 +196,30 @@ public class JsonUtils {
     }
 
     /**
-     * Deep copy an object using JSON serialization
+     * Deep copy an object using Jackson TokenBuffer (Faster than String serialization)
      */
     public static <T> T deepCopy(T obj, Class<T> clazz) {
-        return fromJson(toJson(obj), clazz);
+        if (obj == null) return null;
+        try {
+            com.fasterxml.jackson.databind.util.TokenBuffer tb = new com.fasterxml.jackson.databind.util.TokenBuffer(MAPPER, false);
+            MAPPER.writeValue(tb, obj);
+            return MAPPER.readValue(tb.asParser(), clazz);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deep copy object", e);
+        }
     }
 
     /**
-     * Check if string is valid JSON
+     * Check if string is valid JSON without building a full DOM tree in memory
      */
     public static boolean isValidJson(String json) {
         if (json == null || json.trim().isEmpty()) {
             return false;
         }
-        try {
-            MAPPER.readTree(json);
+        try (com.fasterxml.jackson.core.JsonParser parser = MAPPER.getFactory().createParser(json)) {
+            while (parser.nextToken() != null) {}
             return true;
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             return false;
         }
     }

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
-import { useSnackbar } from 'notistack';
 import {
   Avatar,
   Box,
@@ -33,8 +32,8 @@ import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
 import { formatAccountStatusLabel } from '../../constants/adminStatusDisplay';
-import { useAdminUsersContext, useAdminSystemContext } from '../../stores/AdminStore';
-import { useAuth } from '../../hooks/useAuth';
+import { useAdminUsersContext } from '../../stores/AdminStore';
+import useAdminAuditLogsData from '../../hooks/admin/useAdminAuditLogsData';
 import { getLoginHistoryByUser, getUserActivity, adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -45,9 +44,7 @@ const AdminUserDetailPage = () => {
   const slugMatchExact = useMatch('/:slug/admin');
   const slugMatch = slugMatchWildcard ?? slugMatchExact;
   const adminBase = slugMatch?.params?.slug ? `/${slugMatch.params.slug}/admin` : '/admin';
-  const { enqueueSnackbar } = useSnackbar();
-  const { user: currentUser } = useAuth();
-  const { auditLogs } = useAdminSystemContext();
+  const { auditLogs } = useAdminAuditLogsData();
   const { setBreadcrumbs } = useOutletContext();
   const { allUsers, updateUser, deleteUser, banUser, unbanUser } = useAdminUsersContext();
   const user = useMemo(() => allUsers.find((u) => String(u.id) === String(userId)), [allUsers, userId]);

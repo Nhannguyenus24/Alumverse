@@ -16,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Articles > Learning Resources", description = "API endpoints for learning materials and resources")
 @RestController
 @RequestMapping("/api/articles/learning-resources")
 @RequiredArgsConstructor

@@ -38,6 +38,7 @@ public class AlumniPostService {
                                         .content(request.getContent())
                                         .thumbnailUrl(thumbnailUrl.isEmpty() ? null : thumbnailUrl)
                                         .topic(request.getTopic())
+                                        .url(request.getUrl())
                                         .isHidden(true)
                                         .build();
 
@@ -57,6 +58,7 @@ public class AlumniPostService {
                             existing.setContent(request.getContent());
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
+                            if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return alumniPostRepository.save(existing);
                         }))
                 .map(AlumniPostResponse::from);
@@ -108,6 +110,15 @@ public class AlumniPostService {
                                 .map(AlumniPostResponse::from),
                         alumniPostRepository.count(),
                         page, limit)));
+    }
+
+    public Mono<PaginatedResponse<AlumniPostResponse>> getByAuthorMemberId(Integer authorMemberId, int page, int limit) {
+        int offset = page * limit;
+        return PaginationHelper.paginate(
+                alumniPostRepository.findByAuthorMemberIdWithPagination(authorMemberId, limit, offset).map(AlumniPostResponse::from),
+                alumniPostRepository.countByAuthorMemberId(authorMemberId),
+                page, limit)
+                .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(AlumniPostService.class).info("getByAuthorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
     }
 
     public Mono<PaginatedResponse<AlumniPostResponse>> search(String keyword, int page, int limit) {

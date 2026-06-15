@@ -15,10 +15,12 @@ import com.service.backend.shared.dto.PaginatedResponse;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Network directory search (Kết nối) — members within the authenticated user's organization.
  */
+@Tag(name = "Chat > Network Search", description = "API endpoints for searching members within the network")
 @RestController
 @RequestMapping("/api/chat/network")
 @Validated

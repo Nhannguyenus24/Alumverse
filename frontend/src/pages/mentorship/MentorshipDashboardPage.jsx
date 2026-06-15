@@ -9,10 +9,16 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import dayjs from 'dayjs';
 
 import StarIcon from '@mui/icons-material/Star';
 
@@ -25,9 +31,16 @@ import { useMyMentorSessions } from '../../hooks/mentorship/useMyMentorSessions'
 import { useUpdateSessionStatus } from '../../hooks/mentorship/useUpdateSessionStatus';
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedbacks';
+import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
-import { cancelMentorSession, postponeMentorSession, reportSession } from '../../utils/api';
+import {
+  cancelMentorSession,
+  postponeMentorSession,
+  reportSession,
+  updateMentorSessionMeetingLink,
+} from '../../utils/api';
+import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
 
 const TOP_TABS = MENTOR_PROFILE_TABS;
@@ -48,12 +61,22 @@ const MentorshipDashboardPage = () => {
   const [reportPending, setReportPending] = useState(false);
   const [postponeTarget, setPostponeTarget] = useState(null);
   const [postponeReason, setPostponeReason] = useState('');
+  const [postponeDate, setPostponeDate] = useState(null);
+  const [postponeStart, setPostponeStart] = useState(null);
+  const [postponeEnd, setPostponeEnd] = useState(null);
+  const [postponeError, setPostponeError] = useState(null);
   const [postponePending, setPostponePending] = useState(false);
+  const [linkTarget, setLinkTarget] = useState(null);
+  const [linkValue, setLinkValue] = useState('');
+  const [linkError, setLinkError] = useState(null);
+  const [linkPending, setLinkPending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
   const feedbacksQuery = useMyMentorFeedbacks(0, 50);
   const updateMutation = useUpdateSessionStatus();
+  const joinMutation = useJoinSession();
+  const [actionError, setActionError] = useState('');
 
   const items = useMemo(() => sessionsQuery.data?.items ?? [], [sessionsQuery.data]);
   const feedbacks = useMemo(
@@ -62,7 +85,15 @@ const MentorshipDashboardPage = () => {
   );
 
   const upcomingItems = useMemo(
-    () => items.filter((s) => s.status === 'CONFIRMED'),
+    () =>
+      items.filter(
+        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
+      ),
+    [items],
+  );
+
+  const pastItems = useMemo(
+    () => items.filter((s) => s.status === 'COMPLETED' || s.status === 'EXPIRED'),
     [items],
   );
 
@@ -80,6 +111,15 @@ const MentorshipDashboardPage = () => {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
+    }
+  };
+
+  const handleJoin = async (session) => {
+    setActionError('');
+    try {
+      await joinMutation.joinSession({ sessionId: session.id, asMentor: true });
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
     }
   };
 
@@ -110,24 +150,92 @@ const MentorshipDashboardPage = () => {
   const openPostponeDialog = (session) => {
     setPostponeTarget(session);
     setPostponeReason('');
+    // Seed pickers from the current session time so the mentor only tweaks it.
+    const base = session.startTime ? dayjs(session.startTime) : null;
+    setPostponeDate(base);
+    setPostponeStart(base);
+    setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
+    setPostponeError(null);
   };
 
   const closePostponeDialog = () => {
     setPostponeTarget(null);
     setPostponeReason('');
+    setPostponeDate(null);
+    setPostponeStart(null);
+    setPostponeEnd(null);
+    setPostponeError(null);
   };
 
   const handleConfirmPostpone = async () => {
     if (!postponeTarget) return;
+    setPostponeError(null);
+    if (!postponeDate || !postponeStart || !postponeEnd) {
+      setPostponeError('Hãy chọn ngày, giờ bắt đầu và giờ kết thúc đề xuất.');
+      return;
+    }
+    // Combine the chosen date with the chosen start/end times.
+    const proposedStart = postponeDate
+      .hour(postponeStart.hour())
+      .minute(postponeStart.minute())
+      .second(0)
+      .millisecond(0);
+    const proposedEnd = postponeDate
+      .hour(postponeEnd.hour())
+      .minute(postponeEnd.minute())
+      .second(0)
+      .millisecond(0);
+    if (!proposedEnd.isAfter(proposedStart)) {
+      setPostponeError('Giờ kết thúc phải sau giờ bắt đầu.');
+      return;
+    }
+    if (!proposedStart.isAfter(dayjs())) {
+      setPostponeError('Giờ đề xuất phải nằm trong tương lai.');
+      return;
+    }
     setPostponePending(true);
     try {
-      await postponeMentorSession(postponeTarget.id, postponeReason.trim() || undefined);
+      await postponeMentorSession(postponeTarget.id, {
+        reason: postponeReason.trim() || undefined,
+        proposedStartTime: proposedStart.format('YYYY-MM-DDTHH:mm:ss'),
+        proposedEndTime: proposedEnd.format('YYYY-MM-DDTHH:mm:ss'),
+      });
       sessionsQuery.refetch?.();
       closePostponeDialog();
-    } catch {
-      /* silent */
+    } catch (err) {
+      setPostponeError(err?.response?.data?.message ?? 'Không gửi được đề nghị dời lịch.');
     } finally {
       setPostponePending(false);
+    }
+  };
+
+  const openLinkDialog = (session) => {
+    setLinkTarget(session);
+    setLinkValue(session.meetingLink ?? '');
+    setLinkError(null);
+  };
+  const closeLinkDialog = () => {
+    setLinkTarget(null);
+    setLinkValue('');
+    setLinkError(null);
+  };
+  const handleConfirmLink = async () => {
+    if (!linkTarget) return;
+    const value = linkValue.trim();
+    if (!value) {
+      setLinkError('Vui lòng nhập link tham gia.');
+      return;
+    }
+    setLinkPending(true);
+    setLinkError(null);
+    try {
+      await updateMentorSessionMeetingLink(linkTarget.id, value);
+      sessionsQuery.refetch?.();
+      closeLinkDialog();
+    } catch (err) {
+      setLinkError(err?.response?.data?.message ?? 'Không cập nhật được link tham gia.');
+    } finally {
+      setLinkPending(false);
     }
   };
 
@@ -143,17 +251,23 @@ const MentorshipDashboardPage = () => {
     setReportDescription('');
   };
 
+  const isOtherReason = reportCategory === 'OTHER';
+  const reportDescTooShort = isOtherReason && reportDescription.trim().length < 10;
+  const reportInvalid = !reportCategory || reportDescTooShort;
+
   const handleConfirmReport = async () => {
-    if (!reportTarget || !reportCategory.trim()) return;
+    if (!reportTarget || reportInvalid) return;
+    setActionError('');
     setReportPending(true);
     try {
       await reportSession(reportTarget.id, {
-        reasonCategory: reportCategory.trim(),
+        reasonCategory: reportCategory,
         description: reportDescription.trim() || undefined,
       });
       closeReportDialog();
-    } catch {
-      /* silent */
+      sessionsQuery.refetch?.();
+    } catch (err) {
+      setActionError(err?.response?.data?.message ?? 'Không gửi được báo cáo.');
     } finally {
       setReportPending(false);
     }
@@ -215,6 +329,12 @@ const MentorshipDashboardPage = () => {
             <Alert severity="error">{updateMutation.errorMessage}</Alert>
           )}
 
+          {actionError && (
+            <Alert severity="error" onClose={() => setActionError('')}>
+              {actionError}
+            </Alert>
+          )}
+
           {sessionsQuery.isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
               <CircularProgress />
@@ -236,19 +356,42 @@ const MentorshipDashboardPage = () => {
                           view="mentor"
                           onCancel={openCancelDialog}
                           cancelDisabled={cancelPending}
-                          onReport={openReportDialog}
                           onPostpone={openPostponeDialog}
+                          onJoin={handleJoin}
+                          joinPending={joinMutation.isPending}
+                          onSetMeetingLink={openLinkDialog}
+                          mentorHasDefaultLink={Boolean(profile?.defaultMeetingLink)}
                         />
-                        <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            onClick={() => callUpdate(session.id, 'COMPLETED')}
-                          >
-                            Đánh dấu hoàn tất
-                          </Button>
-                        </Stack>
+                        {(session.status === 'CONFIRMED' || session.status === 'IN_PROGRESS') && (
+                          <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              onClick={() => callUpdate(session.id, 'COMPLETED')}
+                            >
+                              Đánh dấu hoàn tất
+                            </Button>
+                          </Stack>
+                        )}
                       </Box>
+                    ))}
+                  </Stack>
+                )}
+              </Section>
+
+              {/* ĐÃ QUA */}
+              <Section title={`Đã qua (${pastItems.length})`}>
+                {pastItems.length === 0 ? (
+                  <EmptyState message="Chưa có buổi tư vấn nào đã diễn ra." />
+                ) : (
+                  <Stack spacing={2}>
+                    {pastItems.map((session) => (
+                      <MentorshipBookingItem
+                        key={session.id}
+                        session={session}
+                        view="mentor"
+                        onReport={openReportDialog}
+                      />
                     ))}
                   </Stack>
                 )}
@@ -295,17 +438,43 @@ const MentorshipDashboardPage = () => {
         <DialogTitle>Đề nghị dời lịch</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            Buổi hẹn hiện tại sẽ được mở lại để người được cố vấn chọn khung giờ khác phù hợp hơn.
-            Bạn có thể ghi chú lý do để họ nắm rõ.
+            Đề xuất một khung giờ mới cho buổi hẹn. Người được cố vấn sẽ nhận thông báo để
+            đồng ý dời lịch hoặc từ chối. Buổi hẹn vẫn được giữ cho tới khi họ phản hồi.
           </Typography>
-          <TextField
-            label="Lý do dời lịch (tùy chọn)"
-            value={postponeReason}
-            onChange={(e) => setPostponeReason(e.target.value)}
-            fullWidth
-            multiline
-            minRows={2}
-          />
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Stack spacing={2} mt={1}>
+              <DatePicker
+                label="Ngày đề xuất"
+                value={postponeDate}
+                onChange={setPostponeDate}
+                minDate={dayjs()}
+                slotProps={{ textField: { size: 'small', fullWidth: true } }}
+              />
+              <Stack direction="row" spacing={1}>
+                <TimePicker
+                  label="Bắt đầu"
+                  value={postponeStart}
+                  onChange={setPostponeStart}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+                <TimePicker
+                  label="Kết thúc"
+                  value={postponeEnd}
+                  onChange={setPostponeEnd}
+                  slotProps={{ textField: { size: 'small', fullWidth: true } }}
+                />
+              </Stack>
+              <TextField
+                label="Lý do dời lịch (tùy chọn)"
+                value={postponeReason}
+                onChange={(e) => setPostponeReason(e.target.value)}
+                fullWidth
+                multiline
+                minRows={2}
+              />
+              {postponeError && <Alert severity="error">{postponeError}</Alert>}
+            </Stack>
+          </LocalizationProvider>
         </DialogContent>
         <DialogActions>
           <Button onClick={closePostponeDialog} color="inherit">
@@ -324,19 +493,31 @@ const MentorshipDashboardPage = () => {
             Mô tả vấn đề trong buổi mentoring. Đội quản trị sẽ xem xét và xử lý.
           </Typography>
           <TextField
+            select
             label="Lý do báo cáo *"
             value={reportCategory}
             onChange={(e) => setReportCategory(e.target.value)}
             fullWidth
             sx={{ mb: 2 }}
-          />
+          >
+            {reasonsForStatus(reportTarget?.status).map((r) => (
+              <MenuItem key={r.value} value={r.value}>
+                {r.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
-            label="Mô tả thêm (tùy chọn)"
+            label={isOtherReason ? 'Mô tả chi tiết *' : 'Mô tả thêm (tùy chọn)'}
             value={reportDescription}
             onChange={(e) => setReportDescription(e.target.value)}
             fullWidth
             multiline
             minRows={2}
+            required={isOtherReason}
+            error={reportDescTooShort}
+            helperText={
+              isOtherReason ? 'Bắt buộc nhập tối thiểu 10 ký tự khi chọn "Khác".' : undefined
+            }
           />
         </DialogContent>
         <DialogActions>
@@ -347,7 +528,7 @@ const MentorshipDashboardPage = () => {
             onClick={handleConfirmReport}
             color="warning"
             variant="contained"
-            disabled={reportPending || !reportCategory.trim()}
+            disabled={reportPending || reportInvalid}
           >
             Gửi báo cáo
           </Button>
@@ -382,6 +563,37 @@ const MentorshipDashboardPage = () => {
             disabled={cancelPending}
           >
             Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(linkTarget)} onClose={closeLinkDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{linkTarget?.meetingLink ? 'Sửa link tham gia' : 'Thêm link tham gia'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Dán link phòng họp (Google Meet, Zoom...) cho buổi hẹn này. Người được cố vấn sẽ thấy link
+            và nhận thông báo.
+          </Typography>
+          <TextField
+            label="Link tham gia"
+            value={linkValue}
+            onChange={(e) => setLinkValue(e.target.value)}
+            fullWidth
+            placeholder="https://meet.google.com/..."
+            autoFocus
+          />
+          {linkError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {linkError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLinkDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmLink} variant="contained" disabled={linkPending}>
+            {linkPending ? 'Đang lưu...' : 'Lưu link'}
           </Button>
         </DialogActions>
       </Dialog>

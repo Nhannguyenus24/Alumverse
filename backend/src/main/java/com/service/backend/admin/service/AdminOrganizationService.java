@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -177,6 +178,7 @@ public class AdminOrganizationService {
                 });
     }
 
+    @Transactional
     public Mono<OrganizationIntroductionResponse> upsertIntroduction(
             Integer orgaId, UpsertOrganizationIntroductionRequest request) {
         Mono<List<String>> uploadedUrls = uploadImages(request.getImages());

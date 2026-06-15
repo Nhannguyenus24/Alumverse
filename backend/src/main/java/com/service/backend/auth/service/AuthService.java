@@ -1,5 +1,6 @@
 package com.service.backend.auth.service;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.AbstractMap;
@@ -78,6 +79,7 @@ public class AuthService {
         this.secureRandom = new SecureRandom();
     }
 
+    @Transactional
     public Mono<Void> register(String email, String userName, String password, String fullName, Integer organizationId) {
         return authRepository.existsByEmailOrUserName(email, userName)
                 .flatMap(exists -> {
@@ -274,9 +276,13 @@ public class AuthService {
             return Mono.error(new ApplicationException(ErrorCode.REFRESH_TOKEN_NOT_FOUND));
         }
 
-        return Mono.fromCallable(() -> new AbstractMap.SimpleEntry<>(
-                        jwtUtils.getUserIdFromToken(refreshToken),
-                        jwtUtils.getOrganizationIdFromToken(refreshToken)))
+        return Mono.fromCallable(() -> {
+            com.nimbusds.jwt.JWTClaimsSet claims = jwtUtils.validateToken(refreshToken);
+            Integer userId = Integer.valueOf(claims.getSubject());
+            Object orgIdClaim = claims.getClaim("organizationId");
+            Integer orgId = orgIdClaim instanceof Number ? ((Number) orgIdClaim).intValue() : null;
+            return new AbstractMap.SimpleEntry<>(userId, orgId);
+        })
                 .onErrorMap(e -> new ApplicationException(ErrorCode.INVALID_REFRESH_TOKEN, e))
                 .flatMap(entry -> {
                     Integer userId = entry.getKey();

@@ -19,6 +19,7 @@ import AdminDashboardSections from '../../components/admin/AdminDashboardSection
 import Chart from '../../components/Chart';
 import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } from '../../stores/AdminStore';
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
+import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';
 import { useAuth } from '../../hooks/useAuth';
 
 const INTERVALS = [
@@ -32,7 +33,9 @@ const AdminDashboardPage = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
-  const { loading, metrics, timeline, organizations, reload } = useAdminSystemContext();
+  const { loading: systemLoading, organizations } = useAdminSystemContext();
+  const { loading: dashboardLoading, metrics, timeline, reload } = useAdminDashboardData();
+  const loading = systemLoading || dashboardLoading;
   const { allUsers } = useAdminUsersContext();
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);

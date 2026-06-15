@@ -9,6 +9,7 @@ import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
+import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -64,8 +65,7 @@ const ForumAlumniCreateTopicPage = Loadable(
   lazy(() => import("../pages/alumni/ForumAlumniCreateTopicPage")),
 );
 
-const ArticlePage = Loadable(
-  lazy(() => import("../pages/alumni/ArticlePage")));
+const ArticlePage = Loadable(lazy(() => import("../pages/alumni/ArticlePage")));
 
 const MyProfilePage = Loadable(
   lazy(() => import("../pages/user/MyProfilePage")),
@@ -76,27 +76,61 @@ const MyProfileEditPage = Loadable(
 
 const MyTicketsPage = Loadable(
   lazy(() => import("../pages/user/MyTicketsPage")),
-)
+);
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
-const AdminLoginPage = Loadable(lazy(() => import("../pages/admin/AdminLoginPage")));
-const AdminDashboardPage = Loadable(lazy(() => import("../pages/admin/AdminDashboardPage")));
-const AdminUsersListPage = Loadable(lazy(() => import("../pages/admin/AdminUsersListPage")));
-const AdminUserDetailPage = Loadable(lazy(() => import("../pages/admin/AdminUserDetailPage")));
-const AdminForumPostsPage = Loadable(lazy(() => import("../pages/admin/AdminForumPostsPage")));
-const AdminForumTopicsPage = Loadable(lazy(() => import("../pages/admin/AdminForumTopicsPage")));
-const AdminForumCategoriesPage = Loadable(lazy(() => import("../pages/admin/AdminForumCategoriesPage")));
-const AdminOrganizationsPage = Loadable(lazy(() => import("../pages/admin/AdminOrganizationsPage")));
-const AdminEventsPage = Loadable(lazy(() => import("../pages/admin/AdminEventsPage")));
-const AdminSchoolFeedbackPage = Loadable(lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")));
-const AdminVerificationsPage = Loadable(lazy(() => import("../pages/admin/AdminVerificationsPage")));
-const AdminMentorshipPage = Loadable(lazy(() => import("../pages/admin/AdminMentorshipPage")));
-const AdminArticlesPage = Loadable(lazy(() => import("../pages/admin/AdminArticlesPage")));
-const AdminEditArticlePage = Loadable(lazy(() => import("../pages/admin/AdminEditArticlePage")));
-const AdminFundraisingsPage = Loadable(lazy(() => import("../pages/admin/AdminFundraisingsPage")));
-const AdminFundReceivingInfosPage = Loadable(lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")));
-const AdminAuditLogsPage = Loadable(lazy(() => import("../pages/admin/AdminAuditLogsPage")));
+const AdminLoginPage = Loadable(
+  lazy(() => import("../pages/admin/AdminLoginPage")),
+);
+const AdminDashboardPage = Loadable(
+  lazy(() => import("../pages/admin/AdminDashboardPage")),
+);
+const AdminUsersListPage = Loadable(
+  lazy(() => import("../pages/admin/AdminUsersListPage")),
+);
+const AdminUserDetailPage = Loadable(
+  lazy(() => import("../pages/admin/AdminUserDetailPage")),
+);
+const AdminForumPostsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumPostsPage")),
+);
+const AdminForumTopicsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumTopicsPage")),
+);
+const AdminForumCategoriesPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumCategoriesPage")),
+);
+const AdminOrganizationsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminOrganizationsPage")),
+);
+const AdminEventsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminEventsPage")),
+);
+const AdminSchoolFeedbackPage = Loadable(
+  lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")),
+);
+const AdminVerificationsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminVerificationsPage")),
+);
+const AdminMentorshipPage = Loadable(
+  lazy(() => import("../pages/admin/AdminMentorshipPage")),
+);
+const AdminArticlesPage = Loadable(
+  lazy(() => import("../pages/admin/AdminArticlesPage")),
+);
+const AdminEditArticlePage = Loadable(
+  lazy(() => import("../pages/admin/AdminEditArticlePage")),
+);
+const AdminFundraisingsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminFundraisingsPage")),
+);
+const AdminFundReceivingInfosPage = Loadable(
+  lazy(() => import("../pages/admin/AdminFundReceivingInfosPage")),
+);
+const AdminAuditLogsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminAuditLogsPage")),
+);
 
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
@@ -114,9 +148,7 @@ const DonationDetailPage = Loadable(
 );
 
 // Honors pages
-const HonorsPage = Loadable(
-  lazy(() => import("../pages/honors/HonorsPage"))
-);
+const HonorsPage = Loadable(lazy(() => import("../pages/honors/HonorsPage")));
 const HonorsAlumniPage = Loadable(
   lazy(() => import("../pages/honors/HonorsAlumniPage")),
 );
@@ -143,6 +175,12 @@ const NetworkPage = Loadable(
 const NetworkIncomingRequestsPage = Loadable(
   lazy(() => import("../pages/network/NetworkIncomingRequestsPage")),
 );
+const NetworkConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkConnectionsPage")),
+);
+const NetworkRestrictedConnectionsPage = Loadable(
+  lazy(() => import("../pages/network/NetworkRestrictedConnectionsPage")),
+);
 const ChatPage = Loadable(
   lazy(() => import("../pages/chat/ChatPage")),
 );
@@ -162,13 +200,6 @@ const DevelopmentJobsPage = Loadable(
 const MentorshipPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipPage")),
 );
-const MentorshipProfilePage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipProfilePage")),
-);
-const MentorshipProfileEditPage = Loadable(
-  lazy(() => import("../pages/mentorship/MentorshipProfileEditPage")),
-);
-
 const MentorshipDashboardPage = Loadable(
   lazy(() => import("../pages/mentorship/MentorshipDashboardPage")),
 );
@@ -192,20 +223,11 @@ const MenteeSignupPage = Loadable(
 const PostArticlePage = Loadable(
   lazy(() => import("../pages/user/PostArticlePage")),
 );
-const PostArticleAlumniPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleAlumniPage")),
+const PostArticleGenericPage = Loadable(
+  lazy(() => import("../pages/user/PostArticleGenericPage")),
 );
 const PostArticleEventPage = Loadable(
   lazy(() => import("../pages/user/PostArticleEventPage")),
-);
-const PostArticleAchievementPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleAchievementPage")),
-);
-const PostArticleJobPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleJobPage")),
-);
-const PostArticleLearningPage = Loadable(
-  lazy(() => import("../pages/user/PostArticleLearningPage")),
 );
 const PostArticleDonationPage = Loadable(
   lazy(() => import("../pages/user/PostArticleDonationPage")),
@@ -282,12 +304,7 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: "create-post",
-                    element: (
-                      <Navigate
-                        to="../create-topic"
-                        replace
-                      />
-                    ),
+                    element: <Navigate to="../create-topic" replace />,
                   },
                   {
                     path: "create-topic",
@@ -295,6 +312,10 @@ export const router = createBrowserRouter([
                   },
                   {
                     path: ":threadId",
+                    element: <ForumAlumniThreadPage />,
+                  },
+                  {
+                    path: ":threadId/page/:pageId",
                     element: <ForumAlumniThreadPage />,
                   },
                 ],
@@ -342,7 +363,7 @@ export const router = createBrowserRouter([
           {
             path: "news",
             element: <ActivitiesNewsPage />,
-          }
+          },
         ],
       },
       {
@@ -360,6 +381,14 @@ export const router = createBrowserRouter([
           {
             path: "requests",
             element: <NetworkIncomingRequestsPage />,
+          },
+          {
+            path: "connections",
+            element: <NetworkConnectionsPage />,
+          },
+          {
+            path: "restricted-connections",
+            element: <NetworkRestrictedConnectionsPage />,
           },
         ],
       },
@@ -382,6 +411,10 @@ export const router = createBrowserRouter([
             path: "edit",
             element: <MyProfileEditPage />,
           },
+          {
+            path: ":id",
+            element: <MyProfilePage />,
+          },
         ],
       },
       {
@@ -398,24 +431,12 @@ export const router = createBrowserRouter([
         element: <PostArticlePage />,
       },
       {
-        path: "post/alumni",
-        element: <PostArticleAlumniPage />,
-      },
-      {
         path: "post/event",
         element: <PostArticleEventPage />,
       },
       {
-        path: "post/achievement",
-        element: <PostArticleAchievementPage />,
-      },
-      {
-        path: "post/job",
-        element: <PostArticleJobPage />,
-      },
-      {
-        path: "post/learning",
-        element: <PostArticleLearningPage />,
+        path: "post/:channel",
+        element: <PostArticleGenericPage />,
       },
       {
         path: "post/donation",
@@ -470,11 +491,11 @@ export const router = createBrowserRouter([
             element: <DevelopmentPage />,
           },
           {
-            path: 'academics',
+            path: "academics",
             element: <DevelopmentAcademicsPage />,
           },
           {
-            path: 'jobs',
+            path: "jobs",
             element: <DevelopmentJobsPage />,
           },
           {
@@ -498,12 +519,12 @@ export const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    element: <MentorshipProfilePage />,
+                    element: <MyProfilePage />,
                   },
                   {
                     path: "edit",
-                    element: <MentorshipProfileEditPage />,
-                  }
+                    element: <MyProfileEditPage />,
+                  },
                 ],
               },
               {
@@ -512,14 +533,14 @@ export const router = createBrowserRouter([
               },
               {
                 path: "mentors/:mentorId",
-                element: <MentorshipProfilePage />,
+                element: <MyProfilePage />,
               },
               {
                 path: "mentors/:mentorId/book",
                 element: (
-                  <MentorshipFullAccessGate>
+                  <MentorshipBookingGate>
                     <MentorshipBookingPage />
-                  </MentorshipFullAccessGate>
+                  </MentorshipBookingGate>
                 ),
               },
               {

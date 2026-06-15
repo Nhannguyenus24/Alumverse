@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
-import { useSnackbar } from 'notistack';
 import {
   Box,
   Button,
@@ -114,7 +113,7 @@ const AdminUsersListPage = () => {
     return () => { active = false; };
   }, []);
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       id: 'user',
       label: 'Người dùng',
@@ -202,7 +201,7 @@ const AdminUsersListPage = () => {
         </Stack>
       )
     }
-  ];
+  ], [theme, navigate, unbanUser, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen]);
 
   const Filters = (
     <Stack direction="row" spacing={1}>

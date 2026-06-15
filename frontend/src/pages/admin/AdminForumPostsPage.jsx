@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -15,11 +15,9 @@ import {
   Avatar,
   Button,
 } from '@mui/material';
-import { useOutletContext } from 'react-router';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
-import { adminOrganizationApi } from '../../utils/api';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
@@ -38,7 +36,7 @@ import { FORUM_STATUS_FILTER_OPTIONS } from '../../constants/adminDefaultForumPo
 import { useAdminForumContext } from '../../stores/AdminStore';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateTime } from '../../utils/dateFormatter';
-import { forumModerationLabel, truncateText } from '../../utils/stringUtils';
+import { forumModerationLabel, truncateText, toPlainText } from '../../utils/stringUtils';
 
 const FORUM_STATUS_MENU_ORDER = ['PENDING', 'FLAGGED', 'APPROVED', 'REJECTED'];
 
@@ -57,7 +55,6 @@ const AdminForumPostsPage = () => {
     statusFilter,
     setStatusFilter,
     organizationFilter,
-    setOrganizationFilter,
     updatePostStatus,
     deletePostApi,
     banPost: banPostApi,
@@ -74,25 +71,8 @@ const AdminForumPostsPage = () => {
     reviewReport,
     updatePostVisibility,
   } = useAdminForumContext();
-  const { setBreadcrumbs } = useOutletContext();
   const [searchTerm, setSearchTerm] = useState(postsSearch);
   const debouncedSearch = useDebounce(searchTerm, 500);
-  const [organizations, setOrganizations] = useState([]);
-
-  useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Bài viết Diễn đàn', active: true }]);
-
-    // Fetch organizations for filter
-    const fetchOrgs = async () => {
-      try {
-        const data = await adminOrganizationApi.getOrganizations();
-        setOrganizations(data || []);
-      } catch (err) {
-        console.error('Failed to fetch organizations', err);
-      }
-    };
-    fetchOrgs();
-  }, [setBreadcrumbs]);
 
   useEffect(() => {
     setPostsSearch(debouncedSearch);
@@ -104,7 +84,7 @@ const AdminForumPostsPage = () => {
       ID: p.id,
       'Tác giả': p.authorName,
       'Chủ đề': p.topicTitle,
-      'Nội dung': p.content,
+      'Nội dung': toPlainText(p.content),
       'Trạng thái': forumModerationLabel(p.moderationStatus),
       'Tổ chức': p.organizationName || '-',
       'Ngày đăng': formatDateTime(p.postedAt)
@@ -141,7 +121,7 @@ const AdminForumPostsPage = () => {
     }
   };
 
-  const columns = [
+  const columns = useMemo(() => [
     { id: 'id', label: 'ID', width: 60 },
     {
       id: 'author',
@@ -156,8 +136,7 @@ const AdminForumPostsPage = () => {
       )
     },
     { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
-    { id: 'organizationName', label: 'Tổ chức', render: (val) => val || '-' },
-    { id: 'content', label: 'Nội dung', render: (val) => truncateText(val, 50) },
+    { id: 'content', label: 'Nội dung', render: (val) => truncateText(toPlainText(val), 50) },
     {
       id: 'moderationStatus',
       label: 'Trạng thái',
@@ -194,7 +173,7 @@ const AdminForumPostsPage = () => {
         </Stack>
       )
     }
-  ];
+  ], [handleBan, setForumDeletePost, setForumStatusMenu]);
 
   const stats = {
     total: allPosts?.totalElements ?? 0,
@@ -299,19 +278,6 @@ const AdminForumPostsPage = () => {
           searchPlaceholder="Tìm kiếm nội dung bài viết..."
           filters={
             <Stack direction="row" spacing={2}>
-              <TextField
-                select
-                size="small"
-                label="Tổ chức"
-                value={organizationFilter}
-                onChange={(e) => setOrganizationFilter(e.target.value)}
-                sx={{ minWidth: 200 }}
-              >
-                <MenuItem value="ALL">Tất cả tổ chức</MenuItem>
-                {organizations.map((org) => (
-                  <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
-                ))}
-              </TextField>
               <TextField
                 select
                 size="small"

@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
 import TopTabFilter from '../components/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
@@ -15,120 +16,46 @@ const ProfileLayout = ({
   children,
 }) => {
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (window.history.length > 1) { window.history.back(); }
     else { onNavigate('/'); }
-  };
+  }, [onNavigate]);
 
-  const renderButtons = () => {
-    switch (mode) {
-      
-      // ================= MENTOR =================
-      case 'mentor':
-        return (
-          <>
-            <Button variant="outlined" onClick={() => onNavigate('/development/mentorship')}>
-              Về trang Cố vấn
-            </Button>
+  const BUTTON_CONFIG = useMemo(() => ({
+    mentor: [
+      { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
+      { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
+    ],
+    mentorEdit: [
+      { label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile') },
+      { label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/development/mentorship/profile') },
+    ],
+    menteeOwn: [
+      { label: 'Chỉnh sửa hồ sơ', variant: 'outlined', onClick: () => onNavigate('/development/mentorship/mentee-signup') },
+      { label: 'Trở thành cố vấn', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/development/mentorship/signup') },
+    ],
+    mentee: [
+      { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
+      { label: 'Đặt lịch hẹn', variant: 'contained', disabled: !canBook, onClick: canBook ? () => onNavigate(`/development/mentorship/mentors/${mentorId}/book`) : undefined },
+    ],
+    user: [
+      { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
+      { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
+    ],
+    userEdit: [
+      { label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile') },
+      { label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/profile') },
+    ],
+    userView: [
+      { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
+      { label: 'Nhắn tin', variant: 'contained' },
+    ],
+  }), [onNavigate, mentorId, canBook, handleBack]);
 
-            <Button variant="contained" color="secondary" onClick={() => onNavigate('/development/mentorship/profile/edit')}>
-              Sửa trang cá nhân
-            </Button>
-          </>
-        );
-
-      // ================= MENTOR EDIT =================
-      case 'mentorEdit':
-        return (
-          <>
-            <Button variant="outlined" color="secondary" onClick={() => onNavigate('/development/mentorship/profile')}>
-              Huỷ
-            </Button>
-
-            <Button variant="contained" onClick={() => onNavigate('/development/mentorship/profile')}>
-              Lưu thay đổi
-            </Button>
-          </>
-        );
-
-      // ================= MENTEE OWN PROFILE =================
-      case 'menteeOwn':
-        return (
-          <>
-            <Button variant="outlined" onClick={() => onNavigate('/development/mentorship/mentee-signup')}>
-              Chỉnh sửa hồ sơ
-            </Button>
-
-            <Button variant="contained" color="secondary" onClick={() => onNavigate('/development/mentorship/signup')}>
-              Trở thành cố vấn
-            </Button>
-          </>
-        );
-
-      // ================= MENTEE VIEWING MENTOR =================
-      case 'mentee':
-        return (
-          <>
-            <Button variant="outlined" onClick={() => onNavigate('/development/mentorship')}>
-              Về trang Cố vấn
-            </Button>
-
-            <Button
-              variant="contained"
-              disabled={!canBook}
-              onClick={canBook ? () => onNavigate(`/development/mentorship/mentors/${mentorId}/book`) : undefined}
-            >
-              Đặt lịch hẹn
-            </Button>
-          </>
-        );
-
-      // ================= MY USER PROFILE =================
-      case 'user':
-        return (
-          <>
-            <Button variant="outlined" onClick={handleBack}>
-              Quay lại
-            </Button>
-
-            <Button variant="contained" color="secondary" onClick={() => onNavigate('/profile/edit')}>
-              Sửa trang cá nhân
-            </Button>
-          </>
-        );
-
-      // ================= USER EDIT =================
-      case 'userEdit':
-        return (
-          <>
-            <Button variant="outlined" color="secondary" onClick={() => onNavigate('/profile')}>
-              Huỷ
-            </Button>
-
-            <Button variant="contained" onClick={() => onNavigate('/profile')}>
-              Lưu thay đổi
-            </Button>
-          </>
-        );
-
-      // ================= OTHER PEOPLE VIEWING USER =================
-      case 'userView':
-        return (
-          <>
-            <Button variant="outlined" onClick={handleBack}>
-              Quay lại
-            </Button>
-
-            <Button variant="contained">
-              Nhắn tin
-            </Button>
-          </>
-        );
-
-      default:
-        return null;
-    }
-  };
+  const renderButtons = () =>
+    (BUTTON_CONFIG[mode] ?? []).map(({ label, ...props }, i) => (
+      <Button key={i} {...props}>{label}</Button>
+    ));
   
   const isEditMode = mode === 'mentorEdit' || mode === 'userEdit';
 

@@ -6,7 +6,7 @@ INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "a
 ('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
 ('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '90 days', NOW()),
 ('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '60 days', NOW()),
-('nguyen.van.a@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'nguyenvana', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
+('nguyen.van.a@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'nguyenvana', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
 ('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '30 days', NOW()),
 ('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '20 days', NOW()),
 ('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '10 days', NOW()),
@@ -188,29 +188,30 @@ INSERT INTO "mentor_expertise" ("mentor_member_id", "topic", "years_experience",
 (8, 'Technical Entrepreneurship', 5, 'Product-market fit, scaling', 'Entrepreneurship', 'Tech'),
 (5, 'Deep Learning', 3, 'Các kỹ thuật xây dựng và tối ưu mô hình mạng nơ-ron.', 'Technical', 'AI');
 
--- ============= MENTOR AVAILABILITIES DATA =============
 INSERT INTO "mentor_availabilities" ("mentor_member_id", "start_time", "end_time", "status") VALUES
-(2, NOW() + INTERVAL '5 days 10:00', NOW() + INTERVAL '5 days 11:00', 'AVAILABLE'),
-(2, NOW() + INTERVAL '7 days 14:00', NOW() + INTERVAL '7 days 15:00', 'AVAILABLE'),
+(2, NOW() + INTERVAL '5 days 10:00', NOW() + INTERVAL '5 days 11:30', 'AVAILABLE'),
+(2, NOW() + INTERVAL '7 days 14:00', NOW() + INTERVAL '7 days 16:00', 'AVAILABLE'),
 (2, NOW() + INTERVAL '10 days 16:00', NOW() + INTERVAL '10 days 17:00', 'BOOKED'),
-(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 11 hours', 'AVAILABLE'),
+(2, NOW() + INTERVAL '1 day 10 hours', NOW() + INTERVAL '1 day 10 hours 30 minutes', 'AVAILABLE'),
 (2, NOW() + INTERVAL '2 days 14 hours', NOW() + INTERVAL '2 days 15 hours', 'AVAILABLE'),
-(3, NOW() + INTERVAL '4 days 09:00', NOW() + INTERVAL '4 days 10:00', 'AVAILABLE'),
+(3, NOW() + INTERVAL '4 days 09:00', NOW() + INTERVAL '4 days 10:30', 'AVAILABLE'),
 (3, NOW() + INTERVAL '6 days 13:00', NOW() + INTERVAL '6 days 14:00', 'AVAILABLE'),
 (3, NOW() + INTERVAL '1 day 9 hours', NOW() + INTERVAL '1 day 10 hours', 'AVAILABLE'),
 (6, NOW() + INTERVAL '3 days 11:00', NOW() + INTERVAL '3 days 12:00', 'BOOKED'),
-(6, NOW() + INTERVAL '8 days 15:00', NOW() + INTERVAL '8 days 16:00', 'AVAILABLE'),
+(6, NOW() + INTERVAL '8 days 15:00', NOW() + INTERVAL '8 days 16:30', 'AVAILABLE'),
 (7, NOW() + INTERVAL '5 days 13:00', NOW() + INTERVAL '5 days 14:00', 'AVAILABLE'),
-(8, NOW() + INTERVAL '6 days 10:00', NOW() + INTERVAL '6 days 11:00', 'AVAILABLE'),
+(8, NOW() + INTERVAL '6 days 10:00', NOW() + INTERVAL '6 days 12:00', 'AVAILABLE'),
 (5, NOW() + INTERVAL '3 days 19 hours', NOW() + INTERVAL '3 days 20 hours', 'AVAILABLE');
 
 -- ============= MENTORSHIP SESSIONS DATA =============
-INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "introduction", "description", "created_at") VALUES
-(3, 4, 'COMPLETED', 'Discussed web development best practices', 'https://zoom.us/j/123456789', 'TECHNICAL', 'Em muốn học về React Hooks.', 'Buổi học về các React Hooks cơ bản và nâng cao.', NOW() - INTERVAL '5 days'),
-(3, 9, 'SCHEDULED', 'First mentoring session', 'https://zoom.us/j/987654321', 'TECHNICAL', 'Em muốn hỏi về Spring Boot.', 'Lộ trình học Spring Boot cho người mới bắt đầu.', NOW() - INTERVAL '2 days'),
-(6, 5, 'COMPLETED', 'Career guidance and job search strategy', 'https://meet.google.com/abc-defg-hij', 'CAREER', 'Định hướng sự nghiệp.', 'Cách viết CV và chuẩn bị phỏng vấn.', NOW() - INTERVAL '10 days'),
-(1, 4, 'CONFIRMED', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'CAREER_ADVICE', 'Phỏng vấn Big Tech.', 'Chia sẻ kinh nghiệm phỏng vấn tại các công ty lớn.', NOW() - INTERVAL '1 day'),
-(13, 12, 'PENDING', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'GENERAL_INFO', 'Quy trình Product.', 'Tìm hiểu về văn hóa và quy trình làm việc tại VNG.', NOW());
+INSERT INTO "mentorship_sessions" ("availability_id", "mentee_member_id", "status", "booking_note", "meeting_link", "session_type", "introduction", "description", "cancel_reason", "proposed_start_time", "proposed_end_time", "mentor_joined_at", "mentee_joined_at", "started_at", "ended_at", "created_at") VALUES
+(3, 4, 'COMPLETED', 'Discussed web development best practices', 'https://zoom.us/j/123456789', 'ACADEMIC', 'Em muốn học về React Hooks.', 'Buổi học về các React Hooks cơ bản và nâng cao.', NULL, NULL, NULL, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days' + INTERVAL '1 hour', NOW() - INTERVAL '5 days'),
+(3, 9, 'CONFIRMED', 'First mentoring session', 'https://zoom.us/j/987654321', 'ACADEMIC', 'Em muốn hỏi về Spring Boot.', 'Lộ trình học Spring Boot cho người mới bắt đầu.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NOW() - INTERVAL '2 days'),
+(6, 5, 'COMPLETED', 'Career guidance and job search strategy', 'https://meet.google.com/abc-defg-hij', 'CAREER', 'Định hướng sự nghiệp.', 'Cách viết CV và chuẩn bị phỏng vấn.', NULL, NULL, NULL, NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days', NOW() - INTERVAL '10 days' + INTERVAL '1 hour', NOW() - INTERVAL '10 days'),
+(1, 4, 'CONFIRMED', 'Em muốn hỏi về cách chuẩn bị CV ứng tuyển vào Google.', 'https://meet.google.com/abc-defg-hij', 'CAREER', 'Phỏng vấn Big Tech.', 'Chia sẻ kinh nghiệm phỏng vấn tại các công ty lớn.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NOW() - INTERVAL '1 day'),
+(13, 12, 'RESCHEDULE_PROPOSED', 'Chào chị, em muốn tìm hiểu thêm về quy trình làm sản phẩm tại VNG.', NULL, 'CAREER', 'Quy trình Product.', 'Tìm hiểu về văn hóa và quy trình làm việc tại VNG.', 'Cố vấn đề nghị dời buổi hẹn: Trùng lịch công tác, mong em thông cảm.', NOW() + INTERVAL '9 days 10:00', NOW() + INTERVAL '9 days 11:00', NULL, NULL, NULL, NULL, NOW()),
+-- No-show buổi đã qua giờ mà không ai tham gia -> EXPIRED (test luồng báo cáo no-show)
+(2, 5, 'EXPIRED', 'Buổi không ai tham gia', 'https://zoom.us/j/555000111', 'CAREER', 'Hỏi về lộ trình DevOps.', 'Tư vấn lộ trình học DevOps.', NULL, NULL, NULL, NULL, NULL, NULL, NOW() - INTERVAL '3 days' + INTERVAL '1 hour', NOW() - INTERVAL '3 days');
 
 -- ============= SESSION FEEDBACKS DATA =============
 INSERT INTO "session_feedbacks" ("session_id", "mentee_member_id", "rating", "comment", "is_public", "created_at") VALUES
@@ -218,19 +219,19 @@ INSERT INTO "session_feedbacks" ("session_id", "mentee_member_id", "rating", "co
 (3, 5, 5, 'Phạm gave me very useful advice for my job search. Very professional!', true, NOW() - INTERVAL '9 days');
 
 -- ============= NEWS DATA =============
-INSERT INTO "news" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "is_hidden", "published_at") VALUES
-(1, 2, 'CS Department Launches New AI Lab', 'cs-new-ai-lab', 'We are excited to announce the opening of our state-of-the-art AI research laboratory...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Research', false, NOW() - INTERVAL '20 days'),
-(1, 6, '2026 Scholarship Program Now Open', 'scholarship-program-2026', 'Applications for the 2026 scholarship program are now being accepted. Apply now...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', false, NOW() - INTERVAL '15 days'),
-(2, 3, 'IT Department Achievement: 100 Job Placements', 'it-100-placements', 'Congratulations to our graduates who secured employment...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', false, NOW() - INTERVAL '10 days'),
-(2, 8, 'Innovation Week 2026 Schedule Released', 'innovation-week-2026', 'Mark your calendars for our annual Innovation Week...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Event', false, NOW() - INTERVAL '7 days'),
-(3, 7, 'Alumni Business Forum: Success Stories', 'alumni-business-forum', 'Join us as successful alumni share their entrepreneurial journeys...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Networking', false, NOW() - INTERVAL '5 days'),
-(4, 1, 'Engineering Capstone Projects Exhibition', 'capstone-exhibition', 'View the innovative projects created by our engineering students...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Exhibition', false, NOW() - INTERVAL '3 days');
+INSERT INTO "news" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "url", "is_hidden", "published_at") VALUES
+(1, 2, 'CS Department Launches New AI Lab', 'cs-new-ai-lab', 'We are excited to announce the opening of our state-of-the-art AI research laboratory...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Research', 'https://www.hcmus.edu.vn/news/cs-new-ai-lab', false, NOW() - INTERVAL '20 days'),
+(1, 6, '2026 Scholarship Program Now Open', 'scholarship-program-2026', 'Applications for the 2026 scholarship program are now being accepted. Apply now...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', 'https://www.hcmus.edu.vn/scholarship/2026', false, NOW() - INTERVAL '15 days'),
+(2, 3, 'IT Department Achievement: 100 Job Placements', 'it-100-placements', 'Congratulations to our graduates who secured employment...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', 'https://www.hcmus.edu.vn/news/it-100-placements', false, NOW() - INTERVAL '10 days'),
+(2, 8, 'Innovation Week 2026 Schedule Released', 'innovation-week-2026', 'Mark your calendars for our annual Innovation Week...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Event', 'https://www.hcmus.edu.vn/events/innovation-week-2026', false, NOW() - INTERVAL '7 days'),
+(3, 7, 'Alumni Business Forum: Success Stories', 'alumni-business-forum', 'Join us as successful alumni share their entrepreneurial journeys...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Networking', 'https://www.hcmus.edu.vn/events/alumni-business-forum', false, NOW() - INTERVAL '5 days'),
+(4, 1, 'Engineering Capstone Projects Exhibition', 'capstone-exhibition', 'View the innovative projects created by our engineering students...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Exhibition', 'https://www.hcmus.edu.vn/events/capstone-exhibition', false, NOW() - INTERVAL '3 days');
 
 -- ============= ALUMNI POSTS DATA =============
-INSERT INTO "alumni_posts" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "is_hidden", "published_at") VALUES
-(1, 2, 'My Journey from Student to Senior Engineer', 'my-journey-student-to-senior', 'Reflecting on 10 years in the industry after graduating from HCMUS...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', false, NOW() - INTERVAL '5 days'),
-(1, 6, 'Tips for Navigating the Tech Industry', 'tips-navigating-tech-industry', 'Sharing some lessons learned throughout my career as a developer...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Advice', false, NOW() - INTERVAL '3 days'),
-(2, 3, 'The Importance of Continuous Learning', 'importance-continuous-learning', 'How staying curious helped me grow as a Product Manager...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', false, NOW() - INTERVAL '2 days');
+INSERT INTO "alumni_posts" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "url", "is_hidden", "published_at") VALUES
+(1, 2, 'My Journey from Student to Senior Engineer', 'my-journey-student-to-senior', 'Reflecting on 10 years in the industry after graduating from HCMUS...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', 'https://www.linkedin.com/in/sample-senior-engineer', false, NOW() - INTERVAL '5 days'),
+(1, 6, 'Tips for Navigating the Tech Industry', 'tips-navigating-tech-industry', 'Sharing some lessons learned throughout my career as a developer...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Advice', 'https://medium.com/@sample/tips-navigating-tech-industry', false, NOW() - INTERVAL '3 days'),
+(2, 3, 'The Importance of Continuous Learning', 'importance-continuous-learning', 'How staying curious helped me grow as a Product Manager...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', 'https://medium.com/@sample/importance-continuous-learning', false, NOW() - INTERVAL '2 days');
 
 -- ============= SAVED ITEMS DATA =============
 INSERT INTO "saved_items" ("member_id", "item_type", "item_id", "note", "saved_at") VALUES
@@ -405,6 +406,13 @@ INSERT INTO "chat_messages" ("group_id", "sender_member_id", "content", "message
 (8, 6, 'Mình có slide về EXPLAIN ANALYZE, share vào nhóm nha.', 'TEXT', NULL, NOW() - INTERVAL '18 hours', NULL, NULL),
 (8, 4, 'Em đang làm bài lab, mai hỏi thêm ạ!', 'TEXT', NULL, NOW() - INTERVAL '15 minutes', NULL, NULL);
 
+-- ============= CHAT CONVERSATION REQUESTS DATA =============
+-- Seed cho 4 private chat group đã có tin nhắn; status ACCEPTED, cooldown_until NULL
+INSERT INTO "chat_conversation_requests" ("member_low_id", "member_high_id", "requester_member_id", "target_member_id", "chat_group_id", "last_request_message_id", "cooldown_until", "status", "created_at", "updated_at") VALUES
+(2, 4, 2, 4, 1, 1, NULL, 'ACCEPTED', NOW() - INTERVAL '12 days', NOW() - INTERVAL '12 days'),
+(2, 11, 11, 2, 4, 6, NULL, 'ACCEPTED', NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
+(6, 11, 11, 6, 6, 14, NULL, 'ACCEPTED', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days'),
+(4, 11, 4, 11, 7, 19, NULL, 'ACCEPTED', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
 
 -- ============= FORUM CATEGORIES DATA =============
 INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "description", "created_at", "updated_at") VALUES
@@ -559,35 +567,6 @@ INSERT INTO "verification_requests" ("member_id", "document_url", "document_type
 (5, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'GRADUATION_CERTIFICATE', 'Bachelor graduation certificate', 'APPROVED', 'Graduation verified', 1, NOW() - INTERVAL '25 days'),
 (9, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'STUDENT_ID', 'Student ID for AI verification', 'PENDING', 'Awaiting verification', NULL, NOW() - INTERVAL '3 days'),
 (10, 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'DIPLOMA', 'Diploma document scan', 'REJECTED', 'Document quality too low, please resubmit', 1, NOW() - INTERVAL '5 days');
-
--- ============= POLL DATA =============
-INSERT INTO "forum_polls" ("topic_id", "organization_id", "created_by_member_id", "title", "description", "allow_multiple_votes", "is_active", "created_at", "updated_at") VALUES
-(1, 1, 2, 'Best Programming Language for 2026?', 'Vote for your favorite programming language for upcoming projects', false, true, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
-(2, 1, 3, 'When is the best time for next meetup?', 'Help us schedule the next alumni meetup', false, true, NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days');
-
--- Add options for polls
-INSERT INTO "forum_poll_options" ("poll_id", "option_text", "vote_count", "created_at", "updated_at") VALUES
-(1, 'Python', 5, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days'),
-(1, 'JavaScript/TypeScript', 8, NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days'),
-(1, 'Java', 4, NOW() - INTERVAL '5 days', NOW() - INTERVAL '3 days'),
-(1, 'Go', 3, NOW() - INTERVAL '5 days', NOW() - INTERVAL '4 days'),
-(1, 'Rust', 6, NOW() - INTERVAL '5 days', NOW() - INTERVAL '1 day'),
-(2, 'Weekend (Saturday or Sunday)', 12, NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
-(2, 'Weekday Evening (after work)', 8, NOW() - INTERVAL '2 days', NOW()),
-(2, 'Weekday Lunch (12-2pm)', 3, NOW() - INTERVAL '2 days', NOW()),
-(2, 'No preference', 5, NOW() - INTERVAL '2 days', NOW());
-
--- Sample poll votes
-INSERT INTO "forum_poll_votes" ("poll_id", "poll_option_id", "member_id", "created_at") VALUES
-(1, 2, 4, NOW() - INTERVAL '4 days'),
-(1, 2, 6, NOW() - INTERVAL '3 days'),
-(1, 1, 9, NOW() - INTERVAL '2 days'),
-(1, 5, 2, NOW() - INTERVAL '1 day'),
-(1, 1, 5, NOW()),
-(2, 1, 2, NOW() - INTERVAL '2 days'),
-(2, 1, 4, NOW() - INTERVAL '1 day'),
-(2, 2, 6, NOW() - INTERVAL '1 day'),
-(2, 1, 8, NOW());
 
 -- ============= SCHOOL FEEDBACKS DATA =============
 INSERT INTO "school_feedbacks" ("organization_id", "full_name", "phone", "email", "subject", "ai_summary", "content", "created_at", "is_read") VALUES

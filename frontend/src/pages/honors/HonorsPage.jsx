@@ -14,6 +14,7 @@ import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
@@ -47,6 +48,7 @@ const FILTERS = [
 
 const HonorsPage = () => {
   const navigate = useOrgNavigate();
+  const { isAuthenticated } = useAuth();
 
   const { achievements } = usePublishedAchievements(0, 7);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
@@ -101,12 +103,14 @@ const HonorsPage = () => {
                     VINH DANH
                   </Typography>
 
-                  <Button
-                    variant="contained"
-                    onClick={() => navigate('/honors/request-achievements')}
-                  >
-                    Gửi đơn xét thành tựu
-                  </Button>
+                  {isAuthenticated && (
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/honors/request-achievements')}
+                    >
+                      Gửi đơn xét thành tựu
+                    </Button>
+                  )}
                 </Box>
 
                 <Typography color="text.secondary">
