@@ -13,6 +13,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
+import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
@@ -28,9 +29,10 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   }
 
   const open = Boolean(anchorEl);
-  const { logout, verificationLevel } = useAuth();
+  const { logout, verificationLevel, user } = useAuth();
   const toOrgPath = useOrgPath();
   const isGuestVerificationLevel = verificationLevel === 0;
+  const isAdmin = user?.role === 'ADMIN';
   const handleOpen = (event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
@@ -203,6 +205,18 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           <ConfirmationNumberOutlinedIcon fontSize="small" />
           <Typography variant="body2">Vé của tôi</Typography>
         </MenuItem>
+
+        {isAdmin && (
+          <MenuItem
+            component={Link}
+            to="/admin"
+            onClick={handleClose}
+          >
+            <AdminPanelSettingsOutlinedIcon fontSize="small" />
+            <Typography variant="body2">Trang quản trị</Typography>
+          </MenuItem>
+        )}
+
         <MenuItem
           component={Link}
           to={toOrgPath('/settings')}

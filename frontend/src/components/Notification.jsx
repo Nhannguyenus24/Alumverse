@@ -154,7 +154,14 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
             Thông báo
           </Typography>
           <Tooltip title="Cài đặt" arrow>
-            <IconButton size="small" sx={{ color: "text.secondary" }}>
+            <IconButton 
+              size="small" 
+              sx={{ color: "text.secondary" }}
+              onClick={() => {
+                handleClose();
+                navigate('/settings?tab=notification');
+              }}
+            >
               <SettingsIcon fontSize="small" />
             </IconButton>
           </Tooltip>
