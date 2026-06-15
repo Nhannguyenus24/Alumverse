@@ -15,6 +15,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * Service responsible for Optical Character Recognition (OCR) and text extraction.
@@ -24,7 +26,10 @@ import reactor.core.publisher.Mono;
 @Service
 public class OCRService {
 
-    public OCRService() {
+    private final MeterRegistry meterRegistry;
+
+    public OCRService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
     }
 
     /**
@@ -92,10 +97,15 @@ public class OCRService {
     }
 
     private String performOcr(File file) throws TesseractException {
-        ITesseract tesseract = new Tesseract();
-        tesseract.setDatapath("./src/main/resources/tessdata");
-        tesseract.setLanguage("vie+eng");
-        return tesseract.doOCR(file);
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            ITesseract tesseract = new Tesseract();
+            tesseract.setDatapath("./src/main/resources/tessdata");
+            tesseract.setLanguage("vie+eng");
+            return tesseract.doOCR(file);
+        } finally {
+            sample.stop(meterRegistry.timer("ocr.processing.time"));
+        }
     }
 
     private String getFileExtension(String fileName) {
