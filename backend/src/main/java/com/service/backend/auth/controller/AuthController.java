@@ -26,6 +26,7 @@ import com.service.backend.auth.dto.LoginResponse;
 import com.service.backend.auth.dto.RegisterRequest;
 import com.service.backend.auth.dto.SendOtpRequest;
 import com.service.backend.auth.dto.VerifyOtpRequest;
+import com.service.backend.auth.dto.VerifyOldEmailOtpRequest;
 import com.service.backend.shared.entity.User;
 import com.service.backend.auth.service.AuthService;
 import com.service.backend.shared.dto.ApiResponse;
@@ -173,6 +174,53 @@ public class AuthController {
             @Valid @RequestBody VerifyOtpRequest request) {
         return authService.verifyOtpAndActivate(request.getEmail(), request.getOtp())
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP verified and account activated successfully", true)));
+    }
+
+    /**
+     * Request OTP to change email (sent to old email)
+     */
+    @PostMapping("/change-email/{userId}/request-otp-old")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpOld(
+            @Parameter(example = "123")
+            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId) {
+        return authService.requestChangeEmailOtpOld(userId)
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to old email successfully", true)));
+    }
+
+    /**
+     * Verify OTP sent to old email for changing email
+     */
+    @PostMapping("/change-email/{userId}/verify-otp-old")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyChangeEmailOtpOld(
+            @Parameter(example = "123")
+            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
+            @Valid @RequestBody VerifyOldEmailOtpRequest request) {
+        return authService.verifyChangeEmailOtpOld(userId, request.getOtp())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Old email verified successfully", true)));
+    }
+
+    /**
+     * Request OTP to new email
+     */
+    @PostMapping("/change-email/{userId}/request-otp-new")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> requestChangeEmailOtpNew(
+            @Parameter(example = "123")
+            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
+            @Valid @RequestBody SendOtpRequest request) {
+        return authService.requestChangeEmailOtpNew(userId, request.getEmail())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("OTP sent to new email successfully", true)));
+    }
+
+    /**
+     * Verify OTP sent to new email and update email
+     */
+    @PostMapping("/change-email/{userId}/verify-otp-new")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> verifyChangeEmailOtpNew(
+            @Parameter(example = "123")
+            @PathVariable @Min(value = 1, message = "User ID must be greater than 0") Integer userId,
+            @Valid @RequestBody VerifyOtpRequest request) {
+        return authService.verifyChangeEmailOtpNew(userId, request.getEmail(), request.getOtp())
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Email updated successfully", true)));
     }
 
     private String extractUserAgent(ServerWebExchange exchange) {

@@ -25,6 +25,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Mono<User> findByUserName(String userName);
 
     /**
+     * Check if user exists by email
+     */
+    Mono<Boolean> existsByEmail(String email);
+
+    /**
      * Check if user exists by email or username (for registration validation)
      */
     Mono<Boolean> existsByEmailOrUserName(String email, String userName);
@@ -64,6 +69,13 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Modifying
     @Query("UPDATE users SET password_hash = :passwordHash, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updatePasswordById(@Param("id") Integer id, @Param("passwordHash") String passwordHash);
+    
+    /**
+     * Update user email by id
+     */
+    @Modifying
+    @Query("UPDATE users SET email = :email, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    Mono<Void> updateEmailById(@Param("id") Integer id, @Param("email") String email);
     
     /**
      * Update user avatar by id
