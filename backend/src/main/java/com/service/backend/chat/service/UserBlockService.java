@@ -93,17 +93,6 @@ public class UserBlockService {
                 .map(count -> new BlockStatusResponse(targetMemberId, count > 0));
     }
 
-    public Mono<BlockPairFlags> getBlockFlagsBetween(Long currentMemberId, Long peerMemberId) {
-        if (currentMemberId == null || peerMemberId == null) {
-            return Mono.just(new BlockPairFlags(false, false));
-        }
-
-        return Mono.zip(
-                        userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(currentMemberId, peerMemberId),
-                        userBlockRepository.countByBlockerMemberIdAndBlockedMemberId(peerMemberId, currentMemberId))
-                .map(tuple -> new BlockPairFlags(tuple.getT1() > 0, tuple.getT2() > 0));
-    }
-
     public Mono<PaginatedResponse<BlockedMemberItemResponse>> searchBlockedMembers(
             Long blockerMemberId,
             String fullName,

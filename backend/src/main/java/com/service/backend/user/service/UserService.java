@@ -24,7 +24,6 @@ import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.OCRService;
-import reactor.core.scheduler.Schedulers;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -56,23 +55,21 @@ public class UserService {
     @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
-                .flatMap(fileUrl -> {
-                    return authRepository.insertVerificationRequest(
-                            currentUserId.intValue(),
-                            fileUrl,
-                            request.getDocumentType() != null ? request.getDocumentType().getValue() : null
-                    ).doOnSuccess(requestId -> {
-                        if (requestId != null) {
-                            String localPath = fileUploadService.getLocalPath(fileUrl);
-                            if (localPath != null) {
-                                ocrService.extractTextFromFile(localPath)
-                                        .flatMap(text -> authRepository.updateAiSummary(requestId, text))
-                                        .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
-                                        .subscribe();
-                            }
+                .flatMap(fileUrl -> authRepository.insertVerificationRequest(
+                        currentUserId.intValue(),
+                        fileUrl,
+                        request.getDocumentType() != null ? request.getDocumentType().getValue() : null
+                ).doOnSuccess(requestId -> {
+                    if (requestId != null) {
+                        String localPath = fileUploadService.getLocalPath(fileUrl);
+                        if (localPath != null) {
+                            ocrService.extractTextFromFile(localPath)
+                                    .flatMap(text -> authRepository.updateAiSummary(requestId, text))
+                                    .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
+                                    .subscribe();
                         }
-                    });
-                }).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevel(currentUserId.intValue(), 1))
+                    }
+                })).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevel(currentUserId.intValue(), 1))
                 .then();
     }
 
@@ -180,14 +177,6 @@ public class UserService {
                         ErrorCode.USER_NOT_FOUND,
                         "User not found with id: " + currentUserId))))
                 .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
-        return userProfileRepository.findProfileByUserId(userId)
-                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
-                        ErrorCode.USER_NOT_FOUND,
-                        "User not found with id: " + userId))))
-                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {

@@ -1,7 +1,5 @@
 package com.service.backend.chat.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -18,8 +16,6 @@ import reactor.core.publisher.Mono;
 @Service
 @RequiredArgsConstructor
 public class NetworkMemberSearchService {
-
-    private static final Logger log = LoggerFactory.getLogger(NetworkMemberSearchService.class);
 
     private final NetworkMemberSearchRepository networkMemberSearchRepository;
 
