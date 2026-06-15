@@ -3,14 +3,15 @@ import { useLocation } from 'react-router';
 
 const TopTabFilter = ({ tabs, onNavigate }) => {
   const location = useLocation();
+  const normalizedPath = location.pathname.replace(/^\/[^/]+/, '');
 
   return (
     <Stack direction="row" flexWrap="wrap" sx={{ gap: 1.5 }}>
       {tabs.map((tab) => {
         const isActive =
           tab.path === '/development/mentorship'
-            ? location.pathname === tab.path
-            : location.pathname.startsWith(tab.path);
+            ? normalizedPath === tab.path
+            : normalizedPath.startsWith(tab.path);
 
         return (
           <Button

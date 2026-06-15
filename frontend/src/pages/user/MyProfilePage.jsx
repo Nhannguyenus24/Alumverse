@@ -48,6 +48,7 @@ import { useUserAlumniPosts } from '../../hooks/articles/useUserAlumniPosts';
 import { useUserDonations } from '../../hooks/fundraising/useUserDonations';
 import UserHighlights from '../../components/profile/UserHighlights';
 import PublicUserProfile from './PublicUserProfile';
+import StatsBanner from '../../components/StatsBanner';
 
 import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
 import { formatDate } from '../../utils/dateFormatter';
@@ -55,8 +56,6 @@ import { formatRating } from '../../utils/numberFormatter';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
-
-const TOP_TABS = [{ label: 'Trang cá nhân', path: '/profile' }];
 const ITEMS_PER_PAGE = 3;
 const PUBLIC_FEEDBACKS_PER_PAGE = 5;
 
@@ -229,37 +228,6 @@ const ExtendedProfileSections = ({ raw }) => {
   );
 };
 
-const StatsGrid = ({ stats }) => (
-  <Box
-    sx={{
-      backgroundColor: 'primary.main',
-      borderRadius: 4,
-      px: { xs: 3, md: 6 },
-      py: { xs: 4, md: 5 },
-      display: 'grid',
-      gridTemplateColumns: {
-        xs: '1fr',
-        sm: stats.length <= 3 ? `repeat(${stats.length}, 1fr)` : '1fr 1fr',
-        md: `repeat(${Math.min(stats.length, 4)}, 1fr)`,
-      },
-      gap: 3,
-      textAlign: 'center',
-      boxShadow: '0 8px 24px 0 rgba(0,0,0,0.12)',
-    }}
-  >
-    {stats.map((item, i) => (
-      <Box key={i}>
-        <Typography variant="h2" fontWeight={800} color="common.white" mb={1}>
-          {item.value}
-        </Typography>
-        <Typography variant="body1" fontWeight={600} color="common.white" sx={{ opacity: 0.9, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          {item.label}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-);
-
 const ExpertiseSection = ({ expertise }) => (
   <Box>
     <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
@@ -430,8 +398,8 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   };
 
   const tabs = isMentorshipPath
-    ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : TOP_TABS))
-    : TOP_TABS;
+    ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : []))
+    : [];
 
   const renderPersonalSection = () => (
     <Box>
@@ -552,7 +520,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               danh sách tìm cố vấn.
             </Alert>
           )}
-          <StatsGrid stats={stats} />
+          <StatsBanner items={stats} />
           
           <ExpertiseSection expertise={expertise} />
           
@@ -747,7 +715,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
           HỒ SƠ CỐ VẤN
         </Typography>
 
-        <StatsGrid stats={stats} />
+        <StatsBanner items={stats} />
       </Stack>
 
       <Box sx={{ mt: 5 }}>

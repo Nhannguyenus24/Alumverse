@@ -506,7 +506,7 @@ const MentorshipYourCalendarPage = () => {
 
                           {repeatWeekly ? (
                             <>
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, pb: 1.5 }}>
                                 {WEEK_DAYS_SHORT.map((label, index) => {
                                   const isSelected = selectedDays.includes(index);
                                   return (
@@ -515,7 +515,11 @@ const MentorshipYourCalendarPage = () => {
                                       variant={isSelected ? 'contained' : 'outlined'}
                                       size="small"
                                       onClick={() => toggleDay(index)}
-                                      sx={{ fontSize: '0.75rem', px: 1.5, minWidth: 0 }}
+                                      sx={{
+                                        minWidth: 0,
+                                        px: 0,
+                                        fontSize: '0.75rem',
+                                      }}
                                     >
                                       {label}
                                     </Button>
