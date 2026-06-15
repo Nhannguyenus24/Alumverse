@@ -12,6 +12,9 @@ import java.util.Base64;
 import java.util.Set;
 import java.util.UUID;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
 @Slf4j
 @Service
 public class FileUploadService {
@@ -21,6 +24,12 @@ public class FileUploadService {
 
     @Value("${image.domain:http://localhost/images/}")
     private String domain;
+
+    private final MeterRegistry meterRegistry;
+
+    public FileUploadService(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
 
     private static final long MAX_BYTES = 10L * 1024 * 1024;
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("pdf", "doc", "docx", "png", "jpg", "jpeg");
@@ -39,29 +48,34 @@ public class FileUploadService {
     }
 
     private String doUpload(String base64String, String originalFileName) throws Exception {
-        if (base64String == null || base64String.isBlank()) {
-            throw new IllegalArgumentException("Base64 string cannot be empty");
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            if (base64String == null || base64String.isBlank()) {
+                throw new IllegalArgumentException("Base64 string cannot be empty");
+            }
+
+            String extension = resolveExtension(originalFileName);
+            if (!ALLOWED_EXTENSIONS.contains(extension)) {
+                throw new IllegalArgumentException(
+                        "Unsupported file type: ." + extension + ". Allowed: pdf, doc, docx");
+            }
+
+            String pure = base64String.contains(",") ? base64String.split(",", 2)[1] : base64String;
+            byte[] bytes = Base64.getDecoder().decode(pure);
+
+            if (bytes.length > MAX_BYTES) {
+                throw new IllegalArgumentException("File exceeds 10MB limit");
+            }
+
+            String fileName = UUID.randomUUID() + "." + extension;
+            var targetPath = Paths.get(uploadDir + fileName);
+            Files.createDirectories(targetPath.getParent());
+            Files.write(targetPath, bytes);
+
+            return domain + fileName;
+        } finally {
+            sample.stop(meterRegistry.timer("file.upload.processing.time"));
         }
-
-        String extension = resolveExtension(originalFileName);
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException(
-                    "Unsupported file type: ." + extension + ". Allowed: pdf, doc, docx");
-        }
-
-        String pure = base64String.contains(",") ? base64String.split(",", 2)[1] : base64String;
-        byte[] bytes = Base64.getDecoder().decode(pure);
-
-        if (bytes.length > MAX_BYTES) {
-            throw new IllegalArgumentException("File exceeds 10MB limit");
-        }
-
-        String fileName = UUID.randomUUID() + "." + extension;
-        var targetPath = Paths.get(uploadDir + fileName);
-        Files.createDirectories(targetPath.getParent());
-        Files.write(targetPath, bytes);
-
-        return domain + fileName;
     }
 
     private String resolveExtension(String fileName) {
