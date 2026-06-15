@@ -725,3 +725,7 @@ CREATE INDEX ON "forum_posts" ("topic_id", "created_at" DESC);
 
 CREATE INDEX ON "forum_topic_subscriptions" ("topic_id", "member_id", "last_read_at", "last_notified_at");
 
+-- Indexes added for performance optimization
+CREATE INDEX ON "chat_messages" ("group_id", "created_at" DESC);
+CREATE INDEX ON "chat_group_members" ("member_id");
+CREATE INDEX ON "forum_post_reports" ("post_id");

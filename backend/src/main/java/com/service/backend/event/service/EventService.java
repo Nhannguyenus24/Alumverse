@@ -311,8 +311,7 @@ public class EventService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                         .flatMap(event -> {
                             Flux<EventTicket> ticketFlux = request.getTicketIds() != null && !request.getTicketIds().isEmpty()
-                                    ? Flux.fromIterable(request.getTicketIds())
-                                            .flatMap(id -> eventRepository.findTicketById(id))
+                                    ? eventRepository.findTicketsByIds(request.getTicketIds())
                                     : eventRepository.findIssuedTicketsByEvent(eventId);
 
                             return ticketFlux
