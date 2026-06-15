@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import {
   Autocomplete, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem, 
   FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack, 
@@ -25,7 +25,6 @@ import PeopleIcon from '@mui/icons-material/People';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import DialogActions from '@mui/material/DialogActions';
 import Slider from '@mui/material/Slider';
-import Cropper from 'react-easy-crop';
 import Page from '../../components/Page';
 import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 import Sidebar from '../../components/Sidebar';
@@ -81,7 +80,12 @@ export default function SettingPage() {
   const organizationProgramOptions = useMemo(() => parseOrganizationOptions(organization?.programs), [organization?.programs]);
   const organizationMajorOptions = useMemo(() => parseOrganizationOptions(organization?.majors), [organization?.majors]);
 
-  const [activeTab, setActiveTab] = useState('personal');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'personal';
+  const setActiveTab = useCallback((newTab) => {
+    setSearchParams({ tab: newTab });
+  }, [setSearchParams]);
+
   const [isTrustedVerifier, setIsTrustedVerifier] = useState(false);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);

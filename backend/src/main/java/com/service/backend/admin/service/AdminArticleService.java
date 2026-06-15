@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-
 @Service
 public class AdminArticleService {
 
@@ -40,10 +38,6 @@ public class AdminArticleService {
         this.fundRepository = fundRepository;
     }
 
-    public Mono<PaginatedResponse<NewsResponse>> getAllNews(String keyword, int page, int limit) {
-        return getAllNews(null, keyword, page, limit);
-    }
-
     public Mono<PaginatedResponse<NewsResponse>> getAllNews(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
@@ -68,10 +62,6 @@ public class AdminArticleService {
         ).doOnSuccess(r -> log.info("getAllNews result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(String keyword, int page, int limit) {
-        return getAllAlumniPosts(null, keyword, page, limit);
-    }
-
     public Mono<PaginatedResponse<AlumniPostResponse>> getAllAlumniPosts(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
@@ -94,10 +84,6 @@ public class AdminArticleService {
                 alumniPostRepository.count(),
                 page, limit
         ).doOnSuccess(r -> log.info("getAllAlumniPosts result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<PaginatedResponse<AchievementResponse>> getAllAchievements(String keyword, int page, int limit) {
-        return getAllAchievements(null, keyword, page, limit);
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> getAllAchievements(Integer organizationId, String keyword, int page, int limit) {
@@ -132,10 +118,6 @@ public class AdminArticleService {
         ).doOnSuccess(r -> log.info("getAllAchievements result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<JobResponse>> getAllJobs(String keyword, int page, int limit) {
-        return getAllJobs(null, keyword, page, limit);
-    }
-
     public Mono<PaginatedResponse<JobResponse>> getAllJobs(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
@@ -160,10 +142,6 @@ public class AdminArticleService {
         ).doOnSuccess(r -> log.info("getAllJobs result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(String keyword, int page, int limit) {
-        return getAllLearningResources(null, keyword, page, limit);
-    }
-
     public Mono<PaginatedResponse<LearningResourceResponse>> getAllLearningResources(Integer organizationId, String keyword, int page, int limit) {
         int offset = page * limit;
         if (organizationId != null) {
@@ -186,10 +164,6 @@ public class AdminArticleService {
                 learningResourceRepository.count(),
                 page, limit
         ).doOnSuccess(r -> log.info("getAllLearningResources result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(String keyword, int page, int limit) {
-        return getAllFunds(null, keyword, page, limit);
     }
 
     public Mono<PaginatedResponse<FundListItemResponse>> getAllFunds(Integer organizationId, String keyword, int page, int limit) {

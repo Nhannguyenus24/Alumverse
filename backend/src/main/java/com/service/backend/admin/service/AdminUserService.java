@@ -30,12 +30,14 @@ import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.shared.entity.User;
 import com.service.backend.shared.entity.AdminAuditLog;
+import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.dao.UserDisplayInfo;
 import com.service.backend.shared.dao.UserDisplayInfoRepository;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 
@@ -50,18 +52,7 @@ public class AdminUserService {
     private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final AdminUserOrganizationPreviewRepository adminUserOrganizationPreviewRepository;
     private final UserOrganizationMemberRepository userOrganizationMemberRepository;
-
-    public Mono<PaginatedResponse<UserResponse>> getUsersByOrganization(Integer organizationId, int page, int size) {
-        int offset = page * size;
-        return PaginationHelper.paginate(
-                        adminUserRepository.findUsersByOrganizationWithPagination(organizationId, size, offset).collectList(),
-                        adminUserRepository.countUsersByOrganization(organizationId),
-                        page,
-                        size,
-                        this::enrichUserResponses)
-                .doOnSuccess(r -> logger.info("getUsersByOrganization result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> logger.error("Error fetching users for organization: {}", organizationId, error));
-    }
+    private final NotificationService notificationService;
 
     public Mono<PaginatedResponse<UserResponse>> getAllUsers(int page, int size, String search, String role, String status, Integer organizationId) {
         int offset = page * size;
@@ -299,11 +290,6 @@ public class AdminUserService {
         }
         return b.build();
     }
-
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(String keyword, int page, int size) {
-        return getAllVerificationRequests(null, keyword, page, size);
-    }
-
     public Mono<PaginatedResponse<VerificationRequestResponse>> getAllVerificationRequests(Integer organizationId, String keyword, int page, int size) {
         int offset = page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? "%" + keyword.trim() + "%" : null;
@@ -325,10 +311,6 @@ public class AdminUserService {
         )
          .doOnSuccess(r -> logger.info("getAllVerificationRequests result: {}", JsonUtils.toJson(r)))
          .doOnError(e -> logger.error("Error fetching verification requests", e));
-    }
-
-    public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(String keyword, int page, int size) {
-        return getPendingVerificationRequests(null, keyword, page, size);
     }
 
     public Mono<PaginatedResponse<VerificationRequestResponse>> getPendingVerificationRequests(Integer organizationId, String keyword, int page, int size) {
@@ -362,8 +344,20 @@ public class AdminUserService {
                             if (count <= 0) return Mono.just(false);
                             
                             if ("APPROVED".equals(upperStatus)) {
+                                Mono.fromRunnable(() -> notificationService.createNotificationAsync(memberId, "Xác thực thành công", "Yêu cầu xác thực của bạn đã được duyệt."))
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .subscribe();
                                 return userOrganizationMemberRepository.incrementVerificationLevelByUserId(memberId)
                                         .thenReturn(true);
+                            } else if ("REJECTED".equals(upperStatus)) {
+                                String msg = "Yêu cầu xác thực của bạn đã bị từ chối.";
+                                if (StringUtils.hasText(adminNote)) {
+                                    msg += " Lý do: " + adminNote;
+                                }
+                                String finalMsg = msg;
+                                Mono.fromRunnable(() -> notificationService.createNotificationAsync(memberId, "Xác thực thất bại", finalMsg))
+                                        .subscribeOn(Schedulers.boundedElastic())
+                                        .subscribe();
                             }
                             return Mono.just(true);
                         }))
