@@ -183,6 +183,7 @@ const NetworkPage = () => {
           {items.map((member) => (
             <NetworkSearchMemberCard
               key={member.userId}
+              userId={member.userId}
               avatar={member.avatarUrl}
               fullName={member.fullName}
               program={member.program}
