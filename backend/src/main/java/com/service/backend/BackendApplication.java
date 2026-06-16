@@ -5,9 +5,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.r2dbc.config.EnableR2dbcAuditing;
 
+import org.springframework.scheduling.annotation.EnableScheduling;
+
 @SpringBootApplication
 @EnableR2dbcAuditing
 @EnableCaching
+@EnableScheduling
 public class BackendApplication {
 
     public static void main(String[] args) {

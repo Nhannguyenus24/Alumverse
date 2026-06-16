@@ -83,6 +83,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     Mono<Long> countPostsCreatedYesterday();
 
     /**
+     * Find forum posts created since a specific time
+     */
+    @Query("SELECT * FROM forum_posts WHERE created_at >= :since AND is_banned = false")
+    Flux<ForumPost> findPostsCreatedSince(@Param("since") java.time.LocalDateTime since);
+
+    /**
      * Find all banned forum posts with pagination
      */
     @Query("SELECT * FROM forum_posts WHERE is_banned = true ORDER BY updated_at DESC LIMIT :limit OFFSET :offset")
