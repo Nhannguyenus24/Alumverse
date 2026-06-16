@@ -3,12 +3,10 @@ package com.service.backend.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.reactive.function.client.WebClient;
 import com.service.backend.shared.utils.JwtUtils;
 
 @Configuration
-@EnableScheduling
 public class AppConfig {
 
     @Value("${jwt.secret}")
