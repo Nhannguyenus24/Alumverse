@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/logo.dart';
+import '../providers/auth_provider.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
   const ResetPasswordPage({super.key});
@@ -19,6 +22,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   bool _obscureOld = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -30,11 +34,29 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    // TODO: Implement reset password logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đang đổi mật khẩu...')),
-    );
+
+    setState(() => _submitting = true);
+    try {
+      await ref.read(authStateProvider.notifier).changePassword(
+            oldPassword: _oldPassCtl.text,
+            newPassword: _newPassCtl.text,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đổi mật khẩu thành công.')),
+      );
+      context.go(RouteNames.home);
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Đổi mật khẩu thất bại';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -113,13 +135,39 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'Nếu bạn không muốn đổi mật khẩu, bỏ qua trang này.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Đổi mật khẩu', style: TextStyle(fontSize: 16)),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Đổi mật khẩu',
+                          style: TextStyle(fontSize: 16)),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: () => context.go(RouteNames.home),
+                    child: const Text(
+                      'Quay lại trang chủ',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 ),
               ],
             ),

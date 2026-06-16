@@ -60,6 +60,9 @@ dependencies:
   flutter_quill: ^10.8.5
   image_picker: ^1.1.2
 
+  # Render ReactQuill HTML article bodies (no WebView)
+  flutter_widget_from_html_core: ^0.16.0
+
   # Charts (cho dashboard sau này)
   fl_chart: ^0.69.2
 

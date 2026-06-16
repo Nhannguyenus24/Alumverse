@@ -1,16 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/utils/html_utils.dart';
 import '../../../../core/utils/image_url.dart';
 import '../providers/news_provider.dart';
 
-/// Article detail. Renders the article as plain text for now (the body is
-/// ReactQuill HTML — a full HTML renderer can replace [HtmlUtils.toPlainText]
-/// later without touching the data layer).
+/// Article detail. The body is ReactQuill HTML (same content the web frontend
+/// renders) — displayed with [HtmlWidget] so formatting, lists and inline
+/// images match the web. Relative image URLs are resolved against the server.
 class ArticleDetailPage extends ConsumerWidget {
   const ArticleDetailPage({super.key, required this.articleId});
 
@@ -45,7 +45,6 @@ class ArticleDetailPage extends ConsumerWidget {
         ),
         data: (article) {
           final thumb = resolveImageUrl(article.thumbnailUrl);
-          final body = HtmlUtils.toPlainText(article.content);
           final date = article.publishedAt != null
               ? DateFormat('dd/MM/yyyy').format(article.publishedAt!)
               : null;
@@ -102,9 +101,28 @@ class ArticleDetailPage extends ConsumerWidget {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    Text(
-                      body,
-                      style: const TextStyle(fontSize: 15, height: 1.6),
+                    HtmlWidget(
+                      article.content ?? '',
+                      textStyle: const TextStyle(fontSize: 15, height: 1.6),
+                      // ReactQuill stores relative image paths; resolve them
+                      // against the server so inline images load.
+                      customWidgetBuilder: (element) {
+                        if (element.localName != 'img') return null;
+                        final src = resolveImageUrl(element.attributes['src']);
+                        if (src == null) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: CachedNetworkImage(
+                            imageUrl: src,
+                            fit: BoxFit.contain,
+                            placeholder: (_, __) => const SizedBox(
+                              height: 160,
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                            errorWidget: (_, __, ___) => const SizedBox.shrink(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
