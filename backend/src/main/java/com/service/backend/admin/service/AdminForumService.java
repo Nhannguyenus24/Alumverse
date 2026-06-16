@@ -465,7 +465,6 @@ public class AdminForumService {
                             .zipWith(forumPostRepository.countPostsByAuthorInMonth(memberId, month, year))
                             .map(tuple -> TopContributorDTO.builder()
                                     .memberId(memberId)
-                                    .userName(tuple.getT1().getUserName())
                                     .email(tuple.getT1().getEmail())
                                     .avatarUrl(tuple.getT1().getAvatarUrl())
                                     .postCount(tuple.getT2())

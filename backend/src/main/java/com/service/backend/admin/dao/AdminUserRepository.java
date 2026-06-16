@@ -137,19 +137,21 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
            "vr.document_type, vr.ai_summary, vr.\"status\", " +
            "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, u.user_name " +
+           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
+           "JOIN organization_members om ON u.id = om.user_id " +
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
-           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
+           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<VerificationRequestResponse> findAllVerificationRequests(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
 
     @Query("SELECT COUNT(*) FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
+           "JOIN organization_members om ON u.id = om.user_id " +
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
-           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword)")
+           "WHERE (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword)")
     Mono<Long> countAllVerificationRequests(@Param("keyword") String keyword);
 
     /**
@@ -158,21 +160,23 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
            "vr.document_type, vr.ai_summary, vr.\"status\", " +
            "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, u.user_name " +
+           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
+           "JOIN organization_members om ON u.id = om.user_id " +
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "WHERE vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<VerificationRequestResponse> findPendingVerificationRequests(@Param("keyword") String keyword, @Param("limit") int limit, @Param("offset") int offset);
 
     @Query("SELECT COUNT(*) FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
+           "JOIN organization_members om ON u.id = om.user_id " +
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "WHERE vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword)")
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword)")
     Mono<Long> countPendingVerificationRequests(@Param("keyword") String keyword);
 
     /**
@@ -238,9 +242,10 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            @Param("status") String status);
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
-           "u.email, u.user_name " +
+           "u.email, om.student_id as student_id " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
+           "LEFT JOIN organization_members om ON u.id = om.user_id " +
            "WHERE ulh.user_id = :userId " +
            "ORDER BY ulh.login_at DESC " +
            "LIMIT :limit")
@@ -254,15 +259,14 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("UPDATE users SET password_hash = :passwordHash, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Integer> resetPasswordByAdmin(@Param("userId") Integer userId, @Param("passwordHash") String passwordHash);
 
-    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email OR user_name = :userName)")
-    Mono<Boolean> existsByEmailOrUserName(@Param("email") String email, @Param("userName") String userName);
+    @Query("SELECT EXISTS(SELECT 1 FROM users WHERE email = :email)")
+    Mono<Boolean> existsByEmail(@Param("email") String email);
 
-    @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'ADMIN', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> createAdminUser(
             @Param("email") String email,
-            @Param("userName") String userName,
             @Param("passwordHash") String passwordHash);
 
     @Modifying
@@ -310,7 +314,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         SELECT DISTINCT u.* FROM users u
         LEFT JOIN global_profiles gp ON u.id = gp.user_id
         LEFT JOIN organization_members om ON u.id = om.user_id
-        WHERE (:search IS NULL OR u.email ILIKE :search OR u.user_name ILIKE :search OR gp.full_name ILIKE :search)
+        WHERE (:search IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR gp.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)
           AND (:status IS NULL OR u.\"status\" = :status)
           AND (:organizationId IS NULL OR om.organization_id = :organizationId)
@@ -330,7 +334,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
         SELECT COUNT(DISTINCT u.id) FROM users u
         LEFT JOIN global_profiles gp ON u.id = gp.user_id
         LEFT JOIN organization_members om ON u.id = om.user_id
-        WHERE (:search IS NULL OR u.email ILIKE :search OR u.user_name ILIKE :search OR gp.full_name ILIKE :search)
+        WHERE (:search IS NULL OR u.email ILIKE :search OR om.student_id ILIKE :search OR gp.full_name ILIKE :search)
           AND (:role IS NULL OR u.role = :role)
           AND (:status IS NULL OR u.\"status\" = :status)
           AND (:organizationId IS NULL OR om.organization_id = :organizationId)
@@ -367,13 +371,13 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
            "vr.document_type, vr.ai_summary, vr.\"status\", " +
            "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, u.user_name " +
+           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "JOIN organization_members om ON vr.member_id = om.user_id " +
            "WHERE om.organization_id = :organizationId " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<VerificationRequestResponse> findAllVerificationRequestsByOrganization(
@@ -387,7 +391,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "JOIN organization_members om ON vr.member_id = om.user_id " +
            "WHERE om.organization_id = :organizationId " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword)")
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword)")
     Mono<Long> countAllVerificationRequestsByOrganization(
             @Param("organizationId") Integer organizationId,
             @Param("keyword") String keyword);
@@ -395,14 +399,14 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT vr.id, vr.member_id, vr.document_url, " +
            "vr.document_type, vr.ai_summary, vr.\"status\", " +
            "vr.admin_note, vr.reviewed_by_member_id, " +
-           "vr.created_at, vr.updated_at, u.email, u.user_name " +
+           "vr.created_at, vr.updated_at, u.email, om.student_id as student_id " +
            "FROM verification_requests vr " +
            "JOIN users u ON vr.member_id = u.id " +
            "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
            "JOIN organization_members om ON vr.member_id = om.user_id " +
            "WHERE om.organization_id = :organizationId " +
            "AND vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword) " +
            "ORDER BY vr.created_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<VerificationRequestResponse> findPendingVerificationRequestsByOrganization(
@@ -417,7 +421,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            "JOIN organization_members om ON vr.member_id = om.user_id " +
            "WHERE om.organization_id = :organizationId " +
            "AND vr.\"status\" = 'PENDING' " +
-           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR u.user_name ILIKE :keyword OR gp.full_name ILIKE :keyword)")
+           "AND (:keyword IS NULL OR u.email ILIKE :keyword OR om.student_id ILIKE :keyword OR gp.full_name ILIKE :keyword)")
     Mono<Long> countPendingVerificationRequestsByOrganization(
             @Param("organizationId") Integer organizationId,
             @Param("keyword") String keyword);

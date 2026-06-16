@@ -51,7 +51,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       // Step 1: create the (inactive) account.
       await notifier.register(
         email: email,
-        userName: _studentIdCtl.text.trim(),
+        studentId: _studentIdCtl.text.trim(),
         fullName: _fullNameCtl.text.trim(),
         password: _passCtl.text,
       );

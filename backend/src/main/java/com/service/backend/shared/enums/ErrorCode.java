@@ -11,11 +11,8 @@ public enum ErrorCode {
     FORBIDDEN("Bạn không có quyền truy cập", 403),
 
     // Auth module
-    EMAIL_OR_USERNAME_ALREADY_REGISTERED("Email or username already registered", 409),
-    USERNAME_ALREADY_EXISTS("Username already exists", 409),
     EMAIL_ALREADY_EXISTS("Email đã được sử dụng bởi một tài khoản khác", 409),
     INVALID_CREDENTIALS("Invalid email or password", 401),
-    INVALID_USERNAME_CREDENTIALS("Invalid username or password", 401),
     INVALID_OLD_PASSWORD("Invalid old password", 400),
     OTP_EXPIRED_NOT_FOUND("OTP expired or not found", 404),
     INVALID_OTP("Invalid OTP", 400),

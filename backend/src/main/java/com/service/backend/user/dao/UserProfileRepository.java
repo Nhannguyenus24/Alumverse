@@ -16,7 +16,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
     @Query("""
             SELECT u.id AS user_id,
                    u.email,
-                   u.user_name,
+                   om.student_id as student_id,
                    u.role,
                    u.status,
                    u.avatar_url,
@@ -29,6 +29,7 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    gp.updated_at AS profile_updated_at
             FROM users u
             LEFT JOIN global_profiles gp ON gp.user_id = u.id
+            LEFT JOIN organization_members om ON om.user_id = u.id
             WHERE u.id = :userId
             """)
     Mono<UserProfileResponse> findProfileByUserId(Integer userId);

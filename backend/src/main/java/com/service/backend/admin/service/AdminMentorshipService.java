@@ -188,7 +188,7 @@ public class AdminMentorshipService {
                 .flatMap(user -> {
                     if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.empty();
                     Map<String, Object> vars = new HashMap<>();
-                    vars.put("recipientName", user.getUserName() != null ? user.getUserName() : "bạn");
+                    vars.put("recipientName", user.getEmail() != null ? user.getEmail() : "bạn");
                     vars.put("status", status.getValue());
                     vars.put("statusLabel", statusLabel(status));
                     vars.put("reason", reason != null ? reason : "");
@@ -279,10 +279,10 @@ public class AdminMentorshipService {
                 .id(s.getId())
                 .availabilityId(s.getAvailabilityId())
                 .menteeMemberId(s.getMenteeMemberId())
-                .menteeName(mentee != null ? mentee.getUserName() : null)
+                .menteeName(mentee != null ? mentee.getEmail() : null)
                 .menteeEmail(mentee != null ? mentee.getEmail() : null)
                 .mentorMemberId(avail != null ? avail.getMentorMemberId() : null)
-                .mentorName(mentor != null ? mentor.getUserName() : null)
+                .mentorName(mentor != null ? mentor.getEmail() : null)
                 .mentorEmail(mentor != null ? mentor.getEmail() : null)
                 .status(s.getStatus() != null ? s.getStatus().getValue() : null)
                 .sessionType(s.getSessionType() != null ? s.getSessionType().getValue() : null)
@@ -318,7 +318,7 @@ public class AdminMentorshipService {
     private AdminMentorProfileDTO buildProfileDTO(MentorProfile p, User u) {
         return AdminMentorProfileDTO.builder()
                 .memberId(p.getMemberId())
-                .mentorName(u != null ? u.getUserName() : null)
+                .mentorName(u != null ? u.getEmail() : null)
                 .mentorEmail(u != null ? u.getEmail() : null)
                 .currentJobTitle(p.getCurrentJobTitle())
                 .currentCompany(p.getCurrentCompany())

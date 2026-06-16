@@ -80,7 +80,7 @@ const AdminAuditLogsPage = () => {
       }
 
       if (q) {
-        const haystack = [log.description, log.userName, log.userEmail, log.entityType, String(log.entityId ?? ''), log.entityName, log.action]
+        const haystack = [log.description, log.studentId, log.userEmail, log.entityType, String(log.entityId ?? ''), log.entityName, log.action]
           .filter(Boolean).join(' ').toLowerCase();
         if (!haystack.includes(q)) return false;
       }
@@ -95,10 +95,10 @@ const AdminAuditLogsPage = () => {
       return;
     }
     const escape = (v) => `"${String(v ?? '').replaceAll('"', '""')}"`;
-    const header = ['timestamp', 'userName', 'action', 'entityType', 'status', 'description'];
+    const header = ['timestamp', 'studentId', 'action', 'entityType', 'status', 'description'];
     const rows = filteredLogs.map(log => [
       formatDateTimeWithSeconds(log.timestamp),
-      log.userName,
+      log.studentId,
       log.action,
       log.entityType,
       log.status,
@@ -119,7 +119,7 @@ const AdminAuditLogsPage = () => {
   const columns = [
     { id: 'timestamp', label: 'Thời gian', render: (val) => formatDateTimeWithSeconds(val) },
     { 
-      id: 'userName', 
+      id: 'studentId', 
       label: 'Người thực hiện', 
       render: (val, row) => (
         <Box>

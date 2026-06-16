@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class SuspiciousLoginInfo {
     private Integer userId;
     private String email;
-    private String userName;
+    private String studentId;
     private Long distinctIpCount;
     private Long totalLogins;
 }

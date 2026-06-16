@@ -60,7 +60,7 @@ public class AuthController {
     @PostMapping("/register")
     public Mono<ResponseEntity<ApiResponse<Boolean>>> register(
             @Valid @RequestBody RegisterRequest request) {
-        return authService.register(request.getEmail(), request.getUserName(), request.getPassword(), request.getFullName(), request.getOrganizationId())
+        return authService.register(request.getEmail(), request.getStudentId(), request.getPassword(), request.getFullName(), request.getOrganizationId())
                 .thenReturn(ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("User registered successfully", true)));
     }
 
@@ -81,9 +81,6 @@ public class AuthController {
                         return Mono.error(new ApplicationException(ErrorCode.RECAPTCHA_VERIFICATION_FAILED));
                     }
                     return authService.loginByEmail(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
-                            .switchIfEmpty(Mono.defer(() ->
-                                authService.loginByUserName(request.getEmail(), request.getPassword(), request.getOrganizationId(), userAgent, loginIp)
-                            ))
                             .flatMap(user -> buildLoginResponse(user, request.getOrganizationId(), request.isRememberMe()));
                 });
     }
@@ -254,7 +251,6 @@ public class AuthController {
                     user.getId(),
                     user.getEmail(),
                     user.getRole().name(),
-                    user.getUserName(),
                     user.getAvatarUrl(),
                     null
             );
@@ -286,7 +282,6 @@ public class AuthController {
                             user.getId(),
                             user.getEmail(),
                             user.getRole().name(),
-                            user.getUserName(),
                             user.getAvatarUrl(),
                             organizationId
                     );

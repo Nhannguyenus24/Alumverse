@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class UpdateUserRequest {
     @Email(message = "Invalid email format")
     private String email;
-    private String userName;
+    private String studentId;
     private UserRole role;
     private Status status;
     /** Display name stored in global_profiles (upserted when non-blank). */

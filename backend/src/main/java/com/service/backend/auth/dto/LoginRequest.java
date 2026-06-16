@@ -20,7 +20,7 @@ public class LoginRequest {
     @Schema(example = "1")
     private Integer organizationId;
 
-    @NotBlank(message = "Email or username is required")
+    @NotBlank(message = "Email is required")
     @Schema(example = "student01@hcmus.edu.vn")
     private String email;
     
