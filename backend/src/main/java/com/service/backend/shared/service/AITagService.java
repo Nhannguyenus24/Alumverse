@@ -28,18 +28,32 @@ public class AITagService {
     }
 
     /**
-     * Tags a single piece of content.
+     * Tags a single piece of content using default Moderation tags.
      */
     public Mono<String> tagContent(String content) {
-        return tagContents(Collections.singletonList(content))
+        return tagContent(content, this.availableTags);
+    }
+
+    /**
+     * Tags a single piece of content with custom available tags.
+     */
+    public Mono<String> tagContent(String content, String availableTags) {
+        return tagContents(Collections.singletonList(content), availableTags)
                 .next()
                 .defaultIfEmpty(ModerationTag.NORMAL.name());
     }
 
     /**
-     * Tags a list of contents by dynamically batching them.
+     * Tags a list of contents by dynamically batching them, using default Moderation tags.
      */
     public Flux<String> tagContents(List<String> contents) {
+        return tagContents(contents, this.availableTags);
+    }
+
+    /**
+     * Tags a list of contents by dynamically batching them with custom available tags.
+     */
+    public Flux<String> tagContents(List<String> contents, String availableTags) {
         if (contents == null || contents.isEmpty()) {
             return Flux.empty();
         }
@@ -71,12 +85,12 @@ public class AITagService {
         }
 
         return Flux.fromIterable(dynamicBatches)
-                .flatMapSequential(this::processBatch, 3) 
+                .flatMapSequential(batch -> processBatch(batch, availableTags), 3) 
                 .flatMapIterable(BatchModerationResponse::getTags);
     }
 
-    private Mono<BatchModerationResponse> processBatch(List<String> batch) {
-        return Mono.fromCallable(() -> moderationService.analyzeContents(batch, availableTags))
+    private Mono<BatchModerationResponse> processBatch(List<String> batch, String tags) {
+        return Mono.fromCallable(() -> moderationService.analyzeContents(batch, tags))
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorResume(e -> {
                     log.error("AI Dynamic Batch Tagging failed. Items: {}. Error: {}", batch.size(), e.getMessage());
