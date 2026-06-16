@@ -1,6 +1,6 @@
 /// Login payload. `organizationId` is required by the backend to scope the
 /// user to a tenant and to compute the verification level. `email` accepts
-/// either an email or a username (the server tries both).
+/// only an email.
 class LoginRequest {
   final String email;
   final String password;

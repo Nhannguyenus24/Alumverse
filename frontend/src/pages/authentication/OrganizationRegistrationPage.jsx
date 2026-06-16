@@ -405,14 +405,14 @@ const formatVerifierSubtitle = (programData, majorData) => {
                               "&:hover": { borderColor: "primary.light", bgcolor: "primary.lighter" },
                             }}
                           >
-                            <Avatar src={verifier.avatarUrl} alt={verifier.fullName || verifier.userName} sx={{ width: 40, height: 40 }}>
-                              {(verifier.fullName || verifier.userName || "?").charAt(0).toUpperCase()}
+                            <Avatar src={verifier.avatarUrl} alt={verifier.fullName || verifier.studentId} sx={{ width: 40, height: 40 }}>
+                              {(verifier.fullName || verifier.studentId || "?").charAt(0).toUpperCase()}
                             </Avatar>
                             
                             {/* Phần hiển thị Tên và các Dòng ngành học */}
                             <Box sx={{ minWidth: 0, flex: 1 }}>
                               <Typography variant="subtitle2" noWrap color={isSelected ? "primary.darker" : "text.primary"}>
-                                {verifier.fullName || verifier.userName}
+                                {verifier.fullName || verifier.studentId}
                               </Typography>
                               
                               {/* Lặp qua từng cặp ngành học để hiển thị theo từng dòng */}

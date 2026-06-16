@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class TrustedVerifierResponse {
     private Integer userId;
     private String fullName;
-    private String userName;
+    private String studentId;
     private String avatarUrl;
     private String email;
     private String major;

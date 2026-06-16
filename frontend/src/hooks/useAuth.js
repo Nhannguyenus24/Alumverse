@@ -196,7 +196,7 @@ export const useAuth = () => {
     try {
       const { data } = await apiClient.post('/auth/register', {
         email: parsed.data.email,
-        userName: parsed.data.studentId,
+        studentId: parsed.data.studentId,
         fullName: parsed.data.fullName,
         password: parsed.data.password,
         organizationId,

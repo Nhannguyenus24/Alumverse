@@ -37,7 +37,7 @@ public interface ChatGroupRepository extends ReactiveCrudRepository<ChatGroup, L
                 cg.created_at AS created_at,
                 cg.updated_at AS updated_at,
                 peer_cgm.member_id AS peer_member_id,
-                gp.full_name AS peer_user_name,
+                gp.full_name AS peer_full_name,
                 u.avatar_url AS peer_avatar_url,
                 lm.content AS last_message_preview,
                 lm.created_at AS last_message_at,

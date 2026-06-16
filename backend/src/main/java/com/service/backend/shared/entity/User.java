@@ -32,9 +32,6 @@ public class User {
     @Column("password_hash")
     private String passwordHash;
 
-    @Column("user_name")
-    private String userName;
-
     @Column("status")
     private Status status;
 

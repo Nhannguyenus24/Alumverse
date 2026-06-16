@@ -104,7 +104,7 @@ const AdminDashboardPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Chào mừng trở lại, {user?.fullName || user?.userName}!
+            Chào mừng trở lại, {user?.fullName || user?.studentId}!
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
             Đây là tổng quan về hoạt động của hệ thống AlumVerse ngày hôm nay.

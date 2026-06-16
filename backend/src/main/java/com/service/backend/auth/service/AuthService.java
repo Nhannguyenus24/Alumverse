@@ -51,7 +51,7 @@ public class AuthService {
     private static final String OTP_CACHE_USER_ID_FIELD = "userId";
     private static final int OTP_LENGTH = 6;
     private static final int OTP_MAX_VALUE = 1000000;
-    private static final int RANDOM_USERNAME_SUFFIX_BYTES = 4;
+
 
     private final AuthRepository authRepository;
     private final PasswordEncoder passwordEncoder;
@@ -84,17 +84,17 @@ public class AuthService {
     }
 
     @Transactional
-    public Mono<Void> register(String email, String userName, String password, String fullName, Integer organizationId) {
-        return authRepository.existsByEmailOrUserName(email, userName)
+    public Mono<Void> register(String email, String studentId, String password, String fullName, Integer organizationId) {
+        return authRepository.existsByEmail(email)
                 .flatMap(exists -> {
-                    if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED));
+                    if (exists) return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                     return Mono.fromCallable(() -> passwordEncoder.encode(password))
                             .subscribeOn(Schedulers.boundedElastic())
                             .flatMap(hashedPassword ->
-                                    authRepository.registerNewUser(email, userName, hashedPassword)
+                                    authRepository.registerNewUser(email, hashedPassword)
                                             .flatMap(userId ->
                                                 authRepository.createGlobalProfile(userId, fullName)
-                                                        .then(authRepository.createOrganizationMember(organizationId, userId))
+                                                        .then(authRepository.createOrganizationMember(organizationId, userId, studentId))
                             ));
                 })
                 .doOnError(e -> logger.error("Registration failed: {}", email, e));
@@ -133,38 +133,7 @@ public class AuthService {
                 .doOnError(error -> logger.error("Login error for email: {}", email, error));
     }
 
-    public Mono<User> loginByUserName(String userName, String password, Integer organizationId, String userAgent, String loginIp) {
-        return authRepository.findByUserName(userName)
-                .flatMap(user -> {
-                    if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-                        logger.warn("Login failed - invalid password for username: {}", userName);
-                        return Mono.error(new ApplicationException(ErrorCode.INVALID_USERNAME_CREDENTIALS));
-                    }
 
-                    if (user.getStatus() != Status.ACTIVE) {
-                        logger.warn("Login failed - account not active for username: {}. Status: {}", userName, user.getStatus());
-                        return Mono.error(new ApplicationException(ErrorCode.ACCOUNT_NOT_VERIFIED));
-                    }
-
-                    if (organizationId != null) {
-                        return authRepository.existsOrganizationMemberByUserIdAndOrgId(user.getId(), organizationId)
-                                .flatMap(isMember -> {
-                                    if (Boolean.FALSE.equals(isMember)) {
-                                        logger.warn("Login failed - user {} is not a member of organization {}", userName, organizationId);
-                                        return Mono.error(new ApplicationException(ErrorCode.USER_NOT_MEMBER_OF_ORGANIZATION));
-                                    }
-                                    recordLoginSuccessAsync(user.getId(), "USERNAME", userAgent, loginIp);
-                                    return Mono.just(user);
-                                });
-                    } else {
-                        recordLoginSuccessAsync(user.getId(), "USERNAME", userAgent, loginIp);
-                        return Mono.just(user);
-                    }
-                })
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))
-                .doOnSuccess(u -> logger.info("loginByUserName result: {}", JsonUtils.toJson(u)))
-                .doOnError(error -> logger.error("Login error for username: {}", userName, error));
-    }
 
     public Mono<User> loginWithGoogle(String idToken, Integer organizationId, String userAgent, String loginIp) {
         if (!StringUtils.hasText(googleClientId)) {
@@ -391,7 +360,6 @@ public class AuthService {
                                                     user.getId(),
                                                     user.getEmail(),
                                                     user.getRole().name(),
-                                                    user.getUserName(),
                                                     user.getAvatarUrl(),
                                                     finalOrgId
                                             );
@@ -481,26 +449,21 @@ public class AuthService {
                 ? tokenInfo.name().trim()
                 : tokenInfo.email();
 
-        return generateUniqueUsername(tokenInfo.email())
-                .flatMap(userName -> Mono.fromCallable(() -> passwordEncoder.encode(UUID.randomUUID().toString()))
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .flatMap(passwordHash -> authRepository.registerGoogleUser(
-                                        tokenInfo.email(),
-                                        userName,
-                                        passwordHash,
-                                        tokenInfo.picture())
-                                .flatMap(userId -> authRepository.createGlobalProfile(userId, fullName)
-                                        .then(authRepository.createOrganizationMember(organizationId, userId))
-                                        .thenReturn(userId))
-                                .flatMap(authRepository::findById)
-                                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)))))
+        return Mono.fromCallable(() -> passwordEncoder.encode(UUID.randomUUID().toString()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(passwordHash -> authRepository.registerGoogleUser(
+                                tokenInfo.email(),
+                                passwordHash,
+                                tokenInfo.picture())
+                        .flatMap(userId -> authRepository.createGlobalProfile(userId, fullName)
+                                .then(authRepository.createOrganizationMember(organizationId, userId, null))
+                                .thenReturn(userId))
+                        .flatMap(authRepository::findById)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND))))
                 .doOnNext(u -> recordLoginSuccessAsync(u.getId(), GOOGLE_LOGIN_METHOD, userAgent, loginIp));
     }
 
-    private Mono<String> generateUniqueUsername(String email) {
-        String base = buildUsernameSeedFromEmail(email);
-        return Mono.just(base + randomUsernameSuffix());
-    }
+
 
     private Mono<Void> ensureOrganizationMembership(Integer userId, Integer organizationId) {
         return authRepository.existsOrganizationMemberByUserIdAndOrgId(userId, organizationId)
@@ -508,25 +471,12 @@ public class AuthService {
                     if (Boolean.TRUE.equals(isMember)) {
                         return Mono.empty();
                     }
-                    return authRepository.createOrganizationMember(organizationId, userId)
+                    return authRepository.createOrganizationMember(organizationId, userId, null)
                             .doOnError(error -> logger.error("Failed to create organization membership for user id: {} in organization: {}", userId, organizationId, error));
                 });
     }
 
-    private String buildUsernameSeedFromEmail(String email) {
-        String localPart = email == null ? "" : email.split("@")[0];
-        String normalized = localPart == null ? "" : localPart.toLowerCase().replaceAll("[^a-z0-9._]", "");
-        if (!StringUtils.hasText(normalized)) {
-            normalized = "google.user";
-        }
-        return normalized.length() > 24 ? normalized.substring(0, 24) : normalized;
-    }
 
-    private String randomUsernameSuffix() {
-        byte[] bytes = new byte[RANDOM_USERNAME_SUFFIX_BYTES];
-        secureRandom.nextBytes(bytes);
-        return "_" + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes).toLowerCase();
-    }
 
     private void recordLoginSuccessAsync(Integer userId, String loginMethod, String userAgent, String loginIp) {
         UserLoginHistory history = UserLoginHistory.builder()

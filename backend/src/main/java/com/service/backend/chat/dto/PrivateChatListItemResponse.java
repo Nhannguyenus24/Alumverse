@@ -19,7 +19,7 @@ public class PrivateChatListItemResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Long peerMemberId;
-    private String peerUserName;
+    private String peerFullName;
     private String peerAvatarUrl;
     private String lastMessagePreview;
     private LocalDateTime lastMessageAt;

@@ -6,13 +6,13 @@ import dayjs from "dayjs";
 /** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
-/** Username: 3–50 chars, letters, numbers, dots, underscores, hyphens */
-const USERNAME_REGEX = /^[a-zA-Z0-9._-]+$/;
+/** StudentId: 3–50 chars, letters, numbers, dots, underscores, hyphens */
+const STUDENT_ID_REGEX = /^[a-zA-Z0-9._-]+$/;
 
 /** OTP: exactly 6 digits */
 const OTP_REGEX = /^[0-9]{6}$/;
 
-/** Login: backend LoginRequest — email (or username), password */
+/** Login: backend LoginRequest — email, password */
 export const loginSchema = z.object({
   email: z.string().min(1, "Email hoặc mật khẩu không đúng"),
   password: z.string().min(1, "Email hoặc mật khẩu không đúng"),
@@ -20,7 +20,7 @@ export const loginSchema = z.object({
   recaptchaToken: z.string().min(1, "Vui lòng xác nhận bạn không phải là người máy"),
 });
 
-/** Register: backend RegisterRequest — email, userName (studentId), fullName, password; UI: studentId, enrollmentYear (bắt buộc) */
+/** Register: backend RegisterRequest — email, studentId, fullName, password; UI: studentId, enrollmentYear (bắt buộc) */
 export const registerSchema = z
   .object({
     fullName: z
@@ -33,7 +33,7 @@ export const registerSchema = z
       .min(1, 'Mã số sinh viên là bắt buộc')
       .min(3, 'Mã số sinh viên từ 3–50 ký tự')
       .max(50, 'Mã số sinh viên từ 3–50 ký tự')
-      .regex(USERNAME_REGEX, 'Mã số sinh viên chỉ được chứa chữ cái, số, dấu chấm, gạch dưới và gạch ngang'),
+      .regex(STUDENT_ID_REGEX, 'Mã số sinh viên chỉ được chứa chữ cái, số, dấu chấm, gạch dưới và gạch ngang'),
     enrollmentYear: z.string().min(1, 'Vui lòng chọn năm nhập học'),
     email: z.email("Email là bắt buộc"),
     password: z

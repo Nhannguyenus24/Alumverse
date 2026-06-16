@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TopContributorDTO {
     private Integer memberId;
-    private String userName;
+    private String studentId;
     private String email;
     private String avatarUrl;
     private Long postCount;

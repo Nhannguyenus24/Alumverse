@@ -107,7 +107,7 @@ const Header = () => {
     };
   }, []);
 
-  const displayName = user?.userName ?? 'User';
+  const displayName = user?.fullName ?? user?.studentId ?? 'User';
   const rawRole = user?.role ?? 'Student';
   const verificationLabel = verificationLevel != null
     ? VERIFICATION_LABELS[verificationLevel] ?? rawRole.charAt(0) + rawRole.slice(1).toLowerCase()

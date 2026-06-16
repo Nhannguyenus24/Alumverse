@@ -104,7 +104,7 @@ public class AdminUserService {
 
     @Transactional
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId,
-                               String email, String userName, String fullName, String role, String avatarUrl,
+                               String email, String studentId, String fullName, String role, String avatarUrl,
                                String password,
                                List<Integer> graduatedYear, List<String> graduationStatus,
                                List<String> program, List<String> major,
@@ -121,7 +121,6 @@ public class AdminUserService {
             userIdMono = adminUserRepository.findById(userId)
                     .flatMap(user -> {
                         if (StringUtils.hasText(email)) user.setEmail(email);
-                        if (StringUtils.hasText(userName)) user.setUserName(userName);
                         if (StringUtils.hasText(role)) {
                             try {
                                 user.setRole(UserRole.valueOf(role.toUpperCase()));
@@ -137,10 +136,10 @@ public class AdminUserService {
                     .map(User::getId)
                     .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)));
         } else {
-            userIdMono = adminUserRepository.existsByEmailOrUserName(email, userName)
+            userIdMono = adminUserRepository.existsByEmail(email)
                     .flatMap(exists -> {
                         if (exists) {
-                            return Mono.error(new ApplicationException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED));
+                            return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                         }
                         UserRole userRole = UserRole.ALUMNI;
                         if (StringUtils.hasText(role)) {
@@ -153,7 +152,6 @@ public class AdminUserService {
                         String finalPassword = StringUtils.hasText(password) ? password : "Alumni2026@";
                         User newUser = User.builder()
                                 .email(email)
-                                .userName(userName)
                                 .passwordHash(passwordEncoder.encode(finalPassword))
                                 .role(userRole)
                                 .status(Status.ACTIVE)
@@ -217,7 +215,6 @@ public class AdminUserService {
         return adminUserRepository.findById(userId)
                 .flatMap(user -> {
                     if (request.getEmail() != null) user.setEmail(request.getEmail());
-                    if (request.getUserName() != null) user.setUserName(request.getUserName());
                     if (request.getRole() != null) user.setRole(request.getRole());
                     if (request.getStatus() != null) user.setStatus(request.getStatus());
                     user.setUpdatedAt(LocalDateTime.now());
@@ -450,15 +447,14 @@ public class AdminUserService {
 
     @Transactional
     public Mono<Boolean> createAdminAccount(CreateAdminRequest request) {
-        return adminUserRepository.existsByEmailOrUserName(request.getEmail(), request.getUserName())
+        return adminUserRepository.existsByEmail(request.getEmail())
                 .flatMap(exists -> {
                     if (exists) {
-                        return Mono.error(new ApplicationException(ErrorCode.EMAIL_OR_USERNAME_ALREADY_REGISTERED));
+                        return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                     }
                     String encodedPassword = passwordEncoder.encode(request.getPassword());
                     return adminUserRepository.createAdminUser(
                                     request.getEmail(),
-                                    request.getUserName(),
                                     encodedPassword)
                             .flatMap(adminUserId -> adminUserRepository
                                     .createGlobalProfile(adminUserId, request.getFullName())
@@ -545,7 +541,6 @@ public class AdminUserService {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
-                .userName(user.getUserName())
                 .status(user.getStatus())
                 .role(user.getRole())
                 .avatarUrl(user.getAvatarUrl())

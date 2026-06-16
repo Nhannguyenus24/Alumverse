@@ -16,9 +16,10 @@ import reactor.core.publisher.Mono;
 public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long> {
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
-           "u.email, u.user_name " +
+           "u.email, om.student_id as student_id " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
+           "LEFT JOIN organization_members om ON u.id = om.user_id " +
            "ORDER BY ulh.login_at DESC " +
            "LIMIT :limit OFFSET :offset")
     Flux<LoginHistoryResponse> findAllWithUserInfo(@Param("limit") int limit, @Param("offset") int offset);
@@ -27,9 +28,10 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
     Mono<Long> countAll();
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
-           "u.email, u.user_name " +
+           "u.email, om.student_id as student_id " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
+           "LEFT JOIN organization_members om ON u.id = om.user_id " +
            "WHERE ulh.user_id = :userId " +
            "ORDER BY ulh.login_at DESC " +
            "LIMIT :limit OFFSET :offset")
@@ -54,12 +56,13 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
            "ORDER BY date DESC")
     Flux<DailyCountProjection> getDailyLoginStats();
 
-    @Query("SELECT ulh.user_id AS user_id, u.email AS email, u.user_name AS user_name, " +
+    @Query("SELECT ulh.user_id AS user_id, u.email AS email, om.student_id AS student_id, " +
            "COUNT(DISTINCT ulh.login_ip) AS distinct_ip_count, COUNT(*) AS total_logins " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
+           "LEFT JOIN organization_members om ON u.id = om.user_id " +
            "WHERE ulh.login_at >= CURRENT_TIMESTAMP - INTERVAL '7 days' " +
-           "GROUP BY ulh.user_id, u.email, u.user_name " +
+           "GROUP BY ulh.user_id, u.email, om.student_id " +
            "HAVING COUNT(DISTINCT ulh.login_ip) > 3 " +
            "ORDER BY distinct_ip_count DESC")
     Flux<SuspiciousLoginInfo> findSuspiciousLogins();
@@ -68,7 +71,7 @@ public interface AuditRepository extends R2dbcRepository<UserLoginHistory, Long>
     Mono<Long> countDailyActive();
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +
-           "u.email, u.user_name " +
+           "u.email, om.student_id as student_id " +
            "FROM user_login_histories ulh " +
            "INNER JOIN users u ON ulh.user_id = u.id " +
            "INNER JOIN organization_members om ON ulh.user_id = om.user_id " +

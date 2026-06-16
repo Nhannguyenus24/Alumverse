@@ -188,7 +188,7 @@ export default function SettingPage() {
           gender: (profile?.gender ?? '').toLowerCase(),
           birthDate: profile?.dob ?? '',
           phone: profile?.phone ?? '',
-          studentId: profile?.userName ?? '',
+          studentId: profile?.studentId ?? '',
           email: profile?.email ?? '',
           educations,
         }));
