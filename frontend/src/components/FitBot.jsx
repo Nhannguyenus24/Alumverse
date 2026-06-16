@@ -271,51 +271,101 @@ const SUGGESTIONS = [
   'Liên hệ với administrative office',
 ];
 
-// SSE response handler
-const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
-  // Construct the API endpoint and query parameters
-  const apiEndpoint = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat/stream`;
-  const params = new URLSearchParams({
-    message: userMessage,
-  });
-
+// SSE response handler using fetch
+const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
+  const apiEndpoint = 'https://glimmer-clustered-exorcist.ngrok-free.dev/api/query';
+  
   try {
-    // Create EventSource connection
-    const eventSource = new EventSource(`${apiEndpoint}?${params.toString()}`);
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'accept': 'text/event-stream, application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question: userMessage,
+        top_k: 10,
+        model: 'gemini-2.5-flash',
+        use_reranker: false
+      }),
+      signal: signal
+    });
 
-    eventSource.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.content) {
-          onChunk(data.content);
-        }
-      } catch (e) {
-        console.error('Error parsing SSE message:', e);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    
+    // If not streaming, just read all and return
+    if (contentType.includes('application/json')) {
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
       }
-    });
-
-    eventSource.addEventListener('end', () => {
-      eventSource.close();
+      try {
+        const data = JSON.parse(result);
+        const answer = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : null) || JSON.stringify(data);
+        onChunk(answer);
+      } catch (e) {
+        onChunk(result);
+      }
       onComplete();
-    });
+      return;
+    }
 
-    eventSource.addEventListener('error', (error) => {
-      console.error('SSE Error:', error);
-      eventSource.close();
-      onError(error);
-    });
+    // SSE streaming handling
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-    eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-      eventSource.close();
-      onError(error);
-    };
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep the incomplete line
 
-    return eventSource;
+      for (const line of lines) {
+        if (line.trim() === '') continue;
+        if (line.startsWith('data:')) {
+          const dataStr = line.slice(5).trim();
+          if (dataStr === '[DONE]') continue;
+          try {
+            const data = JSON.parse(dataStr);
+            const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
+            if (textChunk) onChunk(textChunk);
+          } catch (e) {
+            onChunk(dataStr);
+          }
+        }
+      }
+    }
+    
+    // Process remaining buffer
+    if (buffer.startsWith('data:')) {
+      const dataStr = buffer.slice(5).trim();
+      if (dataStr && dataStr !== '[DONE]') {
+        try {
+          const data = JSON.parse(dataStr);
+          const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
+          if (textChunk) onChunk(textChunk);
+        } catch (e) {
+          onChunk(dataStr);
+        }
+      }
+    }
+
+    onComplete();
   } catch (error) {
-    console.error('Error creating EventSource:', error);
-    onError(error);
-    return null;
+    if (error.name === 'AbortError') {
+      console.log('Stream aborted');
+    } else {
+      console.error('Error fetching stream response:', error);
+      onError(error);
+    }
   }
 };
 
@@ -330,8 +380,8 @@ export default function FitBot() {
   const messageEndRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
   const suggestionHideTimeoutRef = useRef(null);
-  const eventSourceRef = useRef(null);
   const charIndexRef = useRef(0);
+  const abortControllerRef = useRef(null);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -345,11 +395,11 @@ export default function FitBot() {
     saveMessagesToStorage(messages);
   }, [messages]);
 
-  // Cleanup SSE on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
       if (suggestionTimeoutRef.current) {
         clearTimeout(suggestionTimeoutRef.current);
@@ -447,12 +497,18 @@ export default function FitBot() {
 
         setTimeout(typeNextCharacters, 30);
       } else {
-        // Check if more data is coming from SSE
-        if (eventSourceRef.current && !eventSourceRef.current.closed) {
+        // Check if stream is still active
+        if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
           setTimeout(typeNextCharacters, 30);
         }
       }
     };
+
+    // Create abort controller for this stream
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     // Stream response from server via SSE
     streamSSEResponse(
@@ -467,7 +523,7 @@ export default function FitBot() {
       () => {
         // On complete
         setIsTyping(false);
-        eventSourceRef.current = null;
+        abortControllerRef.current = null;
       },
       (error) => {
         // On error - show fallback message
@@ -486,18 +542,19 @@ export default function FitBot() {
           return updatedMessages;
         });
         setIsTyping(false);
-        eventSourceRef.current = null;
-      }
+        abortControllerRef.current = null;
+      },
+      abortControllerRef.current.signal
     );
   };
 
   const handleClose = () => {
     setIsChatOpen(false);
     setIsTyping(false);
-    // Close SSE connection if active
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+    // Abort active stream
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
   };
 
