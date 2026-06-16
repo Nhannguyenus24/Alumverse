@@ -81,7 +81,7 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     try {
       await adminUserApi.addOrganizationMember({
         email: String(payload.email || '').trim(),
-        userName: String(payload.userName || '').trim(),
+        studentId: String(payload.studentId || '').trim(),
         fullName: String(payload.fullName || '').trim(),
         role: payload.role,
         status: payload.status,

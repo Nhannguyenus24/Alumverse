@@ -16,6 +16,14 @@ public interface ModerationService {
         1. Respond ONLY with a JSON object containing a field 'tags' which is a list of strings.
         2. The 'tags' list must have the EXACT same size and order as the input list.
         3. No explanations, no markdown.
+
+        Example Input:
+        ["I love this new feature!", "Buy cheap followers here!!!", "You are so stupid and ugly"]
+
+        Example Output:
+        {
+          "tags": ["NORMAL", "SPAM", "OFFENSIVE"]
+        }
        \s""")
     BatchModerationResponse analyzeContents(@UserMessage List<String> contents, @V("tags") String tags);
 }

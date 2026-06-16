@@ -35,6 +35,7 @@ import { useOrganization } from '../../hooks/useOrganization';
 import { formatDateTime } from '../../utils/dateFormatter';
 import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
+import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
 
 const parseOrganizationOptions = (value) => {
   if (!value) return [];
@@ -141,6 +142,8 @@ export default function SettingPage() {
   // Tạo state edit mode
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
+  
+  const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -185,7 +188,7 @@ export default function SettingPage() {
           gender: (profile?.gender ?? '').toLowerCase(),
           birthDate: profile?.dob ?? '',
           phone: profile?.phone ?? '',
-          studentId: profile?.userName ?? '',
+          studentId: profile?.studentId ?? '',
           email: profile?.email ?? '',
           educations,
         }));
@@ -451,6 +454,20 @@ export default function SettingPage() {
 
   const renderAccountSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {/* Email Section */}
+      <Box>
+        <Typography variant="h4" sx={{ mb: 2 }}>Địa chỉ Email</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="body1" fontWeight={600}>{formData.email || 'Chưa cập nhật'}</Typography>
+            <Typography variant="caption" color="text.secondary">Email này được sử dụng để đăng nhập và nhận thông báo.</Typography>
+          </Box>
+          <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setIsChangeEmailModalOpen(true)}>Đổi Email</Button>
+        </Box>
+      </Box>
+
+      <Divider />
+
       {/* Change Password Section */}
       <Box>
         <Typography variant="h4" sx={{ mb: 2 }}>Đặt lại mật khẩu</Typography>
@@ -608,6 +625,16 @@ export default function SettingPage() {
           }
           onFileChange={avatarCrop.handleFileChange}
           onSave={avatarCrop.handleSave}
+        />
+
+        <ChangeEmailModal
+          open={isChangeEmailModalOpen}
+          onClose={() => setIsChangeEmailModalOpen(false)}
+          userId={user?.id}
+          currentEmail={formData.email}
+          onEmailChanged={(newEmail) => {
+            setFormData(prev => ({ ...prev, email: newEmail }));
+          }}
         />
       </Page>
   );

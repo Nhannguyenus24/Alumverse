@@ -87,7 +87,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   /// page can surface the message; auth state is left unchanged.
   Future<void> register({
     required String email,
-    required String userName,
+    required String studentId,
     required String fullName,
     required String password,
   }) async {
@@ -97,7 +97,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     }
     await _repo.register(
       email: email,
-      userName: userName,
+      studentId: studentId,
       fullName: fullName,
       password: password,
       organizationId: orgId,

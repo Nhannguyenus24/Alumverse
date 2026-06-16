@@ -1,15 +1,15 @@
 /// Registration payload. Maps to the backend `RegisterRequest`:
-/// `userName` carries the student id. `organizationId` is required.
+/// `studentId` carries the student id. `organizationId` is required.
 class RegisterRequest {
   final String email;
-  final String userName;
+  final String studentId;
   final String fullName;
   final String password;
   final int organizationId;
 
   const RegisterRequest({
     required this.email,
-    required this.userName,
+    required this.studentId,
     required this.fullName,
     required this.password,
     required this.organizationId,
@@ -17,7 +17,7 @@ class RegisterRequest {
 
   Map<String, dynamic> toJson() => {
         'email': email,
-        'userName': userName,
+        'studentId': studentId,
         'fullName': fullName,
         'password': password,
         'organizationId': organizationId,

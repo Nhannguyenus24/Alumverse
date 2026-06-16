@@ -19,7 +19,7 @@ import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 
 const defaultEmptyForm = {
   email: '',
-  userName: '',
+  studentId: '',
   fullName: '',
   password: '',
   role: 'ALUMNI',
@@ -30,7 +30,7 @@ const defaultEmptyForm = {
 /** API list often omits fullName; keep edit form aligned with table column fallback. */
 const resolvedFullNameForEdit = (u) => {
   if (!u) return '';
-  const found = [u.fullName, u.userName, u.email]
+  const found = [u.fullName, u.studentId, u.email]
     .map((x) => (typeof x === 'string' ? x.trim() : x))
     .find(Boolean);
   return typeof found === 'string' ? found : '';
@@ -55,7 +55,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       if (mode === 'edit' && user) {
         setForm({
           email: user.email || '',
-          userName: user.userName || '',
+          studentId: user.studentId || '',
           fullName: resolvedFullNameForEdit(user),
           password: '',
           role: user.role || 'STUDENT',
@@ -82,8 +82,8 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     if (!form.email.trim()) {
       next.email = 'Vui lòng nhập email';
     }
-    if (!form.userName.trim()) {
-      next.userName = 'Vui lòng nhập tên đăng nhập';
+    if (!form.studentId.trim()) {
+      next.studentId = 'Vui lòng nhập MSSV';
     }
     if (!form.fullName.trim()) {
       next.fullName = 'Vui lòng nhập họ tên';
@@ -113,7 +113,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
     const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
     const payload = {
       email: form.email,
-      userName: form.userName,
+      studentId: form.studentId,
       fullName: form.fullName,
       role: form.role,
       status: form.status,
@@ -160,9 +160,9 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         />
         <TextField
           label="Tên đăng nhập"
-          value={form.userName}
-          onChange={handleChange('userName')}
-          error={!!errors.userName}
+          value={form.studentId}
+          onChange={handleChange('studentId')}
+          error={!!errors.studentId}
           fullWidth
           required
           slotProps={{ inputLabel: inputLabelSlotProps }}

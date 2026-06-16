@@ -62,7 +62,7 @@ public class ChatController {
 
     /*
         Search private chats of the current user.
-        text: filter by peer username (case-insensitive, optional)
+        text: filter by peer name (case-insensitive, optional)
         page/size: pagination, default page=0, size=5
     */
     @GetMapping("/private/list")
