@@ -35,6 +35,9 @@ public class ForumPost {
     @Column("answer_to_post_id")
     private Integer answerToPostId;
     
+    @Column("ai_tag")
+    private String aiTag;
+    
     @Column("is_banned")
     private Boolean isBanned;
 

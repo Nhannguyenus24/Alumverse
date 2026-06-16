@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class UserProfileResponse {
     private Integer userId;
     private String email;
-    private String userName;
+    private String studentId;
     private String role;
     private String status;
     private String avatarUrl;

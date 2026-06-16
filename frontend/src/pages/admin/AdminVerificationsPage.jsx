@@ -118,11 +118,11 @@ const AdminVerificationsPage = () => {
             src={r.avatarUrl} 
             sx={{ width: 32, height: 32, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontSize: 13, fontWeight: 700 }}
           >
-            {(r.fullName || r.userName || '?')[0].toUpperCase()}
+            {(r.fullName || r.studentId || '?')[0].toUpperCase()}
           </Avatar>
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              {r.fullName || r.userName}
+              {r.fullName || r.studentId}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {r.email}
@@ -248,7 +248,7 @@ const AdminVerificationsPage = () => {
                   NGƯỜI GỬI
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 700 }}>
-                  {selectedRequest.fullName || selectedRequest.userName} ({selectedRequest.email})
+                  {selectedRequest.fullName || selectedRequest.studentId} ({selectedRequest.email})
                 </Typography>
               </Box>
 

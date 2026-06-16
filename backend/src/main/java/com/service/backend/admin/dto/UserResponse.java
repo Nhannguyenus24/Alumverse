@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class UserResponse {
     private Integer id;
     private String email;
-    private String userName;
+    private String studentId;
     private Status status;
     private UserRole role;
     private String avatarUrl;

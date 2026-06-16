@@ -68,10 +68,6 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error fetching forum posts created yesterday", error));
     }
 
-    public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(int page, int size) {
-        return getNewForumPostsYesterdayWithPagination(null, page, size);
-    }
-
     public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(Integer organizationId, int page, int size) {
         long offset = (long) page * size;
         if (organizationId != null) {
@@ -134,10 +130,6 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", postId, error));
     }
 
-    public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(int page, int size) {
-        return getBannedPostsWithPagination(null, page, size);
-    }
-
     public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(Integer organizationId, int page, int size) {
         long offset = (long) page * size;
         if (organizationId != null) {
@@ -156,10 +148,6 @@ public class AdminForumService {
                     page, size)
                 .doOnSuccess(r -> log.info("getBannedPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
-    }
-
-    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(String keyword, int page, int size) {
-        return getAllPostsWithPagination(null, keyword, page, size);
     }
 
     public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(Integer organizationId, String keyword, int page, int size) {
@@ -181,10 +169,6 @@ public class AdminForumService {
                     page, size)
                 .doOnSuccess(r -> log.info("getAllPostsWithPagination result (keyword={}): {}", kw, JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all forum posts with keyword={}", kw, error));
-    }
-
-    public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(int page, int size) {
-        return getPendingReports(null, page, size);
     }
 
     public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(Integer organizationId, int page, int size) {
@@ -258,7 +242,7 @@ public class AdminForumService {
     @Transactional
     public Mono<Void> deleteForumTopic(Integer topicId) {
         return forumTopicRepository.findById(topicId)
-                .switchIfEmpty(Mono.defer(() -> Mono.<ForumTopic>error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
                 .flatMap(topic -> forumPostReactionRepository.deleteByTopicId(topicId)
                         .then(forumPostRepository.deleteByTopicId(topicId))
                         .then(forumTopicRepository.deleteById(topicId)))
@@ -481,7 +465,6 @@ public class AdminForumService {
                             .zipWith(forumPostRepository.countPostsByAuthorInMonth(memberId, month, year))
                             .map(tuple -> TopContributorDTO.builder()
                                     .memberId(memberId)
-                                    .userName(tuple.getT1().getUserName())
                                     .email(tuple.getT1().getEmail())
                                     .avatarUrl(tuple.getT1().getAvatarUrl())
                                     .postCount(tuple.getT2())
@@ -572,31 +555,27 @@ public class AdminForumService {
                 Mono<Map<Integer, ForumCategory>> categoriesMapMono = categoryIds.isEmpty() ? Mono.just(new HashMap<>()) :
                         forumCategoryRepository.findAllById(categoryIds).collectMap(ForumCategory::getId);
 
-                return categoriesMapMono.flatMapMany(categoriesMap -> {
-                    return flagsCountMapMono.flatMapMany(flagsCountMap -> {
-                        return Flux.fromIterable(posts).map(post -> {
-                            ForumTopic topic = topicsMap.getOrDefault(post.getTopicId(), ForumTopic.builder().build());
-                            ForumCategory category = categoriesMap.getOrDefault(topic.getCategoryId(), ForumCategory.builder().build());
-                            Long flagsCount = flagsCountMap.getOrDefault(post.getId(), 0L);
+                return categoriesMapMono.flatMapMany(categoriesMap -> flagsCountMapMono.flatMapMany(flagsCountMap -> Flux.fromIterable(posts).map(post -> {
+                    ForumTopic topic = topicsMap.getOrDefault(post.getTopicId(), ForumTopic.builder().build());
+                    ForumCategory category = categoriesMap.getOrDefault(topic.getCategoryId(), ForumCategory.builder().build());
+                    Long flagsCount = flagsCountMap.getOrDefault(post.getId(), 0L);
 
-                            return ForumPostDTO.builder()
-                                    .id(post.getId())
-                                    .topicId(post.getTopicId())
-                                    .authorMemberId(post.getAuthorMemberId())
-                                    .topicTitle(topic.getTitle())
-                                    .categoryName(category.getName())
-                                    .flagsCount(flagsCount)
-                                    .content(post.getContent())
-                                    .answerToPostId(post.getAnswerToPostId())
-                                    .isBanned(post.getIsBanned())
-                                    .isHidden(post.getIsHidden())
-                                    .isLike(false)
-                                    .createdAt(post.getCreatedAt())
-                                    .updatedAt(post.getUpdatedAt())
-                                    .build();
-                        });
-                    });
-                });
+                    return ForumPostDTO.builder()
+                            .id(post.getId())
+                            .topicId(post.getTopicId())
+                            .authorMemberId(post.getAuthorMemberId())
+                            .topicTitle(topic.getTitle())
+                            .categoryName(category.getName())
+                            .flagsCount(flagsCount)
+                            .content(post.getContent())
+                            .answerToPostId(post.getAnswerToPostId())
+                            .isBanned(post.getIsBanned())
+                            .isHidden(post.getIsHidden())
+                            .isLike(false)
+                            .createdAt(post.getCreatedAt())
+                            .updatedAt(post.getUpdatedAt())
+                            .build();
+                })));
             });
         });
     }
@@ -697,12 +676,10 @@ public class AdminForumService {
             Mono<Map<Integer, Long>> postCountMapMono = topicIds.isEmpty() ? Mono.just(new HashMap<>()) :
                     forumPostRepository.countByTopicIds(topicIds).collectMap(IdCountDTO::getId, IdCountDTO::getCount);
 
-            return postCountMapMono.flatMapMany(postCountMap -> {
-                return Flux.fromIterable(topics).map(topic -> {
-                    Long postCount = postCountMap.getOrDefault(topic.getId(), 0L);
-                    return convertToTopicDTO(topic, postCount);
-                });
-            });
+            return postCountMapMono.flatMapMany(postCountMap -> Flux.fromIterable(topics).map(topic -> {
+                Long postCount = postCountMap.getOrDefault(topic.getId(), 0L);
+                return convertToTopicDTO(topic, postCount);
+            }));
         });
     }
 

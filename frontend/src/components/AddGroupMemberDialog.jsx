@@ -78,7 +78,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
         ...prev,
         {
           peerMemberId: contact.peerMemberId,
-          peerUserName: contact.peerUserName,
+          peerStudentId: contact.peerStudentId,
           peerAvatarUrl: contact.peerAvatarUrl,
         },
       ];
@@ -162,7 +162,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
                 {selectedMembers.map((m) => (
                   <Chip
                     key={m.peerMemberId}
-                    label={m.peerUserName}
+                    label={m.peerStudentId}
                     size="small"
                     onDelete={() => handleRemoveSelected(m.peerMemberId)}
                     disabled={isAdding}
@@ -214,12 +214,12 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
                           <ListItemAvatar sx={{ minWidth: 40 }}>
                             <ChatAvatar
                               avatarUrl={contact.peerAvatarUrl}
-                              name={contact.peerUserName}
+                              name={contact.peerStudentId}
                               size={32}
                             />
                           </ListItemAvatar>
                           <ListItemText
-                            primary={contact.peerUserName}
+                            primary={contact.peerStudentId}
                             primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
                           />
                           <Checkbox

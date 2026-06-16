@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -60,10 +59,6 @@ public class AdminMentorshipService {
         this.emailService = emailService;
     }
 
-    public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(int page, int size) {
-        return getAllSessions(null, page, size);
-    }
-
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(Integer organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
@@ -78,10 +73,6 @@ public class AdminMentorshipService {
                     adminMentorshipRepository.countAllSessions(),
                     page, size)
                 .doOnSuccess(r -> log.info("getAllSessions result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(String status, int page, int size) {
-        return getSessionsByStatus(null, status, page, size);
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(Integer organizationId, String status, int page, int size) {
@@ -124,10 +115,6 @@ public class AdminMentorshipService {
                 .doOnSuccess(v -> log.info("deleteSession: sessionId={} deleted", sessionId));
     }
 
-    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(int page, int size) {
-        return getAllMentorProfiles(null, page, size);
-    }
-
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(Integer organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
@@ -142,10 +129,6 @@ public class AdminMentorshipService {
                     adminMentorshipRepository.countAllMentorProfiles(),
                     page, size)
                 .doOnSuccess(r -> log.info("getAllMentorProfiles result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(String status, int page, int size) {
-        return getMentorProfilesByStatus(null, status, page, size);
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(Integer organizationId, String status, int page, int size) {
@@ -203,9 +186,9 @@ public class AdminMentorshipService {
         if (profile.getMemberId() == null) return Mono.empty();
         return adminUserRepository.findById(profile.getMemberId())
                 .flatMap(user -> {
-                    if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.<Void>empty();
+                    if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.empty();
                     Map<String, Object> vars = new HashMap<>();
-                    vars.put("recipientName", user.getUserName() != null ? user.getUserName() : "bạn");
+                    vars.put("recipientName", user.getEmail() != null ? user.getEmail() : "bạn");
                     vars.put("status", status.getValue());
                     vars.put("statusLabel", statusLabel(status));
                     vars.put("reason", reason != null ? reason : "");
@@ -215,20 +198,7 @@ public class AdminMentorshipService {
                                 log.warn("Failed to send mentor review email to {}: {}", user.getEmail(), e.getMessage());
                                 return Mono.empty();
                             });
-                })
-                .switchIfEmpty(Mono.empty());
-    }
-
-    private String statusLabel(String status) {
-        if (status == null) return "";
-        return switch (status.toUpperCase()) {
-            case "PENDING" -> "Đang chờ";
-            case "CONFIRMED" -> "Đã xác nhận";
-            case "COMPLETED" -> "Đã hoàn thành";
-            case "CANCELLED" -> "Đã huỷ";
-            case "REJECTED" -> "Bị từ chối";
-            default -> status;
-        };
+                });
     }
 
     private String statusLabel(Status status) {
@@ -294,14 +264,12 @@ public class AdminMentorshipService {
                 if (userIds.isEmpty()) {
                     return Flux.fromIterable(sessions).map(s -> buildSessionDTO(s, availMap.get(s.getAvailabilityId()), null, null));
                 }
-                return adminUserRepository.findAllById(userIds).collectMap(User::getId).flatMapMany(userMap -> {
-                    return Flux.fromIterable(sessions).map(s -> {
-                        MentorAvailability avail = availMap.get(s.getAvailabilityId());
-                        User mentee = userMap.get(s.getMenteeMemberId());
-                        User mentor = avail != null ? userMap.get(avail.getMentorMemberId()) : null;
-                        return buildSessionDTO(s, avail, mentee, mentor);
-                    });
-                });
+                return adminUserRepository.findAllById(userIds).collectMap(User::getId).flatMapMany(userMap -> Flux.fromIterable(sessions).map(s -> {
+                    MentorAvailability avail = availMap.get(s.getAvailabilityId());
+                    User mentee = userMap.get(s.getMenteeMemberId());
+                    User mentor = avail != null ? userMap.get(avail.getMentorMemberId()) : null;
+                    return buildSessionDTO(s, avail, mentee, mentor);
+                }));
             });
         });
     }
@@ -311,10 +279,10 @@ public class AdminMentorshipService {
                 .id(s.getId())
                 .availabilityId(s.getAvailabilityId())
                 .menteeMemberId(s.getMenteeMemberId())
-                .menteeName(mentee != null ? mentee.getUserName() : null)
+                .menteeName(mentee != null ? mentee.getEmail() : null)
                 .menteeEmail(mentee != null ? mentee.getEmail() : null)
                 .mentorMemberId(avail != null ? avail.getMentorMemberId() : null)
-                .mentorName(mentor != null ? mentor.getUserName() : null)
+                .mentorName(mentor != null ? mentor.getEmail() : null)
                 .mentorEmail(mentor != null ? mentor.getEmail() : null)
                 .status(s.getStatus() != null ? s.getStatus().getValue() : null)
                 .sessionType(s.getSessionType() != null ? s.getSessionType().getValue() : null)
@@ -343,16 +311,14 @@ public class AdminMentorshipService {
             if (userIds.isEmpty()) {
                 return Flux.fromIterable(profiles).map(p -> buildProfileDTO(p, null));
             }
-            return adminUserRepository.findAllById(userIds).collectMap(User::getId).flatMapMany(userMap -> {
-                return Flux.fromIterable(profiles).map(p -> buildProfileDTO(p, userMap.get(p.getMemberId())));
-            });
+            return adminUserRepository.findAllById(userIds).collectMap(User::getId).flatMapMany(userMap -> Flux.fromIterable(profiles).map(p -> buildProfileDTO(p, userMap.get(p.getMemberId()))));
         });
     }
 
     private AdminMentorProfileDTO buildProfileDTO(MentorProfile p, User u) {
         return AdminMentorProfileDTO.builder()
                 .memberId(p.getMemberId())
-                .mentorName(u != null ? u.getUserName() : null)
+                .mentorName(u != null ? u.getEmail() : null)
                 .mentorEmail(u != null ? u.getEmail() : null)
                 .currentJobTitle(p.getCurrentJobTitle())
                 .currentCompany(p.getCurrentCompany())

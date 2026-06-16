@@ -1,11 +1,9 @@
 package com.service.backend.chat.service;
 
 import org.springframework.transaction.annotation.Transactional;
-import com.service.backend.auth.dao.AuthRepository;
 import com.service.backend.chat.dao.ChatGroupMemberRepository;
 import com.service.backend.chat.dao.ChatGroupRepository;
 import com.service.backend.chat.dao.ChatMessageRepository;
-import com.service.backend.chat.dto.BlockPairFlags;
 import com.service.backend.chat.dto.ChatGroupMemberItemResponse;
 import com.service.backend.chat.dto.ChatGroupMetadataResponse;
 import com.service.backend.chat.dto.ChatMessageResponse;
@@ -37,35 +35,18 @@ public class ChatService {
     private final ChatGroupRepository chatGroupRepository;
     private final ChatGroupMemberRepository chatGroupMemberRepository;
     private final ChatMessageRepository chatMessageRepository;
-    private final AuthRepository authRepository;
     private final UserBlockService userBlockService;
 
     public ChatService(
         ChatGroupRepository cGRepo,
         ChatGroupMemberRepository cGMRepo,
         ChatMessageRepository cMRepo,
-        AuthRepository authRepository,
         UserBlockService userBlockService
     ) {
         this.chatGroupMemberRepository = cGMRepo;
         this.chatGroupRepository = cGRepo;
         this.chatMessageRepository = cMRepo;
-        this.authRepository = authRepository;
         this.userBlockService = userBlockService;
-    }
-
-
-    public Mono<ChatGroup> getOrCreatePrivateChat(Long memberAId, Long memberBId) {
-        if (memberAId == null || memberBId == null) {
-            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member IDs must not be null"));
-        }
-
-        if (memberAId.equals(memberBId)) {
-            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Cannot create private chat with yourself"));
-        }
-
-        return chatGroupRepository.findPrivateChatBetweenMembers(memberAId, memberBId)
-                .switchIfEmpty(createNewPrivateChat(memberAId, memberBId));
     }
 
     public Mono<ChatGroup> getPrivateChat(Long memberAId, Long memberBId) {
@@ -90,19 +71,6 @@ public class ChatService {
         }
 
         return createPrivateChat(memberAId, memberBId);
-    }
-
-    public Mono<List<ChatGroup>> getListChatGroupsByType(Long memberId, String type) {
-        if (memberId == null) {
-            return Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND, "Member ID must not be null"));
-        }
-
-        return chatGroupMemberRepository.findByMemberId(memberId)
-                .map(ChatGroupMember::getGroupId)
-                .distinct()
-                .flatMap(chatGroupRepository::findById)
-                .filter(group -> type == null || (group.getType() != null && type.equalsIgnoreCase(group.getType().getValue())))
-                .collectList();
     }
 
     public Mono<PaginatedResponse<PrivateChatListItemResponse>> getListPrivateChatsWithSummary(
@@ -225,22 +193,10 @@ public class ChatService {
                 });
     }
 
-
-    public Flux<ChatMessage> getMessages(Long groupId, int page, int size) {
-        int limit = Math.max(size, 1);
-        int offset = Math.max(page, 0) * limit;
-        return chatMessageRepository.findByGroupIdWithPagination(groupId, limit, offset);
-    }
-
     public Flux<ChatMessageResponse> getMessagesWithSenderInfo(Long groupId, int page, int size) {
         int limit = Math.max(size, 1);
         int offset = Math.max(page, 0) * limit;
         return chatMessageRepository.findByGroupIdWithSenderInfoAndPagination(groupId, limit, offset);
-    }
-
-
-    public Mono<Long> countMessages(Long groupId) {
-        return chatMessageRepository.countByGroupId(groupId);
     }
 
     /**
@@ -498,7 +454,7 @@ public class ChatService {
 
                                     return chatGroupMemberRepository.findByGroupId(groupId)
                                             .filter(m -> !m.getMemberId().equals(memberId))
-                                            .sort((m1, m2) -> m1.getJoinedAt().compareTo(m2.getJoinedAt()))
+                                            .sort(Comparator.comparing(ChatGroupMember::getJoinedAt))
                                             .collectList()
                                             .flatMap(others -> {
                                                 if (others.isEmpty()) {

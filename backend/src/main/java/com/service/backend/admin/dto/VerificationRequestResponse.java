@@ -21,8 +21,8 @@ public class VerificationRequestResponse {
 
     private String email;
 
-    @Column("user_name")
-    private String userName;
+    @Column("student_id")
+    private String studentId;
 
     @Column("document_url")
     private String documentUrl;

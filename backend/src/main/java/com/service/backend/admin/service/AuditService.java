@@ -26,10 +26,6 @@ public class AuditService {
         this.auditRepository = auditRepository;
     }
 
-    public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistories(int page, int size) {
-        return getLoginHistories(null, page, size);
-    }
-
     public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistories(Integer organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {

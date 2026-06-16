@@ -2,21 +2,21 @@
 
 -- ============= USERS DATA =============
 -- password to login is Student@2024 for the last 3
-INSERT INTO "users" ("email", "password_hash", "user_name", "status", "role", "avatar_url", "created_at", "updated_at") VALUES
-('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'admin', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
-('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'johndoe', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '90 days', NOW()),
-('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'janesmith', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '60 days', NOW()),
-('nguyen.van.a@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'nguyenvana', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
-('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'tranthib', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '30 days', NOW()),
-('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'phamvanc', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '20 days', NOW()),
-('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'hoangthid', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '10 days', NOW()),
-('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'levane', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '5 days', NOW()),
-('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'duongthif', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '2 days', NOW()),
-('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'vovang', 'ACTIVE', 'ALUMNI', NULL, NOW(), NOW()),
-('test@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'testuser', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
-('bui.van.h@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'buivanh', 'ACTIVE', 'STUDENT', NULL, NOW(), NOW()),
-('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'lythii', 'ACTIVE', 'STUDENT', NULL, NOW(), NOW()),
-('admin@gmail.com', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'testadmin', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW());
+INSERT INTO "users" ("email", "password_hash", "status", "role", "avatar_url", "created_at", "updated_at") VALUES
+('admin@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
+('john.doe@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '90 days', NOW()),
+('jane.smith@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '60 days', NOW()),
+('nguyen.van.a@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '45 days', NOW()),
+('tran.thi.b@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '30 days', NOW()),
+('pham.van.c@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '20 days', NOW()),
+('hoang.thi.d@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '10 days', NOW()),
+('le.van.e@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW() - INTERVAL '5 days', NOW()),
+('duong.thi.f@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'STUDENT', NULL, NOW() - INTERVAL '2 days', NOW()),
+('vo.van.g@hcmus.edu.vn', '$2a$10$slYQmyNdGzIn9KqmFEexCeI7w5yO8Z9TK5D8P2L9H5F2X4Q3A1R5S', 'ACTIVE', 'ALUMNI', NULL, NOW(), NOW()),
+('test@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW()),
+('bui.van.h@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'STUDENT', NULL, NOW(), NOW()),
+('ly.thi.i@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'STUDENT', NULL, NOW(), NOW()),
+('admin@gmail.com', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'ACTIVE', 'ADMIN', NULL, NOW(), NOW());
 
 
 -- ============= GLOBAL PROFILES DATA =============
@@ -97,20 +97,20 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  NOW() - INTERVAL '25 days');
 
 -- ============= ORGANIZATION MEMBERS DATA =============
-INSERT INTO "organization_members" ("organization_id", "user_id", "started_year", "graduated_year", "graduation_status", "program", "major", "faculty", "department", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
-(1, 1, '[2008, 2014]', '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
-(1, 2, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '90 days', NOW()),
-(1, 4, '[2022]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW() - INTERVAL '45 days', NOW()),
-(1, 6, '[2018, 2023]', '[2022, 2024]', '["GRADUATED", "STUDYING"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Computer Science", "Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
-(1, 11, '[2018]', '[2022]', '["GRADUATED"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
-(2, 3, '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '60 days', NOW()),
-(2, 5, '[2020, 2025]', '[2024, 2026]', '["GRADUATED", "STUDYING"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Information Technology", "Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '30 days', NOW()),
-(2, 8, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '180 days', NOW()),
-(2, 9, '[2023]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '15 days', NOW()),
-(3, 7, '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', '["Faculty of Mathematics & Computer Science"]', '["Mathematics"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW()),
-(3, 10, '[2021]', '[]', '["STUDYING"]', '["Regular"]', '["Business Administration"]', '["Faculty of Mathematics & Computer Science"]', '["Mathematics"]', 1, false, 'PENDING', NOW() - INTERVAL '3 days', NOW()),
-(1, 12, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW(), NOW()),
-(2, 13, '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW(), NOW());
+INSERT INTO "organization_members" ("organization_id", "user_id", "student_id", "started_year", "graduated_year", "graduation_status", "program", "major", "faculty", "department", "verification_level", "is_trusted_verifier", "status", "created_at", "updated_at") VALUES
+(1, 1, 'admin', '[2008, 2014]', '[2012, 2016]', '["GRADUATED", "GRADUATED"]', '["Regular", "Master"]', '["Computer Science", "Computer Science"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Computer Science", "Computer Science"]', 3, true, 'ACTIVE', NOW() - INTERVAL '365 days', NOW()),
+(1, 2, 'johndoe', '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '90 days', NOW()),
+(1, 4, 'nguyenvana', '[2022]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW() - INTERVAL '45 days', NOW()),
+(1, 6, 'phamvanc', '[2018, 2023]', '[2022, 2024]', '["GRADUATED", "STUDYING"]', '["Regular", "Part-time"]', '["Computer Science", "Data Science"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Computer Science", "Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
+(1, 11, 'testuser', '[2018]', '[2022]', '["GRADUATED"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 2, true, 'ACTIVE', NOW() - INTERVAL '200 days', NOW()),
+(2, 3, 'janesmith', '[2019]', '[2023]', '["GRADUATED"]', '["Advanced Program"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '60 days', NOW()),
+(2, 5, 'tranthib', '[2020, 2025]', '[2024, 2026]', '["GRADUATED", "STUDYING"]', '["Regular", "Exchange"]', '["Information Technology", "Data Engineering"]', '["Faculty of Information Technology", "Faculty of Information Technology"]', '["Information Technology", "Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '30 days', NOW()),
+(2, 8, 'levane', '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 2, true, 'ACTIVE', NOW() - INTERVAL '180 days', NOW()),
+(2, 9, 'duongthif', '[2023]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW() - INTERVAL '15 days', NOW()),
+(3, 7, 'hoangthid', '[2019]', '[2023]', '["GRADUATED"]', '["Regular"]', '["Business Administration"]', '["Faculty of Mathematics & Computer Science"]', '["Mathematics"]', 2, true, 'ACTIVE', NOW() - INTERVAL '100 days', NOW()),
+(3, 10, 'vovang', '[2021]', '[]', '["STUDYING"]', '["Regular"]', '["Business Administration"]', '["Faculty of Mathematics & Computer Science"]', '["Mathematics"]', 1, false, 'PENDING', NOW() - INTERVAL '3 days', NOW()),
+(1, 12, 'buivanh', '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Computer Science"]', '["Faculty of Information Technology"]', '["Computer Science"]', 1, false, 'ACTIVE', NOW(), NOW()),
+(2, 13, 'lythii', '[2024]', '[]', '["STUDYING"]', '["Regular"]', '["Information Technology"]', '["Faculty of Information Technology"]', '["Information Technology"]', 1, false, 'ACTIVE', NOW(), NOW());
 
 -- ============= EVENTS DATA =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "topic", "is_published", "created_at") VALUES

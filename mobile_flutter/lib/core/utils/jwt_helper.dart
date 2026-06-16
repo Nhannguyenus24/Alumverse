@@ -4,7 +4,7 @@ import '../../features/auth/data/models/auth_user.dart';
 
 /// Decode JWT claims on the client to build the auth user.
 /// Mirrors the web client (`frontend/src/utils/jwt.js`): the backend issues
-/// the access token with claims `sub, email, username, avatar, role,
+/// the access token with claims `sub, email, studentId, avatar, role,
 /// organizationId`. This is for reading claims only — the backend validates
 /// the token for any security decision.
 class JwtHelper {
@@ -26,7 +26,7 @@ class JwtHelper {
     return AuthUser(
       id: claims['sub'].toString(),
       email: (claims['email'] as String?) ?? '',
-      fullName: claims['username'] as String? ?? claims['userName'] as String?,
+      fullName: claims['fullName'] as String?,
       avatarUrl: claims['avatar'] as String? ?? claims['avatarUrl'] as String?,
       role: claims['role'] as String?,
       organizationId: _asInt(claims['organizationId']),

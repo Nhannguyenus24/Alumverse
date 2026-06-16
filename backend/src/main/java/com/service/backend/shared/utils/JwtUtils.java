@@ -38,13 +38,12 @@ public class JwtUtils {
         }
     }
 
-    public String generateAccessToken(Integer userId, String email, String role, String userName, String avatarUrl, Integer organizationId) {
+    public String generateAccessToken(Integer userId, String email, String role, String avatarUrl, Integer organizationId) {
         Instant now = Instant.now();
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(String.valueOf(userId))
                 .claim("email", email)
                 .claim("role", role)
-                .claim("username", userName)
                 .claim("avatar", avatarUrl)
                 .claim("organizationId", organizationId)
                 .issueTime(Date.from(now))

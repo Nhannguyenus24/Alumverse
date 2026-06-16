@@ -53,7 +53,7 @@ const AdminUserDetailPage = () => {
     if (user) {
       setBreadcrumbs?.([
         { label: 'Người dùng', path: `${adminBase}/users` },
-        { label: user.fullName || `@${user.userName}` || `ID: ${user.id}`, active: true },
+        { label: user.fullName || `ID: ${user.studentId}` || `ID: ${user.id}`, active: true },
       ]);
     }
   }, [setBreadcrumbs, user, adminBase]);
@@ -199,14 +199,14 @@ const AdminUserDetailPage = () => {
         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
             <Avatar src={user.avatarUrl || undefined} sx={{ width: 72, height: 72, bgcolor: 'primary.main' }}>
-              {(user.fullName || user.userName || '?').slice(0, 1)}
+              {(user.fullName || user.studentId || '?').slice(0, 1)}
             </Avatar>
             <Box sx={{ flex: '1 1 240px', minWidth: 0 }}>
               <Typography variant="h6" sx={{ fontWeight: 800 }}>
                 {user.fullName || '-'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                @{user.userName || '-'} · {user.email || '-'}
+                ID: {user.studentId || '-'} · {user.email || '-'}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1, alignItems: 'center' }}>
                 <Chip size="small" label={user.role || '-'} color="primary" variant="outlined" />

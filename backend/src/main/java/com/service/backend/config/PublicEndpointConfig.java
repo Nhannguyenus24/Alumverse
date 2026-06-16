@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.reactive.result.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.util.pattern.PathPattern;
 
@@ -14,7 +15,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Configuration
-@RequiredArgsConstructor
 @Slf4j
 public class PublicEndpointConfig {
 
@@ -22,6 +22,10 @@ public class PublicEndpointConfig {
     
     @Getter
     private final Set<String> annotatedPublicUrls = new HashSet<>();
+
+    public PublicEndpointConfig(@Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
+        this.handlerMapping = handlerMapping;
+    }
 
     @PostConstruct
     public void init() {
