@@ -85,17 +85,21 @@ const MentorshipDashboardPage = () => {
     [feedbacksQuery.data],
   );
 
-  const upcomingItems = useMemo(
-    () =>
-      items.filter(
-        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
-      ),
-    [items],
-  );
+  const UPCOMING_PREVIEW_COUNT = 3;
 
-  const pastItems = useMemo(
-    () => items.filter((s) => s.status === 'COMPLETED' || s.status === 'EXPIRED'),
-    [items],
+  const upcomingItems = useMemo(() => {
+    const now = dayjs();
+    return items
+      .filter(
+        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
+      )
+      .filter((s) => !s.endTime || dayjs(s.endTime).isAfter(now))
+      .sort((a, b) => dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf());
+  }, [items]);
+
+  const previewUpcoming = useMemo(
+    () => upcomingItems.slice(0, UPCOMING_PREVIEW_COUNT),
+    [upcomingItems],
   );
 
   const stats = useMemo(() => {
@@ -240,12 +244,6 @@ const MentorshipDashboardPage = () => {
     }
   };
 
-  const openReportDialog = (session) => {
-    setReportTarget(session);
-    setReportCategory('');
-    setReportDescription('');
-  };
-
   const closeReportDialog = () => {
     setReportTarget(null);
     setReportCategory('');
@@ -323,12 +321,24 @@ const MentorshipDashboardPage = () => {
           ) : (
             <>
               {/* LỊCH SẮP TỚI */}
-              <Section title={`Lịch sắp tới (${upcomingItems.length})`}>
-                {upcomingItems.length === 0 ? (
+              <Section
+                title={`Lịch sắp tới (${upcomingItems.length})`}
+                right={
+                  upcomingItems.length > 0 && (
+                    <Button
+                      size="small"
+                      onClick={() => navigate('/development/mentorship/my-bookings')}
+                    >
+                      Xem tất cả
+                    </Button>
+                  )
+                }
+              >
+                {previewUpcoming.length === 0 ? (
                   <EmptyState message="Bạn chưa có buổi tư vấn nào sắp tới." />
                 ) : (
                   <Stack spacing={2}>
-                    {upcomingItems.map((session) => (
+                    {previewUpcoming.map((session) => (
                       <Box key={session.id}>
                         <MentorshipBookingItem
                           session={session}
@@ -354,24 +364,14 @@ const MentorshipDashboardPage = () => {
                         )}
                       </Box>
                     ))}
-                  </Stack>
-                )}
-              </Section>
-
-              {/* ĐÃ QUA */}
-              <Section title={`Đã qua (${pastItems.length})`}>
-                {pastItems.length === 0 ? (
-                  <EmptyState message="Chưa có buổi tư vấn nào đã diễn ra." />
-                ) : (
-                  <Stack spacing={2}>
-                    {pastItems.map((session) => (
-                      <MentorshipBookingItem
-                        key={session.id}
-                        session={session}
-                        view="mentor"
-                        onReport={openReportDialog}
-                      />
-                    ))}
+                    {upcomingItems.length > previewUpcoming.length && (
+                      <Button
+                        variant="outlined"
+                        onClick={() => navigate('/development/mentorship/my-bookings')}
+                      >
+                        Xem thêm {upcomingItems.length - previewUpcoming.length} buổi sắp tới
+                      </Button>
+                    )}
                   </Stack>
                 )}
               </Section>

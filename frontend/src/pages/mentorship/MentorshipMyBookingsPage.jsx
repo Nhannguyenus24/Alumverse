@@ -71,7 +71,6 @@ const MentorshipMyBookingsPage = () => {
   const mentorProfileQuery = useMyMentorProfile();
   const menteeProfileQuery = useMyMenteeProfile();
 
-  const [roleTab, setRoleTab] = useState('mentee');
   const [statusKey, setStatusKey] = useState('all');
 
   const menteeSessionsQuery = useMyMenteeSessions({ page: 0, limit: PAGE_SIZE });
@@ -112,20 +111,45 @@ const MentorshipMyBookingsPage = () => {
   const [linkError, setLinkError] = useState(null);
   const [linkPending, setLinkPending] = useState(false);
 
-  const activeQuery = roleTab === 'mentor' ? mentorSessionsQuery : menteeSessionsQuery;
-  const items = useMemo(() => activeQuery.data?.items ?? [], [activeQuery.data]);
+  // Merge both roles into a single list, tagging each session with the role
+  // the current user plays in it. Mentor sessions get the full action set,
+  // mentee sessions a limited one. List is grouped only by status.
+  const items = useMemo(() => {
+    const menteeItems = (menteeSessionsQuery.data?.items ?? []).map((s) => ({
+      ...s,
+      _role: 'mentee',
+    }));
+    const mentorItems = isMentor
+      ? (mentorSessionsQuery.data?.items ?? []).map((s) => ({ ...s, _role: 'mentor' }))
+      : [];
+    return [...menteeItems, ...mentorItems].sort(
+      (a, b) => dayjs(b.startTime).valueOf() - dayjs(a.startTime).valueOf(),
+    );
+  }, [menteeSessionsQuery.data, mentorSessionsQuery.data, isMentor]);
 
   const visibleItems = useMemo(() => {
     const matcher = STATUS_FILTERS.find((t) => t.key === statusKey)?.match ?? (() => true);
     return items.filter(matcher);
   }, [items, statusKey]);
 
-  const refetchActive = () => activeQuery.refetch?.();
+  const isLoading =
+    menteeSessionsQuery.isLoading || (isMentor && mentorSessionsQuery.isLoading);
+  // Only treat as a hard error when we have nothing to show AND every source we
+  // depend on failed. A mentor without a mentee profile (or vice versa) gets a
+  // 403/404 on one source — that must not blank out the whole page.
+  const menteeFailed = menteeSessionsQuery.isError;
+  const mentorFailed = !isMentor || mentorSessionsQuery.isError;
+  const isError = items.length === 0 && menteeFailed && mentorFailed;
+
+  const refetchActive = () => {
+    menteeSessionsQuery.refetch?.();
+    if (isMentor) mentorSessionsQuery.refetch?.();
+  };
 
   const handleJoin = async (session) => {
     setActionError('');
     try {
-      await joinMutation.joinSession({ sessionId: session.id, asMentor: roleTab === 'mentor' });
+      await joinMutation.joinSession({ sessionId: session.id, asMentor: session._role === 'mentor' });
       refetchActive();
     } catch (err) {
       setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
@@ -364,10 +388,10 @@ const MentorshipMyBookingsPage = () => {
   const tabs = isMentor ? MENTOR_PROFILE_TABS : MENTEE_PROFILE_TABS;
 
   const renderItem = (session) => {
-    if (roleTab === 'mentor') {
+    if (session._role === 'mentor') {
       return (
         <MentorshipBookingItem
-          key={session.id}
+          key={`mentor-${session.id}`}
           session={session}
           view="mentor"
           onCancel={openMentorCancelDialog}
@@ -383,7 +407,7 @@ const MentorshipMyBookingsPage = () => {
     }
     return (
       <MentorshipBookingItem
-        key={session.id}
+        key={`mentee-${session.id}`}
         session={session}
         view="mentee"
         onCancel={openCancelDialog}
@@ -420,21 +444,7 @@ const MentorshipMyBookingsPage = () => {
             </Typography>
           </Box>
 
-          {isMentor && (
-            <Tabs
-              value={roleTab}
-              onChange={(_, v) => {
-                setRoleTab(v);
-                setStatusKey('all');
-              }}
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
-            >
-              <Tab value="mentee" label="Buổi tôi đặt (là người được cố vấn)" />
-              <Tab value="mentor" label="Buổi đặt với tôi (là cố vấn)" />
-            </Tabs>
-          )}
-
-          {cancelMutation.errorMessage && roleTab === 'mentee' && (
+          {cancelMutation.errorMessage && (
             <Alert severity="error">{cancelMutation.errorMessage}</Alert>
           )}
           {actionError && (
@@ -442,7 +452,7 @@ const MentorshipMyBookingsPage = () => {
               {actionError}
             </Alert>
           )}
-          {feedbackMutation.errorMessage && roleTab === 'mentee' && (
+          {feedbackMutation.errorMessage && (
             <Alert severity="error">{feedbackMutation.errorMessage}</Alert>
           )}
           {reportSuccess && (
@@ -468,22 +478,20 @@ const MentorshipMyBookingsPage = () => {
             ))}
           </Tabs>
 
-          {activeQuery.isLoading ? (
+          {isLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
               <CircularProgress />
             </Box>
-          ) : activeQuery.isError ? (
+          ) : isError ? (
             <Alert severity="error">Không tải được danh sách lịch hẹn. Vui lòng thử lại.</Alert>
           ) : visibleItems.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 8 }}>
               <Typography color="text.secondary" mb={2}>
                 {items.length === 0
-                  ? roleTab === 'mentor'
-                    ? 'Chưa có ai đặt lịch hẹn với bạn.'
-                    : 'Bạn chưa đặt lịch hẹn nào với cố vấn.'
+                  ? 'Bạn chưa có lịch hẹn nào.'
                   : 'Không có lịch hẹn nào trong mục này.'}
               </Typography>
-              {items.length === 0 && roleTab === 'mentee' && (
+              {items.length === 0 && (
                 <Button variant="contained" onClick={() => navigate('/development/mentorship')}>
                   Tìm cố vấn
                 </Button>
