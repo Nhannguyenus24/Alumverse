@@ -61,7 +61,6 @@ const loadMessagesFromStorage = () => {
     const prunedHistory = normalizeAndPruneMessages(parsedHistory);
     return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage()];
   } catch (error) {
-    console.error('Error loading chat history from localStorage:', error);
     return [buildDefaultMessage()];
   }
 };
@@ -79,7 +78,7 @@ const saveMessagesToStorage = (messages) => {
       JSON.stringify(serializableMessages)
     );
   } catch (error) {
-    console.error('Error saving chat history to localStorage:', error);
+    // Ignore error
   }
 };
 
@@ -279,7 +278,6 @@ const SUGGESTIONS = [
 // SSE response handler using fetch
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
   const apiEndpoint = '/ngrok-api/api/stream-query';
-  console.log('🔄 Bắt đầu gọi API tới:', apiEndpoint, 'với câu hỏi:', userMessage);
   
   try {
     const requestBody = {
@@ -288,7 +286,6 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
       model: 'gemini-2.5-flash',
       use_reranker: false
     };
-    console.log('📦 Request Payload:', requestBody);
 
     const response = await fetch(apiEndpoint, {
       method: 'POST',
@@ -311,7 +308,6 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
     
     // If not streaming, just read all and return
     if (contentType.includes('application/json')) {
-      console.log('📄 API trả về JSON (không phải stream)');
       let result = '';
       while (true) {
         const { done, value } = await reader.read();
@@ -349,16 +345,13 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
 
       for (const line of lines) {
         if (line.trim() === '') continue;
-        console.log('〰️ Dòng SSE thô:', line);
         if (line.startsWith('data:')) {
           const dataStr = line.slice(5).trim();
           if (dataStr === '[DONE]') {
-            console.log('✅ Nhận được tín hiệu [DONE]');
             continue;
           }
           try {
             const data = JSON.parse(dataStr);
-            console.log('📦 Dữ liệu SSE đã parse:', data);
             let textChunk = '';
             if (Array.isArray(data)) {
               textChunk = data.map(item => item.content || item.text || item.answer || '').join('');
@@ -370,10 +363,8 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
             if (!textChunk && typeof data === 'string') {
               textChunk = data;
             }
-            console.log('📝 Chunk render:', textChunk);
             if (textChunk) onChunk(textChunk);
           } catch (e) {
-            console.warn('⚠️ Lỗi parse JSON từ SSE:', e, 'Data string:', dataStr);
             onChunk(dataStr);
           }
         }
@@ -396,10 +387,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
 
     onComplete();
   } catch (error) {
-    if (error.name === 'AbortError') {
-      console.log('Stream aborted');
-    } else {
-      console.error('Error fetching stream response:', error);
+    if (error.name !== 'AbortError') {
       onError(error);
     }
   }
@@ -542,7 +530,6 @@ export default function FitBot() {
       },
       (error) => {
         // On error - show fallback message
-        console.error('Chat error:', error);
         const errorMessage =
           'Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.';
         fullResponse = errorMessage;
