@@ -1,9 +1,9 @@
+import { useState, useRef } from 'react';
+import { Box, Typography, Button, Popper, Paper } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
-import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router';
 import { useSnackbar } from 'notistack';
-import { Box, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Page from '../../components/Page';
@@ -13,6 +13,7 @@ import { registerSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
+import { useTheme, useMediaQuery } from '@mui/material';
 
 const PasswordRequirementItem = ({ label, met }) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -40,6 +41,10 @@ const RegisterPage = () => {
   const { register: registerUser, forgotPassword, isSubmitting: loading, setError } = useAuth();
   const [passwordValue, setPasswordValue] = useState('');
   const organizationId = useOrganizationStore((state) => state.organization?.id);
+  const [showRequirements, setShowRequirements] = useState(false);
+  const passwordRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const passwordRequirements = {
     length: passwordValue.length >= 8,
@@ -160,42 +165,70 @@ const RegisterPage = () => {
           helperText={errors.email?.message}
           {...register('email')}
         />
-        <Input
-          label="Mật khẩu"
-          placeholder="••••••••"
-          type="password"
-          error={!!errors.password}
-          helperText={errors.password?.message}
-          {...register('password', {
-            onChange: (e) => setPasswordValue(e.target.value),
-          })}
-        />
-
-          <Box
-            sx={{
-              p: 2,
-              border: '1px solid',
-              borderColor: 'divider',
-              borderRadius: 1,
-              bgcolor: 'background.paper',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-            }}
+        <Box ref={passwordRef}>
+          <Input
+            label="Mật khẩu"
+            placeholder="••••••••"
+            type="password"
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            {...register('password', {
+              onChange: (e) => setPasswordValue(e.target.value),
+            })}
+            onFocus={() => setShowRequirements(true)}
+            onBlur={() => setShowRequirements(false)}
+          />
+          <Popper
+            open={showRequirements}
+            anchorEl={passwordRef.current}
+            placement={isMobile ? 'bottom-start' : 'right-start'}
+            sx={{ zIndex: 2000}}
           >
-            <Typography variant="subtitle2" fontWeight={600}>
-              Yêu cầu mật khẩu:
-            </Typography>
-            <PasswordRequirementItem label="Tối thiểu 8 ký tự" met={passwordRequirements.length} />
-            <PasswordRequirementItem label="Ít nhất 1 chữ viết hoa (A-Z)" met={passwordRequirements.uppercase} />
-            <PasswordRequirementItem label="Ít nhất 1 chữ viết thường (a-z)" met={passwordRequirements.lowercase} />
-            <PasswordRequirementItem label="Ít nhất 1 chữ số (0-9)" met={passwordRequirements.digit} />
-            <PasswordRequirementItem
-              label="Ít nhất 1 ký tự đặc biệt (@$!%*?&)"
-              met={passwordRequirements.special}
-            />
-          </Box>
+            <Paper
+              elevation={4}
+              sx={{
+                p: 2,
+                width: { xs: 'calc(100vw - 32px)', md: 260 },
+                maxWidth: 320,
+                ml: { md: 1 },
+                mt: { xs: 1, md: 0 },
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                fontWeight={600}
+                mb={1}
+              >
+                Yêu cầu mật khẩu
+              </Typography>
 
+              <PasswordRequirementItem
+                label="Tối thiểu 8 ký tự"
+                met={passwordRequirements.length}
+              />
+
+              <PasswordRequirementItem
+                label="Ít nhất 1 chữ viết hoa"
+                met={passwordRequirements.uppercase}
+              />
+
+              <PasswordRequirementItem
+                label="Ít nhất 1 chữ viết thường"
+                met={passwordRequirements.lowercase}
+              />
+
+              <PasswordRequirementItem
+                label="Ít nhất 1 chữ số"
+                met={passwordRequirements.digit}
+              />
+
+              <PasswordRequirementItem
+                label="Ít nhất 1 ký tự đặc biệt"
+                met={passwordRequirements.special}
+              />
+            </Paper>
+          </Popper>
+        </Box>
         <Input
           label="Nhập lại mật khẩu"
           placeholder="••••••••"
