@@ -10,6 +10,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
+      '/ngrok-api': {
+        target: 'https://glimmer-clustered-exorcist.ngrok-free.dev',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ngrok-api/, ''),
+        secure: false,
+      },
     },
   },
   build: {
