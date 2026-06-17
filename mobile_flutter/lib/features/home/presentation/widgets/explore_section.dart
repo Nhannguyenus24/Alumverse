@@ -25,6 +25,9 @@ const _items = <_ExploreItem>[
   _ExploreItem(Icons.event_available_rounded, 'Sự kiện & Hội thảo',
       'Tham gia sự kiện mở rộng quan hệ và cơ hội nghề nghiệp.',
       RouteNames.events),
+  _ExploreItem(Icons.info_outline_rounded, 'Giới thiệu',
+      'Tìm hiểu về tầm nhìn, sứ mệnh và hoạt động của tổ chức.',
+      RouteNames.organizationIntroduction),
 ];
 
 /// "Khám phá" — 2-column grid of feature cards (web shows 4 across on desktop,

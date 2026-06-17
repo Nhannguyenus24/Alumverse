@@ -31,6 +31,8 @@ public class LoginRequest {
     @Schema(example = "true")
     private boolean rememberMe;
 
-    @NotBlank(message = "Recaptcha token is required")
+    // Optional: the web client sends a token (verified in RecaptchaService);
+    // the mobile client has no reCAPTCHA widget and omits it (verification is
+    // skipped when blank).
     private String recaptchaToken;
 }

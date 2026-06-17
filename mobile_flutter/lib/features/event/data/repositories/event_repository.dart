@@ -22,6 +22,14 @@ class EventRepository {
     return _items(res.data);
   }
 
+  Future<List<EventSummary>> getPast({int page = 0, int limit = 10}) async {
+    final res = await _dio.get(
+      ApiEndpoints.eventsPast,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    return _items(res.data);
+  }
+
   /// Unwrap `ApiResponse.data` → PaginatedResponse → its item list. The list
   /// key varies (`items`/`content`/`data`), so probe the common ones.
   List<EventSummary> _items(dynamic body) {

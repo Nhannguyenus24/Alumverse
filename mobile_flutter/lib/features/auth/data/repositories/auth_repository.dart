@@ -74,6 +74,21 @@ class AuthRepository {
   Future<void> verifyOtp({required String email, required String otp}) =>
       api.verifyOtp(email, otp);
 
+  /// Forgot password — sends a recovery OTP to [email] (same as web).
+  Future<void> forgotPassword(String email) => api.forgotPassword(email);
+
+  /// Change the signed-in user's password.
+  Future<void> changePassword({
+    required int userId,
+    required String oldPassword,
+    required String newPassword,
+  }) =>
+      api.changePassword(
+        userId: userId,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+
   Future<void> logout() async {
     try {
       await api.logout();

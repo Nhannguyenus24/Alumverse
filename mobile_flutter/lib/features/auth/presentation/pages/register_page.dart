@@ -21,15 +21,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _emailCtl = TextEditingController();
   final _passCtl = TextEditingController();
   final _confirmPassCtl = TextEditingController();
+  final _passFocus = FocusNode();
   String? _selectedYear;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
   bool _submitting = false;
+  bool _passFocused = false;
 
   final List<String> _years = List.generate(
     20,
     (index) => (DateTime.now().year - index).toString(),
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _passFocus.addListener(() {
+      setState(() => _passFocused = _passFocus.hasFocus);
+    });
+    _passCtl.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -38,8 +49,24 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _emailCtl.dispose();
     _passCtl.dispose();
     _confirmPassCtl.dispose();
+    _passFocus.dispose();
     super.dispose();
   }
+
+  // Password requirements (mirrors the web RegisterPage rules).
+  Map<String, bool> get _passwordRules {
+    final v = _passCtl.text;
+    return {
+      'Tối thiểu 8 ký tự': v.length >= 8,
+      'Ít nhất 1 chữ viết hoa (A-Z)': RegExp(r'[A-Z]').hasMatch(v),
+      'Ít nhất 1 chữ viết thường (a-z)': RegExp(r'[a-z]').hasMatch(v),
+      'Ít nhất 1 chữ số (0-9)': RegExp(r'\d').hasMatch(v),
+      'Ít nhất 1 ký tự đặc biệt (@\$!%*?&)':
+          RegExp(r'[@$!%*?&]').hasMatch(v),
+    };
+  }
+
+  bool get _allRulesMet => _passwordRules.values.every((met) => met);
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -144,6 +171,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _passCtl,
+                  focusNode: _passFocus,
                   obscureText: _obscurePass,
                   validator: Validators.password,
                   decoration: InputDecoration(
@@ -156,6 +184,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       onPressed: () => setState(() => _obscurePass = !_obscurePass),
                     ),
                   ),
+                ),
+                // Password requirements: shown only while the password field
+                // is focused and not all rules are met yet (matches web, but
+                // placed below the field instead of beside it).
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 150),
+                  child: (_passFocused && !_allRulesMet)
+                      ? _PasswordRules(rules: _passwordRules)
+                      : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -209,6 +246,63 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Live password-requirement checklist shown below the password field.
+class _PasswordRules extends StatelessWidget {
+  const _PasswordRules({required this.rules});
+
+  final Map<String, bool> rules;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Yêu cầu mật khẩu:',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+          const SizedBox(height: 6),
+          ...rules.entries.map(
+            (e) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Icon(
+                    e.value ? Icons.check_circle : Icons.cancel,
+                    size: 16,
+                    color: e.value
+                        ? const Color(0xFF00A500)
+                        : const Color(0xFFE70000),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      e.key,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: e.value
+                            ? const Color(0xFF00A500)
+                            : const Color(0xFFE70000),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

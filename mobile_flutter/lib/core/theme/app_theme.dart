@@ -11,6 +11,11 @@ class AppTheme {
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
           brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          secondary: AppColors.secondary,
+          error: AppColors.error,
+          surface: AppColors.surface,
         ),
         scaffoldBackgroundColor: AppColors.background,
         textTheme: GoogleFonts.robotoTextTheme(),
