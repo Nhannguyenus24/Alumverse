@@ -48,18 +48,22 @@ class HomePage extends ConsumerWidget {
           IconButton(
             tooltip: 'Thông báo',
             icon: const Icon(Icons.notifications_none_rounded),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Thông báo sắp ra mắt')),
-              );
-            },
+            onPressed: () => context.push(RouteNames.notifications),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle_outlined),
             onSelected: (value) async {
-              if (value == 'logout') {
-                await ref.read(authStateProvider.notifier).logout();
-                if (context.mounted) context.go(RouteNames.login);
+              switch (value) {
+                case 'profile':
+                  context.push(RouteNames.profile);
+                  break;
+                case 'settings':
+                  context.push(RouteNames.settings);
+                  break;
+                case 'logout':
+                  await ref.read(authStateProvider.notifier).logout();
+                  if (context.mounted) context.go(RouteNames.login);
+                  break;
               }
             },
             itemBuilder: (_) => [
@@ -68,6 +72,23 @@ class HomePage extends ConsumerWidget {
                 child: Text(
                   user?.fullName ?? user?.email ?? 'Tài khoản',
                   style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'profile',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.person_outline),
+                  title: Text('Hồ sơ của tôi'),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.settings_outlined),
+                  title: Text('Cài đặt'),
                 ),
               ),
               const PopupMenuDivider(),

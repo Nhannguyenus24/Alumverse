@@ -24,8 +24,11 @@ public class RecaptchaService {
     }
 
     public Mono<Boolean> verifyRecaptcha(String recaptchaResponse) {
+        // No token provided (e.g. the Flutter mobile client, which has no
+        // reCAPTCHA widget) → skip verification. The web client still sends a
+        // token and is verified as before.
         if (recaptchaResponse == null || recaptchaResponse.isEmpty()) {
-            return Mono.just(false);
+            return Mono.just(true);
         }
 
         return webClient.post()
