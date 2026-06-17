@@ -8,6 +8,9 @@ class EventSummary {
   final DateTime? startTime;
   final DateTime? endTime;
   final int interestedCount;
+  final int joinedCount;
+  final int? maxCapacity;
+  final String? organizer;
   final String? topic;
 
   const EventSummary({
@@ -19,6 +22,9 @@ class EventSummary {
     this.startTime,
     this.endTime,
     this.interestedCount = 0,
+    this.joinedCount = 0,
+    this.maxCapacity,
+    this.organizer,
     this.topic,
   });
 
@@ -32,6 +38,9 @@ class EventSummary {
       startTime: _date(json['startTime']),
       endTime: _date(json['endTime']),
       interestedCount: (json['interestedCount'] as num?)?.toInt() ?? 0,
+      joinedCount: ((json['joinedCount'] ?? json['registeredCount']) as num?)?.toInt() ?? 0,
+      maxCapacity: (json['maxCapacity'] as num?)?.toInt(),
+      organizer: json['organizer'] as String?,
       topic: json['topic'] as String?,
     );
   }

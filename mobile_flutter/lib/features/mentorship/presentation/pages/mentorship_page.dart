@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../providers/mentorship_providers.dart';
@@ -95,6 +97,7 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
                 child: Center(child: CircularProgressIndicator()),
               ),
               error: (e, _) => _ErrorBox(
+                error: e,
                 onRetry: () => ref.invalidate(mentorListProvider),
               ),
               data: (mentors) {
@@ -327,11 +330,13 @@ class _Dropdown extends StatelessWidget {
 }
 
 class _ErrorBox extends StatelessWidget {
-  const _ErrorBox({required this.onRetry});
+  const _ErrorBox({required this.onRetry, this.error});
   final VoidCallback onRetry;
+  final Object? error;
 
   @override
   Widget build(BuildContext context) {
+    final message = _messageFrom(error);
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Center(
@@ -340,11 +345,26 @@ class _ErrorBox extends StatelessWidget {
             const Icon(Icons.cloud_off_rounded,
                 size: 40, color: AppColors.textSecondary),
             const SizedBox(height: 8),
-            const Text('Không tải được danh sách cố vấn'),
+            Text(
+              message ?? 'Không tải được danh sách cố vấn',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
             TextButton(onPressed: onRetry, child: const Text('Thử lại')),
           ],
         ),
       ),
     );
+  }
+
+  /// Surface the backend message (e.g. "Vui lòng xác thực email...") instead of
+  /// a generic error. The error interceptor wraps it as [ApiException].
+  String? _messageFrom(Object? e) {
+    if (e is DioException) {
+      final inner = e.error;
+      if (inner is ApiException) return inner.message;
+    }
+    if (e is ApiException) return e.message;
+    return null;
   }
 }
