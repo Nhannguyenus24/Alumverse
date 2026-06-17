@@ -19,8 +19,8 @@ export const useSubscribeToTopic = () => {
     error,
   } = useMutation({
     mutationFn: subscribeToTopic,
-    onSuccess: (_, { topicId }) => {
-      queryClient.invalidateQueries({ queryKey: ["forumTopicSubscriptionStatus", topicId] });
+    onSuccess: (_, { topicId, memberId }) => {
+      queryClient.invalidateQueries({ queryKey: ["forumTopicSubscriptionStatus", { topicId, memberId }] });
     },
   });
 
