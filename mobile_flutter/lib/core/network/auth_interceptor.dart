@@ -46,9 +46,13 @@ class AuthInterceptor extends Interceptor {
     final requestPath = err.requestOptions.path;
     final alreadyRetried = err.requestOptions.extra['__retried'] == true;
 
+    // Only a token problem should trigger a refresh. A 401 can also be a
+    // business rule (e.g. ACCOUNT_NOT_VERIFIED when browsing mentors) — those
+    // must surface to the UI as-is, not loop through a pointless refresh.
     final shouldRefresh = response?.statusCode == 401 &&
         !alreadyRetried &&
-        !_whitelist.contains(requestPath);
+        !_whitelist.contains(requestPath) &&
+        _isTokenError(response?.data);
 
     if (!shouldRefresh) {
       handler.next(err);
@@ -77,6 +81,27 @@ class AuthInterceptor extends Interceptor {
       await _storage.clearAuth();
       handler.next(err);
     }
+  }
+
+  /// True when a 401 looks like a token problem (expired/invalid/missing) and
+  /// is worth a refresh. Business 401s (e.g. ACCOUNT_NOT_VERIFIED) return false
+  /// so they surface to the UI without a pointless refresh+retry loop.
+  /// When the error code is absent, fall back to refreshing (legacy behaviour).
+  bool _isTokenError(dynamic body) {
+    // ApplicationException bodies carry `errorCode`; the security filter's
+    // token errors use `error`. Check both.
+    final code = body is Map
+        ? (body['errorCode'] ?? body['error'] ?? body['code'])
+        : null;
+    if (code is! String) return true; // unknown → keep old refresh behaviour
+    const tokenCodes = {
+      'TOKEN_EXPIRED',
+      'INVALID_TOKEN',
+      'UNAUTHORIZED',
+      'REFRESH_TOKEN_NOT_FOUND',
+      'INVALID_REFRESH_TOKEN',
+    };
+    return tokenCodes.contains(code);
   }
 
   /// Calls `/auth/refresh` (refresh token comes from the cookie jar), persists

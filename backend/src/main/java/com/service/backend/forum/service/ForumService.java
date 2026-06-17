@@ -335,14 +335,13 @@ public class ForumService {
                 }))
                 .flatMap(post -> forumPostReactionRepository.findByPostIdAndMemberId(
                             request.getPostId(), request.getMemberId())
-                        .flatMap(existingReaction -> {
-                            log.info("Removing existing like from post ID: {}, member: {}",
-                                    request.getPostId(), request.getMemberId());
-                            return forumPostReactionRepository.deleteByPostIdAndMemberId(
-                                    request.getPostId(), request.getMemberId())
-                                    .then(Mono.<ForumPostReaction>empty());
-                        })
-                        .switchIfEmpty(Mono.defer(() -> {
+                        .hasElement()
+                        .flatMap(alreadyLiked -> {
+                            if (Boolean.TRUE.equals(alreadyLiked)) {
+                                return forumPostReactionRepository.deleteByPostIdAndMemberId(
+                                                request.getPostId(), request.getMemberId())
+                                        .then(Mono.<ForumPostReaction>empty());
+                            }
                             log.info("Creating new like for post ID: {}, member: {}",
                                     request.getPostId(), request.getMemberId());
                             ForumPostReaction reaction = ForumPostReaction.builder()
@@ -350,7 +349,7 @@ public class ForumService {
                                     .memberId(request.getMemberId())
                                     .build();
                             return forumPostReactionRepository.save(reaction);
-                        })))
+                        }))
                 .map(this::convertToReactionDTO)
                 .doOnSuccess(result -> log.info("reactToPost result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error toggling like for post ID: {}", request.getPostId(), error));

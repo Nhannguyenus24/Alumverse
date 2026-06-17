@@ -49,10 +49,16 @@ class ApiEndpoints {
   static const String chatConversationRequestSearch = '/api/chat/conversation-requests/search';
   static const String networkMembers = '/api/chat/network/members';
 
-  // --- Forum ---
-  static const String forumCategories = '/api/forum/categories';
-  static const String forumTopics = '/api/forum/topics';
-  static const String forumPosts = '/api/forum/posts';
+  // --- Forum --- (backend uses singular paths under /api/forum)
+  static const String forumCategory = '/api/forum/category';
+  static const String forumTopic = '/api/forum/topic';
+  static const String forumPost = '/api/forum/post';
+  static const String forumPostReact = '/api/forum/post/react';
+  static String forumPostAnswer(int postId) => '/api/forum/post/$postId/answer';
+  static String forumPostReactionCount(int postId) =>
+      '/api/forum/post/$postId/reactions/count';
+  static String forumPostUserReaction(int postId) =>
+      '/api/forum/post/$postId/reactions/user';
 
   // --- Articles / News ---
   static const String newsPublished = '/api/articles/news/published';
@@ -64,6 +70,11 @@ class ApiEndpoints {
   static const String eventsUpcoming = '/api/events/upcoming';
   static const String eventsPast = '/api/events/past';
   static String eventDetail(int id) => '/api/events/$id';
+  static String eventInterest(int id) => '/api/events/$id/interest';
+  static String eventInterestCheck(int id) => '/api/events/$id/interest/check';
+  static String eventCheckRegistered(int id) => '/api/events/$id/check-registered';
+  static String eventRegister(int id) => '/api/events/$id/register';
+  static String eventStatistics(int id) => '/api/events/$id/statistics';
   static String eventPublish(int id) => '/api/events/$id/publish';
   static String eventUnpublish(int id) => '/api/events/$id/unpublish';
 

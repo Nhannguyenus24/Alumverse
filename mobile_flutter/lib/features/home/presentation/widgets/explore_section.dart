@@ -28,6 +28,9 @@ const _items = <_ExploreItem>[
   _ExploreItem(Icons.info_outline_rounded, 'Giới thiệu',
       'Tìm hiểu về tầm nhìn, sứ mệnh và hoạt động của tổ chức.',
       RouteNames.organizationIntroduction),
+  _ExploreItem(Icons.forum_rounded, 'Diễn đàn',
+      'Thảo luận, đặt câu hỏi và chia sẻ cùng cộng đồng.',
+      RouteNames.forum),
 ];
 
 /// "Khám phá" — 2-column grid of feature cards (web shows 4 across on desktop,
