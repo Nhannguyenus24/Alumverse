@@ -22,6 +22,7 @@ public class EventRepository implements IEventRepository {
     private final EventTicketR2dbcRepository ticketRepo;
     private final EventInvitationR2dbcRepository invitationRepo;
     private final EventEmailLogR2dbcRepository emailLogRepo;
+    private final EventQuestionR2dbcRepository questionRepo;
 
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ public class EventRepository implements IEventRepository {
     @Override
     public Mono<EventTicket> registerTicket(EventTicket ticketData) {
         ticketData.setTicketCode(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        ticketData.setStatus(Status.PENDING);
+        ticketData.setStatus(Status.ISSUED);
         ticketData.setRegisteredAt(LocalDateTime.now());
         return ticketRepo.save(ticketData);
     }
@@ -224,8 +225,8 @@ public class EventRepository implements IEventRepository {
     // ─── Ticket — lifecycle ───────────────────────────────────────────────────
 
     @Override
-    public Mono<EventTicket> cancelTicket(Long ticketId) {
-        return ticketRepo.cancelTicket(ticketId).then(ticketRepo.findById(ticketId));
+    public Mono<EventTicket> cancelTicket(Long ticketId, String reason) {
+        return ticketRepo.cancelTicket(ticketId, reason).then(ticketRepo.findById(ticketId));
     }
 
     @Override
@@ -280,6 +281,24 @@ public class EventRepository implements IEventRepository {
     }
 
     @Override
+    public Mono<PaginatedResponse<EventTicket>> searchTicketsByEvent(Long eventId, String keyword, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.searchByEventId(eventId, keyword, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countSearchByEventId(eventId, keyword))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    @Override
+    public Mono<PaginatedResponse<EventTicket>> searchTicketsByEventAndStatus(Long eventId, String status, String keyword, int page, int limit) {
+        int offset = page * limit;
+        return ticketRepo.searchByEventIdAndStatus(eventId, status, keyword, limit, offset)
+                .collectList()
+                .zipWith(ticketRepo.countSearchByEventIdAndStatus(eventId, status, keyword))
+                .map(tuple -> PaginatedResponse.of(tuple.getT1(), tuple.getT2(), page, limit));
+    }
+
+    @Override
     public Mono<PaginatedResponse<EventTicket>> findTicketsByMember(Long memberId, int page, int limit) {
         int offset = page * limit;
         return ticketRepo.findByMemberIdWithPagination(memberId, limit, offset)
@@ -290,7 +309,7 @@ public class EventRepository implements IEventRepository {
 
     @Override
     public Mono<Long> countRegisteredTickets(Long eventId) {
-        return ticketRepo.countByEventIdAndStatus(eventId, Status.PENDING.getValue());
+        return ticketRepo.countActiveRegistrations(eventId);
     }
 
     // ─── Invitations ──────────────────────────────────────────────────────────
@@ -355,26 +374,79 @@ public class EventRepository implements IEventRepository {
     @Override
     public Mono<EventStatisticsResponse> getEventStatistics(Long eventId) {
         return eventRepo.findById(eventId)
-                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.PENDING.getValue()))
-                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.ISSUED.getValue()))
+                .zipWith(ticketRepo.countActiveRegistrations(eventId))
+                .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.USED.getValue()))
                 .zipWith(ticketRepo.countByEventIdAndStatus(eventId, Status.CHECKED_IN.getValue()))
                 .map(tuple -> {
                     Event event = tuple.getT1().getT1().getT1();
-                    Long pendingCount = tuple.getT1().getT1().getT2();
-                    Long issuedCount = tuple.getT1().getT2();
+                    Long registeredCount = tuple.getT1().getT1().getT2();
+                    Long usedCount = tuple.getT1().getT2();
                     Long checkedInCount = tuple.getT2();
-                    long total = pendingCount + issuedCount + checkedInCount;
 
                     return EventStatisticsResponse.builder()
                             .eventId(eventId)
                             .interestedCount(event.getInterestedCount())
-                            .registeredCount(total)
-                            .checkedInCount(checkedInCount)
+                            .registeredCount(registeredCount)
+                            .checkedInCount(usedCount + checkedInCount)
                             .maxCapacity(event.getMaxCapacity())
                             .availableSlots(event.getMaxCapacity() != null
-                                    ? event.getMaxCapacity() - total
+                                    ? event.getMaxCapacity() - registeredCount
                                     : null)
                             .build();
                 });
+    }
+
+    // ─── Event questions ──────────────────────────────────────────────────────
+
+    @Override
+    public Flux<EventQuestion> findQuestionsByEvent(Long eventId) {
+        return questionRepo.findByEventIdOrderByOrderIndex(eventId);
+    }
+
+    @Override
+    public Mono<EventQuestion> findQuestionById(Integer questionId) {
+        return questionRepo.findById(questionId);
+    }
+
+    @Override
+    public Mono<EventQuestion> createQuestion(EventQuestion question) {
+        if (question.getOrderIndex() == null) question.setOrderIndex(0);
+        if (question.getRequired() == null) question.setRequired(false);
+        question.setCreatedAt(LocalDateTime.now());
+        return questionRepo.save(question);
+    }
+
+    @Override
+    public Mono<EventQuestion> updateQuestion(Integer questionId, EventQuestion questionData) {
+        return questionRepo.findById(questionId)
+                .flatMap(existing -> {
+                    existing.setType(questionData.getType());
+                    existing.setLabel(questionData.getLabel());
+                    existing.setOptions(questionData.getOptions());
+                    existing.setRequired(questionData.getRequired());
+                    if (questionData.getOrderIndex() != null) {
+                        existing.setOrderIndex(questionData.getOrderIndex());
+                    }
+                    return questionRepo.save(existing);
+                });
+    }
+
+    @Override
+    public Mono<Boolean> deleteQuestion(Long eventId, Integer questionId) {
+        return questionRepo.deleteByIdAndEventId(questionId, eventId).map(rows -> rows > 0);
+    }
+
+    @Override
+    public Mono<Boolean> reorderQuestions(Long eventId, java.util.List<Integer> questionIds) {
+        if (questionIds == null || questionIds.isEmpty()) return Mono.just(true);
+        return Flux.fromIterable(questionIds)
+                .index()
+                .flatMap(tuple -> questionRepo.findById(tuple.getT2())
+                        .filter(q -> eventId.equals(q.getEventId()))
+                        .flatMap(q -> {
+                            q.setOrderIndex(tuple.getT1().intValue());
+                            return questionRepo.save(q);
+                        }))
+                .then(Mono.just(true));
     }
 }

@@ -33,11 +33,11 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     Mono<Integer> updateStatus(Long ticketId, Status status);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = 'CANCELLED' WHERE id = :ticketId")
-    Mono<Integer> cancelTicket(Long ticketId);
+    @Query("UPDATE event_tickets SET status = 'CANCELLED', cancel_reason = :reason WHERE id = :ticketId")
+    Mono<Integer> cancelTicket(Long ticketId, String reason);
 
     @Modifying
-    @Query("UPDATE event_tickets SET status = 'CHECKED_IN', checked_in_at = :checkedInAt WHERE id = :ticketId")
+    @Query("UPDATE event_tickets SET status = 'USED', checked_in_at = :checkedInAt WHERE id = :ticketId")
     Mono<Integer> checkInTicket(Long ticketId, LocalDateTime checkedInAt);
 
     Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
@@ -69,4 +69,75 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
 
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = 'ISSUED' ORDER BY registered_at ASC")
     Flux<EventTicket> findIssuedTicketsByEventId(Long eventId);
+
+    @Query("""
+            SELECT COUNT(*) FROM event_tickets
+            WHERE event_id = :eventId
+            AND status IN ('ISSUED', 'ACTIVE', 'CHECKED_IN', 'USED')
+            """)
+    Mono<Long> countActiveRegistrations(Long eventId);
+
+    @Query("""
+            SELECT et.* FROM event_tickets et
+            LEFT JOIN users u ON et.member_id = u.id
+            LEFT JOIN global_profiles gp ON u.id = gp.user_id
+            WHERE et.event_id = :eventId
+            AND (
+                LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            ORDER BY et.registered_at DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<EventTicket> searchByEventId(Long eventId, String keyword, int limit, int offset);
+
+    @Query("""
+            SELECT COUNT(*) FROM event_tickets et
+            LEFT JOIN users u ON et.member_id = u.id
+            LEFT JOIN global_profiles gp ON u.id = gp.user_id
+            WHERE et.event_id = :eventId
+            AND (
+                LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Mono<Long> countSearchByEventId(Long eventId, String keyword);
+
+    @Query("""
+            SELECT et.* FROM event_tickets et
+            LEFT JOIN users u ON et.member_id = u.id
+            LEFT JOIN global_profiles gp ON u.id = gp.user_id
+            WHERE et.event_id = :eventId AND et.status = :status
+            AND (
+                LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            ORDER BY et.registered_at DESC
+            LIMIT :limit OFFSET :offset
+            """)
+    Flux<EventTicket> searchByEventIdAndStatus(Long eventId, String status, String keyword, int limit, int offset);
+
+    @Query("""
+            SELECT COUNT(*) FROM event_tickets et
+            LEFT JOIN users u ON et.member_id = u.id
+            LEFT JOIN global_profiles gp ON u.id = gp.user_id
+            WHERE et.event_id = :eventId AND et.status = :status
+            AND (
+                LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            )
+            """)
+    Mono<Long> countSearchByEventIdAndStatus(Long eventId, String status, String keyword);
 }

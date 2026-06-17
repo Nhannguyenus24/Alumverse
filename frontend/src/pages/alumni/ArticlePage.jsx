@@ -11,6 +11,7 @@ import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi } from "../../utils/api";
+import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
 
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -21,6 +22,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
   const [openJoinDialog, setOpenJoinDialog] = useState(false);
+  const { data: questions = [] } = useEventQuestions(eventId, channel === "event" && Boolean(eventId));
 
   useEffect(() => {
     if (channel !== "event" || !eventId) return;
@@ -63,14 +65,23 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
     }
   };
 
-  const handleJoin = async () => {
+  const handleJoinClick = () => {
+    if (loadingJoin || isJoined) return;
+    setOpenJoinDialog(true);
+  };
+
+  const handleConfirmJoin = async (answerMap) => {
     if (loadingJoin || isJoined) return;
     setLoadingJoin(true);
     try {
-      await eventApi.registerForEvent(eventId);
+      const payload = questions.length > 0
+        ? { answers: formatAnswersForApi(answerMap, questions) }
+        : {};
+      await eventApi.registerForEvent(eventId, payload);
       setIsJoined(true);
       setJoinedCount((c) => c + 1);
-      enqueueSnackbar("Đăng ký tham gia thành công! Chờ admin duyệt.", { variant: "success" });
+      setOpenJoinDialog(false);
+      enqueueSnackbar("Đăng ký tham gia thành công! Xem vé trong Vé của tôi.", { variant: "success" });
     } catch (err) {
       if (err?.response?.status === 409) {
         setIsJoined(true);
@@ -134,7 +145,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
                 bgcolor: isJoined ? "transparent" : "grey.700",
                 color: isJoined ? "grey.700" : "common.white",
               }}
-              onClick={handleJoin}
+              onClick={handleJoinClick}
             >
               {isJoined ? "Đã đăng ký" : "Tham gia"}
             </Button>
@@ -147,11 +158,9 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         open={openJoinDialog}
         onClose={() => setOpenJoinDialog(false)}
         eventTitle={data.title}
-        questions={[]}
-        onConfirm={() => {
-          setIsJoined(true);
-          setOpenJoinDialog(false);
-        }}
+        questions={questions}
+        loading={loadingJoin}
+        onConfirm={handleConfirmJoin}
       />
     </Box>
     
