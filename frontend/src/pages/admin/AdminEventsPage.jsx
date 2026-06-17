@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import { useDebounce } from "../../hooks/useDebounce";
+import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import {
   Box,
   Button,
@@ -32,6 +33,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import AdminSectionPanel from "../../components/admin/AdminSectionPanel";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminEventFormDialog from "../../components/admin/AdminEventFormDialog";
@@ -75,6 +77,7 @@ const StatTile = ({ label, value }) => (
 
 const AdminEventsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const orgNavigate = useOrgNavigate();
   const { stableOrgId } = useAdminSystemContext();
   const {
     events,
@@ -323,6 +326,15 @@ const AdminEventsPage = () => {
                       onClick={() => setEditTarget(event)}
                     >
                       <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Tổ chức sự kiện">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => orgNavigate(`/admin/events/${event.id}/organize`)}
+                    >
+                      <EventAvailableOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Vé & lượt quan tâm">
