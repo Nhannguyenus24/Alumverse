@@ -362,9 +362,9 @@ CREATE TABLE "fund_receiving_infos" (
   --"type" text,
   "account_number" text,
   "account_name" text,
-  "bank_name" text, -- ma code dua tren payos
+  "bank_name" text, -- ma ngan hang (dung cho SePay QR)
   -- "qr_code_url" text, generate QR dong nen se khong can cai nay
-  "is_active" boolean  -- trang thai dang ki tren payos, neu chua dang ki thi = false
+  "is_active" boolean  -- trang thai kich hoat tai khoan nhan quyen gop
 );
 
 CREATE TABLE "fund_donations" (
