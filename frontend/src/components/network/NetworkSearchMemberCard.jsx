@@ -3,12 +3,15 @@ import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import { alpha } from '@mui/material/styles';
 
 import IconButtonMenu from '../IconButtonMenu';
+import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
+import { networkCardClickableSx } from './networkCardUtils';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
  * Dữ liệu: global_profiles (fullName), users (avatar), organization_members (program, major).
  */
 const NetworkSearchMemberCard = ({
+  userId,
   avatar,
   fullName,
   program,
@@ -19,12 +22,18 @@ const NetworkSearchMemberCard = ({
   isMessageLoading = false,
   isBlockLoading = false,
 }) => {
+  const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
+    useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
   const programLabel = formatAcademicValue(program, '—');
   const majorLabel = formatAcademicValue(major, 'N/A');
 
   return (
     <Card
+      role="button"
+      tabIndex={0}
+      onClick={navigateToProfile}
+      onKeyDown={handleCardKeyDown}
       sx={{
         p: 3,
         borderRadius: 2,
@@ -37,11 +46,12 @@ const NetworkSearchMemberCard = ({
         justifyContent: 'space-between',
         transition: 'transform 0.2s',
         position: 'relative',
+        ...networkCardClickableSx,
         '&:hover': { transform: 'translateY(-4px)' },
       }}
     >
       {onBlock ? (
-        <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+        <Box sx={{ position: 'absolute', top: 8, right: 8 }} onClick={stopActionPropagation}>
           <IconButtonMenu
             menuId={`network-member-card-menu-${fullName}`}
             buttonAriaLabel="Tùy chọn thành viên"
@@ -49,7 +59,8 @@ const NetworkSearchMemberCard = ({
             {({ close }) => (
               <MenuItem
                 disabled={isBlockLoading}
-                onClick={() => {
+                onClick={(event) => {
+                  stopActionPropagation(event);
                   close();
                   onBlock();
                 }}
@@ -106,7 +117,10 @@ const NetworkSearchMemberCard = ({
         sx={{ mt: 3 }}
         fullWidth
         type="button"
-        onClick={onMessage}
+        onClick={(event) => {
+          stopActionPropagation(event);
+          onMessage?.();
+        }}
         disabled={!onMessage || isMessageLoading}
       >
         {isMessageLoading ? (

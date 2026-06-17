@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, TextField, Paper, Typography, Avatar, Fade, Tooltip } from '@mui/material';
 import { Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -59,7 +61,6 @@ const loadMessagesFromStorage = () => {
     const prunedHistory = normalizeAndPruneMessages(parsedHistory);
     return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage()];
   } catch (error) {
-    console.error('Error loading chat history from localStorage:', error);
     return [buildDefaultMessage()];
   }
 };
@@ -77,7 +78,7 @@ const saveMessagesToStorage = (messages) => {
       JSON.stringify(serializableMessages)
     );
   } catch (error) {
-    console.error('Error saving chat history to localStorage:', error);
+    // Ignore error
   }
 };
 
@@ -226,6 +227,9 @@ const MessageBubble = styled(Box, {
   fontSize: '0.95rem',
   lineHeight: 1.4,
   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
+  '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
+  '& li': { marginBottom: '0.2em' },
 }));
 
 const InputContainer = styled(Box)(({ theme }) => ({
@@ -273,21 +277,24 @@ const SUGGESTIONS = [
 
 // SSE response handler using fetch
 const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
-  const apiEndpoint = 'https://glimmer-clustered-exorcist.ngrok-free.dev/api/query';
+  const apiEndpoint = '/ngrok-api/api/stream-query';
   
   try {
+    const requestBody = {
+      question: userMessage,
+      top_k: 10,
+      model: 'gemini-2.5-flash',
+      use_reranker: false
+    };
+
     const response = await fetch(apiEndpoint, {
       method: 'POST',
       headers: {
         'accept': 'text/event-stream, application/json',
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json', 
+        'ngrok-skip-browser-warning': 'true',
       },
-      body: JSON.stringify({
-        question: userMessage,
-        top_k: 10,
-        model: 'gemini-2.5-flash',
-        use_reranker: false
-      }),
+      body: JSON.stringify(requestBody),
       signal: signal
     });
 
@@ -309,8 +316,16 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
       }
       try {
         const data = JSON.parse(result);
-        const answer = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : null) || JSON.stringify(data);
-        onChunk(answer);
+        let answer = '';
+        if (Array.isArray(data)) {
+          answer = data.map(item => item.content || item.text || item.answer || '').join('');
+        } else {
+          answer = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '');
+        }
+        if (!answer && typeof data === 'string') {
+          answer = data;
+        }
+        if (answer) onChunk(answer);
       } catch (e) {
         onChunk(result);
       }
@@ -332,10 +347,22 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
         if (line.trim() === '') continue;
         if (line.startsWith('data:')) {
           const dataStr = line.slice(5).trim();
-          if (dataStr === '[DONE]') continue;
+          if (dataStr === '[DONE]') {
+            continue;
+          }
           try {
             const data = JSON.parse(dataStr);
-            const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
+            let textChunk = '';
+            if (Array.isArray(data)) {
+              textChunk = data.map(item => item.content || item.text || item.answer || '').join('');
+            } else if (data.type === 'sources' || (data.sources && Array.isArray(data.sources))) {
+              textChunk = ''; // Không hiển thị nguồn tham khảo
+            } else {
+              textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '');
+            }
+            if (!textChunk && typeof data === 'string') {
+              textChunk = data;
+            }
             if (textChunk) onChunk(textChunk);
           } catch (e) {
             onChunk(dataStr);
@@ -360,10 +387,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
 
     onComplete();
   } catch (error) {
-    if (error.name === 'AbortError') {
-      console.log('Stream aborted');
-    } else {
-      console.error('Error fetching stream response:', error);
+    if (error.name !== 'AbortError') {
       onError(error);
     }
   }
@@ -475,34 +499,6 @@ export default function FitBot() {
     ]);
 
     let fullResponse = '';
-    charIndexRef.current = 0;
-    let charQueue = '';
-
-    const typeNextCharacters = () => {
-      if (charQueue.length > 0) {
-        const charsToAdd = charQueue.substring(0, 3); // Add up to 3 chars at a time
-        fullResponse += charsToAdd;
-        charQueue = charQueue.substring(3);
-
-        setMessages((prev) => {
-          const updatedMessages = [...prev];
-          const botMessageIndex = updatedMessages.findIndex(
-            (msg) => msg.id === botMessageId
-          );
-          if (botMessageIndex >= 0) {
-            updatedMessages[botMessageIndex].text = fullResponse;
-          }
-          return updatedMessages;
-        });
-
-        setTimeout(typeNextCharacters, 30);
-      } else {
-        // Check if stream is still active
-        if (abortControllerRef.current && !abortControllerRef.current.signal.aborted) {
-          setTimeout(typeNextCharacters, 30);
-        }
-      }
-    };
 
     // Create abort controller for this stream
     if (abortControllerRef.current) {
@@ -514,11 +510,18 @@ export default function FitBot() {
     streamSSEResponse(
       textToSend,
       (chunk) => {
-        // On chunk received, add to queue for typing effect
-        charQueue += chunk;
-        if (!document.hidden) {
-          typeNextCharacters();
-        }
+        // Cập nhật trực tiếp ngay khi nhận chunk để markdown render không bị lỗi và chữ chạy nhanh hơn
+        fullResponse += chunk;
+        setMessages((prev) => {
+          const updatedMessages = [...prev];
+          const botMessageIndex = updatedMessages.findIndex(
+            (msg) => msg.id === botMessageId
+          );
+          if (botMessageIndex >= 0) {
+            updatedMessages[botMessageIndex].text = fullResponse;
+          }
+          return updatedMessages;
+        });
       },
       () => {
         // On complete
@@ -527,7 +530,6 @@ export default function FitBot() {
       },
       (error) => {
         // On error - show fallback message
-        console.error('Chat error:', error);
         const errorMessage =
           'Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.';
         fullResponse = errorMessage;
@@ -626,7 +628,13 @@ export default function FitBot() {
             {messages.map((message) => (
               <Message key={message.id} isBot={message.isBot}>
                 <MessageBubble isBot={message.isBot}>
-                  {message.text}
+                  {message.isBot ? (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.text}
+                    </ReactMarkdown>
+                  ) : (
+                    message.text
+                  )}
                 </MessageBubble>
               </Message>
             ))}
