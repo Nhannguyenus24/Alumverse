@@ -17,11 +17,16 @@ import '../../features/home/presentation/pages/splash_page.dart';
 import '../../features/article/presentation/pages/article_detail_page.dart';
 import '../../features/article/presentation/pages/news_list_page.dart';
 import '../../features/event/presentation/pages/events_page.dart';
+import '../../features/event/presentation/pages/event_detail_page.dart';
 import '../../features/organization/presentation/pages/organization_introduction_page.dart';
 import '../../features/user/presentation/pages/my_profile_page.dart';
 import '../../features/user/presentation/pages/my_profile_edit_page.dart';
 import '../../features/user/presentation/pages/settings_page.dart';
 import '../../features/user/presentation/pages/notifications_page.dart';
+import '../../features/forum/presentation/pages/forum_categories_page.dart';
+import '../../features/forum/presentation/pages/forum_topics_page.dart';
+import '../../features/forum/presentation/pages/forum_thread_page.dart';
+import '../../features/forum/presentation/pages/forum_create_topic_page.dart';
 import '../../features/mentorship/presentation/pages/mentorship_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_profile_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_booking_page.dart';
@@ -136,6 +141,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const EventsPage(),
       ),
       GoRoute(
+        path: '${RouteNames.events}/:id',
+        builder: (_, state) => EventDetailPage(
+          eventId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
         path: RouteNames.news,
         builder: (_, __) => const NewsListPage(),
       ),
@@ -200,9 +211,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.forum,
-        builder: (_, __) => const FeaturePlaceholderPage(
-          title: 'Diễn đàn',
-          icon: Icons.forum_rounded,
+        builder: (_, __) => const ForumCategoriesPage(),
+      ),
+      GoRoute(
+        path: '${RouteNames.forum}/category/:id',
+        builder: (_, state) => ForumTopicsPage(
+          categoryId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+          categoryName: state.extra as String?,
+        ),
+      ),
+      GoRoute(
+        path: '${RouteNames.forum}/category/:id/new',
+        builder: (_, state) => ForumCreateTopicPage(
+          categoryId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+          categoryName: state.extra as String?,
+        ),
+      ),
+      GoRoute(
+        path: '${RouteNames.forum}/topic/:id',
+        builder: (_, state) => ForumThreadPage(
+          topicId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+          topicTitle: state.extra as String?,
         ),
       ),
       GoRoute(
