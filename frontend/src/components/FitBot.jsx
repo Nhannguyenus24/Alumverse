@@ -560,6 +560,22 @@ export default function FitBot() {
     }
   };
 
+  const renderedMessages = React.useMemo(() => {
+    return messages.map((message) => (
+      <Message key={message.id} isBot={message.isBot}>
+        <MessageBubble isBot={message.isBot}>
+          {message.isBot ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.text}
+            </ReactMarkdown>
+          ) : (
+            message.text
+          )}
+        </MessageBubble>
+      </Message>
+    ));
+  }, [messages]);
+
   return (
     <>
       {/* Avatar */}
@@ -625,19 +641,7 @@ export default function FitBot() {
 
           {/* Messages */}
           <MessageContainer>
-            {messages.map((message) => (
-              <Message key={message.id} isBot={message.isBot}>
-                <MessageBubble isBot={message.isBot}>
-                  {message.isBot ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {message.text}
-                    </ReactMarkdown>
-                  ) : (
-                    message.text
-                  )}
-                </MessageBubble>
-              </Message>
-            ))}
+            {renderedMessages}
 
             {/* Typing Indicator */}
             {isTyping && (
