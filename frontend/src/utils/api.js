@@ -475,6 +475,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async getEventById(eventId) {
+		const response = await apiClient.get(`/events/${eventId}`);
+		return unwrap(response);
+	},
+
 	async getEvents(params = {}) {
 		const response = await apiClient.get('/events', { params });
 		return unwrap(response);
@@ -611,8 +616,45 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async cancelTicketByCode(ticketCode) {
-		const response = await apiClient.post(`/events/tickets/${ticketCode}/cancel`);
+	async cancelTicketByCode(ticketCode, reason) {
+		const response = await apiClient.post(`/events/tickets/${ticketCode}/cancel`, { reason });
+		return unwrap(response);
+	},
+
+	async getTicketByCode(ticketCode) {
+		const response = await apiClient.get(`/events/tickets/code/${ticketCode}`);
+		return unwrap(response);
+	},
+
+	async getEventQuestions(eventId) {
+		// Degrade gracefully: nếu backend lỗi (vd bảng event_questions chưa migrate),
+		// coi như event không có câu hỏi thay vì làm vỡ trang.
+		try {
+			const response = await apiClient.get(`/events/${eventId}/questions`);
+			return unwrap(response);
+		} catch (err) {
+			console.warn('getEventQuestions failed, fallback []', err?.response?.status);
+			return [];
+		}
+	},
+
+	async createEventQuestion(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/questions`, payload);
+		return unwrap(response);
+	},
+
+	async updateEventQuestion(eventId, questionId, payload) {
+		const response = await apiClient.put(`/events/${eventId}/questions/${questionId}`, payload);
+		return unwrap(response);
+	},
+
+	async deleteEventQuestion(eventId, questionId) {
+		const response = await apiClient.delete(`/events/${eventId}/questions/${questionId}`);
+		return unwrap(response);
+	},
+
+	async reorderEventQuestions(eventId, questionIds) {
+		const response = await apiClient.put(`/events/${eventId}/questions/reorder`, { questionIds });
 		return unwrap(response);
 	},
 
