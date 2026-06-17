@@ -110,6 +110,31 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   Future<void> verifyOtp({required String email, required String otp}) =>
       _repo.verifyOtp(email: email, otp: otp);
 
+  /// Forgot password: sends a recovery OTP to [email]. Does not touch auth
+  /// state; throws on failure so the page can surface the message.
+  Future<void> forgotPassword(String email) => _repo.forgotPassword(email);
+
+  /// Changes the signed-in user's password. Requires an active session;
+  /// throws if signed out or the request fails. Auth state is left unchanged.
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final userId = state.valueOrNull?.user?.id;
+    if (userId == null) {
+      throw Exception('Vui lòng đăng nhập để đổi mật khẩu');
+    }
+    final parsedId = int.tryParse(userId);
+    if (parsedId == null) {
+      throw Exception('Tài khoản không hợp lệ');
+    }
+    await _repo.changePassword(
+      userId: parsedId,
+      oldPassword: oldPassword,
+      newPassword: newPassword,
+    );
+  }
+
   Future<void> logout() async {
     await _repo.logout();
     state = const AsyncData(AuthState.signedOut);
