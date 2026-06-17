@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/env.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../data/models/organization.dart';
+import '../../data/models/organization_introduction.dart';
+import '../../data/models/trusted_verifier.dart';
 import '../../data/repositories/organization_repository.dart';
 
 final organizationStateProvider =
@@ -46,3 +48,19 @@ class OrganizationNotifier extends AsyncNotifier<Organization?> {
     state = const AsyncData(null);
   }
 }
+
+/// Trusted verifiers for a given organization, used by the registration page.
+final trustedVerifiersProvider =
+    FutureProvider.family<List<TrustedVerifier>, int>((ref, organizationId) {
+  return ref
+      .read(organizationRepositoryProvider)
+      .getTrustedVerifiers(organizationId);
+});
+
+/// Introduction content for a given organization (view-only screen).
+final organizationIntroductionProvider =
+    FutureProvider.family<OrganizationIntroduction, int>((ref, organizationId) {
+  return ref
+      .read(organizationRepositoryProvider)
+      .getIntroduction(organizationId);
+});

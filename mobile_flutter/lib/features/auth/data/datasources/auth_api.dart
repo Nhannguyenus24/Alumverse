@@ -44,5 +44,23 @@ class AuthApi {
   Future<void> verifyOtp(String email, String otp) =>
       _dio.post(ApiEndpoints.authVerifyOtp, data: {'email': email, 'otp': otp});
 
+  /// "Forgot password": mirrors the web flow, which simply sends a recovery
+  /// OTP to the registered email (`POST /auth/send-otp`).
+  Future<void> forgotPassword(String email) =>
+      _dio.post(ApiEndpoints.authSendOtp, data: {'email': email});
+
+  /// Changes the password for the signed-in user
+  /// (`PUT /auth/password/{userId}`). The backend only exposes the
+  /// old-password flow — same as the web `resetPassword`.
+  Future<void> changePassword({
+    required int userId,
+    required String oldPassword,
+    required String newPassword,
+  }) =>
+      _dio.put(
+        ApiEndpoints.authChangePassword(userId),
+        data: {'oldPassword': oldPassword, 'newPassword': newPassword},
+      );
+
   Future<void> logout() => _dio.post(ApiEndpoints.authLogout);
 }

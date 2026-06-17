@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/organization.dart';
+import '../models/organization_introduction.dart';
+import '../models/trusted_verifier.dart';
 
 final organizationApiProvider = Provider<OrganizationApi>((ref) {
   return OrganizationApi(ref.watch(dioProvider));
@@ -17,6 +19,79 @@ class OrganizationApi {
   Future<Organization> getOrganizationBySlug(String slug) async {
     final res = await _dio.get(ApiEndpoints.organizationBySlug(slug));
     return Organization.fromJson(_unwrap(res.data));
+  }
+
+  /// Organization introduction content (`GET /organizations/{id}/introduction`).
+  Future<OrganizationIntroduction> getIntroduction(int organizationId) async {
+    final res = await _dio.get(ApiEndpoints.organizationIntroduction(organizationId));
+    return OrganizationIntroduction.fromJson(_unwrap(res.data));
+  }
+
+  /// Trusted verifiers for [organizationId] — members who can vouch for an
+  /// applicant during registration (`GET /organizations/{id}/trusted-verifiers`).
+  Future<List<TrustedVerifier>> getTrustedVerifiers(int organizationId) async {
+    final res = await _dio.get(ApiEndpoints.trustedVerifiers(organizationId));
+    final body = res.data;
+    final list = (body is Map ? body['data'] : body) as List? ?? const [];
+    return list
+        .map((e) => TrustedVerifier.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Join an organization with academic info. Mirrors the web
+  /// `joinOrganization` body (`POST /admin/users/organization-member`).
+  Future<void> joinOrganization({
+    required int organizationId,
+    required int userId,
+    List<String>? program,
+    List<String>? major,
+    List<int>? graduatedYear,
+  }) {
+    return _dio.post(
+      ApiEndpoints.adminOrganizationMember,
+      data: {
+        'organizationId': organizationId,
+        'userId': userId,
+        'graduatedYear': graduatedYear,
+        'graduationStatus': null,
+        'program': program,
+        'major': major,
+        'verificationLevel': 0,
+        'status': 'active',
+      },
+    );
+  }
+
+  /// Ask a trusted verifier to vouch for the current user
+  /// (`POST /users/me/peer-verifications/request`).
+  Future<void> requestPeerVerification({
+    required int organizationId,
+    required int verifierUserId,
+  }) {
+    return _dio.post(
+      ApiEndpoints.peerVerificationRequest,
+      data: {
+        'organizationId': organizationId,
+        'verifierUserId': verifierUserId,
+      },
+    );
+  }
+
+  /// Upload a proof document for admin verification
+  /// (`POST /users/me/verification-requests`).
+  Future<void> createVerificationRequest({
+    required String base64File,
+    required String originalFileName,
+    required String documentType,
+  }) {
+    return _dio.post(
+      ApiEndpoints.meVerificationRequests,
+      data: {
+        'base64File': base64File,
+        'originalFileName': originalFileName,
+        'documentType': documentType,
+      },
+    );
   }
 
   /// All active organizations.

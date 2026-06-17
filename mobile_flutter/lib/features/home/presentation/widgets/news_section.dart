@@ -24,7 +24,13 @@ class NewsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle('Tin tức & Sự kiện'),
+        SectionTitle(
+          'Tin tức & Sự kiện',
+          action: TextButton(
+            onPressed: () => context.push(RouteNames.news),
+            child: const Text('Xem tất cả'),
+          ),
+        ),
         newsAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.all(24),
