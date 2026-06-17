@@ -15,6 +15,13 @@ import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/splash_page.dart';
 import '../../features/article/presentation/pages/article_detail_page.dart';
+import '../../features/article/presentation/pages/news_list_page.dart';
+import '../../features/event/presentation/pages/events_page.dart';
+import '../../features/organization/presentation/pages/organization_introduction_page.dart';
+import '../../features/user/presentation/pages/my_profile_page.dart';
+import '../../features/user/presentation/pages/my_profile_edit_page.dart';
+import '../../features/user/presentation/pages/settings_page.dart';
+import '../../features/user/presentation/pages/notifications_page.dart';
 import '../../features/mentorship/presentation/pages/mentorship_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_profile_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_booking_page.dart';
@@ -51,11 +58,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       );
 
       final isOrgSelectRoute = state.matchedLocation == RouteNames.organizationSelect;
+      // Public auth routes (signed-out only). Note: reset-password is the
+      // "change password" flow and requires an active session — like the web,
+      // it lives behind the auth gate, NOT here.
       final isAuthRoute = state.matchedLocation == RouteNames.login ||
           state.matchedLocation == RouteNames.register ||
           state.matchedLocation == RouteNames.forgotPassword ||
           state.matchedLocation == RouteNames.signupCode ||
-          state.matchedLocation == RouteNames.resetPassword ||
           state.matchedLocation == RouteNames.organizationRegistration;
       // 1. No organization selected → must pick one first.
       if (!hasOrg && !isOrgSelectRoute) return RouteNames.organizationSelect;
@@ -124,10 +133,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // each feature screen is built; routing works end-to-end now.
       GoRoute(
         path: RouteNames.events,
-        builder: (_, __) => const FeaturePlaceholderPage(
-          title: 'Sự kiện & Hội thảo',
-          icon: Icons.event_available_rounded,
-        ),
+        builder: (_, __) => const EventsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.news,
+        builder: (_, __) => const NewsListPage(),
+      ),
+      GoRoute(
+        path: RouteNames.organizationIntroduction,
+        builder: (_, __) => const OrganizationIntroductionPage(),
       ),
       GoRoute(
         path: RouteNames.network,
@@ -170,17 +184,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.profile,
-        builder: (_, __) => const FeaturePlaceholderPage(
-          title: 'Hồ sơ cá nhân',
-          icon: Icons.person_rounded,
-        ),
+        builder: (_, __) => const MyProfilePage(),
+      ),
+      GoRoute(
+        path: RouteNames.profileEdit,
+        builder: (_, __) => const MyProfileEditPage(),
       ),
       GoRoute(
         path: RouteNames.settings,
-        builder: (_, __) => const FeaturePlaceholderPage(
-          title: 'Cài đặt',
-          icon: Icons.settings_rounded,
-        ),
+        builder: (_, __) => const SettingsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.notifications,
+        builder: (_, __) => const NotificationsPage(),
       ),
       GoRoute(
         path: RouteNames.forum,

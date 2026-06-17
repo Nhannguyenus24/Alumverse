@@ -13,6 +13,8 @@ class RouteNames {
   static const String home = '/home';
   static const String forum = '/forum';
   static const String events = '/events';
+  static const String news = '/news';
+  static const String organizationIntroduction = '/organization-introduction';
   static const String articles = '/articles';
   static const String mentorship = '/mentorship';
   static const String mentorshipMyBookings = '/mentorship/my-bookings';
@@ -24,5 +26,7 @@ class RouteNames {
   static const String network = '/network';
   static const String chat = '/chat';
   static const String profile = '/profile';
+  static const String profileEdit = '/profile/edit';
   static const String settings = '/settings';
+  static const String notifications = '/notifications';
 }

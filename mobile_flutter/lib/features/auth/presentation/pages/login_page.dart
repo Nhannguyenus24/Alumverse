@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/logo.dart';
@@ -34,23 +36,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         .read(authStateProvider.notifier)
         .login(_emailCtl.text.trim(), _passCtl.text);
 
-    final auth = ref.read(authStateProvider);
+    // On success the auth state flips to logged-in, which rebuilds the router
+    // and redirects this route to /home — and disposes this widget. Touching
+    // `ref`/`context` after that throws "Cannot use ref after dispose". So bail
+    // out first when we're no longer mounted, and only surface errors here.
     if (!mounted) return;
-    auth.whenOrNull(
-      data: (state) {
-        if (state.isLoggedIn) context.go(RouteNames.home);
-      },
-      error: (e, _) => _showError(e),
-    );
+
+    final auth = ref.read(authStateProvider);
+    if (auth.hasError) {
+      _showError(auth.error!);
+    } else if (auth.valueOrNull?.isLoggedIn == true) {
+      context.go(RouteNames.home);
+    }
   }
 
   void _showError(Object e) {
-    final message = e is Exception
-        ? e.toString().replaceFirst('Exception: ', '')
-        : e.toString();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(content: Text(_messageFrom(e))),
     );
+  }
+
+  /// Pull a human-readable message out of the error. The error interceptor
+  /// wraps backend errors as [ApiException] inside a [DioException].
+  String _messageFrom(Object e) {
+    if (e is DioException) {
+      final inner = e.error;
+      if (inner is ApiException) return inner.message;
+      return e.message ?? 'Đăng nhập thất bại';
+    }
+    if (e is ApiException) return e.message;
+    return e.toString().replaceFirst('Exception: ', '');
   }
 
   @override

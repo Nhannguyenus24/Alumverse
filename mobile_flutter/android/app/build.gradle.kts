@@ -8,7 +8,9 @@ plugins {
 android {
     namespace = "com.example.datn"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pinned to the highest NDK required by plugins (image_picker, secure_storage,
+    // url_launcher, etc.). NDK is backward-compatible, so this satisfies all.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
