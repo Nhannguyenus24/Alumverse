@@ -4,6 +4,7 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/forum_post.dart';
@@ -40,7 +41,7 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     if (text.isEmpty) return;
     final memberId = _memberId;
     if (memberId == null) {
-      _toast('Vui lòng đăng nhập để bình luận.');
+      AppToast.info(context, 'Vui lòng đăng nhập để bình luận.');
       return;
     }
     setState(() => _sending = true);
@@ -55,7 +56,7 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
       if (mounted) FocusScope.of(context).unfocus();
       ref.invalidate(forumPostsProvider(widget.topicId));
     } catch (e) {
-      _toast('Gửi bình luận thất bại.');
+      if (mounted) AppToast.error(context, 'Gửi bình luận thất bại.');
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -76,12 +77,6 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;');
-
-  void _toast(String m) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(m)));
-  }
 
   @override
   Widget build(BuildContext context) {

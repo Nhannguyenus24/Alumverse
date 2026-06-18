@@ -35,22 +35,48 @@ import '../../features/mentorship/presentation/pages/mentor_signup_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_dashboard_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_availability_page.dart';
 import '../../shared/widgets/feature_placeholder_page.dart';
+import '../../shared/widgets/main_scaffold.dart';
 import 'route_names.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final orgState = ref.watch(organizationStateProvider);
+  // IMPORTANT: build GoRouter ONCE. Use a refreshListenable to re-run `redirect`
+  // when auth/org change — instead of `ref.watch`, which would rebuild the whole
+  // GoRouter and dispose the current page mid-async (that silently swallowed the
+  // login error toast). State is read fresh inside `redirect` via ref.read.
+  final refresh = _RouterRefresh(ref);
+  ref.onDispose(refresh.dispose);
 
   return GoRouter(
     initialLocation: RouteNames.splash,
     debugLogDiagnostics: true,
+    refreshListenable: refresh,
     redirect: (context, state) {
+      final authState = ref.read(authStateProvider);
+      final orgState = ref.read(organizationStateProvider);
       final isSplash = state.matchedLocation == RouteNames.splash;
 
-      // While auth/org are still resolving, stay on splash (avoids redirect
-      // races and the "route not found" flash during startup).
+      final isOrgSelectRoute = state.matchedLocation == RouteNames.organizationSelect;
+      // Public auth routes (signed-out only). Note: reset-password is the
+      // "change password" flow and requires an active session — like the web,
+      // it lives behind the auth gate, NOT here.
+      // organization-registration requires a logged-in user (joins org with the
+      // user id from the JWT), so it is NOT a signed-out-only auth route — it
+      // lives behind the auth gate and is reachable from Settings.
+      final isAuthRoute = state.matchedLocation == RouteNames.login ||
+          state.matchedLocation == RouteNames.register ||
+          state.matchedLocation == RouteNames.forgotPassword ||
+          state.matchedLocation == RouteNames.signupCode;
+
+      // While auth/org are still resolving, stay on splash — but ONLY during
+      // startup (on the splash route). Do NOT bounce the user off an auth/org
+      // screen mid-submit (login sets AsyncLoading→AsyncError); that would
+      // dispose the form and swallow its error toast.
       final isResolving = authState.isLoading || orgState.isLoading;
-      if (isResolving) return isSplash ? null : RouteNames.splash;
+      if (isResolving) {
+        if (isSplash) return null;
+        if (isAuthRoute || isOrgSelectRoute) return null;
+        return RouteNames.splash;
+      }
 
       final isLoggedIn = authState.maybeWhen(
         data: (auth) => auth.isLoggedIn,
@@ -61,16 +87,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         data: (org) => org != null,
         orElse: () => false,
       );
-
-      final isOrgSelectRoute = state.matchedLocation == RouteNames.organizationSelect;
-      // Public auth routes (signed-out only). Note: reset-password is the
-      // "change password" flow and requires an active session — like the web,
-      // it lives behind the auth gate, NOT here.
-      final isAuthRoute = state.matchedLocation == RouteNames.login ||
-          state.matchedLocation == RouteNames.register ||
-          state.matchedLocation == RouteNames.forgotPassword ||
-          state.matchedLocation == RouteNames.signupCode ||
-          state.matchedLocation == RouteNames.organizationRegistration;
       // 1. No organization selected → must pick one first.
       if (!hasOrg && !isOrgSelectRoute) return RouteNames.organizationSelect;
 
@@ -122,7 +138,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.home,
-        builder: (_, __) => const HomePage(),
+        builder: (_, __) =>
+            const MainScaffold(currentIndex: 0, child: HomePage()),
       ),
       GoRoute(
         path: RouteNames.chat,
@@ -138,7 +155,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // each feature screen is built; routing works end-to-end now.
       GoRoute(
         path: RouteNames.events,
-        builder: (_, __) => const EventsPage(),
+        builder: (_, __) =>
+            const MainScaffold(currentIndex: 3, child: EventsPage()),
       ),
       GoRoute(
         path: '${RouteNames.events}/:id',
@@ -179,7 +197,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.mentorship,
-        builder: (_, __) => const MentorshipPage(),
+        builder: (_, __) =>
+            const MainScaffold(currentIndex: 2, child: MentorshipPage()),
       ),
       GoRoute(
         path: '${RouteNames.mentorship}/mentors/:id',
@@ -195,7 +214,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.profile,
-        builder: (_, __) => const MyProfilePage(),
+        builder: (_, __) =>
+            const MainScaffold(currentIndex: 4, child: MyProfilePage()),
       ),
       GoRoute(
         path: RouteNames.profileEdit,
@@ -211,7 +231,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.forum,
-        builder: (_, __) => const ForumCategoriesPage(),
+        builder: (_, __) =>
+            const MainScaffold(currentIndex: 1, child: ForumCategoriesPage()),
       ),
       GoRoute(
         path: '${RouteNames.forum}/category/:id',
@@ -247,3 +268,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
+
+/// Bridges Riverpod auth/org state to a [Listenable] that GoRouter can watch
+/// via `refreshListenable`. This re-runs `redirect` on changes WITHOUT
+/// rebuilding the GoRouter (so pages aren't disposed mid-async).
+class _RouterRefresh extends ChangeNotifier {
+  _RouterRefresh(Ref ref) {
+    _subs.add(ref.listen(authStateProvider, (_, __) => notifyListeners()));
+    _subs.add(
+        ref.listen(organizationStateProvider, (_, __) => notifyListeners()));
+  }
+
+  final List<ProviderSubscription> _subs = [];
+
+  @override
+  void dispose() {
+    for (final s in _subs) {
+      s.close();
+    }
+    super.dispose();
+  }
+}

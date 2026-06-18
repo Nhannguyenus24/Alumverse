@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/blur_validated_field.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/auth_provider.dart';
 
@@ -42,18 +44,14 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             newPassword: _newPassCtl.text,
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đổi mật khẩu thành công.')),
-      );
+      AppToast.success(context, 'Đổi mật khẩu thành công.');
       context.go(RouteNames.home);
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Đổi mật khẩu thất bại';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -87,7 +85,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                TextFormField(
+                BlurValidatedField(
                   controller: _oldPassCtl,
                   obscureText: _obscureOld,
                   validator: (v) => Validators.required(v, field: 'Mật khẩu hiện tại'),
@@ -103,7 +101,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _newPassCtl,
                   obscureText: _obscureNew,
                   validator: Validators.password,
@@ -119,7 +117,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _confirmNewPassCtl,
                   obscureText: _obscureConfirm,
                   validator: (v) => Validators.confirmPassword(v, _newPassCtl.text),

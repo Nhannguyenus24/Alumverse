@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/auth_provider.dart';
 
@@ -33,18 +34,14 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           .read(authStateProvider.notifier)
           .forgotPassword(_emailCtl.text.trim());
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã gửi mã đến email của bạn.')),
-      );
+      AppToast.success(context, 'Đã gửi mã đến email của bạn.');
       context.pop();
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Gửi mã thất bại';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

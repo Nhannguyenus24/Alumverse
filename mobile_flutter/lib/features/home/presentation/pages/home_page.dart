@@ -55,7 +55,7 @@ class HomePage extends ConsumerWidget {
             onSelected: (value) async {
               switch (value) {
                 case 'profile':
-                  context.push(RouteNames.profile);
+                  context.go(RouteNames.profile);
                   break;
                 case 'settings':
                   context.push(RouteNames.settings);
