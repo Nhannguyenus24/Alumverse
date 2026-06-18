@@ -34,13 +34,23 @@ export const useMentorshipAccessState = () => {
 
   // Only fetch the mentee profile once the user can actually use mentorship,
   // to avoid 401/403 noise for guests and unverified members.
+  // IMPORTANT: this query shares its key with useMyMenteeProfile(). The options
+  // (queryFn, retry, staleTime, 404 handling) MUST stay identical, otherwise two
+  // observers on the same key with mismatched staleTime trigger an endless
+  // refetch storm (observed as repeated 429s on /mentorship/mentee/profile).
   const menteeProfileQuery = useQuery({
     queryKey: ['mentorship', 'mentee', 'me', 'profile'],
     queryFn: async () => {
-      const res = await getMyMenteeProfile();
-      return res?.data?.data ?? null;
+      try {
+        const res = await getMyMenteeProfile();
+        return res?.data?.data ?? null;
+      } catch (err) {
+        if (err?.response?.status === 404) return null;
+        throw err;
+      }
     },
     retry: false,
+    staleTime: 5 * 60_000,
     enabled: canUseMentorship,
   });
   const hasMenteeProfile = Boolean(menteeProfileQuery.data?.memberId);

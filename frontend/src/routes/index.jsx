@@ -107,6 +107,9 @@ const AdminOrganizationsPage = Loadable(
 const AdminEventsPage = Loadable(
   lazy(() => import("../pages/admin/AdminEventsPage")),
 );
+const AdminEventOrganizePage = Loadable(
+  lazy(() => import("../pages/admin/AdminEventOrganizePage")),
+);
 const AdminSchoolFeedbackPage = Loadable(
   lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")),
 );
@@ -636,6 +639,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminEventsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "events/:eventId/organize",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminEventOrganizePage />
               </ProtectedRoute>
             ),
           },

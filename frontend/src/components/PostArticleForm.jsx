@@ -1,4 +1,4 @@
-import { Box, Stack, TextField, Typography, MenuItem, Grid, Button } from '@mui/material';
+import { Box, Stack, TextField, Typography, MenuItem, Grid, Button, FormControlLabel, Checkbox } from '@mui/material';
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
@@ -48,7 +48,7 @@ const PostArticleForm = ({
   const addQuestion = () => {
     setRegistrationQuestions((prev) => [
       ...prev,
-      { id: Date.now(), question: "", type: "short_text", required: false, options: [""] },
+      { id: Date.now(), label: "", type: "shortText", required: false, options: [""] },
     ]);
   };
 
@@ -214,18 +214,28 @@ const PostArticleForm = ({
                   <TextField
                     fullWidth
                     label={`Câu hỏi ${index + 1}`}
-                    value={q.question}
-                    onChange={(e) => updateQuestion(q.id, "question", e.target.value)}
+                    value={q.label}
+                    onChange={(e) => updateQuestion(q.id, "label", e.target.value)}
                   />
 
                   <Dropdown
                     label="Loại câu hỏi"
                     value={q.type}
-                    options={[{ value: "short_text", label: "Trả lời ngắn" }, { value: "single_choice", label: "Chọn một" }, { value: "multiple_choice", label: "Chọn nhiều" }]}
+                    options={[{ value: "shortText", label: "Trả lời ngắn" }, { value: "singleChoice", label: "Chọn một" }, { value: "multiChoice", label: "Chọn nhiều" }]}
                     onChange={(e) => updateQuestion(q.id, "type", e.target.value)}
                   />
 
-                  {(q.type === "single_choice" || q.type === "multiple_choice") && (
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={Boolean(q.required)}
+                        onChange={(e) => updateQuestion(q.id, "required", e.target.checked)}
+                      />
+                    }
+                    label="Bắt buộc trả lời"
+                  />
+
+                  {(q.type === "singleChoice" || q.type === "multiChoice") && (
                     <Stack spacing={1}>
                       {q.options.map((option, i) => (
                         <TextField

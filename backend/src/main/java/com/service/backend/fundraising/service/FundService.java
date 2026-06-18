@@ -121,14 +121,18 @@ public class FundService {
                                             ErrorCode.RESOURCES_DUPLICATE,
                                             "Fund receiving info already exists for bankName + accountNumber"));
                                 }
-                                return fundReceivingInfosRepository.save(fundReceivingInfos);
+                                return fundReceivingInfosRepository.save(fundReceivingInfos)
+                                        .delayUntil(res -> cacheUtils.clear("fund_receiving_infos"));
                             });
                 }));
     }
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
-        return fundReceivingInfosRepository.findAll()
-                .filter(FundReceivingInfos::isActive);
+        return cacheUtils.getOrCompute("fund_receiving_infos", "active", Duration.ofDays(1), () ->
+                fundReceivingInfosRepository.findAll()
+                        .filter(FundReceivingInfos::isActive)
+                        .collectList()
+        ).flatMapMany(Flux::fromIterable);
     }
 
     public Mono<PaginatedResponse<FundReceivingInfos>> getActiveFundReceivingInfos(int page, int limit, String keyword) {
@@ -666,20 +670,22 @@ public class FundService {
     }
 
     public Mono<FundStatisticsResponse> getFundStatistics() {
-        LocalDateTime now = LocalDateTime.now();
-        Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
-        Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
-        Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
-        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
-        Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
+        return cacheUtils.getOrCompute("fund_statistics", "all", Duration.ofMinutes(5), () -> {
+            LocalDateTime now = LocalDateTime.now();
+            Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
+            Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
+            Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
+            LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+            LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+            Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
 
-        return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
-                .map(tuple -> FundStatisticsResponse.builder()
-                        .totalCurrentAmount(tuple.getT1())
-                        .totalFunds(tuple.getT2())
-                        .totalDonations(tuple.getT3())
-                        .totalDonationsAmountThisMonth(tuple.getT4())
-                        .build());
+            return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
+                    .map(tuple -> FundStatisticsResponse.builder()
+                            .totalCurrentAmount(tuple.getT1())
+                            .totalFunds(tuple.getT2())
+                            .totalDonations(tuple.getT3())
+                            .totalDonationsAmountThisMonth(tuple.getT4())
+                            .build());
+        });
     }
 }

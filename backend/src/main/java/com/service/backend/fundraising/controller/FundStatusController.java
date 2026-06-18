@@ -5,8 +5,10 @@ import com.service.backend.fundraising.dto.CreateFundStatusRequest;
 import com.service.backend.shared.entity.FundStatus;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import com.service.backend.shared.utils.CacheUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.time.Duration;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -28,6 +30,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class FundStatusController {
 
     private final FundStatusR2dbcRepository fundStatusRepository;
+    private final CacheUtils cacheUtils;
+    private static final String STATUS_CACHE = "fund_statuses";
 
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<FundStatus>>> create(
@@ -37,6 +41,7 @@ public class FundStatusController {
                 .build();
 
         return fundStatusRepository.save(entity)
+                .delayUntil(res -> cacheUtils.clear(STATUS_CACHE))
                 .map(created -> ResponseEntity
                         .status(HttpStatus.CREATED)
                         .body(new ApiResponse<>("Fund status created successfully", created)));
@@ -45,9 +50,9 @@ public class FundStatusController {
     @PublicEndpoint
     @GetMapping
     public Mono<ResponseEntity<ApiResponse<List<FundStatus>>>> getAll() {
-        return fundStatusRepository.findAll()
-                .collectList()
-                .map(list -> ResponseEntity.ok(
-                        new ApiResponse<>("Fund statuses retrieved successfully", list)));
+        return cacheUtils.getOrCompute(STATUS_CACHE, "all", Duration.ofDays(1), () ->
+                fundStatusRepository.findAll().collectList()
+        ).map(list -> ResponseEntity.ok(
+                new ApiResponse<>("Fund statuses retrieved successfully", list)));
     }
 }

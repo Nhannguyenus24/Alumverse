@@ -183,7 +183,7 @@ public class AdminEventService {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
                                 "Ticket already cancelled"));
                     }
-                    return ticketRepo.cancelTicket(ticket.getId()).then(ticketRepo.findById(ticket.getId()));
+                    return ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin").then(ticketRepo.findById(ticket.getId()));
                 })
                 .doOnSuccess(t -> log.info("cancelTicket result: {}", JsonUtils.toJson(t)));
     }

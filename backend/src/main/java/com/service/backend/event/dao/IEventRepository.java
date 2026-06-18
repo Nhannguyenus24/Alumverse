@@ -4,6 +4,7 @@ import com.service.backend.shared.entity.Event;
 import com.service.backend.shared.entity.EventEmailLog;
 import com.service.backend.shared.entity.EventInterest;
 import com.service.backend.shared.entity.EventInvitation;
+import com.service.backend.shared.entity.EventQuestion;
 import com.service.backend.shared.entity.EventTicket;
 import com.service.backend.event.dto.EventStatisticsResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
@@ -46,7 +47,7 @@ public interface IEventRepository {
 
     Flux<EventTicket> findIssuedTicketsByEvent(Long eventId);
 
-    Mono<EventTicket> cancelTicket(Long ticketId);
+    Mono<EventTicket> cancelTicket(Long ticketId, String reason);
     Mono<EventTicket> checkInTicket(Long ticketId);
     Mono<Integer> activateTicketsForEvent(Long eventId);
     Mono<Integer> expireTicketsForEvent(Long eventId);
@@ -56,6 +57,8 @@ public interface IEventRepository {
     Flux<EventTicket> findTicketsByIds(Iterable<Long> ticketIds);
     Mono<PaginatedResponse<EventTicket>> findTicketsByEvent(Long eventId, int page, int limit);
     Mono<PaginatedResponse<EventTicket>> findTicketsByEventAndStatus(Long eventId, String status, int page, int limit);
+    Mono<PaginatedResponse<EventTicket>> searchTicketsByEvent(Long eventId, String keyword, int page, int limit);
+    Mono<PaginatedResponse<EventTicket>> searchTicketsByEventAndStatus(Long eventId, String status, String keyword, int page, int limit);
     Mono<PaginatedResponse<EventTicket>> findTicketsByMember(Long memberId, int page, int limit);
     Mono<Long> countRegisteredTickets(Long eventId);
 
@@ -72,4 +75,12 @@ public interface IEventRepository {
 
     // Statistics
     Mono<EventStatisticsResponse> getEventStatistics(Long eventId);
+
+    // Event questions
+    Flux<EventQuestion> findQuestionsByEvent(Long eventId);
+    Mono<EventQuestion> findQuestionById(Integer questionId);
+    Mono<EventQuestion> createQuestion(EventQuestion question);
+    Mono<EventQuestion> updateQuestion(Integer questionId, EventQuestion question);
+    Mono<Boolean> deleteQuestion(Long eventId, Integer questionId);
+    Mono<Boolean> reorderQuestions(Long eventId, java.util.List<Integer> questionIds);
 }

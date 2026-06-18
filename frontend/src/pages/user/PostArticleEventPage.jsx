@@ -6,6 +6,23 @@ import { useCreateEvent } from '../../hooks/news/useCreateEvent';
 import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { eventApi } from '../../utils/api';
+import { mapQuestionToApi } from '../../hooks/events/useEventQuestions';
+
+// Chuẩn hoá câu hỏi trước khi gửi: bỏ câu trống, lọc lựa chọn rỗng, map sang shape API
+const normalizeQuestions = (questions = []) =>
+  questions
+    .filter((q) => q?.label && q.label.trim())
+    .map((q, index) => {
+      const cleanOptions =
+        q.type === 'shortText'
+          ? null
+          : (q.options || []).map((o) => (o ?? '').trim()).filter(Boolean);
+      return mapQuestionToApi(
+        { ...q, label: q.label.trim(), options: cleanOptions },
+        index,
+      );
+    });
 
 const toIsoDateTime = (value) => {
   if (!value) return null;
@@ -62,6 +79,22 @@ const PostEventPage = () => {
         registrationEndAt: toIsoDateTime(eventData.deadline),
         maxCapacity: eventData.maxParticipants ? Number(eventData.maxParticipants) : null,
       });
+
+      // Lưu các câu hỏi đăng ký (nếu có) sau khi đã tạo event
+      const questionsPayload = normalizeQuestions(registrationQuestions);
+      if (result?.id && questionsPayload.length > 0) {
+        try {
+          for (const payload of questionsPayload) {
+            await eventApi.createEventQuestion(result.id, payload);
+          }
+        } catch (qErr) {
+          showError(
+            qErr.response?.data?.message ??
+              'Sự kiện đã tạo nhưng lưu câu hỏi thất bại, vui lòng chỉnh sửa lại trong quản lý sự kiện.',
+          );
+        }
+      }
+
       showSuccess('Sự kiện đã được đăng thành công!');
       navigate(`/article/event/${result.id}`);
     } catch (err) {

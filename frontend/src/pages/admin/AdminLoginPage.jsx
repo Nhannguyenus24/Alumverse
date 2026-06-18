@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
-import { GoogleReCaptchaCheckbox } from '@google-recaptcha/react';
+import { GoogleReCaptchaCheckbox, useGoogleReCaptcha } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, Navigate } from 'react-router';
 import { useSnackbar } from 'notistack';
@@ -35,6 +35,7 @@ const AdminLoginPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const { login, isSubmitting: loading, setError, forgotPassword, isAuthenticated } = useAuth();
   const organizationId = useOrganizationStore((state) => state.organization?.id);
+  const { reset } = useGoogleReCaptcha();
 
   const redirectTo = location.state?.from?.pathname || '/admin';
 
@@ -88,16 +89,23 @@ const AdminLoginPage = () => {
         // Redirect to regular login or home page
         navigate('/', { replace: true });
       }
-    } else if (result?.error && result.error.includes('Account is not verified')) {
-      const fp = await forgotPassword({ email: data.email });
-      if (!fp?.ok) {
-        enqueueSnackbar(fp?.error ?? 'Gửi mã xác thực thất bại.', { variant: 'error' });
-        return;
+    } else {
+      if (reset) {
+        reset();
       }
-      enqueueSnackbar('Mã xác thực đã được gửi đến email của bạn.', { variant: 'success' });
-      navigate('/auth/signup-code', { state: { email: data.email } });
-    } else if (result?.error) {
-      enqueueSnackbar(result.error, { variant: 'error' });
+      setValue('recaptchaToken', '');
+
+      if (result?.error && result.error.includes('Account is not verified')) {
+        const fp = await forgotPassword({ email: data.email });
+        if (!fp?.ok) {
+          enqueueSnackbar(fp?.error ?? 'Gửi mã xác thực thất bại.', { variant: 'error' });
+          return;
+        }
+        enqueueSnackbar('Mã xác thực đã được gửi đến email của bạn.', { variant: 'success' });
+        navigate('/auth/signup-code', { state: { email: data.email } });
+      } else if (result?.error) {
+        enqueueSnackbar(result.error, { variant: 'error' });
+      }
     }
   };
 

@@ -1,9 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/empty_view.dart';
+import '../../../../shared/widgets/skeleton.dart';
 import '../providers/mentorship_providers.dart';
 import '../widgets/mentor_card.dart';
 
@@ -90,26 +94,23 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
             const _FilterBar(),
             const SizedBox(height: 16),
             mentorsAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.all(40),
-                child: Center(child: CircularProgressIndicator()),
+              loading: () => Column(
+                children: List.generate(4, (_) => const SkeletonTile()),
               ),
               error: (e, _) => _ErrorBox(
+                error: e,
                 onRetry: () => ref.invalidate(mentorListProvider),
               ),
               data: (mentors) {
                 if (mentors.isEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Center(
-                      child: Text(
-                        query.keyword.isNotEmpty
-                            ? 'Không tìm thấy cố vấn khớp "${query.keyword}".'
-                            : 'Chưa có cố vấn nào trong hệ thống.',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                    ),
+                  return EmptyView(
+                    icon: Icons.person_search_outlined,
+                    title: query.keyword.isNotEmpty
+                        ? 'Không tìm thấy cố vấn'
+                        : 'Chưa có cố vấn',
+                    message: query.keyword.isNotEmpty
+                        ? 'Không có cố vấn nào khớp "${query.keyword}".'
+                        : 'Hiện chưa có cố vấn nào trong hệ thống.',
                   );
                 }
                 return Column(
@@ -327,24 +328,64 @@ class _Dropdown extends StatelessWidget {
 }
 
 class _ErrorBox extends StatelessWidget {
-  const _ErrorBox({required this.onRetry});
+  const _ErrorBox({required this.onRetry, this.error});
   final VoidCallback onRetry;
+  final Object? error;
 
   @override
   Widget build(BuildContext context) {
+    final message = _messageFrom(error);
+    final needsVerification = _statusFrom(error) == 401 || _statusFrom(error) == 403;
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Center(
         child: Column(
           children: [
-            const Icon(Icons.cloud_off_rounded,
-                size: 40, color: AppColors.textSecondary),
+            Icon(
+              needsVerification
+                  ? Icons.verified_user_outlined
+                  : Icons.cloud_off_rounded,
+              size: 40,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(height: 8),
-            const Text('Không tải được danh sách cố vấn'),
-            TextButton(onPressed: onRetry, child: const Text('Thử lại')),
+            Text(
+              message ?? 'Không tải được danh sách cố vấn',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 8),
+            if (needsVerification)
+              ElevatedButton.icon(
+                onPressed: () =>
+                    context.push(RouteNames.organizationRegistration),
+                icon: const Icon(Icons.verified_user_outlined, size: 18),
+                label: const Text('Xác thực tài khoản'),
+              )
+            else
+              TextButton(onPressed: onRetry, child: const Text('Thử lại')),
           ],
         ),
       ),
     );
+  }
+
+  /// Surface the backend message (e.g. "Vui lòng xác thực email...") instead of
+  /// a generic error. The error interceptor wraps it as [ApiException].
+  String? _messageFrom(Object? e) {
+    if (e is DioException) {
+      final inner = e.error;
+      if (inner is ApiException) return inner.message;
+    }
+    if (e is ApiException) return e.message;
+    return null;
+  }
+
+  int? _statusFrom(Object? e) {
+    if (e is DioException && e.error is ApiException) {
+      return (e.error as ApiException).statusCode;
+    }
+    if (e is ApiException) return e.statusCode;
+    return null;
   }
 }

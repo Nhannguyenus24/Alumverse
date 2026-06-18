@@ -5,7 +5,10 @@ import com.service.backend.event.dao.IEventRepository;
 import com.service.backend.event.dto.*;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.enums.ErrorCode;
+import com.service.backend.shared.enums.QuestionType;
 import com.service.backend.shared.enums.Status;
+import com.service.backend.organization.dao.OrganizationRepository;
+import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
 import com.service.backend.shared.service.ImageService;
@@ -18,6 +21,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -29,6 +35,8 @@ public class EventService {
     private final IEventRepository eventRepository;
     private final ImageService imageService;
     private final EmailService emailService;
+    private final NotificationService notificationService;
+    private final OrganizationRepository organizationRepository;
 
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
@@ -183,7 +191,8 @@ public class EventService {
                                             .build();
 
                                     return eventRepository.createInvitation(invitation)
-                                            .flatMap(inv -> sendInvitationEmail(event, inv))
+                                            .flatMap(inv -> sendInvitationEmail(event, inv)
+                                                    .then(notifyInvitation(event, inv)))
                                             .thenReturn(1);
                                 })
                                 .reduce(0, Integer::sum)));
@@ -225,12 +234,13 @@ public class EventService {
                                                 .memberId(confirmed.getMemberId())
                                                 .guestEmail(confirmed.getEmail())
                                                 .build();
-                                        return checkCapacityAndRegister(event, ticket);
+                                        return checkCapacityAndRegister(event, ticket, null)
+                                                .doOnNext(saved -> notifyRegistration(event, saved));
                                     }));
                 });
     }
 
-    // ─── Step 2.2: Self-register → PENDING ───────────────────────────────────
+    // ─── Step 2.2: Self-register → ISSUED ────────────────────────────────────
 
     public Mono<EventTicket> registerForEvent(Long eventId, RegisterTicketRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(memberId ->
@@ -239,18 +249,106 @@ public class EventService {
                         .flatMap(event -> eventRepository.hasRegistered(eventId, memberId)
                                 .flatMap(already -> {
                                     if (already) return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_REGISTERED, "Already registered"));
-                                    EventTicket ticket = EventTicket.builder()
-                                            .eventId(eventId)
-                                            .memberId(memberId)
-                                            .guestName(request != null ? request.getGuestName() : null)
-                                            .guestEmail(request != null ? request.getGuestEmail() : null)
-                                            .guestPhone(request != null ? request.getGuestPhone() : null)
-                                            .build();
-                                    return checkCapacityAndRegister(event, ticket);
+                                    return validateRegistrationAnswers(eventId, request != null ? request.getAnswers() : null)
+                                            .flatMap(answersJson -> {
+                                                EventTicket ticket = EventTicket.builder()
+                                                        .eventId(eventId)
+                                                        .memberId(memberId)
+                                                        .guestName(request != null ? request.getGuestName() : null)
+                                                        .guestEmail(request != null ? request.getGuestEmail() : null)
+                                                        .guestPhone(request != null ? request.getGuestPhone() : null)
+                                                        .build();
+                                                ticket.setRegistrationAnswersFromObject(answersJson);
+                                                return checkCapacityAndRegister(event, ticket, answersJson)
+                                                        .doOnNext(saved -> notifyRegistration(event, saved));
+                                            });
                                 })));
     }
 
-    private Mono<EventTicket> checkCapacityAndRegister(Event event, EventTicket ticket) {
+    private Mono<List<Map<String, Object>>> validateRegistrationAnswers(Long eventId, List<AnswerItem> answers) {
+        return eventRepository.findQuestionsByEvent(eventId).collectList()
+                .flatMap(questions -> {
+                    if (questions.isEmpty()) {
+                        return Mono.just(answers == null ? List.of() : toAnswerMaps(answers));
+                    }
+                    Map<Integer, AnswerItem> answerMap = new HashMap<>();
+                    if (answers != null) {
+                        for (AnswerItem item : answers) {
+                            if (item != null && item.getQuestionId() != null) {
+                                answerMap.put(item.getQuestionId(), item);
+                            }
+                        }
+                    }
+                    List<Map<String, Object>> normalized = new ArrayList<>();
+                    for (EventQuestion question : questions) {
+                        AnswerItem answer = answerMap.get(question.getId());
+                        Object value = answer != null ? answer.getValue() : null;
+                        boolean hasAnswer = hasAnswerValue(value);
+                        if (Boolean.TRUE.equals(question.getRequired()) && !hasAnswer) {
+                            return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_ANSWER_INVALID,
+                                    "Missing required answer for: " + question.getLabel()));
+                        }
+                        if (!hasAnswer) continue;
+                        if (question.getType() == QuestionType.SINGLE_CHOICE) {
+                            String selected = value instanceof String ? (String) value : String.valueOf(value);
+                            if (question.getOptions() == null || !question.getOptions().contains(selected)) {
+                                return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_ANSWER_INVALID,
+                                        "Invalid option for: " + question.getLabel()));
+                            }
+                            normalized.add(Map.of("questionId", question.getId(), "value", selected));
+                        } else if (question.getType() == QuestionType.MULTI_CHOICE) {
+                            List<String> selected = toStringList(value);
+                            if (selected.isEmpty() || question.getOptions() == null
+                                    || !question.getOptions().containsAll(selected)) {
+                                return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_ANSWER_INVALID,
+                                        "Invalid options for: " + question.getLabel()));
+                            }
+                            normalized.add(Map.of("questionId", question.getId(), "value", selected));
+                        } else {
+                            String text = value instanceof String ? ((String) value).trim() : String.valueOf(value).trim();
+                            if (text.isEmpty()) {
+                                return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_ANSWER_INVALID,
+                                        "Answer required for: " + question.getLabel()));
+                            }
+                            normalized.add(Map.of("questionId", question.getId(), "value", text));
+                        }
+                    }
+                    return Mono.just(normalized);
+                });
+    }
+
+    private List<Map<String, Object>> toAnswerMaps(List<AnswerItem> answers) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (AnswerItem item : answers) {
+            if (item == null || item.getQuestionId() == null) continue;
+            result.add(Map.of("questionId", item.getQuestionId(), "value", item.getValue()));
+        }
+        return result;
+    }
+
+    private boolean hasAnswerValue(Object value) {
+        if (value == null) return false;
+        if (value instanceof String s) return !s.trim().isEmpty();
+        if (value instanceof List<?> list) return !list.isEmpty();
+        return true;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> toStringList(Object value) {
+        if (value instanceof List<?> list) {
+            List<String> result = new ArrayList<>();
+            for (Object item : list) {
+                if (item != null) result.add(String.valueOf(item));
+            }
+            return result;
+        }
+        return List.of(String.valueOf(value));
+    }
+
+    private Mono<EventTicket> checkCapacityAndRegister(Event event, EventTicket ticket, List<Map<String, Object>> answersJson) {
+        if (answersJson != null) {
+            ticket.setRegistrationAnswersFromObject(answersJson);
+        }
         if (event.getMaxCapacity() != null && event.getMaxCapacity() > 0) {
             return eventRepository.countRegisteredTickets(event.getId())
                     .flatMap(count -> {
@@ -273,7 +371,8 @@ public class EventService {
                             if (ticket.getStatus() != Status.PENDING) {
                                 return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_PENDING, "Ticket is not pending"));
                             }
-                            return eventRepository.approveTicket(ticketId, adminId);
+                            return eventRepository.approveTicket(ticketId, adminId)
+                                    .doOnNext(saved -> notifyTicketReview(saved, true, null));
                         }));
     }
 
@@ -285,7 +384,8 @@ public class EventService {
                             if (ticket.getStatus() != Status.PENDING) {
                                 return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_PENDING, "Ticket is not pending"));
                             }
-                            return eventRepository.rejectTicket(ticketId, adminId, request != null ? request.getRejectReason() : null);
+                            return eventRepository.rejectTicket(ticketId, adminId, request != null ? request.getRejectReason() : null)
+                                    .doOnNext(saved -> notifyTicketReview(saved, false, request != null ? request.getRejectReason() : null));
                         }));
     }
 
@@ -399,10 +499,21 @@ public class EventService {
                     if (ticket.getStatus() == Status.CHECKED_IN || ticket.getStatus() == Status.USED) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CHECKED_IN, "Ticket already checked in"));
                     }
-                    if (ticket.getStatus() != Status.ACTIVE) {
-                        return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not active yet"));
+                    if (ticket.getStatus() != Status.ISSUED && ticket.getStatus() != Status.ACTIVE) {
+                        return Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_ACTIVE, "Ticket is not valid for check-in"));
                     }
                     return eventRepository.checkInTicket(ticket.getId());
+                });
+    }
+
+    public Mono<EventTicket> checkInTicketForEvent(Long eventId, String ticketCode) {
+        return eventRepository.findTicketByCode(ticketCode)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
+                .flatMap(ticket -> {
+                    if (!eventId.equals(ticket.getEventId())) {
+                        return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
+                    }
+                    return checkInTicket(ticketCode);
                 });
     }
 
@@ -416,14 +527,17 @@ public class EventService {
 
     // ─── Ticket queries ───────────────────────────────────────────────────────
 
-    public Mono<EventTicket> cancelTicket(String ticketCode) {
+    public Mono<EventTicket> cancelTicket(String ticketCode, String reason) {
+        if (reason == null || reason.isBlank()) {
+            return Mono.error(new ApplicationException(ErrorCode.CANCEL_REASON_REQUIRED, "Cancel reason is required"));
+        }
         return eventRepository.findTicketByCode(ticketCode)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
                 .flatMap(ticket -> {
                     if (ticket.getStatus() == Status.CANCELLED) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED, "Ticket already cancelled"));
                     }
-                    return eventRepository.cancelTicket(ticket.getId());
+                    return eventRepository.cancelTicket(ticket.getId(), reason.trim());
                 });
     }
 
@@ -432,12 +546,23 @@ public class EventService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found: " + ticketCode)));
     }
 
+    public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, String status, String keyword, int page, int limit) {
+        if (keyword != null && !keyword.isBlank()) {
+            return status != null
+                    ? eventRepository.searchTicketsByEventAndStatus(eventId, status, keyword.trim(), page, limit)
+                    : eventRepository.searchTicketsByEvent(eventId, keyword.trim(), page, limit);
+        }
+        return status != null
+                ? eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit)
+                : eventRepository.findTicketsByEvent(eventId, page, limit);
+    }
+
     public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int limit) {
-        return eventRepository.findTicketsByEvent(eventId, page, limit);
+        return getTicketsByEvent(eventId, null, null, page, limit);
     }
 
     public Mono<PaginatedResponse<EventTicket>> getTicketsByEventAndStatus(Long eventId, String status, int page, int limit) {
-        return eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit);
+        return getTicketsByEvent(eventId, status, null, page, limit);
     }
 
     public Mono<PaginatedResponse<EventTicket>> getMyTickets(int page, int limit) {
@@ -463,5 +588,135 @@ public class EventService {
         return eventRepository.findEventById(eventId)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
                 .flatMap(e -> eventRepository.getEventStatistics(eventId));
+    }
+
+    // ─── Event questions ──────────────────────────────────────────────────────
+
+    public Flux<EventQuestionResponse> getEventQuestions(Long eventId) {
+        return eventRepository.findEventById(eventId)
+                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                .thenMany(eventRepository.findQuestionsByEvent(eventId).map(EventQuestionResponse::from));
+    }
+
+    public Mono<EventQuestionResponse> createEventQuestion(Long eventId, EventQuestionRequest request) {
+        return assertEventInCurrentOrg(eventId)
+                .flatMap(event -> {
+                    validateQuestionRequest(request);
+                    EventQuestion question = EventQuestion.builder()
+                            .eventId(eventId)
+                            .type(request.getType())
+                            .label(request.getLabel().trim())
+                            .required(request.getRequired() != null ? request.getRequired() : false)
+                            .orderIndex(request.getOrderIndex() != null ? request.getOrderIndex() : 0)
+                            .build();
+                    question.setOptions(request.getOptions());
+                    return eventRepository.createQuestion(question).map(EventQuestionResponse::from);
+                });
+    }
+
+    public Mono<EventQuestionResponse> updateEventQuestion(Long eventId, Integer questionId, EventQuestionRequest request) {
+        return assertEventInCurrentOrg(eventId)
+                .flatMap(event -> eventRepository.findQuestionById(questionId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Question not found")))
+                        .flatMap(existing -> {
+                            if (!eventId.equals(existing.getEventId())) {
+                                return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Question does not belong to event"));
+                            }
+                            validateQuestionRequest(request);
+                            EventQuestion updated = EventQuestion.builder()
+                                    .type(request.getType())
+                                    .label(request.getLabel().trim())
+                                    .required(request.getRequired())
+                                    .orderIndex(request.getOrderIndex())
+                                    .build();
+                            updated.setOptions(request.getOptions());
+                            return eventRepository.updateQuestion(questionId, updated).map(EventQuestionResponse::from);
+                        }));
+    }
+
+    public Mono<Boolean> deleteEventQuestion(Long eventId, Integer questionId) {
+        return assertEventInCurrentOrg(eventId)
+                .flatMap(event -> eventRepository.deleteQuestion(eventId, questionId));
+    }
+
+    public Mono<Boolean> reorderEventQuestions(Long eventId, ReorderEventQuestionsRequest request) {
+        return assertEventInCurrentOrg(eventId)
+                .flatMap(event -> eventRepository.reorderQuestions(eventId, request.getQuestionIds()));
+    }
+
+    private Mono<Event> assertEventInCurrentOrg(Long eventId) {
+        return Mono.zip(SecurityUtils.getCurrentOrganizationId(), eventRepository.findEventById(eventId)
+                        .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId))))
+                .flatMap(tuple -> {
+                    Integer orgId = tuple.getT1();
+                    Event event = tuple.getT2();
+                    if (event.getOrganizationId() == null || !event.getOrganizationId().equals(orgId.longValue())) {
+                        return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN, "Event not in current organization"));
+                    }
+                    return Mono.just(event);
+                });
+    }
+
+    private void validateQuestionRequest(EventQuestionRequest request) {
+        if (request.getType() == null) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Question type is required");
+        }
+        if (request.getLabel() == null || request.getLabel().isBlank()) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Question label is required");
+        }
+        if ((request.getType() == QuestionType.SINGLE_CHOICE || request.getType() == QuestionType.MULTI_CHOICE)
+                && (request.getOptions() == null || request.getOptions().isEmpty())) {
+            throw new ApplicationException(ErrorCode.BAD_REQUEST, "Options are required for choice questions");
+        }
+    }
+
+    // ─── Notifications ────────────────────────────────────────────────────────
+
+    private void notifyRegistration(Event event, EventTicket ticket) {
+        if (ticket.getMemberId() == null) return;
+        buildTicketLink(event, ticket.getTicketCode())
+                .subscribe(link -> notificationService.createNotificationAsync(
+                        ticket.getMemberId().intValue(),
+                        "Đăng ký sự kiện thành công",
+                        event.getTitle(),
+                        link));
+    }
+
+    private Mono<Void> notifyInvitation(Event event, EventInvitation invitation) {
+        if (invitation.getMemberId() == null) return Mono.empty();
+        return buildTicketLink(event, null)
+                .doOnNext(link -> notificationService.createNotificationAsync(
+                        invitation.getMemberId().intValue(),
+                        "Lời mời tham gia sự kiện",
+                        event.getTitle(),
+                        link))
+                .then();
+    }
+
+    private void notifyTicketReview(EventTicket ticket, boolean approved, String reason) {
+        if (ticket.getMemberId() == null) return;
+        eventRepository.findEventById(ticket.getEventId())
+                .flatMap(event -> buildTicketLink(event, ticket.getTicketCode())
+                        .doOnNext(link -> notificationService.createNotificationAsync(
+                                ticket.getMemberId().intValue(),
+                                approved ? "Vé sự kiện đã được duyệt" : "Vé sự kiện bị từ chối",
+                                approved ? event.getTitle() : (reason != null ? reason : event.getTitle()),
+                                link)))
+                .subscribe();
+    }
+
+    private Mono<String> buildTicketLink(Event event, String ticketCode) {
+        if (event.getOrganizationId() == null) {
+            String path = ticketCode != null ? "/my-tickets?ticket=" + ticketCode : "/my-tickets";
+            return Mono.just(path);
+        }
+        return organizationRepository.findById(event.getOrganizationId().intValue())
+                .map(org -> {
+                    String slug = org.getSlug() != null ? org.getSlug() : String.valueOf(event.getOrganizationId());
+                    return ticketCode != null
+                            ? "/" + slug + "/my-tickets?ticket=" + ticketCode
+                            : "/" + slug + "/my-tickets";
+                })
+                .defaultIfEmpty(ticketCode != null ? "/my-tickets?ticket=" + ticketCode : "/my-tickets");
     }
 }

@@ -437,10 +437,10 @@ INSERT INTO "global_profiles" ("user_id", "full_name", "phone", "bio", "dob", "g
 
 -- ============= ORGANIZATIONS DATA =============
 INSERT INTO "organizations" ("name", "slug", "logo_url", "brand_config", "features_config", "programs", "majors", "created_at") VALUES
-('HCMUS - Computer Science', 'cs-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#1976d2","secondary":"#dc004e"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","Advanced Program"]', '["Computer Science","Data Science","Artificial Intelligence"]', NOW() - INTERVAL '365 days'),
-('HCMUS - Information Technology', 'it-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#388e3c","secondary":"#ff9800"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","High Quality"]', '["Information Technology","Software Engineering","Information Systems"]', NOW() - INTERVAL '360 days'),
-('HCMUS - Business Administration', 'ba-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#f57c00","secondary":"#512da8"}', '{"mentorship":true,"job":true,"fund":false,"events":true,"forum":true}', '["Regular"]', '["Business Administration","Marketing","Finance"]', NOW() - INTERVAL '350 days'),
-('HCMUS - Engineering', 'eng-hcmus', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Mechanical Engineering","Electrical Engineering","Mechatronics"]', NOW() - INTERVAL '340 days');
+('HCMUS - Computer Science', 'cs-hcmus', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQjONr5O3z_VgQu22nI4zN71cq3w4HWm-wmw&s', '{"primary":"#1976d2","secondary":"#dc004e"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","Advanced Program"]', '["Computer Science","Data Science","Artificial Intelligence"]', NOW() - INTERVAL '365 days'),
+('HCMUS - Information Technology', 'it-hcmus', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTI2RGrI-0nhe_jVirrC2Y2x8vkJs1woD1HDw&s', '{"primary":"#388e3c","secondary":"#ff9800"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","High Quality"]', '["Information Technology","Software Engineering","Information Systems"]', NOW() - INTERVAL '360 days'),
+('HCMUS - Bio Technology', 'bt-hcmus', 'https://fbb.hcmus.edu.vn/vnt_upload/images/10_2025/logo_share.jpg', '{"primary":"#f57c00","secondary":"#512da8"}', '{"mentorship":true,"job":true,"fund":false,"events":true,"forum":true}', '["Regular"]', '["Bio Technology","Biomedical Engineering"]', NOW() - INTERVAL '350 days'),
+('HCMUS - Engineering', 'eng-hcmus', 'https://yt3.googleusercontent.com/DW3Qx-OjYREf8PYgQ6UmE4mUMW4eVIxBUsS9SGszPzlxWZOI2FOGAdcHLsngL2rdB0YWxDMfew=s900-c-k-c0x00ffffff-no-rj', '{"primary":"#c62828","secondary":"#0097a7"}', '{"mentorship":true,"job":true,"fund":true,"events":true,"forum":true}', '["Regular","International"]', '["Electrical Engineering","Telecommunications Engineering"]', NOW() - INTERVAL '340 days');
 
 -- ============= ORGANIZATION INTRODUCTIONS DATA =============
 INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "mission", "core_values", "image_urls", "banner_url", "leaders", "team_members", "leaders_content", "team_members_content", "updated_at") VALUES
@@ -449,8 +449,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To be a world-class computer science program recognized for excellence in education and research',
  'To provide comprehensive education in computer science and cultivate innovative problem-solvers',
  'Excellence, Innovation, Integrity, Collaboration, Continuous Learning',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQjONr5O3z_VgQu22nI4zN71cq3w4HWm-wmw&s',
+ 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRQjONr5O3z_VgQu22nI4zN71cq3w4HWm-wmw&s',
  '[{"name": "Prof. Nguyen Van A", "positions": "Head of CS Department", "email": "nva@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Leading the department towards excellence in AI and Software Engineering."}, {"name": "Assoc. Prof. Tran Thi B", "positions": "Deputy Head", "email": "ttb@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Specializing in Data Science and Big Data analytics."}]',
  '[{"name": "Dr. Le Van C", "positions": "Senior Lecturer", "email": "lvc@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Researcher in Computer Vision."}, {"name": "Ms. Pham Thi D", "positions": "Program Coordinator", "email": "ptd@hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Ensuring the best learning experience for students."}]',
  'Our leadership team consists of seasoned educators and researchers dedicated to academic growth.',
@@ -462,8 +462,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To become the leading IT program transforming lives through technology education',
  'To deliver quality IT education that prepares students for successful careers and innovation',
  'Quality, Relevance, Teamwork, Accountability, Customer-focused',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTI2RGrI-0nhe_jVirrC2Y2x8vkJs1woD1HDw&s',
+ 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTI2RGrI-0nhe_jVirrC2Y2x8vkJs1woD1HDw&s',
  '[{"name": "Dr. Hoang Van E", "positions": "IT Director", "email": "hve@it.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Expert in Cybersecurity and Network Infrastructure."}]',
  '[{"name": "Mr. Vu Van F", "positions": "Technical Lead", "email": "vvf@it.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Cloud Computing enthusiast."}]',
  'Passionate leaders driving digital transformation in education.',
@@ -475,8 +475,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To produce ethical and innovative business leaders who drive organizational and societal growth',
  'To provide business education that develops strategic thinkers and ethical leaders',
  'Integrity, Innovation, Responsibility, Excellence, Inclusivity',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://fbb.hcmus.edu.vn/vnt_upload/images/10_2025/logo_share.jpg',
+ 'https://fbb.hcmus.edu.vn/vnt_upload/images/10_2025/logo_share.jpg',
  '[{"name": "Mrs. Dang Thi G", "positions": "Dean of BA", "email": "dtg@ba.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Expert in Marketing Strategy and Consumer Behavior."}]',
  '[{"name": "Mr. Phan Van H", "positions": "Assistant Professor", "email": "pvh@ba.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Specializing in Financial Management."}]',
  'Visionary leaders shaping the future of global business.',
@@ -488,8 +488,8 @@ INSERT INTO "organization_introductions" ("orga_id", "content", "vision", "missi
  'To be recognized as a premier engineering program developing innovative solutions',
  'To educate and mentor engineers who contribute to technological advancement',
  'Precision, Innovation, Sustainability, Professionalism, Teamwork',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
- 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png',
+ 'https://yt3.googleusercontent.com/DW3Qx-OjYREf8PYgQ6UmE4mUMW4eVIxBUsS9SGszPzlxWZOI2FOGAdcHLsngL2rdB0YWxDMfew=s900-c-k-c0x00ffffff-no-rj',
+ 'https://yt3.googleusercontent.com/DW3Qx-OjYREf8PYgQ6UmE4mUMW4eVIxBUsS9SGszPzlxWZOI2FOGAdcHLsngL2rdB0YWxDMfew=s900-c-k-c0x00ffffff-no-rj',
  '[{"name": "Prof. Bui Van I", "positions": "Engineering Dean", "email": "bvi@eng.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Leader in Sustainable Energy Research."}]',
  '[{"name": "Dr. Ly Van J", "positions": "Lab Manager", "email": "lvj@eng.hcmus.edu.vn", "image": "https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png", "content": "Managing advanced robotics laboratories."}]',
  'Leading innovation in mechanical and electrical engineering.',
@@ -714,13 +714,13 @@ INSERT INTO "organization_members" ("organization_id", "user_id", "student_id", 
 
 -- ============= EVENTS DATA =============
 INSERT INTO "events" ("organization_id", "creator_member_id", "title", "description", "banner_url", "location", "start_time", "end_time", "registration_start_at", "registration_end_at", "max_capacity", "interested_count", "topic", "is_published", "created_at") VALUES
-(1, 2, 'CS Alumni Meetup 2026', 'Annual gathering for CS alumni and current students', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Ho Chi Minh City Convention Center', NOW() + INTERVAL '30 days', NOW() + INTERVAL '30 days 4 hours', NOW(), NOW() + INTERVAL '25 days', 200, 45, 'Networking', true, NOW() - INTERVAL '10 days'),
-(1, 2, 'Web Development Workshop', 'Learn modern web development with React and Node.js', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'HCMUS Campus - Room 101', NOW() + INTERVAL '15 days', NOW() + INTERVAL '15 days 3 hours', NOW(), NOW() + INTERVAL '12 days', 50, 28, 'Technical', true, NOW() - INTERVAL '5 days'),
-(1, 6, 'Database Design Seminar', 'Advanced database design patterns and optimization', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Online via Zoom', NOW() + INTERVAL '20 days', NOW() + INTERVAL '20 days 2 hours', NOW(), NOW() + INTERVAL '18 days', 100, 15, 'Databases', true, NOW() - INTERVAL '3 days'),
-(2, 3, 'IT Internship Fair', 'Connect with top tech companies', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'HCMUS Campus - Auditorium', NOW() + INTERVAL '45 days', NOW() + INTERVAL '45 days 5 hours', NOW(), NOW() + INTERVAL '40 days', 150, 67, 'Career', true, NOW() - INTERVAL '8 days'),
-(2, 8, 'AI & Machine Learning Summit', 'Explore the future of AI technology', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Saigon Pearl Building, District 1', NOW() + INTERVAL '60 days', NOW() + INTERVAL '60 days 6 hours', NOW(), NOW() + INTERVAL '50 days', 300, 89, 'AI/ML', true, NOW() - INTERVAL '15 days'),
-(3, 7, 'Business Leadership Workshop', 'Develop your leadership skills', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'HCMUS Campus - Hall A', NOW() + INTERVAL '25 days', NOW() + INTERVAL '25 days 3 hours', NOW(), NOW() + INTERVAL '20 days', 80, 32, 'Leadership', true, NOW() - INTERVAL '6 days'),
-(4, 1, 'Engineering Excellence Conference', 'Latest innovations in engineering', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Ho Chi Minh City', NOW() + INTERVAL '50 days', NOW() + INTERVAL '50 days 8 hours', NOW(), NOW() + INTERVAL '45 days', 250, 56, 'Engineering', true, NOW() - INTERVAL '12 days');
+(1, 2, 'CS Alumni Meetup 2026', 'Annual gathering for CS alumni and current students', 'https://image.plo.vn/w1000/Uploaded/2026/kwvobciv/2026_05_31/hcmus-alumni-league-1-4794-6538.jpg.webp', 'Ho Chi Minh City Convention Center', NOW() + INTERVAL '30 days', NOW() + INTERVAL '30 days 4 hours', NOW(), NOW() + INTERVAL '25 days', 200, 45, 'Networking', true, NOW() - INTERVAL '10 days'),
+(1, 2, 'Web Development Workshop', 'Learn modern web development with React and Node.js', 'https://phys.hcmus.edu.vn/uploads/khoa-vat-ly/TUI_LA_NGU/TH%C3%94NG_TIN_KHOA_H%E1%BB%8CC/0.jpg', 'HCMUS Campus - Room 101', NOW() + INTERVAL '15 days', NOW() + INTERVAL '15 days 3 hours', NOW(), NOW() + INTERVAL '12 days', 50, 28, 'Technical', true, NOW() - INTERVAL '5 days'),
+(1, 6, 'Database Design Seminar', 'Advanced database design patterns and optimization', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRBd17h1ehE0aAY69lAFBq1jDuLSoSWRH949w&s', 'Online via Zoom', NOW() + INTERVAL '20 days', NOW() + INTERVAL '20 days 2 hours', NOW(), NOW() + INTERVAL '18 days', 100, 15, 'Databases', true, NOW() - INTERVAL '3 days'),
+(2, 3, 'IT Internship Fair', 'Connect with top tech companies', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoyM2Ge8o8zmxpU2coR7N10KwU2tf_5Jg9UA&s', 'HCMUS Campus - Auditorium', NOW() + INTERVAL '45 days', NOW() + INTERVAL '45 days 5 hours', NOW(), NOW() + INTERVAL '40 days', 150, 67, 'Career', true, NOW() - INTERVAL '8 days'),
+(2, 8, 'AI & Machine Learning Summit', 'Explore the future of AI technology', 'https://fis.hcmus.edu.vn/wp-content/uploads/2024/06/Banner-Event-Face-1330x700.png', 'Saigon Pearl Building, District 1', NOW() + INTERVAL '60 days', NOW() + INTERVAL '60 days 6 hours', NOW(), NOW() + INTERVAL '50 days', 300, 89, 'AI/ML', true, NOW() - INTERVAL '15 days'),
+(3, 7, 'Business Leadership Workshop', 'Develop your leadership skills', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS6vBgxN4pE47eoL5kXe2LsCMiEGx9zjtaFgA&s', 'HCMUS Campus - Hall A', NOW() + INTERVAL '25 days', NOW() + INTERVAL '25 days 3 hours', NOW(), NOW() + INTERVAL '20 days', 80, 32, 'Leadership', true, NOW() - INTERVAL '6 days'),
+(4, 1, 'Engineering Excellence Conference', 'Latest innovations in engineering', 'https://www.fit.hcmus.edu.vn/media/news/photos/Talk-show-The-Era-of-Generative-AI-and-Its-Impact-2.png', 'Ho Chi Minh City', NOW() + INTERVAL '50 days', NOW() + INTERVAL '50 days 8 hours', NOW(), NOW() + INTERVAL '45 days', 250, 56, 'Engineering', true, NOW() - INTERVAL '12 days');
 
 -- ============= EVENT INTERESTS DATA =============
 INSERT INTO "event_interests" ("event_id", "member_id", "created_at") VALUES
@@ -820,18 +820,18 @@ INSERT INTO "session_feedbacks" ("session_id", "mentee_member_id", "rating", "co
 
 -- ============= NEWS DATA =============
 INSERT INTO "news" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "url", "is_hidden", "published_at") VALUES
-(1, 2, 'CS Department Launches New AI Lab', 'cs-new-ai-lab', 'We are excited to announce the opening of our state-of-the-art AI research laboratory...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Research', 'https://www.hcmus.edu.vn/news/cs-new-ai-lab', false, NOW() - INTERVAL '20 days'),
-(1, 6, '2026 Scholarship Program Now Open', 'scholarship-program-2026', 'Applications for the 2026 scholarship program are now being accepted. Apply now...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', 'https://www.hcmus.edu.vn/scholarship/2026', false, NOW() - INTERVAL '15 days'),
-(2, 3, 'IT Department Achievement: 100 Job Placements', 'it-100-placements', 'Congratulations to our graduates who secured employment...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', 'https://www.hcmus.edu.vn/news/it-100-placements', false, NOW() - INTERVAL '10 days'),
-(2, 8, 'Innovation Week 2026 Schedule Released', 'innovation-week-2026', 'Mark your calendars for our annual Innovation Week...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Event', 'https://www.hcmus.edu.vn/events/innovation-week-2026', false, NOW() - INTERVAL '7 days'),
-(3, 7, 'Alumni Business Forum: Success Stories', 'alumni-business-forum', 'Join us as successful alumni share their entrepreneurial journeys...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Networking', 'https://www.hcmus.edu.vn/events/alumni-business-forum', false, NOW() - INTERVAL '5 days'),
-(4, 1, 'Engineering Capstone Projects Exhibition', 'capstone-exhibition', 'View the innovative projects created by our engineering students...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Exhibition', 'https://www.hcmus.edu.vn/events/capstone-exhibition', false, NOW() - INTERVAL '3 days');
+(1, 2, 'CS Department Launches New AI Lab', 'cs-new-ai-lab', 'We are excited to announce the opening of our state-of-the-art AI research laboratory...', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS24kgEq5wHfl-4ZcfnJY4tfX9NOmujDFB4Fg&s', 'Research', 'https://congdankhuyenhoc.vn/du-kien-hoc-phi-truong-dai-hoc-khoa-hoc-tu-nhien-cao-nhat-70-trieu-dong-nam-hoc-179260314162819629.htm', false, NOW() - INTERVAL '20 days'),
+(1, 6, '2026 Scholarship Program Now Open', 'scholarship-program-2026', 'Applications for the 2026 scholarship program are now being accepted. Apply now...', 'https://vcdn1-vnexpress.vnecdn.net/2023/08/22/KHTN-Co-so-2-650x450-3610-1692695643.jpg?w=680&h=0&q=100&dpr=2&fit=crop&s=ANftZJMSwfYCuhcx6cmUEg', 'Education', 'https://hcmus.edu.vn/thong-bao-ket-qua-chinh-thuc-hoc-bong-khuyen-khich-hoc-tap-hk1-2025-2026-chuong-trinh-chuan/', false, NOW() - INTERVAL '15 days'),
+(2, 3, 'Job Fair HCMUS x TMA solutions', 'job-fair-tma-solution-hcmus', 'Congratulations to the collaboration of HCMUS and TMA solutions...', 'https://www.tma.vn/images/news/news_thumbnailURL_20260420162625.548.webp', 'Career', 'https://www.tma.vn/tin-tuc/tma-x-fithcmus-job-fair-2026-cung-tma-cham-den-co-hoi-nghe-nghiep-it-toan-cau', false, NOW() - INTERVAL '10 days'),
+(2, 8, 'After gradution studying', 'after-graduation-studying', 'We will discuss about the learning after graduation of HCMUS...', 'https://www.fit.hcmus.edu.vn/vn/media/news/photos/2024-1.png', 'Event', 'https://www.fit.hcmus.edu.vn/tin-tuc/d/thong-bao-tuyen-sinh-sau-dai-hoc-nam-2024-dot-1', false, NOW() - INTERVAL '7 days'),
+(3, 7, 'Alumni Gathering', 'alumni-gathering', 'Join us as successful alumni share their entrepreneurial journeys...', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTVDxl_QbeewSw_VrLx45fpc6NT7yD7mrue6w&s', 'Networking', 'https://alumni.hcmus.edu.vn/', false, NOW() - INTERVAL '5 days'),
+(4, 1, 'Engineering Capstone Projects Exhibition', 'capstone-exhibition', 'View the innovative projects created by our engineering students...', 'https://www.fit.hcmus.edu.vn/vn/media/news/photos/IMG_4313.jpg', 'Exhibition', 'https://www.fit.hcmus.edu.vn/vn/Default.aspx?tabid=292&id=16040', false, NOW() - INTERVAL '3 days');
 
 -- ============= ALUMNI POSTS DATA =============
 INSERT INTO "alumni_posts" ("organization_id", "author_member_id", "title", "slug", "content", "thumbnail_url", "topic", "url", "is_hidden", "published_at") VALUES
-(1, 2, 'My Journey from Student to Senior Engineer', 'my-journey-student-to-senior', 'Reflecting on 10 years in the industry after graduating from HCMUS...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Career', 'https://www.linkedin.com/in/sample-senior-engineer', false, NOW() - INTERVAL '5 days'),
-(1, 6, 'Tips for Navigating the Tech Industry', 'tips-navigating-tech-industry', 'Sharing some lessons learned throughout my career as a developer...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Advice', 'https://medium.com/@sample/tips-navigating-tech-industry', false, NOW() - INTERVAL '3 days'),
-(2, 3, 'The Importance of Continuous Learning', 'importance-continuous-learning', 'How staying curious helped me grow as a Product Manager...', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', 'Education', 'https://medium.com/@sample/importance-continuous-learning', false, NOW() - INTERVAL '2 days');
+(1, 2, 'Young researcher come back to HCMUS', 'researcher-come-back', 'VNU350 helps Vietnamese researcher to come back to country and contribute...', 'https://vnuhcm.edu.vn/cms/wp-content/uploads/2026/06/Anh-2-1.webp', 'Career', 'https://hcmus.edu.vn/nha-khoa-hoc-tre-tro-ve-tu-chuong-trinh-vnu350-ky-vong-xay-dung-cac-nhom-nghien-cuu-manh-ve-toi-uu-hoa-va-tri-tue-nhan-tao/', false, NOW() - INTERVAL '5 days'),
+(1, 6, 'PhD Tran Triet and his great story', 'phd-tran-triet', 'Phd Tran Triet shares his story about Tram Chim...', 'https://hcmus.edu.vn/wp-content/uploads/2026/05/wm_8_anh2_tie1babfnsc4a9tre1baa7ntrie1babft.jpg', 'Advice', 'https://hcmus.edu.vn/ts-tran-triet-nguoi-thuoc-tung-nhip-tho-cua-tram-chim/', false, NOW() - INTERVAL '3 days'),
+(2, 3, 'The Importance of Continuous Learning', 'student-who-receive-scholarship-from-us-university', 'Being a PhD student with scholarship at top university of the US...', 'https://hcmus.edu.vn/wp-content/uploads/2026/05/Bui-Tran-Quang-Khai-1778421670-2576-1778424109.webp', 'Education', 'https://hcmus.edu.vn/nam-sinh-22-tuoi-gianh-hoc-bong-tien-si-dai-hoc-top-7-my/', false, NOW() - INTERVAL '2 days');
 
 -- ============= SAVED ITEMS DATA =============
 INSERT INTO "saved_items" ("member_id", "item_type", "item_id", "note", "saved_at") VALUES
@@ -844,11 +844,11 @@ INSERT INTO "saved_items" ("member_id", "item_type", "item_id", "note", "saved_a
 
 -- ============= ACHIEVEMENTS DATA =============
 INSERT INTO "achievements" ("member_id", "title", "description", "image_url", "awarded_date", "topic", "status") VALUES
-(2, 'Outstanding Alumni Award 2024', 'Recognized for significant contributions to tech community', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-06-15', 'Recognition', 'APPROVED'),
-(3, 'Mentor of the Year', 'Awarded for exceptional mentoring and guidance', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-05-10', 'Mentorship', 'APPROVED'),
-(6, 'Innovation Excellence', 'Developed groundbreaking solutions in system design', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-07-20', 'Innovation', 'APPROVED'),
-(4, 'Scholarship Recipient 2025-2026', 'Awarded academic excellence scholarship', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2025-08-01', 'Scholarship', 'APPROVED'),
-(5, 'Academic Excellence', 'Graduated with high honors', 'https://assets.acegalaxy.co/resources/category/lobby_icon_favorite_small.png', '2024-06-01', 'Academic', 'APPROVED');
+(2, 'Outstanding Alumni Award 2024', 'Recognized for significant contributions to tech community', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqJXIpVayGqnAm1jkUo7_glqDRpIyh00vQiA&s', '2024-06-15', 'Recognition', 'APPROVED'),
+(3, 'Mentor of the Year', 'Awarded for exceptional mentoring and guidance', 'https://i1-vnexpress.vnecdn.net/2024/10/24/toannguyenpsu1-1729703456-3400-1729724941.jpg?w=0&h=0&q=100&dpr=2&fit=crop&s=B2MrtA3UCmSziTVs3oZXgg', '2024-05-10', 'Mentorship', 'APPROVED'),
+(6, 'Innovation Excellence', 'Developed groundbreaking solutions in system design', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoY7pa3erL0sdHd2YquXirKDtIN9v0Sk-oTA&s', '2024-07-20', 'Innovation', 'APPROVED'),
+(4, 'Scholarship Recipient 2025-2026', 'Awarded academic excellence scholarship', 'https://fetel.hcmus.edu.vn/wp-content/uploads/2023/03/337297879_1303160897209185_5759549372357719210_n.jpg', '2025-08-01', 'Scholarship', 'APPROVED'),
+(5, 'Academic Excellence', 'Graduated with high honors', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvMzXOsHh2yEBrUiormLXf7HjHOJEeNWw18A&s', '2024-06-01', 'Academic', 'APPROVED');
 
 -- ============= JOBS DATA =============
 INSERT INTO "jobs" ("organization_id", "poster_member_id", "is_referral", "type", "title", "company_name", "location", "salary_range", "description", "how_to_apply", "deadline", "is_active", "created_at") VALUES
@@ -861,14 +861,14 @@ INSERT INTO "jobs" ("organization_id", "poster_member_id", "is_referral", "type"
 
 -- ============= LEARNING RESOURCES DATA =============
 INSERT INTO "learning_resources" ("organization_id", "uploader_member_id", "title", "type", "link_url", "description", "created_at") VALUES
-(1, 2, 'Complete React Course 2025', 'COURSE', 'https://udemy.com/complete-react-2025', 'Comprehensive React learning path from basics to advanced', NOW() - INTERVAL '60 days'),
-(1, 6, 'Database Design Best Practices', 'EBOOK', 'https://example.com/db-design-ebook.pdf', 'Essential guide to designing scalable databases', NOW() - INTERVAL '50 days'),
-(2, 3, 'Product Management Fundamentals', 'COURSE', 'https://coursera.org/product-management', 'Master the fundamentals of modern product management', NOW() - INTERVAL '45 days'),
-(2, 8, 'Startup Founder Handbook', 'EBOOK', 'https://example.com/startup-handbook.pdf', 'Complete guide for aspiring entrepreneurs', NOW() - INTERVAL '35 days'),
-(3, 7, 'Business Leadership Video Series', 'VIDEO', 'https://youtube.com/playlist?list=PLxxx', 'Learn from successful business leaders', NOW() - INTERVAL '25 days'),
-(4, 1, 'Cloud Architecture Masterclass', 'COURSE', 'https://example.com/cloud-masterclass', 'Deep dive into AWS and cloud design patterns', NOW() - INTERVAL '20 days'),
-(1, 2, 'Web Development Best Practices 2026', 'VIDEO', 'https://youtube.com/webdev-2026', 'Latest trends and best practices in web development', NOW() - INTERVAL '10 days'),
-(2, 9, 'Data Science with Python', 'COURSE', 'https://datacamp.com/python-data-science', 'Learn data science fundamentals using Python', NOW() - INTERVAL '5 days');
+(1, 2, 'Complete React Course 2025', 'COURSE', 'https://www.udemy.com/course/the-ultimate-react-course/', 'Comprehensive React learning path from basics to advanced', NOW() - INTERVAL '60 days'),
+(1, 6, 'Database Design Best Practices', 'EBOOK', 'https://resources.saylor.org/wwwresources/archived/site/wp-content/uploads/2014/12/CS403-1.10-Database-Design-2nd-Edition-CCBY.pdf', 'Essential guide to designing scalable databases', NOW() - INTERVAL '50 days'),
+(2, 3, 'Product Management Fundamentals', 'COURSE', 'https://www.udemy.com/course/product-management-fundamentals-a-beginners-guide/', 'Master the fundamentals of modern product management', NOW() - INTERVAL '45 days'),
+(2, 8, 'Startup Founder Handbook', 'EBOOK', 'https://www.amazon.com/Startup-Handbook-Founders-Building-Business/dp/1662954646', 'Complete guide for aspiring entrepreneurs', NOW() - INTERVAL '35 days'),
+(3, 7, 'Business Leadership Video Series', 'VIDEO', 'https://www.youtube.com/watch?v=v15QaU6bHZw', 'Learn from successful business leaders', NOW() - INTERVAL '25 days'),
+(4, 1, 'Cloud Architecture Masterclass', 'COURSE', 'https://www.udemy.com/course/the-complete-cloud-computing-software-architecture-patterns/', 'Deep dive into AWS and cloud design patterns', NOW() - INTERVAL '20 days'),
+(1, 2, 'Web Development Best Practices 2026', 'VIDEO', 'https://www.youtube.com/watch?v=vbFn0C-pvis', 'Latest trends and best practices in web development', NOW() - INTERVAL '10 days'),
+(2, 9, 'Data Science with Python', 'COURSE', 'https://www.udemy.com/course/python-for-data-science-and-machine-learning-bootcamp/', 'Learn data science fundamentals using Python', NOW() - INTERVAL '5 days');
 
 -- ============= FUND STATUSES DATA =============
 INSERT INTO "fund_statuses" ("name") VALUES
@@ -893,13 +893,13 @@ INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name
 
 -- ============= FUNDS DATA =============
 INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "topic", "time_ended") VALUES
-(1, 'John Doe', 'Student Scholarship Fund 2026', NULL, 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 2, 'Scholarship', '2026-08-15 17:00:00'),
-(1, 'Phạm Văn C', 'Lab Equipment Fund', NULL, 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 2, 'Education', '2026-10-20 18:00:00'),
-(1, 'Jane Smith', 'Alumni Mentorship Fund', NULL, 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 2, 'Mentorship', '2026-09-25 16:30:00'),
-(1, 'Hoàng Thị D', 'Business Incubation Fund', NULL, 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 1, 'Startup', '2026-11-10 20:00:00'),
-(1, 'Admin User', 'Engineering Excellence Fund', NULL, 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 1, 'Engineering', '2026-10-05 19:15:00'),
-(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d', 7, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 4, 'Social', NOW() + INTERVAL '5 months'),
-(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://images.unsplash.com/photo-1531482615713-2afd69097998', 8, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 6, 'Research', NOW() + INTERVAL '3 months');
+(1, 'John Doe', 'Student Scholarship Fund 2026', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNOruzVwqdOL5x15VrzgsWIqMdH4XlTYLk1A&s', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 2, 'Scholarship', '2026-08-15 17:00:00'),
+(1, 'Phạm Văn C', 'Lab Equipment Fund', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2021/8/4/938086/Hoc-Bong-01.jpg', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 2, 'Education', '2026-10-20 18:00:00'),
+(1, 'Jane Smith', 'Alumni Mentorship Fund', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrSFBCRWjf9_3ZIFkYeFOyJlQlvyaChmZc5Q&s', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 2, 'Mentorship', '2026-09-25 16:30:00'),
+(1, 'Hoàng Thị D', 'Business Incubation Fund', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2025/5/30/1515470/Hoc-Bong-02.JPG', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 1, 'Startup', '2026-11-10 20:00:00'),
+(1, 'Admin User', 'Engineering Excellence Fund', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQfmjav140codqz0a5sjbb3BYxtE9drszrtyw&s', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 1, 'Engineering', '2026-10-05 19:15:00'),
+(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2023/12/6/1276364/Hoc-Bong-1-Min.jpg', 7, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 4, 'Social', NOW() + INTERVAL '5 months'),
+(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://cdn-i2.congthuong.vn/resize/th/stores/news_dataimages/2025/042025/05/13/thumbnail/b1620250405135112.jpg?rt=20250405135220', 8, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 6, 'Research', NOW() + INTERVAL '3 months');
 
 -- ============= FUND DONATIONS DATA =============
 INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
@@ -1195,17 +1195,17 @@ INSERT INTO "forum_categories" ("parent_id", "organization_id", "name", "descrip
 (NULL, 1, 'CS Category 4', 'Description for CS Category 4', NOW() - INTERVAL '67 days', NOW()),
 (NULL, 1, 'CS Category 5', 'Description for CS Category 5', NOW() - INTERVAL '63 days', NOW()),
 (3, 1, 'CS Category 6', 'Description for CS Category 6', NOW() - INTERVAL '73 days', NOW()),
-(6, 1, 'CS Category 7', 'Description for CS Category 7', NOW() - INTERVAL '34 days', NOW()),
+(1, 1, 'CS Category 7', 'Description for CS Category 7', NOW() - INTERVAL '34 days', NOW()),
 (1, 1, 'CS Category 8', 'Description for CS Category 8', NOW() - INTERVAL '94 days', NOW()),
 (12, 1, 'CS Category 9', 'Description for CS Category 9', NOW() - INTERVAL '39 days', NOW()),
-(15, 1, 'CS Category 10', 'Description for CS Category 10', NOW() - INTERVAL '62 days', NOW()),
-(16, 1, 'CS Category 11', 'Description for CS Category 11', NOW() - INTERVAL '39 days', NOW()),
-(6, 1, 'CS Category 12', 'Description for CS Category 12', NOW() - INTERVAL '85 days', NOW()),
+(9, 1, 'CS Category 10', 'Description for CS Category 10', NOW() - INTERVAL '62 days', NOW()),
+(1, 1, 'CS Category 11', 'Description for CS Category 11', NOW() - INTERVAL '39 days', NOW()),
+(2, 1, 'CS Category 12', 'Description for CS Category 12', NOW() - INTERVAL '85 days', NOW()),
 (9, 1, 'CS Category 13', 'Description for CS Category 13', NOW() - INTERVAL '48 days', NOW()),
 (1, 1, 'CS Category 14', 'Description for CS Category 14', NOW() - INTERVAL '25 days', NOW()),
 (1, 1, 'CS Category 15', 'Description for CS Category 15', NOW() - INTERVAL '17 days', NOW()),
 (11, 1, 'CS Category 16', 'Description for CS Category 16', NOW() - INTERVAL '10 days', NOW()),
-(20, 1, 'CS Category 17', 'Description for CS Category 17', NOW() - INTERVAL '37 days', NOW()),
+(3, 1, 'CS Category 17', 'Description for CS Category 17', NOW() - INTERVAL '37 days', NOW()),
 (10, 1, 'CS Category 18', 'Description for CS Category 18', NOW() - INTERVAL '21 days', NOW()),
 (10, 1, 'CS Category 19', 'Description for CS Category 19', NOW() - INTERVAL '79 days', NOW()),
 (1, 1, 'CS Category 20', 'Description for CS Category 20', NOW() - INTERVAL '95 days', NOW());
@@ -1398,3 +1398,182 @@ INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to
 (39, 12, 'I totally agree with the points made in this thread. Good job everyone!', 129, 'VERIFIED', false, NOW() - INTERVAL '6 days', NOW()),
 (18, 2, 'I totally agree with the points made in this thread. Good job everyone!', 154, 'VERIFIED', false, NOW() - INTERVAL '2 days', NOW()),
 (10, 2, 'Does anyone have more resources on this? I'd love to read more.', 90, 'VERIFIED', false, NOW() - INTERVAL '5 days', NOW());
+
+-- Test accounts for full-system UAT (local Docker DB)
+--
+-- Apply (idempotent mentee block; first CTE batch fails if emails exist):
+--   docker exec -i db psql -U user -d db < docs/test-accounts.sql
+--
+-- Login: https://localhost/cs-hcmus/auth/login  (org slug cs-hcmus, organizationId = 1)
+-- Hub:    https://localhost/development/mentorship
+--
+-- Passwords:
+--   Student@2024  -> test.l1, test.alumni, test.mentor, test.mentee
+--   Admin2026@    -> test.admin, test.superadmin
+--
+-- === Mentorship demo matrix ===
+-- | Account              | Level | Vai trò demo                                      |
+-- |----------------------|-------|---------------------------------------------------|
+-- | (guest)              | —     | Landing only, không danh sách mentor              |
+-- | test.l1@             | 1     | Xem preview mentor, không đặt lịch                |
+-- | test.mentee@         | 2     | Mentee: đặt lịch, lịch hẹn, hủy, feedback, báo cáo |
+-- | test.alumni@         | 2     | Mentee “sạch”: chưa mentor — đăng ký mentor mới   |
+-- | test.mentor@         | 2     | Mentor APPROVED + slot AVAILABLE (3 khung giờ)    |
+-- | test.admin@          | 2     | Duyệt hồ sơ mentor PENDING trong admin            |
+--
+-- Luồng E2E gợi ý (2 trình duyệt / profile):
+--   1. test.mentee@ → /development/mentorship → Test Mentor → Đặt lịch → chọn slot
+--   2. test.mentor@ → Lịch hẹn (dashboard) → xác nhận/hủy/hoàn thành phiên
+--   3. test.mentee@ → Lịch hẹn của tôi → feedback / báo cáo (nếu đã triển khai)
+--   4. test.alumni@ → Đăng ký mentor → test.admin@ duyệt → test.alumni@ quản lý lịch
+--
+-- Sample data (docs/sample.sql): john.doe@ = mentor L2; mật khẩu hash khác — ưu tiên test.*
+
+WITH new_users AS (
+  INSERT INTO users (email, password_hash, user_name, status, role, created_at, updated_at) VALUES
+  ('test.l1@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testlv1', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
+  ('test.alumni@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testalumni', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
+  ('test.mentor@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testmentor', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
+  ('test.admin@hcmus.edu.vn', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'uat_testadmin', 'ACTIVE', 'ADMIN', NOW(), NOW()),
+  ('test.superadmin@hcmus.edu.vn', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'uat_testsuperadmin', 'ACTIVE', 'ADMIN', NOW(), NOW())
+  RETURNING id, email
+),
+profiles AS (
+  INSERT INTO global_profiles (user_id, full_name, phone, bio, dob, gender, settings)
+  SELECT id,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN 'Test Level 1'
+      WHEN 'test.alumni@hcmus.edu.vn' THEN 'Test Alumni L2'
+      WHEN 'test.mentor@hcmus.edu.vn' THEN 'Test Mentor'
+      WHEN 'test.admin@hcmus.edu.vn' THEN 'Test Org Admin'
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN 'Test Super Admin'
+    END,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN '0901000001'
+      WHEN 'test.alumni@hcmus.edu.vn' THEN '0901000002'
+      WHEN 'test.mentor@hcmus.edu.vn' THEN '0901000003'
+      WHEN 'test.admin@hcmus.edu.vn' THEN '0901000004'
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN '0901000005'
+    END,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN 'Đã xác minh OTP email, chưa đạt Alumni (level 2)'
+      WHEN 'test.alumni@hcmus.edu.vn' THEN 'Alumni đã xác minh cấp 2, chưa đăng ký mentor'
+      WHEN 'test.mentor@hcmus.edu.vn' THEN 'Alumni mentor đã được duyệt'
+      WHEN 'test.admin@hcmus.edu.vn' THEN 'Quản trị viên tổ chức CS-HCMUS'
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN 'Quản trị viên cấp cao (trusted verifier)'
+    END,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN DATE '2002-01-10'
+      WHEN 'test.alumni@hcmus.edu.vn' THEN DATE '1998-06-15'
+      WHEN 'test.mentor@hcmus.edu.vn' THEN DATE '1996-03-20'
+      WHEN 'test.admin@hcmus.edu.vn' THEN DATE '1990-08-01'
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN DATE '1988-12-12'
+    END,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN 'Female'
+      WHEN 'test.alumni@hcmus.edu.vn' THEN 'Male'
+      WHEN 'test.mentor@hcmus.edu.vn' THEN 'Male'
+      WHEN 'test.admin@hcmus.edu.vn' THEN 'Female'
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN 'Male'
+    END,
+    '{"language":"vi","theme":"light"}'::json
+  FROM new_users
+  RETURNING user_id
+),
+members AS (
+  INSERT INTO organization_members (
+    organization_id, user_id, graduated_year, graduation_status, program, major,
+    verification_level, is_trusted_verifier, status, created_at, updated_at
+  )
+  SELECT 1, id,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN '[]'::jsonb
+      WHEN 'test.alumni@hcmus.edu.vn' THEN '[2024]'::jsonb
+      WHEN 'test.mentor@hcmus.edu.vn' THEN '[2020]'::jsonb
+      WHEN 'test.admin@hcmus.edu.vn' THEN '[2015]'::jsonb
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN '[2010]'::jsonb
+    END,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN '["STUDYING"]'::jsonb
+      ELSE '["GRADUATED"]'::jsonb
+    END,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN '["Regular"]'::jsonb
+      WHEN 'test.mentor@hcmus.edu.vn' THEN '["Advanced Program"]'::jsonb
+      ELSE '["Regular"]'::jsonb
+    END,
+    '["Computer Science"]'::jsonb,
+    CASE email
+      WHEN 'test.l1@hcmus.edu.vn' THEN 1
+      WHEN 'test.alumni@hcmus.edu.vn' THEN 2
+      WHEN 'test.mentor@hcmus.edu.vn' THEN 2
+      WHEN 'test.admin@hcmus.edu.vn' THEN 2
+      WHEN 'test.superadmin@hcmus.edu.vn' THEN 3
+    END,
+    email = 'test.superadmin@hcmus.edu.vn',
+    'ACTIVE',
+    NOW(),
+    NOW()
+  FROM new_users
+  RETURNING user_id
+),
+mentor AS (
+  INSERT INTO mentor_profiles (
+    member_id, current_job_title, current_company, bio, rating_avg, total_sessions,
+    status, created_at, updated_at
+  )
+  SELECT id,
+    'Senior Software Engineer',
+    'Alumnverse Tech',
+    'Mentor test — hướng dẫn career path và system design.',
+    4.9,
+    10,
+    'APPROVED',
+    NOW() - INTERVAL '30 days',
+    NOW()
+  FROM new_users
+  WHERE email = 'test.mentor@hcmus.edu.vn'
+  RETURNING member_id
+)
+INSERT INTO mentor_expertise (mentor_member_id, topic, years_experience, description, category, tag)
+SELECT member_id, v.topic, v.years_experience, v.description, v.category, v.tag
+FROM mentor
+CROSS JOIN (VALUES
+  ('Career Development', 5, 'Định hướng nghề nghiệp cho sinh viên và cựu sinh viên CS.', 'Soft Skills', 'Career'),
+  ('System Design', 4, 'Thiết kế hệ thống phân tán và backend scale.', 'Technical', 'Architecture')
+) AS v(topic, years_experience, description, category, tag);
+
+INSERT INTO mentor_availabilities (mentor_member_id, start_time, end_time, status)
+SELECT u.id, slot.start_time, slot.end_time, 'AVAILABLE'
+FROM users u
+CROSS JOIN (VALUES
+  (NOW() + INTERVAL '3 days 10 hours', NOW() + INTERVAL '3 days 11 hours'),
+  (NOW() + INTERVAL '5 days 14 hours', NOW() + INTERVAL '5 days 15 hours')
+) AS slot(start_time, end_time)
+WHERE u.email = 'test.mentor@hcmus.edu.vn';
+
+-- Mentee-only test account (level 1 + active mentee profile, no mentor profile)
+INSERT INTO users (email, password_hash, user_name, status, role, created_at, updated_at)
+SELECT 'test.mentee@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testmentee', 'ACTIVE', 'STUDENT', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'test.mentee@hcmus.edu.vn');
+
+INSERT INTO global_profiles (user_id, full_name, phone, bio, dob, gender, settings)
+SELECT u.id, 'Test Mentee', '0901000006', 'Sinh viên có hồ sơ Mentee — test đặt lịch cố vấn', DATE '2003-05-15', 'Female', '{"language":"vi","theme":"light"}'::json
+FROM users u WHERE u.email = 'test.mentee@hcmus.edu.vn'
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO organization_members (
+  organization_id, user_id, graduated_year, graduation_status, program, major,
+  verification_level, is_trusted_verifier, status, created_at, updated_at
+)
+SELECT 1, u.id, '[]'::jsonb, '["STUDYING"]'::jsonb, '["Regular"]'::jsonb, '["Computer Science"]'::jsonb,
+  2, false, 'ACTIVE', NOW(), NOW()
+FROM users u WHERE u.email = 'test.mentee@hcmus.edu.vn'
+ON CONFLICT (user_id) DO UPDATE SET verification_level = 2, updated_at = NOW();
+
+INSERT INTO mentee_profiles (member_id, mentoring_goal, major, academic_year, interests, is_active, created_at, updated_at)
+SELECT u.id,
+  'Tìm mentor hỗ trợ định hướng nghề nghiệp và kỹ năng phỏng vấn.',
+  'Computer Science', 'Year 3', 'Career, Backend, Internship', true, NOW() - INTERVAL '7 days', NOW()
+FROM users u WHERE u.email = 'test.mentee@hcmus.edu.vn'
+ON CONFLICT (member_id) DO UPDATE SET is_active = true, updated_at = NOW();

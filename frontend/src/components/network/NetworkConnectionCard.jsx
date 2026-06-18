@@ -13,8 +13,9 @@ import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 
 import IconButtonMenu from '../IconButtonMenu';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { truncateText } from '../../utils/stringUtils';
-import { formatAcademicValue } from './networkCardUtils';
+import { formatAcademicValue, networkCardClickableSx } from './networkCardUtils';
 
 const SUBTITLE_MAX_LEN = 72;
 
@@ -25,18 +26,25 @@ const NetworkConnectionCard = ({
   isBlockLoading = false,
 }) => {
   const navigate = useOrgNavigate();
+  const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
+    useNetworkMemberProfileNavigation(connection.peerMemberId);
   const displayName = connection.fullName || 'N/A';
   const programLabel = formatAcademicValue(connection.program, '—');
   const majorLabel = formatAcademicValue(connection.major, 'N/A');
   const subtitleFull = `${programLabel} · ${majorLabel}`;
   const subtitleDisplay = truncateText(subtitleFull, SUBTITLE_MAX_LEN, subtitleFull);
 
-  const handleMessage = () => {
+  const handleMessage = (event) => {
+    stopActionPropagation(event);
     navigate('/chat');
   };
 
   return (
     <Card
+      role="button"
+      tabIndex={0}
+      onClick={navigateToProfile}
+      onKeyDown={handleCardKeyDown}
       sx={{
         p: 2,
         borderRadius: 2,
@@ -44,6 +52,7 @@ const NetworkConnectionCard = ({
         borderColor: 'divider',
         boxShadow: 'none',
         transition: 'transform 0.2s',
+        ...networkCardClickableSx,
         '&:hover': { transform: 'translateY(-2px)' },
       }}
     >
@@ -78,6 +87,7 @@ const NetworkConnectionCard = ({
           alignItems="center"
           justifyContent={{ xs: 'flex-end', sm: 'flex-start' }}
           sx={{ flexShrink: 0 }}
+          onClick={stopActionPropagation}
         >
           <Button
             variant="contained"
@@ -97,7 +107,8 @@ const NetworkConnectionCard = ({
               {({ close }) => (
                 <MenuItem
                   disabled={isBlockLoading}
-                  onClick={() => {
+                  onClick={(event) => {
+                    stopActionPropagation(event);
                     close();
                     onBlock?.();
                   }}

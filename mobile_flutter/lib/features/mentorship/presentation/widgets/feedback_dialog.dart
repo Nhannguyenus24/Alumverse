@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 
@@ -42,15 +43,10 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
       ref.invalidate(mySessionsProvider);
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cảm ơn bạn đã đánh giá!')),
-      );
+      AppToast.success(context, 'Cảm ơn bạn đã đánh giá!');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
+      AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
