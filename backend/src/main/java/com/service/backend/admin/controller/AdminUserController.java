@@ -216,7 +216,6 @@ public class AdminUserController {
                         request.getOrganizationId(),
                         request.getUserId(),
                         request.getEmail(),
-                        request.getStudentId(),
                         request.getFullName(),
                         request.getRole(),
                         request.getAvatarUrl(),

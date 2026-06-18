@@ -744,3 +744,17 @@ CREATE INDEX ON "forum_topic_subscriptions" ("topic_id", "member_id", "last_read
 CREATE INDEX ON "chat_messages" ("group_id", "created_at" DESC);
 CREATE INDEX ON "chat_group_members" ("member_id");
 CREATE INDEX ON "forum_post_reports" ("post_id");
+
+-- Add pg_trgm extension and indexes for ILIKE search queries
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_users_email_trgm          ON users           USING GIN (email gin_trgm_ops);
+CREATE INDEX idx_global_profiles_name_trgm ON global_profiles USING GIN (full_name gin_trgm_ops);
+CREATE INDEX idx_forum_topics_title_trgm   ON forum_topics    USING GIN (title gin_trgm_ops);
+CREATE INDEX idx_forum_posts_content_trgm  ON forum_posts     USING GIN (content gin_trgm_ops);
+
+-- Also add B-tree indexes on common filter columns:
+CREATE INDEX idx_users_status   ON users   (status);
+CREATE INDEX idx_users_role     ON users   (role);
+CREATE INDEX idx_notifications_member ON notifications (member_id);
+CREATE INDEX idx_verification_status  ON verification_requests (status);
+
