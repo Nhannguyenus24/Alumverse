@@ -101,6 +101,9 @@ const AdminForumTopicsPage = Loadable(
 const AdminForumCategoriesPage = Loadable(
   lazy(() => import("../pages/admin/AdminForumCategoriesPage")),
 );
+const AdminForumReportsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumReportsPage")),
+);
 const AdminOrganizationsPage = Loadable(
   lazy(() => import("../pages/admin/AdminOrganizationsPage")),
 );
@@ -623,6 +626,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminForumCategoriesPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "forum/reports",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+                <AdminForumReportsPage />
               </ProtectedRoute>
             ),
           },
