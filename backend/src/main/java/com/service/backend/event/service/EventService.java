@@ -8,6 +8,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.QuestionType;
 import com.service.backend.shared.enums.Status;
 import com.service.backend.organization.dao.OrganizationRepository;
+import com.service.backend.shared.utils.CacheUtils;
 import com.service.backend.user.service.NotificationService;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.EmailService;
@@ -37,6 +38,7 @@ public class EventService {
     private final EmailService emailService;
     private final NotificationService notificationService;
     private final OrganizationRepository organizationRepository;
+    private final CacheUtils cacheUtils;
 
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
@@ -118,13 +120,19 @@ public class EventService {
     }
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(Long organizationId, int page, int limit) {
-        return eventRepository.findUpcomingEvents(organizationId, page, limit)
-                .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())));
+        String cacheKey = "upcoming_events_org_" + organizationId + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
+                eventRepository.findUpcomingEvents(organizationId, page, limit)
+                        .doOnNext(res -> log.info("Fetched {} upcoming events for organization {}: {}", res.getItems().size(), organizationId, JsonUtils.toJson(res.getItems())))
+        );
     }
 
     public Mono<PaginatedResponse<Event>> getUpcomingEvents(int page, int limit) {
-        return eventRepository.findUpcomingEvents(page, limit)
-                .doOnNext(res -> log.info("Fetched {} upcoming events globally: {}", res.getItems().size(), JsonUtils.toJson(res.getItems())));
+        String cacheKey = "upcoming_events_global_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute("event_cache", cacheKey, java.time.Duration.ofMinutes(5), () ->
+                eventRepository.findUpcomingEvents(page, limit)
+                        .doOnNext(res -> log.info("Fetched {} upcoming events globally: {}", res.getItems().size(), JsonUtils.toJson(res.getItems())))
+        );
     }
 
     public Mono<PaginatedResponse<Event>> getPastEvents(Long organizationId, int page, int limit) {
