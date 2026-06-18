@@ -24,22 +24,39 @@ public class ForumPostTagScheduler {
     private final ForumPostRepository forumPostRepository;
     private final AITagService aiTagService;
 
-    @Value("${forum.post.tag.interval.hours:12}")
+    @Value("${forum.post.tag.interval.hours:24}")
     private int intervalHours;
 
-    @Scheduled(cron = "${forum.post.tag.cron:0 0 0 * * ?}")
+    @Value("${gemini.tagging.enabled:true}")
+    private boolean taggingEnabled;
+
+    @Value("${gemini.tagging.max-posts-per-run:100}")
+    private int maxPostsPerRun;
+
+    @Scheduled(cron = "${forum.post.tag.cron:0 0 3 * * *}")
     public void tagRecentForumPosts() {
+        if (!taggingEnabled) {
+            log.info("Gemini tagging is disabled. Skipping scheduled job.");
+            return;
+        }
+
         log.info("Starting scheduled job: Tagging forum posts from the last {} hours", intervalHours);
 
         forumPostRepository.findPostsCreatedSince(LocalDateTime.now().minusHours(intervalHours))
                 .collectList()
-                .flatMap(posts -> {
-                    if (posts.isEmpty()) {
+                .flatMap(allPosts -> {
+                    if (allPosts.isEmpty()) {
                         log.info("No new forum posts found in the last {} hours.", intervalHours);
                         return Mono.just(Collections.<ForumPost>emptyList());
                     }
 
-                    log.info("Found {} posts to tag.", posts.size());
+                    List<ForumPost> posts = allPosts.stream().limit(maxPostsPerRun).collect(Collectors.toList());
+                    if (allPosts.size() > maxPostsPerRun) {
+                        log.info("Found {} posts, but capped at {} for this run.", allPosts.size(), maxPostsPerRun);
+                    } else {
+                        log.info("Found {} posts to tag.", posts.size());
+                    }
+                    
                     List<String> contents = posts.stream()
                             .map(ForumPost::getContent)
                             .collect(Collectors.toList());

@@ -3,6 +3,7 @@ package com.service.backend.shared.service;
 import com.service.backend.shared.dto.BatchModerationResponse;
 import com.service.backend.shared.enums.ModerationTag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -21,6 +22,9 @@ public class AITagService {
     private static final int MAX_CHARS_PER_BATCH = 2000;
     private static final int MAX_ITEMS_PER_BATCH = 15;
     private final String availableTags;
+
+    @Value("${gemini.tagging.enabled:true}")
+    private boolean taggingEnabled;
 
     public AITagService(ModerationService moderationService) {
         this.moderationService = moderationService;
@@ -58,9 +62,14 @@ public class AITagService {
             return Flux.empty();
         }
 
+        if (!taggingEnabled) {
+            return Flux.fromIterable(contents)
+                    .map(c -> ModerationTag.NORMAL.name());
+        }
+
         List<String> cleaned = contents.stream()
                 .map(c -> c == null ? "" : c.trim())
-                .collect(Collectors.toList());
+                .toList();
 
         List<List<String>> dynamicBatches = new ArrayList<>();
         List<String> currentBatch = new ArrayList<>();

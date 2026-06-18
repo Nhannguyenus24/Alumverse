@@ -104,11 +104,11 @@ public class AdminUserService {
 
     @Transactional
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId,
-                               String email, String studentId, String fullName, String role, String avatarUrl,
-                               String password,
-                               List<Integer> graduatedYear, List<String> graduationStatus,
-                               List<String> program, List<String> major,
-                                                   Integer verificationLevel, String status) {
+                                                  String email, String fullName, String role, String avatarUrl,
+                                                  String password,
+                                                  List<Integer> graduatedYear, List<String> graduationStatus,
+                                                  List<String> program, List<String> major,
+                                                  Integer verificationLevel, String status) {
         String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
         String graduationStatusJson = JsonUtils.toJson(graduationStatus);
@@ -129,9 +129,18 @@ public class AdminUserService {
                             }
                         }
                         if (StringUtils.hasText(avatarUrl)) user.setAvatarUrl(avatarUrl);
-                        if (StringUtils.hasText(password)) user.setPasswordHash(passwordEncoder.encode(password));
-                        user.setUpdatedAt(LocalDateTime.now());
-                        return adminUserRepository.save(user);
+                        
+                        Mono<User> userWithPasswordMono = StringUtils.hasText(password)
+                                ? Mono.fromCallable(() -> passwordEncoder.encode(password))
+                                      .subscribeOn(Schedulers.boundedElastic())
+                                      .doOnNext(user::setPasswordHash)
+                                      .thenReturn(user)
+                                : Mono.just(user);
+
+                        return userWithPasswordMono.flatMap(u -> {
+                            u.setUpdatedAt(LocalDateTime.now());
+                            return adminUserRepository.save(u);
+                        });
                     })
                     .map(User::getId)
                     .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.USER_NOT_FOUND)));
@@ -150,16 +159,21 @@ public class AdminUserService {
                             }
                         }
                         String finalPassword = StringUtils.hasText(password) ? password : "Alumni2026@";
-                        User newUser = User.builder()
-                                .email(email)
-                                .passwordHash(passwordEncoder.encode(finalPassword))
-                                .role(userRole)
-                                .status(Status.ACTIVE)
-                                .avatarUrl(avatarUrl)
-                                .createdAt(LocalDateTime.now())
-                                .updatedAt(LocalDateTime.now())
-                                .build();
-                        return adminUserRepository.save(newUser).map(User::getId);
+                        UserRole finalUserRole = userRole;
+                        return Mono.fromCallable(() -> passwordEncoder.encode(finalPassword))
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .flatMap(encodedPassword -> {
+                                    User newUser = User.builder()
+                                            .email(email)
+                                            .passwordHash(encodedPassword)
+                                            .role(finalUserRole)
+                                            .status(Status.ACTIVE)
+                                            .avatarUrl(avatarUrl)
+                                            .createdAt(LocalDateTime.now())
+                                            .updatedAt(LocalDateTime.now())
+                                            .build();
+                                    return adminUserRepository.save(newUser).map(User::getId);
+                                });
                     });
         }
 
@@ -413,8 +427,9 @@ public class AdminUserService {
 
     @Transactional
     public Mono<Boolean> resetPasswordByAdmin(Integer userId, AdminResetPasswordRequest request, Integer adminUserId) {
-        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
-        return adminUserRepository.resetPasswordByAdmin(userId, encodedPassword)
+        return Mono.fromCallable(() -> passwordEncoder.encode(request.getNewPassword()))
+                .subscribeOn(Schedulers.boundedElastic())
+                .flatMap(encodedPassword -> adminUserRepository.resetPasswordByAdmin(userId, encodedPassword)
                 .flatMap(count -> {
                     if (count <= 0) {
                         return Mono.just(false);
@@ -442,7 +457,7 @@ public class AdminUserService {
                                 logger.warn("Password reset succeeded but all audit-log insert attempts failed for user {}", userId, e);
                                 return Mono.just(true);
                             });
-                });
+                }));
     }
 
     @Transactional
@@ -452,8 +467,9 @@ public class AdminUserService {
                     if (exists) {
                         return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                     }
-                    String encodedPassword = passwordEncoder.encode(request.getPassword());
-                    return adminUserRepository.createAdminUser(
+                    return Mono.fromCallable(() -> passwordEncoder.encode(request.getPassword()))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(encodedPassword -> adminUserRepository.createAdminUser(
                                     request.getEmail(),
                                     encodedPassword)
                             .flatMap(adminUserId -> adminUserRepository
@@ -461,7 +477,7 @@ public class AdminUserService {
                                     .then(adminUserRepository.upsertOrganizationMemberByUserId(
                                             request.getOrganizationId(),
                                             adminUserId))
-                                    .thenReturn(true));
+                                    .thenReturn(true)));
                 })
                 .doOnSuccess(created -> logger.info("createAdminAccount: email={}, success={}", request.getEmail(), created))
                 .doOnError(e -> logger.error("Error creating admin account for email={}", request.getEmail(), e));

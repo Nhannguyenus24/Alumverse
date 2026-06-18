@@ -34,6 +34,7 @@ import com.service.backend.shared.entity.UserNotificationSettings;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +60,7 @@ public class UserService {
                         currentUserId.intValue(),
                         fileUrl,
                         request.getDocumentType() != null ? request.getDocumentType().getValue() : null
-                ).doOnSuccess(requestId -> {
+                ).publishOn(Schedulers.boundedElastic()).doOnSuccess(requestId -> {
                     if (requestId != null) {
                         String localPath = fileUploadService.getLocalPath(fileUrl);
                         if (localPath != null) {
@@ -191,8 +192,9 @@ public class UserService {
                         return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
                     }
 
-                    String hashedPassword = passwordEncoder.encode(newPassword);
-                    return authRepository.updatePasswordById(userId, hashedPassword);
+                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword));
                 })
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
     }

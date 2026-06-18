@@ -28,7 +28,7 @@ public class MentorshipSessionStatusTask {
     @Value("${mentorship.meeting-link.reminder-minutes:180}")
     private long meetingLinkReminderMinutes;
 
-    @Scheduled(cron = "${mentorship.session.status.cron:0 */5 * * * *}")
+    @Scheduled(cron = "${mentorship.session.status.cron:0 */15 * * * *}")
     public void autoTransition() {
         LocalDateTime now = LocalDateTime.now();
 
