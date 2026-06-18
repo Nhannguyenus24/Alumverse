@@ -6,7 +6,9 @@ import com.service.backend.article.dao.AlumniPostR2dbcRepository;
 import com.service.backend.article.dao.JobR2dbcRepository;
 import com.service.backend.article.dao.LearningResourceR2dbcRepository;
 import com.service.backend.article.dao.NewsR2dbcRepository;
+import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
+import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,9 +27,11 @@ public class AdminContentService {
     private final JobR2dbcRepository jobRepository;
     private final LearningResourceR2dbcRepository learningResourceRepository;
     private final AchievementR2dbcRepository achievementRepository;
+    private final CacheUtils cacheUtils;
 
     public Mono<ContentStatisticsDTO> getStatistics() {
-        LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+        return cacheUtils.getOrCompute("admin_content_statistics", "all", Duration.ofDays(1), () -> {
+            LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
         LocalDateTime monthAgo = LocalDateTime.now().minusDays(30);
 
         Mono<Long> totalNewsMono = newsRepository.count();
@@ -67,5 +71,6 @@ public class AdminContentService {
                 .build())
                 .doOnSuccess(r -> log.info("getContentStatistics completed"))
                 .doOnError(e -> log.error("Error fetching content statistics", e));
+        });
     }
 }
