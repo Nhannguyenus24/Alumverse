@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSnackbar } from 'notistack';
+import AdminEventQuestionSection from './AdminEventQuestionSection';
 import {
   Box,
   Button,
@@ -7,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   TextField,
 } from '@mui/material';
 
@@ -200,6 +202,12 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
           fullWidth
           slotProps={{ inputLabel: inputLabelSlotProps, htmlInput: { min: 1 } }}
         />
+        {event?.id && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <AdminEventQuestionSection eventId={event.id} />
+          </>
+        )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} sx={{ textTransform: 'none' }}>Cancel</Button>

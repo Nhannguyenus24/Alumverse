@@ -5,6 +5,8 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useSnackbar } from 'notistack';
 import { eventApi } from '../../utils/api';
+import JoinEventDialog from '../event/JoinEventDialog';
+import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
 
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -13,6 +15,8 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }
   const [loadingInterest, setLoadingInterest] = useState(false);
   const [loadingJoin, setLoadingJoin] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [openJoinDialog, setOpenJoinDialog] = useState(false);
+  const { data: questions = [] } = useEventQuestions(article?.id, !isAdmin && Boolean(article?.id));
 
   useEffect(() => {
     if (isAdmin || !article?.id) return;
@@ -43,14 +47,23 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }
     }
   };
 
-  const handleJoin = async (e) => {
+  const handleJoinClick = (e) => {
     e.stopPropagation();
+    if (loadingJoin || isJoined) return;
+    setOpenJoinDialog(true);
+  };
+
+  const handleConfirmJoin = async (answerMap) => {
     if (loadingJoin || isJoined) return;
     setLoadingJoin(true);
     try {
-      await eventApi.registerForEvent(article.id);
+      const payload = questions.length > 0
+        ? { answers: formatAnswersForApi(answerMap, questions) }
+        : {};
+      await eventApi.registerForEvent(article.id, payload);
       setIsJoined(true);
-      enqueueSnackbar('Đăng ký thành công! Chờ admin duyệt.', { variant: 'success' });
+      setOpenJoinDialog(false);
+      enqueueSnackbar('Đăng ký thành công! Xem vé trong Vé của tôi.', { variant: 'success' });
     } catch (err) {
       if (err?.response?.status === 409) {
         setIsJoined(true);
@@ -200,13 +213,22 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }
               color="success"
               disabled={loadingJoin || isJoined}
               sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
-              onClick={handleJoin}
+              onClick={handleJoinClick}
             >
               {isJoined ? 'Đã tham gia' : 'Tham gia'}
             </Button>
           </Stack>
         )}
       </Box>
+
+      <JoinEventDialog
+        open={openJoinDialog}
+        onClose={() => setOpenJoinDialog(false)}
+        eventTitle={article.title}
+        questions={questions}
+        loading={loadingJoin}
+        onConfirm={handleConfirmJoin}
+      />
     </Box>
   );
 };

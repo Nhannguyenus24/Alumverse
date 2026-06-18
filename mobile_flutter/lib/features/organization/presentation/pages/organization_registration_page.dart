@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/trusted_verifier.dart';
 import '../../data/repositories/organization_repository.dart';
@@ -67,9 +68,7 @@ class _OrganizationRegistrationPageState
     final length = await file.length();
     if (length > 5 * 1024 * 1024) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File minh chứng vượt quá 5MB.')),
-      );
+      AppToast.error(context, 'File minh chứng vượt quá 5MB.');
       return;
     }
     setState(() => _proofFile = file);
@@ -118,9 +117,7 @@ class _OrganizationRegistrationPageState
     final majorOptions = org?.majors ?? const <String>[];
     final userId = ref.read(authStateProvider).valueOrNull?.user?.id;
     if (orgId == null || userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thiếu thông tin tổ chức hoặc tài khoản.')),
-      );
+      AppToast.error(context, 'Thiếu thông tin tổ chức hoặc tài khoản.');
       return;
     }
     final parsedUserId = int.tryParse(userId);
@@ -147,9 +144,14 @@ class _OrganizationRegistrationPageState
                 organizationId: orgId,
                 verifierUserId: verifierId,
               );
-          _toast('Yêu cầu xác thực đồng nghiệp đã được gửi.');
+          if (mounted) {
+            AppToast.success(context, 'Yêu cầu xác thực đồng nghiệp đã được gửi.');
+          }
         } catch (_) {
-          _toast('Đăng ký thành công, nhưng gửi yêu cầu xác thực thất bại.');
+          if (mounted) {
+            AppToast.error(context,
+                'Đăng ký thành công, nhưng gửi yêu cầu xác thực thất bại.');
+          }
         }
       }
 
@@ -162,30 +164,28 @@ class _OrganizationRegistrationPageState
                 originalFileName: _proofFile!.name,
                 documentType: 'image',
               );
-          _toast('Yêu cầu xác thực minh chứng đã được gửi.');
+          if (mounted) {
+            AppToast.success(context, 'Yêu cầu xác thực minh chứng đã được gửi.');
+          }
         } catch (_) {
-          _toast('Gửi yêu cầu xác thực minh chứng thất bại.');
+          if (mounted) {
+            AppToast.error(context, 'Gửi yêu cầu xác thực minh chứng thất bại.');
+          }
         }
       }
 
       if (!mounted) return;
-      _toast('Đăng ký tham gia tổ chức thành công.');
+      AppToast.success(context, 'Đăng ký tham gia tổ chức thành công.');
       context.go(RouteNames.home);
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Đăng ký tổ chức thất bại';
-      _toast(message);
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
-  }
-
-  void _toast(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/notification_item.dart';
 import '../../data/repositories/user_repository.dart';
 import '../providers/user_providers.dart';
@@ -96,7 +98,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         ],
       ),
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => ListView(
+          children: List.generate(6, (_) => const SkeletonTile()),
+        ),
         error: (_, __) => ErrorView(
           message: 'Không tải được thông báo',
           onRetry: () => ref.invalidate(notificationsProvider),
@@ -261,19 +265,10 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: const [
-        SizedBox(height: 80),
-        Icon(Icons.notifications_none_rounded,
-            size: 56, color: AppColors.textSecondary),
-        SizedBox(height: 12),
-        Center(
-          child: Text(
-            'Bạn đã xem hết thông báo',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-        ),
-      ],
+    return const EmptyView(
+      icon: Icons.notifications_none_rounded,
+      title: 'Bạn đã xem hết thông báo',
+      message: 'Thông báo mới về sự kiện, diễn đàn sẽ xuất hiện ở đây.',
     );
   }
 }

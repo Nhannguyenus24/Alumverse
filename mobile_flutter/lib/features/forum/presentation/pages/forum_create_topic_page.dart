@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/repositories/forum_repository.dart';
@@ -44,7 +45,7 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
     final memberId = currentMemberIdFromUserId(
         ref.read(authStateProvider).valueOrNull?.user?.id);
     if (orgId == null || memberId == null) {
-      _toast('Thiếu thông tin tổ chức hoặc tài khoản.');
+      AppToast.error(context, 'Thiếu thông tin tổ chức hoặc tài khoản.');
       return;
     }
 
@@ -71,10 +72,10 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
       }
 
       if (!mounted) return;
-      _toast('Đã tạo bài thảo luận.');
+      AppToast.success(context, 'Đã tạo bài thảo luận.');
       context.pop();
     } catch (e) {
-      _toast('Tạo bài thảo luận thất bại.');
+      if (mounted) AppToast.error(context, 'Tạo bài thảo luận thất bại.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -84,11 +85,6 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;');
-
-  void _toast(String m) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
-  }
 
   @override
   Widget build(BuildContext context) {

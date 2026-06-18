@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/mentorship_session.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
@@ -259,17 +260,14 @@ class _AcceptRejectButtonsState
           );
       ref.invalidate(mentorSessionsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(status == 'CONFIRMED'
-              ? 'Đã xác nhận lịch hẹn'
-              : 'Đã từ chối yêu cầu'),
-        ));
+        AppToast.success(
+          context,
+          status == 'CONFIRMED' ? 'Đã xác nhận lịch hẹn' : 'Đã từ chối yêu cầu',
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-                Text(e.toString().replaceFirst('Exception: ', ''))));
+        AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

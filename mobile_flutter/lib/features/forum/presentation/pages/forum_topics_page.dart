@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/relative_time.dart';
+import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/forum_topic.dart';
 import '../providers/forum_providers.dart';
 
@@ -44,21 +46,19 @@ class ForumTopicsPage extends ConsumerWidget {
           await ref.read(forumTopicsProvider(categoryId).future);
         },
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => ListView(
+            children: List.generate(6, (_) => const SkeletonTile()),
+          ),
           error: (_, __) => ErrorView(
             message: 'Không tải được danh sách bài thảo luận',
             onRetry: () => ref.invalidate(forumTopicsProvider(categoryId)),
           ),
           data: (topics) {
             if (topics.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Center(
-                    child: Text('Chưa có bài thảo luận nào',
-                        style: TextStyle(color: AppColors.textSecondary)),
-                  ),
-                ],
+              return const EmptyView(
+                icon: Icons.chat_bubble_outline,
+                title: 'Chưa có bài thảo luận',
+                message: 'Hãy là người đầu tiên tạo bài trong chuyên mục này.',
               );
             }
             return ListView.separated(

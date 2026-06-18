@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/models/notification_settings.dart';
@@ -35,6 +36,13 @@ class SettingsPage extends ConsumerWidget {
             title: const Text('Đổi mật khẩu'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.resetPassword),
+          ),
+          ListTile(
+            leading: const Icon(Icons.verified_user_outlined),
+            title: const Text('Xác thực tài khoản'),
+            subtitle: const Text('Cung cấp minh chứng để dùng đầy đủ tính năng'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.organizationRegistration),
           ),
           const Divider(),
           const _GroupHeader('Thông báo'),
@@ -92,9 +100,7 @@ class _NotificationTogglesState extends ConsumerState<_NotificationToggles> {
       // Revert on failure.
       if (mounted) {
         setState(() => _s = prev);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật cài đặt thất bại')),
-        );
+        AppToast.error(context, 'Cập nhật cài đặt thất bại');
       }
     } finally {
       if (mounted) setState(() => _saving = false);

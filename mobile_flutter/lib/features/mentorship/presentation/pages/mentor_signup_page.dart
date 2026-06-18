@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 
@@ -56,11 +57,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         .where((e) => e.topic.trim().isNotEmpty)
         .toList();
     if (validExpertises.isEmpty) {
-      _toast('Vui lòng thêm ít nhất một lĩnh vực chuyên môn');
+      AppToast.info(context, 'Vui lòng thêm ít nhất một lĩnh vực chuyên môn');
       return;
     }
     if (!_termsAccepted) {
-      _toast('Vui lòng đồng ý điều khoản');
+      AppToast.info(context, 'Vui lòng đồng ý điều khoản');
       return;
     }
 
@@ -83,18 +84,15 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
       }
       ref.invalidate(myMentorProfileProvider);
       if (!mounted) return;
-      _toast('Đăng ký cố vấn thành công! Hồ sơ đang chờ duyệt.');
+      AppToast.success(context, 'Đăng ký cố vấn thành công! Hồ sơ đang chờ duyệt.');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      _toast(e.toString().replaceFirst('Exception: ', ''));
+      AppToast.fromError(context, e, fallback: 'Đăng ký cố vấn thất bại');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
-
-  void _toast(String msg) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(msg)));
 
   @override
   Widget build(BuildContext context) {

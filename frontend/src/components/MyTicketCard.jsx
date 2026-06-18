@@ -11,6 +11,7 @@ const STATUS_CONFIG = {
   ISSUED:    { label: "Đã cấp vé",    color: "tertiary",  canCancel: true  },
   ACTIVE:    { label: "Đang diễn ra", color: "warning",   canCancel: false },
   USED:      { label: "Đã tham gia",  color: "success",   canCancel: false },
+  CHECKED_IN:{ label: "Đã tham gia",  color: "success",   canCancel: false },
   EXPIRED:   { label: "Đã hết hạn",   color: "default",   canCancel: false },
   CANCELLED: { label: "Đã huỷ",       color: "error",     canCancel: false },
 };
@@ -20,7 +21,7 @@ const formatDate = (iso) => {
   return new Date(iso).toLocaleDateString("vi-VN");
 };
 
-const MyTicketCard = ({ ticket, onCancelled }) => {
+const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
   const statusCfg = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.PENDING;
   const [openTicket, setOpenTicket] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
@@ -32,7 +33,7 @@ const MyTicketCard = ({ ticket, onCancelled }) => {
     if (!cancelReason.trim() || loading) return;
     setLoading(true);
     try {
-      await eventApi.cancelTicketByCode(ticket.ticketCode);
+      await eventApi.cancelTicketByCode(ticket.ticketCode, cancelReason.trim());
       setOpenCancelDialog(false);
       setCancelReason("");
       enqueueSnackbar("Vé của bạn đã được huỷ.", { variant: "info" });
@@ -50,11 +51,13 @@ const MyTicketCard = ({ ticket, onCancelled }) => {
 
   return (
     <Box
+      id={ticket.ticketCode ? `ticket-${ticket.ticketCode}` : undefined}
       sx={{
         borderRadius: 1.5,
-        bgcolor: "background.paper",
+        bgcolor: highlighted ? "primary.light" : "background.paper",
         border: "1px solid",
-        borderColor: "divider",
+        borderColor: highlighted ? "primary.main" : "divider",
+        boxShadow: highlighted ? 4 : undefined,
         display: "flex",
         overflow: "hidden",
         transition: "all 0.2s ease",
