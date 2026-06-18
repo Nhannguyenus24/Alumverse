@@ -36,54 +36,59 @@ public class OrganizationService {
     private final CacheUtils cacheUtils;
 
     public Mono<Organization> getOrganizationById(Integer id) {
-        logger.info("Fetching organization with id: {}", id);
-        return cacheUtils.getOrCompute(ORG_CACHE, "id:" + id, Duration.ofDays(1), () ->
-                organizationRepository.findById(id)
-                        .doOnNext(org -> logger.info("Organization found with id: {}, name: {}", id, org.getName()))
+        return cacheUtils.getOrCompute(ORG_CACHE, "id:" + id, Duration.ofDays(1), () -> {
+                logger.info("Fetching organization with id: {}", id);
+                return organizationRepository.findById(id)
+                        .doOnNext(org -> {
+                            logger.info("Organization found with id: {}, name: {}", id, org.getName());
+                            logger.info("getOrganizationById result: {}", JsonUtils.toJson(org));
+                        })
                         .switchIfEmpty(Mono.defer(() -> {
                             logger.warn("Organization not found with id: {}", id);
                             return Mono.error(new ApplicationException(
                                     ErrorCode.ORGANIZATION_NOT_FOUND,
                                     "Organization not found with id: " + id
                             ));
-                        }))
-        )
-                .doOnSuccess(org -> logger.info("getOrganizationById result: {}", JsonUtils.toJson(org)))
+                        }));
+        })
                 .doOnError(error -> logger.error("Failed to fetch organization with id: {}", id, error));
     }
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
-        logger.info("Fetching organization with slug: {}", slug);
-        return cacheUtils.getOrCompute(ORG_CACHE, "slug:" + slug, Duration.ofDays(1), () ->
-                organizationRepository.findBySlug(slug)
-                        .doOnNext(org -> logger.info("Organization found with slug: {}, name: {}", slug, org.getName()))
+        return cacheUtils.getOrCompute(ORG_CACHE, "slug:" + slug, Duration.ofDays(1), () -> {
+                logger.info("Fetching organization with slug: {}", slug);
+                return organizationRepository.findBySlug(slug)
+                        .doOnNext(org -> {
+                            logger.info("Organization found with slug: {}, name: {}", slug, org.getName());
+                            logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org));
+                        })
                         .switchIfEmpty(Mono.defer(() -> {
                             logger.warn("Organization not found with slug: {}", slug);
                             return Mono.error(new ApplicationException(
                                     ErrorCode.ORGANIZATION_NOT_FOUND,
                                     "Organization not found with slug: " + slug
                             ));
-                        }))
-        )
-                .doOnSuccess(org -> logger.info("getOrganizationBySlug result: {}", JsonUtils.toJson(org)))
+                        }));
+        })
                 .doOnError(error -> logger.error("Failed to fetch organization with slug: {}", slug, error));
     }
 
     public Flux<Organization> getAllOrganizations() {
-        logger.info("Fetching all organizations");
-        return cacheUtils.getOrCompute(ORG_CACHE, "all", Duration.ofDays(1), () ->
-                organizationRepository.findAll().collectList()
-        )
+        return cacheUtils.getOrCompute(ORG_CACHE, "all", Duration.ofDays(1), () -> {
+                logger.info("Fetching all organizations");
+                return organizationRepository.findAll()
+                        .doOnNext(org -> logger.info("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
+                        .collectList()
+                        .doOnSuccess(list -> logger.info("Successfully retrieved all organizations"));
+        })
                 .flatMapMany(Flux::fromIterable)
-                .doOnNext(org -> logger.info("Retrieved organization: id={}, name={}", org.getId(), org.getName()))
-                .doOnComplete(() -> logger.info("Successfully retrieved all organizations"))
                 .doOnError(error -> logger.error("Failed to fetch organizations", error));
     }
 
     public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
-        logger.info("Fetching introduction for organization id: {}", orgaId);
-        return cacheUtils.getOrCompute(ORG_CACHE, "intro:" + orgaId, Duration.ofDays(1), () ->
-                introductionRepository.findByOrgaId(orgaId)
+        return cacheUtils.getOrCompute(ORG_CACHE, "intro:" + orgaId, Duration.ofDays(1), () -> {
+                logger.info("Fetching introduction for organization id: {}", orgaId);
+                return introductionRepository.findByOrgaId(orgaId)
                         .map(this::toResponse)
                         .switchIfEmpty(Mono.just(OrganizationIntroductionResponse.builder()
                                 .orgaId(orgaId)
@@ -92,8 +97,8 @@ public class OrganizationService {
                                 .leaders(List.of())
                                 .teamMembers(List.of())
                                 .build()))
-        )
-                .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)))
+                        .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)));
+        })
                 .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
     }
 
@@ -174,12 +179,13 @@ public class OrganizationService {
     }
 
     public Flux<TrustedVerifierResponse> getTrustedVerifiers(Integer organizationId) {
-        logger.info("Fetching trusted verifiers for organization id: {}", organizationId);
-        return cacheUtils.getOrCompute(ORG_CACHE, "trustedVerifiers:" + organizationId, Duration.ofDays(1), () ->
-                organizationRepository.findTrustedVerifiersByOrganizationId(organizationId).collectList()
-        )
+        return cacheUtils.getOrCompute(ORG_CACHE, "trustedVerifiers:" + organizationId, Duration.ofDays(1), () -> {
+                logger.info("Fetching trusted verifiers for organization id: {}", organizationId);
+                return organizationRepository.findTrustedVerifiersByOrganizationId(organizationId)
+                        .collectList()
+                        .doOnSuccess(list -> logger.info("Successfully fetched trusted verifiers for organization id: {}", organizationId));
+        })
                 .flatMapMany(Flux::fromIterable)
-                .doOnComplete(() -> logger.info("Successfully fetched trusted verifiers for organization id: {}", organizationId))
                 .doOnError(error -> logger.error("Failed to fetch trusted verifiers for organization id: {}", organizationId, error));
     }
 }

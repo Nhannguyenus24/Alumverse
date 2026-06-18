@@ -104,15 +104,18 @@ public class AchievementService {
                 .flatMap(userId -> getByMemberId(userId.intValue(), page, limit));
     }
 
-        public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
-        int offset = page * limit;
-        return PaginationHelper.paginate(
-                achievementRepository.findDetailsByStatus(status, limit, offset)
-                        .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
-                        .map(AchievementResponse::from),
-                achievementRepository.countByStatus(status),
-                page, limit
-        );
+    public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
+        String cacheKey = "status_" + status + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute("achievement_cache", cacheKey, java.time.Duration.ofMinutes(5), () -> {
+            int offset = page * limit;
+            return PaginationHelper.paginate(
+                    achievementRepository.findDetailsByStatus(status, limit, offset)
+                            .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
+                            .map(AchievementResponse::from),
+                    achievementRepository.countByStatus(status),
+                    page, limit
+            );
+        });
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> search(String keyword, int page, int limit) {
