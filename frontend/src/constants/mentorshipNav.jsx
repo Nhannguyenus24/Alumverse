@@ -17,8 +17,6 @@ export const MENTORSHIP_STATS = [
 ];
 
 export const MENTORSHIP_LANDING = '/development/mentorship';
-/** @deprecated use MENTORSHIP_LANDING — browse is inline on hub page for v1/v2 */
-export const MENTORSHIP_BROWSE = MENTORSHIP_LANDING;
 
 /** Tabs for an approved mentor's personal workspace. */
 export const MENTOR_PROFILE_TABS = [
