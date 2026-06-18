@@ -11,6 +11,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -21,6 +22,7 @@ public class NewsService {
 
     private final NewsR2dbcRepository newsRepository;
     private final ImageService imageService;
+    private final CacheUtils cacheUtils;
 
     public Mono<NewsResponse> create(CreateNewsRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
@@ -42,7 +44,9 @@ public class NewsService {
                                         .isHidden(true)
                                         .build();
 
-                                return newsRepository.save(news).map(NewsResponse::from);
+                                return newsRepository.save(news)
+                                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .map(NewsResponse::from);
                             });
                 });
     }
@@ -61,13 +65,16 @@ public class NewsService {
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return newsRepository.save(existing);
                         }))
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(NewsResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
-                .flatMap(existing -> newsRepository.deleteById(id).thenReturn(true));
+                .flatMap(existing -> newsRepository.deleteById(id)
+                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .thenReturn(true));
     }
 
     public Mono<NewsResponse> getById(Integer id) {

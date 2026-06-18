@@ -10,6 +10,7 @@ import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.service.backend.shared.enums.JobType;
@@ -23,6 +24,7 @@ import java.time.LocalDateTime;
 public class JobService {
 
     private final JobR2dbcRepository jobRepository;
+    private final CacheUtils cacheUtils;
 
     public Mono<JobResponse> create(CreateJobRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
@@ -45,7 +47,9 @@ public class JobService {
                             .createdAt(LocalDateTime.now())
                             .build();
 
-                    return jobRepository.save(job).map(JobResponse::from);
+                    return jobRepository.save(job)
+                            .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                            .map(JobResponse::from);
                 });
     }
 
@@ -64,13 +68,16 @@ public class JobService {
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
                     return jobRepository.save(existing);
                 })
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(JobResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
-                .flatMap(existing -> jobRepository.deleteById(id).thenReturn(true));
+                .flatMap(existing -> jobRepository.deleteById(id)
+                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .thenReturn(true));
     }
 
     public Mono<JobResponse> getById(Integer id) {
@@ -136,6 +143,7 @@ public class JobService {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> jobRepository.activateJob(id).then(jobRepository.findById(id)))
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(JobResponse::from);
     }
 
@@ -143,6 +151,7 @@ public class JobService {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> jobRepository.deactivateJob(id).then(jobRepository.findById(id)))
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(JobResponse::from);
     }
 }
