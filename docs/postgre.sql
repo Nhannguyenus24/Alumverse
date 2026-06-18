@@ -136,7 +136,7 @@ CREATE TABLE "event_tickets" (
   "reviewed_by" integer,        
   "reviewed_at" timestamp,
   "reject_reason" text,
-  "registration_answers" json,
+  "registration_answers" text,
   "cancel_reason" text
 );
 
@@ -145,7 +145,7 @@ CREATE TABLE "event_questions" (
   "event_id" integer NOT NULL,
   "type" text NOT NULL,
   "label" text NOT NULL,
-  "options" json,
+  "options" text,
   "required" boolean NOT NULL DEFAULT false,
   "order_index" integer NOT NULL DEFAULT 0,
   "created_at" timestamp DEFAULT CURRENT_TIMESTAMP

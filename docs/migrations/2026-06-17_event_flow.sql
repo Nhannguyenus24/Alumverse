@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS event_questions (
   event_id      integer NOT NULL,
   type          text NOT NULL,
   label         text NOT NULL,
-  options       json,
+  options       text,
   required      boolean NOT NULL DEFAULT false,
   order_index   integer NOT NULL DEFAULT 0,
   created_at    timestamp DEFAULT CURRENT_TIMESTAMP
@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS event_questions (
 
 CREATE INDEX IF NOT EXISTS idx_event_questions_event ON event_questions(event_id);
 
-ALTER TABLE event_tickets ADD COLUMN IF NOT EXISTS registration_answers json;
+ALTER TABLE event_tickets ADD COLUMN IF NOT EXISTS registration_answers text;
 ALTER TABLE event_tickets ADD COLUMN IF NOT EXISTS cancel_reason text;
