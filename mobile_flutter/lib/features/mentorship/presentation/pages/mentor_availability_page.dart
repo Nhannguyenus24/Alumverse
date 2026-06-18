@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/mentor_availability.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
@@ -177,13 +178,11 @@ class _SlotTile extends ConsumerWidget {
       await ref.read(mentorshipRepositoryProvider).deleteAvailability(slot.id);
       ref.invalidate(myAvailabilityProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Đã xóa khung giờ')));
+        AppToast.success(context, 'Đã xóa khung giờ');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', ''))));
+        AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
       }
     }
   }
@@ -235,15 +234,13 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
 
   Future<void> _save() async {
     if (_date == null || _startTime == null || _endTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng chọn đầy đủ ngày và giờ')));
+      AppToast.info(context, 'Vui lòng chọn đầy đủ ngày và giờ');
       return;
     }
     final start = _combine(_date!, _startTime!);
     final end = _combine(_date!, _endTime!);
     if (!end.isAfter(start)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Giờ kết thúc phải sau giờ bắt đầu')));
+      AppToast.error(context, 'Giờ kết thúc phải sau giờ bắt đầu');
       return;
     }
 
@@ -255,12 +252,10 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
       ref.invalidate(myAvailabilityProvider);
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Đã thêm khung giờ')));
+      AppToast.success(context, 'Đã thêm khung giờ');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

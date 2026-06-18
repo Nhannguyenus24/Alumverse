@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/auth_provider.dart';
 
@@ -57,9 +58,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
   Future<void> _submit() async {
     final otp = _controllers.map((c) => c.text).join();
     if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đủ 6 chữ số')),
-      );
+      AppToast.info(context, 'Vui lòng nhập đủ 6 chữ số');
       return;
     }
 
@@ -70,11 +69,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
           .verifyOtp(email: widget.email, otp: otp);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Xác thực thành công! Vui lòng đăng nhập.'),
-        ),
-      );
+      AppToast.success(context, 'Xác thực thành công! Vui lòng đăng nhập.');
       // Account is now active — go back to login.
       context.go(RouteNames.login);
     } catch (e) {
@@ -82,9 +77,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Xác thực mã thất bại';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -95,17 +88,13 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
     try {
       await ref.read(authStateProvider.notifier).sendOtp(widget.email);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đã gửi lại mã xác thực')),
-      );
+      AppToast.success(context, 'Đã gửi lại mã xác thực');
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Gửi lại mã thất bại';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _resending = false);
     }

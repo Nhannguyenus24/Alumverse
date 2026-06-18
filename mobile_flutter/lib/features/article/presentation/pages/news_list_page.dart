@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -8,7 +9,9 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/html_utils.dart';
 import '../../../../core/utils/image_url.dart';
+import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/article.dart';
 import '../providers/news_provider.dart';
 
@@ -29,19 +32,14 @@ class NewsListPage extends ConsumerWidget {
           await ref.read(publishedNewsProvider.future);
         },
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const SkeletonList(count: 4),
           error: (_, __) => ErrorView(
             message: 'Không tải được tin tức',
             onRetry: () => ref.invalidate(publishedNewsProvider),
           ),
           data: (news) {
             if (news.isEmpty) {
-              return const Center(
-                child: Text(
-                  'Chưa có tin tức nào',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              );
+              return const _NewsEmpty();
             }
             final featured = news.first;
             final rest = news.length > 1 ? news.sublist(1) : <Article>[];
@@ -57,7 +55,10 @@ class NewsListPage extends ConsumerWidget {
                       ),
                 ),
                 const SizedBox(height: 16),
-                _FeaturedNewsCard(article: featured),
+                _FeaturedNewsCard(article: featured)
+                    .animate()
+                    .fadeIn(duration: 300.ms)
+                    .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   const Text(
@@ -76,7 +77,10 @@ class NewsListPage extends ConsumerWidget {
                       crossAxisSpacing: 12,
                       childAspectRatio: 0.68,
                     ),
-                    itemBuilder: (_, i) => _NewsCard(article: rest[i]),
+                    itemBuilder: (_, i) => _NewsCard(article: rest[i])
+                        .animate()
+                        .fadeIn(duration: 300.ms, delay: (40 * i).ms)
+                        .slideY(begin: 0.1, curve: Curves.easeOut),
                   ),
                 ],
                 const SizedBox(height: 24),
@@ -271,6 +275,19 @@ class _NewsFallback extends StatelessWidget {
         child: Icon(Icons.image_outlined,
             color: AppColors.textSecondary, size: 40),
       ),
+    );
+  }
+}
+
+class _NewsEmpty extends StatelessWidget {
+  const _NewsEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    return const EmptyView(
+      icon: Icons.article_outlined,
+      title: 'Chưa có tin tức',
+      message: 'Tin tức và bài viết mới sẽ xuất hiện ở đây.',
     );
   }
 }
