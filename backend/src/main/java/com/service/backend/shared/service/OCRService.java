@@ -26,10 +26,25 @@ import io.micrometer.core.instrument.Timer;
 @Service
 public class OCRService {
 
-    private final MeterRegistry meterRegistry;
+    static {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("mac")) {
+            String arch = System.getProperty("os.arch");
+            String brewLibPath = "aarch64".equals(arch) ? "/opt/homebrew/lib" : "/usr/local/lib";
+            try {
+                com.sun.jna.NativeLibrary.addSearchPath("tesseract", brewLibPath);
+            } catch (Throwable t) {
+                // Ignore if JNA is not yet on classpath or fails
+            }
+        }
+    }
 
-    public OCRService(MeterRegistry meterRegistry) {
+    private final MeterRegistry meterRegistry;
+    private final OcrCleanupService ocrCleanupService;
+
+    public OCRService(MeterRegistry meterRegistry, OcrCleanupService ocrCleanupService) {
         this.meterRegistry = meterRegistry;
+        this.ocrCleanupService = ocrCleanupService;
     }
 
     /**
@@ -61,6 +76,14 @@ public class OCRService {
                     throw new IllegalArgumentException("Unsupported file format: " + extension);
             }
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+          .map(rawText -> {
+              try {
+                  return ocrCleanupService.cleanOcrText(rawText);
+              } catch (Exception e) {
+                  log.warn("Gemini OCR cleanup failed, returning raw text", e);
+                  return rawText;
+              }
+          })
           .onErrorMap(IOException.class, e -> {
               log.error("Failed to read text file: {}", filePath, e);
               return new RuntimeException("Error reading text file: " + e.getMessage(), e);
@@ -99,9 +122,16 @@ public class OCRService {
     private String performOcr(File file) throws TesseractException {
         Timer.Sample sample = Timer.start(meterRegistry);
         try {
+            File tessDataFolder = new File("./src/main/resources/tessdata");
+            if (!tessDataFolder.exists() || !tessDataFolder.isDirectory()) {
+                throw new IllegalStateException("tessdata folder not found at " + tessDataFolder.getAbsolutePath() + ". Tesseract requires language data files.");
+            }
+            
             ITesseract tesseract = new Tesseract();
-            tesseract.setDatapath("./src/main/resources/tessdata");
+            tesseract.setDatapath(tessDataFolder.getAbsolutePath());
             tesseract.setLanguage("vie+eng");
+            // Set thread limit to 1 to prevent SIGSEGV on Apple Silicon / macOS
+            tesseract.setTessVariable("omp_thread_limit", "1");
             return tesseract.doOCR(file);
         } finally {
             sample.stop(meterRegistry.timer("ocr.processing.time"));

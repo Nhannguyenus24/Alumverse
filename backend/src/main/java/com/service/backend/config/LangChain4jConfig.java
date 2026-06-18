@@ -50,4 +50,26 @@ public class LangChain4jConfig {
                 .chatLanguageModel(model)
                 .build();
     }
+
+    @Bean
+    public com.service.backend.shared.service.OcrCleanupService ocrCleanupService() {
+        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+            return new com.service.backend.shared.service.OcrCleanupService() {
+                @Override
+                public String cleanOcrText(String rawText) {
+                    return rawText;
+                }
+            };
+        }
+
+        GoogleAiGeminiChatModel model = GoogleAiGeminiChatModel.builder()
+                .apiKey(geminiApiKey)
+                .modelName(geminiModelName)
+                .temperature(geminiModelTemperature)
+                .build();
+
+        return AiServices.builder(com.service.backend.shared.service.OcrCleanupService.class)
+                .chatLanguageModel(model)
+                .build();
+    }
 }
