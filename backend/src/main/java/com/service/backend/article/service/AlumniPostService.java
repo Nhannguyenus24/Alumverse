@@ -11,6 +11,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -21,6 +22,7 @@ public class AlumniPostService {
 
     private final AlumniPostR2dbcRepository alumniPostRepository;
     private final ImageService imageService;
+    private final CacheUtils cacheUtils;
 
     public Mono<AlumniPostResponse> create(CreateAlumniPostRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
@@ -42,7 +44,9 @@ public class AlumniPostService {
                                         .isHidden(true)
                                         .build();
 
-                                return alumniPostRepository.save(post).map(AlumniPostResponse::from);
+                                return alumniPostRepository.save(post)
+                                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                        .map(AlumniPostResponse::from);
                             });
                 });
     }
@@ -61,13 +65,16 @@ public class AlumniPostService {
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
                             return alumniPostRepository.save(existing);
                         }))
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(AlumniPostResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
         return alumniPostRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ALUMNI_POST_NOT_FOUND, "Alumni post not found with id: " + id)))
-                .flatMap(existing -> alumniPostRepository.deleteById(id).thenReturn(true));
+                .flatMap(existing -> alumniPostRepository.deleteById(id)
+                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .thenReturn(true));
     }
 
     public Mono<AlumniPostResponse> getById(Integer id) {

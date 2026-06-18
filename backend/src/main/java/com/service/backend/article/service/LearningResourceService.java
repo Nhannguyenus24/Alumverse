@@ -11,6 +11,7 @@ import com.service.backend.shared.enums.LearningResourceType;
 import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 public class LearningResourceService {
 
     private final LearningResourceR2dbcRepository learningResourceRepository;
+    private final CacheUtils cacheUtils;
 
     public Mono<LearningResourceResponse> create(CreateLearningResourceRequest request) {
         return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.getCurrentOrganizationId())
@@ -38,7 +40,9 @@ public class LearningResourceService {
                             .createdAt(LocalDateTime.now())
                             .build();
 
-                    return learningResourceRepository.save(resource).map(LearningResourceResponse::from);
+                    return learningResourceRepository.save(resource)
+                            .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                            .map(LearningResourceResponse::from);
                 });
     }
 
@@ -52,13 +56,16 @@ public class LearningResourceService {
                     existing.setDescription(request.getDescription());
                     return learningResourceRepository.save(existing);
                 })
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(LearningResourceResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
-                .flatMap(existing -> learningResourceRepository.deleteById(id).thenReturn(true));
+                .flatMap(existing -> learningResourceRepository.deleteById(id)
+                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .thenReturn(true));
     }
 
     public Mono<LearningResourceResponse> getById(Integer id) {
