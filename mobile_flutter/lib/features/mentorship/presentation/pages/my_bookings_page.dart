@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/mentorship_session.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
@@ -256,14 +257,11 @@ class _SessionCard extends ConsumerWidget {
       await ref.read(mentorshipRepositoryProvider).cancelSession(session.id);
       ref.invalidate(mySessionsProvider);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đã hủy lịch hẹn')));
+        AppToast.success(context, 'Đã hủy lịch hẹn');
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content:
-                Text(e.toString().replaceFirst('Exception: ', ''))));
+        AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
       }
     }
   }

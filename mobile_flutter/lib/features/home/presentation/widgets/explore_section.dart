@@ -14,7 +14,7 @@ class _ExploreItem {
 }
 
 const _items = <_ExploreItem>[
-  _ExploreItem(Icons.support_agent_rounded, 'Hỗ trợ & Tư vấn',
+  _ExploreItem(Icons.support_agent_rounded, 'Cố vấn',
       'Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.',
       RouteNames.mentorship),
   _ExploreItem(Icons.groups_rounded, 'Kết nối cựu sinh viên',
@@ -25,12 +25,13 @@ const _items = <_ExploreItem>[
   _ExploreItem(Icons.event_available_rounded, 'Sự kiện & Hội thảo',
       'Tham gia sự kiện mở rộng quan hệ và cơ hội nghề nghiệp.',
       RouteNames.events),
-  _ExploreItem(Icons.info_outline_rounded, 'Giới thiệu',
-      'Tìm hiểu về tầm nhìn, sứ mệnh và hoạt động của tổ chức.',
-      RouteNames.organizationIntroduction),
   _ExploreItem(Icons.forum_rounded, 'Diễn đàn',
       'Thảo luận, đặt câu hỏi và chia sẻ cùng cộng đồng.',
       RouteNames.forum),
+  _ExploreItem(Icons.info_outline_rounded, 'Giới thiệu',
+      'Tìm hiểu về tầm nhìn, sứ mệnh và hoạt động của tổ chức.',
+      RouteNames.organizationIntroduction),
+
 ];
 
 /// "Khám phá" — 2-column grid of feature cards (web shows 4 across on desktop,

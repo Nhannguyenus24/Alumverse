@@ -28,7 +28,7 @@ const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
 const EXPLORE_ITEMS = [
   {
     iconSrc: "/icons/ho_tro_tu_van.svg",
-    title: "Hỗ trợ & Tư vấn",
+    title: "Cố vấn",
     description: "Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.",
     path: "/development/mentorship",
   },

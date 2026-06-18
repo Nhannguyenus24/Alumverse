@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/blur_validated_field.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/auth_provider.dart';
 
@@ -92,9 +94,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Đăng ký thất bại';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -128,7 +128,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
-                TextFormField(
+                BlurValidatedField(
                   controller: _fullNameCtl,
                   validator: (v) => Validators.required(v, field: 'Họ và tên'),
                   decoration: const InputDecoration(
@@ -137,7 +137,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _studentIdCtl,
                   validator: Validators.studentId,
                   decoration: const InputDecoration(
@@ -159,7 +159,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _emailCtl,
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
@@ -195,7 +195,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       : const SizedBox.shrink(),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _confirmPassCtl,
                   obscureText: _obscureConfirm,
                   validator: (v) => Validators.confirmPassword(v, _passCtl.text),

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../data/models/event_summary.dart';
 import '../../data/repositories/event_repository.dart';
@@ -160,7 +161,7 @@ class _ActionsState extends ConsumerState<_Actions> {
       }
       ref.invalidate(eventInteractionProvider(widget.eventId));
     } catch (_) {
-      _toast('Thao tác thất bại.');
+      if (mounted) AppToast.error(context, 'Thao tác thất bại.');
     } finally {
       if (mounted) setState(() => _busyInterest = false);
     }
@@ -171,17 +172,14 @@ class _ActionsState extends ConsumerState<_Actions> {
     try {
       await ref.read(eventRepositoryProvider).register(widget.eventId);
       ref.invalidate(eventInteractionProvider(widget.eventId));
-      _toast('Đăng ký tham gia thành công.');
+      if (mounted) AppToast.success(context, 'Đăng ký tham gia thành công.');
     } catch (e) {
-      _toast('Đăng ký thất bại (có thể bạn đã đăng ký).');
+      if (mounted) {
+        AppToast.error(context, 'Đăng ký thất bại (có thể bạn đã đăng ký).');
+      }
     } finally {
       if (mounted) setState(() => _busyRegister = false);
     }
-  }
-
-  void _toast(String m) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
   }
 
   @override
