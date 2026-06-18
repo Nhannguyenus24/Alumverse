@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/mentor_availability.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
@@ -42,7 +43,7 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
 
   Future<void> _submit() async {
     if (_slot == null) {
-      _toast('Vui lòng chọn khung giờ');
+      AppToast.info(context, 'Vui lòng chọn khung giờ');
       return;
     }
     if (!_formKey.currentState!.validate()) return;
@@ -59,18 +60,15 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
       ref.invalidate(mySessionsProvider);
       ref.invalidate(mentorAvailabilityProvider(widget.memberId));
       if (!mounted) return;
-      _toast('Đặt lịch thành công!');
+      AppToast.success(context, 'Đặt lịch thành công!');
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      _toast(e.toString().replaceFirst('Exception: ', ''));
+      AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
   }
-
-  void _toast(String msg) => ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(msg)));
 
   @override
   Widget build(BuildContext context) {

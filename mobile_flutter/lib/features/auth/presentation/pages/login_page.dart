@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/blur_validated_field.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../providers/auth_provider.dart';
@@ -36,10 +38,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         .read(authStateProvider.notifier)
         .login(_emailCtl.text.trim(), _passCtl.text);
 
-    // On success the auth state flips to logged-in, which rebuilds the router
-    // and redirects this route to /home — and disposes this widget. Touching
-    // `ref`/`context` after that throws "Cannot use ref after dispose". So bail
-    // out first when we're no longer mounted, and only surface errors here.
     if (!mounted) return;
 
     final auth = ref.read(authStateProvider);
@@ -51,9 +49,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _showError(Object e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_messageFrom(e))),
-    );
+    AppToast.fromStatus(context, _statusOf(e), _messageFrom(e));
+  }
+
+  int? _statusOf(Object e) {
+    if (e is DioException && e.error is ApiException) {
+      return (e.error as ApiException).statusCode;
+    }
+    if (e is ApiException) return e.statusCode;
+    return null;
   }
 
   /// Pull a human-readable message out of the error. The error interceptor
@@ -105,7 +109,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ],
                 const SizedBox(height: 32),
-                TextFormField(
+                BlurValidatedField(
                   controller: _emailCtl,
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
@@ -117,7 +121,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _passCtl,
                   obscureText: _obscure,
                   validator: (v) =>
@@ -182,11 +186,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           // TODO: Google Sign-In — gọi google_sign_in để lấy
                           // idToken rồi ref.read(authStateProvider.notifier)
                           // .loginWithGoogle(idToken).
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đăng nhập Google sắp ra mắt'),
-                            ),
-                          );
+                          AppToast.info(context, 'Đăng nhập Google sắp ra mắt');
                         },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
                   label: const Text('Tiếp tục với Google'),

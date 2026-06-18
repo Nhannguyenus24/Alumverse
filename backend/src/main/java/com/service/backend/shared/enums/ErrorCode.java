@@ -51,6 +51,9 @@ public enum ErrorCode {
     INVITATION_EXPIRED("Lời mời đã hết hạn", 400),
     INVITATION_ALREADY_USED("Lời mời đã được sử dụng", 409),
     NO_TICKETS_TO_ISSUE("Không có vé nào để phát hành", 400),
+    EVENT_REGISTRATION_ANSWER_INVALID("Câu trả lời đăng ký không hợp lệ", 400),
+    CANCEL_REASON_REQUIRED("Vui lòng nhập lý do huỷ vé", 400),
+    TICKET_WRONG_EVENT("Vé không thuộc sự kiện này", 400),
 
     // Article module
     NEWS_NOT_FOUND("Không tìm thấy tin tức", 404),

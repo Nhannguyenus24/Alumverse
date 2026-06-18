@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/organization_provider.dart';
 
@@ -41,9 +42,7 @@ class _OrganizationSelectPageState
         }
       },
       error: (e, _) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tổ chức không tồn tại: $e')),
-        );
+        AppToast.error(context, 'Tổ chức không tồn tại: $e');
       },
     );
   }

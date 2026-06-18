@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/forum_category.dart';
 import '../providers/forum_providers.dart';
 
@@ -25,16 +27,19 @@ class ForumCategoriesPage extends ConsumerWidget {
           await ref.read(forumCategoriesProvider.future);
         },
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => ListView(
+            children: List.generate(6, (_) => const SkeletonTile()),
+          ),
           error: (_, __) => ErrorView(
             message: 'Không tải được diễn đàn',
             onRetry: () => ref.invalidate(forumCategoriesProvider),
           ),
           data: (categories) {
             if (categories.isEmpty) {
-              return const Center(
-                child: Text('Chưa có chuyên mục nào',
-                    style: TextStyle(color: AppColors.textSecondary)),
+              return const EmptyView(
+                icon: Icons.forum_outlined,
+                title: 'Chưa có chuyên mục',
+                message: 'Diễn đàn chưa có chuyên mục nào.',
               );
             }
             final parents = categories.where((c) => c.isParent).toList();

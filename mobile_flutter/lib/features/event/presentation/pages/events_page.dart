@@ -4,10 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
+import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
+import '../../../../shared/widgets/skeleton.dart';
 import '../../data/models/event_summary.dart';
 import '../providers/event_provider.dart';
 
@@ -30,7 +34,7 @@ class EventsPage extends ConsumerWidget {
           await ref.read(allUpcomingEventsProvider.future);
         },
         child: upcomingAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const SkeletonList(count: 3),
           error: (_, __) => ErrorView(
             message: 'Không tải được sự kiện',
             onRetry: () => ref.invalidate(allUpcomingEventsProvider),
@@ -52,7 +56,10 @@ class EventsPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 if (featured != null)
-                  _FeaturedEventCard(event: featured),
+                  _FeaturedEventCard(event: featured)
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   const _SectionHeader('Sắp diễn ra'),
@@ -67,12 +74,11 @@ class EventsPage extends ConsumerWidget {
                 ],
                 if (featured == null && past.isEmpty)
                   const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(
-                      child: Text(
-                        'Chưa có sự kiện nào',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: EmptyView(
+                      icon: Icons.event_busy_outlined,
+                      title: 'Chưa có sự kiện',
+                      message: 'Các sự kiện và hội thảo sắp tới sẽ hiện ở đây.',
                     ),
                   ),
                 const SizedBox(height: 24),

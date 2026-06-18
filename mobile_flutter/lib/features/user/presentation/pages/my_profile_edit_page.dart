@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/models/user_profile.dart';
@@ -71,9 +72,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
   Future<void> _save() async {
     final orgId = ref.read(organizationStateProvider).valueOrNull?.id;
     if (orgId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Thiếu thông tin tổ chức.')),
-      );
+      AppToast.error(context, 'Thiếu thông tin tổ chức.');
       return;
     }
     setState(() => _submitting = true);
@@ -86,18 +85,14 @@ class _EditFormState extends ConsumerState<_EditForm> {
           );
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cập nhật hồ sơ thành công.')),
-      );
+      AppToast.success(context, 'Cập nhật hồ sơ thành công.');
       context.pop();
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
           : 'Cập nhật thất bại';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
