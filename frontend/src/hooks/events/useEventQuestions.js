@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventApi } from '../../utils/api';
 
-export const mapQuestionToUi = (q) => {
+const mapQuestionToUi = (q) => {
   const typeMap = {
     SHORT_TEXT: 'shortText',
     SINGLE_CHOICE: 'singleChoice',
@@ -52,26 +52,4 @@ export const useEventQuestions = (eventId, enabled = true) => {
   });
 };
 
-export const useCreateEventQuestion = (eventId) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload) => eventApi.createEventQuestion(eventId, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['eventQuestions', eventId] }),
-  });
-};
 
-export const useUpdateEventQuestion = (eventId) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ questionId, payload }) => eventApi.updateEventQuestion(eventId, questionId, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['eventQuestions', eventId] }),
-  });
-};
-
-export const useDeleteEventQuestion = (eventId) => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (questionId) => eventApi.deleteEventQuestion(eventId, questionId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['eventQuestions', eventId] }),
-  });
-};
