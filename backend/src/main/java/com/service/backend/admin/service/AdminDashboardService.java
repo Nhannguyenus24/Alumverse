@@ -70,11 +70,11 @@ public class AdminDashboardService {
                         dto.setTotalDonationsCount(tuple.getT7());
                         dto.setDonationsLast30Days(tuple.getT8());
                         return dto;
-                    });
+                    })
+                    .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
         };
 
-        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier)
-                .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
+        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier);
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(Integer organizationId, int page, int size) {

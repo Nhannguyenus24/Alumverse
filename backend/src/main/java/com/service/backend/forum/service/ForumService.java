@@ -70,9 +70,15 @@ public class ForumService {
 
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
-        return forumCategoryRepository.findByOrganizationId(organizationId)
-                .flatMap(this::convertToCategoryDTOWithStats)
-                .doOnError(error -> log.error("Error finding forum categories for organization ID: {}", organizationId, error));
+        String cacheKey = "forum_categories_org_" + organizationId;
+        return cacheUtils.getOrCompute("forum_category_cache", cacheKey, Duration.ofDays(1), () -> 
+                forumCategoryRepository.findByOrganizationId(organizationId)
+                        .flatMap(this::convertToCategoryDTOWithStats)
+                        .collectList()
+                        .doOnSuccess(res -> log.info("Fetched {} forum categories for organization ID: {}", res.size(), organizationId))
+        )
+        .flatMapMany(Flux::fromIterable)
+        .doOnError(error -> log.error("Error finding forum categories for organization ID: {}", organizationId, error));
     }
 
     public Mono<ForumCategoryDTO> createCategory(CreateForumCategoryRequest request) {
@@ -85,6 +91,7 @@ public class ForumService {
 
         return forumCategoryRepository.save(category)
             .flatMap(this::convertToCategoryDTOWithStats)
+                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("createCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum category: {}", request.getName(), error));
     }
@@ -105,6 +112,7 @@ public class ForumService {
                     return forumCategoryRepository.save(category);
                 })
                 .flatMap(this::convertToCategoryDTOWithStats)
+                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("updateCategory result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum category ID: {}", id, error));
     }
@@ -164,6 +172,7 @@ public class ForumService {
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
+                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("createTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error creating forum topic: {}", request.getTitle(), error));
     }
@@ -184,6 +193,7 @@ public class ForumService {
                     return forumTopicRepository.save(topic);
                 })
                 .flatMap(this::convertToTopicDTOWithPostCount)
+                .delayUntil(res -> cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(result -> log.info("updateTopic result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error updating forum topic ID: {}", id, error));
     }
