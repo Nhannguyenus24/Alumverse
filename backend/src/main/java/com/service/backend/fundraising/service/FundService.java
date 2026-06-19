@@ -1,5 +1,6 @@
 package com.service.backend.fundraising.service;
 
+import com.service.backend.shared.entity.*;
 import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
@@ -20,9 +21,6 @@ import com.service.backend.fundraising.dto.UpdateFundRequest;
 import com.service.backend.fundraising.dto.BanksPayloadDto;
 import com.service.backend.fundraising.dto.BankInfoDto;
 import com.service.backend.fundraising.dto.SupportedBanksResponse;
-import com.service.backend.shared.entity.Funds;
-import com.service.backend.shared.entity.FundReceivingInfos;
-import com.service.backend.shared.entity.FundDonations;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.enums.Status;
@@ -123,14 +121,18 @@ public class FundService {
                                             ErrorCode.RESOURCES_DUPLICATE,
                                             "Fund receiving info already exists for bankName + accountNumber"));
                                 }
-                                return fundReceivingInfosRepository.save(fundReceivingInfos);
+                                return fundReceivingInfosRepository.save(fundReceivingInfos)
+                                        .delayUntil(res -> cacheUtils.clear("fund_receiving_infos"));
                             });
                 }));
     }
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
-        return fundReceivingInfosRepository.findAll()
-                .filter(FundReceivingInfos::isActive);
+        return cacheUtils.getOrCompute("fund_receiving_infos", "active", Duration.ofDays(1), () ->
+                fundReceivingInfosRepository.findAll()
+                        .filter(FundReceivingInfos::isActive)
+                        .collectList()
+        ).flatMapMany(Flux::fromIterable);
     }
 
     public Mono<PaginatedResponse<FundReceivingInfos>> getActiveFundReceivingInfos(int page, int limit, String keyword) {
@@ -171,22 +173,6 @@ public class FundService {
                         : Mono.error(new ApplicationException(
                                 ErrorCode.RESOURCES_NOT_FOUND,
                                 "Bank is not supported: " + bankCode)));
-    }
-
-    public Mono<PaginatedResponse<Funds>> getFunds(int page, int limit, String keyword) {
-        int offset = page * limit;
-        String trimmedKeyword = keyword != null ? keyword.trim() : null;
-        boolean hasKeyword = trimmedKeyword != null && !trimmedKeyword.isEmpty();
-
-        Flux<Funds> dataFlux = hasKeyword
-                ? fundR2dbcRepository.searchFunds(trimmedKeyword, limit, offset)
-                : fundR2dbcRepository.findAllWithPagination(limit, offset);
-
-        Mono<Long> countMono = hasKeyword
-                ? fundR2dbcRepository.countSearchFunds(trimmedKeyword)
-                : fundR2dbcRepository.countAll();
-
-        return PaginationHelper.paginate(dataFlux, countMono, page, limit);
     }
 
     public Mono<DataWithWarnings<PaginatedResponse<FundListItemResponse>>> getFundsForList(FundFilterRequest req) {
@@ -236,7 +222,6 @@ public class FundService {
             } catch (DateTimeParseException ex) {
                 warnings.add("Params timeStartedFrom/timeStartedTo ignored: invalid ISO-8601");
                 tsFrom = null;
-                tsTo = null;
             }
         } else if (hasFrom || hasTo) {
             warnings.add("Params timeStartedFrom/timeStartedTo ignored: both required");
@@ -254,7 +239,6 @@ public class FundService {
             } catch (NumberFormatException ex) {
                 warnings.add("Params targetAmountMin/targetAmountMax ignored: invalid number");
                 amtMin = null;
-                amtMax = null;
             }
         } else if (hasMin || hasMax) {
             warnings.add("Params targetAmountMin/targetAmountMax ignored: both required");
@@ -311,16 +295,6 @@ public class FundService {
         ).map(paged -> new DataWithWarnings<>(paged, warnings));
     }
 
-    public Mono<PaginatedResponse<FundListItemResponse>> getFundsForList(int page, int limit, String keyword) {
-        return getFunds(page, limit, keyword)
-                .flatMap(paged -> {
-                    List<FundListItemResponse> items = paged.getItems().stream()
-                            .map(FundListItemResponse::from)
-                            .toList();
-                    return PaginationHelper.paginate(items, paged.getTotalItem(), paged.getCurrentPage(), paged.getPageSize());
-                });
-    }
-
     public Mono<FundDetailResponse> getFundDetail(Long fundId) {
         return fundR2dbcRepository.findById(fundId)
                 .switchIfEmpty(Mono.error(new ApplicationException(
@@ -331,13 +305,13 @@ public class FundService {
                             .switchIfEmpty(Mono.error(new ApplicationException(
                                     ErrorCode.ORGANIZATION_NOT_FOUND,
                                     "Organization not found with id: " + fund.getOrganizationId())))
-                            .map(org -> org.getName());
+                            .map(Organization::getName);
 
                     Mono<String> statusNameMono = fundStatusRepository.findById(fund.getStatusId())
                             .switchIfEmpty(Mono.error(new ApplicationException(
                                     ErrorCode.FUND_STATUS_NOT_FOUND,
                                     "Fund status not found with id: " + fund.getStatusId())))
-                            .map(status -> status.getName());
+                            .map(FundStatus::getName);
 
                     Integer fundReceivingInfoId = fund.getFundReceivingInfoId();
                     if (fundReceivingInfoId == null) {
@@ -696,20 +670,22 @@ public class FundService {
     }
 
     public Mono<FundStatisticsResponse> getFundStatistics() {
-        LocalDateTime now = LocalDateTime.now();
-        Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
-        Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
-        Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
-        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
-        Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
+        return cacheUtils.getOrCompute("fund_statistics", "all", Duration.ofMinutes(5), () -> {
+            LocalDateTime now = LocalDateTime.now();
+            Mono<BigDecimal> totalCurrentAmountMono = fundR2dbcRepository.sumCurrentAmount();
+            Mono<Long> totalFundsMono = fundR2dbcRepository.countOpenFunds(now);
+            Mono<Long> totalDonationsMono = fundDonationsRepository.countAll();
+            LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+            LocalDateTime endOfMonth = startOfMonth.plusMonths(1);
+            Mono<BigDecimal> totalDonationsAmountThisMonthMono = fundDonationsRepository.sumAmountBetween(startOfMonth, endOfMonth);
 
-        return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
-                .map(tuple -> FundStatisticsResponse.builder()
-                        .totalCurrentAmount(tuple.getT1())
-                        .totalFunds(tuple.getT2())
-                        .totalDonations(tuple.getT3())
-                        .totalDonationsAmountThisMonth(tuple.getT4())
-                        .build());
+            return Mono.zip(totalCurrentAmountMono, totalFundsMono, totalDonationsMono, totalDonationsAmountThisMonthMono)
+                    .map(tuple -> FundStatisticsResponse.builder()
+                            .totalCurrentAmount(tuple.getT1())
+                            .totalFunds(tuple.getT2())
+                            .totalDonations(tuple.getT3())
+                            .totalDonationsAmountThisMonth(tuple.getT4())
+                            .build());
+        });
     }
 }

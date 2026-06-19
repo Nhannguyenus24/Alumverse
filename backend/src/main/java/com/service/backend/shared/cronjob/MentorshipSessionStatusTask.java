@@ -8,6 +8,7 @@ import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -24,7 +25,10 @@ public class MentorshipSessionStatusTask {
     private final MentorAvailabilityR2dbcRepository availabilityRepository;
     private final NotificationService notificationService;
 
-    @Scheduled(cron = "${mentorship.session.status.cron:0 */5 * * * *}")
+    @Value("${mentorship.meeting-link.reminder-minutes:180}")
+    private long meetingLinkReminderMinutes;
+
+    @Scheduled(cron = "${mentorship.session.status.cron:0 */15 * * * *}")
     public void autoTransition() {
         LocalDateTime now = LocalDateTime.now();
 
@@ -44,6 +48,28 @@ public class MentorshipSessionStatusTask {
 
         availabilityRepository.expireStaleAvailabilities(now)
                 .doOnError(e -> log.error("Failed to expire stale availabilities", e))
+                .subscribe();
+
+        remindMissingMeetingLinks(now);
+    }
+
+    private void remindMissingMeetingLinks(LocalDateTime now) {
+        LocalDateTime until = now.plusMinutes(meetingLinkReminderMinutes);
+        sessionRepository.findMissingMeetingLinkCandidates(now, until)
+                .flatMap(candidate ->
+                        sessionRepository.markMeetingLinkReminded(candidate.getSessionId(), now)
+                                .doOnSuccess(ignored -> notificationService.createNotificationAsync(
+                                        candidate.getMentorMemberId(),
+                                        "Hãy thêm link tham gia buổi mentoring",
+                                        "Một buổi cố vấn của bạn sắp diễn ra nhưng chưa có link tham gia. "
+                                                + "Vui lòng thêm link họp cho buổi này trước khi bắt đầu.",
+                                        "/development/mentorship/my-bookings"))
+                                .onErrorResume(e -> {
+                                    log.error("Failed to remind missing meeting link for session {}",
+                                            candidate.getSessionId(), e);
+                                    return Mono.empty();
+                                }), 8)
+                .doOnError(e -> log.error("Error reminding missing meeting links", e))
                 .subscribe();
     }
 

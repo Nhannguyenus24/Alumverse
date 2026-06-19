@@ -158,7 +158,7 @@ public class AdminUserController {
     }
 
     /**
-     * Update user details (role, status, email, userName)
+     * Update user details (role, status, email, studentId)
      */
     @PutMapping("/{userId}")
     public Mono<ResponseEntity<ApiResponse<UserResponse>>> updateUser(
@@ -216,7 +216,6 @@ public class AdminUserController {
                         request.getOrganizationId(),
                         request.getUserId(),
                         request.getEmail(),
-                        request.getUserName(),
                         request.getFullName(),
                         request.getRole(),
                         request.getAvatarUrl(),

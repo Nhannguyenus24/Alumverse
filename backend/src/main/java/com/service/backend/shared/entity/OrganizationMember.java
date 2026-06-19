@@ -30,6 +30,9 @@ public class OrganizationMember {
     @Column("user_id")
     private Integer userId;
 
+    @Column("student_id")
+    private String studentId;
+
     @Column("started_year")
     private String startedYear;
 

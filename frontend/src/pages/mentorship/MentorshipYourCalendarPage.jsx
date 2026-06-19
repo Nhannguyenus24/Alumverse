@@ -170,10 +170,14 @@ const MentorshipYourCalendarPage = () => {
     () => sessionsQuery.data?.items ?? [],
     [sessionsQuery.data],
   );
-  const upcomingSessions = useMemo(
-    () => sessions.filter((s) => s.status === 'Confirmed' || s.status === 'Pending'),
-    [sessions],
-  );
+  const upcomingSessions = useMemo(() => {
+    const now = dayjs();
+    const ACTIVE = ['CONFIRMED', 'IN_PROGRESS', 'PENDING', 'RESCHEDULE_PROPOSED'];
+    return sessions
+      .filter((s) => ACTIVE.includes(s.status))
+      .filter((s) => !s.endTime || dayjs(s.endTime).isAfter(now))
+      .sort((a, b) => dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf());
+  }, [sessions]);
 
   const availabilityByDate = useMemo(() => {
     const map = {};
@@ -287,12 +291,12 @@ const MentorshipYourCalendarPage = () => {
   };
 
   return (
-    <Page title="Cố vấn - Lịch rảnh">
+    <Page title="Cố vấn - Quản lý khung giờ">
       <MentorshipProfileLayout user={user} cover={user.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
-              LỊCH RẢNH
+              QUẢN LÝ KHUNG GIỜ
             </Typography>
           </Box>
 
@@ -364,7 +368,7 @@ const MentorshipYourCalendarPage = () => {
                         </Typography>
                         {inMonth &&
                           slots.map((slot) => {
-                            const booked = slot.status !== 'Available';
+                            const booked = slot.status !== 'AVAILABLE';
                             return (
                               <Stack
                                 key={slot.id}
@@ -422,7 +426,7 @@ const MentorshipYourCalendarPage = () => {
                 {/* 1. UPCOMING APPOINTMENTS */}
                 <Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Typography fontWeight={700} mb={2} variant="subtitle1">
-                    Lịch hẹn của tôi
+                    Lịch hẹn sắp tới
                   </Typography>
                   {sessionsQuery.isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
@@ -506,7 +510,7 @@ const MentorshipYourCalendarPage = () => {
 
                           {repeatWeekly ? (
                             <>
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, pb: 1.5 }}>
                                 {WEEK_DAYS_SHORT.map((label, index) => {
                                   const isSelected = selectedDays.includes(index);
                                   return (
@@ -515,7 +519,11 @@ const MentorshipYourCalendarPage = () => {
                                       variant={isSelected ? 'contained' : 'outlined'}
                                       size="small"
                                       onClick={() => toggleDay(index)}
-                                      sx={{ fontSize: '0.75rem', px: 1.5, minWidth: 0 }}
+                                      sx={{
+                                        minWidth: 0,
+                                        px: 0,
+                                        fontSize: '0.75rem',
+                                      }}
                                     >
                                       {label}
                                     </Button>

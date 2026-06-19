@@ -5,6 +5,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import com.service.backend.shared.dto.IdCountDTO;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
@@ -18,6 +25,7 @@ import com.service.backend.forum.dao.ForumCategoryRepository;
 import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumPostRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
+import com.service.backend.forum.dao.ForumPostReactionRepository;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.shared.entity.ForumCategory;
@@ -44,6 +52,7 @@ public class AdminForumService {
     private static final Logger log = LoggerFactory.getLogger(AdminForumService.class);
 
     private final ForumPostRepository forumPostRepository;
+    private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumTopicRepository forumTopicRepository;
     private final ForumCategoryRepository forumCategoryRepository;
     private final ForumPostReportRepository forumPostReportRepository;
@@ -55,12 +64,8 @@ public class AdminForumService {
 
     public Flux<ForumPostDTO> getNewForumPostsYesterday() {
         return forumPostRepository.findPostsCreatedYesterday()
-                .concatMap(this::convertToPostDTO)
+                .transform(this::enrichPosts)
                 .doOnError(error -> log.error("Error fetching forum posts created yesterday", error));
-    }
-
-    public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(int page, int size) {
-        return getNewForumPostsYesterdayWithPagination(null, page, size);
     }
 
     public Mono<PaginatedResponse<ForumPostDTO>> getNewForumPostsYesterdayWithPagination(Integer organizationId, int page, int size) {
@@ -68,7 +73,7 @@ public class AdminForumService {
         if (organizationId != null) {
             return PaginationHelper.paginate(
                         forumPostRepository.findPostsCreatedYesterdayByOrganizationWithPagination(organizationId, size, (int) offset)
-                                .concatMap(this::convertToPostDTO),
+                                .transform(this::enrichPosts),
                         forumPostRepository.countPostsCreatedYesterdayByOrganization(organizationId),
                         page, size)
                     .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
@@ -76,7 +81,7 @@ public class AdminForumService {
         }
         return PaginationHelper.paginate(
                     forumPostRepository.findPostsCreatedYesterdayWithPagination(size, offset)
-                            .concatMap(this::convertToPostDTO),
+                            .transform(this::enrichPosts),
                     forumPostRepository.countPostsCreatedYesterday(),
                     page, size)
                 .doOnSuccess(r -> log.info("getNewForumPostsYesterdayWithPagination result: {}", JsonUtils.toJson(r)))
@@ -125,16 +130,12 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error deleting forum post ID: {}", postId, error));
     }
 
-    public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(int page, int size) {
-        return getBannedPostsWithPagination(null, page, size);
-    }
-
     public Mono<PaginatedResponse<ForumPostDTO>> getBannedPostsWithPagination(Integer organizationId, int page, int size) {
         long offset = (long) page * size;
         if (organizationId != null) {
             return PaginationHelper.paginate(
                         forumPostRepository.findBannedPostsByOrganizationWithPagination(organizationId, size, (int) offset)
-                                .concatMap(this::convertToPostDTO),
+                                .transform(this::enrichPosts),
                         forumPostRepository.countBannedPostsByOrganization(organizationId),
                         page, size)
                     .doOnSuccess(r -> log.info("getBannedPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
@@ -142,15 +143,11 @@ public class AdminForumService {
         }
         return PaginationHelper.paginate(
                     forumPostRepository.findAllBannedPostsWithPagination(size, offset)
-                            .concatMap(this::convertToPostDTO),
+                            .transform(this::enrichPosts),
                     forumPostRepository.countByIsBannedTrue(),
                     page, size)
                 .doOnSuccess(r -> log.info("getBannedPostsWithPagination result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
-    }
-
-    public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(String keyword, int page, int size) {
-        return getAllPostsWithPagination(null, keyword, page, size);
     }
 
     public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(Integer organizationId, String keyword, int page, int size) {
@@ -159,7 +156,7 @@ public class AdminForumService {
         if (organizationId != null) {
             return PaginationHelper.paginate(
                         forumPostRepository.findAllPostsByOrganizationWithPagination(organizationId, kw, size, (int) offset)
-                                .concatMap(this::convertToPostDTO),
+                                .transform(this::enrichPosts),
                         forumPostRepository.countAllPostsByOrganization(organizationId, kw),
                         page, size)
                     .doOnSuccess(r -> log.info("getAllPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
@@ -167,15 +164,11 @@ public class AdminForumService {
         }
         return PaginationHelper.paginate(
                     forumPostRepository.findAllPostsWithPagination(kw, size, offset)
-                            .concatMap(this::convertToPostDTO),
+                            .transform(this::enrichPosts),
                     forumPostRepository.countAllPostsWithKeyword(kw),
                     page, size)
                 .doOnSuccess(r -> log.info("getAllPostsWithPagination result (keyword={}): {}", kw, JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error fetching all forum posts with keyword={}", kw, error));
-    }
-
-    public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(int page, int size) {
-        return getPendingReports(null, page, size);
     }
 
     public Mono<PaginatedResponse<ForumPostReportDTO>> getPendingReports(Integer organizationId, int page, int size) {
@@ -250,8 +243,8 @@ public class AdminForumService {
     public Mono<Void> deleteForumTopic(Integer topicId) {
         return forumTopicRepository.findById(topicId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND))))
-                .flatMap(topic -> forumPostRepository.findByTopicId(topicId)
-                        .flatMap(post -> forumPostRepository.deleteById(post.getId()))
+                .flatMap(topic -> forumPostReactionRepository.deleteByTopicId(topicId)
+                        .then(forumPostRepository.deleteByTopicId(topicId))
                         .then(forumTopicRepository.deleteById(topicId)))
                 .doOnSuccess(v -> log.info("deleteForumTopic: topicId={} deleted", topicId))
                 .doOnError(error -> log.error("Error deleting forum topic ID: {}", topicId, error));
@@ -472,7 +465,6 @@ public class AdminForumService {
                             .zipWith(forumPostRepository.countPostsByAuthorInMonth(memberId, month, year))
                             .map(tuple -> TopContributorDTO.builder()
                                     .memberId(memberId)
-                                    .userName(tuple.getT1().getUserName())
                                     .email(tuple.getT1().getEmail())
                                     .avatarUrl(tuple.getT1().getAvatarUrl())
                                     .postCount(tuple.getT2())
@@ -543,35 +535,53 @@ public class AdminForumService {
 
     // ========== HELPER METHODS ==========
 
-    private Mono<ForumPostDTO> convertToPostDTO(ForumPost post) {
-        Mono<Long> flagsCountMono = forumPostReportRepository.countByPostId(post.getId()).defaultIfEmpty(0L);
-        Mono<ForumTopic> topicMono = post.getTopicId() == null
-                ? Mono.empty()
-                : forumTopicRepository.findById(post.getTopicId());
-        Mono<ForumCategory> categoryMono = topicMono
-                .flatMap(topic -> topic.getCategoryId() == null
-                        ? Mono.empty()
-                        : forumCategoryRepository.findById(topic.getCategoryId()));
+    private Flux<ForumPostDTO> enrichPosts(Flux<ForumPost> postsFlux) {
+        return postsFlux.collectList().flatMapMany(posts -> {
+            if (posts.isEmpty()) return Flux.empty();
+            Set<Integer> topicIds = posts.stream().map(ForumPost::getTopicId).filter(Objects::nonNull).collect(Collectors.toSet());
+            Set<Integer> postIds = posts.stream().map(ForumPost::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+            Set<Integer> categoryIds = new HashSet<>();
 
-        return Mono.zip(
-                        flagsCountMono,
-                        topicMono.defaultIfEmpty(ForumTopic.builder().build()),
-                        categoryMono.defaultIfEmpty(ForumCategory.builder().build()))
-                .map(tuple -> ForumPostDTO.builder()
-                        .id(post.getId())
-                        .topicId(post.getTopicId())
-                        .authorMemberId(post.getAuthorMemberId())
-                        .topicTitle(tuple.getT2().getTitle())
-                        .categoryName(tuple.getT3().getName())
-                        .flagsCount(tuple.getT1())
-                        .content(post.getContent())
-                        .answerToPostId(post.getAnswerToPostId())
-                        .isBanned(post.getIsBanned())
-                        .isHidden(post.getIsHidden())
-                        .isLike(false)
-                        .createdAt(post.getCreatedAt())
-                        .updatedAt(post.getUpdatedAt())
-                        .build());
+            Mono<Map<Integer, ForumTopic>> topicsMapMono = topicIds.isEmpty() ? Mono.just(new HashMap<>()) :
+                    forumTopicRepository.findAllById(topicIds).collectMap(ForumTopic::getId);
+
+            Mono<Map<Integer, Long>> flagsCountMapMono = postIds.isEmpty() ? Mono.just(new HashMap<>()) :
+                    forumPostReportRepository.countByPostIds(postIds).collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+            return topicsMapMono.flatMapMany(topicsMap -> {
+                for (ForumTopic topic : topicsMap.values()) {
+                    if (topic.getCategoryId() != null) categoryIds.add(topic.getCategoryId());
+                }
+                Mono<Map<Integer, ForumCategory>> categoriesMapMono = categoryIds.isEmpty() ? Mono.just(new HashMap<>()) :
+                        forumCategoryRepository.findAllById(categoryIds).collectMap(ForumCategory::getId);
+
+                return categoriesMapMono.flatMapMany(categoriesMap -> flagsCountMapMono.flatMapMany(flagsCountMap -> Flux.fromIterable(posts).map(post -> {
+                    ForumTopic topic = topicsMap.getOrDefault(post.getTopicId(), ForumTopic.builder().build());
+                    ForumCategory category = categoriesMap.getOrDefault(topic.getCategoryId(), ForumCategory.builder().build());
+                    Long flagsCount = flagsCountMap.getOrDefault(post.getId(), 0L);
+
+                    return ForumPostDTO.builder()
+                            .id(post.getId())
+                            .topicId(post.getTopicId())
+                            .authorMemberId(post.getAuthorMemberId())
+                            .topicTitle(topic.getTitle())
+                            .categoryName(category.getName())
+                            .flagsCount(flagsCount)
+                            .content(post.getContent())
+                            .answerToPostId(post.getAnswerToPostId())
+                            .isBanned(post.getIsBanned())
+                            .isHidden(post.getIsHidden())
+                            .isLike(false)
+                            .createdAt(post.getCreatedAt())
+                            .updatedAt(post.getUpdatedAt())
+                            .build();
+                })));
+            });
+        });
+    }
+
+    private Mono<ForumPostDTO> convertToPostDTO(ForumPost post) {
+        return enrichPosts(Flux.just(post)).next();
     }
 
     private ForumPostReportDTO convertToReportDTO(ForumPostReport report) {
@@ -658,11 +668,24 @@ public class AdminForumService {
                 .build();
     }
 
+    private Flux<com.service.backend.forum.dto.ForumTopicDTO> enrichTopics(Flux<ForumTopic> topicsFlux) {
+        return topicsFlux.collectList().flatMapMany(topics -> {
+            if (topics.isEmpty()) return Flux.empty();
+            Set<Integer> topicIds = topics.stream().map(ForumTopic::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+            
+            Mono<Map<Integer, Long>> postCountMapMono = topicIds.isEmpty() ? Mono.just(new HashMap<>()) :
+                    forumPostRepository.countByTopicIds(topicIds).collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+            return postCountMapMono.flatMapMany(postCountMap -> Flux.fromIterable(topics).map(topic -> {
+                Long postCount = postCountMap.getOrDefault(topic.getId(), 0L);
+                return convertToTopicDTO(topic, postCount);
+            }));
+        });
+    }
+
     private Mono<com.service.backend.forum.dto.ForumTopicDTO> convertToTopicDTOWithPostCount(
             ForumTopic topic) {
-        return forumPostRepository.countByTopicId(topic.getId())
-                .defaultIfEmpty(0L)
-                .map(postCount -> convertToTopicDTO(topic, postCount));
+        return enrichTopics(Flux.just(topic)).next();
     }
 
     private com.service.backend.forum.dto.ForumTopicDTO convertToTopicDTO(

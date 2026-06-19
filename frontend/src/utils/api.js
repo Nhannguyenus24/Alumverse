@@ -147,7 +147,7 @@ export const adminOrganizationApi = {
 
 
 
-export const adminAuditApi = {
+const adminAuditApi = {
 	getLoginHistory(page = 0, size = 50, organizationId = null) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
@@ -171,7 +171,7 @@ export const {
 	getLoginHistoryByUser,
 } = adminAuditApi;
 
-export const adminUserApi = {
+const adminUserApi = {
 	getUsers(page = 0, size = 20, search = '', role = 'ALL', status = 'ALL', organizationId = null) {
 		const params = { page, size };
 		if (search && search.trim()) params.search = search.trim();
@@ -245,7 +245,7 @@ export const {
 	getUserActivity,
 } = adminUserApi;
 
-export const adminMentorshipApi = {
+const adminMentorshipApi = {
 	async getAllSessions(params = {}) {
 		const response = await apiClient.get('/admin/mentorship/sessions', { params });
 		return unwrap(response);
@@ -475,6 +475,11 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
+	async getEventById(eventId) {
+		const response = await apiClient.get(`/events/${eventId}`);
+		return unwrap(response);
+	},
+
 	async getEvents(params = {}) {
 		const response = await apiClient.get('/events', { params });
 		return unwrap(response);
@@ -611,8 +616,45 @@ export const eventApi = {
 		return unwrap(response);
 	},
 
-	async cancelTicketByCode(ticketCode) {
-		const response = await apiClient.post(`/events/tickets/${ticketCode}/cancel`);
+	async cancelTicketByCode(ticketCode, reason) {
+		const response = await apiClient.post(`/events/tickets/${ticketCode}/cancel`, { reason });
+		return unwrap(response);
+	},
+
+	async getTicketByCode(ticketCode) {
+		const response = await apiClient.get(`/events/tickets/code/${ticketCode}`);
+		return unwrap(response);
+	},
+
+	async getEventQuestions(eventId) {
+		// Degrade gracefully: nếu backend lỗi (vd bảng event_questions chưa migrate),
+		// coi như event không có câu hỏi thay vì làm vỡ trang.
+		try {
+			const response = await apiClient.get(`/events/${eventId}/questions`);
+			return unwrap(response);
+		} catch (err) {
+			console.warn('getEventQuestions failed, fallback []', err?.response?.status);
+			return [];
+		}
+	},
+
+	async createEventQuestion(eventId, payload) {
+		const response = await apiClient.post(`/events/${eventId}/questions`, payload);
+		return unwrap(response);
+	},
+
+	async updateEventQuestion(eventId, questionId, payload) {
+		const response = await apiClient.put(`/events/${eventId}/questions/${questionId}`, payload);
+		return unwrap(response);
+	},
+
+	async deleteEventQuestion(eventId, questionId) {
+		const response = await apiClient.delete(`/events/${eventId}/questions/${questionId}`);
+		return unwrap(response);
+	},
+
+	async reorderEventQuestions(eventId, questionIds) {
+		const response = await apiClient.put(`/events/${eventId}/questions/reorder`, { questionIds });
 		return unwrap(response);
 	},
 
@@ -758,7 +800,7 @@ export const {
 	getEventStatistics,
 } = adminEventApi;
 
-export const adminForumApi = {
+const adminForumApi = {
 	getForumStatistics() {
 		return apiClient.get(`${BASE_ADMIN_FORUM}/statistics`);
 	},
@@ -974,7 +1016,7 @@ export const networkApi = {
 
 
 
-export const userApi = {
+const userApi = {
 	joinOrganization(payload) {
 		const userId = useAuthStore.getState().user?.id;
 		const body = {
@@ -1066,7 +1108,7 @@ export const userSettingsApi = {
 
 
 
-export const mentorshipApi = {
+const mentorshipApi = {
 	saveMenteeProfile(payload) {
 		return apiClient.post(`${BASE_MENTEE}/profile`, payload);
 	},
@@ -1202,6 +1244,10 @@ export const mentorshipApi = {
 		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/status`, payload);
 	},
 
+	updateSessionMeetingLink(sessionId, meetingLink) {
+		return apiClient.put(`${BASE_MENTOR}/sessions/${sessionId}/meeting-link`, { meetingLink });
+	},
+
 	cancelMentorSession(sessionId, cancelReason) {
 		const params = cancelReason ? { cancelReason } : {};
 		return apiClient.post(`${BASE_MENTOR}/sessions/${sessionId}/cancel`, null, { params });
@@ -1264,6 +1310,7 @@ export const {
 	updateMyAvailability,
 	getMyMentorSessions,
 	updateSessionStatus: updateMentorSessionStatus,
+	updateSessionMeetingLink: updateMentorSessionMeetingLink,
 	getMyMentorFeedbacks,
 	uploadCvFile,
 } = mentorshipApi;

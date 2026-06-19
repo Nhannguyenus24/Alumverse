@@ -21,7 +21,7 @@ public class CreateOrganizationMemberRequest {
 
     private String email;
 
-    private String userName;
+    private String studentId;
 
     private String fullName;
 

@@ -46,8 +46,13 @@ import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAc
 import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
 import { useUserAlumniPosts } from '../../hooks/articles/useUserAlumniPosts';
 import { useUserDonations } from '../../hooks/fundraising/useUserDonations';
+
 import UserHighlights from '../../components/profile/UserHighlights';
 import PublicUserProfile from './PublicUserProfile';
+import StatsBanner from '../../components/StatsBanner';
+import AcademicInfoRowCard from '../../components/profile/AcademicInfoRowCard';
+import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
+import ExtendedProfileInfoCard from '../../components/profile/ExtendedProfileInfoCard'
 
 import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
 import { formatDate } from '../../utils/dateFormatter';
@@ -55,8 +60,6 @@ import { formatRating } from '../../utils/numberFormatter';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
-
-const TOP_TABS = [{ label: 'Trang cá nhân', path: '/profile' }];
 const ITEMS_PER_PAGE = 3;
 const PUBLIC_FEEDBACKS_PER_PAGE = 5;
 
@@ -160,6 +163,7 @@ const ExtendedProfileSections = ({ raw }) => {
     <Stack spacing={5}>
       {sections.map(({ key, items }) => {
         const Icon = SECTION_ICONS[key] || ArticleIcon;
+        const GRID_SIZE = { educations: 4, awards: 4, skills: 4, experiences: 12, projects: 12, };
         return (
           <Box key={key}>
             <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
@@ -167,58 +171,8 @@ const ExtendedProfileSections = ({ raw }) => {
             </Typography>
             <Grid container spacing={3}>
               {items.map((item, idx) => (
-                <Grid item xs={12} md={6} key={idx}>
-                  <Box
-                    sx={{
-                      p: 3,
-                      bgcolor: 'background.paper',
-                      borderRadius: 3,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      boxShadow: '0 4px 12px 0 rgba(0,0,0,0.02)',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      height: '100%',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 8px 24px 0 rgba(0,0,0,0.08)',
-                        borderColor: 'primary.light',
-                      },
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: 4,
-                        height: '100%',
-                        bgcolor: 'primary.main',
-                      }
-                    }}
-                  >
-                    <Stack spacing={1.5}>
-                      {Object.entries(item)
-                        .filter((entry) => entry[1] != null && String(entry[1]).trim() !== '')
-                        .map(([k, v], i) => (
-                          <Box key={k} sx={{ display: 'flex', flexDirection: 'column' }}>
-                            {i === 0 ? (
-                              <Typography variant="h6" fontWeight={700} color="text.primary" sx={{ mb: 0.5 }}>
-                                {String(v)}
-                              </Typography>
-                            ) : (
-                              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
-                                <Typography variant="body2" sx={{ minWidth: 100, fontWeight: 600, color: 'text.secondary', mt: 0.2 }}>
-                                  {k}
-                                </Typography>
-                                <Typography variant="body2" sx={{ flex: 1, color: 'text.primary', fontWeight: 500 }}>
-                                  {String(v)}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        ))}
-                    </Stack>
-                  </Box>
+                <Grid item xs={12} md={GRID_SIZE[key] ?? 6} key={idx}>
+                  <ExtendedProfileInfoCard item={item} icon={Icon} />
                 </Grid>
               ))}
             </Grid>
@@ -228,37 +182,6 @@ const ExtendedProfileSections = ({ raw }) => {
     </Stack>
   );
 };
-
-const StatsGrid = ({ stats }) => (
-  <Box
-    sx={{
-      backgroundColor: 'primary.main',
-      borderRadius: 4,
-      px: { xs: 3, md: 6 },
-      py: { xs: 4, md: 5 },
-      display: 'grid',
-      gridTemplateColumns: {
-        xs: '1fr',
-        sm: stats.length <= 3 ? `repeat(${stats.length}, 1fr)` : '1fr 1fr',
-        md: `repeat(${Math.min(stats.length, 4)}, 1fr)`,
-      },
-      gap: 3,
-      textAlign: 'center',
-      boxShadow: '0 8px 24px 0 rgba(0,0,0,0.12)',
-    }}
-  >
-    {stats.map((item, i) => (
-      <Box key={i}>
-        <Typography variant="h2" fontWeight={800} color="common.white" mb={1}>
-          {item.value}
-        </Typography>
-        <Typography variant="body1" fontWeight={600} color="common.white" sx={{ opacity: 0.9, textTransform: 'uppercase', letterSpacing: 0.5 }}>
-          {item.label}
-        </Typography>
-      </Box>
-    ))}
-  </Box>
-);
 
 const ExpertiseSection = ({ expertise }) => (
   <Box>
@@ -430,75 +353,78 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   };
 
   const tabs = isMentorshipPath
-    ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : TOP_TABS))
-    : TOP_TABS;
+    ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : []))
+    : [];
 
-  const renderPersonalSection = () => (
-    <Box>
-      <Grid container spacing={4}>
-        {/* Giới thiệu */}
-        <Grid item xs={12}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)', border: '1px solid', borderColor: 'divider' }}>
-            <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-              <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
-                <PersonIcon /> Giới thiệu
-              </Typography>
-              <Typography color={bio?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: bio?.trim() ? 'normal' : 'italic' }}>
-                {bio?.trim() || 'Bạn chưa cập nhật phần giới thiệu.'}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+  const renderPersonalSection = () => {
+    // Cấu hình mảng dữ liệu cho Thông tin cơ bản
+    const personalFields = [
+      { icon: PersonIcon, label: 'Họ và tên', value: profile?.fullName },
+      { icon: EmailIcon, label: 'Email', value: profile?.email },
+      { icon: WorkIcon, label: 'Công việc hiện tại', value: currentJobTitle },
+      { icon: BusinessIcon, label: 'Công ty', value: currentCompany },
+    ];
 
-        <Grid item xs={12}>
-          <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-            <BusinessIcon /> Thông tin cơ bản
-          </Typography>
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Họ và tên" value={profile?.fullName} icon={PersonIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Email" value={profile?.email} icon={EmailIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Công việc hiện tại" value={currentJobTitle} icon={WorkIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Công ty" value={currentCompany} icon={BusinessIcon} />
+    // Cấu hình mảng dữ liệu cho Thông tin học thuật
+    const academicFields = [
+      { label: 'Khoa', value: formatAcademicValue(orgMember?.faculty), icon: SchoolIcon },
+      { label: 'Chuyên ngành', value: formatAcademicValue(orgMember?.major), icon: SchoolIcon },
+      { label: 'Chương trình', value: formatAcademicValue(orgMember?.program), icon: SchoolIcon },
+      { label: 'Khoá', value: formatAcademicValue(orgMember?.startedYear), icon: SchoolIcon },
+      { label: 'Năm tốt nghiệp', value: formatAcademicValue(orgMember?.graduatedYear), icon: SchoolIcon },
+      { label: 'Trạng thái tốt nghiệp', value: formatAcademicValue(orgMember?.graduationStatus), icon: VerifiedIcon },
+    ];
+
+    // Component tiêu đề dùng chung để giảm lặp code UI
+    const SectionTitle = ({ icon: Icon, children }) => (
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
+        <Icon /> {children}
+      </Typography>
+    );
+
+    const hasBio = !!bio?.trim();
+
+    return (
+      <Box>
+        <Grid container spacing={4}>
+          {/* Giới thiệu */}
+          <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
+            <SectionTitle icon={PersonIcon}>Giới thiệu</SectionTitle>
+            <Typography 
+              color={hasBio ? 'text.secondary' : 'text.disabled'} 
+              sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasBio ? 'normal' : 'italic' }}
+            >
+              {bio?.trim() || 'Bạn chưa cập nhật phần giới thiệu.'}
+            </Typography>
+          </Grid>
+
+          {/* Thông tin cơ bản */}
+          <Grid size={{ xs: 12, lg: 4 }}>
+            <Box sx={{ height: '100%' }}>
+              <SectionTitle icon={BusinessIcon}>Thông tin cơ bản</SectionTitle>
+              <Box>
+                {personalFields.map((field, index) => (
+                  <PersonalInfoRow key={index} icon={field.icon} label={field.label} value={field.value} />
+                ))}
+              </Box>
+            </Box>
+          </Grid>
+
+          {/* Thông tin học thuật */}
+          <Grid size={{ xs: 12, lg: 8 }}>
+            <SectionTitle icon={SchoolIcon}>Thông tin học thuật</SectionTitle>
+            <Grid container spacing={3} sx={{ py: 1.75 }}>
+              {academicFields.map((field, index) => (
+                <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <AcademicInfoRowCard icon={field.icon} label={field.label} value={field.value} />
+                </Grid>
+              ))}
             </Grid>
           </Grid>
         </Grid>
-
-        <Grid item xs={12}>
-          <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-            <SchoolIcon /> Thông tin học thuật
-          </Typography>
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Khoa" value={formatAcademicValue(orgMember?.faculty)} icon={SchoolIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Chuyên ngành" value={formatAcademicValue(orgMember?.major)} icon={SchoolIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Chương trình" value={formatAcademicValue(orgMember?.program)} icon={SchoolIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Khoá" value={formatAcademicValue(orgMember?.startedYear)} icon={SchoolIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Năm tốt nghiệp" value={formatAcademicValue(orgMember?.graduatedYear)} icon={SchoolIcon} />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <ProfileItem label="Trạng thái tốt nghiệp" value={formatAcademicValue(orgMember?.graduationStatus)} icon={VerifiedIcon} />
-            </Grid>
-          </Grid>
-        </Grid>
-
-      </Grid>
-    </Box>
-  );
+      </Box>
+    );
+  };
 
   const renderMentorshipSection = () => {
     if (!access.hasMentorProfile && !access.hasMenteeProfile) {
@@ -552,7 +478,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               danh sách tìm cố vấn.
             </Alert>
           )}
-          <StatsGrid stats={stats} />
+          <StatsBanner items={stats} />
           
           <ExpertiseSection expertise={expertise} />
           
@@ -681,7 +607,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   const isOwnProfile =
     access.mentorMemberId != null && mentor?.memberId === access.mentorMemberId;
-  const canBook = access.canUseMentorship && !isOwnProfile;
+  const canBook = access.canUseMentorship && access.hasJoinedMentorship && !isOwnProfile;
 
   useEffect(() => {
     if (isOwnProfile) {
@@ -747,7 +673,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
           HỒ SƠ CỐ VẤN
         </Typography>
 
-        <StatsGrid stats={stats} />
+        <StatsBanner items={stats} />
       </Stack>
 
       <Box sx={{ mt: 5 }}>

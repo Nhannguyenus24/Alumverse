@@ -9,6 +9,8 @@ import com.service.backend.shared.entity.ForumPost;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import java.util.Collection;
+import com.service.backend.shared.dto.IdCountDTO;
 
 @Repository
 public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer> {
@@ -29,6 +31,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
     Flux<ForumPost> findByTopicId(Integer topicId);
 
     /**
+     * Delete all forum posts by topic id
+     */
+    @Query("DELETE FROM forum_posts WHERE topic_id = :topicId")
+    Mono<Void> deleteByTopicId(Integer topicId);
+
+    /**
      * Find forum posts by author member id
      */
     Flux<ForumPost> findByAuthorMemberId(Integer authorMemberId);
@@ -44,6 +52,9 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
      */
     @Query("SELECT COUNT(*) FROM forum_posts WHERE topic_id = :topicId AND is_banned = false AND is_hidden = false")
     Mono<Long> countByTopicId(@Param("topicId") Integer topicId);
+
+    @Query("SELECT topic_id as id, COUNT(*) as count FROM forum_posts WHERE topic_id IN (:topicIds) AND is_banned = false AND is_hidden = false GROUP BY topic_id")
+    Flux<IdCountDTO> countByTopicIds(@Param("topicIds") Collection<Integer> topicIds);
 
     /**
      * Count total posts by topic id (including banned)
@@ -70,6 +81,12 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
      */
     @Query("SELECT COUNT(*) FROM forum_posts WHERE DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND is_banned = false")
     Mono<Long> countPostsCreatedYesterday();
+
+    /**
+     * Find forum posts created since a specific time
+     */
+    @Query("SELECT * FROM forum_posts WHERE created_at >= :since AND is_banned = false")
+    Flux<ForumPost> findPostsCreatedSince(@Param("since") java.time.LocalDateTime since);
 
     /**
      * Find all banned forum posts with pagination

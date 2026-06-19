@@ -24,7 +24,6 @@ import com.service.backend.shared.entity.PeerVerification;
 import com.service.backend.user.dto.CreateVerificationRequest;
 import com.service.backend.shared.service.FileUploadService;
 import com.service.backend.shared.service.OCRService;
-import reactor.core.scheduler.Schedulers;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
@@ -35,6 +34,7 @@ import com.service.backend.shared.entity.UserNotificationSettings;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @Service
 @RequiredArgsConstructor
@@ -56,24 +56,21 @@ public class UserService {
     @Transactional
     public Mono<Void> createVerificationRequest(Long currentUserId, CreateVerificationRequest request) {
         return fileUploadService.uploadBase64File(request.getBase64File(), request.getOriginalFileName())
-                .flatMap(fileUrl -> {
-                    return authRepository.insertVerificationRequest(
-                            currentUserId.intValue(),
-                            fileUrl,
-                            request.getDocumentType() != null ? request.getDocumentType().getValue() : null
-                    ).doOnSuccess(requestId -> {
-                        if (requestId != null) {
-                            String localPath = fileUploadService.getLocalPath(fileUrl);
-                            if (localPath != null) {
-                                Mono.fromCallable(() -> ocrService.extractTextFromFile(localPath))
-                                        .subscribeOn(Schedulers.boundedElastic())
-                                        .flatMap(text -> authRepository.updateAiSummary(requestId, text))
-                                        .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
-                                        .subscribe();
-                            }
+                .flatMap(fileUrl -> authRepository.insertVerificationRequest(
+                        currentUserId.intValue(),
+                        fileUrl,
+                        request.getDocumentType() != null ? request.getDocumentType().getValue() : null
+                ).publishOn(Schedulers.boundedElastic()).doOnSuccess(requestId -> {
+                    if (requestId != null) {
+                        String localPath = fileUploadService.getLocalPath(fileUrl);
+                        if (localPath != null) {
+                            ocrService.extractTextFromFile(localPath)
+                                    .flatMap(text -> authRepository.updateAiSummary(requestId, text))
+                                    .doOnError(e -> logger.error("Background OCR failed for requestId {}: {}", requestId, e.getMessage()))
+                                    .subscribe();
                         }
-                    });
-                }).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevel(currentUserId.intValue(), 1))
+                    }
+                })).flatMap(v -> userOrganizationMemberRepository.updateVerificationLevel(currentUserId.intValue(), 1))
                 .then();
     }
 
@@ -183,14 +180,6 @@ public class UserService {
                 .doOnSuccess(r -> logger.info("getMyProfile result: {}", JsonUtils.toJson(r)));
     }
 
-    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
-        return userProfileRepository.findProfileByUserId(userId)
-                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
-                        ErrorCode.USER_NOT_FOUND,
-                        "User not found with id: " + userId))))
-                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
-    }
-
     public Mono<Void> changeMyPassword(Long currentUserId, String oldPassword, String newPassword) {
         Integer userId = currentUserId.intValue();
 
@@ -203,10 +192,19 @@ public class UserService {
                         return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
                     }
 
-                    String hashedPassword = passwordEncoder.encode(newPassword);
-                    return authRepository.updatePasswordById(userId, hashedPassword);
+                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword));
                 })
                 .doOnSuccess(v -> logger.info("changeMyPassword: userId={} password changed", userId));
+    }
+
+    public Mono<UserProfileResponse> getPublicProfile(Integer userId) {
+        return userProfileRepository.findProfileByUserId(userId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User not found with id: " + userId))))
+                .doOnSuccess(r -> logger.info("getPublicProfile result: {}", JsonUtils.toJson(r)));
     }
 
     public Mono<List<UserLoginHistoryResponse>> getMyLoginHistory(Long currentUserId, int page, int limit) {

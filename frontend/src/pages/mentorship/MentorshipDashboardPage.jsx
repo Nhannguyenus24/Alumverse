@@ -34,9 +34,15 @@ import { useMyMentorFeedbacks } from '../../hooks/mentorship/useMyMentorFeedback
 import { useJoinSession } from '../../hooks/mentorship/useJoinSession';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
-import { cancelMentorSession, postponeMentorSession, reportSession } from '../../utils/api';
+import {
+  cancelMentorSession,
+  postponeMentorSession,
+  reportSession,
+  updateMentorSessionMeetingLink,
+} from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
 import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
+import StatsBanner from '../../components/StatsBanner'
 
 const TOP_TABS = MENTOR_PROFILE_TABS;
 
@@ -61,6 +67,10 @@ const MentorshipDashboardPage = () => {
   const [postponeEnd, setPostponeEnd] = useState(null);
   const [postponeError, setPostponeError] = useState(null);
   const [postponePending, setPostponePending] = useState(false);
+  const [linkTarget, setLinkTarget] = useState(null);
+  const [linkValue, setLinkValue] = useState('');
+  const [linkError, setLinkError] = useState(null);
+  const [linkPending, setLinkPending] = useState(false);
 
   const profileQuery = useMyMentorProfile();
   const sessionsQuery = useMyMentorSessions({ page: 0, limit: PAGE_SIZE });
@@ -75,17 +85,21 @@ const MentorshipDashboardPage = () => {
     [feedbacksQuery.data],
   );
 
-  const upcomingItems = useMemo(
-    () =>
-      items.filter(
-        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
-      ),
-    [items],
-  );
+  const UPCOMING_PREVIEW_COUNT = 3;
 
-  const pastItems = useMemo(
-    () => items.filter((s) => s.status === 'COMPLETED' || s.status === 'EXPIRED'),
-    [items],
+  const upcomingItems = useMemo(() => {
+    const now = dayjs();
+    return items
+      .filter(
+        (s) => s.status === 'CONFIRMED' || s.status === 'IN_PROGRESS' || s.status === 'RESCHEDULE_PROPOSED',
+      )
+      .filter((s) => !s.endTime || dayjs(s.endTime).isAfter(now))
+      .sort((a, b) => dayjs(a.startTime).valueOf() - dayjs(b.startTime).valueOf());
+  }, [items]);
+
+  const previewUpcoming = useMemo(
+    () => upcomingItems.slice(0, UPCOMING_PREVIEW_COUNT),
+    [upcomingItems],
   );
 
   const stats = useMemo(() => {
@@ -200,10 +214,34 @@ const MentorshipDashboardPage = () => {
     }
   };
 
-  const openReportDialog = (session) => {
-    setReportTarget(session);
-    setReportCategory('');
-    setReportDescription('');
+  const openLinkDialog = (session) => {
+    setLinkTarget(session);
+    setLinkValue(session.meetingLink ?? '');
+    setLinkError(null);
+  };
+  const closeLinkDialog = () => {
+    setLinkTarget(null);
+    setLinkValue('');
+    setLinkError(null);
+  };
+  const handleConfirmLink = async () => {
+    if (!linkTarget) return;
+    const value = linkValue.trim();
+    if (!value) {
+      setLinkError('Vui lòng nhập link tham gia.');
+      return;
+    }
+    setLinkPending(true);
+    setLinkError(null);
+    try {
+      await updateMentorSessionMeetingLink(linkTarget.id, value);
+      sessionsQuery.refetch?.();
+      closeLinkDialog();
+    } catch (err) {
+      setLinkError(err?.response?.data?.message ?? 'Không cập nhật được link tham gia.');
+    } finally {
+      setLinkPending(false);
+    }
   };
 
   const closeReportDialog = () => {
@@ -262,29 +300,7 @@ const MentorshipDashboardPage = () => {
           </Typography>
 
           {/* STATS */}
-          <Box
-            sx={{
-              backgroundColor: 'primary.main',
-              borderRadius: 1,
-              px: { xs: 3, md: 6 },
-              py: { xs: 3, md: 4 },
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' },
-              gap: 3,
-              textAlign: 'center',
-            }}
-          >
-            {stats.map((item, i) => (
-              <Box key={i}>
-                <Typography variant="h2" fontWeight={700} color="common.white">
-                  {item.value}
-                </Typography>
-                <Typography variant="body2" color="common.white">
-                  {item.label}
-                </Typography>
-              </Box>
-            ))}
-          </Box>
+          <StatsBanner items={stats} />
 
           {updateMutation.errorMessage && (
             <Alert severity="error">{updateMutation.errorMessage}</Alert>
@@ -305,12 +321,24 @@ const MentorshipDashboardPage = () => {
           ) : (
             <>
               {/* LỊCH SẮP TỚI */}
-              <Section title={`Lịch sắp tới (${upcomingItems.length})`}>
-                {upcomingItems.length === 0 ? (
+              <Section
+                title={`Lịch sắp tới (${upcomingItems.length})`}
+                right={
+                  upcomingItems.length > 0 && (
+                    <Button
+                      size="small"
+                      onClick={() => navigate('/development/mentorship/my-bookings')}
+                    >
+                      Xem tất cả
+                    </Button>
+                  )
+                }
+              >
+                {previewUpcoming.length === 0 ? (
                   <EmptyState message="Bạn chưa có buổi tư vấn nào sắp tới." />
                 ) : (
                   <Stack spacing={2}>
-                    {upcomingItems.map((session) => (
+                    {previewUpcoming.map((session) => (
                       <Box key={session.id}>
                         <MentorshipBookingItem
                           session={session}
@@ -320,6 +348,8 @@ const MentorshipDashboardPage = () => {
                           onPostpone={openPostponeDialog}
                           onJoin={handleJoin}
                           joinPending={joinMutation.isPending}
+                          onSetMeetingLink={openLinkDialog}
+                          mentorHasDefaultLink={Boolean(profile?.defaultMeetingLink)}
                         />
                         {(session.status === 'CONFIRMED' || session.status === 'IN_PROGRESS') && (
                           <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 0.5 }}>
@@ -334,24 +364,14 @@ const MentorshipDashboardPage = () => {
                         )}
                       </Box>
                     ))}
-                  </Stack>
-                )}
-              </Section>
-
-              {/* ĐÃ QUA */}
-              <Section title={`Đã qua (${pastItems.length})`}>
-                {pastItems.length === 0 ? (
-                  <EmptyState message="Chưa có buổi tư vấn nào đã diễn ra." />
-                ) : (
-                  <Stack spacing={2}>
-                    {pastItems.map((session) => (
-                      <MentorshipBookingItem
-                        key={session.id}
-                        session={session}
-                        view="mentor"
-                        onReport={openReportDialog}
-                      />
-                    ))}
+                    {upcomingItems.length > previewUpcoming.length && (
+                      <Button
+                        variant="outlined"
+                        onClick={() => navigate('/development/mentorship/my-bookings')}
+                      >
+                        Xem thêm {upcomingItems.length - previewUpcoming.length} buổi sắp tới
+                      </Button>
+                    )}
                   </Stack>
                 )}
               </Section>
@@ -522,6 +542,37 @@ const MentorshipDashboardPage = () => {
             disabled={cancelPending}
           >
             Xác nhận hủy
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={Boolean(linkTarget)} onClose={closeLinkDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>{linkTarget?.meetingLink ? 'Sửa link tham gia' : 'Thêm link tham gia'}</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Dán link phòng họp (Google Meet, Zoom...) cho buổi hẹn này. Người được cố vấn sẽ thấy link
+            và nhận thông báo.
+          </Typography>
+          <TextField
+            label="Link tham gia"
+            value={linkValue}
+            onChange={(e) => setLinkValue(e.target.value)}
+            fullWidth
+            placeholder="https://meet.google.com/..."
+            autoFocus
+          />
+          {linkError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {linkError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLinkDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button onClick={handleConfirmLink} variant="contained" disabled={linkPending}>
+            {linkPending ? 'Đang lưu...' : 'Lưu link'}
           </Button>
         </DialogActions>
       </Dialog>

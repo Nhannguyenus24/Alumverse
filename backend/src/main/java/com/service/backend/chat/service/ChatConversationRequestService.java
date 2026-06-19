@@ -20,7 +20,6 @@ import com.service.backend.shared.enums.ConversationRequestStatus;
 
 import com.service.backend.shared.enums.ChatType;
 import com.service.backend.shared.enums.ChatRole;
-import com.service.backend.shared.enums.Status;
 import com.service.backend.shared.exception.ApplicationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

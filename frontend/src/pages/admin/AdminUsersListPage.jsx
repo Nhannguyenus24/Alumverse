@@ -79,7 +79,7 @@ const AdminUsersListPage = () => {
   const handleExport = () => {
     const exportData = sortedUsers.map(u => ({
       ID: u.id,
-      'Họ tên': u.fullName || u.userName,
+      'Họ tên': u.fullName || u.studentId,
       Email: u.email,
       'Vai trò': u.role,
       'Trạng thái': formatAccountStatusLabel(u.status),
@@ -123,11 +123,11 @@ const AdminUsersListPage = () => {
             src={u.avatarUrl}
             sx={{ width: 32, height: 32, bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontSize: 13, fontWeight: 700 }}
           >
-            {(u.fullName || u.userName || '?')[0].toUpperCase()}
+            {(u.fullName || u.studentId || '?')[0].toUpperCase()}
           </Avatar>
           <Box>
             <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              {u.fullName || u.userName}
+              {u.fullName || u.studentId}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
               {u.email}
@@ -310,7 +310,7 @@ const AdminUsersListPage = () => {
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
         onSearchChange={(val) => { setSearchTerm(val); setPage(0); }}
         searchValue={searchTerm}
-        searchPlaceholder="Tìm theo tên, email, username..."
+        searchPlaceholder="Tìm theo tên, email, mssv..."
         filters={Filters}
         onExport={handleExport}
         addButton={

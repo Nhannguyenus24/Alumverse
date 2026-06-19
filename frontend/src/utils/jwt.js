@@ -2,7 +2,7 @@
  * Decode JWT payload without verification (for reading claims on client).
  * Do not use for security decisions; backend validates the token.
  * @param {string} token - JWT access token
- * @returns {{ sub?: number, email?: string, userName?: string, avatarUrl?: string } | null}
+ * @returns {{ sub?: number, email?: string, studentId?: string, avatarUrl?: string } | null}
  */
 function decodeJwtPayload(token) {
   if (!token || typeof token !== 'string') return null;
@@ -15,7 +15,7 @@ function decodeJwtPayload(token) {
     return {
       sub: parsed.sub != null ? Number(parsed.sub) : undefined,
       email: parsed.email,
-      userName: parsed.username ?? parsed.userName,
+      studentId: parsed.studentId,
       avatarUrl: parsed.avatar ?? parsed.avatarUrl,
       role: parsed.role,
       exp: parsed.exp,
@@ -28,7 +28,7 @@ function decodeJwtPayload(token) {
 /**
  * Build auth user from access token (for store).
  * @param {string} token - JWT access token
- * @returns {{ id: number, email?: string, userName?: string, avatarUrl?: string } | null}
+ * @returns {{ id: number, email?: string, studentId?: string, avatarUrl?: string } | null}
  */
 export function userFromAccessToken(token) {
   if (!token) return null;
@@ -37,7 +37,7 @@ export function userFromAccessToken(token) {
   return {
     id: payload.sub,
     email: payload.email,
-    userName: payload.userName,
+    studentId: payload.studentId,
     avatarUrl: payload.avatarUrl,
     role: payload.role,
   };

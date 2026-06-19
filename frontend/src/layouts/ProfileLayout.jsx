@@ -1,5 +1,6 @@
+import { useCallback, useMemo } from 'react';
 import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
-import TopTabFilter from '../components/TopTabFilter';
+import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
 
 const ProfileLayout = ({
@@ -13,25 +14,26 @@ const ProfileLayout = ({
   mentorId,
   canBook = true,
   children,
+  avatarSlot
 }) => {
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (window.history.length > 1) { window.history.back(); }
     else { onNavigate('/'); }
-  };
+  }, [onNavigate]);
 
-  const BUTTON_CONFIG = {
+  const BUTTON_CONFIG = useMemo(() => ({
     mentor: [
       { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
-      { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
+      { label: 'Sửa trang cá nhân', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
     ],
     mentorEdit: [
-      { label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile') },
-      { label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/development/mentorship/profile') },
+      //{ label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile') },
+      //{ label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/development/mentorship/profile') },
     ],
     menteeOwn: [
       { label: 'Chỉnh sửa hồ sơ', variant: 'outlined', onClick: () => onNavigate('/development/mentorship/mentee-signup') },
-      { label: 'Trở thành cố vấn', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/development/mentorship/signup') },
+      { label: 'Trở thành cố vấn', variant: 'contained', color: 'primary', onClick: () => onNavigate('/development/mentorship/signup') },
     ],
     mentee: [
       { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
@@ -39,17 +41,17 @@ const ProfileLayout = ({
     ],
     user: [
       { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
-      { label: 'Sửa trang cá nhân', variant: 'contained', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
+      { label: 'Sửa trang cá nhân', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
     ],
     userEdit: [
-      { label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile') },
-      { label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/profile') },
+      //{ label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile') },
+      //{ label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/profile') },
     ],
     userView: [
       { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
       { label: 'Nhắn tin', variant: 'contained' },
     ],
-  };
+  }), [onNavigate, mentorId, canBook, handleBack]);
 
   const renderButtons = () =>
     (BUTTON_CONFIG[mode] ?? []).map(({ label, ...props }, i) => (
@@ -96,15 +98,18 @@ const ProfileLayout = ({
                   gap: 2,
                 }}
               >
-                <Avatar
-                  src={user.avatar}
-                  sx={{
-                    width: 140,
-                    height: 140,
-                    border: '5px solid white',
-                    mt: { xs: -7, md: '-40px' },
-                  }}
-                />
+                <Box sx={{ position: 'relative', width: 140, height: 140, mt: { xs: -7, md: '-40px', borderRadius: '50%', overflow: 'hidden', } }}>
+                  {avatarSlot ?? (
+                    <Avatar
+                      src={user.avatar}
+                      sx={{
+                        width: 140,
+                        height: 140,
+                        border: '5px solid white',
+                      }}
+                    />
+                  )}
+                </Box>
 
                 <Box sx={{ pb: { md: 1 } }}>
                   <Typography variant="h2" fontWeight={800}>
@@ -129,7 +134,10 @@ const ProfileLayout = ({
       <Container maxWidth="lg" sx={{ mt: 6 }}>
         <Stack spacing={6}>
           {/* TAB FILTER */}
-          {(tabs ?? []).length > 0 && <TopTabFilter tabs={tabs} onNavigate={onNavigate} />}
+          {(tabs?.length ?? 0) > 1 && (
+            <TopTabFilter tabs={tabs} onNavigate={onNavigate}
+            />
+          )}
 
           {/* PAGE CONTENT */}
           {children}

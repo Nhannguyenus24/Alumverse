@@ -1,9 +1,13 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/blur_validated_field.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../providers/auth_provider.dart';
@@ -34,23 +38,38 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         .read(authStateProvider.notifier)
         .login(_emailCtl.text.trim(), _passCtl.text);
 
-    final auth = ref.read(authStateProvider);
     if (!mounted) return;
-    auth.whenOrNull(
-      data: (state) {
-        if (state.isLoggedIn) context.go(RouteNames.home);
-      },
-      error: (e, _) => _showError(e),
-    );
+
+    final auth = ref.read(authStateProvider);
+    if (auth.hasError) {
+      _showError(auth.error!);
+    } else if (auth.valueOrNull?.isLoggedIn == true) {
+      context.go(RouteNames.home);
+    }
   }
 
   void _showError(Object e) {
-    final message = e is Exception
-        ? e.toString().replaceFirst('Exception: ', '')
-        : e.toString();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    AppToast.fromStatus(context, _statusOf(e), _messageFrom(e));
+  }
+
+  int? _statusOf(Object e) {
+    if (e is DioException && e.error is ApiException) {
+      return (e.error as ApiException).statusCode;
+    }
+    if (e is ApiException) return e.statusCode;
+    return null;
+  }
+
+  /// Pull a human-readable message out of the error. The error interceptor
+  /// wraps backend errors as [ApiException] inside a [DioException].
+  String _messageFrom(Object e) {
+    if (e is DioException) {
+      final inner = e.error;
+      if (inner is ApiException) return inner.message;
+      return e.message ?? 'Đăng nhập thất bại';
+    }
+    if (e is ApiException) return e.message;
+    return e.toString().replaceFirst('Exception: ', '');
   }
 
   @override
@@ -90,7 +109,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ],
                 const SizedBox(height: 32),
-                TextFormField(
+                BlurValidatedField(
                   controller: _emailCtl,
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
@@ -102,7 +121,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                BlurValidatedField(
                   controller: _passCtl,
                   obscureText: _obscure,
                   validator: (v) =>
@@ -167,11 +186,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           // TODO: Google Sign-In — gọi google_sign_in để lấy
                           // idToken rồi ref.read(authStateProvider.notifier)
                           // .loginWithGoogle(idToken).
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đăng nhập Google sắp ra mắt'),
-                            ),
-                          );
+                          AppToast.info(context, 'Đăng nhập Google sắp ra mắt');
                         },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
                   label: const Text('Tiếp tục với Google'),

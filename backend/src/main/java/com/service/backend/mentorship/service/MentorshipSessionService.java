@@ -5,6 +5,7 @@ import com.service.backend.mentorship.dao.MentorProfileR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
 import com.service.backend.mentorship.dao.SessionWindowProjection;
 import com.service.backend.mentorship.dto.JoinSessionResponse;
+import com.service.backend.shared.entity.MentorProfile;
 import com.service.backend.shared.entity.MentorshipSession;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
@@ -69,16 +70,14 @@ public class MentorshipSessionService {
                             }
 
                             return resolveMeetingLink(session, window.getMentorMemberId())
-                                    .flatMap(link -> {
-                                        return sessionRepository.markJoined(sessionId, Status.IN_PROGRESS.getValue(), isMentor, now)
-                                                .doOnSuccess(ignored -> notifyOtherParty(session, window, isMentor))
-                                                .thenReturn(JoinSessionResponse.builder()
-                                                        .sessionId(sessionId)
-                                                        .status(Status.IN_PROGRESS.getValue())
-                                                        .meetingLink(link)
-                                                        .joinedAt(now)
-                                                        .build());
-                                    });
+                                    .flatMap(link -> sessionRepository.markJoined(sessionId, Status.IN_PROGRESS.getValue(), isMentor, now)
+                                            .doOnSuccess(ignored -> notifyOtherParty(session, window, isMentor))
+                                            .thenReturn(JoinSessionResponse.builder()
+                                                    .sessionId(sessionId)
+                                                    .status(Status.IN_PROGRESS.getValue())
+                                                    .meetingLink(link)
+                                                    .joinedAt(now)
+                                                    .build()));
                         }));
     }
 
@@ -87,7 +86,7 @@ public class MentorshipSessionService {
             return Mono.just(session.getMeetingLink());
         }
         return profileRepository.findById(mentorMemberId)
-                .map(profile -> profile.getDefaultMeetingLink())
+                .map(MentorProfile::getDefaultMeetingLink)
                 .filter(link -> link != null && !link.isBlank())
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.MEETING_LINK_NOT_CONFIGURED)));
     }
@@ -100,9 +99,7 @@ public class MentorshipSessionService {
         String message = joinerIsMentor
                 ? "Cố vấn đã vào phòng họp. Hãy tham gia buổi mentoring ngay."
                 : "Người được cố vấn đã vào phòng họp. Hãy tham gia buổi mentoring ngay.";
-        String link = joinerIsMentor
-                ? "/development/mentorship/my-bookings"
-                : "/development/mentorship/dashboard";
-        notificationService.createNotificationAsync(recipientId, "Buổi mentoring đã bắt đầu", message, link);
+        notificationService.createNotificationAsync(recipientId, "Buổi mentoring đã bắt đầu", message,
+                "/development/mentorship/my-bookings");
     }
 }

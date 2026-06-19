@@ -20,7 +20,7 @@ public class LoginRequest {
     @Schema(example = "1")
     private Integer organizationId;
 
-    @NotBlank(message = "Email or username is required")
+    @NotBlank(message = "Email is required")
     @Schema(example = "student01@hcmus.edu.vn")
     private String email;
     
@@ -31,6 +31,8 @@ public class LoginRequest {
     @Schema(example = "true")
     private boolean rememberMe;
 
-    @NotBlank(message = "Recaptcha token is required")
+    // Optional: the web client sends a token (verified in RecaptchaService);
+    // the mobile client has no reCAPTCHA widget and omits it (verification is
+    // skipped when blank).
     private String recaptchaToken;
 }

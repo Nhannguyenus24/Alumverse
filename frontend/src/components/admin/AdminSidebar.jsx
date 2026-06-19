@@ -18,6 +18,7 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ForumOutlinedIcon from '@mui/icons-material/ForumOutlined';
 import TopicOutlinedIcon from '@mui/icons-material/TopicOutlined';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
@@ -55,6 +56,7 @@ const NAV_GROUPS = (adminBase) => [
       { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: 'Bài viết' },
       { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: 'Chủ đề', role: 'ADMIN' },
       { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: 'Danh mục', role: 'ADMIN' },
+      { to: `${adminBase}/forum/reports`, icon: <FlagOutlinedIcon />, label: 'Báo cáo vi phạm', role: 'ADMIN' },
     ],
   },
     {

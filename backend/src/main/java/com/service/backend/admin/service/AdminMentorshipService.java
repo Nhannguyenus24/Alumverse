@@ -28,6 +28,10 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminMentorshipService {
@@ -55,10 +59,6 @@ public class AdminMentorshipService {
         this.emailService = emailService;
     }
 
-    public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(int page, int size) {
-        return getAllSessions(null, page, size);
-    }
-
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getAllSessions(Integer organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
@@ -73,10 +73,6 @@ public class AdminMentorshipService {
                     adminMentorshipRepository.countAllSessions(),
                     page, size)
                 .doOnSuccess(r -> log.info("getAllSessions result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(String status, int page, int size) {
-        return getSessionsByStatus(null, status, page, size);
     }
 
     public Mono<PaginatedResponse<AdminMentorshipSessionDTO>> getSessionsByStatus(Integer organizationId, String status, int page, int size) {
@@ -119,10 +115,6 @@ public class AdminMentorshipService {
                 .doOnSuccess(v -> log.info("deleteSession: sessionId={} deleted", sessionId));
     }
 
-    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(int page, int size) {
-        return getAllMentorProfiles(null, page, size);
-    }
-
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getAllMentorProfiles(Integer organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
@@ -137,10 +129,6 @@ public class AdminMentorshipService {
                     adminMentorshipRepository.countAllMentorProfiles(),
                     page, size)
                 .doOnSuccess(r -> log.info("getAllMentorProfiles result: {}", JsonUtils.toJson(r)));
-    }
-
-    public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(String status, int page, int size) {
-        return getMentorProfilesByStatus(null, status, page, size);
     }
 
     public Mono<PaginatedResponse<AdminMentorProfileDTO>> getMentorProfilesByStatus(Integer organizationId, String status, int page, int size) {
@@ -198,9 +186,9 @@ public class AdminMentorshipService {
         if (profile.getMemberId() == null) return Mono.empty();
         return adminUserRepository.findById(profile.getMemberId())
                 .flatMap(user -> {
-                    if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.<Void>empty();
+                    if (user.getEmail() == null || user.getEmail().isBlank()) return Mono.empty();
                     Map<String, Object> vars = new HashMap<>();
-                    vars.put("recipientName", user.getUserName() != null ? user.getUserName() : "bạn");
+                    vars.put("recipientName", user.getEmail() != null ? user.getEmail() : "bạn");
                     vars.put("status", status.getValue());
                     vars.put("statusLabel", statusLabel(status));
                     vars.put("reason", reason != null ? reason : "");
@@ -210,20 +198,7 @@ public class AdminMentorshipService {
                                 log.warn("Failed to send mentor review email to {}: {}", user.getEmail(), e.getMessage());
                                 return Mono.empty();
                             });
-                })
-                .switchIfEmpty(Mono.empty());
-    }
-
-    private String statusLabel(String status) {
-        if (status == null) return "";
-        return switch (status.toUpperCase()) {
-            case "PENDING" -> "Đang chờ";
-            case "CONFIRMED" -> "Đã xác nhận";
-            case "COMPLETED" -> "Đã hoàn thành";
-            case "CANCELLED" -> "Đã huỷ";
-            case "REJECTED" -> "Bị từ chối";
-            default -> status;
-        };
+                });
     }
 
     private String statusLabel(Status status) {
@@ -268,60 +243,83 @@ public class AdminMentorshipService {
                 .doOnSuccess(r -> log.info("getStatistics result: {}", JsonUtils.toJson(r)));
     }
 
-    private Flux<AdminMentorshipSessionDTO> enrichSessions(Flux<MentorshipSession> sessions) {
-        return sessions.concatMap(this::enrichSession);
-    }
-
     private Mono<AdminMentorshipSessionDTO> enrichSession(MentorshipSession s) {
-        Mono<MentorAvailability> availMono = s.getAvailabilityId() != null
-                ? availabilityRepo.findById(s.getAvailabilityId()).defaultIfEmpty(new MentorAvailability())
-                : Mono.just(new MentorAvailability());
-
-        Mono<User> menteeMono = s.getMenteeMemberId() != null
-                ? adminUserRepository.findById(s.getMenteeMemberId()).defaultIfEmpty(new User())
-                : Mono.just(new User());
-
-        return availMono.flatMap(avail ->
-                menteeMono.flatMap(mentee -> {
-                    Mono<User> mentorMono = avail.getMentorMemberId() != null
-                            ? adminUserRepository.findById(avail.getMentorMemberId()).defaultIfEmpty(new User())
-                            : Mono.just(new User());
-                    return mentorMono.map(mentor -> AdminMentorshipSessionDTO.builder()
-                            .id(s.getId())
-                            .availabilityId(s.getAvailabilityId())
-                            .menteeMemberId(s.getMenteeMemberId())
-                            .menteeName(mentee.getUserName())
-                            .menteeEmail(mentee.getEmail())
-                            .mentorMemberId(avail.getMentorMemberId())
-                            .mentorName(mentor.getUserName())
-                            .mentorEmail(mentor.getEmail())
-                            .status(s.getStatus() != null ? s.getStatus().getValue() : null)
-                            .sessionType(s.getSessionType() != null ? s.getSessionType().getValue() : null)
-                            .bookingNote(s.getBookingNote())
-                            .introduction(s.getIntroduction())
-                            .description(s.getDescription())
-                            .meetingLink(s.getMeetingLink())
-                            .cvUrl(s.getCvUrl())
-                            .startTime(avail.getStartTime())
-                            .endTime(avail.getEndTime())
-                            .createdAt(s.getCreatedAt())
-                            .build());
-                }));
+        return enrichSessions(Flux.just(s)).next();
     }
 
-    private Flux<AdminMentorProfileDTO> enrichMentors(Flux<MentorProfile> profiles) {
-        return profiles.concatMap(this::enrichMentor);
+    private Flux<AdminMentorshipSessionDTO> enrichSessions(Flux<MentorshipSession> sessionsFlux) {
+        return sessionsFlux.collectList().flatMapMany(sessions -> {
+            if (sessions.isEmpty()) return Flux.empty();
+            Set<Integer> availIds = sessions.stream()
+                    .map(MentorshipSession::getAvailabilityId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            return availabilityRepo.findAllById(availIds).collectMap(MentorAvailability::getId).flatMapMany(availMap -> {
+                Set<Integer> userIds = new HashSet<>();
+                for (MentorshipSession s : sessions) {
+                    if (s.getMenteeMemberId() != null) userIds.add(s.getMenteeMemberId());
+                    MentorAvailability avail = availMap.get(s.getAvailabilityId());
+                    if (avail != null && avail.getMentorMemberId() != null) userIds.add(avail.getMentorMemberId());
+                }
+                if (userIds.isEmpty()) {
+                    return Flux.fromIterable(sessions).map(s -> buildSessionDTO(s, availMap.get(s.getAvailabilityId()), null, null));
+                }
+                return adminUserRepository.findAllById(userIds).collectMap(User::getId).flatMapMany(userMap -> Flux.fromIterable(sessions).map(s -> {
+                    MentorAvailability avail = availMap.get(s.getAvailabilityId());
+                    User mentee = userMap.get(s.getMenteeMemberId());
+                    User mentor = avail != null ? userMap.get(avail.getMentorMemberId()) : null;
+                    return buildSessionDTO(s, avail, mentee, mentor);
+                }));
+            });
+        });
+    }
+
+    private AdminMentorshipSessionDTO buildSessionDTO(MentorshipSession s, MentorAvailability avail, User mentee, User mentor) {
+        return AdminMentorshipSessionDTO.builder()
+                .id(s.getId())
+                .availabilityId(s.getAvailabilityId())
+                .menteeMemberId(s.getMenteeMemberId())
+                .menteeName(mentee != null ? mentee.getEmail() : null)
+                .menteeEmail(mentee != null ? mentee.getEmail() : null)
+                .mentorMemberId(avail != null ? avail.getMentorMemberId() : null)
+                .mentorName(mentor != null ? mentor.getEmail() : null)
+                .mentorEmail(mentor != null ? mentor.getEmail() : null)
+                .status(s.getStatus() != null ? s.getStatus().getValue() : null)
+                .sessionType(s.getSessionType() != null ? s.getSessionType().getValue() : null)
+                .bookingNote(s.getBookingNote())
+                .introduction(s.getIntroduction())
+                .description(s.getDescription())
+                .meetingLink(s.getMeetingLink())
+                .cvUrl(s.getCvUrl())
+                .startTime(avail != null ? avail.getStartTime() : null)
+                .endTime(avail != null ? avail.getEndTime() : null)
+                .createdAt(s.getCreatedAt())
+                .build();
     }
 
     private Mono<AdminMentorProfileDTO> enrichMentor(MentorProfile p) {
-        Mono<User> userMono = p.getMemberId() != null
-                ? adminUserRepository.findById(p.getMemberId()).defaultIfEmpty(new User())
-                : Mono.just(new User());
+        return enrichMentors(Flux.just(p)).next();
+    }
 
-        return userMono.map(u -> AdminMentorProfileDTO.builder()
+    private Flux<AdminMentorProfileDTO> enrichMentors(Flux<MentorProfile> profilesFlux) {
+        return profilesFlux.collectList().flatMapMany(profiles -> {
+            if (profiles.isEmpty()) return Flux.empty();
+            Set<Integer> userIds = profiles.stream()
+                    .map(MentorProfile::getMemberId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            if (userIds.isEmpty()) {
+                return Flux.fromIterable(profiles).map(p -> buildProfileDTO(p, null));
+            }
+            return adminUserRepository.findAllById(userIds).collectMap(User::getId).flatMapMany(userMap -> Flux.fromIterable(profiles).map(p -> buildProfileDTO(p, userMap.get(p.getMemberId()))));
+        });
+    }
+
+    private AdminMentorProfileDTO buildProfileDTO(MentorProfile p, User u) {
+        return AdminMentorProfileDTO.builder()
                 .memberId(p.getMemberId())
-                .mentorName(u.getUserName())
-                .mentorEmail(u.getEmail())
+                .mentorName(u != null ? u.getEmail() : null)
+                .mentorEmail(u != null ? u.getEmail() : null)
                 .currentJobTitle(p.getCurrentJobTitle())
                 .currentCompany(p.getCurrentCompany())
                 .bio(p.getBio())
@@ -333,6 +331,6 @@ public class AdminMentorshipService {
                 .coverUrl(p.getCoverUrl())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
-                .build());
+                .build();
     }
 }

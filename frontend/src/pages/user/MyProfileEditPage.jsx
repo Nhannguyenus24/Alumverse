@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import {
   Alert,
@@ -18,6 +18,10 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
+import EmailIcon from '@mui/icons-material/Email'
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import Avatar from '@mui/material/Avatar';
 
 import Page from '../../components/Page';
 import ProfileLayout from '../../layouts/ProfileLayout';
@@ -26,6 +30,9 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { useUpdateProfile } from '../../hooks/profile/useUpdateProfile';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
+
+import useAvatarCrop from '../../hooks/profile/useAvatarCrop';
+import AvatarUploadDialog from '../../components/profile/AvatarUploadDialog';
 
 import { useMyMentorProfile } from '../../hooks/mentorship/useMyMentorProfile';
 import { useMyMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
@@ -129,6 +136,7 @@ const UnifiedProfileEditPage = () => {
   const [experiences, setExperiences] = useState([]);
   const [educations, setEducations] = useState([]);
   const [success, setSuccess] = useState(false);
+  const [email, setEmail] = useState('');
 
   const [editingExpertiseId, setEditingExpertiseId] = useState(null);
   const [draftExpertise, setDraftExpertise] = useState({
@@ -137,6 +145,8 @@ const UnifiedProfileEditPage = () => {
     description: '',
     tag: '',
   });
+
+  const avatarCrop = useAvatarCrop();
 
   useEffect(() => {
     const p = profileQuery.data;
@@ -147,6 +157,7 @@ const UnifiedProfileEditPage = () => {
       setCurrentCompany(m?.currentCompany ?? p?.currentCompany ?? '');
       setBio(m?.bio ?? p?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
+      setEmail(p?.email ?? '');
       
       const cover = m?.coverUrl ?? p?.coverUrl;
       if (cover) setCoverPreview(cover);
@@ -198,6 +209,7 @@ const UnifiedProfileEditPage = () => {
       
       // Also update base profile (even if it ignores some fields, we send what we can)
       await updateBaseProfile({
+        email: email.trim(),
         bio: bio.trim(),
         coverUrl: uploadedCoverUrl ?? undefined,
       });
@@ -209,16 +221,16 @@ const UnifiedProfileEditPage = () => {
     }
   };
 
-  const addExperienceRow = () => setExperiences((list) => [...list, emptyExperience()]);
-  const updateExperienceRow = (idx, field, value) =>
-    setExperiences((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
-  const removeExperienceRow = (idx) =>
-    setExperiences((list) => list.filter((_, i) => i !== idx));
+  const addExperienceRow = useCallback(() => setExperiences((list) => [...list, emptyExperience()]), []);
+  const updateExperienceRow = useCallback((idx, field, value) =>
+    setExperiences((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeExperienceRow = useCallback((idx) =>
+    setExperiences((list) => list.filter((_, i) => i !== idx)), []);
 
-  const addEducationRow = () => setEducations((list) => [...list, emptyEducation()]);
-  const updateEducationRow = (idx, field, value) =>
-    setEducations((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row)));
-  const removeEducationRow = (idx) => setEducations((list) => list.filter((_, i) => i !== idx));
+  const addEducationRow = useCallback(() => setEducations((list) => [...list, emptyEducation()]), []);
+  const updateEducationRow = useCallback((idx, field, value) =>
+    setEducations((list) => list.map((row, i) => (i === idx ? { ...row, [field]: value } : row))), []);
+  const removeEducationRow = useCallback((idx) => setEducations((list) => list.filter((_, i) => i !== idx)), []);
 
   const startEditExpertise = (item) => {
     setEditingExpertiseId(item.id);
@@ -285,42 +297,95 @@ const UnifiedProfileEditPage = () => {
     avatar: profile?.avatarUrl ?? '',
     cover: coverPreview,
   };
+  
+  const avatarEditor = (
+    <Box
+      onClick={() => avatarCrop.setOpen(true)}
+      sx={{
+        position: 'relative',
+        width: 140,
+        height: 140,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        cursor: 'pointer',
+      }}
+    >
+      <Avatar
+        src={avatarCrop.avatarUrl || user.avatar}
+        sx={{
+          width: 140,
+          height: 140,
+          border: '5px solid white',
+        }}
+      />
+
+      {/* overlay */}
+      <Box
+        sx={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0,0,0,0.35)',
+          opacity: 0,
+          transition: '0.2s',
+          borderRadius: '50%',
+          '&:hover': { opacity: 1 },
+        }}
+      >
+        <CameraAltIcon sx={{ color: 'white' }} />
+      </Box>
+    </Box>
+  );
 
   const tabs = isMentorshipPath
     ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : TOP_TABS))
     : TOP_TABS;
 
   const renderPersonalSection = () => (
-    <Grid container spacing={4}>
-      <Grid item xs={12} md={6}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
-            Cá nhân
-          </Typography>
-          <Stack spacing={1.5}>
-            <ProfileItem label="Họ và tên" value={profile?.fullName} />
-            <ProfileItem label="Email" value={profile?.email} />
-            <ProfileItem label="Khoa" value={orgMember?.faculty?.join(', ')} />
-            <ProfileItem label="Khoá" value={orgMember?.startedYear?.join(', ')} />
-          </Stack>
-        </Box>
-      </Grid>
-      <Grid item xs={12} md={6}>
-        <Box>
-          <Typography variant="h4" fontWeight={700} color="primary.main" mb={2}>
-            Giới thiệu
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            minRows={10}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder="Nhập mô tả về bạn..."
-          />
-        </Box>
-      </Grid>
-    </Grid>
+    <Stack spacing={3}>
+      <Typography
+        variant="h5"
+        fontWeight={800}
+        color="primary.main"
+        mb={2}
+        display="flex"
+        alignItems="center"
+        gap={1}
+      >
+        <PersonIcon />
+        Giới thiệu
+      </Typography>
+
+      <TextField
+        fullWidth
+        multiline
+        minRows={6}
+        value={bio}
+        onChange={(e) => setBio(e.target.value)}
+        placeholder="Giới thiệu về bản thân..."
+      />
+      <Typography
+          variant="h5"
+          fontWeight={800}
+          color="primary.main"
+          mb={2}
+          mt={4}
+          display="flex"
+          alignItems="center"
+          gap={1}
+        >
+          <EmailIcon />
+          Email
+        </Typography>
+
+        <TextField
+          fullWidth
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+    </Stack>
   );
 
   const renderMentorshipSection = () => {
@@ -346,6 +411,7 @@ const UnifiedProfileEditPage = () => {
       }
       return null;
     }
+
 
     return (
       <Stack spacing={4} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
@@ -761,7 +827,8 @@ const UnifiedProfileEditPage = () => {
         onCoverChange={handleCoverUpload}
         tabs={tabs}
         onNavigate={navigate}
-        mode={isMentorshipPath ? "mentorEdit" : "userEdit"}
+        mode={isMentorshipPath ? 'mentorEdit' : 'userEdit'}
+        avatarSlot={avatarEditor}
       >
         <Stack spacing={4}>
           <Box
@@ -823,6 +890,21 @@ const UnifiedProfileEditPage = () => {
           )}
         </Stack>
       </ProfileLayout>
+
+      <AvatarUploadDialog
+        open={avatarCrop.open}
+        onClose={() => avatarCrop.setOpen(false)}
+        avatarPreview={avatarCrop.avatarPreview}
+        crop={avatarCrop.crop}
+        zoom={avatarCrop.zoom}
+        setCrop={avatarCrop.setCrop}
+        setZoom={avatarCrop.setZoom}
+        onCropComplete={(_, croppedPixels) =>
+          avatarCrop.setCroppedAreaPixels(croppedPixels)
+        }
+        onFileChange={avatarCrop.handleFileChange}
+        onSave={avatarCrop.handleSave}
+      />
     </Page>
   );
 };

@@ -3,7 +3,6 @@ package com.service.backend.admin.service;
 import com.service.backend.admin.dao.AdminEventRepository;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.admin.dao.AdminAuditLogRepository;
-import com.service.backend.admin.dao.AuditRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.admin.dto.DashboardMetricsDTO;
@@ -37,7 +36,6 @@ public class AdminDashboardService {
     private final AdminEventRepository adminEventRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
-    private final AuditRepository auditRepository;
     private final CacheUtils cacheUtils;
 
     public Mono<DashboardMetricsDTO> getMetrics() {
@@ -45,7 +43,6 @@ public class AdminDashboardService {
             Mono<Long> totalUsersMono = adminUserRepository.countAllUsers();
             Mono<Long> totalOrgsMono = adminOrganizationRepository.count();
             Mono<Long> pendingVerifMono = adminUserRepository.countPendingVerificationRequests(null);
-            Mono<Long> pendingPeerVerificationsMono = adminUserRepository.countPeerVerificationsByStatus("PENDING");
             Mono<Long> totalEventsMono = adminEventRepository.countAllEvents();
             Mono<Long> upcomingEventsMono = adminEventRepository.countUpcomingEvents(LocalDateTime.now());
             Mono<Long> ticketsSoldMono = adminEventRepository.countAllTickets();
@@ -54,8 +51,6 @@ public class AdminDashboardService {
             LocalDateTime start30 = end.minusDays(30);
             Mono<BigDecimal> donations30Mono = fundDonationsRepository.sumAmountBetween(start30, end)
                     .defaultIfEmpty(BigDecimal.ZERO);
-                Mono<Long> dailyActiveMono = auditRepository.countDailyActive()
-                    .onErrorResume(e -> Mono.just(0L));
 
             return Mono.zip(totalUsersMono, totalOrgsMono, pendingVerifMono, totalEventsMono,
                     upcomingEventsMono, ticketsSoldMono, totalDonationsMono, donations30Mono)
@@ -75,30 +70,25 @@ public class AdminDashboardService {
                         dto.setTotalDonationsCount(tuple.getT7());
                         dto.setDonationsLast30Days(tuple.getT8());
                         return dto;
-                    });
+                    })
+                    .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
         };
 
-        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier)
-                .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
-    }
-
-    public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(int page, int size) {
-        return getActivities(null, page, size);
+        return cacheUtils.getOrCompute("admin:metrics", "global", Duration.ofMinutes(5), supplier);
     }
 
     public Mono<PaginatedResponse<ActivityItemDTO>> getActivities(Integer organizationId, int page, int size) {
-        int limit = size;
         int offset = page * size;
 
         Flux<ActivityItemDTO> items;
         Mono<Long> total;
 
         if (organizationId != null) {
-            items = adminAuditLogRepository.findAdminActionLogsByOrganization(organizationId, null, null, null, limit, offset)
+            items = adminAuditLogRepository.findAdminActionLogsByOrganization(organizationId, null, null, null, size, offset)
                     .map(this::toDto);
             total = adminAuditLogRepository.countAdminActionLogsByOrganization(organizationId, null, null, null);
         } else {
-            items = adminAuditLogRepository.findAdminActionLogs(null, null, null, limit, offset)
+            items = adminAuditLogRepository.findAdminActionLogs(null, null, null, size, offset)
                     .map(this::toDto);
             total = adminAuditLogRepository.countAdminActionLogs(null, null, null);
         }

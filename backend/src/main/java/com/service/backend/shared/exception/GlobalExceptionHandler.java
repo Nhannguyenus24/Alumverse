@@ -15,6 +15,8 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.micrometer.core.instrument.MeterRegistry;
+
 /**
  * Shared Global Exception Handler used across all modules
  */
@@ -22,8 +24,16 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
+    private final MeterRegistry meterRegistry;
+
+    public GlobalExceptionHandler(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
     @ExceptionHandler(WebExchangeBindException.class)
     public Mono<ResponseEntity<?>> handleValidationException(WebExchangeBindException ex) {
+        meterRegistry.counter("api.errors.count", "error_code", "VALIDATION_FAILED").increment();
+        
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
@@ -41,6 +51,8 @@ public class GlobalExceptionHandler {
     public Mono<ResponseEntity<?>> handleApplicationException(ApplicationException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         
+        meterRegistry.counter("api.errors.count", "error_code", errorCode.name()).increment();
+        
         ApiResponse<?> response = ApiResponse.error(errorCode);
         // Override default ErrorCode message if a custom message was provided to the exception
         if (ex.getMessage() != null && !ex.getMessage().isEmpty()) {
@@ -53,6 +65,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Mono<ResponseEntity<?>> handleGenericException(Exception ex) {
         log.error("Unhandled exception occurred: {}", ex.getMessage(), ex);
+        
+        meterRegistry.counter("api.errors.count", "error_code", "INTERNAL_SERVER_ERROR").increment();
+        
         return Mono.just(
                 ResponseEntity
                         .status(500)

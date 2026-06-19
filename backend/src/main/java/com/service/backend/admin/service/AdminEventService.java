@@ -18,7 +18,6 @@ import com.service.backend.shared.utils.PaginationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -53,10 +52,6 @@ public class AdminEventService {
         this.imageService = imageService;
     }
 
-    public Mono<PaginatedResponse<Event>> getAllEvents(int page, int size) {
-        return getAllEvents(null, page, size);
-    }
-
     public Mono<PaginatedResponse<Event>> getAllEvents(Long organizationId, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
@@ -75,20 +70,6 @@ public class AdminEventService {
                 .doOnError(error -> log.error("Error fetching all events", error));
     }
 
-    public Mono<PaginatedResponse<Event>> getEventsByOrganization(Long organizationId, int page, int size) {
-        int offset = page * size;
-        return PaginationHelper.paginate(
-                    adminEventRepository.findEventsByOrganization(organizationId, size, offset),
-                    adminEventRepository.countEventsByOrganization(organizationId),
-                    page, size)
-                .doOnSuccess(r -> log.info("getEventsByOrganization result: {}", JsonUtils.toJson(r)))
-                .doOnError(error -> log.error("Error fetching events for organization {}", organizationId, error));
-    }
-
-    public Mono<PaginatedResponse<Event>> searchAllEvents(String keyword, int page, int size) {
-        return searchAllEvents(null, keyword, page, size);
-    }
-
     public Mono<PaginatedResponse<Event>> searchAllEvents(Long organizationId, String keyword, int page, int size) {
         int offset = page * size;
         if (organizationId != null) {
@@ -105,10 +86,6 @@ public class AdminEventService {
                     page, size)
                 .doOnSuccess(r -> log.info("searchAllEvents result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> log.error("Error searching events with keyword {}", keyword, error));
-    }
-
-    public Mono<PaginatedResponse<Event>> getEventsByPublishStatus(Boolean isPublished, int page, int size) {
-        return getEventsByPublishStatus(null, isPublished, page, size);
     }
 
     public Mono<PaginatedResponse<Event>> getEventsByPublishStatus(Long organizationId, Boolean isPublished, int page, int size) {
@@ -202,11 +179,11 @@ public class AdminEventService {
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND,
                         "Ticket not found with code: " + ticketCode)))
                 .flatMap(ticket -> {
-                    if (STATUS_CANCELLED.equals(ticket.getStatus())) {
+                    if (STATUS_CANCELLED.equals(ticket.getStatus().toString())) {
                         return Mono.error(new ApplicationException(ErrorCode.TICKET_ALREADY_CANCELLED,
                                 "Ticket already cancelled"));
                     }
-                    return ticketRepo.cancelTicket(ticket.getId()).then(ticketRepo.findById(ticket.getId()));
+                    return ticketRepo.cancelTicket(ticket.getId(), "Cancelled by admin").then(ticketRepo.findById(ticket.getId()));
                 })
                 .doOnSuccess(t -> log.info("cancelTicket result: {}", JsonUtils.toJson(t)));
     }
@@ -260,14 +237,12 @@ public class AdminEventService {
         ).map(tuple -> new long[]{tuple.getT1(), tuple.getT2(), tuple.getT3(), tuple.getT4(), tuple.getT5()});
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByRegistrationMono =
-                adminEventRepository.findTopEventsByRegistration(5)
-                        .concatMap(this::toEventSummaryWithRegisteredCount)
+                adminEventRepository.findTopEventsByRegistrationSummary(5)
                         .collectList()
                         .defaultIfEmpty(Collections.emptyList());
 
         Mono<List<EventStatisticsDTO.EventSummary>> topByInterestMono =
-                adminEventRepository.findTopEventsByInterest(5)
-                        .concatMap(this::toEventSummaryWithRegisteredCount)
+                adminEventRepository.findTopEventsByInterestSummary(5)
                         .collectList()
                         .defaultIfEmpty(Collections.emptyList());
 
@@ -288,22 +263,5 @@ public class AdminEventService {
                 .doOnError(error -> log.error("Error fetching event statistics", error));
     }
 
-    private Mono<EventStatisticsDTO.EventSummary> toEventSummaryWithRegisteredCount(Event event) {
-        return Flux.merge(
-                ticketRepo.countByEventIdAndStatus(event.getId(), STATUS_REGISTERED),
-                ticketRepo.countByEventIdAndStatus(event.getId(), STATUS_CHECKED_IN)
-        ).reduce(0L, Long::sum)
-                .defaultIfEmpty(0L)
-                .map(registeredCount -> EventStatisticsDTO.EventSummary.builder()
-                        .eventId(event.getId())
-                        .organizationId(event.getOrganizationId())
-                        .title(event.getTitle())
-                        .location(event.getLocation())
-                        .startTime(event.getStartTime())
-                        .endTime(event.getEndTime())
-                        .interestedCount(event.getInterestedCount())
-                        .registeredCount(registeredCount)
-                        .isPublished(event.getIsPublished())
-                        .build());
-    }
+
 }

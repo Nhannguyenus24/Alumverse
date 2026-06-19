@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, TextField, Paper, Typography, Avatar, Fade, Tooltip } from '@mui/material';
 import { Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -59,7 +61,6 @@ const loadMessagesFromStorage = () => {
     const prunedHistory = normalizeAndPruneMessages(parsedHistory);
     return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage()];
   } catch (error) {
-    console.error('Error loading chat history from localStorage:', error);
     return [buildDefaultMessage()];
   }
 };
@@ -77,7 +78,7 @@ const saveMessagesToStorage = (messages) => {
       JSON.stringify(serializableMessages)
     );
   } catch (error) {
-    console.error('Error saving chat history to localStorage:', error);
+    // Ignore error
   }
 };
 
@@ -226,6 +227,9 @@ const MessageBubble = styled(Box, {
   fontSize: '0.95rem',
   lineHeight: 1.4,
   boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+  '& p': { margin: '0 0 0.5em 0', '&:last-child': { margin: 0 } },
+  '& ul, & ol': { margin: '0 0 0.5em 0', paddingLeft: '1.5em' },
+  '& li': { marginBottom: '0.2em' },
 }));
 
 const InputContainer = styled(Box)(({ theme }) => ({
@@ -271,51 +275,121 @@ const SUGGESTIONS = [
   'Liên hệ với administrative office',
 ];
 
-// SSE response handler
-const streamSSEResponse = (userMessage, onChunk, onComplete, onError) => {
-  // Construct the API endpoint and query parameters
-  const apiEndpoint = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/chat/stream`;
-  const params = new URLSearchParams({
-    message: userMessage,
-  });
-
+// SSE response handler using fetch
+const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, signal) => {
+  const apiEndpoint = '/ngrok-api/api/stream-query';
+  
   try {
-    // Create EventSource connection
-    const eventSource = new EventSource(`${apiEndpoint}?${params.toString()}`);
-
-    eventSource.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.content) {
-          onChunk(data.content);
-        }
-      } catch (e) {
-        console.error('Error parsing SSE message:', e);
-      }
-    });
-
-    eventSource.addEventListener('end', () => {
-      eventSource.close();
-      onComplete();
-    });
-
-    eventSource.addEventListener('error', (error) => {
-      console.error('SSE Error:', error);
-      eventSource.close();
-      onError(error);
-    });
-
-    eventSource.onerror = (error) => {
-      console.error('EventSource error:', error);
-      eventSource.close();
-      onError(error);
+    const requestBody = {
+      question: userMessage,
+      top_k: 10,
+      model: 'gemini-2.5-flash',
+      use_reranker: false
     };
 
-    return eventSource;
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'accept': 'text/event-stream, application/json',
+        'Content-Type': 'application/json', 
+        'ngrok-skip-browser-warning': 'true',
+      },
+      body: JSON.stringify(requestBody),
+      signal: signal
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    
+    // If not streaming, just read all and return
+    if (contentType.includes('application/json')) {
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        result += decoder.decode(value, { stream: true });
+      }
+      try {
+        const data = JSON.parse(result);
+        let answer = '';
+        if (Array.isArray(data)) {
+          answer = data.map(item => item.content || item.text || item.answer || '').join('');
+        } else {
+          answer = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '');
+        }
+        if (!answer && typeof data === 'string') {
+          answer = data;
+        }
+        if (answer) onChunk(answer);
+      } catch (e) {
+        onChunk(result);
+      }
+      onComplete();
+      return;
+    }
+
+    // SSE streaming handling
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep the incomplete line
+
+      for (const line of lines) {
+        if (line.trim() === '') continue;
+        if (line.startsWith('data:')) {
+          const dataStr = line.slice(5).trim();
+          if (dataStr === '[DONE]') {
+            continue;
+          }
+          try {
+            const data = JSON.parse(dataStr);
+            let textChunk = '';
+            if (Array.isArray(data)) {
+              textChunk = data.map(item => item.content || item.text || item.answer || '').join('');
+            } else if (data.type === 'sources' || (data.sources && Array.isArray(data.sources))) {
+              textChunk = ''; // Không hiển thị nguồn tham khảo
+            } else {
+              textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '');
+            }
+            if (!textChunk && typeof data === 'string') {
+              textChunk = data;
+            }
+            if (textChunk) onChunk(textChunk);
+          } catch (e) {
+            onChunk(dataStr);
+          }
+        }
+      }
+    }
+    
+    // Process remaining buffer
+    if (buffer.startsWith('data:')) {
+      const dataStr = buffer.slice(5).trim();
+      if (dataStr && dataStr !== '[DONE]') {
+        try {
+          const data = JSON.parse(dataStr);
+          const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
+          if (textChunk) onChunk(textChunk);
+        } catch (e) {
+          onChunk(dataStr);
+        }
+      }
+    }
+
+    onComplete();
   } catch (error) {
-    console.error('Error creating EventSource:', error);
-    onError(error);
-    return null;
+    if (error.name !== 'AbortError') {
+      onError(error);
+    }
   }
 };
 
@@ -330,8 +404,8 @@ export default function FitBot() {
   const messageEndRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
   const suggestionHideTimeoutRef = useRef(null);
-  const eventSourceRef = useRef(null);
   const charIndexRef = useRef(0);
+  const abortControllerRef = useRef(null);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -345,11 +419,11 @@ export default function FitBot() {
     saveMessagesToStorage(messages);
   }, [messages]);
 
-  // Cleanup SSE on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
       if (suggestionTimeoutRef.current) {
         clearTimeout(suggestionTimeoutRef.current);
@@ -425,15 +499,19 @@ export default function FitBot() {
     ]);
 
     let fullResponse = '';
-    charIndexRef.current = 0;
-    let charQueue = '';
 
-    const typeNextCharacters = () => {
-      if (charQueue.length > 0) {
-        const charsToAdd = charQueue.substring(0, 3); // Add up to 3 chars at a time
-        fullResponse += charsToAdd;
-        charQueue = charQueue.substring(3);
+    // Create abort controller for this stream
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
+    // Stream response from server via SSE
+    streamSSEResponse(
+      textToSend,
+      (chunk) => {
+        // Cập nhật trực tiếp ngay khi nhận chunk để markdown render không bị lỗi và chữ chạy nhanh hơn
+        fullResponse += chunk;
         setMessages((prev) => {
           const updatedMessages = [...prev];
           const botMessageIndex = updatedMessages.findIndex(
@@ -444,34 +522,14 @@ export default function FitBot() {
           }
           return updatedMessages;
         });
-
-        setTimeout(typeNextCharacters, 30);
-      } else {
-        // Check if more data is coming from SSE
-        if (eventSourceRef.current && !eventSourceRef.current.closed) {
-          setTimeout(typeNextCharacters, 30);
-        }
-      }
-    };
-
-    // Stream response from server via SSE
-    streamSSEResponse(
-      textToSend,
-      (chunk) => {
-        // On chunk received, add to queue for typing effect
-        charQueue += chunk;
-        if (!document.hidden) {
-          typeNextCharacters();
-        }
       },
       () => {
         // On complete
         setIsTyping(false);
-        eventSourceRef.current = null;
+        abortControllerRef.current = null;
       },
       (error) => {
         // On error - show fallback message
-        console.error('Chat error:', error);
         const errorMessage =
           'Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.';
         fullResponse = errorMessage;
@@ -486,20 +544,37 @@ export default function FitBot() {
           return updatedMessages;
         });
         setIsTyping(false);
-        eventSourceRef.current = null;
-      }
+        abortControllerRef.current = null;
+      },
+      abortControllerRef.current.signal
     );
   };
 
   const handleClose = () => {
     setIsChatOpen(false);
     setIsTyping(false);
-    // Close SSE connection if active
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+    // Abort active stream
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
   };
+
+  const renderedMessages = React.useMemo(() => {
+    return messages.map((message) => (
+      <Message key={message.id} isBot={message.isBot}>
+        <MessageBubble isBot={message.isBot}>
+          {message.isBot ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {message.text}
+            </ReactMarkdown>
+          ) : (
+            message.text
+          )}
+        </MessageBubble>
+      </Message>
+    ));
+  }, [messages]);
 
   return (
     <>
@@ -566,13 +641,7 @@ export default function FitBot() {
 
           {/* Messages */}
           <MessageContainer>
-            {messages.map((message) => (
-              <Message key={message.id} isBot={message.isBot}>
-                <MessageBubble isBot={message.isBot}>
-                  {message.text}
-                </MessageBubble>
-              </Message>
-            ))}
+            {renderedMessages}
 
             {/* Typing Indicator */}
             {isTyping && (

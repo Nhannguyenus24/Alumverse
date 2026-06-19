@@ -19,20 +19,14 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      */
     Mono<User> findByEmail(String email);
     
-    /**
-     * Find user by username
-     */
-    Mono<User> findByUserName(String userName);
+
 
     /**
-     * Check if user exists by email or username (for registration validation)
+     * Check if user exists by email
      */
-    Mono<Boolean> existsByEmailOrUserName(String email, String userName);
+    Mono<Boolean> existsByEmail(String email);
 
-    /**
-     * Check if username already exists
-     */
-    Mono<Boolean> existsByUserName(String userName);
+
 
     /**
      * Find active user by email
@@ -40,11 +34,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT * FROM users WHERE email = :email AND \"status\" = 'ACTIVE'")
     Mono<User> findActiveByEmail(@Param("email") String email);
     
-    /**
-     * Find active user by username
-     */
-    @Query("SELECT * FROM users WHERE user_name = :userName AND \"status\" = 'ACTIVE'")
-    Mono<User> findActiveByUserName(@Param("userName") String userName);
+
     
     /**
      * Find user by email and password for login
@@ -52,11 +42,7 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Query("SELECT * FROM users WHERE email = :email AND password_hash = :passwordHash")
     Mono<User> findByEmailAndPassword(@Param("email") String email, @Param("passwordHash") String passwordHash);
     
-    /**
-     * Find user by username and password for login
-     */
-    @Query("SELECT * FROM users WHERE user_name = :userName AND password_hash = :passwordHash")
-    Mono<User> findByUsernameAndPassword(@Param("userName") String userName, @Param("passwordHash") String passwordHash);
+
     
     /**
      * Update user password by id
@@ -64,6 +50,13 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     @Modifying
     @Query("UPDATE users SET password_hash = :passwordHash, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
     Mono<Void> updatePasswordById(@Param("id") Integer id, @Param("passwordHash") String passwordHash);
+    
+    /**
+     * Update user email by id
+     */
+    @Modifying
+    @Query("UPDATE users SET email = :email, updated_at = CURRENT_TIMESTAMP WHERE id = :id")
+    Mono<Void> updateEmailById(@Param("id") Integer id, @Param("email") String email);
     
     /**
      * Update user avatar by id
@@ -103,21 +96,20 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Register new user with unverified status and alumni role
      * Returns the created user ID
      */
-    @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'ALUMNI', 'UNVERIFIED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
-    Mono<Integer> registerNewUser(@Param("email") String email, @Param("userName") String userName, @Param("passwordHash") String passwordHash);
+    Mono<Integer> registerNewUser(@Param("email") String email, @Param("passwordHash") String passwordHash);
 
     /**
      * Register new user from Google login with active status
      * Returns the created user ID
      */
-    @Query("INSERT INTO users (email, user_name, password_hash, role, \"status\", avatar_url, created_at, updated_at) " +
-           "VALUES (:email, :userName, :passwordHash, 'ALUMNI', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
+    @Query("INSERT INTO users (email, password_hash, role, \"status\", avatar_url, created_at, updated_at) " +
+           "VALUES (:email, :passwordHash, 'GUEST', 'ACTIVE', :avatarUrl, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) " +
            "RETURNING id")
     Mono<Integer> registerGoogleUser(
             @Param("email") String email,
-            @Param("userName") String userName,
             @Param("passwordHash") String passwordHash,
             @Param("avatarUrl") String avatarUrl);
     
@@ -140,9 +132,9 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
      * Create a default organization_members record when a user registers under an organization
      */
     @Modifying
-    @Query("INSERT INTO organization_members (organization_id, user_id, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, 0, false, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
-    Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId);
+    @Query("INSERT INTO organization_members (organization_id, user_id, student_id, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, :studentId, 0, false, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    Mono<Void> createOrganizationMember(@Param("organizationId") Integer organizationId, @Param("userId") Integer userId, @Param("studentId") String studentId);
 
     /**
      * Check if an organization_members record exists for the given user and organization

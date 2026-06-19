@@ -16,11 +16,15 @@ import jakarta.mail.internet.MimeMessage;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
 @Service
 public class EmailService {
     private static final Logger log = LoggerFactory.getLogger(EmailService.class);
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private final MeterRegistry meterRegistry;
 
     @Value("${app.mail.from-address}")
     private String fromAddress;
@@ -28,15 +32,18 @@ public class EmailService {
     @Value("${app.mail.from-name}")
     private String fromName;
 
-    private EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
+    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine, MeterRegistry meterRegistry) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
+        this.meterRegistry = meterRegistry;
     }
     /**
      * Gửi email HTML với template (Reactive)
      */
     public Mono<Void> sendHtmlEmail(String to, String subject, String templateName, Map<String, Object> variables) {
-        return Mono.fromCallable(() -> {
+        return Mono.defer(() -> {
+            Timer.Sample sample = Timer.start(meterRegistry);
+            return Mono.fromCallable(() -> {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -53,11 +60,13 @@ public class EmailService {
 
             return message;
         })
-        .flatMap(message -> Mono.fromRunnable(() -> mailSender.send(message))
-            .subscribeOn(Schedulers.boundedElastic()))
+        .subscribeOn(Schedulers.boundedElastic())
+        .flatMap(message -> Mono.fromRunnable(() -> mailSender.send(message)))
         .doOnSuccess(v -> log.info("Email sent successfully to: {} with subject: {}", to, subject))
         .doOnError(e -> log.error("Failed to send email to: {}. Error: {}", to, e.getMessage(), e))
         .onErrorMap(MessagingException.class, e -> new RuntimeException("Failed to send email", e))
-        .then();
+        .then()
+        .doFinally(sig -> sample.stop(meterRegistry.timer("email.send.time")));
+        });
     }
 }

@@ -35,11 +35,11 @@ public class RegisterRequest {
     @Schema(example = "Nguyễn Văn A")
     private String fullName;
     
-    @NotBlank(message = "Username (Student ID) is required")
-    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "Username can only contain letters, numbers, dots, underscores, and hyphens")
+    @NotBlank(message = "Student ID is required")
+    @Size(min = 3, max = 50, message = "Student ID must be between 3 and 50 characters")
+    @Pattern(regexp = "^[a-zA-Z0-9._-]+$", message = "Student ID can only contain letters, numbers, dots, underscores, and hyphens")
     @Schema(example = "20120123")
-    private String userName;
+    private String studentId;
     
     @NotBlank(message = "Password is required")
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")

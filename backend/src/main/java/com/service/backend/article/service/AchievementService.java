@@ -13,6 +13,7 @@ import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
+import com.service.backend.shared.utils.CacheUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class AchievementService {
 
     private final AchievementR2dbcRepository achievementRepository;
     private final ImageService imageService;
+    private final CacheUtils cacheUtils;
 
     public Mono<AchievementResponse> create(CreateAchievementRequest request) {
         return SecurityUtils.getCurrentUserId()
@@ -41,7 +43,9 @@ public class AchievementService {
                                     .status(request.getStatus())
                                     .build();
 
-                            return achievementRepository.save(achievement).map(AchievementResponse::from);
+                            return achievementRepository.save(achievement)
+                                    .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                                    .map(AchievementResponse::from);
                         }));
     }
 
@@ -59,13 +63,16 @@ public class AchievementService {
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             return achievementRepository.save(existing);
                         }))
+                .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
                 .map(AchievementResponse::from);
     }
 
     public Mono<Boolean> delete(Integer id) {
         return achievementRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
-                .flatMap(existing -> achievementRepository.deleteById(id).thenReturn(true));
+                .flatMap(existing -> achievementRepository.deleteById(id)
+                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .thenReturn(true));
     }
 
     public Mono<AchievementResponse> getById(Integer id) {
@@ -97,15 +104,18 @@ public class AchievementService {
                 .flatMap(userId -> getByMemberId(userId.intValue(), page, limit));
     }
 
-        public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
-        int offset = page * limit;
-        return PaginationHelper.paginate(
-                achievementRepository.findDetailsByStatus(status, limit, offset)
-                        .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
-                        .map(AchievementResponse::from),
-                achievementRepository.countByStatus(status),
-                page, limit
-        );
+    public Mono<PaginatedResponse<AchievementResponse>> getByStatus(Status status, int page, int limit) {
+        String cacheKey = "status_" + status + "_page_" + page + "_limit_" + limit;
+        return cacheUtils.getOrCompute("achievement_cache", cacheKey, java.time.Duration.ofMinutes(5), () -> {
+            int offset = page * limit;
+            return PaginationHelper.paginate(
+                    achievementRepository.findDetailsByStatus(status, limit, offset)
+                            .doOnNext(item -> log.info("Fetched achievement with status {}: {}", status, JsonUtils.toJson(item)))
+                            .map(AchievementResponse::from),
+                    achievementRepository.countByStatus(status),
+                    page, limit
+            );
+        });
     }
 
     public Mono<PaginatedResponse<AchievementResponse>> search(String keyword, int page, int limit) {

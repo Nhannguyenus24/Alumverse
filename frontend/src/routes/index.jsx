@@ -9,6 +9,7 @@ import RequireSlugRoute from "./RequireSlugRoute";
 import LoadingScreen from "../components/LoadingScreen";
 import { Loadable, AuthLoadable } from "./loadable";
 import MentorshipFullAccessGate from "../components/mentorship/MentorshipFullAccessGate";
+import MentorshipBookingGate from "../components/mentorship/MentorshipBookingGate";
 
 if (typeof window !== "undefined") {
   queueMicrotask(() => {
@@ -100,11 +101,17 @@ const AdminForumTopicsPage = Loadable(
 const AdminForumCategoriesPage = Loadable(
   lazy(() => import("../pages/admin/AdminForumCategoriesPage")),
 );
+const AdminForumReportsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminForumReportsPage")),
+);
 const AdminOrganizationsPage = Loadable(
   lazy(() => import("../pages/admin/AdminOrganizationsPage")),
 );
 const AdminEventsPage = Loadable(
   lazy(() => import("../pages/admin/AdminEventsPage")),
+);
+const AdminEventOrganizePage = Loadable(
+  lazy(() => import("../pages/admin/AdminEventOrganizePage")),
 );
 const AdminSchoolFeedbackPage = Loadable(
   lazy(() => import("../pages/admin/AdminSchoolFeedbackPage")),
@@ -537,9 +544,9 @@ export const router = createBrowserRouter([
               {
                 path: "mentors/:mentorId/book",
                 element: (
-                  <MentorshipFullAccessGate>
+                  <MentorshipBookingGate>
                     <MentorshipBookingPage />
-                  </MentorshipFullAccessGate>
+                  </MentorshipBookingGate>
                 ),
               },
               {
@@ -623,6 +630,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "forum/reports",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+                <AdminForumReportsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "organizations",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -635,6 +650,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
                 <AdminEventsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: "events/:eventId/organize",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminEventOrganizePage />
               </ProtectedRoute>
             ),
           },

@@ -12,8 +12,10 @@ import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined
 import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../utils/dateFormatter";
 import { notificationApi } from "../utils/api";
+import { useOrgNavigate } from "../hooks/useOrgNavigate";
 
 const Notification = ({ headerTextColor = "text.primary" }) => {
+  const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [notifications, setNotifications] = useState([]);
@@ -69,8 +71,16 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         console.error("Failed to mark notification as read:", error);
       }
     }
-    // Handle navigation if notification has a link (optional, depends on backend)
-    // if (notification.link) window.location.href = notification.link;
+    const targetLink = notification.link || "";
+    
+    if (targetLink) {
+      handleClose();
+      if (/^https?:\/\//i.test(targetLink)) {
+        window.open(targetLink, "_blank", "noopener,noreferrer");
+      } else {
+        navigate(targetLink);
+      }
+    }
   };
 
   // Filter notifications based on active tab
@@ -144,7 +154,14 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
             Thông báo
           </Typography>
           <Tooltip title="Cài đặt" arrow>
-            <IconButton size="small" sx={{ color: "text.secondary" }}>
+            <IconButton 
+              size="small" 
+              sx={{ color: "text.secondary" }}
+              onClick={() => {
+                handleClose();
+                navigate('/settings?tab=notification');
+              }}
+            >
               <SettingsIcon fontSize="small" />
             </IconButton>
           </Tooltip>

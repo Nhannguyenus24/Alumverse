@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router';
 import useOrganizationStore from '../stores/organizationStore';
 import useAuthStore from '../stores/authStore';
@@ -57,7 +57,11 @@ export const useOrganization = ({ enabled = true } = {}) => {
   const isOrganizationNotFound = statusCode === 404;
   const isServerError = statusCode >= 500;
 
-  return {
+  const refetch = useCallback(() => {
+    return enabled && slug ? fetchOrganization(slug) : Promise.resolve();
+  }, [enabled, slug, fetchOrganization]);
+
+  return useMemo(() => ({
     slug,
     organization,
     loading,
@@ -65,7 +69,7 @@ export const useOrganization = ({ enabled = true } = {}) => {
     isOrganizationNotFound,
     isServerError,
     fetchOrganization,
-    refetch: () => (enabled && slug ? fetchOrganization(slug) : Promise.resolve()),
+    refetch,
     reset,
-  };
+  }), [slug, organization, loading, error, isOrganizationNotFound, isServerError, fetchOrganization, refetch, reset]);
 };

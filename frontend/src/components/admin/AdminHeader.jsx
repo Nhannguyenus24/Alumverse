@@ -214,7 +214,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                   boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
                 }}
               >
-                {(user?.fullName || user?.userName || 'A')[0].toUpperCase()}
+                {(user?.fullName || user?.studentId || 'A')[0].toUpperCase()}
               </Avatar>
             </Stack>
           </Button>
@@ -246,7 +246,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
           >
             <Box sx={{ px: 2.5, py: 1.5 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                {user?.fullName || user?.userName}
+                {user?.fullName || user?.studentId}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {user?.role} · Quản trị viên

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Container, Stack, Box, Typography, CircularProgress } from "@mui/material";
 import Page from "../../components/Page";
@@ -16,8 +17,20 @@ const useMyTickets = () => {
 
 const MyTicketsPage = () => {
   const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const highlightCode = searchParams.get("ticket");
+  const scrolledRef = useRef(false);
   const queryClient = useQueryClient();
   const { data: tickets = [], isPending, isError } = useMyTickets();
+
+  useEffect(() => {
+    if (!highlightCode || scrolledRef.current || isPending) return;
+    const el = document.getElementById(`ticket-${highlightCode}`);
+    if (el) {
+      scrolledRef.current = true;
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "center" }), 200);
+    }
+  }, [highlightCode, isPending, tickets]);
 
   const filtered = tickets.filter((t) =>
     (t.eventTitle ?? t.ticketCode ?? "").toLowerCase().includes(search.toLowerCase())
@@ -38,7 +51,6 @@ const MyTicketsPage = () => {
         }}
       >
         <Stack spacing={3}>
-          {/* HEADER */}
           <Stack gap={2}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <Typography
@@ -54,7 +66,6 @@ const MyTicketsPage = () => {
             <SearchBar value={search} onChange={setSearch} />
           </Stack>
 
-          {/* STATE */}
           {isPending && (
             <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
               <CircularProgress />
@@ -73,10 +84,14 @@ const MyTicketsPage = () => {
             </Typography>
           )}
 
-          {/* TICKETS */}
           <Stack spacing={2}>
             {filtered.map((ticket) => (
-              <MyTicketCard key={ticket.id} ticket={ticket} onCancelled={handleCancelled} />
+              <MyTicketCard
+                key={ticket.id}
+                ticket={ticket}
+                highlighted={highlightCode === ticket.ticketCode}
+                onCancelled={handleCancelled}
+              />
             ))}
           </Stack>
         </Stack>

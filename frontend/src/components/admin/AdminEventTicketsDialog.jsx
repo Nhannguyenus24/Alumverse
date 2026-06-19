@@ -59,7 +59,7 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
   const { enqueueSnackbar } = useSnackbar();
   const eventId = event?.id ?? null;
 
-  const [tab, setTab] = useState('pending');
+  const [tab, setTab] = useState('tickets');
 
   const [pending, setPending]           = useState(fallbackPage);
   const [pendingPage, setPendingPage]   = useState(0);
@@ -112,7 +112,7 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
-      setTab('pending');
+      setTab('tickets');
       setPendingPage(0);
       setTicketsPage(0);
       setInterestsPage(0);
@@ -201,7 +201,6 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 1 }}>
-          <Tab value="pending"    label={`Chờ duyệt (${pending.totalItem ?? 0})`} />
           <Tab value="tickets"   label={`Tất cả vé (${tickets.totalItem ?? 0})`} />
           <Tab value="interests" label={`Quan tâm (${interests.totalItem ?? 0})`} />
         </Tabs>

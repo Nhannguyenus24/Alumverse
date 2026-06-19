@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
+import '../providers/auth_provider.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -14,6 +17,7 @@ class ForgotPasswordPage extends ConsumerStatefulWidget {
 class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailCtl = TextEditingController();
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -23,11 +27,24 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    // TODO: Implement forgot password logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đang gửi mã xác thực...')),
-    );
+
+    setState(() => _submitting = true);
+    try {
+      await ref
+          .read(authStateProvider.notifier)
+          .forgotPassword(_emailCtl.text.trim());
+      if (!mounted) return;
+      AppToast.success(context, 'Đã gửi mã đến email của bạn.');
+      context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is Exception
+          ? e.toString().replaceFirst('Exception: ', '')
+          : 'Gửi mã thất bại';
+      AppToast.error(context, message);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -75,11 +92,20 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: _submit,
+                  onPressed: _submitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Gửi mã', style: TextStyle(fontSize: 16)),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Gửi mã', style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),

@@ -50,6 +50,22 @@ public class MenteeService {
         return SecurityUtils.getCurrentUserId().map(Long::intValue);
     }
 
+    private Mono<Void> requireJoinedMentorship() {
+        return currentMemberId().flatMap(memberId ->
+                menteeProfileRepository.findById(memberId).hasElement()
+                        .zipWith(profileRepository.findById(memberId).hasElement())
+                        .flatMap(tuple -> {
+                            boolean hasMentee = tuple.getT1();
+                            boolean hasMentor = tuple.getT2();
+                            if (hasMentee || hasMentor) {
+                                return Mono.empty();
+                            }
+                            return Mono.error(new ApplicationException(
+                                    ErrorCode.FORBIDDEN,
+                                    "Bạn cần đăng ký trở thành mentee hoặc cố vấn trước khi đặt lịch hẹn."));
+                        }));
+    }
+
     private Mono<MentorshipSessionResponse> enrich(MentorshipSession session) {
         return enrichAll(List.of(session)).map(list -> list.get(0));
     }
@@ -264,6 +280,7 @@ public class MenteeService {
     @Transactional
     public Mono<MentorshipSessionResponse> bookSession(BookSessionRequest request) {
         return accessService.requireOrgVerifiedForMentorship()
+                .then(requireJoinedMentorship())
                 .then(currentMemberId().flatMap(memberId ->
                         availabilityRepository.findById(request.getAvailabilityId())
                                 .switchIfEmpty(Mono.error(new ApplicationException(
@@ -287,7 +304,7 @@ public class MenteeService {
                                     }
                                     return accessService
                                             .requireApprovedMentorProfile(availability.getMentorMemberId())
-                                            .then(Mono.defer(() -> {
+                                            .flatMap(mentorProfile -> {
                                                 MentorshipSession session = MentorshipSession.builder()
                                                         .availabilityId(request.getAvailabilityId())
                                                         .menteeMemberId(memberId)
@@ -300,6 +317,11 @@ public class MenteeService {
                                                         .cvUrl(request.getCvUrl())
                                                         .createdAt(LocalDateTime.now())
                                                         .build();
+                                                String defaultLink = mentorProfile.getDefaultMeetingLink();
+                                                boolean hasDefaultLink = defaultLink != null && !defaultLink.isBlank();
+                                                String message = hasDefaultLink
+                                                        ? "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi."
+                                                        : "Bạn vừa nhận được một lịch hẹn cố vấn mới, nhưng buổi này chưa có link tham gia. Hãy thêm link họp cho buổi trao đổi.";
                                         return availabilityRepository.updateStatus(
                                                         availability.getId(), Status.BOOKED.getValue())
                                                 .then(sessionRepository.save(session))
@@ -307,9 +329,9 @@ public class MenteeService {
                                                         notificationService.createNotificationAsync(
                                                                 availability.getMentorMemberId(),
                                                                 "Lịch hẹn mới",
-                                                                "Bạn vừa nhận được một lịch hẹn cố vấn mới. Hãy xem chi tiết và chuẩn bị cho buổi trao đổi.",
-                                                                "/development/mentorship/dashboard"));
-                                            }));
+                                                                message,
+                                                                "/development/mentorship/my-bookings"));
+                                            });
                                 })
                                 .flatMap(this::enrich)));
     }

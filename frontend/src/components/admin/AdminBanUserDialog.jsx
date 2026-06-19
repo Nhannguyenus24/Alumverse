@@ -69,7 +69,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
               {user.fullName || 'Người dùng không xác định'}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              @{user.userName || '-'} · {user.email || '-'}
+              ID: {user.studentId || '-'} · {user.email || '-'}
             </Typography>
           </Box>
         ) : null}

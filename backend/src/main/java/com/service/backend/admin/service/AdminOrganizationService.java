@@ -30,6 +30,7 @@ import com.service.backend.shared.exception.ApplicationException;
 import com.service.backend.shared.service.ImageService;
 import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
+import com.service.backend.shared.utils.CacheUtils;
 import reactor.core.publisher.Flux;
 
 import lombok.RequiredArgsConstructor;
@@ -39,11 +40,13 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class AdminOrganizationService {
     private static final Logger logger = LoggerFactory.getLogger(AdminOrganizationService.class);
+    private static final String ORG_CACHE = "organization_cache";
 
     private final AdminOrganizationRepository organizationRepository;
     private final SchoolFeedbackRepository schoolFeedbackRepository;
     private final OrganizationIntroductionRepository introductionRepository;
     private final ImageService imageService;
+    private final CacheUtils cacheUtils;
 
     public Mono<PaginatedResponse<Organization>> getAllOrganizations(int page, int size, String search) {
         int offset = page * size;
@@ -115,6 +118,7 @@ public class AdminOrganizationService {
                         JsonUtils.toJson(request.getPrograms()),
                         JsonUtils.toJson(request.getMajors())
                 ))
+                .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .doOnSuccess(saved -> logger.info("createOrganization result: {}", JsonUtils.toJson(saved)))
                 .doOnError(error -> logger.error("Failed to create organization: {}", request.getName(), error));
     }
@@ -137,7 +141,8 @@ public class AdminOrganizationService {
 
                         return organizationRepository.updateOrganizationFields(
                                 organizationId, name, slug, finalLogoUrl, status, brandConfig, featuresConfig, programs, majors
-                        ).flatMap(rows -> organizationRepository.findById(organizationId));
+                        ).flatMap(rows -> organizationRepository.findById(organizationId))
+                         .delayUntil(res -> cacheUtils.clear(ORG_CACHE));
                     });
                 })
                 .doOnSuccess(saved -> logger.info("updateOrganization result: {}", JsonUtils.toJson(saved)))
@@ -146,6 +151,7 @@ public class AdminOrganizationService {
 
     public Mono<Boolean> deleteOrganization(Integer organizationId) {
         return organizationRepository.deleteById(organizationId)
+                .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .then(Mono.just(true))
                 .doOnSuccess(success -> logger.info("deleteOrganization: organizationId={} deleted", organizationId))
                 .onErrorResume(error -> {
@@ -231,6 +237,7 @@ public class AdminOrganizationService {
                             });
                 })
                 .map(this::toResponse)
+                .delayUntil(res -> cacheUtils.clear(ORG_CACHE))
                 .doOnSuccess(r -> logger.info("upsertIntroduction result: {}", JsonUtils.toJson(r)))
                 .doOnError(error -> logger.error("Failed to upsert introduction for organization id: {}", orgaId, error));
     }
@@ -570,7 +577,8 @@ public class AdminOrganizationService {
         return organizationRepository.updateOrganizationFields(
                 org.getId(), org.getName(), org.getSlug(), org.getLogoUrl(),
                 org.getStatus(), org.getBrandConfig(), org.getFeaturesConfig(),
-                org.getPrograms(), org.getMajors());
+                org.getPrograms(), org.getMajors())
+                .delayUntil(res -> cacheUtils.clear(ORG_CACHE));
     }
 
     /**

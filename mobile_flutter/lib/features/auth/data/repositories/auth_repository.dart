@@ -54,14 +54,14 @@ class AuthRepository {
   /// Step 1 of signup: create the (inactive) account.
   Future<void> register({
     required String email,
-    required String userName,
+    required String studentId,
     required String fullName,
     required String password,
     required int organizationId,
   }) {
     return api.register(RegisterRequest(
       email: email,
-      userName: userName,
+      studentId: studentId,
       fullName: fullName,
       password: password,
       organizationId: organizationId,
@@ -73,6 +73,21 @@ class AuthRepository {
   /// Step 2 of signup: verify the OTP and activate the account.
   Future<void> verifyOtp({required String email, required String otp}) =>
       api.verifyOtp(email, otp);
+
+  /// Forgot password — sends a recovery OTP to [email] (same as web).
+  Future<void> forgotPassword(String email) => api.forgotPassword(email);
+
+  /// Change the signed-in user's password.
+  Future<void> changePassword({
+    required int userId,
+    required String oldPassword,
+    required String newPassword,
+  }) =>
+      api.changePassword(
+        userId: userId,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
 
   Future<void> logout() async {
     try {

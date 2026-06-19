@@ -14,6 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Mono;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * Service responsible for Optical Character Recognition (OCR) and text extraction.
@@ -23,38 +26,44 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class OCRService {
 
-    private final ITesseract tesseract;
+    static {
+        String osName = System.getProperty("os.name").toLowerCase();
+        if (osName.contains("mac")) {
+            String arch = System.getProperty("os.arch");
+            String brewLibPath = "aarch64".equals(arch) ? "/opt/homebrew/lib" : "/usr/local/lib";
+            try {
+                com.sun.jna.NativeLibrary.addSearchPath("tesseract", brewLibPath);
+            } catch (Throwable t) {
+                // Ignore if JNA is not yet on classpath or fails
+            }
+        }
+    }
 
-    public OCRService() {
-        this.tesseract = new Tesseract();
-        this.tesseract.setDatapath("./src/main/resources/tessdata"); 
-        
-        // Configure Tesseract to use both Vietnamese and English
-        this.tesseract.setLanguage("vie+eng");
+    private final MeterRegistry meterRegistry;
+    private final OcrCleanupService ocrCleanupService;
+
+    public OCRService(MeterRegistry meterRegistry, OcrCleanupService ocrCleanupService) {
+        this.meterRegistry = meterRegistry;
+        this.ocrCleanupService = ocrCleanupService;
     }
 
     /**
      * Extracts text content from a given file path.
      * Supported formats: PNG, JPEG, JPG, PDF, TXT.
-     *
-     * @param filePath The absolute or relative path to the file.
-     * @return The extracted text as a String.
-     * @throws IllegalArgumentException if the file does not exist or the extension is unsupported.
-     * @throws RuntimeException         if an error occurs during file reading or OCR processing.
      */
-    public String extractTextFromFile(String filePath) {
+    public Mono<String> extractTextFromFile(String filePath) {
         if (filePath == null || filePath.trim().isEmpty()) {
-            throw new IllegalArgumentException("File path cannot be null or empty.");
+            return Mono.error(new IllegalArgumentException("File path cannot be null or empty."));
         }
 
-        File file = new File(filePath);
-        if (!file.exists() || !file.isFile()) {
-            throw new IllegalArgumentException("File does not exist or is not a valid file: " + filePath);
-        }
+        return Mono.fromCallable(() -> {
+            File file = new File(filePath);
+            if (!file.exists() || !file.isFile()) {
+                throw new IllegalArgumentException("File does not exist or is not a valid file: " + filePath);
+            }
 
-        String extension = getFileExtension(file.getName()).toLowerCase();
+            String extension = getFileExtension(file.getName()).toLowerCase();
 
-        try {
             switch (extension) {
                 case "txt":
                     return readTextFile(file);
@@ -66,64 +75,69 @@ public class OCRService {
                 default:
                     throw new IllegalArgumentException("Unsupported file format: " + extension);
             }
-        } catch (IOException e) {
-            log.error("Failed to read text file: {}", filePath, e);
-            throw new RuntimeException("Error reading text file: " + e.getMessage(), e);
-        } catch (TesseractException e) {
-            log.error("OCR processing failed for file: {}", filePath, e);
-            throw new RuntimeException("Error during OCR processing: " + e.getMessage(), e);
-        }
+        }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+          .map(rawText -> {
+              try {
+                  return ocrCleanupService.cleanOcrText(rawText);
+              } catch (Exception e) {
+                  log.warn("Gemini OCR cleanup failed, returning raw text", e);
+                  return rawText;
+              }
+          })
+          .onErrorMap(IOException.class, e -> {
+              log.error("Failed to read text file: {}", filePath, e);
+              return new RuntimeException("Error reading text file: " + e.getMessage(), e);
+          })
+          .onErrorMap(TesseractException.class, e -> {
+              log.error("OCR processing failed for file: {}", filePath, e);
+              return new RuntimeException("Error during OCR processing: " + e.getMessage(), e);
+          });
     }
 
     /**
      * Extracts text content from a Spring MultipartFile.
-     * This is useful for processing files uploaded directly from clients.
-     *
-     * @param file The uploaded MultipartFile.
-     * @return The extracted text as a String.
-     * @throws IOException        if an I/O error occurs writing the temporary file.
-     * @throws TesseractException if an error occurs in the Tesseract engine.
      */
-    public String extractTextFromMultipartFile(MultipartFile file) throws IOException, TesseractException {
-        Path tempFile = Files.createTempFile("ocr_", "_" + file.getOriginalFilename());
-        Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
-        try {
-            return extractTextFromFile(tempFile.toString());
-        } finally {
-            Files.deleteIfExists(tempFile);
-        }
+    public Mono<String> extractTextFromMultipartFile(MultipartFile file) {
+        return Mono.fromCallable(() -> {
+            Path tempFile = Files.createTempFile("ocr_", "_" + file.getOriginalFilename());
+            Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+            return tempFile;
+        }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+          .flatMap(tempFile -> extractTextFromFile(tempFile.toString())
+                .doFinally(sig -> {
+                    try {
+                        Files.deleteIfExists(tempFile);
+                    } catch (IOException e) {
+                        log.warn("Failed to delete temp file", e);
+                    }
+                })
+          );
     }
 
-    /**
-     * Reads text directly from a TXT file using Java I/O.
-     *
-     * @param file The TXT file.
-     * @return The text content of the file.
-     * @throws IOException if an I/O error occurs reading from the file.
-     */
     private String readTextFile(File file) throws IOException {
         Path path = Paths.get(file.getAbsolutePath());
         return Files.readString(path, StandardCharsets.UTF_8);
     }
 
-    /**
-     * Performs OCR on an image or PDF file using Tess4J.
-     *
-     * @param file The image or PDF file.
-     * @return The extracted text.
-     * @throws TesseractException if an error occurs in the Tesseract engine.
-     */
     private String performOcr(File file) throws TesseractException {
-        // Tess4J's doOCR method handles both image files and PDF files automatically.
-        return tesseract.doOCR(file);
+        Timer.Sample sample = Timer.start(meterRegistry);
+        try {
+            File tessDataFolder = new File("./src/main/resources/tessdata");
+            if (!tessDataFolder.exists() || !tessDataFolder.isDirectory()) {
+                throw new IllegalStateException("tessdata folder not found at " + tessDataFolder.getAbsolutePath() + ". Tesseract requires language data files.");
+            }
+            
+            ITesseract tesseract = new Tesseract();
+            tesseract.setDatapath(tessDataFolder.getAbsolutePath());
+            tesseract.setLanguage("vie+eng");
+            // Set thread limit to 1 to prevent SIGSEGV on Apple Silicon / macOS
+            tesseract.setTessVariable("omp_thread_limit", "1");
+            return tesseract.doOCR(file);
+        } finally {
+            sample.stop(meterRegistry.timer("ocr.processing.time"));
+        }
     }
 
-    /**
-     * Extracts the extension from a filename.
-     *
-     * @param fileName The name of the file.
-     * @return The file extension (without the dot), or empty string if not found.
-     */
     private String getFileExtension(String fileName) {
         int lastIndexOfDot = fileName.lastIndexOf('.');
         if (lastIndexOfDot > 0 && lastIndexOfDot < fileName.length() - 1) {
