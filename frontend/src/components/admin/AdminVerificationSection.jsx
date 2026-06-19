@@ -1,5 +1,9 @@
 import { Stack } from '@mui/material';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -30,29 +34,36 @@ const AdminVerificationSection = () => {
       subtitle="Trạng thái yêu cầu xác minh alumni và xác minh đồng nghiệp."
     >
       <Stack spacing={3}>
-        <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-          <AdminDashboardMetricTile
-            label="Tổng yêu cầu xác minh"
-            value={Number(stats.totalAlumniVerificationRequests).toLocaleString()}
-            icon={<VerifiedUserOutlinedIcon />}
-          />
-          <AdminDashboardMetricTile
-            label="Chờ duyệt"
-            value={Number(stats.pendingAlumniRequests).toLocaleString()}
-            caption="Cần xử lý"
-          />
-          <AdminDashboardMetricTile
-            label="Đã duyệt"
-            value={Number(stats.approvedAlumniRequests).toLocaleString()}
-          />
-          <AdminDashboardMetricTile
-            label="Từ chối"
-            value={Number(stats.rejectedAlumniRequests).toLocaleString()}
-          />
-          <AdminDashboardMetricTile
-            label="Tổng xác minh đồng nghiệp"
-            value={Number(stats.totalPeerVerifications).toLocaleString()}
-          />
+        <Stack spacing={2}>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile
+              label="Tổng yêu cầu xác minh"
+              value={Number(stats.totalAlumniVerificationRequests).toLocaleString()}
+              icon={<VerifiedUserOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Lượt xác minh đồng nghiệp"
+              value={Number(stats.totalPeerVerifications).toLocaleString()}
+              icon={<GroupsOutlinedIcon />}
+            />
+          </Stack>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile
+              label="Chờ duyệt"
+              value={Number(stats.pendingAlumniRequests).toLocaleString()}
+              icon={<PendingActionsOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Đã duyệt"
+              value={Number(stats.approvedAlumniRequests).toLocaleString()}
+              icon={<TaskAltOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Bị từ chối"
+              value={Number(stats.rejectedAlumniRequests).toLocaleString()}
+              icon={<BlockOutlinedIcon />}
+            />
+          </Stack>
         </Stack>
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>

@@ -11,19 +11,11 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   IconButton,
   MenuItem,
-  Paper,
   Rating,
   Stack,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   Tabs,
   TextField,
   Tooltip,
@@ -34,7 +26,17 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DoneAllOutlinedIcon from "@mui/icons-material/DoneAllOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import AdminSectionPanel from "../../components/admin/AdminSectionPanel";
+import SchoolOutlinedIcon from "@mui/icons-material/SchoolOutlined";
+import VerifiedUserOutlinedIcon from "@mui/icons-material/VerifiedUserOutlined";
+import PendingActionsOutlinedIcon from "@mui/icons-material/PendingActionsOutlined";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import HourglassEmptyOutlinedIcon from "@mui/icons-material/HourglassEmptyOutlined";
+import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
+import TaskAltOutlinedIcon from "@mui/icons-material/TaskAltOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
+import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
@@ -69,24 +71,6 @@ const statusChip = (status) => {
   if (k === "rejected") return { color: "error", label: "Từ chối" };
   return { color: "default", label: status || "-" };
 };
-
-const StatTile = ({ label, value }) => (
-  <Paper
-    variant="outlined"
-    sx={{ p: 1.5, textAlign: "center", height: "100%" }}
-  >
-    <Typography
-      variant="caption"
-      color="text.secondary"
-      sx={{ display: "block" }}
-    >
-      {label}
-    </Typography>
-    <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
-      {value ?? "-"}
-    </Typography>
-  </Paper>
-);
 
 const PersonCell = ({ name, email, fallback }) => (
   <Box>
@@ -173,92 +157,142 @@ const AdminMentorshipPage = () => {
     setDeleteTarget(null);
   };
 
+  const metricRows = statistics
+    ? [
+        [
+          {
+            label: "Tổng cố vấn",
+            value: statistics.totalMentors,
+            icon: <SchoolOutlinedIcon />,
+          },
+          {
+            label: "Cố vấn đã duyệt",
+            value: statistics.approvedMentors,
+            icon: <VerifiedUserOutlinedIcon />,
+          },
+          {
+            label: "Cố vấn chờ duyệt",
+            value: statistics.pendingMentors,
+            icon: <PendingActionsOutlinedIcon />,
+          },
+        ],
+        [
+          {
+            label: "Tổng số phiên",
+            value: statistics.totalSessions,
+            icon: <EventNoteOutlinedIcon />,
+          },
+          {
+            label: "Phiên đang chờ",
+            value: statistics.pendingSessions,
+            icon: <HourglassEmptyOutlinedIcon />,
+          },
+          {
+            label: "Phiên đã xác nhận",
+            value: statistics.confirmedSessions,
+            icon: <EventAvailableOutlinedIcon />,
+          },
+          {
+            label: "Phiên hoàn thành",
+            value: statistics.completedSessions,
+            icon: <TaskAltOutlinedIcon />,
+          },
+        ],
+        [
+          {
+            label: "Phiên đã bị hủy",
+            value: statistics.cancelledSessions,
+            icon: <EventBusyOutlinedIcon />,
+          },
+          {
+            label: "Phiên bị từ chối",
+            value: statistics.rejectedSessions,
+            icon: <BlockOutlinedIcon />,
+          },
+          {
+            label: "Lịch trống",
+            value: statistics.totalAvailabilities,
+            icon: <CalendarMonthOutlinedIcon />,
+          },
+          {
+            label: "Phản hồi",
+            value: statistics.totalFeedbacks,
+            icon: <RateReviewOutlinedIcon />,
+          },
+        ],
+      ]
+    : [];
+
   return (
-    <>
-      <AdminSectionPanel
-        title="Quản lý cố vấn"
-        subtitle="Kiểm duyệt hoạt động cố vấn - các phiên hẹn và duyệt hồ sơ cố vấn trên toàn hệ thống."
+    <Box>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 2,
+        }}
       >
-        {statistics ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 2,
-              mb: 3,
-              "& > *": {
-              flex: {
-                xs: "1 1 100%",
-                sm: "1 1 calc(50% - 12px)",
-                md: "1 1 calc(25% - 12px)",
-                lg: "1 1 0",
-              },
-              },
-            }}
+        <Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main" }}>
+            Quản lý cố vấn
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            <AdminDashboardMetricTile
-              label="Tổng số phiên"
-              value={statistics.totalSessions}
-            />
-            <AdminDashboardMetricTile
-              label="Đang chờ"
-              value={statistics.pendingSessions}
-              valueColor="warning.main"
-            />
-            <AdminDashboardMetricTile
-              label="Đã xác nhận"
-              value={statistics.confirmedSessions}
-              valueColor="info.main"
-            />
-            <AdminDashboardMetricTile
-              label="Hoàn thành"
-              value={statistics.completedSessions}
-              valueColor="success.main"
-            />
-            <AdminDashboardMetricTile
-              label="Đã hủy"
-              value={statistics.cancelledSessions}
-              valueColor="text.disabled"
-            />
-            <AdminDashboardMetricTile
-              label="Bị từ chối"
-              value={statistics.rejectedSessions}
-              valueColor="error.main"
-            />
-            <AdminDashboardMetricTile
-              label="Tổng cố vấn"
-              value={statistics.totalMentors}
-              valueColor="primary.main"
-            />
-            <AdminDashboardMetricTile
-              label="Đã duyệt"
-              value={statistics.approvedMentors}
-              valueColor="success.dark"
-            />
-            <AdminDashboardMetricTile
-              label="Chờ duyệt"
-              value={statistics.pendingMentors}
-              valueColor="warning.dark"
-            />
-            <AdminDashboardMetricTile
-              label="Lịch trống"
-              value={statistics.totalAvailabilities}
-              valueColor="info.dark"
-            />
-            <AdminDashboardMetricTile
-              label="Phản hồi"
-              value={statistics.totalFeedbacks}
-              valueColor="secondary.main"
-            />
-          </Box>
-        ) : null}
+            Kiểm duyệt hoạt động cố vấn, phiên hẹn và hồ sơ cố vấn trên toàn hệ thống.
+          </Typography>
+        </Box>
+      </Box>
 
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
-          <Tab value="sessions" label={`Phiên hẹn (${sessionTotal})`} />
-          <Tab value="mentors" label={`Cố vấn (${mentorTotal})`} />
-        </Tabs>
+      {statistics ? (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            mb: 4,
+          }}
+        >
+          {metricRows.map((row, rowIndex) => (
+            <Box
+              key={rowIndex}
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 3,
+                "& > *": {
+                  flex: {
+                    xs: "1 1 100%",
+                    sm: "1 1 calc(50% - 12px)",
+                    lg: `1 1 calc(${100 / row.length}% - 18px)`,
+                  },
+                },
+              }}
+            >
+              {row.map((metric) => (
+                <AdminDashboardMetricTile
+                  key={metric.label}
+                  label={metric.label}
+                  value={metric.value}
+                  icon={metric.icon}
+                />
+              ))}
+            </Box>
+          ))}
+        </Box>
+      ) : null}
 
-        {tab === "sessions" ? (
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+        <Tab value="sessions" label={`Phiên hẹn (${sessionTotal})`} />
+        <Tab value="mentors" label={`Cố vấn (${mentorTotal})`} />
+      </Tabs>
+
+      {tab === "sessions" ? (
           <>
             {sessionLoading ? (
               <Stack alignItems="center" sx={{ py: 4 }}>
@@ -406,7 +440,7 @@ const AdminMentorshipPage = () => {
               />
             )}
           </>
-        ) : (
+      ) : (
           <>
             {mentorLoading ? (
               <Stack alignItems="center" sx={{ py: 4 }}>
@@ -533,8 +567,7 @@ const AdminMentorshipPage = () => {
               />
             )}
           </>
-        )}
-      </AdminSectionPanel>
+      )}
 
       <Dialog
         open={Boolean(detailItem)}
@@ -663,7 +696,7 @@ const AdminMentorshipPage = () => {
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
           {mentorDetail && !mentorDetail.isApproved ? (
             <Button
-              variant="outlined"
+              variant="contained"
               color="success"
               startIcon={<CheckCircleOutlineIcon />}
               onClick={async () => {
@@ -676,7 +709,8 @@ const AdminMentorshipPage = () => {
             </Button>
           ) : null}
           <Button
-            variant="contained"
+            variant="outlined"
+            color="secondary"
             onClick={() => setMentorDetail(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
@@ -694,7 +728,7 @@ const AdminMentorshipPage = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-    </>
+    </Box>
   );
 };
 
