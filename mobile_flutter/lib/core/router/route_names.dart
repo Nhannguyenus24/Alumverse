@@ -30,4 +30,8 @@ class RouteNames {
   static const String profileEdit = '/profile/edit';
   static const String settings = '/settings';
   static const String notifications = '/notifications';
+  static const String myTickets = '/my-tickets';
+  // '/my-tickets/:code' — ticket detail (code is the ticket code).
+  static String ticketDetail(String code) => '/my-tickets/$code';
+  static const String savedArticles = '/saved-articles';
 }

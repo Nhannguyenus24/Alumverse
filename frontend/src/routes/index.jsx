@@ -77,6 +77,9 @@ const MyProfileEditPage = Loadable(
 const MyTicketsPage = Loadable(
   lazy(() => import("../pages/user/MyTicketsPage")),
 );
+const SavedArticlesPage = Loadable(
+  lazy(() => import("../pages/user/SavedArticlesPage")),
+);
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
@@ -431,6 +434,10 @@ export const router = createBrowserRouter([
             element: <MyTicketsPage />,
           },
         ],
+      },
+      {
+        path: "saved-articles",
+        element: <SavedArticlesPage />,
       },
       {
         path: "post",

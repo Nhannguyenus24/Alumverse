@@ -6,6 +6,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
+import { VIETNAM_PHONE_REGEX } from "../../utils/regexUtils";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
@@ -17,7 +18,14 @@ const donationSchema = z.object({
   isAnonymous: z.boolean().default(false),
   donorName: z.string().trim().max(50, "Tên tối đa 50 ký tự").optional().or(z.literal("")),
   email: z.string().trim().max(255, "Email tối đa 255 ký tự").optional().or(z.literal("")),
-  phone: z.string().trim().max(50, "Số điện thoại tối đa 50 ký tự").optional().or(z.literal("")),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(""))
+    .refine((v) => !v || VIETNAM_PHONE_REGEX.test(v), {
+      message: "Số điện thoại không hợp lệ (10 số, đầu số Việt Nam)",
+    }),
   address: z.string().trim().max(500, "Địa chỉ tối đa 500 ký tự").optional().or(z.literal("")),
   message: z.string().trim().max(100, "Lời nhắn nhủ tối đa 100 ký tự").optional().or(z.literal("")),
 }).superRefine((data, ctx) => {

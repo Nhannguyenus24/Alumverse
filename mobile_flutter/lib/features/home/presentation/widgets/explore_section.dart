@@ -14,14 +14,15 @@ class _ExploreItem {
 }
 
 const _items = <_ExploreItem>[
+  _ExploreItem(Icons.newspaper_rounded, 'Tin tức',
+      'Cập nhật tin tức, thông báo mới nhất từ tổ chức.',
+      RouteNames.news),
   _ExploreItem(Icons.support_agent_rounded, 'Cố vấn',
       'Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.',
       RouteNames.mentorship),
   _ExploreItem(Icons.groups_rounded, 'Kết nối cựu sinh viên',
       'Kết nối và chia sẻ với cộng đồng.',
       RouteNames.network),
-  _ExploreItem(Icons.person_search_rounded, 'Tìm kiếm cựu sinh viên',
-      'Dễ dàng tìm kiếm và kết nối với cựu sinh viên.', RouteNames.network),
   _ExploreItem(Icons.event_available_rounded, 'Sự kiện & Hội thảo',
       'Tham gia sự kiện mở rộng quan hệ và cơ hội nghề nghiệp.',
       RouteNames.events),
@@ -31,9 +32,7 @@ const _items = <_ExploreItem>[
   _ExploreItem(Icons.volunteer_activism_rounded, 'Đóng góp & Quỹ',
       'Ủng hộ các chiến dịch gây quỹ và hoạt động cộng đồng.',
       RouteNames.fundraising),
-  _ExploreItem(Icons.info_outline_rounded, 'Giới thiệu',
-      'Tìm hiểu về tầm nhìn, sứ mệnh và hoạt động của tổ chức.',
-      RouteNames.organizationIntroduction),
+  
 
 ];
 

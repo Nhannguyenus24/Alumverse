@@ -11,6 +11,7 @@ import '../../../../shared/widgets/error_view.dart';
 import '../../data/models/event_summary.dart';
 import '../../data/repositories/event_repository.dart';
 import '../providers/event_provider.dart';
+import '../widgets/event_register_sheet.dart';
 
 /// Event detail + interactions — native port of the web event detail
 /// (ArticlePage event view): banner, info, HTML description, stats, and the
@@ -81,16 +82,28 @@ class _DetailBody extends ConsumerWidget {
                       fontSize: 22, fontWeight: FontWeight.bold, height: 1.3)),
               const SizedBox(height: 12),
               if (event.startTime != null)
-                _InfoLine(Icons.schedule, () {
-                  final start = df.format(event.startTime!);
-                  return event.endTime != null
-                      ? '$start → ${df.format(event.endTime!)}'
-                      : start;
-                }()),
+                _InfoLine(
+                  Icons.schedule,
+                  () {
+                    final start = df.format(event.startTime!);
+                    return event.endTime != null
+                        ? '$start → ${df.format(event.endTime!)}'
+                        : start;
+                  }(),
+                  label: 'Thời gian diễn ra',
+                ),
+              if (event.registrationEndAt != null)
+                _InfoLine(
+                  Icons.event_available_outlined,
+                  df.format(event.registrationEndAt!),
+                  label: 'Hạn đăng ký',
+                ),
               if (event.location != null && event.location!.isNotEmpty)
-                _InfoLine(Icons.place_outlined, event.location!),
+                _InfoLine(Icons.place_outlined, event.location!,
+                    label: 'Địa điểm'),
               if (event.organizer != null && event.organizer!.isNotEmpty)
-                _InfoLine(Icons.groups_outlined, event.organizer!),
+                _InfoLine(Icons.groups_outlined, event.organizer!,
+                    label: 'Đơn vị tổ chức'),
 
               // Stats (live from interaction provider, fallback to summary).
               const SizedBox(height: 8),
@@ -129,7 +142,7 @@ class _DetailBody extends ConsumerWidget {
                   },
                 ),
               const SizedBox(height: 24),
-              _Actions(eventId: event.id),
+              _Actions(eventId: event.id, eventTitle: event.title),
             ],
           ),
         ),
@@ -139,8 +152,9 @@ class _DetailBody extends ConsumerWidget {
 }
 
 class _Actions extends ConsumerStatefulWidget {
-  const _Actions({required this.eventId});
+  const _Actions({required this.eventId, required this.eventTitle});
   final int eventId;
+  final String eventTitle;
 
   @override
   ConsumerState<_Actions> createState() => _ActionsState();
@@ -150,28 +164,72 @@ class _ActionsState extends ConsumerState<_Actions> {
   bool _busyInterest = false;
   bool _busyRegister = false;
 
+  EventInteractionNotifier get _notifier =>
+      ref.read(eventInteractionProvider(widget.eventId).notifier);
+
   Future<void> _toggleInterest(bool currentlyInterested) async {
     setState(() => _busyInterest = true);
     try {
-      final repo = ref.read(eventRepositoryProvider);
       if (currentlyInterested) {
-        await repo.removeInterest(widget.eventId);
+        await _notifier.removeInterest();
       } else {
-        await repo.addInterest(widget.eventId);
+        await _notifier.addInterest();
       }
-      ref.invalidate(eventInteractionProvider(widget.eventId));
     } catch (_) {
+      // The notifier swallows benign state-mismatch errors (409/404) and
+      // resyncs; only unexpected failures land here.
       if (mounted) AppToast.error(context, 'Thao tác thất bại.');
     } finally {
       if (mounted) setState(() => _busyInterest = false);
     }
   }
 
-  Future<void> _register() async {
+  /// Entry point for the "Tham gia" button. Loads the event's registration
+  /// questions: if there are none, show a simple confirm dialog; if there are,
+  /// open a form to answer them. Then register with the collected answers.
+  Future<void> _onRegisterPressed() async {
     setState(() => _busyRegister = true);
+    final repo = ref.read(eventRepositoryProvider);
     try {
-      await ref.read(eventRepositoryProvider).register(widget.eventId);
-      ref.invalidate(eventInteractionProvider(widget.eventId));
+      final questions = await repo.getQuestions(widget.eventId);
+      if (!mounted) return;
+
+      List<Map<String, dynamic>>? answers;
+      if (questions.isEmpty) {
+        final ok = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Tham gia sự kiện'),
+            content: Text(
+                'Bạn có chắc chắn muốn tham gia "${widget.eventTitle}" không?'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Hủy')),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Tham gia')),
+            ],
+          ),
+        );
+        if (ok != true) {
+          if (mounted) setState(() => _busyRegister = false);
+          return;
+        }
+      } else {
+        answers = await EventRegisterSheet.show(
+          context,
+          eventTitle: widget.eventTitle,
+          questions: questions,
+        );
+        if (answers == null) {
+          // user dismissed the form
+          if (mounted) setState(() => _busyRegister = false);
+          return;
+        }
+      }
+
+      await _notifier.register(answers);
       if (mounted) AppToast.success(context, 'Đăng ký tham gia thành công.');
     } catch (e) {
       if (mounted) {
@@ -180,6 +238,73 @@ class _ActionsState extends ConsumerState<_Actions> {
     } finally {
       if (mounted) setState(() => _busyRegister = false);
     }
+  }
+
+  /// "Hủy tham gia": require a reason, then cancel the ticket.
+  Future<void> _onCancelPressed() async {
+    final reason = await _askCancelReason();
+    if (reason == null) return; // dismissed
+    setState(() => _busyRegister = true);
+    try {
+      await _notifier.cancelRegistration(reason);
+      if (mounted) AppToast.success(context, 'Đã hủy tham gia.');
+    } catch (e) {
+      if (mounted) AppToast.error(context, 'Hủy tham gia thất bại.');
+    } finally {
+      if (mounted) setState(() => _busyRegister = false);
+    }
+  }
+
+  /// Prompts for a (required) cancellation reason. Returns the trimmed reason,
+  /// or null if dismissed.
+  Future<String?> _askCancelReason() {
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hủy tham gia'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Vui lòng cho biết lý do bạn hủy tham gia sự kiện này.'),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: controller,
+                autofocus: true,
+                minLines: 2,
+                maxLines: 4,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'Vui lòng nhập lý do'
+                    : null,
+                decoration: const InputDecoration(
+                  hintText: 'Nhập lý do hủy...',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Đóng')),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState?.validate() ?? false) {
+                Navigator.pop(ctx, controller.text.trim());
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Xác nhận hủy'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -204,14 +329,25 @@ class _ActionsState extends ConsumerState<_Actions> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: (_busyRegister || registered) ? null : _register,
-            icon: Icon(registered ? Icons.check_circle : Icons.event_available),
-            label: Text(registered ? 'Đã tham gia' : 'Tham gia'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
+          child: registered
+              ? OutlinedButton.icon(
+                  onPressed: _busyRegister ? null : _onCancelPressed,
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Hủy tham gia'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                  ),
+                )
+              : ElevatedButton.icon(
+                  onPressed: _busyRegister ? null : _onRegisterPressed,
+                  icon: const Icon(Icons.event_available),
+                  label: const Text('Tham gia'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
         ),
       ],
     );
@@ -219,21 +355,38 @@ class _ActionsState extends ConsumerState<_Actions> {
 }
 
 class _InfoLine extends StatelessWidget {
-  const _InfoLine(this.icon, this.text);
+  const _InfoLine(this.icon, this.text, {this.label});
   final IconData icon;
   final String text;
+
+  /// Optional caption shown above the value (e.g. "Thời gian diễn ra").
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: AppColors.textSecondary),
-          const SizedBox(width: 8),
+          Icon(icon, size: 18, color: AppColors.primary),
+          const SizedBox(width: 10),
           Expanded(
-            child: Text(text,
-                style: const TextStyle(color: AppColors.textSecondary)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (label != null)
+                  Text(label!,
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.textSecondary)),
+                Text(text,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight:
+                          label != null ? FontWeight.w600 : FontWeight.w400,
+                    )),
+              ],
+            ),
           ),
         ],
       ),

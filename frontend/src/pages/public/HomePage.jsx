@@ -303,7 +303,7 @@ const HomePage = () => {
         </Container>
       </Box>
 
-      {/* Tin tức & Sự kiện */}
+      {/* Tin tức */}
       <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
@@ -313,7 +313,7 @@ const HomePage = () => {
             textAlign="center"
             sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
-            TIN TỨC & SỰ KIỆN
+            TIN TỨC
           </Typography>
           <Stack
             direction="row"
