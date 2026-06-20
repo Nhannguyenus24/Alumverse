@@ -51,7 +51,7 @@ dependencies:
   formz: ^0.7.0
 
   # Utils
-  intl: ^0.20.0
+  intl: ^0.19.0
   logger: ^2.5.0
   equatable: ^2.0.7
   url_launcher: ^6.3.1
@@ -68,7 +68,10 @@ dependencies:
 
   # Charts (cho dashboard sau này)
   fl_chart: ^0.69.2
-  path_provider: ^2.1.6
+  path_provider: 2.1.5
+
+  # QR vé sự kiện — render hoàn toàn trên client (tự host, không qua bên thứ 3)
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
@@ -88,3 +91,4 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+    - assets/fitbot/

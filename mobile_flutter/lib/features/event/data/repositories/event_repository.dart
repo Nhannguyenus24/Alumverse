@@ -2,8 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/errors/api_exception.dart';
 import '../../../../core/network/dio_client.dart';
+import '../models/event_question.dart';
 import '../models/event_summary.dart';
+import '../models/event_ticket.dart';
 
 final eventRepositoryProvider = Provider<EventRepository>((ref) {
   return EventRepository(ref.watch(dioProvider));
@@ -66,8 +69,92 @@ class EventRepository {
   Future<void> removeInterest(int id) =>
       _dio.delete(ApiEndpoints.eventInterest(id));
 
-  Future<void> register(int id) =>
-      _dio.post(ApiEndpoints.eventRegister(id), data: {});
+  /// Registration questions for an event (empty list if none).
+  Future<List<EventQuestion>> getQuestions(int id) async {
+    final res = await _dio.get(ApiEndpoints.eventQuestions(id));
+    final data = res.data is Map ? res.data['data'] : res.data;
+    if (data is! List) return const [];
+    return data
+        .map((e) => EventQuestion.fromJson(e as Map<String, dynamic>))
+        .toList()
+      ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+  }
+
+  /// Register for an event. [answers] is a list of {questionId, value} where
+  /// value is a String (text/single choice) or `List<String>` (multi choice).
+  Future<void> register(int id, {List<Map<String, dynamic>>? answers}) =>
+      _dio.post(
+        ApiEndpoints.eventRegister(id),
+        data: {
+          if (answers != null && answers.isNotEmpty) 'answers': answers,
+        },
+      );
+
+  /// The current user's registration tickets (`GET /api/events/my-tickets`).
+  Future<List<EventTicket>> getMyTickets({int page = 0, int limit = 50}) async {
+    final res = await _dio.get(
+      ApiEndpoints.eventMyTickets,
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    final list = data is Map
+        ? (data['items'] ?? data['content'] ?? data['data'])
+        : data;
+    if (list is! List) return const [];
+    return list
+        .whereType<Map>()
+        .map((e) => EventTicket.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  /// A single ticket by its code (`GET /api/events/tickets/code/{code}`).
+  Future<EventTicket> getTicketByCode(String code) async {
+    final res = await _dio.get('/api/events/tickets/code/$code');
+    final data = res.data is Map && res.data['data'] is Map
+        ? res.data['data'] as Map<String, dynamic>
+        : res.data as Map<String, dynamic>;
+    return EventTicket.fromJson(data);
+  }
+
+  /// Cancel the current user's registration for [eventId]. Looks up the user's
+  /// ticket (via /my-tickets) to find its code, then cancels with [reason].
+  /// Throws if no active ticket is found.
+  Future<void> cancelRegistration(int eventId, String reason) async {
+    final code = await _findMyTicketCode(eventId);
+    if (code == null) {
+      throw const ApiException(
+        statusCode: 404,
+        message: 'Không tìm thấy vé đăng ký để hủy.',
+      );
+    }
+    await _dio.post(
+      ApiEndpoints.eventCancelTicket(code),
+      data: {'reason': reason},
+    );
+  }
+
+  /// Find the (non-cancelled) ticket code the current user holds for [eventId].
+  Future<String?> _findMyTicketCode(int eventId) async {
+    final res = await _dio.get(
+      ApiEndpoints.eventMyTickets,
+      queryParameters: {'page': 0, 'limit': 100},
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    final list = data is Map
+        ? (data['items'] ?? data['content'] ?? data['data'])
+        : data;
+    if (list is! List) return null;
+    for (final raw in list) {
+      if (raw is! Map) continue;
+      final tEventId = (raw['eventId'] as num?)?.toInt();
+      final status = raw['status']?.toString().toUpperCase();
+      if (tEventId == eventId && status != 'CANCELLED') {
+        final code = raw['ticketCode']?.toString();
+        if (code != null && code.isNotEmpty) return code;
+      }
+    }
+    return null;
+  }
 
   Future<bool> _checkFlag(String path, List<String> keys) async {
     final res = await _dio.get(path);
