@@ -19,8 +19,12 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/splash_page.dart';
 import '../../features/article/presentation/pages/article_detail_page.dart';
 import '../../features/article/presentation/pages/news_list_page.dart';
+import '../../features/article/presentation/pages/saved_articles_page.dart';
 import '../../features/event/presentation/pages/events_page.dart';
 import '../../features/event/presentation/pages/event_detail_page.dart';
+import '../../features/event/presentation/pages/my_tickets_page.dart';
+import '../../features/event/presentation/pages/ticket_detail_page.dart';
+import '../../features/event/data/models/event_ticket.dart';
 import '../../features/organization/presentation/pages/organization_introduction_page.dart';
 import '../../features/user/presentation/pages/my_profile_page.dart';
 import '../../features/user/presentation/pages/my_profile_edit_page.dart';
@@ -151,7 +155,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.chat,
-        builder: (_, __) => const ChatListPage(),
+        builder: (_, __) =>
+            const MainScaffold(currentIndex: 4, child: ChatListPage()),
       ),
       // '/chat/new' must be declared BEFORE '/chat/:groupId' so the literal
       // segment 'new' isn't captured as a groupId.
@@ -249,8 +254,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.profile,
+        // Profile is opened from the header avatar, not a bottom-nav tab, so it
+        // highlights no tab (currentIndex: -1).
         builder: (_, __) =>
-            const MainScaffold(currentIndex: 4, child: MyProfilePage()),
+            const MainScaffold(currentIndex: -1, child: MyProfilePage()),
       ),
       GoRoute(
         path: RouteNames.profileEdit,
@@ -270,6 +277,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.notifications,
         builder: (_, __) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.savedArticles,
+        builder: (_, __) => const SavedArticlesPage(),
+      ),
+      GoRoute(
+        path: RouteNames.myTickets,
+        builder: (_, __) => const MyTicketsPage(),
+      ),
+      // '/my-tickets/:code' — ticket detail. `extra` carries the EventTicket
+      // when navigated from the list (fast path); otherwise it's fetched.
+      GoRoute(
+        path: '${RouteNames.myTickets}/:code',
+        builder: (_, state) => TicketDetailPage(
+          code: state.pathParameters['code'] ?? '',
+          initial: state.extra is EventTicket
+              ? state.extra as EventTicket
+              : null,
+        ),
       ),
       GoRoute(
         path: RouteNames.forum,

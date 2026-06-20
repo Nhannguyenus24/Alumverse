@@ -131,7 +131,7 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                 error: (_, __) => const Text('Không tải được trạng thái',
                     style: TextStyle(color: AppColors.textSecondary)),
                 data: (statuses) => DropdownButtonFormField<String?>(
-                  initialValue: _statusId,
+                  value: _statusId,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),

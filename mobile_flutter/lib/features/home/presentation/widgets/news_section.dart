@@ -12,7 +12,7 @@ import '../../../article/data/models/article.dart';
 import '../../../article/presentation/providers/news_provider.dart';
 import 'section_title.dart';
 
-/// "Tin tức & Sự kiện" — live published news from the API. Handles loading,
+/// "Tin tức" — live published news from the API. Handles loading,
 /// error, and empty states; tapping a card opens the article detail.
 class NewsSection extends ConsumerWidget {
   const NewsSection({super.key});
@@ -25,7 +25,7 @@ class NewsSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionTitle(
-          'Tin tức & Sự kiện',
+          'Tin tức',
           action: TextButton(
             onPressed: () => context.push(RouteNames.news),
             child: const Text('Xem tất cả'),

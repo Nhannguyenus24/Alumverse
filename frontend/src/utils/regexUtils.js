@@ -6,11 +6,41 @@ import dayjs from "dayjs";
 /** Password pattern: at least one lowercase, uppercase, digit, special char @$!%*?& */
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/;
 
-/** StudentId: 3–50 chars, letters, numbers, dots, underscores, hyphens */
-const STUDENT_ID_REGEX = /^[a-zA-Z0-9._-]+$/;
+/** StudentId: digits only (mã số sinh viên chỉ gồm chữ số). */
+const STUDENT_ID_REGEX = /^[0-9]+$/;
 
 /** OTP: exactly 6 digits */
 const OTP_REGEX = /^[0-9]{6}$/;
+
+/** Vietnamese mobile: 10 digits, leading 0, carrier prefix 3/5/7/8/9. */
+export const VIETNAM_PHONE_REGEX = /^0[35789]\d{8}$/;
+
+/**
+ * Validate a Vietnamese phone string. Returns an error message or null.
+ * Used outside zod (e.g. plain-state forms like ContactPage).
+ */
+export const validateVietnamPhone = (value, { optional = false } = {}) => {
+  const v = (value ?? '').trim();
+  if (!v) return optional ? null : 'Số điện thoại không được để trống';
+  if (!/^\d+$/.test(v)) return 'Số điện thoại chỉ gồm chữ số';
+  if (v.length !== 10) return 'Số điện thoại phải có đúng 10 chữ số';
+  if (!VIETNAM_PHONE_REGEX.test(v)) return 'Số điện thoại không hợp lệ (đầu số Việt Nam)';
+  return null;
+};
+
+/**
+ * A reusable zod field for an optional Vietnamese phone number. Empty string
+ * passes; otherwise must match the VN mobile format.
+ */
+export const optionalVietnamPhoneField = () =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .refine((v) => !v || VIETNAM_PHONE_REGEX.test(v), {
+      message: 'Số điện thoại không hợp lệ (10 số, đầu số Việt Nam)',
+    });
 
 /** Login: backend LoginRequest — email, password */
 export const loginSchema = z.object({
@@ -33,7 +63,7 @@ export const registerSchema = z
       .min(1, 'Mã số sinh viên là bắt buộc')
       .min(3, 'Mã số sinh viên từ 3–50 ký tự')
       .max(50, 'Mã số sinh viên từ 3–50 ký tự')
-      .regex(STUDENT_ID_REGEX, 'Mã số sinh viên chỉ được chứa chữ cái, số, dấu chấm, gạch dưới và gạch ngang'),
+      .regex(STUDENT_ID_REGEX, 'Mã số sinh viên chỉ được chứa chữ số'),
     enrollmentYear: z.string().min(1, 'Vui lòng chọn năm nhập học'),
     email: z.email("Email là bắt buộc"),
     password: z

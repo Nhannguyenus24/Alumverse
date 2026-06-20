@@ -64,3 +64,9 @@ final organizationIntroductionProvider =
       .read(organizationRepositoryProvider)
       .getIntroduction(organizationId);
 });
+
+/// All organizations, for the org-select dropdown. Public endpoint — works
+/// before login.
+final organizationListProvider = FutureProvider<List<Organization>>((ref) {
+  return ref.read(organizationRepositoryProvider).getOrganizations();
+});

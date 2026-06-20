@@ -138,9 +138,14 @@ const RegisterPage = () => {
           label="Mã số sinh viên"
           placeholder="Mã số sinh viên"
           type="text"
+          inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 50 }}
           error={!!errors.studentId}
           helperText={errors.studentId?.message}
           {...register('studentId')}
+          onInput={(e) => {
+            // MSSV chỉ gồm chữ số.
+            e.target.value = e.target.value.replace(/\D/g, '');
+          }}
         />
         <Controller
           name="enrollmentYear"

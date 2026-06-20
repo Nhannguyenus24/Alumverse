@@ -24,6 +24,8 @@ class ApiEndpoints {
 
   // --- User Settings / Me ---
   static const String meProfile = '/api/users/me/profile';
+  static const String meAvatar = '/api/users/me/avatar';
+  static const String imageUpload = '/api/images/upload';
   static String publicProfile(int userId) => '/api/users/$userId/public-profile';
   static const String mePassword = '/api/users/me/password';
   static const String meOrganizationMember = '/api/users/me/organization-member';
@@ -77,6 +79,11 @@ class ApiEndpoints {
   static const String alumniPostsPublished = '/api/articles/alumni-posts/published';
   static String newsDetail(int id) => '/api/articles/news/$id';
 
+  // --- Saved items (bookmarked articles) ---
+  static const String savedItems = '/api/articles/saved';
+  static const String savedItemCheck = '/api/articles/saved/check';
+  static String savedItemsByType(String type) => '/api/articles/saved/type/$type';
+
   // --- Events ---
   static const String events = '/api/events';
   static const String eventsUpcoming = '/api/events/upcoming';
@@ -86,7 +93,11 @@ class ApiEndpoints {
   static String eventInterestCheck(int id) => '/api/events/$id/interest/check';
   static String eventCheckRegistered(int id) => '/api/events/$id/check-registered';
   static String eventRegister(int id) => '/api/events/$id/register';
+  static String eventQuestions(int id) => '/api/events/$id/questions';
   static String eventStatistics(int id) => '/api/events/$id/statistics';
+  static const String eventMyTickets = '/api/events/my-tickets';
+  static String eventCancelTicket(String code) =>
+      '/api/events/tickets/$code/cancel';
   static String eventPublish(int id) => '/api/events/$id/publish';
   static String eventUnpublish(int id) => '/api/events/$id/unpublish';
 

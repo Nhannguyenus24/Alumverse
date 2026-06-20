@@ -41,4 +41,24 @@ class Validators {
     // Add specific student ID validation if needed
     return null;
   }
+
+  /// Vietnamese mobile number: exactly 10 digits, leading 0, and a valid
+  /// carrier prefix (second digit 3/5/7/8/9 — Viettel/Vina/Mobi/Vietnamobile/
+  /// Gmobile under the current numbering plan). [optional] allows an empty value.
+  static String? vietnamPhone(String? value, {bool optional = false}) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) {
+      return optional ? null : 'Số điện thoại không được để trống';
+    }
+    if (!RegExp(r'^\d+$').hasMatch(v)) {
+      return 'Số điện thoại chỉ gồm chữ số';
+    }
+    if (v.length != 10) {
+      return 'Số điện thoại phải có đúng 10 chữ số';
+    }
+    if (!RegExp(r'^0[35789]\d{8}$').hasMatch(v)) {
+      return 'Số điện thoại không hợp lệ';
+    }
+    return null;
+  }
 }

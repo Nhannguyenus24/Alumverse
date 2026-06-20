@@ -29,6 +29,17 @@ class UserRepository {
         bio: bio,
       );
 
+  /// Upload an avatar image (base64) then point the user's profile at it.
+  /// Returns the new avatar URL.
+  Future<String> updateAvatarFromBase64(String base64String) async {
+    final url = await _api.uploadImage(base64String);
+    if (url.isEmpty) {
+      throw Exception('Tải ảnh thất bại');
+    }
+    await _api.updateAvatar(url);
+    return url;
+  }
+
   Future<NotificationSettings> getNotificationSettings() =>
       _api.getNotificationSettings();
 

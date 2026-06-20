@@ -4,6 +4,7 @@ import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material
 import { useSnackbar } from "notistack";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import { QRCodeSVG } from "qrcode.react";
 import { eventApi } from "../utils/api";
 
 const STATUS_CONFIG = {
@@ -142,12 +143,11 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
               {ticket.eventTitle ?? `Sự kiện #${ticket.eventId}`}
             </Typography>
 
-            <Box
-              component="img"
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrData)}`}
-              alt="QR Code"
-              sx={{ width: 220, height: 220 }}
-            />
+            {/* QR generated client-side (self-hosted) — the code never leaves
+                the app to a third-party QR service. */}
+            <Box sx={{ p: 1.5, bgcolor: "#fff", borderRadius: 2, border: "1px solid #e0e0e0" }}>
+              <QRCodeSVG value={qrData} size={220} level="M" />
+            </Box>
 
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
