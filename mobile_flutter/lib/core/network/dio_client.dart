@@ -9,10 +9,20 @@ import '../storage/secure_storage.dart';
 import 'auth_interceptor.dart';
 import 'error_interceptor.dart';
 
-/// In-memory cookie store shared by the app. The backend sets the refresh
+/// Persistent cookie store shared by the app. The backend sets the refresh
 /// token as an HTTP-only cookie on login/refresh; the cookie manager replays
 /// it on `/auth/refresh` automatically — we never read it ourselves.
-final cookieJarProvider = Provider<CookieJar>((ref) => CookieJar());
+///
+/// This MUST be overridden in `main()` with a [PersistCookieJar] so the refresh
+/// cookie survives app restarts (the mobile equivalent of browser cookie
+/// persistence). Without persistence, a cold start leaves the jar empty and the
+/// first token refresh fails — logging the user out the moment the short-lived
+/// access token expires.
+final cookieJarProvider = Provider<CookieJar>((ref) {
+  throw UnimplementedError(
+    'cookieJarProvider must be overridden in main() with a persistent jar',
+  );
+});
 
 final dioProvider = Provider<Dio>((ref) {
   final storage = ref.watch(secureStorageProvider);

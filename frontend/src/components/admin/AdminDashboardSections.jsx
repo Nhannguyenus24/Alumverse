@@ -1,6 +1,23 @@
 import { Box, Chip, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
+import PersonOffOutlinedIcon from '@mui/icons-material/PersonOffOutlined';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import TopicOutlinedIcon from '@mui/icons-material/TopicOutlined';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
+import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import ReportGmailerrorredOutlinedIcon from '@mui/icons-material/ReportGmailerrorredOutlined';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import DomainVerificationOutlinedIcon from '@mui/icons-material/DomainVerificationOutlined';
+import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -15,7 +32,7 @@ import AdminFeedbackSection from './AdminFeedbackSection';
 
 const metricRowSx = {
   '& > *': {
-    flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 calc(25% - 8px)', lg: '1 1 0' },
+    flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' },
   },
 };
 
@@ -31,13 +48,17 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         subtitle="Tài khoản, xu hướng đăng ký và phân loại trạng thái."
       >
         <Stack spacing={3}>
-          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Tổng người dùng" value={user.totalUsers} />
-            <AdminDashboardMetricTile label="Tham gia tuần này" value={user.newUsersWeek} />
-            <AdminDashboardMetricTile label="Tham gia tháng này" value={user.newUsersMonth} />
-            <AdminDashboardMetricTile label="Hoạt động" value={user.activeUsers} />
-            <AdminDashboardMetricTile label="Chưa kích hoạt" value={user.inactiveUsers} />
-            <AdminDashboardMetricTile label="Đã khóa" value={user.bannedUsers} />
+          <Stack spacing={2}>
+            <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+              <AdminDashboardMetricTile label="Tổng người dùng" value={user.totalUsers} icon={<PeopleAltOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Tham gia tuần này" value={user.newUsersWeek} icon={<PersonAddAltOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Tham gia tháng này" value={user.newUsersMonth} icon={<CalendarMonthOutlinedIcon />} />
+            </Stack>
+            <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+              <AdminDashboardMetricTile label="Hoạt động" value={user.activeUsers} icon={<CheckCircleOutlineOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Chưa kích hoạt" value={user.inactiveUsers} icon={<PersonOffOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Đã khóa" value={user.bannedUsers} icon={<BlockOutlinedIcon />} />
+            </Stack>
           </Stack>
           <Chart
             type="line"
@@ -56,20 +77,23 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         subtitle="Khối lượng bài viết, tình trạng kiểm duyệt và thống kê trực tiếp từ API."
       >
         <Stack spacing={3}>
-          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Tổng bài viết" value={stats.totalPosts ?? forum.totalPosts} />
-            <AdminDashboardMetricTile label="Tổng chủ đề" value={stats.totalTopics ?? 0} />
-            <AdminDashboardMetricTile label="Tổng danh mục" value={stats.totalCategories ?? 0} />
-            <AdminDashboardMetricTile label="Chủ đề hôm nay" value={stats.newTopicsToday ?? 0} />
-            <AdminDashboardMetricTile label="Bài viết hôm nay" value={stats.newPostsToday ?? 0} />
-          </Stack>
-          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Chờ duyệt" value={forum.pending} />
-            <AdminDashboardMetricTile label="Đã duyệt" value={forum.approved} />
-            <AdminDashboardMetricTile label="Đã từ chối" value={forum.rejected} />
-            <AdminDashboardMetricTile label="Bị báo cáo" value={forum.flagged} />
-            <AdminDashboardMetricTile label="Báo xấu" value={forum.totalFlags} />
-            <AdminDashboardMetricTile label="Đã khóa" value={stats.bannedPosts ?? 0} />
+          <Stack spacing={2}>
+            <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+              <AdminDashboardMetricTile label="Tổng bài viết" value={stats.totalPosts ?? forum.totalPosts} icon={<ArticleOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Tổng chủ đề" value={stats.totalTopics ?? 0} icon={<TopicOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Tổng danh mục" value={stats.totalCategories ?? 0} icon={<CategoryOutlinedIcon />} />
+            </Stack>
+            <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+              <AdminDashboardMetricTile label="Chủ đề hôm nay" value={stats.newTopicsToday ?? 0} icon={<TodayOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Bài viết hôm nay" value={stats.newPostsToday ?? 0} icon={<ArticleOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Chờ duyệt" value={forum.pending} icon={<WarningAmberOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Đã duyệt" value={forum.approved} icon={<TaskAltOutlinedIcon />} />
+            </Stack>
+            <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+              <AdminDashboardMetricTile label="Bị báo cáo" value={forum.flagged} icon={<ReportGmailerrorredOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Báo xấu" value={forum.totalFlags} icon={<FlagOutlinedIcon />} />
+              <AdminDashboardMetricTile label="Đã khóa" value={stats.bannedPosts ?? 0} icon={<LockOutlinedIcon />} />
+            </Stack>
           </Stack>
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
@@ -196,9 +220,9 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
       >
         <Stack spacing={3}>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } } }}>
-            <AdminDashboardMetricTile label="Tổng số tổ chức" value={organization.totalOrganizations} />
-            <AdminDashboardMetricTile label="Đang hoạt động" value={organization.activeOrganizations} />
-            <AdminDashboardMetricTile label="Ngừng hoạt động" value={organization.inactiveOrganizations} />
+            <AdminDashboardMetricTile label="Tổng số tổ chức" value={organization.totalOrganizations} icon={<BusinessCenterOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Đang hoạt động" value={organization.activeOrganizations} icon={<DomainVerificationOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Ngừng hoạt động" value={organization.inactiveOrganizations} icon={<BusinessOutlinedIcon />} />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="flex-start">
             <Box flex={1} minWidth={260}>

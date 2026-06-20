@@ -77,6 +77,9 @@ const MyProfileEditPage = Loadable(
 const MyTicketsPage = Loadable(
   lazy(() => import("../pages/user/MyTicketsPage")),
 );
+const SavedArticlesPage = Loadable(
+  lazy(() => import("../pages/user/SavedArticlesPage")),
+);
 
 // Admin pages
 const AdminLayout = Loadable(lazy(() => import("../layouts/AdminLayout")));
@@ -431,6 +434,10 @@ export const router = createBrowserRouter([
             element: <MyTicketsPage />,
           },
         ],
+      },
+      {
+        path: "saved-articles",
+        element: <SavedArticlesPage />,
       },
       {
         path: "post",
@@ -861,6 +868,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "forum/reports",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminForumReportsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "organizations",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -873,6 +888,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminEventsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "events/:eventId/organize",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminEventOrganizePage />
           </ProtectedRoute>
         ),
       },

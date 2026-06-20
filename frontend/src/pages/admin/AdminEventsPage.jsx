@@ -12,17 +12,9 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
   IconButton,
   MenuItem,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TablePagination,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -34,7 +26,17 @@ import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
-import AdminSectionPanel from "../../components/admin/AdminSectionPanel";
+import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
+import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
+import TodayOutlinedIcon from "@mui/icons-material/TodayOutlined";
+import PlayCircleOutlineOutlinedIcon from "@mui/icons-material/PlayCircleOutlineOutlined";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
+import DraftsOutlinedIcon from "@mui/icons-material/DraftsOutlined";
+import UpcomingOutlinedIcon from "@mui/icons-material/UpcomingOutlined";
+import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
+import HowToRegOutlinedIcon from "@mui/icons-material/HowToRegOutlined";
+import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import AdminEventFormDialog from "../../components/admin/AdminEventFormDialog";
 import AdminEventTicketsDialog from "../../components/admin/AdminEventTicketsDialog";
@@ -56,24 +58,6 @@ const publishStatusChip = (isPublished) =>
   isPublished
     ? { color: "success", label: "Đã đăng" }
     : { color: "default", label: "Bản nháp" };
-
-const StatTile = ({ label, value }) => (
-  <Paper
-    variant="outlined"
-    sx={{ p: 1.5, textAlign: "center", height: "100%" }}
-  >
-    <Typography
-      variant="caption"
-      color="text.secondary"
-      sx={{ display: "block" }}
-    >
-      {label}
-    </Typography>
-    <Typography variant="h6" sx={{ fontWeight: 700, mt: 0.5 }}>
-      {value ?? "-"}
-    </Typography>
-  </Paper>
-);
 
 const AdminEventsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -158,89 +142,138 @@ const AdminEventsPage = () => {
   };
 
   const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
+  const eventMetricRows = statistics
+    ? [
+        [
+          {
+            label: "Tổng sự kiện",
+            value: statistics.totalEvents,
+            icon: <EventNoteOutlinedIcon />,
+          },
+          {
+            label: "Lượt quan tâm",
+            value: statistics.totalInterests,
+            icon: <FavoriteBorderOutlinedIcon />,
+          },
+          {
+            label: "Sự kiện hôm nay",
+            value: statistics.newEventsToday,
+            icon: <TodayOutlinedIcon />,
+          },
+          {
+            label: "Đang diễn ra",
+            value: statistics.ongoingEvents,
+            icon: <PlayCircleOutlineOutlinedIcon />,
+          },
+        ],
+        [
+          {
+            label: "Đã diễn ra",
+            value: statistics.pastEvents,
+            icon: <HistoryOutlinedIcon />,
+          },
+          {
+            label: "Đã công bố",
+            value: statistics.publishedEvents,
+            icon: <CampaignOutlinedIcon />,
+          },
+          {
+            label: "Bản nháp",
+            value: statistics.unpublishedEvents,
+            icon: <DraftsOutlinedIcon />,
+          },
+          {
+            label: "Sắp tới",
+            value: statistics.upcomingEvents,
+            icon: <UpcomingOutlinedIcon />,
+          },
+        ],
+        [
+          {
+            label: "Vé đã đăng ký",
+            value: statistics.registeredTickets,
+            icon: <ConfirmationNumberOutlinedIcon />,
+          },
+          {
+            label: "Vé đã check-in",
+            value: statistics.checkedInTickets,
+            icon: <HowToRegOutlinedIcon />,
+          },
+          {
+            label: "Vé đã hủy",
+            value: statistics.cancelledTickets,
+            icon: <EventBusyOutlinedIcon />,
+          },
+        ],
+      ]
+    : [];
 
   return (
-    <>
-      <AdminSectionPanel
-        title="Quản lý sự kiện"
-        subtitle="Danh sách sự kiện, kiểm duyệt và xóa sự kiện trên toàn hệ thống."
+    <Box>
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 2,
+        }}
       >
-        {statistics ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 2,
-              mb: 3,
-              "& > *": {
-              flex: {
-                xs: "1 1 100%",
-                sm: "1 1 calc(50% - 12px)",
-                md: "1 1 calc(25% - 12px)",
-                lg: "1 1 0",
-              },
-              },
-            }}
+        <Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main" }}>
+            Quản lý sự kiện
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            <AdminDashboardMetricTile
-              label="Tổng sự kiện"
-              value={statistics.totalEvents}
-            />
-            <AdminDashboardMetricTile
-              label="Đã đăng"
-              value={statistics.publishedEvents}
-              valueColor="success.main"
-            />
-            <AdminDashboardMetricTile
-              label="Bản nháp"
-              value={statistics.unpublishedEvents}
-              valueColor="text.secondary"
-            />
-            <AdminDashboardMetricTile
-              label="Sắp tới"
-              value={statistics.upcomingEvents}
-              valueColor="info.main"
-            />
-            <AdminDashboardMetricTile
-              label="Đang diễn ra"
-              value={statistics.ongoingEvents}
-              valueColor="warning.main"
-            />
-            <AdminDashboardMetricTile
-              label="Đã qua"
-              value={statistics.pastEvents}
-              valueColor="text.disabled"
-            />
-            <AdminDashboardMetricTile
-              label="Vé đã đăng ký"
-              value={statistics.registeredTickets}
-              valueColor="primary.main"
-            />
-            <AdminDashboardMetricTile
-              label="Vé đã check-in"
-              value={statistics.checkedInTickets}
-              valueColor="success.dark"
-            />
-            <AdminDashboardMetricTile
-              label="Vé đã hủy"
-              value={statistics.cancelledTickets}
-              valueColor="error.main"
-            />
-            <AdminDashboardMetricTile
-              label="Tổng lượt quan tâm"
-              value={statistics.totalInterests}
-              valueColor="secondary.main"
-            />
-            <AdminDashboardMetricTile
-              label="Mới hôm nay"
-              value={statistics.newEventsToday}
-              valueColor="success.main"
-            />
-          </Box>
-        ) : null}
+            Danh sách sự kiện, kiểm duyệt và xóa sự kiện trên toàn hệ thống.
+          </Typography>
+        </Box>
+      </Box>
 
-        <AdminDataTable
-          columns={[
+      {statistics ? (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+            mb: 4,
+          }}
+        >
+          {eventMetricRows.map((row, rowIndex) => (
+            <Box
+              key={rowIndex}
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 3,
+                "& > *": {
+                  flex: {
+                    xs: "1 1 100%",
+                    sm: "1 1 calc(50% - 12px)",
+                    lg: `1 1 calc(${100 / row.length}% - 18px)`,
+                  },
+                },
+              }}
+            >
+              {row.map((metric) => (
+                <AdminDashboardMetricTile
+                  key={metric.label}
+                  label={metric.label}
+                  value={metric.value}
+                  icon={metric.icon}
+                />
+              ))}
+            </Box>
+          ))}
+        </Box>
+      ) : null}
+
+      <AdminDataTable
+        columns={[
             { id: "id", label: "ID" },
             {
               id: "title",
@@ -379,71 +412,70 @@ const AdminEventsPage = () => {
                 </Box>
               ),
             },
-          ]}
-          rows={events}
-          totalCount={totalItems}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(Number(e.target.value));
-            setPage(0);
-          }}
-          onSearchChange={(val) => {
-            setSearchTerm(val);
-            setPage(0);
-          }}
-          searchValue={searchTerm}
-          searchPlaceholder="Tiêu đề hoặc mô tả..."
-          onRowClick={(event) => setDetailItem(event)}
-          filters={
-            <Stack direction="row" spacing={1}>
-              <TextField
-                select
-                size="small"
-                label="Trạng thái"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(0);
-                }}
-                sx={{ minWidth: 160 }}
-              >
-                {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="Sắp xếp"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                sx={{ minWidth: 140 }}
-              >
-                {ADMIN_EVENT_SORT_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                size="small"
-                label="Thứ tự"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                sx={{ minWidth: 110 }}
-              >
-                <MenuItem value="DESC">Giảm dần</MenuItem>
-                <MenuItem value="ASC">Tăng dần</MenuItem>
-              </TextField>
-            </Stack>
-          }
-        />
-      </AdminSectionPanel>
+        ]}
+        rows={events}
+        totalCount={totalItems}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={(_, p) => setPage(p)}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(Number(e.target.value));
+          setPage(0);
+        }}
+        onSearchChange={(val) => {
+          setSearchTerm(val);
+          setPage(0);
+        }}
+        searchValue={searchTerm}
+        searchPlaceholder="Tiêu đề hoặc mô tả..."
+        onRowClick={(event) => setDetailItem(event)}
+        filters={
+          <Stack direction="row" spacing={1}>
+            <TextField
+              select
+              size="small"
+              label="Trạng thái"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(0);
+              }}
+              sx={{ minWidth: 160 }}
+            >
+              {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              label="Sắp xếp"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              sx={{ minWidth: 140 }}
+            >
+              {ADMIN_EVENT_SORT_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              label="Thứ tự"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              sx={{ minWidth: 110 }}
+            >
+              <MenuItem value="DESC">Giảm dần</MenuItem>
+              <MenuItem value="ASC">Tăng dần</MenuItem>
+            </TextField>
+          </Stack>
+        }
+      />
 
       <Dialog
         open={Boolean(detailItem)}
@@ -564,7 +596,7 @@ const AdminEventsPage = () => {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
-    </>
+    </Box>
   );
 };
 

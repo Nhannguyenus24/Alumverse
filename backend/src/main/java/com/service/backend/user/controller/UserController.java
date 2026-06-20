@@ -25,6 +25,7 @@ import com.service.backend.user.dto.NotificationResponse;
 import com.service.backend.user.dto.NotificationSettingsResponse;
 import com.service.backend.user.dto.PendingPeerVerificationResponse;
 import com.service.backend.user.dto.RequestPeerVerificationRequest;
+import com.service.backend.user.dto.UpdateAvatarRequest;
 import com.service.backend.user.dto.UpdateMyProfileRequest;
 import com.service.backend.user.dto.UpdateNotificationSettingsRequest;
 import com.service.backend.user.dto.UserLoginHistoryResponse;
@@ -61,6 +62,14 @@ public class UserController {
         return SecurityUtils.getCurrentUserId()
                 .flatMap(userId -> userService.updateMyProfile(userId, request))
                 .thenReturn(ResponseEntity.ok(new ApiResponse<>("Profile updated successfully", true)));
+    }
+
+    @PutMapping("/avatar")
+    public Mono<ResponseEntity<ApiResponse<Boolean>>> updateMyAvatar(
+            @Valid @RequestBody UpdateAvatarRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(userId -> userService.updateMyAvatar(userId, request.getAvatarUrl()))
+                .thenReturn(ResponseEntity.ok(new ApiResponse<>("Avatar updated successfully", true)));
     }
 
     @GetMapping("/organization-member")

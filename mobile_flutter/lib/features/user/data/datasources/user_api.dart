@@ -40,6 +40,22 @@ class UserApi {
     });
   }
 
+  /// Upload a base64 image (may include the `data:image/...;base64,` header)
+  /// and return the stored image URL.
+  Future<String> uploadImage(String base64String) async {
+    final res = await _dio.post(
+      ApiEndpoints.imageUpload,
+      data: {'base64String': base64String},
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    return data?.toString() ?? '';
+  }
+
+  /// Set the current user's avatar to an already-uploaded image URL.
+  Future<void> updateAvatar(String avatarUrl) {
+    return _dio.put(ApiEndpoints.meAvatar, data: {'avatarUrl': avatarUrl});
+  }
+
   Future<NotificationSettings> getNotificationSettings() async {
     final res = await _dio.get(ApiEndpoints.meNotificationSettings);
     return NotificationSettings.fromJson(_unwrap(res.data));
@@ -66,6 +82,11 @@ class UserApi {
 
   Future<void> deleteAllNotifications() =>
       _dio.delete(ApiEndpoints.meNotifications);
+
+  Future<UserProfile> getPublicProfile(int userId) async {
+    final res = await _dio.get(ApiEndpoints.publicProfile(userId));
+    return UserProfile.fromJson(_unwrap(res.data));
+  }
 
   Map<String, dynamic> _unwrap(dynamic body) {
     if (body is Map && body['data'] is Map) {

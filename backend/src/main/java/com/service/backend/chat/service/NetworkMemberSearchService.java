@@ -6,7 +6,6 @@ import org.springframework.util.StringUtils;
 import com.service.backend.chat.dao.NetworkMemberSearchRepository;
 import com.service.backend.chat.dto.NetworkMemberSearchItemResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
-import com.service.backend.shared.utils.JsonUtils;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.shared.utils.SecurityUtils;
 
@@ -27,8 +26,8 @@ public class NetworkMemberSearchService {
             int size) {
 
         String fullNamePattern = toContainsPattern(fullName);
-        String programJson = toExactJsonArray(program);
-        String majorJson = toExactJsonArray(major);
+        String programPattern = toContainsPattern(program);
+        String majorPattern = toContainsPattern(major);
 
         int offset = page * size;
 
@@ -43,16 +42,16 @@ public class NetworkMemberSearchService {
                             organizationId,
                             currentUserId,
                             fullNamePattern,
-                            programJson,
-                            majorJson);
+                            programPattern,
+                            majorPattern);
 
                     return PaginationHelper.paginate(
                             networkMemberSearchRepository.searchMembers(
                                     organizationId,
                                     currentUserId,
                                     fullNamePattern,
-                                    programJson,
-                                    majorJson,
+                                    programPattern,
+                                    majorPattern,
                                     size,
                                     offset),
                             totalMono,
@@ -71,14 +70,4 @@ public class NetworkMemberSearchService {
         String trimmed = raw.trim();
         return "%" + trimmed + "%";
     }
-
-        /**
-         * Convert an exact filter value into a single-element JSON array string for jsonb @>.
-         */
-        private static String toExactJsonArray(String raw) {
-                if (!StringUtils.hasText(raw)) {
-                        return null;
-                }
-                return JsonUtils.toJson(java.util.List.of(raw.trim()));
-        }
 }

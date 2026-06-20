@@ -34,8 +34,8 @@ public interface ConnectionSearchRepository extends ReactiveCrudRepository<ChatC
             + "conn.peer_id AS peer_member_id, "
             + "gp.full_name AS full_name, "
             + "u.avatar_url AS avatar_url, "
-            + "om.program AS program, "
-            + "om.major AS major, "
+            + "om.program ->> 0 AS program, "
+            + "om.major ->> 0 AS major, "
             + "conn.updated_at AS connected_at ";
 
     @Query(SEARCH_SELECT + CONNECTIONS_BASE + SEARCH_WHERE

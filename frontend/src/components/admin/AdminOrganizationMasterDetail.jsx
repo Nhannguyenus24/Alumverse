@@ -52,7 +52,7 @@ import AdminStatusChip from './AdminStatusChip';
 import SearchBar from '../SearchBar';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material';
-import { adminOrganizationApi, adminUserApi } from '../../utils/api';
+import { adminOrganizationApi } from '../../utils/api';
 import { useSnackbar } from 'notistack';
 import AdminManualMemberDialog from './AdminManualMemberDialog';
 import { fileToBase64 } from '../../utils/imageUtils';
@@ -319,7 +319,7 @@ const AdminOrganizationMasterDetail = ({
         alignItems: 'stretch',
         gap: 3,
         minHeight: 0,
-        height: { xs: 'none', lg: '80vh' },
+        height: { xs: 'none', lg: '88vh' },
       }}
     >
       {/* MASTER LIST */}
@@ -335,7 +335,7 @@ const AdminOrganizationMasterDetail = ({
           overflow: 'hidden',
           bgcolor: 'background.paper',
           minWidth: 0,
-          maxHeight: { lg: '80vh' }
+          maxHeight: { lg: '88vh' }
         }}
       >
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}>
@@ -422,7 +422,7 @@ const AdminOrganizationMasterDetail = ({
           overflow: 'hidden',
           minHeight: 0,
           minWidth: 0,
-          maxHeight: { lg: '80vh' },
+          maxHeight: { lg: '88vh' },
         }}
       >
         {!selectedOrg ? (
@@ -709,6 +709,13 @@ const AdminOrganizationMasterDetail = ({
                           </Grid>
                         </Grid>
                     </DetailSection>
+
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
+                      <Typography variant="caption" color="primary.darker" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
+                        <InfoOutlinedIcon sx={{ fontSize: 14 }} />
+                        Lưu ý: Các thay đổi chương trình & chuyên ngành lưu khi bạn nhấn nút "Lưu".
+                      </Typography>
+                    </Box>
                   </Stack>
                 )}
 
@@ -771,64 +778,6 @@ const AdminOrganizationMasterDetail = ({
                       <DetailSection title="Cấu hình giao diện">
                         <Box>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
-                            Hình ảnh
-                          </Typography>
-
-                          <Grid container spacing={3}>
-                            <Grid item xs={12} md={4}>
-                              <Stack spacing={1} alignItems="center">
-                                <Avatar src={brandState.logoUrl} variant="rounded" sx={{ width: 64, height: 64, border: 1, borderColor: 'divider' }} />
-                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
-                                  Logo
-                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const base64 = await fileToBase64(file);
-                                      setBrandState(s => ({ ...s, logoUrl: base64 }));
-                                    }
-                                  }} />
-                                </Button>
-                              </Stack>
-                            </Grid>
-
-                            <Grid item xs={12} md={4}>
-                              <Stack spacing={1} alignItems="center">
-                                <Avatar src={brandState.faviconUrl} variant="rounded" sx={{ width: 32, height: 32, border: 1, borderColor: 'divider' }} />
-                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
-                                  Favicon
-                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const base64 = await fileToBase64(file);
-                                      setBrandState(s => ({ ...s, faviconUrl: base64 }));
-                                    }
-                                  }} />
-                                </Button>
-                              </Stack>
-                            </Grid>
-
-                            <Grid item xs={12} md={4}>
-                              <Stack spacing={1} alignItems="center">
-                                <Box sx={{ width: '100%', height: 64, border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-                                  {brandState.heroBannerUrl && <img src={brandState.heroBannerUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                                </Box>
-                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
-                                  Hero Banner
-                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const base64 = await fileToBase64(file);
-                                      setBrandState(s => ({ ...s, heroBannerUrl: base64 }));
-                                    }
-                                  }} />
-                                </Button>
-                              </Stack>
-                            </Grid>
-                          </Grid>
-                        </Box>
-
-                        <Box sx={{ mt: 3 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
                             Màu sắc
                           </Typography>
 
@@ -879,44 +828,135 @@ const AdminOrganizationMasterDetail = ({
                           </Grid>
                         </Box>
 
-                        <Button
-                          startIcon={<SaveOutlinedIcon />}
-                          variant="contained"
-                          size="small"
-                            onClick={async () => {
-                              try {
-                                let cfg = {};
-                                try {
-                                  cfg = selectedOrg.featuresConfig
-                                    ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
-                                    : {};
-                                } catch { cfg = {}; }
-                                const brand = {
-                                  logo_url: brandState.logoUrl,
-                                  favicon_url: brandState.faviconUrl,
-                                  hero_banner_url: brandState.heroBannerUrl,
-                                  theme_colors: { ...brandState.themeColors },
-                                };
-                                const newCfg = { ...cfg, brand_config: brand };
-                                await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
-                                enqueueSnackbar('Đã lưu cấu hình giao diện', { variant: 'success' });
-                                onRefresh?.();
-                              } catch (err) {
-                                enqueueSnackbar('Lưu thất bại', { variant: 'error' });
-                              }
-                            }}
-                         sx={{ mt: 2 }}
-                        >
-                          Lưu giao diện
-                        </Button>
-                      </DetailSection>
+                        <Box sx={{ mt: 3 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
+                            Hình ảnh
+                          </Typography>
 
-                      <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
-                        <Typography variant="caption" color="primary.darker" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
-                          <InfoOutlinedIcon sx={{ fontSize: 14 }} />
-                          Lưu ý: Các thay đổi chương trình & chuyên ngành lưu khi bạn nhấn nút "Lưu".
-                        </Typography>
-                      </Box>
+                          <Grid container spacing={3}>
+                            <Grid item xs={12} sm={6}>
+                              <Stack spacing={1} alignItems="center">
+                                <Avatar
+                                  src={brandState.logoUrl}
+                                  variant="rounded"
+                                  sx={{
+                                    width: 96,
+                                    height: 96,
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    bgcolor: 'background.default',
+                                  }}
+                                />
+                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
+                                  Logo
+                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const base64 = await fileToBase64(file);
+                                      setBrandState(s => ({ ...s, logoUrl: base64 }));
+                                    }
+                                  }} />
+                                </Button>
+                              </Stack>
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                              <Stack spacing={1} alignItems="center">
+                                <Avatar
+                                  src={brandState.faviconUrl}
+                                  variant="rounded"
+                                  sx={{
+                                    width: 96,
+                                    height: 96,
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    bgcolor: 'background.default',
+                                  }}
+                                />
+                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
+                                  Favicon
+                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const base64 = await fileToBase64(file);
+                                      setBrandState(s => ({ ...s, faviconUrl: base64 }));
+                                    }
+                                  }} />
+                                </Button>
+                              </Stack>
+                            </Grid>
+
+                            <Grid item xs={12}>
+                              <Stack spacing={1} alignItems="stretch">
+                                <Box
+                                  sx={{
+                                    width: '100%',
+                                    height: { xs: 140, md: 200 },
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    bgcolor: 'background.default',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  {brandState.heroBannerUrl ? (
+                                    <img src={brandState.heroBannerUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  ) : (
+                                    <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 600 }}>
+                                      Khu vực preview Hero Banner
+                                    </Typography>
+                                  )}
+                                </Box>
+                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
+                                  Hero Banner
+                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      const base64 = await fileToBase64(file);
+                                      setBrandState(s => ({ ...s, heroBannerUrl: base64 }));
+                                    }
+                                  }} />
+                                </Button>
+                              </Stack>
+                            </Grid>
+                          </Grid>
+                        </Box>
+
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                          <Button
+                            startIcon={<SaveOutlinedIcon />}
+                            variant="contained"
+                            size="small"
+                              onClick={async () => {
+                                try {
+                                  let cfg = {};
+                                  try {
+                                    cfg = selectedOrg.featuresConfig
+                                      ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
+                                      : {};
+                                  } catch { cfg = {}; }
+                                  const brand = {
+                                    logo_url: brandState.logoUrl,
+                                    favicon_url: brandState.faviconUrl,
+                                    hero_banner_url: brandState.heroBannerUrl,
+                                    theme_colors: { ...brandState.themeColors },
+                                  };
+                                  const newCfg = { ...cfg, brand_config: brand };
+                                  await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
+                                  enqueueSnackbar('Đã lưu cấu hình giao diện', { variant: 'success' });
+                                  onRefresh?.();
+                                } catch (err) {
+                                  enqueueSnackbar('Lưu thất bại', { variant: 'error' });
+                                }
+                              }}
+                          >
+                            Lưu giao diện
+                          </Button>
+                        </Box>
+                      </DetailSection>
                   </Stack>
                 )}
 

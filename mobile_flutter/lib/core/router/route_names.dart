@@ -23,10 +23,15 @@ class RouteNames {
   static const String mentorAvailability = '/mentorship/mentor-availability';
   // mentor profile: /mentorship/mentors/:id ; booking: /mentorship/mentors/:id/book
   static const String fundraising = '/fundraising';
+  static const String fundraisingMyDonations = '/fundraising/my-donations';
   static const String network = '/network';
   static const String chat = '/chat';
   static const String profile = '/profile';
   static const String profileEdit = '/profile/edit';
   static const String settings = '/settings';
   static const String notifications = '/notifications';
+  static const String myTickets = '/my-tickets';
+  // '/my-tickets/:code' — ticket detail (code is the ticket code).
+  static String ticketDetail(String code) => '/my-tickets/$code';
+  static const String savedArticles = '/saved-articles';
 }

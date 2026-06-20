@@ -20,6 +20,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email'
+import PhoneIcon from '@mui/icons-material/Phone';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import Avatar from '@mui/material/Avatar';
 
@@ -30,6 +31,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMyProfile } from '../../hooks/profile/useMyProfile';
 import { useUpdateProfile } from '../../hooks/profile/useUpdateProfile';
 import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
+import useOrganizationStore from '../../stores/organizationStore';
 
 import useAvatarCrop from '../../hooks/profile/useAvatarCrop';
 import AvatarUploadDialog from '../../components/profile/AvatarUploadDialog';
@@ -46,6 +48,8 @@ import {
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 
 import { useUploadImage } from '../../utils/imageUtils';
+import { userSettingsApi } from '../../utils/api';
+import { validateVietnamPhone } from '../../utils/regexUtils';
 import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
 
 const DEFAULT_COVER =
@@ -125,7 +129,7 @@ const UnifiedProfileEditPage = () => {
   const addExpertise = useAddExpertise();
   const updateExpertise = useUpdateExpertise();
   const deleteExpertise = useDeleteExpertise();
-  const { uploadFile, isPending: uploadingCover } = useUploadImage();
+  const { uploadFile, uploadBase64, isPending: uploadingCover } = useUploadImage();
 
   const [coverPreview, setCoverPreview] = useState(DEFAULT_COVER);
   const [coverFile, setCoverFile] = useState(null);
@@ -137,6 +141,7 @@ const UnifiedProfileEditPage = () => {
   const [educations, setEducations] = useState([]);
   const [success, setSuccess] = useState(false);
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
 
   const [editingExpertiseId, setEditingExpertiseId] = useState(null);
   const [draftExpertise, setDraftExpertise] = useState({
@@ -147,6 +152,10 @@ const UnifiedProfileEditPage = () => {
   });
 
   const avatarCrop = useAvatarCrop();
+  const organizationId = useOrganizationStore((state) => state.organization?.id ?? null);
+
+  // Optional phone — if filled it must be a valid VN mobile number.
+  const phoneError = phone.trim() ? validateVietnamPhone(phone) : null;
 
   useEffect(() => {
     const p = profileQuery.data;
@@ -158,7 +167,8 @@ const UnifiedProfileEditPage = () => {
       setBio(m?.bio ?? p?.bio ?? '');
       setDefaultMeetingLink(m?.defaultMeetingLink ?? '');
       setEmail(p?.email ?? '');
-      
+      setPhone(p?.phone ?? '');
+
       const cover = m?.coverUrl ?? p?.coverUrl;
       if (cover) setCoverPreview(cover);
       
@@ -186,10 +196,20 @@ const UnifiedProfileEditPage = () => {
 
   const handleSave = async () => {
     setSuccess(false);
+    if (phoneError) return; // invalid phone — error already shown under field
     try {
       let uploadedCoverUrl;
       if (coverFile) {
         uploadedCoverUrl = await uploadFile(coverFile);
+      }
+
+      // Persist a newly-cropped avatar: upload the base64 data URL, then point
+      // the user's profile at the returned image URL.
+      if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
+        const avatarImageUrl = await uploadBase64(avatarCrop.avatarUrl);
+        if (avatarImageUrl) {
+          await userSettingsApi.updateAvatar(avatarImageUrl);
+        }
       }
       
       const previousExt = parseExtended(mentorQuery.data?.extendedProfile ?? profileQuery.data?.extendedProfile);
@@ -209,8 +229,10 @@ const UnifiedProfileEditPage = () => {
       
       // Also update base profile (even if it ignores some fields, we send what we can)
       await updateBaseProfile({
+        ...(organizationId ? { organizationId } : {}),
         email: email.trim(),
         bio: bio.trim(),
+        phone: phone.trim() || undefined,
         coverUrl: uploadedCoverUrl ?? undefined,
       });
 
@@ -363,8 +385,11 @@ const UnifiedProfileEditPage = () => {
         multiline
         minRows={6}
         value={bio}
-        onChange={(e) => setBio(e.target.value)}
+        onChange={(e) => setBio(e.target.value.slice(0, 500))}
         placeholder="Giới thiệu về bản thân..."
+        inputProps={{ maxLength: 500 }}
+        helperText={`${bio.length}/500`}
+        FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
       />
       <Typography
           variant="h5"
@@ -384,6 +409,30 @@ const UnifiedProfileEditPage = () => {
           fullWidth
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <Typography
+          variant="h5"
+          fontWeight={800}
+          color="primary.main"
+          mb={2}
+          mt={4}
+          display="flex"
+          alignItems="center"
+          gap={1}
+        >
+          <PhoneIcon />
+          Số điện thoại
+        </Typography>
+
+        <TextField
+          fullWidth
+          value={phone}
+          onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+          placeholder="Ví dụ: 0901234567"
+          inputProps={{ inputMode: 'numeric', maxLength: 10 }}
+          error={Boolean(phoneError)}
+          helperText={phoneError || ''}
         />
     </Stack>
   );

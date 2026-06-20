@@ -111,6 +111,19 @@ class _ProfileView extends StatelessWidget {
               icon: Icons.cake_outlined,
               label: 'Ngày sinh',
               value: profile.dob!),
+        const SizedBox(height: 20),
+        const _SectionTitle('Hoạt động'),
+        _ActivityTile(
+          icon: Icons.confirmation_number_outlined,
+          title: 'Vé của tôi',
+          onTap: () => context.push(RouteNames.myTickets),
+        ),
+        const SizedBox(height: 10),
+        _ActivityTile(
+          icon: Icons.volunteer_activism_outlined,
+          title: 'Lịch sử đóng góp',
+          onTap: () => context.push(RouteNames.fundraisingMyDonations),
+        ),
       ],
     );
   }
@@ -143,6 +156,33 @@ class _SectionTitle extends StatelessWidget {
           fontWeight: FontWeight.w700,
           color: AppColors.primary,
         ),
+      ),
+    );
+  }
+}
+
+class _ActivityTile extends StatelessWidget {
+  const _ActivityTile(
+      {required this.icon, required this.title, required this.onTap});
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.divider),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: AppColors.primary),
+        title: Text(title),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

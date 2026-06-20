@@ -1,4 +1,10 @@
 import { Stack } from '@mui/material';
+import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
+import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -25,13 +31,17 @@ const AdminMentorshipSection = () => {
       subtitle="Trạng thái mentor, phiên tư vấn và phản hồi từ mentee."
     >
       <Stack spacing={3}>
-        <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-          <AdminDashboardMetricTile label="Tổng mentor" value={Number(stats.totalMentors).toLocaleString()} />
-          <AdminDashboardMetricTile label="Đã duyệt" value={Number(stats.approvedMentors).toLocaleString()} />
-          <AdminDashboardMetricTile label="Chờ duyệt" value={Number(stats.pendingMentors).toLocaleString()} />
-          <AdminDashboardMetricTile label="Tổng phiên" value={Number(stats.totalSessions).toLocaleString()} />
-          <AdminDashboardMetricTile label="Hoàn thành" value={Number(stats.completedSessions).toLocaleString()} />
-          <AdminDashboardMetricTile label="Tổng đánh giá" value={Number(stats.totalFeedbacks).toLocaleString()} />
+        <Stack spacing={2}>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile label="Tổng cố vấn" value={Number(stats.totalMentors).toLocaleString()} icon={<SchoolOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Cố vấn đã duyệt" value={Number(stats.approvedMentors).toLocaleString()} icon={<VerifiedUserOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Cố vấn chờ duyệt" value={Number(stats.pendingMentors).toLocaleString()} icon={<PendingActionsOutlinedIcon />} />
+          </Stack>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile label="Tổng số phiên" value={Number(stats.totalSessions).toLocaleString()} icon={<EventNoteOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Phiên hoàn thành" value={Number(stats.completedSessions).toLocaleString()} icon={<TaskAltOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Phản hồi" value={Number(stats.totalFeedbacks).toLocaleString()} icon={<RateReviewOutlinedIcon />} />
+          </Stack>
         </Stack>
 
         <Chart

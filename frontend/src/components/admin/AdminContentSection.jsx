@@ -1,5 +1,11 @@
 import { Stack } from '@mui/material';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
+import RecordVoiceOverOutlinedIcon from '@mui/icons-material/RecordVoiceOverOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
+import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import MenuBookOutlinedIcon from '@mui/icons-material/MenuBookOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -26,17 +32,41 @@ const AdminContentSection = () => {
       subtitle="Tổng quan tin tức, bài alumni, việc làm, tài liệu và thành tích."
     >
       <Stack spacing={3}>
-        <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-          <AdminDashboardMetricTile
-            label="Tin tức"
-            value={Number(stats.totalNews).toLocaleString()}
-            icon={<ArticleOutlinedIcon />}
-          />
-          <AdminDashboardMetricTile label="Bài alumni" value={Number(stats.totalAlumniPosts).toLocaleString()} />
-          <AdminDashboardMetricTile label="Việc làm (tổng)" value={Number(stats.totalJobs).toLocaleString()} />
-          <AdminDashboardMetricTile label="Việc làm (đang tuyển)" value={Number(stats.activeJobs).toLocaleString()} />
-          <AdminDashboardMetricTile label="Tài liệu học tập" value={Number(stats.totalLearningResources).toLocaleString()} />
-          <AdminDashboardMetricTile label="Thành tích" value={Number(stats.totalAchievements).toLocaleString()} />
+        <Stack spacing={2}>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile
+              label="Tin tức"
+              value={Number(stats.totalNews).toLocaleString()}
+              icon={<ArticleOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Bài đăng từ cựu sinh viên"
+              value={Number(stats.totalAlumniPosts).toLocaleString()}
+              icon={<RecordVoiceOverOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Thành tích"
+              value={Number(stats.totalAchievements).toLocaleString()}
+              icon={<EmojiEventsOutlinedIcon />}
+            />
+          </Stack>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile
+              label="Cơ hội việc làm"
+              value={Number(stats.totalJobs).toLocaleString()}
+              icon={<WorkOutlineOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Đang tuyển dụng"
+              value={Number(stats.activeJobs).toLocaleString()}
+              icon={<BusinessCenterOutlinedIcon />}
+            />
+            <AdminDashboardMetricTile
+              label="Tài liệu học tập"
+              value={Number(stats.totalLearningResources).toLocaleString()}
+              icon={<MenuBookOutlinedIcon />}
+            />
+          </Stack>
         </Stack>
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
@@ -53,11 +83,13 @@ const AdminContentSection = () => {
               label="Nội dung mới tuần này"
               value={Number(stats.newContentThisWeek).toLocaleString()}
               caption="Tất cả các loại"
+              icon={<ArticleOutlinedIcon />}
             />
             <AdminDashboardMetricTile
               label="Nội dung mới tháng này"
               value={Number(stats.newContentThisMonth).toLocaleString()}
               caption="Tất cả các loại"
+              icon={<CalendarMonthOutlinedIcon />}
             />
           </Stack>
         </Stack>

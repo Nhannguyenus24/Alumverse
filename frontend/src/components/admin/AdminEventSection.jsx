@@ -1,4 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import CampaignOutlinedIcon from '@mui/icons-material/CampaignOutlined';
+import UpcomingOutlinedIcon from '@mui/icons-material/UpcomingOutlined';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
+import HowToRegOutlinedIcon from '@mui/icons-material/HowToRegOutlined';
+import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -23,13 +29,17 @@ const AdminEventSection = () => {
       subtitle="Tổng quan về sự kiện, đăng ký vé và tỷ lệ check-in."
     >
       <Stack spacing={3}>
-        <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-          <AdminDashboardMetricTile label="Tổng sự kiện" value={Number(stats.totalEvents).toLocaleString()} />
-          <AdminDashboardMetricTile label="Đã công bố" value={Number(stats.publishedEvents).toLocaleString()} />
-          <AdminDashboardMetricTile label="Sắp diễn ra" value={Number(stats.upcomingEvents).toLocaleString()} />
-          <AdminDashboardMetricTile label="Tổng vé" value={Number(stats.totalTickets).toLocaleString()} />
-          <AdminDashboardMetricTile label="Đã check-in" value={Number(stats.checkedInTickets).toLocaleString()} />
-          <AdminDashboardMetricTile label="Mới hôm nay" value={Number(stats.newEventsToday).toLocaleString()} />
+        <Stack spacing={2}>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile label="Tổng sự kiện" value={Number(stats.totalEvents).toLocaleString()} icon={<EventNoteOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Đã công bố" value={Number(stats.publishedEvents).toLocaleString()} icon={<CampaignOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Sắp diễn ra" value={Number(stats.upcomingEvents).toLocaleString()} icon={<UpcomingOutlinedIcon />} />
+          </Stack>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile label="Tổng số vé" value={Number(stats.totalTickets).toLocaleString()} icon={<ConfirmationNumberOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Vé đã check-in" value={Number(stats.checkedInTickets).toLocaleString()} icon={<HowToRegOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Sự kiện hôm nay" value={Number(stats.newEventsToday).toLocaleString()} icon={<TodayOutlinedIcon />} />
+          </Stack>
         </Stack>
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>

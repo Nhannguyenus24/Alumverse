@@ -1,0 +1,337 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/currency.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/repositories/fundraising_repository.dart';
+import '../providers/fundraising_provider.dart';
+
+const _presetAmounts = <int>[100000, 200000, 500000, 1000000];
+
+/// Donation form — native port of the web `DonationDetailPage`.
+/// Pick an amount (preset or custom), donate anonymously or with details,
+/// then receive a SePay QR to complete the bank transfer.
+class FundraisingDonatePage extends ConsumerStatefulWidget {
+  const FundraisingDonatePage({super.key, required this.fundId});
+
+  final int fundId;
+
+  @override
+  ConsumerState<FundraisingDonatePage> createState() =>
+      _FundraisingDonatePageState();
+}
+
+class _FundraisingDonatePageState
+    extends ConsumerState<FundraisingDonatePage> {
+  final _formKey = GlobalKey<FormState>();
+  final _customController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _messageController = TextEditingController();
+
+  int? _selectedPreset = _presetAmounts.first;
+  bool _custom = false;
+  bool _anonymous = false;
+  bool _submitting = false;
+  bool _prefilled = false;
+
+  @override
+  void dispose() {
+    _customController.dispose();
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  int? get _amount {
+    if (_custom) {
+      return int.tryParse(_customController.text.replaceAll('.', '').trim());
+    }
+    return _selectedPreset;
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    final amount = _amount;
+    if (amount == null || amount <= 0) {
+      AppToast.error(context, 'Vui lòng nhập số tiền hợp lệ.');
+      return;
+    }
+
+    setState(() => _submitting = true);
+    try {
+      final rawId = ref.read(authStateProvider).valueOrNull?.user?.id;
+      final memberId =
+          (!_anonymous && rawId != null) ? int.tryParse(rawId) : null;
+
+      final checkoutUrl =
+          await ref.read(fundraisingRepositoryProvider).createDonation(
+                CreateDonationRequest(
+                  fundId: widget.fundId,
+                  donorMemberId: memberId,
+                  donorName:
+                      _anonymous ? null : _nameController.text.trim(),
+                  amount: amount,
+                  address: _anonymous ? null : _trimOrNull(_addressController),
+                  phone: _anonymous ? null : _trimOrNull(_phoneController),
+                  email: _anonymous ? null : _trimOrNull(_emailController),
+                  message: _trimOrNull(_messageController),
+                ),
+              );
+
+      if (!mounted) return;
+      if (checkoutUrl.isEmpty) {
+        AppToast.error(context, 'Không tạo được liên kết thanh toán.');
+        return;
+      }
+      await _showQrDialog(checkoutUrl);
+      if (mounted) {
+        ref.invalidate(fundDetailProvider(widget.fundId));
+        ref.invalidate(myDonationsProvider);
+        context.pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        AppToast.fromError(context, e, fallback: 'Đóng góp thất bại.');
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  String? _trimOrNull(TextEditingController c) {
+    final t = c.text.trim();
+    return t.isEmpty ? null : t;
+  }
+
+  Future<void> _showQrDialog(String url) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text('Quét mã QR để thanh toán'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 280),
+              child: CachedNetworkImage(
+                imageUrl: url,
+                fit: BoxFit.contain,
+                placeholder: (_, __) => const SizedBox(
+                  height: 200,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                errorWidget: (_, __, ___) => Column(
+                  children: [
+                    const Text(
+                      'Không tải được mã QR. Vui lòng mở liên kết thanh toán.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => launchUrl(
+                        Uri.parse(url),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Mở liên kết thanh toán'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Dùng app ngân hàng quét mã để hoàn tất đóng góp. '
+              'Giao dịch sẽ được ghi nhận sau khi thanh toán thành công.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Hoàn tất'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Prefill name/email from the signed-in profile once.
+    if (!_prefilled) {
+      final user = ref.read(authStateProvider).valueOrNull?.user;
+      if (user != null) {
+        _nameController.text = user.fullName ?? '';
+        _emailController.text = user.email;
+      }
+      _prefilled = true;
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Đóng góp')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const _Label('Chọn số tiền'),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final amount in _presetAmounts)
+                  ChoiceChip(
+                    label: Text(formatVnd(amount)),
+                    selected: !_custom && _selectedPreset == amount,
+                    onSelected: (_) => setState(() {
+                      _custom = false;
+                      _selectedPreset = amount;
+                    }),
+                  ),
+                ChoiceChip(
+                  label: const Text('Tùy chọn'),
+                  selected: _custom,
+                  onSelected: (_) => setState(() => _custom = true),
+                ),
+              ],
+            ),
+            if (_custom) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _customController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Số tiền (VND)',
+                  suffixText: '₫',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (!_custom) return null;
+                  final n = int.tryParse((v ?? '').trim());
+                  if (n == null || n <= 0) return 'Nhập số tiền hợp lệ';
+                  return null;
+                },
+              ),
+            ],
+            const SizedBox(height: 20),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Đóng góp ẩn danh'),
+              subtitle: const Text('Không hiển thị thông tin của bạn'),
+              value: _anonymous,
+              onChanged: (v) => setState(() => _anonymous = v),
+            ),
+            if (!_anonymous) ...[
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                maxLength: 50,
+                decoration: const InputDecoration(
+                  labelText: 'Họ và tên *',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  if (_anonymous) return null;
+                  if ((v ?? '').trim().isEmpty) return 'Vui lòng nhập họ tên';
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _emailController,
+                maxLength: 255,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  final t = (v ?? '').trim();
+                  if (t.isEmpty) return null;
+                  final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
+                  return ok ? null : 'Email không hợp lệ';
+                },
+              ),
+              TextFormField(
+                controller: _phoneController,
+                maxLength: 50,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Số điện thoại',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              TextFormField(
+                controller: _addressController,
+                maxLength: 500,
+                decoration: const InputDecoration(
+                  labelText: 'Địa chỉ',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _messageController,
+              maxLength: 100,
+              maxLines: 2,
+              decoration: const InputDecoration(
+                labelText: 'Lời nhắn',
+                helperText: '(Không bắt buộc)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: _submitting
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Tiếp tục thanh toán',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  const _Label(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text,
+        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15));
+  }
+}

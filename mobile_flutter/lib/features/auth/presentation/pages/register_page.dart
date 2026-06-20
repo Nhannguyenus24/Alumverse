@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -72,6 +73,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedYear == null) {
+      AppToast.info(context, 'Vui lòng chọn năm nhập học');
+      return;
+    }
 
     final email = _emailCtl.text.trim();
     setState(() => _submitting = true);
@@ -140,23 +145,46 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 BlurValidatedField(
                   controller: _studentIdCtl,
                   validator: Validators.studentId,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: const InputDecoration(
                     labelText: 'Mã số sinh viên',
                     prefixIcon: Icon(Icons.badge_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _selectedYear,
-                  items: _years
-                      .map((y) => DropdownMenuItem(value: y, child: Text(y)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _selectedYear = v),
-                  validator: (v) => Validators.required(v, field: 'Năm nhập học'),
-                  decoration: const InputDecoration(
-                    labelText: 'Năm nhập học',
-                    prefixIcon: Icon(Icons.calendar_today_outlined),
+                // Material 3 dropdown: menu opens BELOW the field, sized to it,
+                // rounded, and capped to ~5 visible entries (scrolls for more).
+                DropdownMenu<String>(
+                  initialSelection: _selectedYear,
+                  expandedInsets: EdgeInsets.zero,
+                  requestFocusOnTap: false,
+                  hintText: 'Năm nhập học',
+                  leadingIcon: const Icon(Icons.calendar_today_outlined),
+                  menuHeight: 240, // ~5 rows then scroll
+                  textStyle: const TextStyle(fontSize: 16),
+                  menuStyle: MenuStyle(
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    backgroundColor: const WidgetStatePropertyAll(Colors.white),
                   ),
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: OutlineInputBorder(),
+                  ),
+                  dropdownMenuEntries: [
+                    for (final y in _years)
+                      DropdownMenuEntry(
+                        value: y,
+                        label: y,
+                        style: MenuItemButton.styleFrom(
+                          textStyle: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                  ],
+                  onSelected: (v) => setState(() => _selectedYear = v),
                 ),
                 const SizedBox(height: 16),
                 BlurValidatedField(
