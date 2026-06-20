@@ -42,6 +42,15 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
 
     Mono<Boolean> existsByEventIdAndMemberId(Long eventId, Long memberId);
 
+    @Query("""
+            SELECT EXISTS(
+                SELECT 1 FROM event_tickets
+                WHERE event_id = :eventId AND member_id = :memberId
+                  AND status NOT IN ('CANCELLED', 'EXPIRED', 'REJECTED')
+            )
+            """)
+    Mono<Boolean> existsActiveByEventIdAndMemberId(Long eventId, Long memberId);
+
     @Query("SELECT * FROM event_tickets WHERE event_id = :eventId AND status = :status ORDER BY registered_at DESC LIMIT :limit OFFSET :offset")
     Flux<EventTicket> findByEventIdAndStatusWithPagination(Long eventId, String status, int limit, int offset);
 
