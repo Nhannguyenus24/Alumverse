@@ -52,7 +52,7 @@ import AdminStatusChip from './AdminStatusChip';
 import SearchBar from '../SearchBar';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTheme } from '@mui/material';
-import { adminOrganizationApi, adminUserApi } from '../../utils/api';
+import { adminOrganizationApi } from '../../utils/api';
 import { useSnackbar } from 'notistack';
 import AdminManualMemberDialog from './AdminManualMemberDialog';
 import { fileToBase64 } from '../../utils/imageUtils';

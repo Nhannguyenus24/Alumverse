@@ -34,15 +34,19 @@ public interface NetworkMemberSearchRepository
                    OR (ub.blocker_member_id = u.id AND ub.blocked_member_id = :currentUserId)
               )
               AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
-              AND (:programJson IS NULL OR om.program @> CAST(:programJson AS jsonb))
-              AND (:majorJson IS NULL OR om.major @> CAST(:majorJson AS jsonb))
+              AND (:program IS NULL OR EXISTS (
+                    SELECT 1 FROM jsonb_array_elements_text(om.program) AS elem(val)
+                    WHERE val ILIKE :program))
+              AND (:major IS NULL OR EXISTS (
+                    SELECT 1 FROM jsonb_array_elements_text(om.major) AS elem(val)
+                    WHERE val ILIKE :major))
             """;
 
     @Query("""
             SELECT om.user_id AS user_id,
                    gp.full_name AS full_name,
-                   om.program AS program,
-                   om.major AS major,
+                   om.program ->> 0 AS program,
+                   om.major ->> 0 AS major,
                    u.avatar_url AS avatar_url
             """ + SEARCH_FROM_JOIN + SEARCH_WHERE + """
             ORDER BY gp.full_name ASC, om.id ASC
@@ -52,8 +56,8 @@ public interface NetworkMemberSearchRepository
             Integer organizationId,
             Long currentUserId,
             String fullName,
-            String programJson,
-            String majorJson,
+            String program,
+            String major,
             int limit,
             int offset);
 
@@ -64,6 +68,6 @@ public interface NetworkMemberSearchRepository
             Integer organizationId,
             Long currentUserId,
             String fullName,
-            String programJson,
-            String majorJson);
+            String program,
+            String major);
 }

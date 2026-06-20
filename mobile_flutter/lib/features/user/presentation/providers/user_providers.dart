@@ -17,3 +17,8 @@ final notificationSettingsProvider =
 final notificationsProvider = FutureProvider<List<NotificationItem>>((ref) {
   return ref.watch(userRepositoryProvider).getNotifications();
 });
+
+final publicProfileProvider =
+    FutureProvider.family<UserProfile, int>((ref, userId) {
+  return ref.watch(userRepositoryProvider).getPublicProfile(userId);
+});

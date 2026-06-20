@@ -192,50 +192,68 @@ static String publicProfile(int userId) => '/api/users/$userId/public-profile';
 - Dùng từ card ở Sub-feature 1, 3 (Chặn) và Sub-feature 4 (Bỏ chặn).
 - Lỗi `409` (đã chặn) / `403` (bị peer chặn) → SnackBar lỗi (đọc message từ `error_interceptor.dart`).
 
-### Sub-feature 7 — Điều hướng profile (→ tạo mới feature `user`)
+### Sub-feature 7 — Điều hướng profile (→ **mở rộng** feature `user` đã có)
 
 - Tap vào card/tên → `context.push('/profile/$userId')`.
 
-> **Chốt hiện trạng (đã discuss):** Mobile **CHƯA có** màn profile của người khác.
-> - `features/user/` rỗng (chỉ `.gitkeep`).
-> - `RouteNames.profile = '/profile'` (không param) → route trỏ `FeaturePlaceholderPage`.
-> - Không có màn profile nào (trừ `mentor_profile_page.dart`, là domain mentor riêng).
+> **Chốt hiện trạng (cập nhật 20/06/2026 sau git pull):** `features/user/` **ĐÃ tồn tại và có nội dung**
+> (không còn rỗng như mô tả cũ). Hiện có:
+> - `data/datasources/user_api.dart` — `UserApi` bọc các endpoint `/api/users/me/*` (có sẵn helper `_unwrap`).
+> - `data/repositories/user_repository.dart` — `UserRepository` + `userRepositoryProvider` (đã có `getProfile`, `updateProfile`…).
+> - `data/models/user_profile.dart` — model **`UserProfile`** (userId, email, studentId, role, status, avatarUrl, fullName, phone, bio, dob, gender).
+> - `presentation/providers/user_providers.dart` — `myProfileProvider`, `notificationSettingsProvider`, `notificationsProvider`.
+> - `presentation/pages/` — `my_profile_page.dart`, `my_profile_edit_page.dart`, `settings_page.dart`, `notifications_page.dart`.
+> - `RouteNames.profile = '/profile'` → trỏ **`MyProfilePage`** (KHÔNG còn là `FeaturePlaceholderPage`). `RouteNames.profileEdit = '/profile/edit'`.
 >
-> → **Phải xây mới** màn **Public Profile** trong `features/user/`. Đây là điều kiện cần để
-> Sub-feature 7 hoạt động. Xem **Mục 4b** bên dưới.
+> → Mobile **CHƯA có** màn profile *của người khác*, nhưng **KHÔNG dựng feature mới**. Chỉ cần
+> **mở rộng** feature `user` đang có: thêm method `getPublicProfile` vào `UserApi`/`UserRepository`,
+> thêm `publicProfileProvider`, **tái dùng model `UserProfile`**, và thêm 1 page mới `public_profile_page.dart`.
+> Xem **Mục 4b** (đã viết lại).
 
-**Web tham chiếu:** `PublicUserProfile.jsx` gọi `GET /users/{userId}/public-profile`
-(hook `usePublicProfile`) → `{ userId, fullName, avatarUrl, coverUrl, currentJobTitle,
-currentCompany, bio, email }`. Ngoài ra web còn render `UserHighlights` (bài viết alumni +
-lịch sử đóng góp) — **bỏ qua ở MVP** (xem phạm vi đã chốt).
+**Web tham chiếu:** `PublicUserProfile.jsx` gọi `GET /users/{userId}/public-profile`.
+> ⚠️ **Khác biệt schema (đã verify backend):** Mobile gọi cùng endpoint nhưng backend trả về
+> **`UserProfileResponse`** (cùng DTO với profile đầy đủ), **KHÔNG** có `coverUrl`, `currentJobTitle`,
+> `currentCompany` như mô tả cũ. Field thực tế: `userId, email, studentId, role, status, avatarUrl,
+> createdAt, fullName, phone, bio, dob, gender, profileUpdatedAt`.
+> → UI Public Profile **bỏ** mục chức danh/công ty/cover; chỉ render field có thật.
+> Web còn render `UserHighlights` (bài viết alumni + lịch sử đóng góp) — **bỏ qua ở MVP**.
 
 ---
 
-## 4b. Feature `user` — Màn Public Profile (MỚI)
+## 4b. Feature `user` — Màn Public Profile (**MỞ RỘNG feature đã có**)
 
 > **Phạm vi đã chốt (đã discuss): Core profile.** Chỉ thông tin cơ bản, **bỏ** `UserHighlights`
 > (posts/donations) vì feature `article`/`fundraising` trên mobile chưa sẵn sàng.
+>
+> ⚠️ **Cập nhật 20/06/2026:** `features/user/` đã tồn tại đầy đủ (xem Sub-feature 7). **KHÔNG tạo
+> file trùng tên** (`user_repository.dart`, `user_provider.dart` đã có → sẽ collide). Cách làm:
+> **mở rộng** file sẵn có, **tái dùng model `UserProfile`**, chỉ thêm **1 page mới**.
 
 ```
 lib/features/user/
 ├── data/
-│   ├── models/public_profile.dart        # MỚI
-│   └── repositories/user_repository.dart # MỚI — getPublicProfile(userId)
+│   ├── datasources/user_api.dart         # (MỞ RỘNG) — thêm getPublicProfile(userId)
+│   ├── models/user_profile.dart          # (TÁI DÙNG) — khớp UserProfileResponse, KHÔNG tạo model mới
+│   └── repositories/user_repository.dart # (MỞ RỘNG) — thêm getPublicProfile(userId)
 └── presentation/
-    ├── providers/user_provider.dart      # MỚI — publicProfileProvider (FutureProvider.family<…,int>)
-    └── pages/public_profile_page.dart     # MỚI — màn hiển thị
+    ├── providers/user_providers.dart     # (MỞ RỘNG) — thêm publicProfileProvider = FutureProvider.family<UserProfile, int>
+    └── pages/public_profile_page.dart    # MỚI (file mới duy nhất) — màn hiển thị
 ```
 
 | Thành phần | Chi tiết |
 |---|---|
-| **Endpoint** | `GET /api/users/{userId}/public-profile` |
-| **Model `PublicProfile`** | `userId, fullName, avatarUrl, coverUrl, currentJobTitle, currentCompany, bio, email` |
-| **UI** | Cover + avatar, họ tên, dòng chức danh `currentJobTitle @ currentCompany`, card "Giới thiệu" (bio), card "Thông tin cơ bản" (họ tên, email nếu có, công việc, công ty). Trạng thái thiếu → "Chưa cập nhật". |
-| **Route** | `GoRoute('${RouteNames.profile}/:id')` → `PublicProfilePage(userId: …)` |
+| **Endpoint** | `GET /api/users/{userId}/public-profile` (đã verify ở `PublicUserController`) |
+| **Model** | **Tái dùng `UserProfile`** (đã khớp `UserProfileResponse`). Field thực tế: `userId, email, studentId, role, status, avatarUrl, fullName, phone, bio, dob, gender` (+ `createdAt, profileUpdatedAt` nếu cần). **KHÔNG có** `coverUrl/currentJobTitle/currentCompany`. |
+| **Transport** | Thêm vào `UserApi`: `getPublicProfile(int userId)` gọi `ApiEndpoints.publicProfile(userId)`, parse qua helper `_unwrap` đã có → `UserProfile.fromJson(...)`. |
+| **Provider** | Thêm vào `user_providers.dart`: `final publicProfileProvider = FutureProvider.family<UserProfile, int>((ref, id) => ref.watch(userRepositoryProvider).getPublicProfile(id));` |
+| **UI** | Avatar + họ tên, card "Giới thiệu" (bio), card "Thông tin cơ bản" (email nếu có, phone, gender, studentId). **Bỏ** cover/chức danh/công ty (BE không trả). Field thiếu → "Chưa cập nhật". |
+| **Route** | `GoRoute('${RouteNames.profile}/:id')` → `PublicProfilePage(userId: …)`. |
 | **Loading/Error** | Dùng lại `LoadingView` / `ErrorView` trong `lib/shared/widgets/`. |
 
-> Route `/profile` (không id) hiện vẫn là placeholder "Hồ sơ cá nhân" của chính mình — **giữ nguyên**,
+> Route `/profile` (không id) hiện trỏ **`MyProfilePage`** (hồ sơ của chính mình) — **giữ nguyên**,
 > chỉ thêm route con `/profile/:id` cho profile người khác.
+> ⚠️ **Thứ tự route go_router:** khai báo `/profile/edit` **trước** `/profile/:id` để `:id` không
+> nuốt nhầm segment `edit` (hoặc int-parse `:id` và fallback). Xem Mục 5.
 
 ---
 
@@ -257,6 +275,8 @@ GoRoute(
 Thêm route profile người khác (cho Sub-feature 7):
 
 ```dart
+// ⚠️ Phải khai báo SAU '/profile/edit' (RouteNames.profileEdit) để ':id'
+// không match nhầm segment 'edit'.
 GoRoute(
   path: '${RouteNames.profile}/:id',                 // '/profile/:id'
   builder: (_, state) => PublicProfilePage(
@@ -264,6 +284,9 @@ GoRoute(
   ),
 ),
 ```
+
+> Hiện `app_router.dart` đã có `RouteNames.profile` → `MyProfilePage` và `RouteNames.profileEdit`
+> (`/profile/edit`) → `MyProfileEditPage`. Chèn route `/profile/:id` **sau** 2 route đó.
 
 ---
 
@@ -290,17 +313,21 @@ GoRoute(
 
 #### Feature `user` (Public Profile — cho Sub-feature 7)
 
-- [ ] `features/user/data/models/public_profile.dart`
-- [ ] `features/user/data/repositories/user_repository.dart`
-- [ ] `features/user/presentation/providers/user_provider.dart`
-- [ ] `features/user/presentation/pages/public_profile_page.dart`
+> ⚠️ Feature `user` đã tồn tại → **MỞ RỘNG**, không tạo file trùng tên. Chỉ 1 file MỚI.
+
+- [ ] `features/user/presentation/pages/public_profile_page.dart` *(file MỚI duy nhất)*
+- [ ] `features/user/data/datasources/user_api.dart` *(sửa — thêm `getPublicProfile`)*
+- [ ] `features/user/data/repositories/user_repository.dart` *(sửa — thêm `getPublicProfile`)*
+- [ ] `features/user/presentation/providers/user_providers.dart` *(sửa — thêm `publicProfileProvider`)*
+- [ ] ~~`models/public_profile.dart`~~ → **không tạo**, tái dùng `UserProfile` đã có.
 
 ### Sửa
 
 - [ ] `core/constants/api_endpoints.dart` — thêm `connectionsSearch`, `blocks`, `blockUser(id)`, `publicProfile(userId)`
-- [ ] `core/router/app_router.dart` — `/network` → `NetworkPage`; thêm route `/profile/:id` → `PublicProfilePage`
-- [ ] `data/repositories/network_repository.dart` — thêm: `searchIncomingRequests`, `respondRequest`, `searchConnections`, `searchBlockedMembers`, `getConnectionStatus`, `sendConnectionRequest` (+ trả pagination cho `searchMembers`)
-- [ ] `presentation/providers/network_provider.dart` — query states + FutureProviders cho từng list + mutations
+- [ ] `core/router/app_router.dart` — `/network` → `NetworkPage`; thêm route `/profile/:id` → `PublicProfilePage` (đặt **sau** `/profile/edit`)
+- [ ] `features/network/data/repositories/network_repository.dart` — thêm: `searchIncomingRequests`, `respondRequest`, `searchConnections`, `searchBlockedMembers`, `getConnectionStatus`, `sendConnectionRequest` (+ trả pagination cho `searchMembers`)
+- [ ] `features/network/presentation/providers/network_provider.dart` — query states + FutureProviders cho từng list + mutations
+- [ ] `features/user/` (3 file ở trên) — mở rộng cho Public Profile
 
 ---
 
@@ -326,8 +353,8 @@ GoRoute(
 | # | Vấn đề | Quyết định |
 |---|---|---|
 | 1 | Nguồn filter **program/major** | ✅ **Text tự do**, không phải dropdown/API. 2 `TextField` + toggle "Tất cả". Xem chốt ở Sub-feature 1. |
-| 2 | Route profile `/profile/:id` trên mobile | ✅ **Chưa có → xây mới** feature `user` Public Profile (Mục 4b) + route `/profile/:id`. |
-| 3 | Phạm vi màn Public Profile | ✅ **Core profile** (info cơ bản), **bỏ** UserHighlights ở MVP. |
+| 2 | Route profile `/profile/:id` trên mobile | ✅ **Mở rộng** feature `user` đã có (Mục 4b) + thêm route `/profile/:id` (sau `/profile/edit`). *(Cập nhật 20/06: feature `user` đã tồn tại, không dựng mới.)* |
+| 3 | Phạm vi màn Public Profile | ✅ **Core profile** (info cơ bản), **bỏ** UserHighlights ở MVP. ⚠️ BE trả `UserProfileResponse` → bỏ luôn cover/chức danh/công ty. |
 | 4 | Phạm vi build session này | ✅ Build **cả network 4 tab + Public Profile**. |
 
 ### Còn lại (xác nhận khi triển khai)
@@ -378,7 +405,7 @@ GoRoute(
 | **Connection** | `connections/search` | `peerMemberId, fullName, avatarUrl, program, major` (+ `connectionId, chatGroupId, connectedAt`) |
 | **BlockedMember** | `blocks` | `blockedMemberId, fullName, avatarUrl, blockedAt` |
 | **ConnectionStatus** | `conversation-requests/connection-status?targetMemberId=` | `{ status, cooldownUntil, latestMessage }`, `latestMessage = { id, content, senderMemberId }`; **null** = chưa từng kết nối |
-| **PublicProfile** | `users/{id}/public-profile` | `userId, fullName, avatarUrl, coverUrl, currentJobTitle, currentCompany, bio, email` |
+| **PublicProfile** (= `UserProfile`, tái dùng) | `users/{id}/public-profile` | `userId, email, studentId, role, status, avatarUrl, fullName, phone, bio, dob, gender` (+ `createdAt, profileUpdatedAt`). ⚠️ BE trả `UserProfileResponse`, **KHÔNG** có `coverUrl/currentJobTitle/currentCompany` |
 
 **Body request:**
 - Respond: `PUT conversation-requests/respond` body `{ id, status: ACCEPTED\|REJECTED }`
