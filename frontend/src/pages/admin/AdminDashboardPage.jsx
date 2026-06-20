@@ -156,49 +156,59 @@ const AdminDashboardPage = () => {
       </Stack>
 
       {/* Primary Metrics */}
-      <Stack
-        direction="row"
-        flexWrap="wrap"
-        spacing={3}
-        useFlexGap
-        sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } } }}
-      >
-        <AdminDashboardMetricTile
-          label="Tổng thành viên"
-          value={totalUsers.toLocaleString()}
-          icon={<PeopleAltOutlinedIcon />}
-          trend={12}
-        />
-        <AdminDashboardMetricTile
-          label="Bài viết chờ duyệt"
-          value={pendingPosts}
-          icon={<MarkChatUnreadOutlinedIcon />}
-          caption="Cần xử lý ngay"
-        />
-        <AdminDashboardMetricTile
-          label="Tổ chức / Đơn vị"
-          value={totalOrgs}
-          icon={<BusinessCenterOutlinedIcon />}
-          trend={2}
-        />
-        <AdminDashboardMetricTile
-          label="Hoạt động hệ thống"
-          value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
-          icon={<TrendingUpIcon />}
-          caption="Bản ghi mới hôm nay"
-        />
-        <AdminDashboardMetricTile
-          label="Chờ xác minh"
-          value={(metrics?.pendingVerifications || 0).toLocaleString()}
-          icon={<VerifiedUserOutlinedIcon />}
-          caption="Yêu cầu xác minh"
-        />
-        <AdminDashboardMetricTile
-          label="Quyên góp (30 ngày)"
-          value={donationsFormatted}
-          icon={<VolunteerActivismOutlinedIcon />}
-          caption={`${(metrics?.totalDonationsCount || 0).toLocaleString()} lượt`}
-        />
+      <Stack spacing={3}>
+        <Stack
+          direction="row"
+          flexWrap="wrap"
+          spacing={3}
+          useFlexGap
+          sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } } }}
+        >
+          <AdminDashboardMetricTile
+            label="Tổng thành viên"
+            value={totalUsers.toLocaleString()}
+            icon={<PeopleAltOutlinedIcon />}
+            trend={12}
+          />
+          <AdminDashboardMetricTile
+            label="Bài viết chờ duyệt"
+            value={pendingPosts}
+            icon={<MarkChatUnreadOutlinedIcon />}
+            caption="Cần xử lý ngay"
+          />
+          <AdminDashboardMetricTile
+            label="Tổ chức / Đơn vị"
+            value={totalOrgs}
+            icon={<BusinessCenterOutlinedIcon />}
+            trend={2}
+          />
+        </Stack>
+        <Stack
+          direction="row"
+          flexWrap="wrap"
+          spacing={3}
+          useFlexGap
+          sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } } }}
+        >
+          <AdminDashboardMetricTile
+            label="Hoạt động hệ thống"
+            value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
+            icon={<TrendingUpIcon />}
+            caption="Bản ghi mới hôm nay"
+          />
+          <AdminDashboardMetricTile
+            label="Chờ xác minh"
+            value={(metrics?.pendingVerifications || 0).toLocaleString()}
+            icon={<VerifiedUserOutlinedIcon />}
+            caption="Yêu cầu xác minh"
+          />
+          <AdminDashboardMetricTile
+            label="Quyên góp gần đây"
+            value={donationsFormatted}
+            icon={<VolunteerActivismOutlinedIcon />}
+            caption={`${(metrics?.totalDonationsCount || 0).toLocaleString()} lượt trong 30 ngày qua`}
+          />
+        </Stack>
       </Stack>
 
       {/* Main Chart + Sidebar */}

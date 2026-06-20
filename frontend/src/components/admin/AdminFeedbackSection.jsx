@@ -1,5 +1,7 @@
 import { Stack } from '@mui/material';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
+import MarkEmailUnreadOutlinedIcon from '@mui/icons-material/MarkEmailUnreadOutlined';
+import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -36,11 +38,12 @@ const AdminFeedbackSection = () => {
           <AdminDashboardMetricTile
             label="Chưa đọc"
             value={Number(stats.unreadFeedbacks).toLocaleString()}
-            caption={stats.unreadFeedbacks > 0 ? 'Cần xem xét' : 'Đã xử lý hết'}
+            icon={<MarkEmailUnreadOutlinedIcon />}
           />
           <AdminDashboardMetricTile
             label="Đã đọc"
             value={Number(stats.readFeedbacks).toLocaleString()}
+            icon={<DraftsOutlinedIcon />}
           />
         </Stack>
 

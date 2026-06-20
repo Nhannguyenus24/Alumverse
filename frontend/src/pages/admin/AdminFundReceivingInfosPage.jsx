@@ -189,13 +189,17 @@ const AdminFundReceivingInfosPage = () => {
         justifyContent="space-between"
         alignItems={{ xs: 'flex-start', sm: 'center' }}
         spacing={2}
-        sx={{ mb: 3 }}
+        sx={{ mb: 4 }}
       >
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
             Tài khoản ngân hàng
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
+          >
             Quản lý tài khoản nhận quỹ dùng cho các chiến dịch gây quỹ.
           </Typography>
         </Box>

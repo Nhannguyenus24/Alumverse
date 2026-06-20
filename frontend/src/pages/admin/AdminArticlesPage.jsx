@@ -14,7 +14,6 @@ import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import { useDebounce } from '../../hooks/useDebounce';
-import AdminSectionPanel from '../../components/admin/AdminSectionPanel';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import { ADMIN_STATUS_CHIP_SX } from '../../constants/adminUiShared';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
@@ -25,9 +24,9 @@ import { formatDateTime } from '../../utils/dateFormatter';
 const CHANNEL_OPTIONS = [
   { value: 'news', label: 'Tin tức' },
   { value: 'alumni', label: 'Cựu sinh viên' },
-  { value: 'achievement', label: 'Thành tựu' },
-  { value: 'job', label: 'Việc làm' },
-  { value: 'learning', label: 'Học bổng / Học tập' },
+  { value: 'achievement', label: 'Kênh thành tựu' },
+  { value: 'job', label: 'Cơ hội việc làm' },
+  { value: 'learning', label: 'Cơ hội học tập' },
   { value: 'event', label: 'Sự kiện' },
   { value: 'donation', label: 'Quyên góp' },
 ];
@@ -68,10 +67,31 @@ const AdminArticlesPage = () => {
   const openView = (a) => navigate(`/article/${channel}/${idOf(a)}`);
 
   return (
-    <AdminSectionPanel
-      title="Quản lý bài viết"
-      subtitle="Chỉnh sửa bất kỳ bài viết nào đã đăng trên 7 chuyên mục."
-    >
+    <Box>
+      <Box
+        sx={{
+          mb: 4,
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
+            Quản lý bài viết
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.5, fontWeight: 500 }}
+          >
+            Chỉnh sửa bất kỳ bài viết nào đã đăng trên 7 chuyên mục.
+          </Typography>
+        </Box>
+      </Box>
+
       {loading ? (
         <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress size={28} /></Stack>
       ) : (
@@ -151,16 +171,11 @@ const AdminArticlesPage = () => {
                   </MenuItem>
                 ))}
               </TextField>
-              <Chip
-                label={channelLabel(channel)}
-                color="primary"
-                sx={ADMIN_STATUS_CHIP_SX}
-              />
             </Stack>
           }
         />
       )}
-    </AdminSectionPanel>
+    </Box>
   );
 };
 
