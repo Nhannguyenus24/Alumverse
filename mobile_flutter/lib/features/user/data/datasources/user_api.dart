@@ -67,6 +67,11 @@ class UserApi {
   Future<void> deleteAllNotifications() =>
       _dio.delete(ApiEndpoints.meNotifications);
 
+  Future<UserProfile> getPublicProfile(int userId) async {
+    final res = await _dio.get(ApiEndpoints.publicProfile(userId));
+    return UserProfile.fromJson(_unwrap(res.data));
+  }
+
   Map<String, dynamic> _unwrap(dynamic body) {
     if (body is Map && body['data'] is Map) {
       return body['data'] as Map<String, dynamic>;

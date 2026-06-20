@@ -111,6 +111,23 @@ class _ProfileView extends StatelessWidget {
               icon: Icons.cake_outlined,
               label: 'Ngày sinh',
               value: profile.dob!),
+        const SizedBox(height: 20),
+        const _SectionTitle('Hoạt động'),
+        Card(
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: AppColors.divider),
+          ),
+          child: ListTile(
+            leading: const Icon(Icons.volunteer_activism_outlined,
+                color: AppColors.primary),
+            title: const Text('Lịch sử đóng góp'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(RouteNames.fundraisingMyDonations),
+          ),
+        ),
       ],
     );
   }

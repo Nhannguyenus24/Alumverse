@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/chat/presentation/widgets/chat_preview_sheet.dart';
 
 /// App shell with a persistent bottom navigation bar for the five primary
 /// destinations. Each tab is a normal route; tapping a tab `go`s to it so the
@@ -31,10 +32,29 @@ class MainScaffold extends StatelessWidget {
     context.go(_tabs[index].route);
   }
 
+  void _openChatPreview(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => const ChatPreviewSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openChatPreview(context),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        tooltip: 'Tin nhắn',
+        child: const Icon(Icons.chat_bubble_outline_rounded),
+      ),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           backgroundColor: AppColors.surface,
