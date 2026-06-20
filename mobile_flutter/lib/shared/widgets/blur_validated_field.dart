@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 
 /// A text field that validates **on blur**, not while typing. Error only shows
 /// after the user leaves the field (and it's invalid); a valid field stays
@@ -17,6 +18,7 @@ class BlurValidatedField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.inputFormatters,
   });
 
   final TextEditingController controller;
@@ -26,6 +28,7 @@ class BlurValidatedField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<BlurValidatedField> createState() => _BlurValidatedFieldState();
@@ -63,6 +66,7 @@ class _BlurValidatedFieldState extends State<BlurValidatedField> {
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,
       onFieldSubmitted: widget.onFieldSubmitted,
+      inputFormatters: widget.inputFormatters,
       decoration: widget.decoration,
     );
   }

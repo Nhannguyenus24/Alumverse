@@ -1078,6 +1078,11 @@ export const userSettingsApi = {
 		return unwrap(response);
 	},
 
+	async updateAvatar(avatarUrl) {
+		const response = await apiClient.put('/users/me/avatar', { avatarUrl });
+		return unwrap(response);
+	},
+
 	async updateNotificationSettings(payload) {
 		const response = await apiClient.put('/users/me/notification-settings', payload);
 		return unwrap(response);
@@ -1102,6 +1107,34 @@ export const userSettingsApi = {
 
 	async acceptPeerVerification(requestId) {
 		const response = await apiClient.patch(`/users/me/peer-verifications/${requestId}/accept`);
+		return unwrap(response);
+	},
+};
+
+// Saved (bookmarked / "quan tâm") articles. itemType is "NEWS" for articles.
+export const savedItemApi = {
+	async check(itemType, itemId) {
+		const response = await apiClient.get('/articles/saved/check', {
+			params: { itemType, itemId },
+		});
+		const data = unwrap(response);
+		return data?.saved ?? data?.isSaved ?? false;
+	},
+
+	async save(itemType, itemId) {
+		const response = await apiClient.post('/articles/saved', { itemType, itemId });
+		return unwrap(response);
+	},
+
+	async unsave(itemType, itemId) {
+		const response = await apiClient.delete('/articles/saved', {
+			params: { itemType, itemId },
+		});
+		return unwrap(response);
+	},
+
+	async listByType(itemType, params = { page: 0, limit: 50 }) {
+		const response = await apiClient.get(`/articles/saved/type/${itemType}`, { params });
 		return unwrap(response);
 	},
 };

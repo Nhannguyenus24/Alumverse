@@ -170,7 +170,9 @@ public class EventRepository implements IEventRepository {
 
     @Override
     public Mono<Boolean> checkUserRegistered(Long eventId, Long memberId) {
-        return ticketRepo.existsByEventIdAndMemberId(eventId, memberId);
+        // Only a non-cancelled/expired/rejected ticket counts as registered, so
+        // a cancelled registration correctly reads as not-registered.
+        return ticketRepo.existsActiveByEventIdAndMemberId(eventId, memberId);
     }
 
     @Override
@@ -193,7 +195,9 @@ public class EventRepository implements IEventRepository {
 
     @Override
     public Mono<Boolean> hasRegistered(Long eventId, Long memberId) {
-        return ticketRepo.existsByEventIdAndMemberId(eventId, memberId);
+        // Allow re-registering after a cancellation: a cancelled ticket no
+        // longer blocks a new registration.
+        return ticketRepo.existsActiveByEventIdAndMemberId(eventId, memberId);
     }
 
     // ─── Ticket — admin approve / reject ─────────────────────────────────────

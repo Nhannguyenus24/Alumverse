@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
+import '../../../../shared/widgets/app_toast.dart';
+import '../../data/repositories/article_repository.dart';
 import '../providers/news_provider.dart';
 
 /// Article detail. The body is ReactQuill HTML (same content the web frontend
@@ -21,7 +23,10 @@ class ArticleDetailPage extends ConsumerWidget {
     final async = ref.watch(newsDetailProvider(articleId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết bài viết')),
+      appBar: AppBar(
+        title: const Text('Chi tiết bài viết'),
+        actions: [_SaveButton(articleId: articleId)],
+      ),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -131,6 +136,53 @@ class ArticleDetailPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Bookmark toggle for the article AppBar. Saves/unsaves the article and keeps
+/// the saved list + saved-status providers in sync.
+class _SaveButton extends ConsumerStatefulWidget {
+  const _SaveButton({required this.articleId});
+  final int articleId;
+
+  @override
+  ConsumerState<_SaveButton> createState() => _SaveButtonState();
+}
+
+class _SaveButtonState extends ConsumerState<_SaveButton> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool currentlySaved) async {
+    setState(() => _busy = true);
+    final repo = ref.read(articleRepositoryProvider);
+    try {
+      if (currentlySaved) {
+        await repo.unsave(widget.articleId);
+        if (mounted) AppToast.info(context, 'Đã bỏ quan tâm bài viết.');
+      } else {
+        await repo.save(widget.articleId);
+        if (mounted) AppToast.success(context, 'Đã quan tâm bài viết.');
+      }
+    } catch (_) {
+      // Tolerate already-saved/not-saved races; resync below reflects truth.
+    } finally {
+      ref.invalidate(isArticleSavedProvider(widget.articleId));
+      ref.invalidate(savedArticlesProvider);
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final saved =
+        ref.watch(isArticleSavedProvider(widget.articleId)).valueOrNull ??
+            false;
+    return IconButton(
+      tooltip: saved ? 'Bỏ quan tâm' : 'Quan tâm',
+      onPressed: _busy ? null : () => _toggle(saved),
+      icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
+      color: saved ? AppColors.error : null,
     );
   }
 }

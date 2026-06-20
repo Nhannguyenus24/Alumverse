@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/event_summary.dart';
+import '../../data/models/event_ticket.dart';
 import '../../data/repositories/event_repository.dart';
 
 /// Upcoming events for the home feed.
@@ -25,8 +26,19 @@ final eventDetailProvider =
   return ref.read(eventRepositoryProvider).getDetail(id);
 });
 
+/// The current user's registration tickets ("Vé của tôi").
+final myTicketsProvider = FutureProvider<List<EventTicket>>((ref) {
+  return ref.watch(eventRepositoryProvider).getMyTickets();
+});
+
+/// A ticket's full detail by its code (used by the ticket detail screen).
+final ticketByCodeProvider =
+    FutureProvider.family<EventTicket, String>((ref, code) {
+  return ref.read(eventRepositoryProvider).getTicketByCode(code);
+});
+
 /// Interaction state for the detail screen: interested/registered flags +
-/// live stat counts. Re-fetched (invalidated) after each toggle/register.
+/// live stat counts.
 class EventInteraction {
   final bool interested;
   final bool registered;
@@ -39,22 +51,120 @@ class EventInteraction {
     this.interestedCount = 0,
     this.registeredCount = 0,
   });
+
+  EventInteraction copyWith({
+    bool? interested,
+    bool? registered,
+    int? interestedCount,
+    int? registeredCount,
+  }) {
+    return EventInteraction(
+      interested: interested ?? this.interested,
+      registered: registered ?? this.registered,
+      interestedCount: interestedCount ?? this.interestedCount,
+      registeredCount: registeredCount ?? this.registeredCount,
+    );
+  }
 }
 
-final eventInteractionProvider =
-    FutureProvider.family<EventInteraction, int>((ref, id) async {
-  final repo = ref.read(eventRepositoryProvider);
-  final results = await Future.wait([
-    repo.isInterested(id).catchError((_) => false),
-    repo.isRegistered(id).catchError((_) => false),
-    repo.getStatistics(id).catchError(
-        (_) => (interested: 0, registered: 0)),
-  ]);
-  final stats = results[2] as ({int interested, int registered});
-  return EventInteraction(
-    interested: results[0] as bool,
-    registered: results[1] as bool,
-    interestedCount: stats.interested,
-    registeredCount: stats.registered,
-  );
-});
+/// Loads + holds the interaction state for one event. Exposes optimistic
+/// mutators so the counts/flags update instantly after an action, then resync
+/// with the server in the background (the statistics read can momentarily lag
+/// a just-committed write, so we don't rely on it alone for the count).
+class EventInteractionNotifier
+    extends AutoDisposeFamilyAsyncNotifier<EventInteraction, int> {
+  EventRepository get _repo => ref.read(eventRepositoryProvider);
+
+  @override
+  Future<EventInteraction> build(int arg) => _load(arg);
+
+  Future<EventInteraction> _load(int id) async {
+    final results = await Future.wait([
+      _repo.isInterested(id).catchError((_) => false),
+      _repo.isRegistered(id).catchError((_) => false),
+      _repo
+          .getStatistics(id)
+          .then<({int interested, int registered})?>((s) => s)
+          .catchError((_) => null),
+    ]);
+    final interested = results[0] as bool;
+    final registered = results[1] as bool;
+    final stats = results[2] as ({int interested, int registered})?;
+    // If statistics failed, keep whatever counts we already have (avoid
+    // clobbering a good count with 0). On first load there's nothing yet, so
+    // fall back to deriving a floor from the flags.
+    final prev = state.valueOrNull;
+    return EventInteraction(
+      interested: interested,
+      registered: registered,
+      interestedCount: stats?.interested ?? prev?.interestedCount ?? 0,
+      registeredCount: stats?.registered ?? prev?.registeredCount ?? 0,
+    );
+  }
+
+  void _setOptimistic(EventInteraction next) =>
+      state = AsyncData(next);
+
+  Future<void> _resync() async {
+    final next = await _load(arg);
+    state = AsyncData(next);
+  }
+
+  Future<void> addInterest() async {
+    final cur = state.valueOrNull ?? const EventInteraction();
+    _setOptimistic(cur.copyWith(
+      interested: true,
+      interestedCount: cur.interested ? cur.interestedCount : cur.interestedCount + 1,
+    ));
+    try {
+      await _repo.addInterest(arg);
+    } catch (_) {
+      // 409 already-interested etc. — ignore; resync corrects the truth.
+    }
+    await _resync();
+  }
+
+  Future<void> removeInterest() async {
+    final cur = state.valueOrNull ?? const EventInteraction();
+    _setOptimistic(cur.copyWith(
+      interested: false,
+      interestedCount: cur.interested && cur.interestedCount > 0
+          ? cur.interestedCount - 1
+          : cur.interestedCount,
+    ));
+    try {
+      await _repo.removeInterest(arg);
+    } catch (_) {}
+    await _resync();
+  }
+
+  Future<void> register(List<Map<String, dynamic>>? answers) async {
+    await _repo.register(arg, answers: answers);
+    final cur = state.valueOrNull ?? const EventInteraction();
+    _setOptimistic(cur.copyWith(
+      registered: true,
+      registeredCount: cur.registered ? cur.registeredCount : cur.registeredCount + 1,
+      // Registering implies interest on the backend; reflect it locally too.
+      interested: true,
+      interestedCount: cur.interested ? cur.interestedCount : cur.interestedCount + 1,
+    ));
+    await _resync();
+  }
+
+  Future<void> cancelRegistration(String reason) async {
+    await _repo.cancelRegistration(arg, reason);
+    final cur = state.valueOrNull ?? const EventInteraction();
+    _setOptimistic(cur.copyWith(
+      registered: false,
+      registeredCount: cur.registered && cur.registeredCount > 0
+          ? cur.registeredCount - 1
+          : cur.registeredCount,
+    ));
+    await _resync();
+  }
+}
+
+final eventInteractionProvider = AsyncNotifierProvider.autoDispose
+    .family<EventInteractionNotifier, EventInteraction, int>(
+  EventInteractionNotifier.new,
+);

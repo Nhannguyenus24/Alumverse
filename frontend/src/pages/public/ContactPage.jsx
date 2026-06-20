@@ -6,6 +6,7 @@ import Dropdown from '../../components/Dropdown';
 import { useOrganization } from '../../hooks/useOrganization';
 import { organizationApi } from '../../utils/api';
 import { useNotification } from '../../hooks/useNotification';
+import { validateVietnamPhone } from '../../utils/regexUtils';
 
 const BACKGROUND_IMG = '/home_page/home_page_contact.png';
 
@@ -41,6 +42,11 @@ const ContactPage = () => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
+  // Phone is required here; show a VN-format error once the user types.
+  const phoneError = form.phone.trim()
+    ? validateVietnamPhone(form.phone)
+    : null;
+
   const canSubmit = useMemo(() => {
     return (
       !loading &&
@@ -60,6 +66,11 @@ const ContactPage = () => {
     }
     if (!canSubmit) {
       showError('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      return;
+    }
+    const phoneErr = validateVietnamPhone(form.phone);
+    if (phoneErr) {
+      showError(phoneErr);
       return;
     }
 
@@ -222,6 +233,12 @@ const ContactPage = () => {
                         placeholder="Số điện thoại"
                         value={form.phone}
                         onChange={handleChange('phone')}
+                        inputProps={{ inputMode: 'numeric', maxLength: 10 }}
+                        onInput={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, '');
+                        }}
+                        error={Boolean(phoneError)}
+                        helperText={phoneError || ''}
                       />
                     </Box>
                   </Box>

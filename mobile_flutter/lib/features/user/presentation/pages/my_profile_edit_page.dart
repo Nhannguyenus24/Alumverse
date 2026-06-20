@@ -1,9 +1,18 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'
+    show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/app_toast.dart';
+import '../../../../shared/widgets/blur_validated_field.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/models/user_profile.dart';
@@ -49,6 +58,10 @@ class _EditFormState extends ConsumerState<_EditForm> {
   String? _gender;
   bool _submitting = false;
 
+  // Avatar: shows the saved URL until the user picks + uploads a new one.
+  String? _avatarUrl;
+  bool _uploadingAvatar = false;
+
   static const _genders = {'male': 'Nam', 'female': 'Nữ', 'other': 'Khác'};
 
   @override
@@ -59,6 +72,41 @@ class _EditFormState extends ConsumerState<_EditForm> {
     _dobCtl = TextEditingController(text: widget.profile.dob ?? '');
     final g = widget.profile.gender?.toLowerCase();
     _gender = _genders.containsKey(g) ? g : null;
+    _avatarUrl = widget.profile.avatarUrl;
+  }
+
+  /// Pick an image, upload it, set it as the avatar, then refresh profile/auth
+  /// so the new avatar shows everywhere immediately.
+  Future<void> _changeAvatar() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 800,
+      imageQuality: 85,
+    );
+    if (file == null) return;
+    final length = await file.length();
+    if (length > 5 * 1024 * 1024) {
+      if (mounted) AppToast.error(context, 'Ảnh vượt quá 5MB.');
+      return;
+    }
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      final bytes = await file.readAsBytes();
+      final base64 = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      final url =
+          await ref.read(userRepositoryProvider).updateAvatarFromBase64(base64);
+      ref.invalidate(myProfileProvider);
+      if (!mounted) return;
+      setState(() => _avatarUrl = url);
+      AppToast.success(context, 'Cập nhật ảnh đại diện thành công.');
+    } catch (e) {
+      if (!mounted) return;
+      AppToast.error(context, 'Cập nhật ảnh đại diện thất bại.');
+    } finally {
+      if (mounted) setState(() => _uploadingAvatar = false);
+    }
   }
 
   @override
@@ -73,6 +121,12 @@ class _EditFormState extends ConsumerState<_EditForm> {
     final orgId = ref.read(organizationStateProvider).valueOrNull?.id;
     if (orgId == null) {
       AppToast.error(context, 'Thiếu thông tin tổ chức.');
+      return;
+    }
+    final phoneError =
+        Validators.vietnamPhone(_phoneCtl.text, optional: true);
+    if (phoneError != null) {
+      AppToast.error(context, phoneError);
       return;
     }
     setState(() => _submitting = true);
@@ -104,6 +158,8 @@ class _EditFormState extends ConsumerState<_EditForm> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Center(child: _avatarEditor()),
+        const SizedBox(height: 20),
         _ReadOnlyField(label: 'Họ và tên', value: p.fullName ?? '—'),
         const SizedBox(height: 12),
         _ReadOnlyField(label: 'Email', value: p.email),
@@ -114,34 +170,59 @@ class _EditFormState extends ConsumerState<_EditForm> {
         ],
         TextField(
           controller: _bioCtl,
-          maxLines: 4,
+          maxLength: 500,
           decoration: const InputDecoration(
             labelText: 'Giới thiệu',
-            alignLabelWithHint: true,
             prefixIcon: Icon(Icons.notes_outlined),
           ),
         ),
         const SizedBox(height: 16),
-        TextField(
+        BlurValidatedField(
           controller: _phoneCtl,
+          // Optional field, but if filled it must be a valid VN mobile number.
+          validator: (v) => Validators.vietnamPhone(v, optional: true),
           keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(10),
+          ],
           decoration: const InputDecoration(
             labelText: 'Số điện thoại',
+            hintText: 'Ví dụ: 0901234567',
             prefixIcon: Icon(Icons.phone_outlined),
           ),
         ),
         const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          value: _gender,
-          items: _genders.entries
-              .map((e) =>
-                  DropdownMenuItem(value: e.key, child: Text(e.value)))
-              .toList(),
-          onChanged: (v) => setState(() => _gender = v),
-          decoration: const InputDecoration(
-            labelText: 'Giới tính',
-            prefixIcon: Icon(Icons.wc_outlined),
+        // Material 3 dropdown: opens BELOW the field, sized to it, rounded.
+        DropdownMenu<String>(
+          initialSelection: _gender,
+          expandedInsets: EdgeInsets.zero,
+          requestFocusOnTap: false,
+          hintText: 'Giới tính',
+          leadingIcon: const Icon(Icons.wc_outlined),
+          textStyle: const TextStyle(fontSize: 16),
+          menuStyle: MenuStyle(
+            shape: WidgetStatePropertyAll(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            backgroundColor: const WidgetStatePropertyAll(Colors.white),
           ),
+          inputDecorationTheme: const InputDecorationTheme(
+            border: OutlineInputBorder(),
+          ),
+          dropdownMenuEntries: [
+            for (final e in _genders.entries)
+              DropdownMenuEntry(
+                value: e.key,
+                label: e.value,
+                style: MenuItemButton.styleFrom(
+                  textStyle: const TextStyle(fontSize: 16),
+                ),
+              ),
+          ],
+          onSelected: (v) => setState(() => _gender = v),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -169,6 +250,52 @@ class _EditFormState extends ConsumerState<_EditForm> {
                       strokeWidth: 2, color: Colors.white),
                 )
               : const Text('Lưu thay đổi', style: TextStyle(fontSize: 16)),
+        ),
+      ],
+    );
+  }
+
+  Widget _avatarEditor() {
+    final url = resolveImageUrl(_avatarUrl);
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 48,
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          backgroundImage:
+              url != null ? CachedNetworkImageProvider(url) : null,
+          child: url == null
+              ? const Icon(Icons.person, size: 52, color: AppColors.primary)
+              : null,
+        ),
+        if (_uploadingAvatar)
+          const Positioned.fill(
+            child: CircleAvatar(
+              radius: 48,
+              backgroundColor: Colors.black45,
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              ),
+            ),
+          ),
+        Positioned(
+          right: 0,
+          bottom: 0,
+          child: Material(
+            color: AppColors.primary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: _uploadingAvatar ? null : _changeAvatar,
+              child: const Padding(
+                padding: EdgeInsets.all(7),
+                child: Icon(Icons.camera_alt, color: Colors.white, size: 18),
+              ),
+            ),
+          ),
         ),
       ],
     );

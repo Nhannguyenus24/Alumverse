@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
-import { Box, Container, Typography, CircularProgress, Button, Stack } from "@mui/material";
+import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip } from "@mui/material";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import { useArticleById } from "../../hooks/articles/useArticleById";
@@ -10,8 +12,52 @@ import DOMPurify from "dompurify";
 import { formatDate, formatDateRange } from "../../utils/dateFormatter";
 import { formatNumberVi } from "../../utils/numberFormatter";
 import JoinEventDialog from "../../components/event/JoinEventDialog";
-import { eventApi } from "../../utils/api";
+import { eventApi, savedItemApi } from "../../utils/api";
 import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
+
+/** Heart toggle to save ("quan tâm") an article. itemType is fixed to NEWS. */
+const SaveArticleButton = ({ itemId }) => {
+  const { enqueueSnackbar } = useSnackbar();
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    savedItemApi
+      .check("NEWS", itemId)
+      .then((v) => { if (active) setSaved(Boolean(v)); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [itemId]);
+
+  const toggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (saved) {
+        await savedItemApi.unsave("NEWS", itemId);
+        setSaved(false);
+        enqueueSnackbar("Đã bỏ quan tâm bài viết.", { variant: "info" });
+      } else {
+        await savedItemApi.save("NEWS", itemId);
+        setSaved(true);
+        enqueueSnackbar("Đã quan tâm bài viết.", { variant: "success" });
+      }
+    } catch {
+      enqueueSnackbar("Thao tác thất bại.", { variant: "error" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Tooltip title={saved ? "Bỏ quan tâm" : "Quan tâm"}>
+      <IconButton onClick={toggle} disabled={busy} color={saved ? "primary" : "default"}>
+        {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+      </IconButton>
+    </Tooltip>
+  );
+};
 
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();
@@ -260,6 +306,8 @@ const ArticlePage = () => {
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
                   Quay lại
                 </Button>
+                <Box sx={{ flexGrow: 1 }} />
+                <SaveArticleButton itemId={Number(id)} />
               </Box>
 
               {/* Title */}
