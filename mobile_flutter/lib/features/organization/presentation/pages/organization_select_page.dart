@@ -7,6 +7,9 @@ import '../../../../shared/widgets/app_toast.dart';
 import '../../../../shared/widgets/logo.dart';
 import '../providers/organization_provider.dart';
 
+/// Pick the organization to enter (Moodle-style gate). Loads the list of
+/// organizations from the backend so the user chooses from a dropdown instead
+/// of guessing a slug. Falls back to a free-text slug field if the list fails.
 class OrganizationSelectPage extends ConsumerStatefulWidget {
   const OrganizationSelectPage({super.key});
 
@@ -17,98 +20,209 @@ class OrganizationSelectPage extends ConsumerStatefulWidget {
 
 class _OrganizationSelectPageState
     extends ConsumerState<OrganizationSelectPage> {
-  final _ctl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _slugCtl = TextEditingController(); // fallback when list fails
+  String? _selectedSlug;
 
   @override
   void dispose() {
-    _ctl.dispose();
+    _slugCtl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final slug = _ctl.text.trim();
+  Future<void> _enter(String slug) async {
     await ref.read(organizationStateProvider.notifier).fetchOrganization(slug);
-
     final orgState = ref.read(organizationStateProvider);
     if (!mounted) return;
-
     orgState.whenOrNull(
       data: (org) {
-        if (org != null) {
-          context.go(RouteNames.login);
-        }
+        if (org != null) context.go(RouteNames.login);
       },
-      error: (e, _) {
-        AppToast.error(context, 'Tổ chức không tồn tại: $e');
-      },
+      error: (e, _) => AppToast.error(context, 'Không vào được tổ chức này.'),
     );
+  }
+
+  Future<void> _submitDropdown() async {
+    final slug = _selectedSlug;
+    if (slug == null) {
+      AppToast.info(context, 'Vui lòng chọn tổ chức');
+      return;
+    }
+    await _enter(slug);
+  }
+
+  Future<void> _submitFallback() async {
+    if (!_formKey.currentState!.validate()) return;
+    await _enter(_slugCtl.text.trim());
   }
 
   @override
   Widget build(BuildContext context) {
     final loading = ref.watch(organizationStateProvider).isLoading;
+    final listAsync = ref.watch(organizationListProvider);
 
     return Scaffold(
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Center(child: AlumverseLogo(size: 80)),
-                const SizedBox(height: 48),
-                Text(
-                  'Nhập đường dẫn tổ chức',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Center(child: AlumverseLogo(size: 80)),
+              const SizedBox(height: 48),
+              Text(
+                'Chọn tổ chức',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Chọn đơn vị bạn muốn truy cập để tiếp tục.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 32),
+              listAsync.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Ví dụ: hcmus, fit-hcmus...',
-                  textAlign: TextAlign.center,
+                error: (_, __) => _Fallback(
+                  formKey: _formKey,
+                  controller: _slugCtl,
+                  loading: loading,
+                  onSubmit: _submitFallback,
+                  onRetry: () => ref.invalidate(organizationListProvider),
                 ),
-                const SizedBox(height: 32),
-                TextFormField(
-                  controller: _ctl,
-                  validator: (v) => (v == null || v.isEmpty)
-                      ? 'Vui lòng nhập slug tổ chức'
-                      : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Tên định danh tổ chức',
-                    hintText: 'slug-to-chuc',
-                    prefixIcon: Icon(Icons.link),
-                  ),
-                  onFieldSubmitted: (_) => _submit(),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: loading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                  child: loading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                data: (orgs) {
+                  if (orgs.isEmpty) {
+                    return _Fallback(
+                      formKey: _formKey,
+                      controller: _slugCtl,
+                      loading: loading,
+                      onSubmit: _submitFallback,
+                      onRetry: () => ref.invalidate(organizationListProvider),
+                    );
+                  }
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Material 3 dropdown: the menu opens BELOW the field
+                      // (anchored), sized to the field, with rounded corners —
+                      // not the full-width overlay that covers the field.
+                      DropdownMenu<String>(
+                        initialSelection: _selectedSlug,
+                        expandedInsets: EdgeInsets.zero, // match field width
+                        enabled: !loading,
+                        requestFocusOnTap: false,
+                        hintText: 'Chọn tổ chức',
+                        leadingIcon: const Icon(Icons.apartment_rounded),
+                        menuStyle: MenuStyle(
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                        )
-                      : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
-                ),
-              ],
-            ),
+                          backgroundColor:
+                              const WidgetStatePropertyAll(Colors.white),
+                        ),
+                        inputDecorationTheme: const InputDecorationTheme(
+                          border: OutlineInputBorder(),
+                        ),
+                        dropdownMenuEntries: [
+                          for (final o in orgs)
+                            DropdownMenuEntry(value: o.slug, label: o.name),
+                        ],
+                        onSelected: loading
+                            ? null
+                            : (v) => setState(() => _selectedSlug = v),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: loading ? null : _submitDropdown,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: loading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text('Tiếp tục',
+                                style: TextStyle(fontSize: 16)),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Free-text slug entry, shown only if the organization list can't be loaded.
+class _Fallback extends StatelessWidget {
+  const _Fallback({
+    required this.formKey,
+    required this.controller,
+    required this.loading,
+    required this.onSubmit,
+    required this.onRetry,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final TextEditingController controller;
+  final bool loading;
+  final VoidCallback onSubmit;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Không tải được danh sách tổ chức. Bạn có thể nhập định danh tổ chức.',
+            textAlign: TextAlign.center,
+          ),
+          TextButton(onPressed: onRetry, child: const Text('Thử lại')),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: controller,
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập định danh tổ chức' : null,
+            decoration: const InputDecoration(
+              labelText: 'Định danh tổ chức',
+              hintText: 'vd: cs-hcmus',
+              prefixIcon: Icon(Icons.link),
+            ),
+            onFieldSubmitted: (_) => onSubmit(),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: loading ? null : onSubmit,
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            child: loading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
+          ),
+        ],
       ),
     );
   }

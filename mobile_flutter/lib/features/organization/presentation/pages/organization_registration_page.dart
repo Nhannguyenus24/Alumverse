@@ -115,6 +115,19 @@ class _OrganizationRegistrationPageState
     final orgId = org?.id;
     final programOptions = org?.programs ?? const <String>[];
     final majorOptions = org?.majors ?? const <String>[];
+
+    // The program/major DropdownMenus aren't form fields, so enforce their
+    // "required" rule here when the academic info isn't optional.
+    if (verifierId == null && !_isAcademicOptional) {
+      if (programOptions.isNotEmpty && _selectedProgram == null) {
+        AppToast.info(context, 'Vui lòng chọn hệ đào tạo.');
+        return;
+      }
+      if (majorOptions.isNotEmpty && _selectedMajor == null) {
+        AppToast.info(context, 'Vui lòng chọn chuyên ngành.');
+        return;
+      }
+    }
     final userId = ref.read(authStateProvider).valueOrNull?.user?.id;
     if (orgId == null || userId == null) {
       AppToast.error(context, 'Thiếu thông tin tổ chức hoặc tài khoản.');
@@ -196,7 +209,7 @@ class _OrganizationRegistrationPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đăng ký tổ chức'),
+        title: const Text('Xác thực tài khoản'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -210,7 +223,7 @@ class _OrganizationRegistrationPageState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'ĐĂNG KÝ TỔ CHỨC',
+                  'XÁC THỰC TÀI KHOẢN',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -218,8 +231,8 @@ class _OrganizationRegistrationPageState
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Vui lòng cung cấp thông tin học thuật của bạn để đăng ký '
-                  'tham gia tổ chức.',
+                  'Vui lòng cung cấp thông tin học thuật của bạn để xác thực '
+                  'tài khoản và tham gia tổ chức.',
                   style: TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 16),
@@ -256,21 +269,39 @@ class _OrganizationRegistrationPageState
                   required: !_isAcademicOptional,
                 ),
                 if (programOptions.isNotEmpty)
-                  DropdownButtonFormField<String>(
-                    value: _selectedProgram,
-                    items: programOptions
-                        .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedProgram = v),
-                    validator: _isAcademicOptional
-                        ? null
-                        : (v) => (v == null || v.isEmpty)
-                            ? 'Hệ đào tạo là bắt buộc'
-                            : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Hệ đào tạo',
-                      prefixIcon: Icon(Icons.school_outlined),
+                  // Material 3 dropdown: opens BELOW the field, sized to it,
+                  // rounded, capped to ~5 rows (matches the register page).
+                  DropdownMenu<String>(
+                    initialSelection: _selectedProgram,
+                    expandedInsets: EdgeInsets.zero,
+                    requestFocusOnTap: false,
+                    hintText: 'Hệ đào tạo',
+                    leadingIcon: const Icon(Icons.school_outlined),
+                    menuHeight: 240,
+                    textStyle: const TextStyle(fontSize: 16),
+                    menuStyle: MenuStyle(
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      backgroundColor:
+                          const WidgetStatePropertyAll(Colors.white),
                     ),
+                    inputDecorationTheme: const InputDecorationTheme(
+                      border: OutlineInputBorder(),
+                    ),
+                    dropdownMenuEntries: [
+                      for (final p in programOptions)
+                        DropdownMenuEntry(
+                          value: p,
+                          label: p,
+                          style: MenuItemButton.styleFrom(
+                            textStyle: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                    ],
+                    onSelected: (v) => setState(() => _selectedProgram = v),
                   )
                 else
                   TextFormField(
@@ -324,21 +355,37 @@ class _OrganizationRegistrationPageState
                 ),
                 const SizedBox(height: 16),
                 if (majorOptions.isNotEmpty)
-                  DropdownButtonFormField<String>(
-                    value: _selectedMajor,
-                    items: majorOptions
-                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedMajor = v),
-                    validator: _isAcademicOptional
-                        ? null
-                        : (v) => (v == null || v.isEmpty)
-                            ? 'Chuyên ngành là bắt buộc'
-                            : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Chuyên ngành',
-                      prefixIcon: Icon(Icons.book_outlined),
+                  DropdownMenu<String>(
+                    initialSelection: _selectedMajor,
+                    expandedInsets: EdgeInsets.zero,
+                    requestFocusOnTap: false,
+                    hintText: 'Chuyên ngành',
+                    leadingIcon: const Icon(Icons.book_outlined),
+                    menuHeight: 240,
+                    textStyle: const TextStyle(fontSize: 16),
+                    menuStyle: MenuStyle(
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      backgroundColor:
+                          const WidgetStatePropertyAll(Colors.white),
                     ),
+                    inputDecorationTheme: const InputDecorationTheme(
+                      border: OutlineInputBorder(),
+                    ),
+                    dropdownMenuEntries: [
+                      for (final m in majorOptions)
+                        DropdownMenuEntry(
+                          value: m,
+                          label: m,
+                          style: MenuItemButton.styleFrom(
+                            textStyle: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                    ],
+                    onSelected: (v) => setState(() => _selectedMajor = v),
                   )
                 else
                   TextFormField(
