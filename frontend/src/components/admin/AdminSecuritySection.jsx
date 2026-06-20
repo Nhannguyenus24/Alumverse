@@ -1,5 +1,6 @@
 import { Box, Stack } from '@mui/material';
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
+import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -37,14 +38,16 @@ const AdminSecuritySection = () => {
       <Stack spacing={3}>
         <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
           <AdminDashboardMetricTile
-            label="Đăng nhập (30 ngày)"
+            label="Đăng nhập"
             value={totalLogins30d.toLocaleString()}
             icon={<SecurityOutlinedIcon />}
+            caption="Lượt đăng nhập trong 30 ngày qua"
           />
           <AdminDashboardMetricTile
             label="IP đáng ngờ (7 ngày)"
             value={suspiciousCount.toLocaleString()}
             caption={suspiciousCount > 0 ? 'Cần kiểm tra ngay' : 'Không có bất thường'}
+            icon={<TravelExploreOutlinedIcon />}
           />
         </Stack>
 

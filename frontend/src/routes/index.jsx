@@ -861,6 +861,14 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        path: "forum/reports",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+            <AdminForumReportsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "organizations",
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -873,6 +881,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminEventsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "events/:eventId/organize",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminEventOrganizePage />
           </ProtectedRoute>
         ),
       },

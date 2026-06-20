@@ -1,5 +1,10 @@
 import { Box, Stack, Typography } from '@mui/material';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
+import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
+import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
+import TrackChangesOutlinedIcon from '@mui/icons-material/TrackChangesOutlined';
+import SavingsOutlinedIcon from '@mui/icons-material/SavingsOutlined';
+import FavoriteBorderOutlinedIcon from '@mui/icons-material/FavoriteBorderOutlined';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -37,13 +42,17 @@ const AdminFundraisingSection = () => {
       subtitle="Tổng quan chiến dịch, lượt quyên góp và timeline 30 ngày."
     >
       <Stack spacing={3}>
-        <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-          <AdminDashboardMetricTile label="Tổng chiến dịch" value={fmt(stats.totalFunds)} icon={<VolunteerActivismOutlinedIcon />} />
-          <AdminDashboardMetricTile label="Đang hoạt động" value={fmt(stats.activeFunds)} />
-          <AdminDashboardMetricTile label="Đã kết thúc" value={fmt(stats.completedFunds)} />
-          <AdminDashboardMetricTile label="Tổng mục tiêu" value={fmtMoney(stats.totalTarget)} />
-          <AdminDashboardMetricTile label="Đã gây quỹ" value={fmtMoney(stats.totalRaised)} />
-          <AdminDashboardMetricTile label="Tổng lượt quyên góp" value={fmt(stats.totalDonations)} />
+        <Stack spacing={2}>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile label="Tổng số chiến dịch" value={fmt(stats.totalFunds)} icon={<VolunteerActivismOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Đang hoạt động" value={fmt(stats.activeFunds)} icon={<PlayCircleOutlineOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Đã kết thúc" value={fmt(stats.completedFunds)} icon={<TaskAltOutlinedIcon />} />
+          </Stack>
+          <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
+            <AdminDashboardMetricTile label="Tổng số mục tiêu" value={fmtMoney(stats.totalTarget)} icon={<TrackChangesOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Đã gây quỹ" value={fmtMoney(stats.totalRaised)} icon={<SavingsOutlinedIcon />} />
+            <AdminDashboardMetricTile label="Lượt quyên góp" value={fmt(stats.totalDonations)} icon={<FavoriteBorderOutlinedIcon />} />
+          </Stack>
         </Stack>
 
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
