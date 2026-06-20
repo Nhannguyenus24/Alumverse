@@ -23,6 +23,7 @@ class RouteNames {
   static const String mentorAvailability = '/mentorship/mentor-availability';
   // mentor profile: /mentorship/mentors/:id ; booking: /mentorship/mentors/:id/book
   static const String fundraising = '/fundraising';
+  static const String fundraisingMyDonations = '/fundraising/my-donations';
   static const String network = '/network';
   static const String chat = '/chat';
   static const String profile = '/profile';

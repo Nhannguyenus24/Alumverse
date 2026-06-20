@@ -24,6 +24,7 @@ class ApiEndpoints {
 
   // --- User Settings / Me ---
   static const String meProfile = '/api/users/me/profile';
+  static String publicProfile(int userId) => '/api/users/$userId/public-profile';
   static const String mePassword = '/api/users/me/password';
   static const String meOrganizationMember = '/api/users/me/organization-member';
   static const String meNotificationSettings = '/api/users/me/notification-settings';
@@ -42,12 +43,23 @@ class ApiEndpoints {
   static const String chatGroups = '/api/chat/groups';
   static const String chatPrivateList = '/api/chat/private/list';
   static String chatGroupMessages(String groupId) => '/api/chat/groups/$groupId/messages';
+  static String chatGroupBlockedContext(int groupId) =>
+      '/api/chat/groups/$groupId/blocked-members-context';
+  static const String chatPrivateCreate = '/api/chat/private/create';
+  static const String chatPrivateInfo = '/api/chat/private';
   static const String chatRecentPreviews = '/api/chat/recent-previews';
+  static String chatGroupMembers(int groupId) => '/api/chat/groups/$groupId/members';
+  static String chatGroupMember(int groupId, int memberId) => '/api/chat/groups/$groupId/members/$memberId';
+  static String chatGroupLeave(int groupId) => '/api/chat/groups/$groupId/leave';
+
   static const String chatConnectionStatus = '/api/chat/conversation-requests/connection-status';
   static const String chatConversationRequests = '/api/chat/conversation-requests';
   static const String chatConversationRequestRespond = '/api/chat/conversation-requests/respond';
   static const String chatConversationRequestSearch = '/api/chat/conversation-requests/search';
   static const String networkMembers = '/api/chat/network/members';
+  static const String connectionsSearch = '/api/chat/connections/search';
+  static const String blocks = '/api/chat/blocks';
+  static String blockUser(int memberId) => '/api/chat/blocks/$memberId';
 
   // --- Forum --- (backend uses singular paths under /api/forum)
   static const String forumCategory = '/api/forum/category';
@@ -118,6 +130,7 @@ class ApiEndpoints {
   static const String fundReceivingActive = '/api/funds/receiving-infos/active';
   static const String fundDonations = '/api/fund-donations';
   static String fundDonationsByFund(int fundId) => '/api/fund-donations/$fundId';
+  static String fundDonationsByUser(int userId) => '/api/fund-donations/user/$userId';
 
   // ===========================================================================
   // ADMIN ENDPOINTS

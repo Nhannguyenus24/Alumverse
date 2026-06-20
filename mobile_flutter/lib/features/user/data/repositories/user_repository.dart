@@ -42,4 +42,7 @@ class UserRepository {
   Future<void> deleteNotification(String id) => _api.deleteNotification(id);
 
   Future<void> deleteAllNotifications() => _api.deleteAllNotifications();
+
+  Future<UserProfile> getPublicProfile(int userId) =>
+      _api.getPublicProfile(userId);
 }

@@ -12,6 +12,9 @@ import '../../features/organization/presentation/pages/organization_select_page.
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../../features/organization/presentation/providers/organization_provider.dart';
 import '../../features/chat/presentation/pages/chat_list_page.dart';
+import '../../features/chat/presentation/pages/chat_room_page.dart';
+import '../../features/chat/presentation/pages/create_group_page.dart';
+import '../../features/chat/presentation/pages/group_members_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/home/presentation/pages/splash_page.dart';
 import '../../features/article/presentation/pages/article_detail_page.dart';
@@ -34,7 +37,12 @@ import '../../features/mentorship/presentation/pages/my_bookings_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_signup_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_dashboard_page.dart';
 import '../../features/mentorship/presentation/pages/mentor_availability_page.dart';
-import '../../shared/widgets/feature_placeholder_page.dart';
+import '../../features/network/presentation/pages/network_page.dart';
+import '../../features/fundraising/presentation/pages/fundraising_list_page.dart';
+import '../../features/fundraising/presentation/pages/fundraising_detail_page.dart';
+import '../../features/fundraising/presentation/pages/fundraising_donate_page.dart';
+import '../../features/fundraising/presentation/pages/my_donations_page.dart';
+import '../../features/user/presentation/pages/public_profile_page.dart';
 import '../../shared/widgets/main_scaffold.dart';
 import 'route_names.dart';
 
@@ -145,6 +153,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.chat,
         builder: (_, __) => const ChatListPage(),
       ),
+      // '/chat/new' must be declared BEFORE '/chat/:groupId' so the literal
+      // segment 'new' isn't captured as a groupId.
+      GoRoute(
+        path: '${RouteNames.chat}/new',
+        builder: (_, __) => const CreateGroupPage(),
+      ),
+      // '/chat/:groupId' — opens a conversation. `extra` carries a
+      // ChatRoomArgs (title/type/peer); deep links without it fall back to a
+      // private chat shell keyed only by the group id.
+      GoRoute(
+        path: '${RouteNames.chat}/:groupId',
+        builder: (_, state) {
+          final groupId =
+              int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0;
+          final args = state.extra is ChatRoomArgs
+              ? state.extra as ChatRoomArgs
+              : ChatRoomArgs(groupId: groupId);
+          return ChatRoomPage(args: args);
+        },
+      ),
+      // '/chat/:groupId/members' — group members management.
+      GoRoute(
+        path: '${RouteNames.chat}/:groupId/members',
+        builder: (_, state) {
+          final groupId =
+              int.tryParse(state.pathParameters['groupId'] ?? '') ?? 0;
+          final title = state.extra as String?;
+          return GroupMembersPage(groupId: groupId, groupTitle: title);
+        },
+      ),
       GoRoute(
         path: '${RouteNames.articles}/:id',
         builder: (_, state) => ArticleDetailPage(
@@ -174,10 +212,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.network,
-        builder: (_, __) => const FeaturePlaceholderPage(
-          title: 'Kết nối cựu sinh viên',
-          icon: Icons.groups_rounded,
-        ),
+        builder: (_, __) => const NetworkPage(),
       ),
       GoRoute(
         path: RouteNames.mentorshipMyBookings,
@@ -221,6 +256,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteNames.profileEdit,
         builder: (_, __) => const MyProfileEditPage(),
       ),
+      // ⚠️ Must be declared AFTER profileEdit so ':id' doesn't match 'edit'.
+      GoRoute(
+        path: '${RouteNames.profile}/:id',
+        builder: (_, state) => PublicProfilePage(
+          userId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
+      ),
       GoRoute(
         path: RouteNames.settings,
         builder: (_, __) => const SettingsPage(),
@@ -257,9 +299,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.fundraising,
-        builder: (_, __) => const FeaturePlaceholderPage(
-          title: 'Đóng góp & Quỹ',
-          icon: Icons.volunteer_activism_rounded,
+        builder: (_, __) => const FundraisingListPage(),
+      ),
+      GoRoute(
+        path: RouteNames.fundraisingMyDonations,
+        builder: (_, __) => const MyDonationsPage(),
+      ),
+      GoRoute(
+        path: '${RouteNames.fundraising}/:id',
+        builder: (_, state) => FundraisingDetailPage(
+          fundId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+        ),
+      ),
+      GoRoute(
+        path: '${RouteNames.fundraising}/:id/donate',
+        builder: (_, state) => FundraisingDonatePage(
+          fundId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
         ),
       ),
     ],
