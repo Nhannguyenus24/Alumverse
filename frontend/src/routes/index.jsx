@@ -403,6 +403,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "chat",
+        handle: { hideFooter: true },
         element: (
           <ProtectedRoute>
             <ChatPage />

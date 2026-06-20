@@ -19,6 +19,11 @@ import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import ArticleIcon from '@mui/icons-material/Article';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -367,11 +372,11 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
     // Cấu hình mảng dữ liệu cho Thông tin học thuật
     const academicFields = [
-      { label: 'Khoa', value: formatAcademicValue(orgMember?.faculty), icon: SchoolIcon },
-      { label: 'Chuyên ngành', value: formatAcademicValue(orgMember?.major), icon: SchoolIcon },
-      { label: 'Chương trình', value: formatAcademicValue(orgMember?.program), icon: SchoolIcon },
-      { label: 'Khoá', value: formatAcademicValue(orgMember?.startedYear), icon: SchoolIcon },
-      { label: 'Năm tốt nghiệp', value: formatAcademicValue(orgMember?.graduatedYear), icon: SchoolIcon },
+      { label: 'Khoa', value: formatAcademicValue(orgMember?.faculty), icon: AccountBalanceIcon },
+      { label: 'Chuyên ngành', value: formatAcademicValue(orgMember?.major), icon: AccountTreeIcon },
+      { label: 'Chương trình', value: formatAcademicValue(orgMember?.program), icon: MenuBookIcon },
+      { label: 'Khoá', value: formatAcademicValue(orgMember?.startedYear), icon: CalendarMonthIcon },
+      { label: 'Năm tốt nghiệp', value: formatAcademicValue(orgMember?.graduatedYear), icon: EventAvailableIcon },
       { label: 'Trạng thái tốt nghiệp', value: formatAcademicValue(orgMember?.graduationStatus), icon: VerifiedIcon },
     ];
 

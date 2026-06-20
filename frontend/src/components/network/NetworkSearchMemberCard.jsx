@@ -1,6 +1,5 @@
-import { Avatar, Box, Button, Card, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Button, Card, Chip, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
-import { alpha } from '@mui/material/styles';
 
 import IconButtonMenu from '../IconButtonMenu';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
@@ -21,12 +20,12 @@ const NetworkSearchMemberCard = ({
   isDemo = false,
   isMessageLoading = false,
   isBlockLoading = false,
+  messageButtonLabel = 'Nhắn tin',
 }) => {
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
-  const programLabel = formatAcademicValue(program, '—');
-  const majorLabel = formatAcademicValue(major, 'N/A');
+  const academicRows = buildAcademicRows(program, major);
 
   return (
     <Card
@@ -83,31 +82,29 @@ const NetworkSearchMemberCard = ({
             {displayName}
           </Typography>
           <Box
-            sx={(theme) => ({
+            sx={{
               mt: 1.25,
               width: '100%',
-              px: 1.25,
-              py: 1.25,
-              borderRadius: 1.5,
-              bgcolor: alpha(theme.palette.primary.main, 0.08),
-              border: '1px solid',
-              borderColor: alpha(theme.palette.primary.main, 0.18),
-            })}
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 0.75,
+            }}
           >
-            <Stack spacing={0.75} alignItems="center">
-              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
-                Program:{' '}
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {programLabel}
-                </Box>
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'primary.dark', fontWeight: 500 }}>
-                Major:{' '}
-                <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                  {majorLabel}
-                </Box>
-              </Typography>
-            </Stack>
+            {academicRows.map((row, index) => (
+              <Stack
+                key={`${row.program}-${row.major}-${index}`}
+                direction="row"
+                spacing={0.75}
+                justifyContent="center"
+                flexWrap="wrap"
+                useFlexGap
+                sx={{ width: '100%' }}
+              >
+                {row.program ? <AcademicChip label={row.program} /> : null}
+                {row.major ? <AcademicChip label={row.major} /> : null}
+              </Stack>
+            ))}
           </Box>
         </Box>
       </Stack>
@@ -126,17 +123,47 @@ const NetworkSearchMemberCard = ({
         {isMessageLoading ? (
           <CircularProgress size={22} color="inherit" />
         ) : (
-          'Nhắn tin'
+          messageButtonLabel
         )}
       </Button>
     </Card>
   );
 };
 
-function formatAcademicValue(value, fallback) {
+const AcademicChip = ({ label }) => (
+  <Chip
+    label={label}
+    size="small"
+    sx={{
+      maxWidth: '100%',
+      bgcolor: 'primary.light',
+      color: 'primary.main',
+      fontWeight: 600,
+      borderRadius: 999,
+      '& .MuiChip-label': {
+        px: 1.25,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      },
+    }}
+  />
+);
+
+function buildAcademicRows(program, major) {
+  const programs = parseAcademicItems(program, '—');
+  const majors = parseAcademicItems(major, 'N/A');
+  const rowCount = Math.max(programs.length, majors.length, 1);
+
+  return Array.from({ length: rowCount }, (_, index) => ({
+    program: programs[index] ?? null,
+    major: majors[index] ?? null,
+  })).filter((row) => row.program || row.major);
+}
+
+function parseAcademicItems(value, fallback) {
   if (Array.isArray(value)) {
     const items = value.filter(Boolean);
-    return items.length > 0 ? items.join(' · ') : fallback;
+    return items.length > 0 ? items : [fallback];
   }
 
   if (typeof value === 'string' && value.trim()) {
@@ -144,15 +171,15 @@ function formatAcademicValue(value, fallback) {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
         const items = parsed.filter(Boolean);
-        return items.length > 0 ? items.join(' · ') : fallback;
+        return items.length > 0 ? items : [fallback];
       }
     } catch {
-      return value;
+      return [value];
     }
-    return value;
+    return [value];
   }
 
-  return fallback;
+  return [fallback];
 }
 
 export default NetworkSearchMemberCard;
