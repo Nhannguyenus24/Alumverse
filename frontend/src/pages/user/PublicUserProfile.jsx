@@ -45,7 +45,7 @@ const formatAcademicValue = (raw) => {
   return String(raw);
 };
 
-const SectionTitle = ({ icon: Icon, children }) => (
+const SectionTitle = ({ icon:  children }) => (
   <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
     <Icon /> {children}
   </Typography>

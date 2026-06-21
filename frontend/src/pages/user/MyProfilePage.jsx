@@ -364,10 +364,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const renderPersonalSection = () => {
     // Cấu hình mảng dữ liệu cho Thông tin cơ bản
     const personalFields = [
-      { icon: PersonIcon, label: 'Họ và tên', value: profile?.fullName },
-      { icon: EmailIcon, label: 'Email', value: profile?.email },
-      { icon: WorkIcon, label: 'Công việc hiện tại', value: currentJobTitle },
-      { icon: BusinessIcon, label: 'Công ty', value: currentCompany },
+      { icon: Person label: 'Họ và tên', value: profile?.fullName },
+      { icon: Email label: 'Email', value: profile?.email },
+      { icon: Work label: 'Công việc hiện tại', value: currentJobTitle },
+      { icon: Business label: 'Công ty', value: currentCompany },
     ];
 
     // Cấu hình mảng dữ liệu cho Thông tin học thuật
@@ -381,7 +381,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     ];
 
     // Component tiêu đề dùng chung để giảm lặp code UI
-    const SectionTitle = ({ icon: Icon, children }) => (
+    const SectionTitle = ({ icon:  children }) => (
       <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
         <Icon /> {children}
       </Typography>

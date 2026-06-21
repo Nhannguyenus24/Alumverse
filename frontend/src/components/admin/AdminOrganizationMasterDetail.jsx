@@ -50,7 +50,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DOMPurify from 'dompurify';
 import AdminStatusChip from './AdminStatusChip';
 import SearchBar from '../SearchBar';
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTheme } from '@mui/material';
 import { adminOrganizationApi } from '../../utils/api';
 import { useSnackbar } from 'notistack';
@@ -154,11 +154,11 @@ const AdminOrganizationMasterDetail = ({
     return organizations.find((o) => o.id === filteredOrganizations[0].id) ?? filteredOrganizations[0];
   }, [selectedOrganization, organizations, filteredOrganizations, selectedOrganizationId]);
 
-  const selectedPrograms = useMemo(
+  
     () => normalizeList(selectedOrg?.programs),
     [selectedOrg?.programs],
   );
-  const selectedMajors = useMemo(
+  
     () => normalizeList(selectedOrg?.majors),
     [selectedOrg?.majors],
   );
@@ -233,7 +233,7 @@ const AdminOrganizationMasterDetail = ({
       await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
       enqueueSnackbar('Đã cập nhật nhân sự', { variant: 'success' });
       onRefreshIntroduction?.();
-    } catch (error) {
+    } catch (_) {
       enqueueSnackbar('Không thể cập nhật nhân sự', { variant: 'error' });
     }
   };
@@ -261,7 +261,7 @@ const AdminOrganizationMasterDetail = ({
       await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
       enqueueSnackbar('Đã xóa nhân sự', { variant: 'success' });
       onRefreshIntroduction?.();
-    } catch (error) {
+    } catch (_) {
       enqueueSnackbar('Không thể xóa nhân sự', { variant: 'error' });
     }
   };
@@ -668,7 +668,7 @@ const AdminOrganizationMasterDetail = ({
                                   await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
                                   enqueueSnackbar('Đã lưu danh sách chương trình', { variant: 'success' });
                                   onRefresh?.();
-                                } catch (err) {
+                                } catch (_) {
                                   enqueueSnackbar('Lưu chương trình thất bại', { variant: 'error' });
                                 }
                               }}>Lưu</Button>
@@ -701,7 +701,7 @@ const AdminOrganizationMasterDetail = ({
                                   await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
                                   enqueueSnackbar('Đã lưu danh sách chuyên ngành', { variant: 'success' });
                                   onRefresh?.();
-                                } catch (err) {
+                                } catch (_) {
                                   enqueueSnackbar('Lưu chuyên ngành thất bại', { variant: 'error' });
                                 }
                               }}>Lưu</Button>
@@ -741,7 +741,7 @@ const AdminOrganizationMasterDetail = ({
                               await adminOrganizationApi.toggleFeature(selectedOrg.id, key);
                               enqueueSnackbar(`Đã cập nhật tính năng "${featureLabels[key]}"`, { variant: 'success' });
                               onRefresh?.();
-                            } catch (err) {
+                            } catch (_) {
                               enqueueSnackbar('Không thể cập nhật tính năng', { variant: 'error' });
                             }
                           };
@@ -948,7 +948,7 @@ const AdminOrganizationMasterDetail = ({
                                   await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
                                   enqueueSnackbar('Đã lưu cấu hình giao diện', { variant: 'success' });
                                   onRefresh?.();
-                                } catch (err) {
+                                } catch (_) {
                                   enqueueSnackbar('Lưu thất bại', { variant: 'error' });
                                 }
                               }}

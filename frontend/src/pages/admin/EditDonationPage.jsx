@@ -32,6 +32,21 @@ import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
 
+const STATUS_TRANSLATIONS = {
+  "ACTIVE": "Đang hoạt động",
+  "CLOSED": "Đã đóng",
+  "PENDING": "Chờ duyệt",
+  "APPROVED": "Đã duyệt",
+  "REJECTED": "Từ chối",
+  "UPCOMING": "Sắp diễn ra",
+  "IMPORTANT": "Quan trọng",
+  "POOR": "Vượt khó",
+  "RURAL_AREAS": "Vùng sâu vùng xa",
+  "COMPLETED": "Đã hoàn thành",
+  "URGENT": "Khẩn cấp",
+  "EMERGENCY": "Cứu trợ khẩn cấp",
+};
+
 const isEmptyHtml = (html) => {
   if (!html || typeof html !== "string") return true;
   const stripped = html.replace(/<[^>]*>/g, "").trim();
@@ -522,7 +537,7 @@ export default function EditDonationPage() {
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
                         <FormControl fullWidth error={!!errors.statusId}>
-                          <InputLabel id="status-id-label">Trạng thái</InputLabel>
+                          <InputLabel id="status-id-label">Loại quỹ</InputLabel>
                           <Controller
                             name="statusId"
                             control={control}
@@ -530,13 +545,13 @@ export default function EditDonationPage() {
                               <Select
                                 {...field}
                                 labelId="status-id-label"
-                                label="Trạng thái"
+                                label="Loại quỹ"
                                 disabled={disableAllFields}
                                 MenuProps={{ disableScrollLock: true }}
                               >
                                 {statusOptions.map((option) => (
                                   <MenuItem key={option.id} value={option.id}>
-                                    {option.name}
+                                    {STATUS_TRANSLATIONS[option.name?.toUpperCase()] || option.name}
                                   </MenuItem>
                                 ))}
                               </Select>

@@ -32,15 +32,6 @@ export const validateVietnamPhone = (value, { optional = false } = {}) => {
  * A reusable zod field for an optional Vietnamese phone number. Empty string
  * passes; otherwise must match the VN mobile format.
  */
-export const optionalVietnamPhoneField = () =>
-  z
-    .string()
-    .trim()
-    .optional()
-    .or(z.literal(''))
-    .refine((v) => !v || VIETNAM_PHONE_REGEX.test(v), {
-      message: 'Số điện thoại không hợp lệ (10 số, đầu số Việt Nam)',
-    });
 
 /** Login: backend LoginRequest — email, password */
 export const loginSchema = z.object({

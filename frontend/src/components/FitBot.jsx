@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, Button, TextField, Paper, Typography, Avatar, Fade, Tooltip } from '@mui/material';
 import { Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
@@ -60,7 +60,7 @@ const loadMessagesFromStorage = () => {
 
     const prunedHistory = normalizeAndPruneMessages(parsedHistory);
     return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage()];
-  } catch (error) {
+  } catch (_) {
     return [buildDefaultMessage()];
   }
 };
@@ -77,7 +77,7 @@ const saveMessagesToStorage = (messages) => {
       CHAT_HISTORY_STORAGE_KEY,
       JSON.stringify(serializableMessages)
     );
-  } catch (error) {
+  } catch (_) {
     // Ignore error
   }
 };
@@ -326,7 +326,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
           answer = data;
         }
         if (answer) onChunk(answer);
-      } catch (e) {
+      } catch (_) {
         onChunk(result);
       }
       onComplete();
@@ -364,7 +364,7 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
               textChunk = data;
             }
             if (textChunk) onChunk(textChunk);
-          } catch (e) {
+          } catch (_) {
             onChunk(dataStr);
           }
         }
@@ -379,14 +379,14 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
           const data = JSON.parse(dataStr);
           const textChunk = data.answer || data.response || data.text || data.content || (data.message ? data.message.content : '') || dataStr;
           if (textChunk) onChunk(textChunk);
-        } catch (e) {
+        } catch (_) {
           onChunk(dataStr);
         }
       }
     }
 
     onComplete();
-  } catch (error) {
+  } catch (_) {
     if (error.name !== 'AbortError') {
       onError(error);
     }
@@ -404,7 +404,6 @@ export default function FitBot() {
   const messageEndRef = useRef(null);
   const suggestionTimeoutRef = useRef(null);
   const suggestionHideTimeoutRef = useRef(null);
-  const charIndexRef = useRef(0);
   const abortControllerRef = useRef(null);
 
   // Auto-scroll to bottom when messages change
@@ -462,14 +461,9 @@ export default function FitBot() {
     }
   }, [isChatOpen]);
 
-  const handleSuggestionClick = (suggestion) => {
-    setShowSuggestion(false);
-    setIsChatOpen(true);
-    handleSendMessage(suggestion);
-  };
 
-  const handleSendMessage = async (messageText) => {
-    const textToSend = messageText || inputValue.trim();
+  const handleSendMessage = useCallback(async (messageText) => {
+    const textToSend = typeof messageText === 'string' ? messageText : inputValue.trim();
     if (!textToSend) return;
 
     // Add user message
@@ -548,9 +542,15 @@ export default function FitBot() {
       },
       abortControllerRef.current.signal
     );
-  };
+  }, [inputValue]);
 
-  const handleClose = () => {
+  const handleSuggestionClick = useCallback((suggestion) => {
+    setShowSuggestion(false);
+    setIsChatOpen(true);
+    handleSendMessage(suggestion);
+  }, [handleSendMessage]);
+
+  const handleClose = useCallback(() => {
     setIsChatOpen(false);
     setIsTyping(false);
     // Abort active stream
@@ -558,7 +558,7 @@ export default function FitBot() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-  };
+  }, []);
 
   const renderedMessages = React.useMemo(() => {
     return messages.map((message) => (

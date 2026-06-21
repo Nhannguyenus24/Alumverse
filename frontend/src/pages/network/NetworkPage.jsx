@@ -86,12 +86,17 @@ const NetworkPage = () => {
 
   const handlePageChange = usePaginationScrollToTop({ currentPage: safePage, setPage });
 
-  const handleSearchKeyDown = (event) => {
+  const handleSearchKeyDown = useCallback((event) => {
     if (event.key !== 'Enter') return;
     event.preventDefault();
     setAppliedFullName(searchInput.trim());
     setPage(1);
-  };
+  }, [searchInput]);
+
+  const handleFilterChange = useCallback((next) => {
+    setFilters(next);
+    setPage(1);
+  }, []);
 
   const hasActiveCriteria = Boolean(appliedFullName) || !filters.all;
   const showEmptyState = !isPending && !isFetching && items.length === 0;
@@ -154,10 +159,7 @@ const NetworkPage = () => {
         <DynamicFilterBar
           config={FILTERS}
           value={filters}
-          onChange={(next) => {
-            setFilters(next);
-            setPage(1);
-          }}
+          onChange={handleFilterChange}
         />
 
         <SearchBar

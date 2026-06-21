@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   Alert,
   Box,
@@ -111,34 +111,34 @@ const MentorshipDashboardPage = () => {
     ];
   }, [items, upcomingItems]);
 
-  const callUpdate = async (sessionId, status) => {
+  const callUpdate = useCallback(async (sessionId, status) => {
     try {
       await updateMutation.updateStatus({ sessionId, status });
     } catch {
       /* surfaced via errorMessage */
     }
-  };
+  }, [updateMutation]);
 
-  const handleJoin = async (session) => {
+  const handleJoin = useCallback(async (session) => {
     setActionError('');
     try {
       await joinMutation.joinSession({ sessionId: session.id, asMentor: true });
     } catch (err) {
       setActionError(err?.response?.data?.message ?? 'Không thể tham gia buổi mentoring.');
     }
-  };
+  }, [joinMutation, setActionError]);
 
-  const openCancelDialog = (session) => {
+  const openCancelDialog = useCallback((session) => {
     setCancelTarget(session);
     setCancelReason('');
-  };
+  }, []);
 
-  const closeCancelDialog = () => {
+  const closeCancelDialog = useCallback(() => {
     setCancelTarget(null);
     setCancelReason('');
-  };
+  }, []);
 
-  const handleConfirmCancel = async () => {
+  const handleConfirmCancel = useCallback(async () => {
     if (!cancelTarget) return;
     setCancelPending(true);
     try {
@@ -150,9 +150,9 @@ const MentorshipDashboardPage = () => {
     } finally {
       setCancelPending(false);
     }
-  };
+  }, [cancelTarget, cancelReason, sessionsQuery, closeCancelDialog]);
 
-  const openPostponeDialog = (session) => {
+  const openPostponeDialog = useCallback((session) => {
     setPostponeTarget(session);
     setPostponeReason('');
     // Seed pickers from the current session time so the mentor only tweaks it.
@@ -161,18 +161,18 @@ const MentorshipDashboardPage = () => {
     setPostponeStart(base);
     setPostponeEnd(session.endTime ? dayjs(session.endTime) : null);
     setPostponeError(null);
-  };
+  }, []);
 
-  const closePostponeDialog = () => {
+  const closePostponeDialog = useCallback(() => {
     setPostponeTarget(null);
     setPostponeReason('');
     setPostponeDate(null);
     setPostponeStart(null);
     setPostponeEnd(null);
     setPostponeError(null);
-  };
+  }, []);
 
-  const handleConfirmPostpone = async () => {
+  const handleConfirmPostpone = useCallback(async () => {
     if (!postponeTarget) return;
     setPostponeError(null);
     if (!postponeDate || !postponeStart || !postponeEnd) {
@@ -212,19 +212,19 @@ const MentorshipDashboardPage = () => {
     } finally {
       setPostponePending(false);
     }
-  };
+  }, [postponeTarget, postponeDate, postponeStart, postponeEnd, postponeReason, sessionsQuery, closePostponeDialog]);
 
-  const openLinkDialog = (session) => {
+  const openLinkDialog = useCallback((session) => {
     setLinkTarget(session);
     setLinkValue(session.meetingLink ?? '');
     setLinkError(null);
-  };
-  const closeLinkDialog = () => {
+  }, []);
+  const closeLinkDialog = useCallback(() => {
     setLinkTarget(null);
     setLinkValue('');
     setLinkError(null);
-  };
-  const handleConfirmLink = async () => {
+  }, []);
+  const handleConfirmLink = useCallback(async () => {
     if (!linkTarget) return;
     const value = linkValue.trim();
     if (!value) {
@@ -242,19 +242,19 @@ const MentorshipDashboardPage = () => {
     } finally {
       setLinkPending(false);
     }
-  };
+  }, [linkTarget, linkValue, sessionsQuery, closeLinkDialog]);
 
-  const closeReportDialog = () => {
+  const closeReportDialog = useCallback(() => {
     setReportTarget(null);
     setReportCategory('');
     setReportDescription('');
-  };
+  }, []);
 
   const isOtherReason = reportCategory === 'OTHER';
   const reportDescTooShort = isOtherReason && reportDescription.trim().length < 10;
   const reportInvalid = !reportCategory || reportDescTooShort;
 
-  const handleConfirmReport = async () => {
+  const handleConfirmReport = useCallback(async () => {
     if (!reportTarget || reportInvalid) return;
     setActionError('');
     setReportPending(true);
@@ -270,10 +270,10 @@ const MentorshipDashboardPage = () => {
     } finally {
       setReportPending(false);
     }
-  };
+  }, [reportTarget, reportInvalid, reportCategory, reportDescription, sessionsQuery, closeReportDialog]);
 
   const profile = profileQuery.data;
-  const user = {
+  const mentorUser = useMemo(() => ({
     name: profile?.fullName ?? 'Tài khoản của tôi',
     role:
       profile && (profile.currentJobTitle || profile.currentCompany)
@@ -281,15 +281,15 @@ const MentorshipDashboardPage = () => {
         : 'Mentor',
     avatar: profile?.avatarUrl ?? '',
     cover: profile?.coverUrl ?? DEFAULT_COVER,
-  };
+  }), [profile]);
 
   const ratingAvg = formatRating(profile?.ratingAvg);
 
   return (
     <Page title="Cố vấn - Tổng quan">
       <MentorshipProfileLayout
-        user={user}
-        cover={user.cover}
+        user={mentorUser}
+        cover={mentorUser.cover}
         tabs={TOP_TABS}
         onNavigate={navigate}
         mode="mentor"
