@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/notification_link.dart';
 import '../../../../shared/widgets/empty_view.dart';
 import '../../../../shared/widgets/error_view.dart';
 import '../../../../shared/widgets/skeleton.dart';
@@ -36,8 +37,10 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       if (RegExp(r'^https?://').hasMatch(link)) {
         final uri = Uri.tryParse(link);
         if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else if (mounted) {
-        context.push(link);
+      } else {
+        // Map web/org-scoped backend links to the matching mobile route.
+        final route = normalizeNotificationLink(link);
+        if (route != null && mounted) context.push(route);
       }
     }
   }
