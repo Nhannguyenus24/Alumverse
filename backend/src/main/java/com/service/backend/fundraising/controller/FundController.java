@@ -48,7 +48,6 @@ public class FundController {
             @RequestParam(defaultValue = "10") @Min(1) int limit,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String organizationId,
-            @RequestParam(required = false) String statusId,
             @RequestParam(required = false) String timeStartedFrom,
             @RequestParam(required = false) String timeStartedTo,
             @RequestParam(required = false) String targetAmountMin,
@@ -62,7 +61,6 @@ public class FundController {
                         .size(limit)
                         .q(q)
                         .organizationId(organizationId)
-                        .statusId(statusId)
                         .timeStartedFrom(timeStartedFrom)
                         .timeStartedTo(timeStartedTo)
                         .targetAmountMin(targetAmountMin)
@@ -89,17 +87,6 @@ public class FundController {
         return fundService.getFundDetail(fundId)
                 .map(response -> ResponseEntity.ok(
                         new ApiResponse<>("Fund retrieved successfully", response)));
-    }
-
-    @GetMapping("/status/{statusId}")
-    // Dung o trang frontend cho normal user + guest voi cac quy theo hang muc QUAN TRONG hoac VUNG SAU VUNG XA 
-    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<FundListItemResponse>>>> getByStatusId(
-            @PathVariable @Min(1) Integer statusId,
-            @RequestParam(defaultValue = "0") @Min(0) int page,
-            @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return fundService.getFundsByStatusId(page, limit, statusId)
-                .map(response -> ResponseEntity.ok(
-                        new ApiResponse<>("Funds retrieved successfully", response)));
     }
 
     @PutMapping("/{fundId}")

@@ -170,8 +170,8 @@ public class AdminArticleService {
         int offset = page * limit;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
         return PaginationHelper.paginate(
-                fundRepository.findFiltered(organizationId, null, kw, null, null, null, null, limit, offset).map(FundListItemResponse::from),
-                fundRepository.countFiltered(organizationId, null, kw, null, null, null, null),
+                fundRepository.findFiltered(organizationId, kw, null, null, null, null, limit, offset).map(FundListItemResponse::from),
+                fundRepository.countFiltered(organizationId, kw, null, null, null, null),
                 page, limit
         ).doOnSuccess(r -> log.info("getAllFunds result (org={}, keyword={}): {}", organizationId, kw, JsonUtils.toJson(r)));
     }

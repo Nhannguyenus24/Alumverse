@@ -4,7 +4,6 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../organization/presentation/providers/organization_provider.dart';
 import '../../data/models/fund_detail.dart';
 import '../../data/models/fund_donation.dart';
-import '../../data/models/fund_status.dart';
 import '../../data/models/fund_summary.dart';
 import '../../data/repositories/fundraising_repository.dart';
 
@@ -14,7 +13,6 @@ const int kFundPageSize = 3;
 /// Search + filter + page state for the fund list.
 class FundQuery {
   final String q;
-  final String? statusId;
   final int? amountMin;
   final int? amountMax;
   final DateTime? dateFrom;
@@ -23,7 +21,6 @@ class FundQuery {
 
   const FundQuery({
     this.q = '',
-    this.statusId,
     this.amountMin,
     this.amountMax,
     this.dateFrom,
@@ -33,7 +30,6 @@ class FundQuery {
 
   /// Whether any filter (excluding the free-text search) is active.
   bool get hasActiveFilters =>
-      statusId != null ||
       amountMin != null ||
       amountMax != null ||
       dateFrom != null ||
@@ -41,13 +37,11 @@ class FundQuery {
 
   FundQuery copyWith({
     String? q,
-    String? statusId,
     int? amountMin,
     int? amountMax,
     DateTime? dateFrom,
     DateTime? dateTo,
     int? page,
-    bool clearStatus = false,
     bool clearAmountMin = false,
     bool clearAmountMax = false,
     bool clearDateFrom = false,
@@ -55,7 +49,6 @@ class FundQuery {
   }) {
     return FundQuery(
       q: q ?? this.q,
-      statusId: clearStatus ? null : (statusId ?? this.statusId),
       amountMin: clearAmountMin ? null : (amountMin ?? this.amountMin),
       amountMax: clearAmountMax ? null : (amountMax ?? this.amountMax),
       dateFrom: clearDateFrom ? null : (dateFrom ?? this.dateFrom),
@@ -67,11 +60,6 @@ class FundQuery {
 
 final fundQueryProvider = StateProvider<FundQuery>((ref) => const FundQuery());
 
-/// Status options for the filter dropdown.
-final fundStatusesProvider = FutureProvider<List<FundStatus>>((ref) {
-  return ref.watch(fundraisingRepositoryProvider).getFundStatuses();
-});
-
 /// Paginated list of campaigns, reactive to [fundQueryProvider]. Scoped to the
 /// currently selected organization (matches the web client).
 final fundsProvider = FutureProvider<FundPageResult<FundSummary>>((ref) {
@@ -82,7 +70,6 @@ final fundsProvider = FutureProvider<FundPageResult<FundSummary>>((ref) {
         limit: kFundPageSize,
         q: q.q,
         organizationId: orgId,
-        statusId: q.statusId != null ? int.tryParse(q.statusId!) : null,
         targetAmountMin: q.amountMin,
         targetAmountMax: q.amountMax,
         timeStartedFrom: q.dateFrom,

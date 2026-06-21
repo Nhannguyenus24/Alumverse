@@ -324,6 +324,11 @@ export const chatApi = {
 		return unwrap(response);
 	},
 
+	async updateGroup(groupId, title) {
+		const response = await apiClient.put(`/chat/groups/${groupId}`, { title });
+		return unwrap(response);
+	},
+
 	async getGroupMembers(groupId, { text = '', page = 0, size = 50 } = {}) {
 		const response = await apiClient.get(`/chat/groups/${groupId}/members`, {
 			params: { text, page, size },
@@ -947,11 +952,6 @@ export const fundApi = {
 	async getFundDetail(id) {
 		const response = await apiClient.get(`${BASE_FUND}/${id}`);
 		return unwrap(response);
-	},
-
-	async getFundStatuses() {
-		const response = await apiClient.get('/fund-statuses');
-		return unwrap(response) ?? [];
 	},
 
 	async getFundStatistics() {

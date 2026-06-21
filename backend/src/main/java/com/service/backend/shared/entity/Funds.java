@@ -53,9 +53,6 @@ public class Funds {
     @Column("donor_count")
     private Integer donorCount;
 
-    @Column("status_id")
-    private Integer statusId;
-
     @Column("topic")
     private String topic;
 

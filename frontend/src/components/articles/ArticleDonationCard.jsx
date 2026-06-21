@@ -19,11 +19,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
 
   const isEnded = Boolean(startTime && endTime && startTime.isValid() && endTime.isValid()) &&
     startTime.isBefore(endTime) && endTime.isBefore(now);
-  const isClosed =
-    isEnded ||
-    campaign.status === "CLOSED" ||
-    campaign.statusName === "CLOSED" ||
-    campaign.statusName === "Đã đóng";
+  const isClosed = isEnded;
 
   const progressValue = Math.min(100, Math.round(((campaign.currentAmount ?? 0) / Math.max(campaign.targetAmount ?? 1, 1)) * 100));
   const startedAt = formatDate(campaign.timeStarted);

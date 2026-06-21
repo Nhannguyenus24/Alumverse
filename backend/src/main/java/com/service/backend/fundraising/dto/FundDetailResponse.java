@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 public class FundDetailResponse {
     private Integer id;
     private String organizationName;
-    private String statusName;
     private Integer donorCount;
 
     private String managerName;
@@ -40,8 +39,7 @@ public class FundDetailResponse {
     public static FundDetailResponse from(
             Funds fund,
             FundReceivingInfos fundReceivingInfo,
-            String organizationName,
-            String statusName
+            String organizationName
     ) {
         if (fund == null) {
             return null;
@@ -50,7 +48,6 @@ public class FundDetailResponse {
         return FundDetailResponse.builder()
                 .id(fund.getId())
                 .organizationName(organizationName)
-                .statusName(statusName)
                 .donorCount(fund.getDonorCount())
                 .managerName(fund.getManagerName())
                 .name(fund.getName())

@@ -30,22 +30,8 @@ import WYSIWYG from "../../components/WYSIWYG";
 import { fundApi } from "../../utils/api";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
+import MoneyField from "../../components/MoneyField";
 import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
-
-const STATUS_TRANSLATIONS = {
-  "ACTIVE": "Đang hoạt động",
-  "CLOSED": "Đã đóng",
-  "PENDING": "Chờ duyệt",
-  "APPROVED": "Đã duyệt",
-  "REJECTED": "Từ chối",
-  "UPCOMING": "Sắp diễn ra",
-  "IMPORTANT": "Quan trọng",
-  "POOR": "Vượt khó",
-  "RURAL_AREAS": "Vùng sâu vùng xa",
-  "COMPLETED": "Đã hoàn thành",
-  "URGENT": "Khẩn cấp",
-  "EMERGENCY": "Cứu trợ khẩn cấp",
-};
 
 const isEmptyHtml = (html) => {
   if (!html || typeof html !== "string") return true;
@@ -81,7 +67,6 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
         .refine((value) => !isEmptyHtml(value), "Vui lòng nhập mô tả đầy đủ"),
       targetAmount: z.coerce.number({ message: "Mục tiêu quỹ phải là số" }).positive("Mục tiêu quỹ phải lớn hơn 0"),
       fundReceivingInfoId: z.coerce.number().int().positive("Vui lòng chọn tài khoản nhận quỹ"),
-      statusId: z.coerce.number().int().positive("Vui lòng chọn trạng thái"),
       startDate: z
         .custom((value) => value === null || dayjs.isDayjs(value), {
           message: "Vui lòng chọn thời gian bắt đầu",
@@ -155,7 +140,6 @@ export default function EditDonationPage() {
   const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams();
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
-  const [statusOptions, setStatusOptions] = useState([]);
   const [receivingOptions, setReceivingOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const logoInputRef = useRef(null);
@@ -204,7 +188,6 @@ export default function EditDonationPage() {
       descriptionFull: "",
       targetAmount: 0,
       fundReceivingInfoId: "",
-      statusId: "",
       startDate: now,
       endDate: now.add(1, "day"),
     },
@@ -239,9 +222,8 @@ export default function EditDonationPage() {
     const loadEditData = async () => {
       try {
         setIsLoading(true);
-        const [detail, statuses, receivingInfos] = await Promise.all([
+        const [detail, receivingInfos] = await Promise.all([
           fundApi.getFundDetail(id),
-          fundApi.getFundStatuses(),
           fundApi.getActiveFundReceivingInfos(),
         ]);
 
@@ -249,9 +231,7 @@ export default function EditDonationPage() {
           return;
         }
 
-        const resolvedStatuses = statuses ?? [];
         const resolvedReceivingInfos = receivingInfos ?? [];
-        const matchedStatus = resolvedStatuses.find((status) => status.name === detail?.statusName);
         const startDate = detail?.timeStarted ? dayjs(detail.timeStarted) : null;
         const endDate = detail?.timeEnded ? dayjs(detail.timeEnded) : null;
         const normalizedDetail = {
@@ -262,7 +242,6 @@ export default function EditDonationPage() {
           endDate: endDate && endDate.isValid() ? endDate : now.add(1, "day"),
         };
 
-        setStatusOptions(resolvedStatuses);
         setReceivingOptions(resolvedReceivingInfos);
         setDonationDetail(normalizedDetail);
         setLogoFile(null);
@@ -274,7 +253,6 @@ export default function EditDonationPage() {
           descriptionFull: detail?.descriptionFull ?? "",
           targetAmount: normalizedDetail.targetAmount,
           fundReceivingInfoId: detail?.fundReceivingInfo?.id ?? "",
-          statusId: matchedStatus?.id ?? "",
           startDate: normalizedDetail.startDate,
           endDate: normalizedDetail.endDate,
         });
@@ -337,7 +315,6 @@ export default function EditDonationPage() {
         description_full: values.descriptionFull,
         targetAmount: Number(values.targetAmount),
         fundReceivingInfoId: Number(values.fundReceivingInfoId),
-        statusId: Number(values.statusId),
         timeStarted: values.startDate?.format("YYYY-MM-DDTHH:mm:ss"),
         timeEnded: values.endDate?.format("YYYY-MM-DDTHH:mm:ss"),
       };
@@ -469,7 +446,7 @@ export default function EditDonationPage() {
                           helperText={errors.descriptionShort?.message}
                         />
                       </Grid>
-                      <Grid size={12}>
+                      <Grid size={12} sx={{ mb: 3 }}>
                         <Typography
                           variant="body2"
                           sx={{ mb: 1, fontWeight: 600, color: "text.secondary" }}
@@ -500,14 +477,21 @@ export default function EditDonationPage() {
                         )}
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                          fullWidth
-                          type="number"
-                          label="Mục tiêu quỹ (VND)"
-                          {...register("targetAmount")}
-                          disabled={disableTargetAmount}
-                          error={!!errors.targetAmount}
-                          helperText={errors.targetAmount?.message}
+                        <Controller
+                          name="targetAmount"
+                          control={control}
+                          render={({ field }) => (
+                            <MoneyField
+                              fullWidth
+                              label="Mục tiêu quỹ (VND)"
+                              value={field.value}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                              disabled={disableTargetAmount}
+                              error={!!errors.targetAmount}
+                              helperText={errors.targetAmount?.message}
+                            />
+                          )}
                         />
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
@@ -533,31 +517,6 @@ export default function EditDonationPage() {
                             )}
                           />
                           <FormHelperText>{errors.fundReceivingInfoId?.message}</FormHelperText>
-                        </FormControl>
-                      </Grid>
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <FormControl fullWidth error={!!errors.statusId}>
-                          <InputLabel id="status-id-label">Loại quỹ</InputLabel>
-                          <Controller
-                            name="statusId"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                labelId="status-id-label"
-                                label="Loại quỹ"
-                                disabled={disableAllFields}
-                                MenuProps={{ disableScrollLock: true }}
-                              >
-                                {statusOptions.map((option) => (
-                                  <MenuItem key={option.id} value={option.id}>
-                                    {STATUS_TRANSLATIONS[option.name?.toUpperCase()] || option.name}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            )}
-                          />
-                          <FormHelperText>{errors.statusId?.message}</FormHelperText>
                         </FormControl>
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>

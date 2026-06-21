@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { fundApi } from '../../utils/api';
 
-const normalizeFundStatus = (value) => {
-  const status = String(value || '').toUpperCase();
-  if (status === 'OPEN') return 'ACTIVE';
-  if (status) return status;
-  return 'DRAFT';
-};
-
 const mapFundRow = (fund) => ({
   id: fund.id,
   title: fund.name || fund.title || 'Untitled fund',
-  status: normalizeFundStatus(fund.statusName || fund.status || fund.fundStatusName),
+  timeStarted: fund.timeStarted || null,
+  timeEnded: fund.timeEnded || null,
   ownerName: fund.managerName || fund.ownerName || '-',
   targetAmount: Number(fund.targetAmount || 0),
   raisedAmount: Number(fund.raisedAmount || fund.currentAmount || 0),
@@ -106,19 +100,14 @@ const useAdminFundraisingsData = (organizationId) => {
     loadFunds();
   }, [loadFunds, reloadTrigger]);
 
-  const updateStatus = useCallback(async (id, status) => {
-    if (status !== 'COMPLETED') return;
-
-    try {
-      await fundApi.closeFund(id);
-      setFundraisings((prev) =>
-        prev.map((row) =>
-          row.id === id ? { ...row, status: 'COMPLETED', updatedAt: new Date().toISOString() } : row,
-        ),
-      );
-    } catch {
-      throw new Error('Failed to close fund');
-    }
+  const closeFundById = useCallback(async (id) => {
+    await fundApi.closeFund(id);
+    const closedAt = new Date().toISOString();
+    setFundraisings((prev) =>
+      prev.map((row) =>
+        row.id === id ? { ...row, timeEnded: closedAt, updatedAt: closedAt } : row,
+      ),
+    );
   }, []);
 
   return {
@@ -134,7 +123,7 @@ const useAdminFundraisingsData = (organizationId) => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
-    updateStatus,
+    closeFundById,
     reload,
   };
 };

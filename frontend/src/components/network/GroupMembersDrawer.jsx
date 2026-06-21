@@ -18,6 +18,7 @@ import {
   ListItemAvatar,
   ListItemText,
   Stack,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -25,6 +26,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PersonRemoveIcon from '@mui/icons-material/PersonRemove';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import DriveFileRenameOutlineIcon from '@mui/icons-material/DriveFileRenameOutline';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import ChatAvatar from '../ChatAvatar';
@@ -75,6 +77,8 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
   const [kickTarget, setKickTarget] = useState(null);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
 
   const { members, totalItem, isPending, isError, errorMessage } = useGroupMembers(groupId, {
     enabled: open && Boolean(groupId),
@@ -104,6 +108,25 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
     },
   });
 
+  const renameMutation = useMutation({
+    mutationFn: ({ gId, title }) => chatApi.updateGroup(gId, title),
+    onSuccess: () => {
+      invalidateChatListQueries(queryClient);
+      setRenameDialogOpen(false);
+    },
+  });
+
+  const openRenameDialog = () => {
+    setRenameValue(groupName ?? '');
+    setRenameDialogOpen(true);
+  };
+
+  const handleRenameConfirm = () => {
+    const trimmed = renameValue.trim();
+    if (!trimmed) return;
+    renameMutation.mutate({ gId: groupId, title: trimmed });
+  };
+
   const handleKickConfirm = () => {
     if (!kickTarget) return;
     removeMutation.mutate({ gId: groupId, mId: kickTarget.memberId });
@@ -115,7 +138,8 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
 
   const mutationError =
     (removeMutation.isError ? removeMutation.error?.response?.data?.message ?? removeMutation.error?.message : null) ??
-    (leaveMutation.isError ? leaveMutation.error?.response?.data?.message ?? leaveMutation.error?.message : null);
+    (leaveMutation.isError ? leaveMutation.error?.response?.data?.message ?? leaveMutation.error?.message : null) ??
+    (renameMutation.isError ? renameMutation.error?.response?.data?.message ?? renameMutation.error?.message : null);
 
   return (
     <>
@@ -251,6 +275,18 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
             <>
               <Divider />
               <Box sx={{ px: 2, py: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {isOwner ? (
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<DriveFileRenameOutlineIcon />}
+                    onClick={openRenameDialog}
+                    disabled={renameMutation.isPending}
+                  >
+                    Đổi tên nhóm
+                  </Button>
+                ) : null}
                 {isOwner && totalItem < MAX_GROUP_SIZE ? (
                   <Button
                     fullWidth
@@ -301,6 +337,41 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
         onCancel={() => setLeaveDialogOpen(false)}
         loading={leaveMutation.isPending}
       />
+
+      <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Đổi tên nhóm</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            margin="dense"
+            label="Tên nhóm"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            inputProps={{ maxLength: 100 }}
+            disabled={renameMutation.isPending}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleRenameConfirm();
+              }
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameDialogOpen(false)} disabled={renameMutation.isPending}>
+            Hủy
+          </Button>
+          <Button
+            onClick={handleRenameConfirm}
+            variant="contained"
+            disabled={renameMutation.isPending || !renameValue.trim()}
+            startIcon={renameMutation.isPending ? <CircularProgress size={14} /> : null}
+          >
+            Lưu
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <AddGroupMemberDialog
         open={addMemberDialogOpen}

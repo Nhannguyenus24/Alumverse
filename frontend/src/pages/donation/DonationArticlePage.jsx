@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, Container, Divider, Typography } from "@mui/material";
 import DOMPurify from "dompurify";
 import dayjs from "dayjs";
 import Page from "../../components/Page";
@@ -11,7 +11,6 @@ import DonationListSection from "../../components/donation/DonationListSection";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-const BANNER_IMG = "https://www.islamic-relief.org.uk/wp-content/uploads/2022/10/Fundraising-ideas-.jpg";
 const ARTICLE_IMG_FALLBACK = "https://placehold.co/1200x720/eef3ff/0f3a7a?text=Fund";
 const ARTICLE_IMAGE_ASPECT_RATIO = "16 / 9";
 const DESCRIPTION_MAX_HEIGHT = { xs: 360, md: 480 };
@@ -78,7 +77,7 @@ export default function DonationArticlePage() {
   const isEnded = Boolean(startTime && endTime && startTime.isValid() && endTime.isValid()) &&
     startTime.isBefore(endTime) && endTime.isBefore(now);
 
-  const isClosed = isEnded || fundDetail?.status === "CLOSED" || fundDetail?.statusName === "CLOSED" || fundDetail?.statusName === "Đã đóng";
+  const isClosed = isEnded;
 
   const articleImg = fundDetail?.logoUrl || ARTICLE_IMG_FALLBACK;
   const pageTitle = fundDetail?.name || "Chi tiết quỹ";
@@ -90,10 +89,7 @@ export default function DonationArticlePage() {
           sx={{
             height: { xs: "32vh", sm: "36vh", md: "40vh" },
             minHeight: { xs: 200, sm: 240, md: 280 },
-            backgroundImage: `url(${BANNER_IMG})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
+            backgroundColor: "primary.main",
           }}
         />
 
@@ -131,6 +127,20 @@ export default function DonationArticlePage() {
                   {fundDetail.name}
                 </Typography>
 
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+                  <Box
+                    sx={{
+                      width: { xs: "100%", md: "60%" },
+                      aspectRatio: ARTICLE_IMAGE_ASPECT_RATIO,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+                    }}
+                  >
+                    <Box component="img" src={articleImg} alt={fundDetail.name} sx={articleImageSx} />
+                  </Box>
+                </Box>
+
                 <Box sx={{ mt: 3, mb: 6, p: 5, bgcolor: "primary.light", borderRadius: 2, display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 3, alignItems: { md: "stretch" } }}>
                   <Box sx={{ flex: 1 }}>
                     <DonationFundInfoPanel fundDetail={fundDetail} />
@@ -161,18 +171,12 @@ export default function DonationArticlePage() {
                   )}
                 </Box>
 
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
-                  <Box
-                    sx={{
-                      width: { xs: "100%", md: "60%" },
-                      aspectRatio: ARTICLE_IMAGE_ASPECT_RATIO,
-                      borderRadius: 2,
-                      overflow: "hidden",
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    <Box component="img" src={articleImg} alt={fundDetail.name} sx={articleImageSx} />
-                  </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, my: 3 }}>
+                  <Divider sx={{ flex: 1 }} />
+                  <Typography variant="h1" component="h2" fontWeight={700} color="primary.main" sx={{ whiteSpace: "nowrap", fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
+                    Bài viết
+                  </Typography>
+                  <Divider sx={{ flex: 1 }} />
                 </Box>
 
                 <Scrollbar sx={{ maxHeight: DESCRIPTION_MAX_HEIGHT, pr: 1 }}>

@@ -27,9 +27,6 @@ export default function DonationFundInfoPanel({ fundDetail }) {
       <Typography sx={{ mt: 1.2, color: "#365886", fontSize: "0.94rem", fontWeight: 600 }}>
         Người quản lí: {fundDetail?.managerName || "--"}
       </Typography>
-      <Box sx={{ mt: 1, display: "inline-flex", px: 1.2, py: 0.45, borderRadius: 99, fontSize: "0.78rem", fontWeight: 700, color: "#0f4b72", backgroundColor: "#e0f2fe", border: "1px solid", borderColor: "#7dd3fc", width: "fit-content" }}>
-        {fundDetail?.statusName || "--"}
-      </Box>
       <Typography sx={{ mt: 1.2, color: "#5f78a4", fontSize: "0.92rem" }}>
         Thời gian bắt đầu: {fundDetail?.timeStarted ? dayjs(fundDetail.timeStarted).format("DD/MM/YYYY") : "--"}
       </Typography>

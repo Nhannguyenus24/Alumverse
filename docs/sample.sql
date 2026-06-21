@@ -870,16 +870,6 @@ INSERT INTO "learning_resources" ("organization_id", "uploader_member_id", "titl
 (1, 2, 'Web Development Best Practices 2026', 'VIDEO', 'https://www.youtube.com/watch?v=vbFn0C-pvis', 'Latest trends and best practices in web development', NOW() - INTERVAL '10 days'),
 (2, 9, 'Data Science with Python', 'COURSE', 'https://www.udemy.com/course/python-for-data-science-and-machine-learning-bootcamp/', 'Learn data science fundamentals using Python', NOW() - INTERVAL '5 days');
 
--- ============= FUND STATUSES DATA =============
-INSERT INTO "fund_statuses" ("name") VALUES
-('IMPORTANT'),
-('POOR'),
-('RURAL_AREAS'),
-('ACTIVE'),
-('COMPLETED'),
-('URGENT'),
-('EMERGENCY');
-
 -- ============= FUND RECEIVING INFOS DATA =============
 INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name", "is_active") VALUES
 ('1234567890', 'HCMUS Student Scholarship Fund', 'MB', true),
@@ -892,14 +882,14 @@ INSERT INTO "fund_receiving_infos" ("account_number", "account_name", "bank_name
 ('987654321', 'HCMUS CHARITY', 'ICB', true);
 
 -- ============= FUNDS DATA =============
-INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "status_id", "topic", "time_ended") VALUES
-(1, 'John Doe', 'Student Scholarship Fund 2026', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNOruzVwqdOL5x15VrzgsWIqMdH4XlTYLk1A&s', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 2, 'Scholarship', '2026-08-15 17:00:00'),
-(1, 'Phạm Văn C', 'Lab Equipment Fund', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2021/8/4/938086/Hoc-Bong-01.jpg', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 2, 'Education', '2026-10-20 18:00:00'),
-(1, 'Jane Smith', 'Alumni Mentorship Fund', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrSFBCRWjf9_3ZIFkYeFOyJlQlvyaChmZc5Q&s', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 2, 'Mentorship', '2026-09-25 16:30:00'),
-(1, 'Hoàng Thị D', 'Business Incubation Fund', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2025/5/30/1515470/Hoc-Bong-02.JPG', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 1, 'Startup', '2026-11-10 20:00:00'),
-(1, 'Admin User', 'Engineering Excellence Fund', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQfmjav140codqz0a5sjbb3BYxtE9drszrtyw&s', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 1, 'Engineering', '2026-10-05 19:15:00'),
-(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2023/12/6/1276364/Hoc-Bong-1-Min.jpg', 7, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 4, 'Social', NOW() + INTERVAL '5 months'),
-(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://cdn-i2.congthuong.vn/resize/th/stores/news_dataimages/2025/042025/05/13/thumbnail/b1620250405135112.jpg?rt=20250405135220', 8, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 6, 'Research', NOW() + INTERVAL '3 months');
+INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fund_receiving_info_id", "description_short", "description_full", "target_amount", "current_amount", "time_started", "donor_count", "topic", "time_ended") VALUES
+(1, 'John Doe', 'Student Scholarship Fund 2026', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNOruzVwqdOL5x15VrzgsWIqMdH4XlTYLk1A&s', 1, 'Supporting talented students with financial needs', 'Supporting talented students with financial needs', 50000.00, 28500.00, '2026-01-15 09:00:00', 3, 'Scholarship', '2026-08-15 17:00:00'),
+(1, 'Phạm Văn C', 'Lab Equipment Fund', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2021/8/4/938086/Hoc-Bong-01.jpg', 3, 'Upgrading our research laboratory equipment', 'Upgrading our research laboratory equipment', 100000.00, 45000.00, '2025-12-20 10:30:00', 2, 'Education', '2026-10-20 18:00:00'),
+(1, 'Jane Smith', 'Alumni Mentorship Fund', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrSFBCRWjf9_3ZIFkYeFOyJlQlvyaChmZc5Q&s', 4, 'Funding mentorship programs and workshops', 'Funding mentorship programs and workshops', 30000.00, 12000.00, '2026-02-10 14:00:00', 2, 'Mentorship', '2026-09-25 16:30:00'),
+(1, 'Hoàng Thị D', 'Business Incubation Fund', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2025/5/30/1515470/Hoc-Bong-02.JPG', 5, 'Supporting student-led startup initiatives', 'Supporting student-led startup initiatives', 80000.00, 35000.00, '2026-03-05 08:45:00', 1, 'Startup', '2026-11-10 20:00:00'),
+(1, 'Admin User', 'Engineering Excellence Fund', 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQfmjav140codqz0a5sjbb3BYxtE9drszrtyw&s', 6, 'Supporting engineering projects and competitions', 'Supporting engineering projects and competitions', 60000.00, 22500.00, '2026-02-25 11:15:00', 1, 'Engineering', '2026-10-05 19:15:00'),
+(1, 'Admin User', 'Học bổng vượt khó 2026', 'https://media-cdn-v2.laodong.vn/storage/newsportal/2023/12/6/1276364/Hoc-Bong-1-Min.jpg', 7, 'Hỗ trợ sinh viên có hoàn cảnh khó khăn đạt thành tích tốt.', 'Quỹ học bổng được thành lập nhằm tiếp sức cho các bạn sinh viên vượt qua nghịch cảnh để tiếp tục con đường học vấn. Mục tiêu của chúng tôi là trao 50 suất học bổng trong năm học này.', 500000000, 150000000, NOW() - INTERVAL '1 month', 120, 'Social', NOW() + INTERVAL '5 months'),
+(2, 'Trần Thị B', 'Xây dựng phòng Lab AI', 'https://cdn-i2.congthuong.vn/resize/th/stores/news_dataimages/2025/042025/05/13/thumbnail/b1620250405135112.jpg?rt=20250405135220', 8, 'Nâng cấp thiết bị nghiên cứu cho phòng thí nghiệm AI.', 'Dự án nhằm trang bị các máy chủ GPU mạnh mẽ phục vụ cho nghiên cứu Trí tuệ Nhân tạo tại Khoa CNTT. Chúng tôi mong muốn tạo điều kiện tốt nhất cho các nhóm nghiên cứu sinh viên.', 1000000000, 450000000, NOW() - INTERVAL '2 months', 85, 'Research', NOW() + INTERVAL '3 months');
 
 -- ============= FUND DONATIONS DATA =============
 INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
@@ -1430,12 +1420,12 @@ INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to
 -- Sample data (docs/sample.sql): john.doe@ = mentor L2; mật khẩu hash khác — ưu tiên test.*
 
 WITH new_users AS (
-  INSERT INTO users (email, password_hash, user_name, status, role, created_at, updated_at) VALUES
-  ('test.l1@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testlv1', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
-  ('test.alumni@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testalumni', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
-  ('test.mentor@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testmentor', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
-  ('test.admin@hcmus.edu.vn', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'uat_testadmin', 'ACTIVE', 'ADMIN', NOW(), NOW()),
-  ('test.superadmin@hcmus.edu.vn', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'uat_testsuperadmin', 'ACTIVE', 'ADMIN', NOW(), NOW())
+  INSERT INTO users (email, password_hash, status, role, created_at, updated_at) VALUES
+  ('test.l1@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
+  ('test.alumni@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
+  ('test.mentor@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'ALUMNI', NOW(), NOW()),
+  ('test.admin@hcmus.edu.vn', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'ACTIVE', 'ADMIN', NOW(), NOW()),
+  ('test.superadmin@hcmus.edu.vn', '$2a$10$XV9KfhWlRF4ypiISf3u1.u1PeEKWw1x.BpzqLaVPM4WA7D9KbcZ7m', 'ACTIVE', 'ADMIN', NOW(), NOW())
   RETURNING id, email
 ),
 profiles AS (
@@ -1553,8 +1543,8 @@ CROSS JOIN (VALUES
 WHERE u.email = 'test.mentor@hcmus.edu.vn';
 
 -- Mentee-only test account (level 1 + active mentee profile, no mentor profile)
-INSERT INTO users (email, password_hash, user_name, status, role, created_at, updated_at)
-SELECT 'test.mentee@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'uat_testmentee', 'ACTIVE', 'STUDENT', NOW(), NOW()
+INSERT INTO users (email, password_hash, status, role, created_at, updated_at)
+SELECT 'test.mentee@hcmus.edu.vn', '$2b$12$ig35cC5G.hFgdmWUzbnv5OiJRpBGrzZmTXhl5L/8Akvmr4.r3Ciwm', 'ACTIVE', 'STUDENT', NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'test.mentee@hcmus.edu.vn');
 
 INSERT INTO global_profiles (user_id, full_name, phone, bio, dob, gender, settings)
