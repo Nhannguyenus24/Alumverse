@@ -13,6 +13,8 @@ const ProfileLayout = ({
   onCoverChange,
   mentorId,
   canBook = true,
+  onUserMessage,
+  userMessageLabel = 'Nhắn tin',
   children,
   avatarSlot
 }) => {
@@ -49,9 +51,9 @@ const ProfileLayout = ({
     ],
     userView: [
       { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
-      { label: 'Nhắn tin', variant: 'contained' },
+      { label: userMessageLabel, variant: 'contained', disabled: !onUserMessage, onClick: onUserMessage },
     ],
-  }), [onNavigate, mentorId, canBook, handleBack]);
+  }), [onNavigate, mentorId, canBook, handleBack, onUserMessage, userMessageLabel]);
 
   const renderButtons = () =>
     (BUTTON_CONFIG[mode] ?? []).map(({ label, ...props }, i) => (

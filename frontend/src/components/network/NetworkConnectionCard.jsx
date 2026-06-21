@@ -36,7 +36,7 @@ const NetworkConnectionCard = ({
 
   const handleMessage = (event) => {
     stopActionPropagation(event);
-    navigate('/chat');
+    navigate(`/chat?memberId=${connection.peerMemberId}`);
   };
 
   return (
