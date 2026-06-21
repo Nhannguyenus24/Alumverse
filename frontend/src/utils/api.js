@@ -1009,7 +1009,12 @@ export const fundApi = {
 
 export const networkApi = {
 	async searchMembers(params = {}) {
-		const response = await apiClient.get('/chat/network/members', { params });
+		const response = await apiClient.get('/chat/network/members', {
+			params,
+			// Repeat array keys without brackets (organizationIds=1&organizationIds=2)
+			// so Spring binds them to List<Integer>; axios defaults to ids[]=1.
+			paramsSerializer: { indexes: null },
+		});
 		return unwrap(response);
 	},
 };
