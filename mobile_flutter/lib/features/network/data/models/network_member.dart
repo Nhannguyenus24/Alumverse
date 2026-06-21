@@ -1,14 +1,35 @@
-/// Coerce a `program`/`major` value into a display string. The backend now
-/// returns the first array element as plain text (`om.program ->> 0`), but we
-/// stay defensive: a raw JSON array (`List`) is joined with ` · `.
+import 'dart:convert';
+
+/// Coerce a `program`/`major` value into a display string. The backend may
+/// return plain text, a real JSON array, or — as seen in practice — the whole
+/// array serialised as a string (`'["Computer Science"]'`). Handle all three so
+/// we never render raw brackets/quotes.
 String? _coerce(dynamic v) {
   if (v == null) return null;
-  if (v is String) return v.isEmpty ? null : v;
-  if (v is List) {
-    final joined = v.map((e) => e.toString()).join(' · ');
-    return joined.isEmpty ? null : joined;
+  if (v is List) return _joinList(v);
+  if (v is String) {
+    final s = v.trim();
+    if (s.isEmpty) return null;
+    // A JSON-array string like ["Computer Science","Master"].
+    if (s.startsWith('[') && s.endsWith(']')) {
+      try {
+        final decoded = jsonDecode(s);
+        if (decoded is List) return _joinList(decoded);
+      } catch (_) {
+        // fall through to the raw string
+      }
+    }
+    return s;
   }
   return v.toString();
+}
+
+String? _joinList(List list) {
+  final joined = list
+      .map((e) => e.toString().trim())
+      .where((e) => e.isNotEmpty)
+      .join(' · ');
+  return joined.isEmpty ? null : joined;
 }
 
 /// A member in the organization directory, from `/api/chat/network/members`
