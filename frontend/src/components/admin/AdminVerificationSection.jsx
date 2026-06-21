@@ -1,4 +1,4 @@
-import { Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
@@ -66,23 +66,27 @@ const AdminVerificationSection = () => {
           </Stack>
         </Stack>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-          <Chart
-            type="bar"
-            title="Yêu cầu xác minh alumni theo trạng thái"
-            data={alumniStatusData}
-            dataKey="count"
-            xAxisKey="name"
-            height={260}
-          />
-          <Chart
-            type="bar"
-            title="Xác minh đồng nghiệp theo trạng thái"
-            data={peerStatusData}
-            dataKey="count"
-            xAxisKey="name"
-            height={260}
-          />
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="stretch">
+          <Box flex={1} minWidth={0}>
+            <Chart
+              type="bar"
+              title="Yêu cầu xác minh alumni theo trạng thái"
+              data={alumniStatusData}
+              dataKey="count"
+              xAxisKey="name"
+              height={260}
+            />
+          </Box>
+          <Box flex={1} minWidth={0}>
+            <Chart
+              type="bar"
+              title="Xác minh đồng nghiệp theo trạng thái"
+              data={peerStatusData}
+              dataKey="count"
+              xAxisKey="name"
+              height={260}
+            />
+          </Box>
         </Stack>
       </Stack>
     </AdminSectionPanel>

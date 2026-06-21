@@ -21,28 +21,9 @@ import {
   isComposerEnabled,
   resolveConnectionDrawerState,
 } from '../../utils/networkConnectionDrawerUi';
+import { buildProgramMajorRows } from '../../utils/academicUtils';
 
 import ChatAvatar from '../ChatAvatar';
-
-function formatAcademicValue(value) {
-  if (Array.isArray(value)) {
-    return value.filter(Boolean).join(' · ');
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        return parsed.filter(Boolean).join(' · ');
-      }
-    } catch {
-      return value;
-    }
-    return value;
-  }
-
-  return '';
-}
 
 function NetworkMessageBubble({ message, isOwn }) {
   return (
@@ -148,9 +129,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
     handleSend();
   };
 
-  
-  const programLabel = formatAcademicValue(peer?.program);
-  const majorLabel = formatAcademicValue(peer?.major);
+  const academicRows = buildProgramMajorRows(peer?.program, peer?.major);
 
   return (
     <Drawer
@@ -185,11 +164,17 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
             <Typography variant="subtitle1" fontWeight={700} noWrap>
               {peer?.fullName ?? 'Thành viên'}
             </Typography>
-            {(programLabel || majorLabel) && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                {[programLabel, majorLabel].filter(Boolean).join(' · ')}
+            {academicRows.map((row, index) => (
+              <Typography
+                key={`${row.program}-${row.major}-${index}`}
+                variant="caption"
+                color="text.secondary"
+                noWrap
+                sx={{ display: 'block' }}
+              >
+                {[row.program, row.major].filter(Boolean).join(' · ')}
               </Typography>
-            )}
+            ))}
           </Box>
         </Stack>
         <IconButton size="small" onClick={onClose} aria-label="Đóng">

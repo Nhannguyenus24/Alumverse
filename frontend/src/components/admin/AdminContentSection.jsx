@@ -1,4 +1,4 @@
-import { Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 import RecordVoiceOverOutlinedIcon from '@mui/icons-material/RecordVoiceOverOutlined';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
@@ -69,27 +69,31 @@ const AdminContentSection = () => {
           </Stack>
         </Stack>
 
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
-          <Chart
-            type="bar"
-            title="Phân bổ nội dung theo loại"
-            data={contentTypeData}
-            dataKey="count"
-            xAxisKey="name"
-            height={260}
-          />
-          <Stack flex={1} spacing={2} justifyContent="center">
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="stretch">
+          <Box flex={2} minWidth={0}>
+            <Chart
+              type="bar"
+              title="Phân bổ nội dung theo loại"
+              data={contentTypeData}
+              dataKey="count"
+              xAxisKey="name"
+              height={260}
+            />
+          </Box>
+          <Stack flex={1} minWidth={0} spacing={2} sx={{ alignSelf: 'stretch' }}>
             <AdminDashboardMetricTile
               label="Nội dung mới tuần này"
               value={Number(stats.newContentThisWeek).toLocaleString()}
               caption="Tất cả các loại"
               icon={<ArticleOutlinedIcon />}
+              sx={{ flex: '1 1 0', minHeight: 0 }}
             />
             <AdminDashboardMetricTile
               label="Nội dung mới tháng này"
               value={Number(stats.newContentThisMonth).toLocaleString()}
               caption="Tất cả các loại"
               icon={<CalendarMonthOutlinedIcon />}
+              sx={{ flex: '1 1 0', minHeight: 0 }}
             />
           </Stack>
         </Stack>

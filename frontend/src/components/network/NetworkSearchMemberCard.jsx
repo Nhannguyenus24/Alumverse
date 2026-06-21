@@ -4,6 +4,7 @@ import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import IconButtonMenu from '../IconButtonMenu';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { networkCardClickableSx } from './networkCardUtils';
+import { buildProgramMajorRows } from '../../utils/academicUtils';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
@@ -25,7 +26,7 @@ const NetworkSearchMemberCard = ({
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
-  const academicRows = buildAcademicRows(program, major);
+  const academicRows = buildProgramMajorRows(program, major);
 
   return (
     <Card
@@ -148,38 +149,5 @@ const AcademicChip = ({ label }) => (
     }}
   />
 );
-
-function buildAcademicRows(program, major) {
-  const programs = parseAcademicItems(program, '—');
-  const majors = parseAcademicItems(major, 'N/A');
-  const rowCount = Math.max(programs.length, majors.length, 1);
-
-  return Array.from({ length: rowCount }, (_, index) => ({
-    program: programs[index] ?? null,
-    major: majors[index] ?? null,
-  })).filter((row) => row.program || row.major);
-}
-
-function parseAcademicItems(value, fallback) {
-  if (Array.isArray(value)) {
-    const items = value.filter(Boolean);
-    return items.length > 0 ? items : [fallback];
-  }
-
-  if (typeof value === 'string' && value.trim()) {
-    try {
-      const parsed = JSON.parse(value);
-      if (Array.isArray(parsed)) {
-        const items = parsed.filter(Boolean);
-        return items.length > 0 ? items : [fallback];
-      }
-    } catch {
-      return [value];
-    }
-    return [value];
-  }
-
-  return [fallback];
-}
 
 export default NetworkSearchMemberCard;

@@ -42,6 +42,7 @@ const AdminDashboardPage = () => {
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
   const { setBreadcrumbs } = useOutletContext();
+  const displayName = user?.fullName || user?.name || user?.studentId || 'ADMIN';
 
   const [refreshInterval, setRefreshInterval] = useState('0');
   const [sectionRefreshKey, setSectionRefreshKey] = useState(0);
@@ -76,6 +77,11 @@ const AdminDashboardPage = () => {
     totalOrgs: organizations?.length ?? 0,
   }), [timeline, metrics, aggregates, organizations]);
 
+  const donationsFormatted = useMemo(() => {
+    const val = metrics?.donationsLast30Days ?? 0;
+    return Number(val).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+  }, [metrics?.donationsLast30Days]);
+
   if (loading) {
     return (
       <Stack spacing={3}>
@@ -92,11 +98,6 @@ const AdminDashboardPage = () => {
     );
   }
 
-  const donationsFormatted = useMemo(() => {
-    const val = metrics?.donationsLast30Days ?? 0;
-    return Number(val).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
-  }, [metrics?.donationsLast30Days]);
-
   return (
     <Stack spacing={4}>
       {/* Welcome Header + Refresh Controls */}
@@ -108,7 +109,7 @@ const AdminDashboardPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Chào mừng trở lại, {user?.fullName || user?.studentId}!
+            Chào mừng trở lại, {displayName}!
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
             Đây là tổng quan về hoạt động của hệ thống AlumVerse ngày hôm nay.
