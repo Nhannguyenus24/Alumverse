@@ -34,4 +34,5 @@ class RouteNames {
   // '/my-tickets/:code' — ticket detail (code is the ticket code).
   static String ticketDetail(String code) => '/my-tickets/$code';
   static const String savedArticles = '/saved-articles';
+  static const String alumniVerification = '/alumni-verification';
 }
