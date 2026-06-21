@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSnackbar } from "notistack";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 
 import {
@@ -14,11 +15,13 @@ import Page from "../../components/Page";
 import Input from "../../components/Input";
 import Iconify from "../../components/Iconify";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useAuth } from "../../hooks/useAuth";
 import { useOrganization } from "../../hooks/useOrganization";
 import { fileToBase64 } from "../../utils/imageUtils";
+import { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from "../../utils/axios";
 import {
   getTrustedVerifiers, joinOrganization,
-  requestPeerVerification, createVerificationRequest,
+  requestPeerVerification, createVerificationRequest, userSettingsApi,
 } from "../../utils/api";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
@@ -130,6 +133,8 @@ const VerificationOptionCard = ({ icon, title, description, selected, onClick })
 const OrganizationRegistrationPage = () => {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+  const { verificationLevel } = useAuth();
   const { organization, loading: organizationLoading } = useOrganization();
   const [searchParams] = useSearchParams();
 
@@ -152,6 +157,18 @@ const OrganizationRegistrationPage = () => {
   const queryOrgId = searchParams.get("orgId");
   const parsedQueryOrgId = queryOrgId ? parseInt(queryOrgId, 10) : null;
   const organizationId = organization?.id ?? (Number.isInteger(parsedQueryOrgId) ? parsedQueryOrgId : null);
+
+  const myOrganizationMemberQuery = useQuery({
+    queryKey: ["user", "me", "organization-member", organizationId],
+    queryFn: () => userSettingsApi.getOrganizationMember(organizationId),
+    enabled: Boolean(organizationId),
+    staleTime: 0,
+    retry: false,
+  });
+
+  const memberVerificationLevel = Number(myOrganizationMemberQuery.data?.verificationLevel ?? 0);
+  const effectiveVerificationLevel = Math.max(Number(verificationLevel ?? 0), memberVerificationLevel);
+  const hasSubmittedVerification = effectiveVerificationLevel >= 1;
 
   const programOptions = useMemo(() => parseOrganizationOptions(organization?.programs), [organization?.programs]);
   const majorOptions = useMemo(() => parseOrganizationOptions(organization?.majors), [organization?.majors]);
@@ -260,7 +277,18 @@ const OrganizationRegistrationPage = () => {
           } catch (proofError) {
             console.error("Failed to submit verification request", proofError);
             enqueueSnackbar("Gửi yêu cầu xác thực minh chứng thất bại.", { variant: "error" });
+            throw proofError;
           }
+        }
+
+        await queryClient.invalidateQueries({
+          queryKey: ["user", "me", "organization-member", data.organizationId],
+        });
+        try {
+          const refreshedSession = await refreshSessionAccessToken();
+          syncAuthStoreFromAccessToken(refreshedSession);
+        } catch (refreshError) {
+          console.warn("Could not refresh auth session after verification submit", refreshError);
         }
 
         navigate("/");
@@ -283,6 +311,61 @@ const OrganizationRegistrationPage = () => {
           <Typography variant="body2" color="textSecondary">Please provide a valid organization to register.</Typography>
           <Button variant="contained" onClick={() => navigate("/", { replace: true })}>Back to Login</Button>
         </Box>
+      </Page>
+    );
+  }
+
+  if (myOrganizationMemberQuery.isLoading) {
+    return (
+      <Page title="Organization Registration" meta={<meta name="description" content="Register to organization" />}>
+        <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
+          <CircularProgress size={28} />
+          <Typography variant="body2" color="textSecondary">Đang kiểm tra trạng thái xác minh...</Typography>
+        </Box>
+      </Page>
+    );
+  }
+
+  if (hasSubmittedVerification) {
+    const isFullyVerified = effectiveVerificationLevel >= 2;
+    return (
+      <Page title="Organization Registration" meta={<meta name="description" content="Register to organization" />}>
+        <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 8 } }}>
+          <Box
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+              bgcolor: "background.paper",
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <Avatar sx={{ width: 64, height: 64, mx: "auto", bgcolor: isFullyVerified ? "success.main" : "primary.main" }}>
+              <Iconify icon={isFullyVerified ? "eva:checkmark-circle-2-fill" : "eva:clock-outline"} width={32} height={32} />
+            </Avatar>
+            <Box>
+              <Typography variant="h4" color="primary.main" fontWeight={800}>
+                {isFullyVerified ? "Tài khoản đã được xác thực" : "Yêu cầu xác minh đã được gửi"}
+              </Typography>
+              <Typography variant="body2" color="textSecondary" sx={{ mt: 1, lineHeight: 1.7 }}>
+                {isFullyVerified
+                  ? "Bạn đã hoàn tất xác minh học vấn cho tổ chức này, không cần gửi thêm yêu cầu."
+                  : "Hồ sơ của bạn đang được xử lý. Bạn không cần gửi lại biểu mẫu xác minh trong thời gian chờ duyệt."}
+              </Typography>
+            </Box>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ pt: 1 }}>
+              <Button variant="outlined" fullWidth onClick={() => navigate("/", { replace: true })}>
+                Về trang chủ
+              </Button>
+              <Button variant="contained" fullWidth onClick={() => navigate("/profile", { replace: true })}>
+                Xem hồ sơ
+              </Button>
+            </Stack>
+          </Box>
+        </Container>
       </Page>
     );
   }

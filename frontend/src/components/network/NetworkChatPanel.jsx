@@ -17,6 +17,7 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import LockOpenOutlinedIcon from '@mui/icons-material/LockOpen';
 import SendIcon from '@mui/icons-material/Send';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import Scrollbar from '../Scrollbar';
 import ChatEmojiPickerButton from '../ChatEmojiPickerButton';
@@ -35,13 +36,19 @@ import { buildGroupBlockedMembersBannerMessage } from '../../utils/formatBlocked
 function formatTime(isoString) {
   if (!isoString) return '';
   const date = new Date(isoString);
-  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 
 const SCROLL_TOP_THRESHOLD = 8;
 
-const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
+const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
@@ -201,9 +208,11 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        flex: 1,
+        flex: { xs: '1 1 auto', md: 1 },
         minWidth: 0,
         minHeight: 0,
+        width: '100%',
+        height: '100%',
         overflow: 'hidden',
         bgcolor: 'background.default',
       }}
@@ -215,25 +224,37 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
           alignItems: 'center',
           justifyContent: 'space-between',
           px: 2,
-          py: 1.5,
+          py: 0,
+          minHeight: 72,
+          flexShrink: 0,
           borderBottom: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          {onBack ? (
+            <IconButton
+              size="small"
+              aria-label="Quay lại danh sách chat"
+              onClick={onBack}
+              sx={{ flexShrink: 0 }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+          ) : null}
           <ChatAvatar
             avatarUrl={activeChat?.avatarUrl}
             name={activeChat?.name}
             size={40}
             variant={activeChat?.type === 'GROUP' ? 'group' : 'user'}
           />
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle1" fontWeight={700} noWrap>
+          <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+            <Typography variant="subtitle1" fontWeight={700} lineHeight={1.2} noWrap>
               {activeChat?.name ?? 'Network Chat'}
             </Typography>
             {activeChat?.type === 'GROUP' && (
-              <Typography variant="caption" color="text.secondary" noWrap>
+              <Typography variant="caption" color="text.secondary" lineHeight={1.15} noWrap>
                 Nhóm chat
               </Typography>
             )}
@@ -408,18 +429,27 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
                 sx={{
                   display: 'flex',
                   justifyContent: isOwn ? 'flex-end' : 'flex-start',
-                  alignItems: 'flex-end',
+                  alignItems: 'flex-start',
                   gap: 1,
                 }}
               >
                 {!isOwn && (
-                  <ChatAvatar
-                    avatarUrl={msg.senderAvatarUrl}
-                    name={msg.senderFullName ?? `User ${msg.senderMemberId}`}
-                    size={32}
-                  />
+                  <Box sx={{ mt: msg.senderFullName ? 2.6 : 0 }}>
+                    <ChatAvatar
+                      avatarUrl={msg.senderAvatarUrl}
+                      name={msg.senderFullName ?? `User ${msg.senderMemberId}`}
+                      size={32}
+                    />
+                  </Box>
                 )}
-                <Box sx={{ maxWidth: { xs: '85%', sm: '72%' } }}>
+                <Box
+                  sx={{
+                    maxWidth: { xs: '85%', sm: '72%' },
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: isOwn ? 'flex-end' : 'flex-start',
+                  }}
+                >
                   {!isOwn && (
                     <Typography variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
                       {msg.senderFullName ?? `User ${msg.senderMemberId}`}
@@ -427,21 +457,40 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
                   )}
                   <Box
                     sx={{
-                      px: 1.25,
-                      py: 1,
-                      borderRadius: 2,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      width: 'fit-content',
+                      maxWidth: '100%',
+                      px: 1.5,
+                      py: 1.25,
+                      borderRadius: 999,
                       bgcolor: isOwn ? 'primary.main' : 'grey.200',
                       color: isOwn ? 'primary.contrastText' : 'text.primary',
                     }}
                   >
-                    <Typography variant="body2" sx={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        lineHeight: 1.35,
+                        wordBreak: 'break-word',
+                        whiteSpace: 'pre-wrap',
+                      }}
+                    >
                       {msg.content}
                     </Typography>
                   </Box>
                   <Typography
                     variant="caption"
                     color="text.disabled"
-                    sx={{ display: 'block', mt: 0.25, textAlign: isOwn ? 'right' : 'left', mx: 0.5 }}
+                    sx={{
+                      display: 'block',
+                      mt: 0.25,
+                      textAlign: isOwn ? 'right' : 'left',
+                      mx: 0.5,
+                      fontSize: '0.68rem',
+                      lineHeight: 1.25,
+                      whiteSpace: 'nowrap',
+                    }}
                   >
                     {formatTime(msg.createdAt)}
                   </Typography>
@@ -456,12 +505,13 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
         sx={{
           flexShrink: 0,
           px: 2,
-          py: 1.5,
+          pt: 1.5,
+          pb: { xs: 'max(12px, env(safe-area-inset-bottom))', md: 1.5 },
           borderTop: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
           display: 'flex',
-          alignItems: 'flex-end',
+          alignItems: 'center',
           gap: 1,
         }}
       >
@@ -494,6 +544,17 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
             disabled={isInputDisabled}
             variant="outlined"
             size="small"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 999,
+                minHeight: 48,
+                alignItems: 'center',
+                pr: 1,
+              },
+              '& .MuiOutlinedInput-input': {
+                py: 1,
+              },
+            }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -512,6 +573,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
           disabled={isInputDisabled || !draft.trim()}
           onClick={handleSend}
           sx={{
+            width: 40,
+            height: 40,
+            p: 0,
+            alignSelf: 'center',
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
             '&:hover': { bgcolor: 'primary.dark' },
@@ -521,7 +586,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup }) => {
             },
           }}
         >
-          <SendIcon />
+          <SendIcon fontSize="small" />
         </IconButton>
       </Box>
 
