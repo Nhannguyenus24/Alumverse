@@ -19,11 +19,6 @@ import SchoolIcon from '@mui/icons-material/School';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
 import VerifiedIcon from '@mui/icons-material/Verified';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import ArticleIcon from '@mui/icons-material/Article';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -48,15 +43,13 @@ import { useMentorPublicProfile } from '../../hooks/mentorship/useMentorPublicPr
 import { useMentorPublicFeedbacks } from '../../hooks/mentorship/useMentorPublicFeedbacks';
 import { useMentorExpertise } from '../../hooks/mentorship/useMentorExpertise';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
-import { usePublicProfile } from '../../hooks/profile/usePublicProfile';
-import { useUserAlumniPosts } from '../../hooks/articles/useUserAlumniPosts';
-import { useUserDonations } from '../../hooks/fundraising/useUserDonations';
 
 import UserHighlights from '../../components/profile/UserHighlights';
 import PublicUserProfile from './PublicUserProfile';
 import StatsBanner from '../../components/StatsBanner';
-import AcademicInfoRowCard from '../../components/profile/AcademicInfoRowCard';
+import AcademicInfoSection from '../../components/profile/AcademicInfoSection';
 import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
+import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
 import ExtendedProfileInfoCard from '../../components/profile/ExtendedProfileInfoCard'
 
 import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
@@ -127,18 +120,6 @@ const ProfileItem = ({ label, value, icon: Icon }) => (
     </Box>
   </Box>
 );
-
-const formatAcademicValue = (raw) => {
-  if (raw == null) return null;
-  try {
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    if (Array.isArray(parsed)) return parsed.join(', ');
-  } catch {
-    // fallthrough
-  }
-  if (Array.isArray(raw)) return raw.join(', ');
-  return String(raw);
-};
 
 const SECTION_ICONS = {
   educations: SchoolIcon,
@@ -364,28 +345,11 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const renderPersonalSection = () => {
     // Cấu hình mảng dữ liệu cho Thông tin cơ bản
     const personalFields = [
-      { icon: Person, label: 'Họ và tên', value: profile?.fullName },
-      { icon: Email, label: 'Email', value: profile?.email },
-      { icon: Work, label: 'Công việc hiện tại', value: currentJobTitle },
-      { icon: Business, label: 'Công ty', value: currentCompany },
+      { icon: PersonIcon, label: 'Họ và tên', value: profile?.fullName },
+      { icon: EmailIcon, label: 'Email', value: profile?.email },
+      { icon: WorkIcon, label: 'Công việc hiện tại', value: currentJobTitle },
+      { icon: BusinessIcon, label: 'Công ty', value: currentCompany },
     ];
-
-    // Cấu hình mảng dữ liệu cho Thông tin học thuật
-    const academicFields = [
-      { label: 'Khoa', value: formatAcademicValue(orgMember?.faculty), icon: AccountBalanceIcon },
-      { label: 'Chuyên ngành', value: formatAcademicValue(orgMember?.major), icon: AccountTreeIcon },
-      { label: 'Chương trình', value: formatAcademicValue(orgMember?.program), icon: MenuBookIcon },
-      { label: 'Khoá', value: formatAcademicValue(orgMember?.startedYear), icon: CalendarMonthIcon },
-      { label: 'Năm tốt nghiệp', value: formatAcademicValue(orgMember?.graduatedYear), icon: EventAvailableIcon },
-      { label: 'Trạng thái tốt nghiệp', value: formatAcademicValue(orgMember?.graduationStatus), icon: VerifiedIcon },
-    ];
-
-    // Component tiêu đề dùng chung để giảm lặp code UI
-    const SectionTitle = ({ icon:  children }) => (
-      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
-        <Icon /> {children}
-      </Typography>
-    );
 
     const hasBio = !!bio?.trim();
 
@@ -394,7 +358,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         <Grid container spacing={4}>
           {/* Giới thiệu */}
           <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
-            <SectionTitle icon={PersonIcon}>Giới thiệu</SectionTitle>
+            <ProfileSectionTitle icon={PersonIcon}>Giới thiệu</ProfileSectionTitle>
             <Typography 
               color={hasBio ? 'text.secondary' : 'text.disabled'} 
               sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasBio ? 'normal' : 'italic' }}
@@ -406,7 +370,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
           {/* Thông tin cơ bản */}
           <Grid size={{ xs: 12, lg: 4 }}>
             <Box sx={{ height: '100%' }}>
-              <SectionTitle icon={BusinessIcon}>Thông tin cơ bản</SectionTitle>
+              <ProfileSectionTitle icon={BusinessIcon}>Thông tin cơ bản</ProfileSectionTitle>
               <Box>
                 {personalFields.map((field, index) => (
                   <PersonalInfoRow key={index} icon={field.icon} label={field.label} value={field.value} />
@@ -417,14 +381,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
           {/* Thông tin học thuật */}
           <Grid size={{ xs: 12, lg: 8 }}>
-            <SectionTitle icon={SchoolIcon}>Thông tin học thuật</SectionTitle>
-            <Grid container spacing={3} sx={{ py: 1.75 }}>
-              {academicFields.map((field, index) => (
-                <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <AcademicInfoRowCard icon={field.icon} label={field.label} value={field.value} />
-                </Grid>
-              ))}
-            </Grid>
+            <AcademicInfoSection academicProfile={orgMember} />
           </Grid>
         </Grid>
       </Box>

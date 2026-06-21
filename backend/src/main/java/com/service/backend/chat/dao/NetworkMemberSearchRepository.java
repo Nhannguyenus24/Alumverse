@@ -45,8 +45,8 @@ public interface NetworkMemberSearchRepository
     @Query("""
             SELECT om.user_id AS user_id,
                    gp.full_name AS full_name,
-                   om.program ->> 0 AS program,
-                   om.major ->> 0 AS major,
+                   CAST(om.program AS text) AS program,
+                   CAST(om.major AS text) AS major,
                    u.avatar_url AS avatar_url
             """ + SEARCH_FROM_JOIN + SEARCH_WHERE + """
             ORDER BY gp.full_name ASC, om.id ASC

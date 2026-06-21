@@ -1,0 +1,71 @@
+export const ACADEMIC_EMPTY_LABEL = 'Chưa cập nhật';
+
+export function parseAcademicList(value) {
+  if (value == null) return [];
+
+  if (Array.isArray(value)) {
+    return normalizeAcademicItems(value);
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return normalizeAcademicItems(parsed);
+    } catch {
+      // Keep plain text values as a single item.
+    }
+
+    return normalizeAcademicItems([trimmed]);
+  }
+
+  return normalizeAcademicItems([value]);
+}
+
+export function buildAcademicRecords(source = {}) {
+  const lists = {
+    faculty: parseAcademicList(source.faculty),
+    major: parseAcademicList(source.major),
+    program: parseAcademicList(source.program),
+    startedYear: parseAcademicList(source.startedYear),
+    graduatedYear: parseAcademicList(source.graduatedYear),
+    graduationStatus: parseAcademicList(source.graduationStatus),
+  };
+
+  const recordCount = Math.max(
+    1,
+    ...Object.values(lists).map((items) => items.length),
+  );
+
+  return Array.from({ length: recordCount }, (_, index) => ({
+    faculty: lists.faculty[index] ?? null,
+    major: lists.major[index] ?? null,
+    program: lists.program[index] ?? null,
+    startedYear: lists.startedYear[index] ?? null,
+    graduatedYear: lists.graduatedYear[index] ?? null,
+    graduationStatus: lists.graduationStatus[index] ?? null,
+  }));
+}
+
+export function buildProgramMajorRows(program, major) {
+  const programs = parseAcademicList(program);
+  const majors = parseAcademicList(major);
+  const rowCount = Math.max(programs.length, majors.length, 1);
+
+  return Array.from({ length: rowCount }, (_, index) => ({
+    program: programs[index] ?? null,
+    major: majors[index] ?? null,
+  })).filter((row) => row.program || row.major);
+}
+
+function normalizeAcademicItems(items) {
+  return items
+    .map((item) => {
+      if (item == null) return null;
+      const text = String(item).trim();
+      return text && text !== '0' ? text : null;
+    })
+    .filter(Boolean);
+}
