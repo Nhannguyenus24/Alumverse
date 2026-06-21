@@ -50,6 +50,7 @@ class HomePage extends ConsumerWidget {
           ],
         ),
         actions: [
+          _OrgSwitchButton(currentName: org?.name),
           const NotificationBell(),
           _AccountMenuButton(
             userLabel: user?.fullName ?? user?.email ?? 'Tài khoản',
@@ -164,6 +165,91 @@ class _AccountMenuButton extends ConsumerWidget {
             ? const Icon(Icons.person, size: 18, color: AppColors.primary)
             : null,
       ),
+    );
+  }
+}
+
+/// Organisation switcher in the header. Opens an anchored dropdown of available
+/// organisations and switches at runtime (no re-login) via the org notifier,
+/// then refreshes org-scoped feeds.
+class _OrgSwitchButton extends ConsumerWidget {
+  const _OrgSwitchButton({this.currentName});
+  final String? currentName;
+
+  Future<void> _switch(WidgetRef ref, String slug) async {
+    await ref.read(organizationStateProvider.notifier).fetchOrganization(slug);
+    // Reload everything scoped to the organization.
+    ref.invalidate(publishedNewsProvider);
+    ref.invalidate(upcomingEventsProvider);
+    ref.invalidate(featuredMembersProvider);
+  }
+
+  void _open(BuildContext context, WidgetRef ref) {
+    showAnchoredDropdown<void>(
+      anchorContext: context,
+      width: 260,
+      builder: (_, close) => Consumer(
+        builder: (ctx, r, __) {
+          final async = r.watch(organizationListProvider);
+          final current = r.watch(organizationStateProvider).valueOrNull;
+          return async.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                  child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2))),
+            ),
+            error: (_, __) => const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('Không tải được danh sách tổ chức'),
+            ),
+            data: (orgs) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
+                  child: Text('Chọn tổ chức',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+                const Divider(height: 1),
+                for (final o in orgs)
+                  ListTile(
+                    dense: true,
+                    leading: Icon(
+                      o.id == current?.id
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: o.id == current?.id
+                          ? AppColors.primary
+                          : AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    title: Text(o.name,
+                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    onTap: o.id == current?.id
+                        ? null
+                        : () {
+                            close();
+                            _switch(ref, o.slug);
+                          },
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return IconButton(
+      tooltip: currentName != null ? 'Tổ chức: $currentName' : 'Đổi tổ chức',
+      onPressed: () => _open(context, ref),
+      icon: const Icon(Icons.apartment_rounded),
     );
   }
 }

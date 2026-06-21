@@ -26,6 +26,7 @@ import '../../features/event/presentation/pages/my_tickets_page.dart';
 import '../../features/event/presentation/pages/ticket_detail_page.dart';
 import '../../features/event/data/models/event_ticket.dart';
 import '../../features/organization/presentation/pages/organization_introduction_page.dart';
+import '../../features/organization/presentation/pages/alumni_verification_page.dart';
 import '../../features/user/presentation/pages/my_profile_page.dart';
 import '../../features/user/presentation/pages/my_profile_edit_page.dart';
 import '../../features/user/presentation/pages/settings_page.dart';
@@ -277,6 +278,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.notifications,
         builder: (_, __) => const NotificationsPage(),
+      ),
+      GoRoute(
+        path: RouteNames.alumniVerification,
+        builder: (_, __) => const AlumniVerificationPage(),
       ),
       GoRoute(
         path: RouteNames.savedArticles,

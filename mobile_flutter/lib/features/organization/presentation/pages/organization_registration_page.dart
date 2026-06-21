@@ -38,12 +38,14 @@ class _OrganizationRegistrationPageState
   final _programCtl = TextEditingController(); // free text fallback
   final _majorCtl = TextEditingController();
 
-  int? _selectedVerifierUserId;
+  // Multiple trusted verifiers can be selected; the request is sent to each.
+  final Set<int> _selectedVerifierIds = {};
   XFile? _proofFile;
   bool _submitting = false;
 
-  bool get _isAllOptional => _selectedVerifierUserId != null;
-  bool get _isAcademicOptional => _proofFile != null || _selectedVerifierUserId != null;
+  bool get _hasVerifier => _selectedVerifierIds.isNotEmpty;
+  bool get _isAllOptional => _hasVerifier;
+  bool get _isAcademicOptional => _proofFile != null || _hasVerifier;
 
   @override
   void dispose() {
@@ -74,40 +76,21 @@ class _OrganizationRegistrationPageState
     setState(() => _proofFile = file);
   }
 
-  Future<void> _confirmVerifier(TrustedVerifier verifier) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Xác nhận người xác thực'),
-        content: Text(
-          'Bạn có chắc muốn chọn ${verifier.displayName} làm người xác thực? '
-          'Sau khi xác nhận, yêu cầu đăng ký của bạn sẽ được gửi đi ngay.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy bỏ'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Xác nhận & Gửi'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      setState(() => _selectedVerifierUserId = verifier.userId);
-      await _submit(verifierUserId: verifier.userId);
-    }
+  /// Toggle a verifier in/out of the selection (multi-select).
+  void _toggleVerifier(TrustedVerifier verifier) {
+    setState(() {
+      if (_selectedVerifierIds.contains(verifier.userId)) {
+        _selectedVerifierIds.remove(verifier.userId);
+      } else {
+        _selectedVerifierIds.add(verifier.userId);
+      }
+    });
   }
 
-  Future<void> _submit({int? verifierUserId}) async {
+  Future<void> _submit() async {
     // When a verifier is chosen the academic fields are optional, so skip
     // validation; otherwise require the form to pass.
-    final verifierId = verifierUserId ?? _selectedVerifierUserId;
-    if (verifierId == null &&
-        !_isAllOptional &&
-        !_formKey.currentState!.validate()) {
+    if (!_isAllOptional && !_formKey.currentState!.validate()) {
       return;
     }
 
@@ -118,7 +101,7 @@ class _OrganizationRegistrationPageState
 
     // The program/major DropdownMenus aren't form fields, so enforce their
     // "required" rule here when the academic info isn't optional.
-    if (verifierId == null && !_isAcademicOptional) {
+    if (!_isAcademicOptional) {
       if (programOptions.isNotEmpty && _selectedProgram == null) {
         AppToast.info(context, 'Vui lòng chọn hệ đào tạo.');
         return;
@@ -150,20 +133,26 @@ class _OrganizationRegistrationPageState
             graduatedYear: gradYear != null ? [gradYear] : null,
           );
 
-      // Optional: ask the chosen verifier to vouch.
-      if (verifierId != null) {
-        try {
-          await ref.read(organizationRepositoryProvider).requestPeerVerification(
-                organizationId: orgId,
-                verifierUserId: verifierId,
-              );
-          if (mounted) {
-            AppToast.success(context, 'Yêu cầu xác thực đồng nghiệp đã được gửi.');
+      // Optional: ask each chosen verifier to vouch (one request per verifier).
+      if (_selectedVerifierIds.isNotEmpty) {
+        final repo = ref.read(organizationRepositoryProvider);
+        var failed = 0;
+        for (final verifierId in _selectedVerifierIds) {
+          try {
+            await repo.requestPeerVerification(
+              organizationId: orgId,
+              verifierUserId: verifierId,
+            );
+          } catch (_) {
+            failed++;
           }
-        } catch (_) {
-          if (mounted) {
+        }
+        if (mounted) {
+          if (failed == 0) {
+            AppToast.success(context, 'Đã gửi yêu cầu xác thực tới người bạn chọn.');
+          } else {
             AppToast.error(context,
-                'Đăng ký thành công, nhưng gửi yêu cầu xác thực thất bại.');
+                'Một số yêu cầu xác thực gửi không thành công ($failed).');
           }
         }
       }
@@ -209,7 +198,7 @@ class _OrganizationRegistrationPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Xác thực tài khoản'),
+        title: const Text('Xác minh học vấn'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -223,7 +212,7 @@ class _OrganizationRegistrationPageState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'XÁC THỰC TÀI KHOẢN',
+                  'XÁC MINH HỌC VẤN',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
@@ -231,8 +220,8 @@ class _OrganizationRegistrationPageState
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Vui lòng cung cấp thông tin học thuật của bạn để xác thực '
-                  'tài khoản và tham gia tổ chức.',
+                  'Vui lòng cung cấp thông tin học thuật của bạn để xác minh '
+                  'học vấn và tham gia tổ chức.',
                   style: TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 16),
@@ -434,8 +423,8 @@ class _OrganizationRegistrationPageState
                 // --- Trusted verifiers ---
                 const _SectionLabel('Người xác thực tin cậy', required: false),
                 const Text(
-                  'Chọn một người bạn quen biết trong tổ chức để xác thực danh '
-                  'tính, giúp yêu cầu được phê duyệt nhanh hơn.',
+                  'Chọn một hoặc nhiều người bạn quen biết trong tổ chức để xác '
+                  'thực danh tính, giúp yêu cầu được phê duyệt nhanh hơn.',
                   style: TextStyle(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
@@ -443,10 +432,8 @@ class _OrganizationRegistrationPageState
                 if (org != null)
                   _VerifierList(
                     organizationId: org.id,
-                    selectedUserId: _selectedVerifierUserId,
-                    onSelectNone: () =>
-                        setState(() => _selectedVerifierUserId = null),
-                    onSelectVerifier: _confirmVerifier,
+                    selectedUserIds: _selectedVerifierIds,
+                    onToggleVerifier: _toggleVerifier,
                   ),
                 const SizedBox(height: 28),
 
@@ -480,7 +467,7 @@ class _OrganizationRegistrationPageState
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text('Đăng ký tham gia'),
+                            : const Text('Xác minh học vấn'),
                       ),
                     ),
                   ],
@@ -546,15 +533,13 @@ class _InfoBanner extends StatelessWidget {
 class _VerifierList extends ConsumerWidget {
   const _VerifierList({
     required this.organizationId,
-    required this.selectedUserId,
-    required this.onSelectNone,
-    required this.onSelectVerifier,
+    required this.selectedUserIds,
+    required this.onToggleVerifier,
   });
 
   final int organizationId;
-  final int? selectedUserId;
-  final VoidCallback onSelectNone;
-  final void Function(TrustedVerifier) onSelectVerifier;
+  final Set<int> selectedUserIds;
+  final void Function(TrustedVerifier) onToggleVerifier;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -570,32 +555,24 @@ class _VerifierList extends ConsumerWidget {
         style: TextStyle(color: AppColors.textSecondary),
       ),
       data: (verifiers) {
+        if (verifiers.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              'Hiện chưa có người xác thực khả dụng cho tổ chức này.',
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            ),
+          );
+        }
         return Column(
           children: [
-            _VerifierTile(
-              title: 'Không chọn người xác thực',
-              subtitle: 'Quản trị viên sẽ trực tiếp phê duyệt yêu cầu của bạn.',
-              selected: selectedUserId == null,
-              onTap: onSelectNone,
-            ),
-            if (verifiers.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Text(
-                  'Hiện chưa có người xác thực khả dụng cho tổ chức này.',
-                  style: TextStyle(
-                      fontSize: 12, color: AppColors.textSecondary),
-                ),
-              )
-            else
-              ...verifiers.map(
-                (v) => _VerifierTile(
-                  title: v.displayName,
-                  subtitle: [...v.program, ...v.major].join(' · '),
-                  avatarUrl: resolveImageUrl(v.avatarUrl),
-                  selected: selectedUserId == v.userId,
-                  onTap: () => onSelectVerifier(v),
-                ),
+            for (final v in verifiers)
+              _VerifierTile(
+                title: v.displayName,
+                subtitle: [...v.program, ...v.major].join(' · '),
+                avatarUrl: resolveImageUrl(v.avatarUrl),
+                selected: selectedUserIds.contains(v.userId),
+                onTap: () => onToggleVerifier(v),
               ),
           ],
         );

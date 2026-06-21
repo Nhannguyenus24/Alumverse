@@ -1,8 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
@@ -200,18 +202,49 @@ class _FeedbackTab extends ConsumerWidget {
 
     return async.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Không tải được đánh giá'),
-            TextButton(
-              onPressed: () => ref.invalidate(mentorFeedbacksProvider(memberId)),
-              child: const Text('Thử lại'),
+      error: (e, __) {
+        // 403 = the user isn't org-verified for mentorship yet — guide them to
+        // verify instead of showing a generic load failure.
+        if (_statusOf(e) == 403) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_outline,
+                      size: 40, color: AppColors.textSecondary),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Bạn cần xác minh học vấn để xem đánh giá.',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () =>
+                        context.push(RouteNames.organizationRegistration),
+                    icon: const Icon(Icons.verified_user_outlined, size: 18),
+                    label: const Text('Xác minh học vấn'),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
+          );
+        }
+        return Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Không tải được đánh giá'),
+              TextButton(
+                onPressed: () =>
+                    ref.invalidate(mentorFeedbacksProvider(memberId)),
+                child: const Text('Thử lại'),
+              ),
+            ],
+          ),
+        );
+      },
       data: (feedbacks) {
         if (feedbacks.isEmpty) {
           return const Center(
@@ -253,4 +286,15 @@ class _SectionLabel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Extract an HTTP status from an error (ApiException via DioException).
+int? _statusOf(Object e) {
+  if (e is ApiException) return e.statusCode;
+  if (e is DioException) {
+    final inner = e.error;
+    if (inner is ApiException) return inner.statusCode;
+    return e.response?.statusCode;
+  }
+  return null;
 }

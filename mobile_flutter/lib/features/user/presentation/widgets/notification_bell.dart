@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/notification_link.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/anchored_dropdown.dart';
 import '../../data/models/notification_item.dart';
@@ -115,8 +116,11 @@ class _NotificationDropdown extends ConsumerWidget {
         if (uri != null) {
           launchUrl(uri, mode: LaunchMode.externalApplication);
         }
-      } else if (context.mounted) {
-        context.push(link);
+      } else {
+        // Backend links are web/org-scoped (e.g. /cs-hcmus/my-tickets?ticket=X);
+        // map them to the matching mobile route.
+        final route = normalizeNotificationLink(link);
+        if (route != null && context.mounted) context.push(route);
       }
     }
   }

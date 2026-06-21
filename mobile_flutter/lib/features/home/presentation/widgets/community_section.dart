@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
 import '../../../network/data/models/network_member.dart';
@@ -51,15 +53,18 @@ class _MemberCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatar = resolveImageUrl(member.avatarUrl);
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => context.push('${RouteNames.profile}/${member.userId}'),
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.divider),
+        ),
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircleAvatar(
@@ -94,6 +99,7 @@ class _MemberCard extends StatelessWidget {
             ),
           ],
         ],
+        ),
       ),
     );
   }

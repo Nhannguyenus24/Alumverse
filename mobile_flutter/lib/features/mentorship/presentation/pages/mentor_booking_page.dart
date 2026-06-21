@@ -1,7 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/errors/api_exception.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
 import '../../data/models/mentor_availability.dart';
@@ -33,6 +37,37 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
   MentorAvailability? _slot;
   String? _sessionType;
   bool _submitting = false;
+  // Day (yyyy-mm-dd) currently expanded in the slot picker, so a mentor with
+  // many slots is grouped by date instead of one long flat list.
+  DateTime? _selectedDay;
+  // Optional date-range filter (inclusive) to narrow the slot list.
+  DateTime? _rangeStart;
+  DateTime? _rangeEnd;
+
+  /// Pick a start/end day for the range filter.
+  Future<void> _pickRange(bool isStart) async {
+    final now = DateTime.now();
+    final initial = (isStart ? _rangeStart : _rangeEnd) ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial.isBefore(now) ? now : initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (picked == null) return;
+    setState(() {
+      final day = DateTime(picked.year, picked.month, picked.day);
+      if (isStart) {
+        _rangeStart = day;
+        if (_rangeEnd != null && _rangeEnd!.isBefore(day)) _rangeEnd = day;
+      } else {
+        _rangeEnd = day;
+        if (_rangeStart != null && _rangeStart!.isAfter(day)) _rangeStart = day;
+      }
+      _selectedDay = null; // re-default to first day in the filtered set
+      _slot = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -88,26 +123,118 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                   child: Padding(
                       padding: EdgeInsets.all(20),
                       child: CircularProgressIndicator())),
-              error: (e, _) => const Text('Không tải được khung giờ.'),
+              error: (e, _) => _SlotsError(error: e),
               data: (slots) {
-                final open = slots
+                final allOpen = slots
                     .where((s) =>
                         (s.status == null || s.status == 'AVAILABLE') &&
                         s.startTime.isAfter(DateTime.now()))
-                    .toList();
-                if (open.isEmpty) {
+                    .toList()
+                  ..sort((a, b) => a.startTime.compareTo(b.startTime));
+                if (allOpen.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Text('Cố vấn chưa mở khung giờ rảnh nào.',
                         style: TextStyle(color: AppColors.textSecondary)),
                   );
                 }
+
+                // Apply the optional date-range filter (inclusive of both ends).
+                final open = allOpen.where((s) {
+                  final d = DateTime(
+                      s.startTime.year, s.startTime.month, s.startTime.day);
+                  if (_rangeStart != null && d.isBefore(_rangeStart!)) {
+                    return false;
+                  }
+                  if (_rangeEnd != null && d.isAfter(_rangeEnd!)) return false;
+                  return true;
+                }).toList();
+
+                final rangeRow = _RangeFilter(
+                  start: _rangeStart,
+                  end: _rangeEnd,
+                  onPickStart: () => _pickRange(true),
+                  onPickEnd: () => _pickRange(false),
+                  onClear: (_rangeStart == null && _rangeEnd == null)
+                      ? null
+                      : () => setState(() {
+                            _rangeStart = null;
+                            _rangeEnd = null;
+                            _selectedDay = null;
+                            _slot = null;
+                          }),
+                );
+
+                if (open.isEmpty) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      rangeRow,
+                      const SizedBox(height: 10),
+                      const Text('Không có khung giờ trong khoảng đã chọn.',
+                          style: TextStyle(color: AppColors.textSecondary)),
+                    ],
+                  );
+                }
+
+                // Group slots by day so many slots stay manageable.
+                final byDay = <DateTime, List<MentorAvailability>>{};
+                for (final s in open) {
+                  final d = DateTime(
+                      s.startTime.year, s.startTime.month, s.startTime.day);
+                  byDay.putIfAbsent(d, () => []).add(s);
+                }
+                final days = byDay.keys.toList()..sort();
+                // Default the expanded day to the first available one.
+                final selectedDay = (_selectedDay != null &&
+                        byDay.containsKey(_selectedDay))
+                    ? _selectedDay!
+                    : days.first;
+                final dayDf = DateFormat('dd/MM');
+                final daySlots = byDay[selectedDay] ?? const [];
+
                 return Column(
-                  children: open.map((s) => _SlotTile(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    rangeRow,
+                    const SizedBox(height: 10),
+                    // Date chips (horizontal scroll).
+                    SizedBox(
+                      height: 40,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: days.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (_, i) {
+                          final d = days[i];
+                          final sel = d == selectedDay;
+                          return ChoiceChip(
+                            label: Text(
+                                '${dayDf.format(d)} (${byDay[d]!.length})'),
+                            selected: sel,
+                            onSelected: (_) => setState(() {
+                              _selectedDay = d;
+                              _slot = null; // reset slot when day changes
+                            }),
+                            selectedColor: AppColors.primary,
+                            labelStyle: TextStyle(
+                              color: sel ? Colors.white : AppColors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Time slots for the selected day.
+                    for (final s in daySlots)
+                      _SlotTile(
                         slot: s,
                         selected: _slot?.id == s.id,
                         onTap: () => setState(() => _slot = s),
-                      )).toList(),
+                      ),
+                  ],
                 );
               },
             ),
@@ -180,6 +307,134 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
   }
 }
 
+/// Slot-load error. A 403 means the user isn't org-verified for mentorship —
+/// guide them to verify their academics instead of a generic failure.
+class _SlotsError extends StatelessWidget {
+  const _SlotsError({required this.error});
+  final Object error;
+
+  int? get _status {
+    final e = error;
+    if (e is ApiException) return e.statusCode;
+    if (e is DioException) {
+      final inner = e.error;
+      if (inner is ApiException) return inner.statusCode;
+      return e.response?.statusCode;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_status == 403) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.info.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Bạn cần xác minh học vấn trước khi đặt lịch cố vấn.',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton.icon(
+                onPressed: () =>
+                    context.push(RouteNames.organizationRegistration),
+                icon: const Icon(Icons.verified_user_outlined, size: 18),
+                label: const Text('Xác minh học vấn'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const Text('Không tải được khung giờ.',
+        style: TextStyle(color: AppColors.textSecondary));
+  }
+}
+
+/// "Từ ngày / Đến ngày" date-range filter for the slot picker.
+class _RangeFilter extends StatelessWidget {
+  const _RangeFilter({
+    required this.start,
+    required this.end,
+    required this.onPickStart,
+    required this.onPickEnd,
+    this.onClear,
+  });
+
+  final DateTime? start;
+  final DateTime? end;
+  final VoidCallback onPickStart;
+  final VoidCallback onPickEnd;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final df = DateFormat('dd/MM/yyyy');
+    return Row(
+      children: [
+        Expanded(
+          child: _DateButton(
+            label: 'Từ ngày',
+            value: start != null ? df.format(start!) : null,
+            onTap: onPickStart,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _DateButton(
+            label: 'Đến ngày',
+            value: end != null ? df.format(end!) : null,
+            onTap: onPickEnd,
+          ),
+        ),
+        if (onClear != null)
+          IconButton(
+            tooltip: 'Xóa lọc',
+            onPressed: onClear,
+            icon: const Icon(Icons.close, size: 20),
+          ),
+      ],
+    );
+  }
+}
+
+class _DateButton extends StatelessWidget {
+  const _DateButton(
+      {required this.label, required this.value, required this.onTap});
+  final String label;
+  final String? value;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.calendar_today_outlined, size: 16),
+      label: Text(
+        value ?? label,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: value != null ? AppColors.textPrimary : AppColors.textSecondary,
+          fontWeight: value != null ? FontWeight.w600 : FontWeight.w400,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        alignment: Alignment.centerLeft,
+      ),
+    );
+  }
+}
+
 class _SlotTile extends StatelessWidget {
   const _SlotTile({
     required this.slot,
@@ -193,8 +448,8 @@ class _SlotTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final df = DateFormat('dd/MM/yyyy');
     final tf = DateFormat('HH:mm');
+    final mins = slot.endTime.difference(slot.startTime).inMinutes;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       color: selected ? AppColors.primary.withValues(alpha: 0.08) : null,
@@ -212,9 +467,9 @@ class _SlotTile extends StatelessWidget {
           selected ? Icons.radio_button_checked : Icons.radio_button_off,
           color: selected ? AppColors.primary : AppColors.textSecondary,
         ),
-        title: Text(df.format(slot.startTime)),
-        subtitle: Text(
+        title: Text(
             '${tf.format(slot.startTime)} - ${tf.format(slot.endTime)}'),
+        subtitle: mins > 0 ? Text('$mins phút') : null,
       ),
     );
   }

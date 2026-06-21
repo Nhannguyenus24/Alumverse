@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../datasources/organization_api.dart';
 import '../models/organization.dart';
 import '../models/organization_introduction.dart';
+import '../models/pending_peer_verification.dart';
 import '../models/trusted_verifier.dart';
 
 final organizationRepositoryProvider = Provider<OrganizationRepository>((ref) {
@@ -49,6 +50,15 @@ class OrganizationRepository {
         organizationId: organizationId,
         verifierUserId: verifierUserId,
       );
+
+  /// Peer-verification requests the current user received (to vouch for others).
+  Future<List<PendingPeerVerification>> getPendingPeerVerifications(
+          int organizationId) =>
+      api.getPendingPeerVerifications(organizationId);
+
+  /// Accept a received peer-verification request.
+  Future<void> acceptPeerVerification(int requestId) =>
+      api.acceptPeerVerification(requestId);
 
   Future<void> createVerificationRequest({
     required String base64File,

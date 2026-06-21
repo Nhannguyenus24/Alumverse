@@ -24,6 +24,22 @@ class UserApi {
     return UserProfile.fromJson(_unwrap(res.data));
   }
 
+  /// Whether the current user is a trusted verifier in [organizationId] — only
+  /// trusted verifiers may vouch for other members. Reads `isTrustedVerifier`
+  /// from `GET /users/me/organization-member`.
+  Future<bool> isTrustedVerifier(int organizationId) async {
+    final res = await _dio.get(
+      ApiEndpoints.meOrganizationMember,
+      queryParameters: {'organizationId': organizationId},
+    );
+    final data = res.data is Map ? res.data['data'] : res.data;
+    if (data is Map) {
+      final v = data['isTrustedVerifier'];
+      if (v is bool) return v;
+    }
+    return false;
+  }
+
   /// Update profile. The backend requires organizationId; academic fields are
   /// optional lists. [extra] carries optional bio/phone/gender etc.
   Future<void> updateProfile({
