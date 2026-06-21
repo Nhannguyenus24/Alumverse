@@ -3,7 +3,6 @@ import { Box, Stack, TextField, Typography, MenuItem, Grid, Button, FormControlL
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
-import { useFundStatuses } from '../hooks/news/useFundStatuses';
 import { useFundReceivingInfos } from '../hooks/news/useFundReceivingInfos';
 
 const TOPICS_BY_CHANNEL = {
@@ -36,13 +35,8 @@ const PostArticleForm = ({
   registrationQuestions = [], // event
   setRegistrationQuestions,   // event
 }) => {
-  const { statuses: fundStatuses } = useFundStatuses();
   const { infos: fundReceivingInfos } = useFundReceivingInfos();
 
-  const fundStatusOptions = useMemo(
-    () => fundStatuses.map((s) => ({ value: s.id, label: s.name })),
-    [fundStatuses]
-  );
   const fundReceivingOptions = useMemo(
     () => fundReceivingInfos.map((i) => ({
       value: i.id,
@@ -116,9 +110,8 @@ const PostArticleForm = ({
           <Box sx={{ mb: 3 }}>
             <Input label="Tên quỹ quyên góp" name="donationFundName" value={donationData.donationFundName} onChange={handleDonationInputChange} />
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}><Input label="Người phụ trách" name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} /></Box>
-            <Box sx={{ flex: 1 }}><Dropdown label="Trạng thái quỹ" options={fundStatusOptions} value={donationData.statusId ?? ''} onChange={(e) => handleDonationInputChange({ target: { name: 'statusId', value: e.target.value } })} /></Box>
+          <Box sx={{ mb: 3 }}>
+            <Input label="Người phụ trách" name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} />
           </Box>
           <Box sx={{ mb: 3 }}>
             <Dropdown

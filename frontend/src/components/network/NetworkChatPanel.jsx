@@ -593,7 +593,15 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
       <ConfirmDialog
         open={blockConfirmOpen}
         title="Chặn người dùng"
-        message={`Bạn có chắc muốn chặn ${activeChat?.name ?? 'người dùng này'}? Bạn sẽ không thể gửi tin nhắn cho họ.`}
+        message={(
+          <>
+            {`Bạn có chắc muốn chặn ${activeChat?.name ?? 'người dùng này'}? `}
+            <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
+              Lưu ý: việc chặn chỉ áp dụng trong Kết nối và Nhắn tin.
+            </strong>
+            {' Bạn sẽ không thể gửi tin nhắn cho họ.'}
+          </>
+        )}
         confirmText="Chặn"
         cancelText="Hủy"
         confirmColor="primary"

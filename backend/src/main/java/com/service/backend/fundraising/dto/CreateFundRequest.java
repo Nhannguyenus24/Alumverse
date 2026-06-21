@@ -55,12 +55,6 @@ public class CreateFundRequest {
     private Integer fundReceivingInfoId;
 
     @NotNull
-    @Min(1)
-    @Schema(example = "1")
-    @JsonProperty("status_id")
-    private Integer statusId;
-
-    @NotNull
     @DecimalMin(value = "0.01", message = "Target amount must be greater than 0")
     @Schema(example = "50000.00")
     private BigDecimal targetAmount;

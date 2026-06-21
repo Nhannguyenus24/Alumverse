@@ -26,6 +26,8 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class ChatService {
@@ -231,6 +233,17 @@ public class ChatService {
 
         LocalDateTime now = LocalDateTime.now();
         String resolvedTitle = (title != null && !title.isBlank()) ? title.trim() : null;
+
+        // When the user does not provide a title, derive a default one from the member ids in the group
+        // (creator first, then the other selected members).
+        if (resolvedTitle == null) {
+            String joinedIds = Stream.concat(Stream.of(creatorMemberId), distinctOthers.stream())
+                    .map(String::valueOf)
+                    .collect(Collectors.joining(", "));
+            String defaultTitle = "Nhóm " + joinedIds;
+            // title column is limited to 100 characters.
+            resolvedTitle = defaultTitle.length() > 100 ? defaultTitle.substring(0, 97) + "..." : defaultTitle;
+        }
 
         ChatGroup group = ChatGroup.builder()
                 .type(ChatType.GROUP)

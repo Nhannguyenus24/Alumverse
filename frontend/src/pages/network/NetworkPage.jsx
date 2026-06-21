@@ -249,7 +249,15 @@ const NetworkPage = () => {
       <ConfirmDialog
         open={Boolean(blockTarget)}
         title="Chặn người dùng"
-        message={`Bạn có chắc muốn chặn ${blockTarget?.fullName ?? 'người dùng này'}? Bạn sẽ không thể gửi tin nhắn cho họ.`}
+        message={(
+          <>
+            {`Bạn có chắc muốn chặn ${blockTarget?.fullName ?? 'người dùng này'}? `}
+            <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
+              Lưu ý: việc chặn chỉ áp dụng trong Kết nối và Nhắn tin.
+            </strong>
+            {' Bạn sẽ không thể gửi tin nhắn cho họ.'}
+          </>
+        )}
         confirmText="Chặn"
         cancelText="Hủy"
         confirmColor="primary"

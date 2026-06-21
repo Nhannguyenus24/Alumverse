@@ -19,7 +19,6 @@ class FundFilterSheet extends ConsumerStatefulWidget {
 }
 
 class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
-  late String? _statusId;
   late DateTime? _dateFrom;
   late DateTime? _dateTo;
   late final TextEditingController _minController;
@@ -28,7 +27,6 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
   @override
   void initState() {
     super.initState();
-    _statusId = widget.initial.statusId;
     _dateFrom = widget.initial.dateFrom;
     _dateTo = widget.initial.dateTo;
     _minController = TextEditingController(
@@ -66,7 +64,6 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
 
   void _reset() {
     setState(() {
-      _statusId = null;
       _dateFrom = null;
       _dateTo = null;
       _minController.clear();
@@ -79,8 +76,6 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
     final max = int.tryParse(_maxController.text.trim());
     Navigator.of(context).pop(
       widget.initial.copyWith(
-        statusId: _statusId,
-        clearStatus: _statusId == null,
         amountMin: min,
         clearAmountMin: min == null,
         amountMax: max,
@@ -96,7 +91,6 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final statusesAsync = ref.watch(fundStatusesProvider);
     final df = DateFormat('dd/MM/yyyy');
 
     return SafeArea(
@@ -122,35 +116,6 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                 ],
               ),
               const SizedBox(height: 8),
-
-              // Status
-              const _Label('Trạng thái'),
-              const SizedBox(height: 6),
-              statusesAsync.when(
-                loading: () => const LinearProgressIndicator(),
-                error: (_, __) => const Text('Không tải được trạng thái',
-                    style: TextStyle(color: AppColors.textSecondary)),
-                data: (statuses) => DropdownButtonFormField<String?>(
-                  value: _statusId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    isDense: true,
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                  hint: const Text('Tất cả'),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                        value: null, child: Text('Tất cả')),
-                    for (final s in statuses)
-                      DropdownMenuItem<String?>(
-                          value: s.id.toString(), child: Text(s.name)),
-                  ],
-                  onChanged: (v) => setState(() => _statusId = v),
-                ),
-              ),
-              const SizedBox(height: 16),
 
               // Start date range
               const _Label('Thời gian bắt đầu'),

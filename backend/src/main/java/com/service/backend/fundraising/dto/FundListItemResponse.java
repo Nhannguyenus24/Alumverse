@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 public class FundListItemResponse {
     private Integer id;
     private Integer organizationId;
-    private Integer statusId;
     private Integer donorCount;
 
     private String managerName;
@@ -41,7 +40,6 @@ public class FundListItemResponse {
         return FundListItemResponse.builder()
                 .id(fund.getId())
                 .organizationId(fund.getOrganizationId())
-                .statusId(fund.getStatusId())
                 .donorCount(fund.getDonorCount())
                 .managerName(fund.getManagerName())
                 .name(fund.getName())
