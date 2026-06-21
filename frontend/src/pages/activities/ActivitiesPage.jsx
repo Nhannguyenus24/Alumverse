@@ -149,6 +149,24 @@ const ActivitiesPage = () => {
                     >
                     HOẠT ĐỘNG
                   </Typography>
+                  {isAdmin && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => navigate('/admin/events')}
+                      >
+                        Quản lý sự kiện
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => navigate('/admin/article')}
+                      >
+                        Quản lý tin tức
+                      </Button>
+                    </Stack>
+                  )}
                 </Box>
 
                 {/* FILTERS */}

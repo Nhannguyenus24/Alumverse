@@ -148,6 +148,15 @@ const ActivitiesPage = () => {
                     >
                     SỰ KIỆN
                   </Typography>
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate('/admin/events')}
+                    >
+                      Quản lý sự kiện
+                    </Button>
+                  )}
                 </Box>
 
                 {/* FILTERS */}
@@ -230,7 +239,12 @@ const ActivitiesPage = () => {
                   >
                     {pastCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(pastEvents[i])}>
-                        <ArticleEventCard article={card} />
+                        <ArticleEventCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(pastEvents[i])}
+                          onDelete={() => handleDelete(pastEvents[i])}
+                        />
                       </Box>
                     ))}
                   </Box>

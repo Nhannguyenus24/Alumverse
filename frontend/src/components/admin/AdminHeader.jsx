@@ -26,6 +26,8 @@ import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 
+const ADMIN_HEADER_HEIGHT = 88;
+
 const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -59,6 +61,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
         backdropFilter: 'blur(8px)',
         borderBottom: `1px solid ${theme.palette.divider}`,
         color: 'text.primary',
+        height: ADMIN_HEADER_HEIGHT,
         zIndex: theme.zIndex.appBar,
         transition: theme.transitions.create(['width', 'margin'], {
           easing: theme.transitions.easing.sharp,
@@ -66,7 +69,16 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
         }),
       }}
     >
-      <Toolbar sx={{ justifyContent: 'space-between', minHeight: 70 }}>
+      <Toolbar
+        sx={{
+          justifyContent: 'space-between',
+          height: ADMIN_HEADER_HEIGHT,
+          minHeight: ADMIN_HEADER_HEIGHT,
+          '@media (min-width: 600px)': {
+            minHeight: ADMIN_HEADER_HEIGHT,
+          },
+        }}
+      >
         {/* Left Side: Toggle (Mobile Only) & Breadcrumbs */}
         <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
           {/* Mobile Toggle */}

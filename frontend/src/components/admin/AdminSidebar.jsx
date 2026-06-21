@@ -33,6 +33,7 @@ import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
+const ADMIN_HEADER_HEIGHT = 88;
 
 const NAV_GROUPS = (adminBase) => [
   {
@@ -62,8 +63,8 @@ const NAV_GROUPS = (adminBase) => [
     {
     title: 'Nội dung & Cộng đồng',
     items: [
-      { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
       { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: 'Bài viết', role: 'ADMIN' },
+      { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
       { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: 'Quyên góp', role: 'ADMIN' },
       { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: 'Tài khoản ngân hàng', role: 'ADMIN' },
     ],
@@ -91,7 +92,7 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
           sx={{
             position: 'absolute',
             right: -12,
-            top: 28,
+            top: (ADMIN_HEADER_HEIGHT - 24) / 2,
             width: 24,
             height: 24,
             bgcolor: 'background.paper',
@@ -113,11 +114,14 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
 
       {/* Brand Header */}
       <Box sx={{ 
-        p: 3, 
+        p: 2.5,
+        height: ADMIN_HEADER_HEIGHT,
+        minHeight: ADMIN_HEADER_HEIGHT,
+        flex: `0 0 ${ADMIN_HEADER_HEIGHT}px`,
+        boxSizing: 'border-box',
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: collapsed ? 'center' : 'flex-start',
-        minHeight: 88
       }}>
         <Box
           component="img"
@@ -165,7 +169,7 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
                       <Tooltip title={collapsed ? item.label : ""} placement="right">
                         <ListItemButton
                           sx={{
-                            borderRadius: 2,
+                            borderRadius: 0,
                             mb: 0.5,
                             py: 1.25,
                             px: collapsed ? 0 : 2,
@@ -180,11 +184,11 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
                               content: '""',
                               position: 'absolute',
                               left: 0,
-                              top: '20%',
-                              bottom: '20%',
+                              top: 0,
+                              bottom: 0,
                               width: 3,
                               bgcolor: 'primary.main',
-                              borderRadius: '0 4px 4px 0',
+                              borderRadius: 0,
                             } : {},
                           }}
                         >

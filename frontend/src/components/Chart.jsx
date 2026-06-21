@@ -18,6 +18,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+const AXIS_TICK_MARGIN = 12;
+const CARTESIAN_CHART_MARGIN = { top: 8, right: 16, left: 0, bottom: 24 };
+const LEGEND_WRAPPER_STYLE = { paddingTop: 12 };
+
 const Chart = ({
   type = "line",
   data = [],
@@ -64,10 +68,10 @@ const Chart = ({
         return (
           <AreaChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
-            <XAxis dataKey={xAxisKey} />
+            <XAxis dataKey={xAxisKey} tickMargin={AXIS_TICK_MARGIN} />
             <YAxis />
             <Tooltip />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={strokeColor} stopOpacity={0.15} />
@@ -89,10 +93,10 @@ const Chart = ({
         return (
           <LineChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
-            <XAxis dataKey={xAxisKey} />
+            <XAxis dataKey={xAxisKey} tickMargin={AXIS_TICK_MARGIN} />
             <YAxis />
             <Tooltip />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
             {dataKeys && dataKeys.length > 0 ? (
               dataKeys.map((dk, idx) => (
                 <Line
@@ -120,10 +124,10 @@ const Chart = ({
         return (
           <BarChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
-            <XAxis dataKey={xAxisKey} />
+            <XAxis dataKey={xAxisKey} tickMargin={AXIS_TICK_MARGIN} />
             <YAxis />
             <Tooltip />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
             {dataKeys && dataKeys.length > 0 ? (
               dataKeys.map((dk, idx) => (
                 <Bar
@@ -162,7 +166,7 @@ const Chart = ({
               ))}
             </Pie>
             <Tooltip />
-            {showLegend && <Legend />}
+            {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
           </PieChart>
         );
 

@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -13,10 +15,12 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import apiClient from '../../utils/axios';
 
 const SIDEBAR = [
   { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
@@ -47,13 +51,18 @@ const FILTERS = [
 
 const HonorsAlumniPage = () => {
   const navigate = useOrgNavigate();
-  const { isAuthenticated } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const { articles } = usePublishedAlumniPosts(0, 12);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [featured, ...rest] = articles;
   const featuredCard = featured ? toCardShape(featured) : null;
@@ -62,6 +71,27 @@ const HonorsAlumniPage = () => {
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const handleEdit = (article) => {
+    navigate(`/article/${article.channel}/${article.id}/edit`);
+  };
+
+  const handleDelete = (article) => setDeleteTarget(article);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/admin/articles/alumni-posts/${deleteTarget.id}`);
+      queryClient.invalidateQueries({ queryKey: ['publishedAlumniPosts'] });
+      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -100,12 +130,21 @@ const HonorsAlumniPage = () => {
                     CỰU SINH VIÊN
                   </Typography>
 
-                  {isAuthenticated && (
+                  {!isAdmin && isAuthenticated && (
                     <Button
                       variant="contained"
                       onClick={() => navigate('/honors/request-achievements')}
                     >
                       Gửi đơn xét thành tựu
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate('/admin/article')}
+                    >
+                      Quản lý vinh danh
                     </Button>
                   )}
                 </Box>
@@ -133,7 +172,12 @@ const HonorsAlumniPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
-                  <FeaturedArticleCard article={featuredCard} />
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
                 </Box>
               )}
 
@@ -157,7 +201,12 @@ const HonorsAlumniPage = () => {
                   >
                     {cards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
-                        <ArticleCard article={card} />
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(rest[i])}
+                          onDelete={() => handleDelete(rest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -168,6 +217,15 @@ const HonorsAlumniPage = () => {
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá bài viết"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };

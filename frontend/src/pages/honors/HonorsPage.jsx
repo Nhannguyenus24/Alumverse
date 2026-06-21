@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -13,11 +15,13 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchievements';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import apiClient from '../../utils/axios';
 
 const SIDEBAR = [
   { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
@@ -48,7 +52,10 @@ const FILTERS = [
 
 const HonorsPage = () => {
   const navigate = useOrgNavigate();
-  const { isAuthenticated } = useAuth();
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const { achievements } = usePublishedAchievements(0, 7);
   const { articles: alumniArticles } = usePublishedAlumniPosts(0, 6);
@@ -56,6 +63,8 @@ const HonorsPage = () => {
   const [filters, setFilters] = useState({
     all: true,
   });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [featured, ...achievementRest] = achievements;
   const featuredCard = featured ? toCardShape(featured) : null;
@@ -65,6 +74,32 @@ const HonorsPage = () => {
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const handleEdit = (article) => {
+    navigate(`/article/${article.channel}/${article.id}/edit`);
+  };
+
+  const handleDelete = (article) => setDeleteTarget(article);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      const endpoint =
+        deleteTarget.channel === 'alumni'
+          ? '/admin/articles/alumni-posts'
+          : '/admin/articles/achievements';
+      await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      queryClient.invalidateQueries({ queryKey: ['publishedAlumniPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedAchievements'] });
+      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -103,12 +138,21 @@ const HonorsPage = () => {
                     VINH DANH
                   </Typography>
 
-                  {isAuthenticated && (
+                  {!isAdmin && isAuthenticated && (
                     <Button
                       variant="contained"
                       onClick={() => navigate('/honors/request-achievements')}
                     >
                       Gửi đơn xét thành tựu
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate('/admin/article')}
+                    >
+                      Quản lý vinh danh
                     </Button>
                   )}
                 </Box>
@@ -136,7 +180,12 @@ const HonorsPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
-                  <FeaturedArticleCard article={featuredCard} />
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
                 </Box>
               )}
 
@@ -160,7 +209,12 @@ const HonorsPage = () => {
                   >
                     {alumniCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(alumniArticles[i])}>
-                        <ArticleCard article={card} />
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(alumniArticles[i])}
+                          onDelete={() => handleDelete(alumniArticles[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -187,7 +241,12 @@ const HonorsPage = () => {
                   >
                     {achievementCards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(achievementRest[i])}>
-                        <ArticleCard article={card} />
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(achievementRest[i])}
+                          onDelete={() => handleDelete(achievementRest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -197,6 +256,15 @@ const HonorsPage = () => {
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá bài viết"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };
