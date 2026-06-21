@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography, useTheme } from "@mui/material";
 import {
   AreaChart,
   Area,
@@ -18,10 +18,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
-
-const MULTI_LINE_COLORS = ["#1976d2", "#2e7d32", "#ed6c02", "#9c27b0", "#d32f2f"];
-
 const Chart = ({
   type = "line",
   data = [],
@@ -34,6 +30,7 @@ const Chart = ({
   showGrid = true,
   color,
 }) => {
+  const theme = useTheme();
   // Recharts ResponsiveContainer with height="100%" often measures -1 until a parent
   // chain has explicit height (flex/tabs). Use a concrete pixel height instead.
   const chartHeight =
@@ -41,23 +38,31 @@ const Chart = ({
       ? height
       : 300;
 
-  if (!data || data.length === 0) {
-    return (
-      <Paper sx={{ p: 3, textAlign: "center" }}>
-        <Typography variant="body2" color="text.secondary">
-          No data to display
-        </Typography>
-      </Paper>
-    );
-  }
+  const chartData = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+  const strokeColor = color || theme.palette.primary.main;
 
-  const strokeColor = color || "#1976d2";
+  const chartColors = useMemo(
+    () => [
+      theme.palette.primary.main,
+      theme.palette.success.main,
+      theme.palette.warning.main,
+      theme.palette.secondary.main,
+      theme.palette.error.main,
+    ],
+    [
+      theme.palette.primary.main,
+      theme.palette.success.main,
+      theme.palette.warning.main,
+      theme.palette.secondary.main,
+      theme.palette.error.main,
+    ],
+  );
 
   const renderedChart = useMemo(() => {
     switch (type) {
       case "area":
         return (
-          <AreaChart data={data}>
+          <AreaChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis dataKey={xAxisKey} />
             <YAxis />
@@ -82,7 +87,7 @@ const Chart = ({
 
       case "line":
         return (
-          <LineChart data={data}>
+          <LineChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis dataKey={xAxisKey} />
             <YAxis />
@@ -95,7 +100,7 @@ const Chart = ({
                   type="monotone"
                   dataKey={dk.key}
                   name={dk.label || dk.key}
-                  stroke={dk.color || MULTI_LINE_COLORS[idx % MULTI_LINE_COLORS.length]}
+                  stroke={dk.color || chartColors[idx % chartColors.length]}
                   strokeWidth={2}
                   dot={false}
                 />
@@ -104,7 +109,7 @@ const Chart = ({
               <Line
                 type="monotone"
                 dataKey={dataKey}
-                stroke="#1976d2"
+                stroke={strokeColor}
                 strokeWidth={2}
               />
             )}
@@ -113,7 +118,7 @@ const Chart = ({
 
       case "bar":
         return (
-          <BarChart data={data}>
+          <BarChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis dataKey={xAxisKey} />
             <YAxis />
@@ -125,11 +130,11 @@ const Chart = ({
                   key={dk.key}
                   dataKey={dk.key}
                   name={dk.label || dk.key}
-                  fill={dk.color || MULTI_LINE_COLORS[idx % MULTI_LINE_COLORS.length]}
+                  fill={dk.color || chartColors[idx % chartColors.length]}
                 />
               ))
             ) : (
-              <Bar dataKey={dataKey} fill="#1976d2" />
+              <Bar dataKey={dataKey} fill={strokeColor} />
             )}
           </BarChart>
         );
@@ -138,7 +143,7 @@ const Chart = ({
         return (
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               labelLine={false}
@@ -146,13 +151,13 @@ const Chart = ({
                 `${name}: ${(percent * 100).toFixed(0)}%`
               }
               outerRadius={80}
-              fill="#8884d8"
+              fill={strokeColor}
               dataKey={dataKey}
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
+                  fill={chartColors[index % chartColors.length]}
                 />
               ))}
             </Pie>
@@ -164,7 +169,17 @@ const Chart = ({
       default:
         return null;
     }
-  }, [type, data, dataKey, dataKeys, xAxisKey, showGrid, showLegend, strokeColor]);
+  }, [type, chartData, dataKey, dataKeys, xAxisKey, showGrid, showLegend, strokeColor, chartColors]);
+
+  if (chartData.length === 0) {
+    return (
+      <Paper sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="body2" color="text.secondary">
+          No data to display
+        </Typography>
+      </Paper>
+    );
+  }
 
   return (
     <Paper sx={{ p: 2 }}>
