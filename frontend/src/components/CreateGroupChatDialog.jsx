@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Button,
@@ -42,11 +42,11 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
     pageSize: DIALOG_PAGE_SIZE,
   });
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setTitle('');
     setSearchInput('');
     setSelectedMembers([]);
-  };
+  }, []);
 
   const { mutate: createGroup, isPending: isCreating } = useCreateGroupChat({
     onSuccess: (createdGroup) => {
@@ -56,13 +56,13 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
     },
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (isCreating) return;
     resetState();
     onClose();
-  };
+  }, [isCreating, resetState, onClose]);
 
-  const handleToggleMember = (contact) => {
+  const handleToggleMember = useCallback((contact) => {
     setSelectedMembers((prev) => {
       const alreadySelected = prev.some((m) => m.peerMemberId === contact.peerMemberId);
       if (alreadySelected) {
@@ -71,19 +71,19 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
       if (prev.length >= MAX_OTHER_MEMBERS) return prev;
       return [...prev, { peerMemberId: contact.peerMemberId, peerStudentId: contact.peerStudentId, peerAvatarUrl: contact.peerAvatarUrl }];
     });
-  };
+  }, []);
 
-  const handleRemoveSelected = (memberId) => {
+  const handleRemoveSelected = useCallback((memberId) => {
     setSelectedMembers((prev) => prev.filter((m) => m.peerMemberId !== memberId));
-  };
+  }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (selectedMembers.length < MIN_OTHER_MEMBERS) return;
     createGroup({
       title: title.trim() || null,
       memberIds: selectedMembers.map((m) => m.peerMemberId),
     });
-  };
+  }, [selectedMembers, createGroup, title]);
 
   const canSubmit = selectedMembers.length >= MIN_OTHER_MEMBERS && selectedMembers.length <= MAX_OTHER_MEMBERS && !isCreating;
 

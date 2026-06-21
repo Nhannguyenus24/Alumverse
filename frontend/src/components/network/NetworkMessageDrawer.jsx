@@ -148,7 +148,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
     handleSend();
   };
 
-  const avatarSrc = peer?.avatarUrl;
+  
   const programLabel = formatAcademicValue(peer?.program);
   const majorLabel = formatAcademicValue(peer?.major);
 

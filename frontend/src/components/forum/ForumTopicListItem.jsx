@@ -2,7 +2,7 @@ import { Box, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
 
-const ForumTopicListItem = ({ topic, activeCategory, categoryId, onClick }) => {
+const ForumTopicListItem = ({ topic, onClick }) => {
   return (
     <Box
       onClick={() => onClick(topic)}

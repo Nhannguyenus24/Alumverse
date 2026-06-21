@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import {
   Alert,
@@ -119,7 +119,7 @@ const UnifiedProfileEditPage = () => {
   const orgMemberQuery = useMyOrganizationMember();
   
   const mentorQuery = useMyMentorProfile();
-  const menteeQuery = useMyMenteeProfile();
+  
   const expertiseQuery = useMyExpertise();
   const access = useMentorshipAccessState();
 
@@ -306,7 +306,7 @@ const UnifiedProfileEditPage = () => {
   }
 
   const profile = profileQuery.data;
-  const orgMember = orgMemberQuery.data;
+  
   const mentor = mentorQuery.data;
   const expertise = expertiseQuery.data ?? [];
 

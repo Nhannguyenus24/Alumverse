@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Paper, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Paper, Typography, useTheme } from '@mui/material';
 
 const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
   const theme = useTheme();

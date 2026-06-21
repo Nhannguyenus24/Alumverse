@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useOutletContext } from 'react-router';
 import {
   Box, Button, IconButton, MenuItem, Select, Skeleton, Stack,
@@ -28,6 +28,8 @@ const INTERVALS = [
   { value: '5', label: 'Mỗi 5 phút' },
   { value: '15', label: 'Mỗi 15 phút' },
 ];
+
+const SYSTEM_STATUS_ITEMS = [['Cơ sở dữ liệu'], ['Máy chủ Email'], ['Lưu trữ hình ảnh']];
 
 const AdminDashboardPage = () => {
   const theme = useTheme();
@@ -67,10 +69,12 @@ const AdminDashboardPage = () => {
     return () => clearInterval(intervalRef.current);
   }, [refreshInterval, handleRefresh]);
 
-  const chartData = Array.isArray(timeline) ? timeline : [];
-  const totalUsers = metrics?.totalUsers ?? aggregates.user.totalUsers;
-  const pendingPosts = metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending;
-  const totalOrgs = organizations?.length ?? 0;
+  const { chartData, totalUsers, pendingPosts, totalOrgs } = useMemo(() => ({
+    chartData: Array.isArray(timeline) ? timeline : [],
+    totalUsers: metrics?.totalUsers ?? aggregates.user.totalUsers,
+    pendingPosts: metrics?.pendingPosts ?? metrics?.postsAwaitingModerationCount ?? aggregates.forum.pending,
+    totalOrgs: organizations?.length ?? 0,
+  }), [timeline, metrics, aggregates, organizations]);
 
   if (loading) {
     return (
@@ -88,10 +92,10 @@ const AdminDashboardPage = () => {
     );
   }
 
-  const donationsLast30Days = metrics?.donationsLast30Days ?? 0;
-  const donationsFormatted = Number(donationsLast30Days).toLocaleString('vi-VN', {
-    style: 'currency', currency: 'VND', maximumFractionDigits: 0,
-  });
+  const donationsFormatted = useMemo(() => {
+    const val = metrics?.donationsLast30Days ?? 0;
+    return Number(val).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+  }, [metrics?.donationsLast30Days]);
 
   return (
     <Stack spacing={4}>
@@ -291,7 +295,7 @@ const AdminDashboardPage = () => {
             <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>Trạng thái hệ thống</Typography>
               <Stack spacing={2}>
-                {[['Cơ sở dữ liệu'], ['Máy chủ Email'], ['Lưu trữ hình ảnh']].map(([label]) => (
+                {SYSTEM_STATUS_ITEMS.map(([label]) => (
                   <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" color="text.secondary">{label}</Typography>
                     <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>
