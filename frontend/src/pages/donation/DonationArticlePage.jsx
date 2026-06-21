@@ -11,7 +11,6 @@ import DonationListSection from "../../components/donation/DonationListSection";
 import { fundApi } from "../../utils/api";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
-
 const BANNER_IMG = "https://www.islamic-relief.org.uk/wp-content/uploads/2022/10/Fundraising-ideas-.jpg";
 const ARTICLE_IMG_FALLBACK = "https://placehold.co/1200x720/eef3ff/0f3a7a?text=Fund";
 const ARTICLE_IMAGE_ASPECT_RATIO = "16 / 9";
@@ -45,7 +44,6 @@ export default function DonationArticlePage() {
   const isAdmin = isAuthenticated && user?.role === "ADMIN";
 
   const [fundDetail, setFundDetail] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -53,7 +51,6 @@ export default function DonationArticlePage() {
     let ignore = false;
 
     const fetchDetail = async () => {
-      setIsLoading(true);
       setErrorMessage("");
       try {
         const detail = await fundApi.getFundDetail(id);
@@ -63,8 +60,6 @@ export default function DonationArticlePage() {
         if (ignore) return;
         setFundDetail(null);
         setErrorMessage(error?.response?.data?.message ?? "Không thể tải chi tiết quỹ.");
-      } finally {
-        if (!ignore) setIsLoading(false);
       }
     };
 
@@ -124,17 +119,13 @@ export default function DonationArticlePage() {
           >
             <Breadcrumb items={[{ label: "QUYÊN GÓP", path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
 
-            {isLoading && (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}><CircularProgress /></Box>
-            )}
-
-            {!isLoading && errorMessage && (
+            {errorMessage && (
               <Box sx={{ p: 3, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
                 <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
               </Box>
             )}
 
-            {!isLoading && !errorMessage && fundDetail && (
+            {!errorMessage && fundDetail && (
               <>
                 <Typography variant="h1" component="h1" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 4, fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
                   {fundDetail.name}
@@ -192,7 +183,7 @@ export default function DonationArticlePage() {
           </Box>
         </Box>
 
-        {!isLoading && !errorMessage && fundDetail && isAdmin ? (
+        {!errorMessage && fundDetail && isAdmin ? (
           <Box sx={{ px: { xs: 2, sm: 3 }, py: 6, backgroundColor: "#f3f5f9" }}>
             <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto" }}>
               <DonationListSection fundId={id} />

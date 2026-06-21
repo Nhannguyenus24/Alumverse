@@ -508,7 +508,7 @@ const ForumAlumniThreadPage = () => {
         setIsConfirmDeleteOpen(false);
         setPostToDelete(null);
         showSuccess('Xóa bài viết thành công.');
-      } catch (err) {
+      } catch (_) {
         const message =
           err?.response?.data?.message ??
           deleteErrorMessage ??
@@ -548,7 +548,7 @@ const ForumAlumniThreadPage = () => {
       showSuccess('Gửi báo cáo thành công.');
       setIsReportOpen(false);
       setPostToReport(null);
-    } catch (err) {
+    } catch (_) {
       showError(err?.response?.data?.message ?? err?.message ?? 'Không thể gửi báo cáo.');
     }
   };
@@ -577,7 +577,7 @@ const ForumAlumniThreadPage = () => {
         setIsEditPostOpen(false);
         setEditingPost(null);
         showSuccess('Cập nhật bài viết thành công.');
-      } catch (err) {
+      } catch (_) {
         const message =
           err?.response?.data?.message ??
           updatePostErrorMessage ??
@@ -601,7 +601,7 @@ const ForumAlumniThreadPage = () => {
         return;
       }
       navigate('/forum');
-    } catch (err) {
+    } catch (_) {
       const message =
         err?.response?.data?.message ??
         deleteTopicErrorMessage ??
@@ -642,7 +642,7 @@ const ForumAlumniThreadPage = () => {
       setThreadTitleOverride(updatedTopic?.title ?? trimmedTitle);
       setIsEditTopicOpen(false);
       showSuccess('Cập nhật chủ đề thành công.');
-    } catch (err) {
+    } catch (_) {
       const message =
         err?.response?.data?.message ??
         updateTopicErrorMessage ??
@@ -660,7 +660,7 @@ const ForumAlumniThreadPage = () => {
     try {
       await toggleSubscription({ topicId, memberId });
       showSuccess(isSubscribed ? 'Đã hủy theo dõi chủ đề.' : 'Đã theo dõi chủ đề.');
-    } catch (err) {
+    } catch (_) {
       showError('Không thể thực hiện yêu cầu.');
     }
   };
@@ -703,7 +703,7 @@ const ForumAlumniThreadPage = () => {
           navigate(`/forum/alumni/career/${threadId}/page/${newLastPage + 1}`, { state: location.state });
         }
       }
-    } catch (err) {
+    } catch (_) {
       const message =
         err?.response?.data?.message ??
         err?.message ??

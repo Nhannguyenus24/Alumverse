@@ -401,20 +401,6 @@ export default function DetailDonationPage() {
     return () => { ignore = true; };
   }, [id]);
 
-  if (isAuthLoading || isAdmin) {
-    return (
-      <Page title="Quyên góp">
-        <PageBackground>
-          <Container maxWidth={false} sx={{ maxWidth: 1140 }}>
-            <SurfaceCard sx={{ px: { xs: 2.5, md: 4 }, py: 6, mb: 3 }}>
-              <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
-            </SurfaceCard>
-          </Container>
-        </PageBackground>
-      </Page>
-    );
-  }
-
   return (
     <Page title={fundDetail?.name || "Chi tiết quỹ"} meta={<meta name="description" content="Chi tiết quỹ quyên góp cộng đồng cựu sinh viên khoa học." />}>
       <PageBackground>
@@ -422,12 +408,6 @@ export default function DetailDonationPage() {
           <Box sx={{ mb: 3 }}>
             <Breadcrumb items={[{ label: "QUYÊN GÓP", path: "/donations" }, { label: fundDetail?.name || "Chi tiết quỹ", path: `/donations/${id}` }, { label: "Quyên góp" }]} fontSize="0.8rem" />
           </Box>
-
-          {isLoading ? (
-            <SurfaceCard sx={{ px: { xs: 2.5, md: 4 }, py: 6, mb: 3 }}>
-              <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
-            </SurfaceCard>
-          ) : null}
 
           {!isLoading && errorMessage ? (
             <SurfaceCard sx={{ px: { xs: 2.5, md: 4 }, py: 4, mb: 3 }}>

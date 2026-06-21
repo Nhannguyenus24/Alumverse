@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Box, Paper, Typography } from "@mui/material";
 import {
   AreaChart,
@@ -52,7 +53,7 @@ const Chart = ({
 
   const strokeColor = color || "#1976d2";
 
-  const renderChart = () => {
+  const renderedChart = useMemo(() => {
     switch (type) {
       case "area":
         return (
@@ -163,7 +164,7 @@ const Chart = ({
       default:
         return null;
     }
-  };
+  }, [type, data, dataKey, dataKeys, xAxisKey, showGrid, showLegend, strokeColor]);
 
   return (
     <Paper sx={{ p: 2 }}>
@@ -174,7 +175,7 @@ const Chart = ({
       )}
       <Box sx={{ width: "100%", height: chartHeight, minWidth: 0 }}>
         <ResponsiveContainer width="100%" height={chartHeight}>
-          {renderChart()}
+          {renderedChart}
         </ResponsiveContainer>
       </Box>
     </Paper>

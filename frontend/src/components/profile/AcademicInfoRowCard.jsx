@@ -1,5 +1,5 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+
 import { Box, Stack, Typography } from '@mui/material';
 
 const AcademicCard = ({ icon: Icon, label, value }) => {
@@ -42,10 +42,5 @@ const AcademicCard = ({ icon: Icon, label, value }) => {
   );
 };
 
-AcademicCard.propTypes = {
-  icon: PropTypes.elementType,
-  label: PropTypes.string.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-};
 
 export default AcademicCard;

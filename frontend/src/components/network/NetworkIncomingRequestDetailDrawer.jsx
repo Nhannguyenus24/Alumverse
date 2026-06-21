@@ -42,7 +42,7 @@ function MessageBubble({ body, createdAt }) {
 const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
   if (!request) return null;
 
-  const avatarSrc = request.avatarUrl?.trim();
+  
 
   return (
     <Drawer

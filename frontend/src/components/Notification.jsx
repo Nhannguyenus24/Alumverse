@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
   IconButton,
@@ -23,7 +23,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
 
   const open = Boolean(anchorEl);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const data = await notificationApi.getNotifications();
@@ -33,7 +33,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Initial fetch
@@ -42,28 +42,28 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
     // Set up polling every 1 minute
     const interval = setInterval(fetchNotifications, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]);
 
-  const handleOpen = (event) => {
+  const handleOpen = useCallback((event) => {
     setAnchorEl(event.currentTarget);
     // Refresh notifications when opening
     fetchNotifications();
-  };
+  }, [fetchNotifications]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setAnchorEl(null);
-  };
+  }, []);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const handleNotificationClick = async (notification) => {
+  const handleNotificationClick = useCallback(async (notification) => {
     if (!notification.isRead) {
       try {
         await notificationApi.markAsRead(notification.id);
-        setNotifications(
-          notifications.map((notif) =>
+        setNotifications((prev) =>
+          prev.map((notif) =>
             notif.id === notification.id ? { ...notif, isRead: true } : notif
           )
         );
@@ -81,16 +81,19 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
         navigate(targetLink);
       }
     }
-  };
+  }, [navigate, handleClose]);
 
   // Filter notifications based on active tab
-  const filteredNotifications =
-    activeTab === 0
-      ? notifications
-      : notifications.filter((notif) => !notif.isRead);
+  const filteredNotifications = useMemo(
+    () => activeTab === 0 ? notifications : notifications.filter((notif) => !notif.isRead),
+    [activeTab, notifications]
+  );
 
   // Count unread notifications
-  const unreadCount = notifications.filter((notif) => !notif.isRead).length;
+  const unreadCount = useMemo(
+    () => notifications.filter((notif) => !notif.isRead).length,
+    [notifications]
+  );
 
   return (
     <>

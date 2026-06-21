@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router';
@@ -119,35 +119,35 @@ const ChatPage = () => {
   const isError = groupError || privateError;
   const errorMessage = groupErrorMsg ?? privateErrorMsg ?? null;
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = useCallback(() => {
     setAppliedSearch(searchInput.trim());
     setPage(1);
-  };
+  }, [searchInput]);
 
-  const handlePageChange = (_, value) => {
+  const handlePageChange = useCallback((_, value) => {
     setPage(value);
-  };
+  }, []);
 
-  const handleGroupCreated = (createdGroup) => {
+  const handleGroupCreated = useCallback((createdGroup) => {
     if (createdGroup?.id) {
       setActiveChatId(createdGroup.id);
     }
-  };
+  }, []);
 
-  const handleLeaveGroup = (leftGroupId) => {
+  const handleLeaveGroup = useCallback((leftGroupId) => {
     invalidateChatListQueries(queryClient);
     if (activeChatId === leftGroupId) {
       setActiveChatId(null);
     }
-  };
+  }, [queryClient, activeChatId]);
 
-  const handleSelectChat = (chatId) => {
+  const handleSelectChat = useCallback((chatId) => {
     setActiveChatId(chatId);
-  };
+  }, []);
 
-  const handleBackToList = () => {
+  const handleBackToList = useCallback(() => {
     setActiveChatId(null);
-  };
+  }, []);
 
   const showMobileChatPanel = isMobile && activeChatId != null;
   const showSidebar = !isMobile || !showMobileChatPanel;

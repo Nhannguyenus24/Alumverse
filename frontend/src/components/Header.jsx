@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import {
   AppBar, Toolbar, Box, Typography,
@@ -83,12 +83,16 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const normalizedPathname = getNormalizedPathname(location.pathname, routeSlug);
-  const isHomePage = normalizedPathname === '/';
-  const isAdmin = user?.role === 'ADMIN';
-  const isGuestVerificationLevel = isAuthenticated && verificationLevel === 0;
-
-  const isTransparent = isHomePage && !isScrolled;
+  const {isAdmin, isGuestVerificationLevel, isTransparent } = useMemo(() => {
+    const np = getNormalizedPathname(location.pathname, routeSlug);
+    const admin = user?.role === 'ADMIN';
+    const home = np === '/';
+    return {
+        isAdmin: admin,
+      isGuestVerificationLevel: isAuthenticated && verificationLevel === 0,
+      isTransparent: home && !isScrolled,
+    };
+  }, [location.pathname, routeSlug, user?.role, isAuthenticated, verificationLevel, isScrolled]);
 
   const rafRef = useRef(null);
   useEffect(() => {
@@ -107,35 +111,33 @@ const Header = () => {
     };
   }, []);
 
-  const displayName = user?.fullName ?? user?.studentId ?? 'User';
-  const rawRole = user?.role ?? 'Student';
-  const verificationLabel = verificationLevel != null
-    ? VERIFICATION_LABELS[verificationLevel] ?? rawRole.charAt(0) + rawRole.slice(1).toLowerCase()
-    : rawRole.charAt(0) + rawRole.slice(1).toLowerCase();
-  const displayRole = isAdmin ? 'Admin' : verificationLabel;
+  const { displayName, displayRole } = useMemo(() => {
+    const name = user?.fullName ?? user?.studentId ?? 'User';
+    const rawRole = user?.role ?? 'Student';
+    const verLabel = verificationLevel != null
+      ? (VERIFICATION_LABELS[verificationLevel] ?? rawRole.charAt(0) + rawRole.slice(1).toLowerCase())
+      : rawRole.charAt(0) + rawRole.slice(1).toLowerCase();
+    return { displayName: name, displayRole: isAdmin ? 'Admin' : verLabel };
+  }, [user, verificationLevel, isAdmin]);
 
-  const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
-  const closeDrawer = () => setMobileOpen(false);
-  const toggleDrawerNav = (label) => () => {
+  const handleDrawerToggle = useCallback(() => setMobileOpen((prev) => !prev), []);
+  const closeDrawer = useCallback(() => setMobileOpen(false), []);
+  const toggleDrawerNav = useCallback((label) => () => {
     setExpandedNav((prev) => ({ ...prev, [label]: !prev[label] }));
-  };
+  }, []);
 
   const headerTextColor = isTransparent 
     ? '#FFFFFF' 
     : (isAdmin ? 'primary.contrastText' : 'text.primary');
 
-  const navButtonSx = {
-    color: headerTextColor, 
-    fontWeight: 600, 
-    fontSize: '0.9375rem',
-    textTransform: 'none', 
-    px: 1.5, 
-    transition: 'all 0.3s ease',
-    '&:hover': { 
-      backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' :
-      (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover') 
+  const navButtonSx = useMemo(() => ({
+    color: headerTextColor, fontWeight: 600, fontSize: '0.9375rem',
+    textTransform: 'none', px: 1.5, transition: 'all 0.3s ease',
+    '&:hover': {
+      backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)'
+        : (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover'),
     },
-  };
+  }), [headerTextColor, isTransparent, isAdmin]);
 
   const appBarMinHeight = { xs: 56, md: 64 };
 

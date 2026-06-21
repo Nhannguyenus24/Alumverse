@@ -31,7 +31,7 @@ const CHANNEL_OPTIONS = [
   { value: 'donation', label: 'Quyên góp' },
 ];
 
-const channelLabel = (v) => CHANNEL_OPTIONS.find((c) => c.value === v)?.label ?? v;
+
 
 const titleOf = (a) => a.title || a.name || a.position || '-';
 const idOf = (a) => a.id;
