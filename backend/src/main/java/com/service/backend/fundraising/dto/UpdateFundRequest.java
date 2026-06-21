@@ -59,11 +59,6 @@ public class UpdateFundRequest {
     private Integer fundReceivingInfoId;
 
     @NotNull
-    @Min(1)
-    @Schema(example = "1")
-    private Integer statusId;
-
-    @NotNull
     @Schema(example = "2026-05-01T08:00:00")
     private LocalDateTime timeStarted;
 

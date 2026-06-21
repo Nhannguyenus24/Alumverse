@@ -19,7 +19,7 @@ import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
-const DEFAULT_FILTERS = { all: true, statusId: "", timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
+const DEFAULT_FILTERS = { all: true, timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
 
 const DONATION_SIDEBAR_ITEMS = [
   { id: "list", label: "Quyên góp", icon: <FormatListBulletedIcon /> },
@@ -47,9 +47,7 @@ export default function DonationPage() {
 
   const [featuredCampaign, setFeaturedCampaign] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
-  const [statusOptions, setStatusOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [search, setSearch] = useState("");
@@ -61,32 +59,15 @@ export default function DonationPage() {
   const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
   const warningSetRef = useRef(new Set());
 
-  const gridPageSize = 3;
+  const gridPageSize = 4;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => [
-    { type: "dropdown", key: "statusId", label: "Trạng thái", multiple: false, options: statusOptions.map((o) => ({ value: o.value, label: o.label })) },
     { type: "date", key: "timeStartedFrom", label: "Từ ngày" },
     { type: "date", key: "timeStartedTo", label: "Đến ngày" },
-    { type: "dropdown", key: "trending", label: "Xu hướng", multiple: false, options: [{ value: "asc", label: "ASC" }, { value: "desc", label: "DESC" }] },
+    { type: "dropdown", key: "trending", label: "Xu hướng", multiple: false, options: [{ value: "asc", label: "Cũ nhất" }, { value: "desc", label: "Mới nhất" }] },
     { type: "range-input", key: "amount", label: "Mức quyên góp" },
-  ], [statusOptions]);
-
-  useEffect(() => {
-    let ignore = false;
-    setIsLoadingStatus(true);
-    fundApi.getFundStatuses()
-      .then((statuses) => {
-        if (ignore) return;
-        setStatusOptions(statuses.map((item) => ({ value: String(item.id), label: item.name })));
-      })
-      .catch((error) => {
-        if (ignore) return;
-        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải danh sách trạng thái quỹ.", { variant: "error" });
-      })
-      .finally(() => { if (!ignore) setIsLoadingStatus(false); });
-    return () => { ignore = true; };
-  }, [enqueueSnackbar]);
+  ], []);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -118,7 +99,7 @@ export default function DonationPage() {
       const params = {
         page: page - 1, limit: gridPageSize,
         organizationId: organizationId != null ? String(organizationId) : undefined,
-        q: search.trim() || undefined, statusId: filters.statusId || undefined,
+        q: search.trim() || undefined,
         targetAmountMin: filters.amountMin || undefined, targetAmountMax: filters.amountMax || undefined,
         sortBy: filters.trending ? "donor_count" : undefined, direction: filters.trending || undefined,
         timeStartedFrom: filters.timeStartedFrom ? toIsoStartOfDay(filters.timeStartedFrom) : undefined,
@@ -138,9 +119,14 @@ export default function DonationPage() {
           const pagedData = payload?.data;
           const items = pagedData?.items ?? [];
 
-          if (page === 1 && items.length > 0 && !featuredCampaign) {
-            setFeaturedCampaign(items[0]);
-            setCampaigns(items.slice(1));
+          if (page === 1) {
+            if (items.length > 0) {
+              setFeaturedCampaign(items[0]);
+              setCampaigns(items.slice(1));
+            } else {
+              setFeaturedCampaign(null);
+              setCampaigns([]);
+            }
           } else {
             setCampaigns(items);
           }
@@ -160,7 +146,6 @@ export default function DonationPage() {
       return () => { ignore = true; };
     }, 300);
     return () => clearTimeout(debounce);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken]);
 
   const adminBannerItems = useMemo(() => [
@@ -231,19 +216,13 @@ export default function DonationPage() {
               <SearchBar value={search} onChange={handleSearchChange} placeholder="Tìm kiếm chiến dịch quyên góp..." />
             </Stack>
 
-            {(isLoading || isLoadingStatus) && (
-              <Box sx={{ mb: 3 }}>
-                <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
-              </Box>
-            )}
-
             {errorMessage && (
               <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
                 <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
               </Box>
             )}
 
-            {!isLoading && !errorMessage && campaigns.length === 0 && (
+            {!isLoading && !errorMessage && !featuredCampaign && campaigns.length === 0 && (
               <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
                 <Typography sx={{ color: "#43608e", fontWeight: 600 }}>Không có quỹ nào phù hợp với bộ lọc hiện tại.</Typography>
               </Box>
@@ -282,9 +261,11 @@ export default function DonationPage() {
               </Box>
             )}
 
-            <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
-              <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
-            </Stack>
+            {(featuredCampaign || campaigns.length > 0) && (
+              <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
+                <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
+              </Stack>
+            )}
           </Stack>
         </Box>
 

@@ -1,8 +1,8 @@
+import { useMemo, useCallback } from 'react';
 import { Box, Stack, TextField, Typography, MenuItem, Grid, Button, FormControlLabel, Checkbox } from '@mui/material';
 import WYSIWYG from './WYSIWYG';
 import Input from './Input';
 import Dropdown from './Dropdown';
-import { useFundStatuses } from '../hooks/news/useFundStatuses';
 import { useFundReceivingInfos } from '../hooks/news/useFundReceivingInfos';
 
 const TOPICS_BY_CHANNEL = {
@@ -35,32 +35,33 @@ const PostArticleForm = ({
   registrationQuestions = [], // event
   setRegistrationQuestions,   // event
 }) => {
-  const { statuses: fundStatuses } = useFundStatuses();
   const { infos: fundReceivingInfos } = useFundReceivingInfos();
 
-  const fundStatusOptions = fundStatuses.map((s) => ({ value: s.id, label: s.name }));
-  const fundReceivingOptions = fundReceivingInfos.map((i) => ({
-    value: i.id,
-    label: `${i.bankName ?? ''} - ${i.accountName ?? ''} (${i.accountNumber ?? ''})`,
-  }));
+  const fundReceivingOptions = useMemo(
+    () => fundReceivingInfos.map((i) => ({
+      value: i.id,
+      label: `${i.bankName ?? ''} - ${i.accountName ?? ''} (${i.accountNumber ?? ''})`,
+    })),
+    [fundReceivingInfos]
+  );
 
   // Câu hỏi event
-  const addQuestion = () => {
+  const addQuestion = useCallback(() => {
     setRegistrationQuestions((prev) => [
       ...prev,
       { id: Date.now(), label: "", type: "shortText", required: false, options: [""] },
     ]);
-  };
+  }, [setRegistrationQuestions]);
 
-  const updateQuestion = (id, field, value) => {
+  const updateQuestion = useCallback((id, field, value) => {
     setRegistrationQuestions((prev) => prev.map((q) => q.id === id ? { ...q, [field]: value } : q));
-  };
+  }, [setRegistrationQuestions]);
 
-  const removeQuestion = (id) => {
+  const removeQuestion = useCallback((id) => {
     setRegistrationQuestions((prev) => prev.filter((q) => q.id !== id));
-  };
+  }, [setRegistrationQuestions]);
 
-  const updateOption = (questionId, optionIndex, value) => {
+  const updateOption = useCallback((questionId, optionIndex, value) => {
     setRegistrationQuestions((prev) =>
       prev.map((q) => {
         if (q.id !== questionId) return q;
@@ -69,13 +70,13 @@ const PostArticleForm = ({
         return { ...q, options: newOptions };
       })
     );
-  };
+  }, [setRegistrationQuestions]);
 
-  const addOption = (questionId) => {
+  const addOption = useCallback((questionId) => {
     setRegistrationQuestions((prev) =>
       prev.map((q) => q.id === questionId ? { ...q, options: [...q.options, ""] } : q)
     );
-  };
+  }, [setRegistrationQuestions]);
 
   return (
     <Stack spacing={3}>
@@ -109,9 +110,8 @@ const PostArticleForm = ({
           <Box sx={{ mb: 3 }}>
             <Input label="Tên quỹ quyên góp" name="donationFundName" value={donationData.donationFundName} onChange={handleDonationInputChange} />
           </Box>
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}><Input label="Người phụ trách" name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} /></Box>
-            <Box sx={{ flex: 1 }}><Dropdown label="Trạng thái quỹ" options={fundStatusOptions} value={donationData.statusId ?? ''} onChange={(e) => handleDonationInputChange({ target: { name: 'statusId', value: e.target.value } })} /></Box>
+          <Box sx={{ mb: 3 }}>
+            <Input label="Người phụ trách" name="organizer" value={donationData.organizer} onChange={handleDonationInputChange} />
           </Box>
           <Box sx={{ mb: 3 }}>
             <Dropdown

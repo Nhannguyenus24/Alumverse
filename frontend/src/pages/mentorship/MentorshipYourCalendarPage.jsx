@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import {
   Alert,
   Box,
@@ -95,13 +95,13 @@ const MentorshipYourCalendarPage = () => {
   const deleteMutation = useDeleteAvailability();
   const updateProfileMutation = useUpdateMentorProfile();
 
-  const handleSaveBookingWindow = async (jsonString) => {
+  const handleSaveBookingWindow = useCallback(async (jsonString) => {
     try {
       await updateProfileMutation.updateProfile({ bookingWindowSettings: jsonString });
     } catch {
       /* error surfaced via mutation.errorMessage */
     }
-  };
+  }, [updateProfileMutation]);
 
   const [anchorMonth, setAnchorMonth] = useState(dayjs().startOf('month'));
   const [showAddTime, setShowAddTime] = useState(false);
@@ -120,21 +120,21 @@ const MentorshipYourCalendarPage = () => {
   const [editEndTime, setEditEndTime] = useState(null);
   const [editError, setEditError] = useState(null);
 
-  const openEditSlot = (slot) => {
+  const openEditSlot = useCallback((slot) => {
     setEditingSlot(slot);
     setEditStartTime(dayjs(slot.startTime));
     setEditEndTime(dayjs(slot.endTime));
     setEditError(null);
-  };
+  }, []);
 
-  const closeEditSlot = () => {
+  const closeEditSlot = useCallback(() => {
     setEditingSlot(null);
     setEditStartTime(null);
     setEditEndTime(null);
     setEditError(null);
-  };
+  }, []);
 
-  const submitEditSlot = async () => {
+  const submitEditSlot = useCallback(async () => {
     if (!editingSlot || !editStartTime || !editEndTime) return;
     if (!editEndTime.isAfter(editStartTime)) {
       setEditError('Giờ kết thúc phải sau giờ bắt đầu.');
@@ -156,10 +156,11 @@ const MentorshipYourCalendarPage = () => {
         err?.response?.data?.message ?? updateAvailabilityMutation.errorMessage ?? 'Không cập nhật được slot.';
       setEditError(message);
     }
-  };
+  }, [editingSlot, editStartTime, editEndTime, updateAvailabilityMutation, closeEditSlot]);
 
-  const toggleDay = (index) =>
+  const toggleDay = useCallback((index) => {
     setSelectedDays((prev) => (prev.includes(index) ? prev.filter((d) => d !== index) : [...prev, index]));
+  }, []);
 
   const profile = profileQuery.data;
   const availabilities = useMemo(
@@ -205,7 +206,7 @@ const MentorshipYourCalendarPage = () => {
 
   const calendarCells = useMemo(() => buildMonthCells(anchorMonth), [anchorMonth]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSubmitMessage(null);
     try {
       const today = dayjs();
@@ -269,18 +270,18 @@ const MentorshipYourCalendarPage = () => {
     } catch {
       setSubmitMessage({ severity: 'error', text: addMutation.errorMessage ?? 'Không thể thêm lịch.' });
     }
-  };
+  }, [startTime, endTime, repeatWeekly, selectedDays, startDate, endDate, singleDate, addMutation]);
 
-  const handleDeleteSlot = async (id) => {
+  const handleDeleteSlot = useCallback(async (id) => {
     if (!window.confirm('Xóa slot này khỏi lịch?')) return;
     try {
       await deleteMutation.deleteAvailability(id);
     } catch {
       /* surfaced via deleteMutation.errorMessage */
     }
-  };
+  }, [deleteMutation]);
 
-  const user = {
+  const calendarUser = useMemo(() => ({
     name: profile?.fullName ?? 'Tài khoản của tôi',
     role:
       profile && (profile.currentJobTitle || profile.currentCompany)
@@ -288,11 +289,11 @@ const MentorshipYourCalendarPage = () => {
         : 'Mentor',
     avatar: profile?.avatarUrl ?? '',
     cover: DEFAULT_COVER,
-  };
+  }), [profile]);
 
   return (
     <Page title="Cố vấn - Quản lý khung giờ">
-      <MentorshipProfileLayout user={user} cover={user.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
+      <MentorshipProfileLayout user={calendarUser} cover={calendarUser.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">

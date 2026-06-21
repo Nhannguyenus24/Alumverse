@@ -26,7 +26,14 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    gp.bio,
                    gp.dob,
                    gp.gender,
-                   gp.updated_at AS profile_updated_at
+                   gp.updated_at AS profile_updated_at,
+                   CAST(om.started_year AS text) AS started_year,
+                   CAST(om.graduated_year AS text) AS graduated_year,
+                   CAST(om.graduation_status AS text) AS graduation_status,
+                   CAST(om.program AS text) AS program,
+                   CAST(om.major AS text) AS major,
+                   CAST(om.faculty AS text) AS faculty,
+                   CAST(om.department AS text) AS department
             FROM users u
             LEFT JOIN global_profiles gp ON gp.user_id = u.id
             LEFT JOIN organization_members om ON om.user_id = u.id

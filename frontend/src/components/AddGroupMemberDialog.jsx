@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Alert,
   Box,
@@ -44,14 +44,14 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
   });
 
   // Filter out contacts who are already in the group
-  const availableContacts = contacts.filter(
+  const availableContacts = useMemo(() => contacts.filter(
     (c) => !existingMemberIds.includes(c.peerMemberId),
-  );
+  ), [contacts, existingMemberIds]);
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setSearchInput('');
     setSelectedMembers([]);
-  };
+  }, []);
 
   const { mutate: addMembers, isPending: isAdding, isError, error } = useAddGroupMembers({
     groupId,
@@ -61,13 +61,13 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
     },
   });
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     if (isAdding) return;
     resetState();
     onClose();
-  };
+  }, [isAdding, resetState, onClose]);
 
-  const handleToggleMember = (contact) => {
+  const handleToggleMember = useCallback((contact) => {
     setSelectedMembers((prev) => {
       const alreadySelected = prev.some((m) => m.peerMemberId === contact.peerMemberId);
       if (alreadySelected) {
@@ -83,16 +83,16 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
         },
       ];
     });
-  };
+  }, [remainingSlots]);
 
-  const handleRemoveSelected = (memberId) => {
+  const handleRemoveSelected = useCallback((memberId) => {
     setSelectedMembers((prev) => prev.filter((m) => m.peerMemberId !== memberId));
-  };
+  }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     if (selectedMembers.length === 0) return;
     addMembers(selectedMembers.map((m) => m.peerMemberId));
-  };
+  }, [selectedMembers, addMembers]);
 
   const canSubmit = selectedMembers.length > 0 && !isAdding;
 

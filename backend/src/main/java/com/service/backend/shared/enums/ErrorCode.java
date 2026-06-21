@@ -99,7 +99,6 @@ public enum ErrorCode {
     // Fund module
     FUND_NOT_FOUND("Không tìm thấy quỹ", 404),
     ORGANIZATION_NOT_FOUND("Không tìm thấy organization", 404),
-    FUND_STATUS_NOT_FOUND("Không tìm thấy trạng thái quỹ", 404),
     FUND_RECEIVING_INFO_NOT_FOUND("Không tìm thấy thông tin tài khoản đích", 404),
     FUND_INVALID_TIME_RANGE("Khoảng thời gian quỹ không hợp lệ", 400),
     FUND_ALREADY_ENDED("Quỹ đã kết thúc, không thể chỉnh sửa", 400),

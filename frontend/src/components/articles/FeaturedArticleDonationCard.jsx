@@ -22,11 +22,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
   const isEnded = Boolean(startTime && endTime && startTime.isValid() && endTime.isValid()) &&
     startTime.isBefore(endTime) && endTime.isBefore(now);
 
-  const isClosed =
-    isEnded ||
-    data?.status === "CLOSED" ||
-    data?.statusName === "CLOSED" ||
-    data?.statusName === "Đã đóng";
+  const isClosed = isEnded;
 
   const progressValue = Math.min(100, Math.round(((data?.currentAmount ?? 0) / Math.max(data?.targetAmount ?? 1, 1)) * 100));
   const startedAt = formatDate(data?.timeStarted);

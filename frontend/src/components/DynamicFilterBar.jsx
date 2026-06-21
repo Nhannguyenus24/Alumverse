@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Stack, Button, Select, MenuItem, Checkbox, ListItemText,
   TextField, Slider, Box, Typography, Popover, Paper
@@ -133,13 +133,13 @@ const filterBaseSx = (theme, active) => ({
 const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
   const [internalValue, setInternalValue] = useState({ all: true, ...value });
 
-  const updateState = (newState) => {
+  const updateState = useCallback((newState) => {
     setInternalValue(newState);
     onChange?.(newState);
-  };
+  }, [onChange]);
 
   // ===== TẤT CẢ =====
-  const handleAllClick = () => {
+  const handleAllClick = useCallback(() => {
     const reset = { all: true };
 
     config.forEach((item) => {
@@ -151,35 +151,35 @@ const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
       else reset[item.key] = [];
     });
     updateState(reset);
-  };
+  }, [config, updateState]);
 
   // ===== TOPICS =====
-  const handleTopicToggle = (key, option) => {
+  const handleTopicToggle = useCallback((key, option) => {
     const current = internalValue[key] || [];
     const newValues = current.includes(option) ? current.filter((v) => v !== option) : [...current, option];
 
     updateState({ ...internalValue, all: false, [key]: newValues });
-  };
+  }, [internalValue, updateState]);
 
   // ===== DROPDOWN =====
-  const handleDropdownChange = (key, newValue) => {
+  const handleDropdownChange = useCallback((key, newValue) => {
     updateState({ ...internalValue, all: false, [key]: newValue });
-  };
+  }, [internalValue, updateState]);
 
   // ===== DATE =====
-  const handleDateChange = (key, newValue) => {
+  const handleDateChange = useCallback((key, newValue) => {
     updateState({ ...internalValue, all: false, [key]: newValue });
-  };
+  }, [internalValue, updateState]);
 
   // ===== RANGE =====
-  const handleRangeChange = (key, newValue) => {
+  const handleRangeChange = useCallback((key, newValue) => {
     updateState({ ...internalValue, all: false, [key]: newValue });
-  };
+  }, [internalValue, updateState]);
 
   // ===== INPUT =====
-  const handleInputCommit = (key, newValue) => {
+  const handleInputCommit = useCallback((key, newValue) => {
     updateState({ ...internalValue, all: false, [key]: newValue });
-  };
+  }, [internalValue, updateState]);
 
   const formatDateVN = (dateStr) => {
     if (!dateStr) return '';

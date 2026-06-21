@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Container, Stack, Typography } from '@mui/material';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
@@ -23,7 +24,7 @@ function normalizeGroupChat(item) {
 function normalizePrivateChat(item) {
   return {
     id: item.id,
-    name: item.peerStudentId ?? item.title ?? '(No name)',
+    name: item.peerFullName ?? item.title ?? '(No name)',
     avatarUrl: item.peerAvatarUrl ?? null,
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,
@@ -35,7 +36,11 @@ function normalizePrivateChat(item) {
 }
 
 const ChatPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const targetMemberId = searchParams.get('memberId');
   const [searchInput, setSearchInput] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -58,7 +63,7 @@ const ChatPage = () => {
     isFetching: privateFetching,
     isError: privateError,
     errorMessage: privateErrorMsg,
-  } = usePrivateChatList({ searchQuery: appliedSearch, page });
+  } = usePrivateChatList({ searchQuery: appliedSearch, page, pageSize: targetMemberId ? 100 : undefined });
 
   const chats = useMemo(() => {
     const merged = [
@@ -85,11 +90,24 @@ const ChatPage = () => {
   }, [totalPage, page]);
 
   useEffect(() => {
+    if (!targetMemberId) return;
+    const targetChat = chats.find(
+      (chat) => chat.type === 'PRIVATE' && String(chat.peerMemberId) === String(targetMemberId),
+    );
+    if (targetChat && activeChatId !== targetChat.id) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setActiveChatId(targetChat.id);
+    }
+  }, [activeChatId, chats, targetMemberId]);
+
+  useEffect(() => {
+    if (targetMemberId) return;
+    if (isMobile) return;
     if (activeChatId == null && chats.length > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveChatId(chats[0].id);
     }
-  }, [chats, activeChatId]);
+  }, [chats, activeChatId, isMobile, targetMemberId]);
 
   const activeChat = useMemo(
     () => chats.find((c) => c.id === activeChatId) ?? null,
@@ -101,103 +119,104 @@ const ChatPage = () => {
   const isError = groupError || privateError;
   const errorMessage = groupErrorMsg ?? privateErrorMsg ?? null;
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = useCallback(() => {
     setAppliedSearch(searchInput.trim());
     setPage(1);
-  };
+  }, [searchInput]);
 
-  const handlePageChange = (_, value) => {
+  const handlePageChange = useCallback((_, value) => {
     setPage(value);
-  };
+  }, []);
 
-  const handleGroupCreated = (createdGroup) => {
+  const handleGroupCreated = useCallback((createdGroup) => {
     if (createdGroup?.id) {
       setActiveChatId(createdGroup.id);
     }
-  };
+  }, []);
 
-  const handleLeaveGroup = (leftGroupId) => {
+  const handleLeaveGroup = useCallback((leftGroupId) => {
     invalidateChatListQueries(queryClient);
     if (activeChatId === leftGroupId) {
       setActiveChatId(null);
     }
-  };
+  }, [queryClient, activeChatId]);
+
+  const handleSelectChat = useCallback((chatId) => {
+    setActiveChatId(chatId);
+  }, []);
+
+  const handleBackToList = useCallback(() => {
+    setActiveChatId(null);
+  }, []);
+
+  const showMobileChatPanel = isMobile && activeChatId != null;
+  const showSidebar = !isMobile || !showMobileChatPanel;
+  const showPanel = !isMobile || showMobileChatPanel;
 
   return (
     <Page title="Chat">
-      <Container maxWidth={false} disableGutters sx={{ pb: 3 }}>
-        <Container
-          maxWidth="xl"
-          sx={{
-            pt: { xs: 1.5, sm: 2, md: 2 },
-            px: { xs: 2, sm: 3, lg: 6 },
-          }}
-        >
-          <Box
+      <Box
+        sx={{
+          height: { xs: 'calc(100dvh - 56px)', md: 'calc(100dvh - 64px)' },
+          minHeight: 0,
+          width: '100%',
+          position: 'relative',
+          bgcolor: 'background.default',
+          overflow: 'hidden',
+        }}
+      >
+        {isError ? (
+          <Alert
+            severity="error"
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: { xs: 2, md: 3 },
+              borderRadius: 0,
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              zIndex: 2,
             }}
           >
-            <Stack
-              spacing={1.5}
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                width: '100%',
-                minHeight: 0,
-                px: { xs: 1.5, sm: 2, md: 2.75 },
-              }}
-            >
-              <Typography
-                variant="h1"
-                fontWeight={800}
-                color="primary.main"
-                sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-              >
-                NETWORK
-              </Typography>
+            {errorMessage}
+          </Alert>
+        ) : null}
 
-              {isError ? (
-                <Alert severity="error" sx={{ borderRadius: 1.5 }}>
-                  {errorMessage}
-                </Alert>
-              ) : null}
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            width: '100%',
+            height: '100%',
+            minHeight: 0,
+            overflow: 'hidden',
+            bgcolor: 'background.paper',
+          }}
+        >
+          {showSidebar ? (
+            <NetworkChatSidebar
+              chats={chats}
+              activeChatId={activeChatId}
+              onSelectChat={handleSelectChat}
+              onCreateGroupChat={() => setCreateGroupOpen(true)}
+              searchValue={searchInput}
+              onSearchChange={setSearchInput}
+              onSearchSubmit={handleSearchSubmit}
+              page={safePage}
+              totalPage={totalPage}
+              onPageChange={handlePageChange}
+              isPending={isPending}
+              isFetching={isFetching}
+            />
+          ) : null}
 
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  overflow: 'hidden',
-                  height: { xs: 'calc(100dvh - 254px)', md: 'calc(100dvh - 209px)' },
-                  minHeight: 0,
-                  bgcolor: 'background.paper',
-                }}
-              >
-                <NetworkChatSidebar
-                  chats={chats}
-                  activeChatId={activeChatId}
-                  onSelectChat={setActiveChatId}
-                  onCreateGroupChat={() => setCreateGroupOpen(true)}
-                  searchValue={searchInput}
-                  onSearchChange={setSearchInput}
-                  onSearchSubmit={handleSearchSubmit}
-                  page={safePage}
-                  totalPage={totalPage}
-                  onPageChange={handlePageChange}
-                  isPending={isPending}
-                  isFetching={isFetching}
-                />
-                <NetworkChatPanel activeChat={activeChat} onLeaveGroup={handleLeaveGroup} />
-              </Box>
-            </Stack>
-          </Box>
-        </Container>
-      </Container>
+          {showPanel ? (
+            <NetworkChatPanel
+              activeChat={activeChat}
+              onLeaveGroup={handleLeaveGroup}
+              onBack={isMobile ? handleBackToList : undefined}
+            />
+          ) : null}
+        </Box>
+      </Box>
       <CreateGroupChatDialog
         open={createGroupOpen}
         onClose={() => setCreateGroupOpen(false)}

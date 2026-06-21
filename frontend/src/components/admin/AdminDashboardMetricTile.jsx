@@ -1,7 +1,7 @@
 import React from 'react';
-import { Box, Paper, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Paper, Typography, useTheme } from '@mui/material';
 
-const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
+const AdminDashboardMetricTile = ({ label, value, caption, icon, trend, sx }) => {
   const theme = useTheme();
 
   return (
@@ -16,6 +16,7 @@ const AdminDashboardMetricTile = ({ label, value, caption, icon, trend }) => {
         flexDirection: 'column',
         gap: 1.5,
         bgcolor: 'background.paper',
+        ...sx,
       }}
     >
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

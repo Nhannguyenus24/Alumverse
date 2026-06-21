@@ -27,4 +27,12 @@ public class UserProfileResponse {
     private LocalDate dob;
     private String gender;
     private LocalDateTime profileUpdatedAt;
+
+    private String startedYear;
+    private String graduatedYear;
+    private String graduationStatus;
+    private String program;
+    private String major;
+    private String faculty;
+    private String department;
 }

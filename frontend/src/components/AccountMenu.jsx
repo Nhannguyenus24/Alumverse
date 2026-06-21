@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router";
 import {
   Box,
@@ -18,6 +18,15 @@ import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettin
 import { useAuth } from "../hooks/useAuth";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
+const AVATAR_SX = {
+  borderRadius: "50%",
+  bgcolor: "primary.main",
+  color: "primary.contrastText",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
 const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -34,32 +43,23 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
   const toOrgPath = useOrgPath();
   const isGuestVerificationLevel = verificationLevel === 0;
   const isAdmin = user?.role === 'ADMIN';
-  const handleOpen = (event) => {
+  const handleOpen = useCallback((event) => {
     event.stopPropagation();
     setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => setAnchorEl(null);
+  }, []);
+  const handleClose = useCallback(() => setAnchorEl(null), []);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     handleClose();
     await logout();
     navigate("/");
-  };
-
-  const avatarSx = {
-    borderRadius: "50%",
-    bgcolor: "primary.main",
-    color: "primary.contrastText",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
+  }, [handleClose, logout, navigate]);
 
   const resolvedAvatarUrl = !avatarLoadFailed && avatarUrl ? avatarUrl : undefined;
-  const avatarImgProps = {
+  const avatarImgProps = useMemo(() => ({
     referrerPolicy: "no-referrer",
     onError: () => setAvatarLoadFailed(true),
-  };
+  }), []);
 
   return (
     <>
@@ -76,7 +76,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
         aria-expanded={open ? "true" : undefined}
         aria-controls={open ? "account-menu" : undefined}
       >
-        <Box sx={{ width: 36, height: 36, ...avatarSx }}>
+        <Box sx={{ width: 36, height: 36, ...AVATAR_SX }}>
           <Avatar
             src={resolvedAvatarUrl}
             alt={displayName}
@@ -157,7 +157,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           <Avatar
             src={resolvedAvatarUrl}
             slotProps={{ img: avatarImgProps }}
-            sx={{ ...avatarSx, width: 40, height: 40 }}
+            sx={{ ...AVATAR_SX, width: 40, height: 40 }}
           >
             <PersonIcon sx={{ fontSize: 22 }} />
           </Avatar>

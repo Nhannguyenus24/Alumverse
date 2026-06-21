@@ -15,7 +15,8 @@ import IconButtonMenu from '../IconButtonMenu';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { truncateText } from '../../utils/stringUtils';
-import { formatAcademicValue, networkCardClickableSx } from './networkCardUtils';
+import { networkCardClickableSx } from './networkCardUtils';
+import { buildProgramMajorRows } from '../../utils/academicUtils';
 
 const SUBTITLE_MAX_LEN = 72;
 
@@ -29,14 +30,14 @@ const NetworkConnectionCard = ({
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(connection.peerMemberId);
   const displayName = connection.fullName || 'N/A';
-  const programLabel = formatAcademicValue(connection.program, '—');
-  const majorLabel = formatAcademicValue(connection.major, 'N/A');
-  const subtitleFull = `${programLabel} · ${majorLabel}`;
-  const subtitleDisplay = truncateText(subtitleFull, SUBTITLE_MAX_LEN, subtitleFull);
+  const academicRows = buildProgramMajorRows(connection.program, connection.major);
+  const subtitleFull = academicRows
+    .map((row) => [row.program, row.major].filter(Boolean).join(' · '))
+    .join('\n');
 
   const handleMessage = (event) => {
     stopActionPropagation(event);
-    navigate('/chat');
+    navigate(`/chat?memberId=${connection.peerMemberId}`);
   };
 
   return (
@@ -69,15 +70,24 @@ const NetworkConnectionCard = ({
             <Typography fontWeight={700} variant="subtitle1" noWrap sx={{ lineHeight: 1.3 }}>
               {displayName}
             </Typography>
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              noWrap
-              title={subtitleFull}
-              sx={{ display: 'block', mt: 0.25, lineHeight: 1.3 }}
-            >
-              {subtitleDisplay}
-            </Typography>
+            {academicRows.length > 0 ? (
+              <Box title={subtitleFull} sx={{ mt: 0.25 }}>
+                {academicRows.map((row, index) => {
+                  const line = [row.program, row.major].filter(Boolean).join(' · ');
+                  return (
+                    <Typography
+                      key={`${line}-${index}`}
+                      variant="caption"
+                      color="text.secondary"
+                      noWrap
+                      sx={{ display: 'block', lineHeight: 1.3 }}
+                    >
+                      {truncateText(line, SUBTITLE_MAX_LEN, line)}
+                    </Typography>
+                  );
+                })}
+              </Box>
+            ) : null}
           </Box>
         </Stack>
 

@@ -1,19 +1,16 @@
 import { useSnackbar } from 'notistack';
 import {
-  Avatar,
   Box,
   CircularProgress,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
+  IconButton,
   Pagination,
   Stack,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
-import IconButtonMenu from '../IconButtonMenu';
 import ChatAvatar from '../ChatAvatar';
 
 const NetworkChatSidebar = ({
@@ -38,19 +35,39 @@ const NetworkChatSidebar = ({
     onSearchSubmit?.();
   };
 
+  const handleCreateGroupChat = () => {
+    if (onCreateGroupChat) {
+      onCreateGroupChat();
+      return;
+    }
+    enqueueSnackbar('Tạo nhóm chat đang được phát triển.', { variant: 'info' });
+  };
+
   return (
     <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        flex: 1,
+        flex: { xs: '1 1 auto', md: '0 0 340px' },
         minHeight: 0,
+        height: '100%',
+        overflow: 'hidden',
         bgcolor: 'background.paper',
-        borderRight: { xs: 'none', md: 1 },
-        borderColor: 'divider',
-        width: { xs: '100%', md: 320 },
-        minWidth: { xs: '100%', md: 280 },
-        maxWidth: { xs: '100%', md: 320 },
+        position: 'relative',
+        '&::after': {
+          content: { xs: 'none', md: '""' },
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '1px',
+          height: '100%',
+          bgcolor: 'divider',
+          pointerEvents: 'none',
+          zIndex: 1,
+        },
+        width: { xs: '100%', md: 340 },
+        minWidth: { xs: '100%', md: 300 },
+        maxWidth: { xs: '100%', md: 360 },
       }}
     >
       <Box
@@ -60,39 +77,33 @@ const NetworkChatSidebar = ({
           justifyContent: 'space-between',
           gap: 1,
           px: 2,
-          py: 1.5,
+          py: 0,
+          minHeight: 72,
           borderBottom: 1,
           borderColor: 'divider',
         }}
       >
-        <Typography variant="subtitle1" fontWeight={600} sx={{ minWidth: 0 }}>
-          Chats
-        </Typography>
-        <IconButtonMenu
-          menuId="network-chat-list-menu"
-          buttonAriaLabel="Tùy chọn danh sách chat"
+        <Typography
+          variant="h4"
+          color="primary.main"
+          fontWeight={800}
+          sx={{
+            minWidth: 0,
+            fontSize: { xs: '1.45rem', md: '1.6rem' },
+          }}
         >
-          {({ close }) => (
-            <MenuItem
-              onClick={() => {
-                close();
-                if (onCreateGroupChat) {
-                  onCreateGroupChat();
-                } else {
-                  enqueueSnackbar('Tạo nhóm chat đang được phát triển.', { variant: 'info' });
-                }
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                <GroupAddIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                primary="Tạo nhóm chat"
-                primaryTypographyProps={{ variant: 'body2' }}
-              />
-            </MenuItem>
-          )}
-        </IconButtonMenu>
+          Tin nhắn
+        </Typography>
+        <Tooltip title="Tạo nhóm chat" placement="bottom">
+          <IconButton
+            size="small"
+            aria-label="Tạo nhóm chat"
+            onClick={handleCreateGroupChat}
+            sx={{ flexShrink: 0 }}
+          >
+            <GroupAddIcon />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider' }}>
@@ -100,7 +111,7 @@ const NetworkChatSidebar = ({
           value={searchValue}
           onChange={onSearchChange}
           onKeyDown={handleSearchKeyDown}
-          placeholder="Tìm chat… (Enter để tìm)"
+          placeholder="Tìm đoạn chat"
         />
       </Box>
 

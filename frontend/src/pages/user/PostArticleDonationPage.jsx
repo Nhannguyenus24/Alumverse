@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useSnackbar } from "notistack";
 import {
+  alpha,
   Box,
   Button,
   CircularProgress,
@@ -27,11 +28,11 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 
 import Page from "../../components/Page";
-import CoverUpload from "../../components/CoverUpload";
+import Breadcrumb from "../../components/Breadcrumb";
+import MoneyField from "../../components/MoneyField";
 import WYSIWYG from "../../components/WYSIWYG";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useCreateFund } from "../../hooks/news/useCreateFund";
-import { useFundStatuses } from "../../hooks/news/useFundStatuses";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
 import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
@@ -47,7 +48,6 @@ const buildSchema = (minStartTime) =>
     .object({
       fundName: z.string().trim().min(1, "Vui lòng nhập tên quỹ quyên góp"),
       organizer: z.string().trim().min(1, "Vui lòng nhập người tổ chức"),
-      statusId: z.coerce.number().int().positive("Vui lòng chọn trạng thái"),
       fundReceivingInfoId: z.coerce
         .number()
         .int()
@@ -95,7 +95,6 @@ const buildSchema = (minStartTime) =>
 const defaultValues = {
   fundName: "",
   organizer: "",
-  statusId: "",
   fundReceivingInfoId: "",
   targetAmount: "",
   descriptionShort: "",
@@ -111,7 +110,6 @@ export default function PostArticleDonationPage() {
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
 
   const organizationId = useOrganizationStore((s) => s.organization?.id ?? null);
-  const { statuses } = useFundStatuses();
   const { infos: receivingInfos } = useFundReceivingInfos();
 
   const pickImageFile = (file, onValid, inputEl) => {
@@ -122,14 +120,6 @@ export default function PostArticleDonationPage() {
       return;
     }
     onValid(file);
-  };
-
-  // Ảnh bìa trang — decorative, không submit vào API
-  const [coverPreview, setCoverPreview] = useState(null);
-  const handleCoverChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    pickImageFile(file, (f) => setCoverPreview(URL.createObjectURL(f)), e.target);
   };
 
   // Logo quỹ — upload riêng → POST /images/upload → logoUrl
@@ -181,7 +171,6 @@ export default function PostArticleDonationPage() {
         name: values.fundName,
         managerName: values.organizer,
         logoUrl: logoUrl ?? null,
-        status_id: Number(values.statusId),
         fundReceivingInfoId: Number(values.fundReceivingInfoId),
         targetAmount: Number(values.targetAmount),
         description_short: values.descriptionShort,
@@ -209,36 +198,48 @@ export default function PostArticleDonationPage() {
       title="Tạo quỹ quyên góp"
       meta={<meta name="description" content="Tạo quỹ quyên góp" />}
     >
-      <Box sx={{ minHeight: "100vh", backgroundColor: "background.default" }}>
-        {/* Ảnh bìa trang — chỉ hiển thị, không liên quan logoUrl */}
-        <CoverUpload value={coverPreview} onChange={handleCoverChange} accept={IMAGE_ACCEPT} />
-
+      <Box
+        sx={{
+          minHeight: "100vh",
+          py: 5,
+          background: (theme) =>
+            `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${theme.palette.background.default} 320px)`,
+        }}
+      >
         <Container maxWidth="lg" sx={{ position: "relative", zIndex: 10 }}>
           <Box
             sx={{
               width: { xs: "100%", md: "85%", lg: "75%" },
               mx: "auto",
-              mt: -10,
-              mb: 6,
             }}
           >
+            <Breadcrumb
+              items={[
+                { label: "Quyên góp", path: "/donations" },
+                { label: "Tạo quỹ" },
+              ]}
+              fontSize="0.9rem"
+            />
+
+            <Typography
+              variant="h1"
+              fontWeight={800}
+              color="primary.main"
+              sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, mb: 2.5 }}
+            >
+              TẠO QUỸ QUYÊN GÓP
+            </Typography>
+
             <Paper
               elevation={0}
               sx={{
                 p: { xs: 3, md: 5 },
+                borderRadius: 3,
                 border: "1px solid",
                 borderColor: "divider",
+                boxShadow: (theme) => `0 10px 26px ${alpha(theme.palette.primary.main, 0.08)}`,
               }}
             >
-              <Typography
-                variant="h1"
-                fontWeight={800}
-                color="primary.main"
-                sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, textAlign: "center", mb: 4 }}
-              >
-                TẠO QUỸ QUYÊN GÓP
-              </Typography>
-
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
                   <Grid container spacing={2.5}>
@@ -326,34 +327,8 @@ export default function PostArticleDonationPage() {
                       </Box>
                     </Grid>
 
-                    {/* Trạng thái + Tài khoản nhận */}
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <FormControl fullWidth error={!!errors.statusId}>
-                        <InputLabel id="status-label">Trạng thái</InputLabel>
-                        <Controller
-                          name="statusId"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              labelId="status-label"
-                              label="Trạng thái"
-                              MenuProps={{ disableScrollLock: true }}
-                            >
-                              {statuses.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>
-                                  {s.name}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                        <FormHelperText>{errors.statusId?.message}</FormHelperText>
-                      </FormControl>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    {/* Tài khoản nhận */}
+                    <Grid size={12}>
                       <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
                         <InputLabel id="receiving-label">Tài khoản nhận quỹ</InputLabel>
                         <Controller
@@ -381,14 +356,21 @@ export default function PostArticleDonationPage() {
 
                     {/* Số tiền mục tiêu */}
                     <Grid size={12}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Số tiền mục tiêu để quyên góp (VNĐ)"
-                        placeholder="Nhập số tiền mục tiêu"
-                        {...register("targetAmount")}
-                        error={!!errors.targetAmount}
-                        helperText={errors.targetAmount?.message}
+                      <Controller
+                        name="targetAmount"
+                        control={control}
+                        render={({ field }) => (
+                          <MoneyField
+                            fullWidth
+                            label="Số tiền mục tiêu để quyên góp (VNĐ)"
+                            placeholder="Nhập số tiền mục tiêu"
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            error={!!errors.targetAmount}
+                            helperText={errors.targetAmount?.message}
+                          />
+                        )}
                       />
                     </Grid>
 
