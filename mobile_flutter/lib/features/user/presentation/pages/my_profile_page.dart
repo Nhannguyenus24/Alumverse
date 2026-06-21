@@ -18,6 +18,9 @@ class MyProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(myProfileProvider);
+    // Only authorised trusted verifiers see the alumni-verification entry.
+    final isVerifier =
+        ref.watch(isTrustedVerifierProvider).valueOrNull ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +44,7 @@ class MyProfilePage extends ConsumerWidget {
             message: 'Không tải được hồ sơ',
             onRetry: () => ref.invalidate(myProfileProvider),
           ),
-          data: (p) => _ProfileView(profile: p),
+          data: (p) => _ProfileView(profile: p, showVerifier: isVerifier),
         ),
       ),
     );
@@ -49,9 +52,10 @@ class MyProfilePage extends ConsumerWidget {
 }
 
 class _ProfileView extends StatelessWidget {
-  const _ProfileView({required this.profile});
+  const _ProfileView({required this.profile, this.showVerifier = false});
 
   final UserProfile profile;
+  final bool showVerifier;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +89,20 @@ class _ProfileView extends StatelessWidget {
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () =>
+                    context.push(RouteNames.organizationRegistration),
+                icon: const Icon(Icons.verified_user_outlined, size: 18),
+                label: const Text('Xác minh học vấn'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -118,6 +136,14 @@ class _ProfileView extends StatelessWidget {
           title: 'Vé của tôi',
           onTap: () => context.push(RouteNames.myTickets),
         ),
+        if (showVerifier) ...[
+          const SizedBox(height: 10),
+          _ActivityTile(
+            icon: Icons.verified_user_outlined,
+            title: 'Xác minh cựu sinh viên',
+            onTap: () => context.push(RouteNames.alumniVerification),
+          ),
+        ],
         const SizedBox(height: 10),
         _ActivityTile(
           icon: Icons.volunteer_activism_outlined,
