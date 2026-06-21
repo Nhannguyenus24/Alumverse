@@ -1,5 +1,7 @@
 package com.service.backend.chat.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -19,6 +21,7 @@ public class NetworkMemberSearchService {
     private final NetworkMemberSearchRepository networkMemberSearchRepository;
 
     public Mono<PaginatedResponse<NetworkMemberSearchItemResponse>> searchMembers(
+            List<Integer> organizationIds,
             String fullName,
             String program,
             String major,
@@ -31,15 +34,18 @@ public class NetworkMemberSearchService {
 
         int offset = page * size;
 
-        return Mono.zip(
-                        SecurityUtils.getCurrentOrganizationId(),
-                        SecurityUtils.getCurrentUserId())
-                .flatMap(tuple -> {
-                    Integer organizationId = tuple.getT1();
-                    Long currentUserId = tuple.getT2();
+        // No organization selected → the directory spans every organization.
+        // The repository's IN-clause still needs a non-empty list to be valid
+        // SQL, so pass a sentinel that matches nothing; it is short-circuited
+        // by filterByOrg = false.
+        boolean filterByOrg = organizationIds != null && !organizationIds.isEmpty();
+        List<Integer> orgIds = filterByOrg ? organizationIds : List.of(-1);
 
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(currentUserId -> {
                     Mono<Long> totalMono = networkMemberSearchRepository.countSearchMembers(
-                            organizationId,
+                            filterByOrg,
+                            orgIds,
                             currentUserId,
                             fullNamePattern,
                             programPattern,
@@ -47,7 +53,8 @@ public class NetworkMemberSearchService {
 
                     return PaginationHelper.paginate(
                             networkMemberSearchRepository.searchMembers(
-                                    organizationId,
+                                    filterByOrg,
+                                    orgIds,
                                     currentUserId,
                                     fullNamePattern,
                                     programPattern,
