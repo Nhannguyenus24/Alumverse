@@ -26,6 +26,21 @@ const DONATION_SIDEBAR_ITEMS = [
   { id: "create", label: "Mở quỹ quyên góp", icon: <AddCircleOutlineIcon /> },
 ];
 
+const STATUS_TRANSLATIONS = {
+  "ACTIVE": "Đang hoạt động",
+  "CLOSED": "Đã đóng",
+  "PENDING": "Chờ duyệt",
+  "APPROVED": "Đã duyệt",
+  "REJECTED": "Từ chối",
+  "UPCOMING": "Sắp diễn ra",
+  "IMPORTANT": "Quan trọng",
+  "POOR": "Vượt khó",
+  "RURAL_AREAS": "Vùng sâu vùng xa",
+  "COMPLETED": "Đã hoàn thành",
+  "URGENT": "Khẩn cấp",
+  "EMERGENCY": "Cứu trợ khẩn cấp",
+};
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
 }
@@ -61,14 +76,14 @@ export default function DonationPage() {
   const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
   const warningSetRef = useRef(new Set());
 
-  const gridPageSize = 3;
+  const gridPageSize = 4;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => [
-    { type: "dropdown", key: "statusId", label: "Trạng thái", multiple: false, options: statusOptions.map((o) => ({ value: o.value, label: o.label })) },
+    { type: "dropdown", key: "statusId", label: "Loại quỹ", multiple: false, options: statusOptions.map((o) => ({ value: o.value, label: o.label })) },
     { type: "date", key: "timeStartedFrom", label: "Từ ngày" },
     { type: "date", key: "timeStartedTo", label: "Đến ngày" },
-    { type: "dropdown", key: "trending", label: "Xu hướng", multiple: false, options: [{ value: "asc", label: "ASC" }, { value: "desc", label: "DESC" }] },
+    { type: "dropdown", key: "trending", label: "Xu hướng", multiple: false, options: [{ value: "asc", label: "Cũ nhất" }, { value: "desc", label: "Mới nhất" }] },
     { type: "range-input", key: "amount", label: "Mức quyên góp" },
   ], [statusOptions]);
 
@@ -78,7 +93,7 @@ export default function DonationPage() {
     fundApi.getFundStatuses()
       .then((statuses) => {
         if (ignore) return;
-        setStatusOptions(statuses.map((item) => ({ value: String(item.id), label: item.name })));
+        setStatusOptions(statuses.map((item) => ({ value: String(item.id), label: STATUS_TRANSLATIONS[item.name?.toUpperCase()] || item.name })));
       })
       .catch((error) => {
         if (ignore) return;
@@ -138,9 +153,14 @@ export default function DonationPage() {
           const pagedData = payload?.data;
           const items = pagedData?.items ?? [];
 
-          if (page === 1 && items.length > 0 && !featuredCampaign) {
-            setFeaturedCampaign(items[0]);
-            setCampaigns(items.slice(1));
+          if (page === 1) {
+            if (items.length > 0) {
+              setFeaturedCampaign(items[0]);
+              setCampaigns(items.slice(1));
+            } else {
+              setFeaturedCampaign(null);
+              setCampaigns([]);
+            }
           } else {
             setCampaigns(items);
           }
@@ -231,19 +251,13 @@ export default function DonationPage() {
               <SearchBar value={search} onChange={handleSearchChange} placeholder="Tìm kiếm chiến dịch quyên góp..." />
             </Stack>
 
-            {(isLoading || isLoadingStatus) && (
-              <Box sx={{ mb: 3 }}>
-                <LinearProgress sx={{ height: 8, borderRadius: 999 }} />
-              </Box>
-            )}
-
             {errorMessage && (
               <Box sx={{ mb: 3, p: 2, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
                 <Typography sx={{ color: "#9f2f2f", fontWeight: 600 }}>{errorMessage}</Typography>
               </Box>
             )}
 
-            {!isLoading && !errorMessage && campaigns.length === 0 && (
+            {!isLoading && !errorMessage && !featuredCampaign && campaigns.length === 0 && (
               <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
                 <Typography sx={{ color: "#43608e", fontWeight: 600 }}>Không có quỹ nào phù hợp với bộ lọc hiện tại.</Typography>
               </Box>
@@ -282,9 +296,11 @@ export default function DonationPage() {
               </Box>
             )}
 
-            <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
-              <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
-            </Stack>
+            {(featuredCampaign || campaigns.length > 0) && (
+              <Stack direction="row" justifyContent="center" alignItems="center" sx={{ mt: 3.5 }}>
+                <Pagination count={pageCount || 1} page={page} onChange={handlePageChange} color="primary" shape="rounded" size="large" sx={{ "& .MuiPaginationItem-root": { fontWeight: 700, minWidth: 38, height: 38 } }} />
+              </Stack>
+            )}
           </Stack>
         </Box>
 

@@ -8,7 +8,7 @@ const reportPost = async ({ id, reporterMemberId, reason, description }) => {
 };
 
 export const useReportForumPost = () => {
-  const queryClient = useQueryClient();
+  
 
   const mutation = useMutation({
     mutationFn: reportPost,

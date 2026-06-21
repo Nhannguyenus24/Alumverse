@@ -62,7 +62,7 @@ const AdminForumReportsPage = () => {
         setReports(data.content || []);
         setTotalElements(data.totalElements || 0);
       }
-    } catch (err) {
+    } catch (_) {
       enqueueSnackbar("Không thể tải danh sách báo cáo.", { variant: "error" });
     } finally {
       setLoading(false);
@@ -94,7 +94,7 @@ const AdminForumReportsPage = () => {
       enqueueSnackbar("Đã xử lý báo cáo thành công.", { variant: "success" });
       setReviewDialog({ open: false, report: null });
       fetchReports();
-    } catch (err) {
+    } catch (_) {
       const msg = err.response?.data?.message || "Không thể xử lý báo cáo.";
       enqueueSnackbar(msg, { variant: "error" });
     } finally {

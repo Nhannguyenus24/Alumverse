@@ -1,6 +1,5 @@
 import { Box, Divider, Typography } from '@mui/material';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined';
 import PersonIcon from '@mui/icons-material/Person';
 
 const StatCell = ({ label, value, showLabel = true }) => {
@@ -92,18 +91,6 @@ const ForumBoardRow = ({ board, onClick }) => {
             <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
             <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
           </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'text.secondary',
-              pl: 2,
-            }}
-          >
-            <NotificationsNoneOutlinedIcon fontSize="small" />
-          </Box>
         </Box>
 
         {/* Mobile extras */}
@@ -113,9 +100,6 @@ const ForumBoardRow = ({ board, onClick }) => {
             <Box sx={{ display: 'flex', gap: 2 }}>
               <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
               <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
-              <NotificationsNoneOutlinedIcon fontSize="small" />
             </Box>
           </Box>
           <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>

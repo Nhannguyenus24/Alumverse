@@ -1,4 +1,4 @@
-import PropTypes from 'prop-types';
+
 import { useRef } from 'react';
 import { SnackbarProvider } from 'notistack';
 import { styled } from '@mui/material/styles';
@@ -69,9 +69,6 @@ function SnackbarStyles() {
   );
 }
 
-NotistackProvider.propTypes = {
-  children: PropTypes.node,
-};
 
 export default function NotistackProvider({ children }) {
   const notistackRef = useRef(null);
