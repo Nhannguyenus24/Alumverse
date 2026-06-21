@@ -5,6 +5,7 @@ import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/organization.dart';
 import '../models/organization_introduction.dart';
+import '../models/pending_peer_verification.dart';
 import '../models/trusted_verifier.dart';
 
 final organizationApiProvider = Provider<OrganizationApi>((ref) {
@@ -75,6 +76,28 @@ class OrganizationApi {
         'verifierUserId': verifierUserId,
       },
     );
+  }
+
+  /// Peer-verification requests the current user RECEIVED (pending), scoped to
+  /// [organizationId] (`GET /users/me/peer-verifications/pending`).
+  Future<List<PendingPeerVerification>> getPendingPeerVerifications(
+      int organizationId) async {
+    final res = await _dio.get(
+      ApiEndpoints.peerVerificationPending,
+      queryParameters: {'organizationId': organizationId},
+    );
+    final body = res.data;
+    final list = (body is Map ? body['data'] : body) as List? ?? const [];
+    return list
+        .map((e) =>
+            PendingPeerVerification.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Accept (vouch for) a received peer-verification request
+  /// (`PATCH /users/me/peer-verifications/{requestId}/accept`).
+  Future<void> acceptPeerVerification(int requestId) {
+    return _dio.patch(ApiEndpoints.peerVerificationAccept('$requestId'));
   }
 
   /// Upload a proof document for admin verification

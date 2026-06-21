@@ -4,6 +4,7 @@ import '../../../../core/config/env.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../data/models/organization.dart';
 import '../../data/models/organization_introduction.dart';
+import '../../data/models/pending_peer_verification.dart';
 import '../../data/models/trusted_verifier.dart';
 import '../../data/repositories/organization_repository.dart';
 
@@ -69,4 +70,15 @@ final organizationIntroductionProvider =
 /// before login.
 final organizationListProvider = FutureProvider<List<Organization>>((ref) {
   return ref.read(organizationRepositoryProvider).getOrganizations();
+});
+
+/// Peer-verification requests the current user received, for the current org.
+/// Re-watches the current organization so it scopes to the active tenant.
+final pendingPeerVerificationsProvider =
+    FutureProvider<List<PendingPeerVerification>>((ref) async {
+  final org = ref.watch(organizationStateProvider).valueOrNull;
+  if (org == null) return const [];
+  return ref
+      .read(organizationRepositoryProvider)
+      .getPendingPeerVerifications(org.id);
 });
