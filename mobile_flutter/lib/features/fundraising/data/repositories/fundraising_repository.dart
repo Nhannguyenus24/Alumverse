@@ -5,7 +5,6 @@ import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
 import '../models/fund_detail.dart';
 import '../models/fund_donation.dart';
-import '../models/fund_status.dart';
 import '../models/fund_summary.dart';
 
 final fundraisingRepositoryProvider = Provider<FundraisingRepository>((ref) {
@@ -72,7 +71,6 @@ class FundraisingRepository {
     int limit = 10,
     String? q,
     int? organizationId,
-    int? statusId,
     num? targetAmountMin,
     num? targetAmountMax,
     DateTime? timeStartedFrom,
@@ -85,7 +83,6 @@ class FundraisingRepository {
         'limit': limit,
         if (q != null && q.isNotEmpty) 'q': q,
         if (organizationId != null) 'organizationId': organizationId,
-        if (statusId != null) 'statusId': statusId,
         if (targetAmountMin != null) 'targetAmountMin': targetAmountMin,
         if (targetAmountMax != null) 'targetAmountMax': targetAmountMax,
         if (timeStartedFrom != null)
@@ -94,17 +91,6 @@ class FundraisingRepository {
       },
     );
     return _pageResult(res.data, FundSummary.fromJson);
-  }
-
-  /// Status options for the filter dropdown.
-  Future<List<FundStatus>> getFundStatuses() async {
-    final res = await _dio.get(ApiEndpoints.fundStatuses);
-    final data = res.data is Map ? res.data['data'] : res.data;
-    final list = data is Map ? (data['data'] ?? data['items']) : data;
-    if (list is! List) return const [];
-    return list
-        .map((e) => FundStatus.fromJson(e as Map<String, dynamic>))
-        .toList();
   }
 
   Future<FundDetail> getFundDetail(int id) async {

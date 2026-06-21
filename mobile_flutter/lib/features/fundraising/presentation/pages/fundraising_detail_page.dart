@@ -183,8 +183,6 @@ class _ProgressPanel extends StatelessWidget {
               formatVnd(fund.averageDonation)),
           if (fund.managerName != null && fund.managerName!.isNotEmpty)
             _row(Icons.person_outline, 'Người phụ trách', fund.managerName!),
-          if (fund.statusName != null && fund.statusName!.isNotEmpty)
-            _row(Icons.flag_outlined, 'Trạng thái', fund.statusName!),
           if (fund.timeStarted != null)
             _row(Icons.play_circle_outline, 'Bắt đầu',
                 df.format(fund.timeStarted!)),

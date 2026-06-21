@@ -362,14 +362,8 @@ CREATE TABLE "funds" (
   "current_amount" decimal,
   "time_started" timestamp,
   "donor_count" integer DEFAULT 0, -- so luong donate, phuc vu frontend
-  "status_id" integer,  -- khoa ngoai den fund_statuses
   "topic" text,
   "time_ended" timestamp
-);
-
-CREATE TABLE "fund_statuses" ( -- force to have as admin can add new status, mac dinh la co QUAN TRONG, VUNG SAU VUNG XA
-  "id" SERIAL PRIMARY KEY,
-  "name" text
 );
 
 CREATE TABLE "fund_receiving_infos" (
@@ -678,8 +672,6 @@ ALTER TABLE "learning_resources" ADD FOREIGN KEY ("uploader_member_id") REFERENC
 ALTER TABLE "funds" ADD FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id");
 
 ALTER TABLE "fund_donations" ADD FOREIGN KEY ("fund_id") REFERENCES "funds" ("id");
-
-ALTER TABLE "funds" ADD FOREIGN KEY ("status_id") REFERENCES "fund_statuses" ("id");
 
 ALTER TABLE "fund_receiving_infos" ADD CONSTRAINT "uk_fund_receiving_infos_bank_account"
 UNIQUE ("bank_name", "account_number");

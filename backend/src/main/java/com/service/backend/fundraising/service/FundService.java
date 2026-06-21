@@ -5,7 +5,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.service.backend.fundraising.dao.UserR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
 import com.service.backend.fundraising.dao.FundReceivingInfosR2dbcRepository;
-import com.service.backend.fundraising.dao.FundStatusR2dbcRepository;
 import com.service.backend.fundraising.dao.OrganizationR2dbcRepository;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dto.CreateFundRequest;
@@ -37,6 +36,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.service.backend.shared.dto.DataWithWarnings;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.math.BigDecimal;
@@ -52,7 +52,6 @@ public class FundService {
     private final FundR2dbcRepository fundR2dbcRepository;
     private final OrganizationR2dbcRepository organizationRepository;
     private final FundReceivingInfosR2dbcRepository fundReceivingInfosRepository;
-    private final FundStatusR2dbcRepository fundStatusRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final UserR2dbcRepository userRepository;
     private final CacheUtils cacheUtils;
@@ -61,10 +60,12 @@ public class FundService {
     @Value("${sepay.img.qr.url}")
     private String sepayQrImgUrl;
 
+    @Value("${sepay.img.qr.template:compact2}")
+    private String vietQrTemplate;
+
     public Mono<Funds> createFund(CreateFundRequest request) {
         Integer organizationId = request.getOrganizationId();
         Integer fundReceivingInfoId = request.getFundReceivingInfoId();
-        Integer statusId = request.getStatusId();
 
         return organizationRepository.findById(organizationId)
                 .switchIfEmpty(Mono.error(new ApplicationException(
@@ -74,31 +75,26 @@ public class FundService {
                         .switchIfEmpty(Mono.error(new ApplicationException(
                                 ErrorCode.FUND_NOT_FOUND,
                                 "Fund receiving info not found with id: " + fundReceivingInfoId)))
-                        .flatMap(existingFundReceivingInfo -> fundStatusRepository.findById(statusId)
-                                .switchIfEmpty(Mono.error(new ApplicationException(
-                                        ErrorCode.FUND_NOT_FOUND,
-                                        "Fund status not found with id: " + statusId)))
-                                .flatMap(existingStatus -> imageService.uploadBase64IfPresent(request.getLogoBase64())
-                                        .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
-                                        .flatMap(logoUrl -> {
-                                            Funds fund = Funds.builder()
-                                                    .organizationId(organizationId)
-                                                    .fundReceivingInfoId(fundReceivingInfoId)
-                                                    .name(request.getName())
-                                                    .logoUrl(logoUrl.isEmpty() ? null : logoUrl)
-                                                    .descriptionShort(request.getDescriptionShort())
-                                                    .descriptionFull(request.getDescriptionFull())
-                                                    .managerName(request.getManagerName())
-                                                    .targetAmount(request.getTargetAmount())
-                                                    .currentAmount(java.math.BigDecimal.ZERO)
-                                                    .timeStarted(request.getTimeStarted())
-                                                    .statusId(statusId)
-                                                    .topic(request.getTopic())
-                                                    .timeEnded(request.getTimeEnded())
-                                                    .build();
+                        .flatMap(existingFundReceivingInfo -> imageService.uploadBase64IfPresent(request.getLogoBase64())
+                                .defaultIfEmpty(request.getLogoUrl() == null ? "" : request.getLogoUrl())
+                                .flatMap(logoUrl -> {
+                                    Funds fund = Funds.builder()
+                                            .organizationId(organizationId)
+                                            .fundReceivingInfoId(fundReceivingInfoId)
+                                            .name(request.getName())
+                                            .logoUrl(logoUrl.isEmpty() ? null : logoUrl)
+                                            .descriptionShort(request.getDescriptionShort())
+                                            .descriptionFull(request.getDescriptionFull())
+                                            .managerName(request.getManagerName())
+                                            .targetAmount(request.getTargetAmount())
+                                            .currentAmount(java.math.BigDecimal.ZERO)
+                                            .timeStarted(request.getTimeStarted())
+                                            .topic(request.getTopic())
+                                            .timeEnded(request.getTimeEnded())
+                                            .build();
 
-                                            return fundR2dbcRepository.save(fund);
-                                        }))));
+                                    return fundR2dbcRepository.save(fund);
+                                })));
     }
 
     public Mono<FundReceivingInfos> createFundReceivingInfos(CreateFundReceivingInfosRequest request) {
@@ -200,16 +196,6 @@ public class FundService {
             }
         }
 
-        // statusId
-        Integer statusId = null;
-        if (req.getStatusId() != null) {
-            try {
-                statusId = Integer.parseInt(req.getStatusId());
-            } catch (NumberFormatException ex) {
-                warnings.add("Param statusId ignored: invalid format");
-            }
-        }
-
         // tim kiem theo thoi gian
         LocalDateTime tsFrom = null;
         LocalDateTime tsTo = null;
@@ -272,14 +258,13 @@ public class FundService {
         Flux<Funds> data;
         if (sortByDonor) {
             data = sortAsc
-                    ? fundR2dbcRepository.findFilteredOrderByDonorCountAsc(organizationId, statusId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset)
-                    : fundR2dbcRepository.findFilteredOrderByDonorCountDesc(organizationId, statusId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
+                    ? fundR2dbcRepository.findFilteredOrderByDonorCountAsc(organizationId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset)
+                    : fundR2dbcRepository.findFilteredOrderByDonorCountDesc(organizationId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
         } else {
-            data = fundR2dbcRepository.findFiltered(organizationId, statusId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
+            data = fundR2dbcRepository.findFiltered(organizationId, keyword, tsFrom, tsTo, amtMin, amtMax, limit, offset);
         }
         Mono<Long> count = fundR2dbcRepository.countFiltered(
                 organizationId,
-                statusId,
                 keyword,
                 tsFrom,
                 tsTo,
@@ -307,20 +292,13 @@ public class FundService {
                                     "Organization not found with id: " + fund.getOrganizationId())))
                             .map(Organization::getName);
 
-                    Mono<String> statusNameMono = fundStatusRepository.findById(fund.getStatusId())
-                            .switchIfEmpty(Mono.error(new ApplicationException(
-                                    ErrorCode.FUND_STATUS_NOT_FOUND,
-                                    "Fund status not found with id: " + fund.getStatusId())))
-                            .map(FundStatus::getName);
-
                     Integer fundReceivingInfoId = fund.getFundReceivingInfoId();
                     if (fundReceivingInfoId == null) {
-                        return Mono.zip(organizationNameMono, statusNameMono)
-                                .map(tuple -> FundDetailResponse.from(
+                        return organizationNameMono
+                                .map(organizationName -> FundDetailResponse.from(
                                         fund,
                                         null,
-                                        tuple.getT1(),
-                                        tuple.getT2()
+                                        organizationName
                                 ));
                     }
 
@@ -329,24 +307,13 @@ public class FundService {
                                     ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
                                     "Fund receiving info not found with id: " + fundReceivingInfoId)));
 
-                    return Mono.zip(receivingInfoMono, organizationNameMono, statusNameMono)
+                    return Mono.zip(receivingInfoMono, organizationNameMono)
                             .map(tuple -> FundDetailResponse.from(
                                     fund,
                                     tuple.getT1(),
-                                    tuple.getT2(),
-                                    tuple.getT3()
+                                    tuple.getT2()
                             ));
                 });
-    }
-
-    public Mono<PaginatedResponse<FundListItemResponse>> getFundsByStatusId(int page, int limit, Integer statusId) {
-        int offset = page * limit;
-        return PaginationHelper.paginate(
-                fundR2dbcRepository.findByStatusIdWithPagination(statusId, limit, offset).map(FundListItemResponse::from),
-                fundR2dbcRepository.countByStatusId(statusId),
-                page,
-                limit
-        );
     }
 
     public Mono<Funds> updateFund(Long fundId, UpdateFundRequest request) {
@@ -363,7 +330,6 @@ public class FundService {
                     LocalDateTime newEnd = request.getTimeEnded();
                     BigDecimal newTargetAmount = request.getTargetAmount();
                     Integer newFundReceivingInfoId = request.getFundReceivingInfoId();
-                    Integer newStatusId = request.getStatusId();
 
                     if (!newEnd.isAfter(newStart)) {
                         return Mono.error(new ApplicationException(
@@ -420,19 +386,12 @@ public class FundService {
                         }
                     }
 
-                    return Mono.zip(
-                                    fundReceivingInfosRepository.findById(newFundReceivingInfoId)
-                                            .switchIfEmpty(Mono.error(new ApplicationException(
-                                                    ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
-                                                    "Fund receiving info not found with id: " + newFundReceivingInfoId
-                                            ))),
-                                    fundStatusRepository.findById(newStatusId)
-                                            .switchIfEmpty(Mono.error(new ApplicationException(
-                                                    ErrorCode.FUND_STATUS_NOT_FOUND,
-                                                    "Fund status not found with id: " + newStatusId
-                                            )))
-                            )
-                            .flatMap(tuple -> {
+                    return fundReceivingInfosRepository.findById(newFundReceivingInfoId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(
+                                    ErrorCode.FUND_RECEIVING_INFO_NOT_FOUND,
+                                    "Fund receiving info not found with id: " + newFundReceivingInfoId
+                            )))
+                            .flatMap(existingReceivingInfo -> {
                                 String newLogoUrl = request.getLogoUrl();
                                 existing.setName(request.getName().trim());
                                 existing.setDescriptionShort(request.getDescriptionShort().trim());
@@ -444,7 +403,6 @@ public class FundService {
                                 existing.setManagerName(request.getManagerName().trim());
                                 existing.setTargetAmount(newTargetAmount);
                                 existing.setFundReceivingInfoId(newFundReceivingInfoId);
-                                existing.setStatusId(newStatusId);
                                 existing.setTimeStarted(newStart);
                                 existing.setTimeEnded(newEnd);
                                 if (request.getTopic() != null) existing.setTopic(request.getTopic());
@@ -520,13 +478,19 @@ public class FundService {
                             long amountInVnd = normalizeAmountToVnd(request.getAmount());
                             String description = buildDescription(request.getMessage(), savedDonation.getId());
 
-                            String qrUrl = UriComponentsBuilder.fromUriString(sepayQrImgUrl)
-                                    .queryParam("acc", receivingInfo.getAccountNumber())
-                                    .queryParam("bank", bankCode)
+                            // VietQR Quick Link format:
+                            // https://img.vietqr.io/image/<BANK_ID>-<ACCOUNT_NO>-<TEMPLATE>.png
+                            //   ?amount=<AMOUNT>&addInfo=<DESCRIPTION>&accountName=<ACCOUNT_NAME>
+                            String fileName = bankCode + "-" + receivingInfo.getAccountNumber() + "-" + vietQrTemplate + ".png";
+
+                            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(sepayQrImgUrl)
+                                    .path(fileName)
                                     .queryParam("amount", amountInVnd)
-                                    .queryParam("des", description)
-                                    .build()
-                                    .toUriString();
+                                    .queryParam("addInfo", description);
+                            if (receivingInfo.getAccountName() != null && !receivingInfo.getAccountName().isBlank()) {
+                                builder.queryParam("accountName", receivingInfo.getAccountName().trim());
+                            }
+                            String qrUrl = builder.encode(StandardCharsets.UTF_8).build().toUriString();
                             return new FundDonationCheckoutResponse(qrUrl);
                         })));
     }

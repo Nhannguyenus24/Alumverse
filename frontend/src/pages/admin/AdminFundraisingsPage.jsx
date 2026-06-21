@@ -45,6 +45,18 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 import { useDebounce } from "../../hooks/useDebounce";
 
+// Trạng thái quỹ được suy ra hoàn toàn từ thời gian bắt đầu/kết thúc.
+const getFundPhase = (timeStarted, timeEnded) => {
+  const now = Date.now();
+  const start = timeStarted ? new Date(timeStarted).getTime() : null;
+  const end = timeEnded ? new Date(timeEnded).getTime() : null;
+  if (start && now < start) return { status: "UPCOMING", label: "Sắp diễn ra" };
+  if (end && now > end) return { status: "ENDED", label: "Đã kết thúc" };
+  return { status: "ACTIVE", label: "Đang chạy" };
+};
+
+const isFundActive = (fund) => getFundPhase(fund.timeStarted, fund.timeEnded).status === "ACTIVE";
+
 const AdminFundraisingsPage = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -66,7 +78,7 @@ const AdminFundraisingsPage = () => {
     setPage,
     rowsPerPage,
     setRowsPerPage,
-    updateStatus,
+    closeFundById,
   } = useAdminFundraisingsData(stableOrgId);
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -127,7 +139,7 @@ const AdminFundraisingsPage = () => {
       (acc, f) => acc + (f.raisedAmount || 0),
       0,
     ),
-    activeCampaigns: fundraisings.filter((f) => f.status === "ACTIVE").length,
+    activeCampaigns: fundraisings.filter(isFundActive).length,
     totalDonors: fundraisings.reduce((acc, f) => acc + (f.donorCount || 0), 0),
     avgCompletion: fundraisings.length
       ? (
@@ -156,21 +168,16 @@ const AdminFundraisingsPage = () => {
     {
       id: "status",
       label: "Trạng thái",
-      render: (val) => (
-        <AdminStatusChip
-          status={val}
-          category="fundraising"
-          label={
-            val === "ACTIVE"
-              ? "Đang chạy"
-              : val === "PAUSED"
-                ? "Tạm dừng"
-                : val === "COMPLETED"
-                  ? "Hoàn thành"
-                  : "Bản nháp"
-          }
-        />
-      ),
+      render: (_, fund) => {
+        const phase = getFundPhase(fund.timeStarted, fund.timeEnded);
+        return (
+          <AdminStatusChip
+            status={phase.status}
+            category="fundraising"
+            label={phase.label}
+          />
+        );
+      },
     },
     {
       id: "targetAmount",
@@ -245,7 +252,7 @@ const AdminFundraisingsPage = () => {
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          {fund.status !== "COMPLETED" && (
+          {getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" && (
             <Tooltip title="Đóng quỹ">
               <IconButton
                 size="small"
@@ -514,7 +521,7 @@ const AdminFundraisingsPage = () => {
               if (!closeTarget) return;
               setIsClosing(true);
               try {
-                await updateStatus(closeTarget.id, "COMPLETED");
+                await closeFundById(closeTarget.id);
                 enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
               } catch (err) {
                 const errorMsg = err?.response?.data?.message || "Đóng quỹ thất bại.";

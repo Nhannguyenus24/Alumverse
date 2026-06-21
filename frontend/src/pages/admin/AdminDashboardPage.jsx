@@ -76,6 +76,11 @@ const AdminDashboardPage = () => {
     totalOrgs: organizations?.length ?? 0,
   }), [timeline, metrics, aggregates, organizations]);
 
+  const donationsFormatted = useMemo(() => {
+    const val = metrics?.donationsLast30Days ?? 0;
+    return Number(val).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
+  }, [metrics?.donationsLast30Days]);
+
   if (loading) {
     return (
       <Stack spacing={3}>
@@ -91,11 +96,6 @@ const AdminDashboardPage = () => {
       </Stack>
     );
   }
-
-  const donationsFormatted = useMemo(() => {
-    const val = metrics?.donationsLast30Days ?? 0;
-    return Number(val).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
-  }, [metrics?.donationsLast30Days]);
 
   return (
     <Stack spacing={4}>

@@ -19,27 +19,12 @@ import DonationCloseDialog from "../../components/donation/DonationCloseDialog";
 import StatsBanner from "../../components/StatsBanner";
 
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
-const DEFAULT_FILTERS = { all: true, statusId: "", timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
+const DEFAULT_FILTERS = { all: true, timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
 
 const DONATION_SIDEBAR_ITEMS = [
   { id: "list", label: "Quyên góp", icon: <FormatListBulletedIcon /> },
   { id: "create", label: "Mở quỹ quyên góp", icon: <AddCircleOutlineIcon /> },
 ];
-
-const STATUS_TRANSLATIONS = {
-  "ACTIVE": "Đang hoạt động",
-  "CLOSED": "Đã đóng",
-  "PENDING": "Chờ duyệt",
-  "APPROVED": "Đã duyệt",
-  "REJECTED": "Từ chối",
-  "UPCOMING": "Sắp diễn ra",
-  "IMPORTANT": "Quan trọng",
-  "POOR": "Vượt khó",
-  "RURAL_AREAS": "Vùng sâu vùng xa",
-  "COMPLETED": "Đã hoàn thành",
-  "URGENT": "Khẩn cấp",
-  "EMERGENCY": "Cứu trợ khẩn cấp",
-};
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
@@ -62,9 +47,7 @@ export default function DonationPage() {
 
   const [featuredCampaign, setFeaturedCampaign] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
-  const [statusOptions, setStatusOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [search, setSearch] = useState("");
@@ -80,28 +63,11 @@ export default function DonationPage() {
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => [
-    { type: "dropdown", key: "statusId", label: "Loại quỹ", multiple: false, options: statusOptions.map((o) => ({ value: o.value, label: o.label })) },
     { type: "date", key: "timeStartedFrom", label: "Từ ngày" },
     { type: "date", key: "timeStartedTo", label: "Đến ngày" },
     { type: "dropdown", key: "trending", label: "Xu hướng", multiple: false, options: [{ value: "asc", label: "Cũ nhất" }, { value: "desc", label: "Mới nhất" }] },
     { type: "range-input", key: "amount", label: "Mức quyên góp" },
-  ], [statusOptions]);
-
-  useEffect(() => {
-    let ignore = false;
-    setIsLoadingStatus(true);
-    fundApi.getFundStatuses()
-      .then((statuses) => {
-        if (ignore) return;
-        setStatusOptions(statuses.map((item) => ({ value: String(item.id), label: STATUS_TRANSLATIONS[item.name?.toUpperCase()] || item.name })));
-      })
-      .catch((error) => {
-        if (ignore) return;
-        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải danh sách trạng thái quỹ.", { variant: "error" });
-      })
-      .finally(() => { if (!ignore) setIsLoadingStatus(false); });
-    return () => { ignore = true; };
-  }, [enqueueSnackbar]);
+  ], []);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -133,7 +99,7 @@ export default function DonationPage() {
       const params = {
         page: page - 1, limit: gridPageSize,
         organizationId: organizationId != null ? String(organizationId) : undefined,
-        q: search.trim() || undefined, statusId: filters.statusId || undefined,
+        q: search.trim() || undefined,
         targetAmountMin: filters.amountMin || undefined, targetAmountMax: filters.amountMax || undefined,
         sortBy: filters.trending ? "donor_count" : undefined, direction: filters.trending || undefined,
         timeStartedFrom: filters.timeStartedFrom ? toIsoStartOfDay(filters.timeStartedFrom) : undefined,
@@ -180,7 +146,6 @@ export default function DonationPage() {
       return () => { ignore = true; };
     }, 300);
     return () => clearTimeout(debounce);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken]);
 
   const adminBannerItems = useMemo(() => [

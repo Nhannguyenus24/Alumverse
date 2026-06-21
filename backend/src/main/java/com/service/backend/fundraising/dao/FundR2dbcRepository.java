@@ -28,12 +28,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("SELECT COUNT(*) FROM funds WHERE (LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_short) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(description_full) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Mono<Long> countSearchFunds(String keyword);
 
-    @Query("SELECT * FROM funds WHERE status_id = :statusId ORDER BY id DESC LIMIT :limit OFFSET :offset")
-    Flux<Funds> findByStatusIdWithPagination(Integer statusId, int limit, int offset);
-
-    @Query("SELECT COUNT(*) FROM funds WHERE status_id = :statusId")
-    Mono<Long> countByStatusId(Integer statusId);
-
     @Query("SELECT COALESCE(SUM(current_amount), 0) FROM funds")
     Mono<BigDecimal> sumCurrentAmount();
 
@@ -49,7 +43,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("""
             SELECT * FROM funds
             WHERE (:organizationId IS NULL OR organization_id = :organizationId)
-              AND (:statusId IS NULL OR status_id = :statusId)
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
@@ -58,7 +51,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
             """)
     Flux<Funds> findFiltered(
             Integer organizationId,
-            Integer statusId,
             String keyword,
             LocalDateTime timeStartedFrom,
             LocalDateTime timeStartedTo,
@@ -71,7 +63,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("""
             SELECT * FROM funds
             WHERE (:organizationId IS NULL OR organization_id = :organizationId)
-              AND (:statusId IS NULL OR status_id = :statusId)
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
@@ -80,7 +71,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
             """)
     Flux<Funds> findFilteredOrderByDonorCountAsc(
             Integer organizationId,
-            Integer statusId,
             String keyword,
             LocalDateTime timeStartedFrom,
             LocalDateTime timeStartedTo,
@@ -93,7 +83,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("""
             SELECT * FROM funds
             WHERE (:organizationId IS NULL OR organization_id = :organizationId)
-              AND (:statusId IS NULL OR status_id = :statusId)
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
@@ -102,7 +91,6 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
             """)
     Flux<Funds> findFilteredOrderByDonorCountDesc(
             Integer organizationId,
-            Integer statusId,
             String keyword,
             LocalDateTime timeStartedFrom,
             LocalDateTime timeStartedTo,
@@ -115,14 +103,12 @@ public interface FundR2dbcRepository extends ReactiveCrudRepository<Funds, Long>
     @Query("""
             SELECT COUNT(*) FROM funds
             WHERE (:organizationId IS NULL OR organization_id = :organizationId)
-              AND (:statusId IS NULL OR status_id = :statusId)
               AND (:keyword IS NULL OR LOWER(name) LIKE LOWER(CONCAT('%', :keyword, '%')))
               AND ((:timeStartedFrom IS NULL AND :timeStartedTo IS NULL) OR time_started BETWEEN :timeStartedFrom AND :timeStartedTo)
               AND ((:targetAmountMin IS NULL AND :targetAmountMax IS NULL) OR target_amount BETWEEN :targetAmountMin AND :targetAmountMax)
             """)
     Mono<Long> countFiltered(
             Integer organizationId,
-            Integer statusId,
             String keyword,
             LocalDateTime timeStartedFrom,
             LocalDateTime timeStartedTo,

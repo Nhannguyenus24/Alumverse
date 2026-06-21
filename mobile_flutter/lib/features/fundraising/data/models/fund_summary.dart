@@ -3,7 +3,6 @@
 class FundSummary {
   final int id;
   final int? organizationId;
-  final int? statusId;
   final int donorCount;
   final String? managerName;
   final String name;
@@ -18,7 +17,6 @@ class FundSummary {
   const FundSummary({
     required this.id,
     this.organizationId,
-    this.statusId,
     this.donorCount = 0,
     this.managerName,
     required this.name,
@@ -43,7 +41,6 @@ class FundSummary {
     return FundSummary(
       id: (json['id'] as num).toInt(),
       organizationId: (json['organizationId'] as num?)?.toInt(),
-      statusId: (json['statusId'] as num?)?.toInt(),
       donorCount: (json['donorCount'] as num?)?.toInt() ?? 0,
       managerName: json['managerName'] as String?,
       name: json['name'] as String? ?? '',
