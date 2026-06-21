@@ -364,10 +364,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const renderPersonalSection = () => {
     // Cấu hình mảng dữ liệu cho Thông tin cơ bản
     const personalFields = [
-      { icon: Person label: 'Họ và tên', value: profile?.fullName },
-      { icon: Email label: 'Email', value: profile?.email },
-      { icon: Work label: 'Công việc hiện tại', value: currentJobTitle },
-      { icon: Business label: 'Công ty', value: currentCompany },
+      { icon: Person, label: 'Họ và tên', value: profile?.fullName },
+      { icon: Email, label: 'Email', value: profile?.email },
+      { icon: Work, label: 'Công việc hiện tại', value: currentJobTitle },
+      { icon: Business, label: 'Công ty', value: currentCompany },
     ];
 
     // Cấu hình mảng dữ liệu cho Thông tin học thuật

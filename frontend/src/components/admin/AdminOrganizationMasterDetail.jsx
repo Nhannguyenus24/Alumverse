@@ -154,11 +154,12 @@ const AdminOrganizationMasterDetail = ({
     return organizations.find((o) => o.id === filteredOrganizations[0].id) ?? filteredOrganizations[0];
   }, [selectedOrganization, organizations, filteredOrganizations, selectedOrganizationId]);
 
-  
+  const programs = useMemo(
     () => normalizeList(selectedOrg?.programs),
     [selectedOrg?.programs],
   );
   
+  const majors = useMemo(
     () => normalizeList(selectedOrg?.majors),
     [selectedOrg?.majors],
   );
