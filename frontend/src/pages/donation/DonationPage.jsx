@@ -198,9 +198,14 @@ export default function DonationPage() {
                 </Typography>
 
                 {isAdmin && (
-                  <Button variant="contained" onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
-                    Mở quỹ quyên góp
-                  </Button>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
+                    <Button variant="contained" onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
+                      Mở quỹ quyên góp
+                    </Button>
+                    <Button variant="outlined" color="primary" onClick={() => navigate("/admin/fundraising")} sx={{ textTransform: "none", fontWeight: 700 }}>
+                      Quản lý quyên góp
+                    </Button>
+                  </Stack>
                 )}
               </Box>
 
