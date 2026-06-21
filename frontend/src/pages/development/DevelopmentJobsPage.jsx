@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
@@ -14,9 +16,12 @@ import SearchBar from '../../components/SearchBar';
 import FeaturedArticleCard from '../../components/articles/FeaturedArticleCard';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import apiClient from '../../utils/axios';
 
 const SIDEBAR = [
   { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
@@ -68,12 +73,18 @@ const FILTERS = [
 
 const DevelopmentJobsPage = () => {
   const navigate = useOrgNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const { jobs } = usePublishedJobs(0, 12);
 
   const [filters, setFilters] = useState({
     all: true,
   });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const [featured, ...rest] = jobs;
   const featuredCard = featured ? toCardShape(featured) : null;
@@ -82,6 +93,27 @@ const DevelopmentJobsPage = () => {
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const handleEdit = (article) => {
+    navigate(`/article/${article.channel}/${article.id}/edit`);
+  };
+
+  const handleDelete = (article) => setDeleteTarget(article);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/admin/articles/jobs/${deleteTarget.id}`);
+      queryClient.invalidateQueries({ queryKey: ['publishedJobs'] });
+      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -120,12 +152,22 @@ const DevelopmentJobsPage = () => {
                     CƠ HỘI VIỆC LÀM
                   </Typography>
 
-                  <Button
-                    variant="contained"
-                    onClick={() => navigate('/post/job')}
-                  >
-                    Đăng bài
-                  </Button>
+                  {isAdmin ? (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate('/admin/article')}
+                    >
+                      Quản lý cơ hội
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/post/job')}
+                    >
+                      Đăng bài
+                    </Button>
+                  )}
                 </Box>
 
                 <Typography color="text.secondary">
@@ -151,7 +193,12 @@ const DevelopmentJobsPage = () => {
               {/* FEATURED ARTICLE */}
               {featuredCard && (
                 <Box sx={{ cursor: 'pointer' }} onClick={() => openArticle(featured)}>
-                  <FeaturedArticleCard article={featuredCard} />
+                  <FeaturedArticleCard
+                    article={featuredCard}
+                    isAdmin={isAdmin}
+                    onEdit={() => handleEdit(featured)}
+                    onDelete={() => handleDelete(featured)}
+                  />
                 </Box>
               )}
 
@@ -175,7 +222,12 @@ const DevelopmentJobsPage = () => {
                   >
                     {cards.map((card, i) => (
                       <Box key={card.id ?? i} sx={{ cursor: 'pointer' }} onClick={() => openArticle(rest[i])}>
-                        <ArticleCard article={card} />
+                        <ArticleCard
+                          article={card}
+                          isAdmin={isAdmin}
+                          onEdit={() => handleEdit(rest[i])}
+                          onDelete={() => handleDelete(rest[i])}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -186,6 +238,15 @@ const DevelopmentJobsPage = () => {
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá bài viết"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };

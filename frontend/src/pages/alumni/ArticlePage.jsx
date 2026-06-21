@@ -188,8 +188,11 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
               variant={isJoined ? "outlined" : "contained"}
               disabled={loadingJoin || isJoined}
               sx={{
-                bgcolor: isJoined ? "transparent" : "grey.700",
-                color: isJoined ? "grey.700" : "common.white",
+                bgcolor: isJoined ? "transparent" : "success.main",
+                color: isJoined ? "success.main" : "common.white",
+                "&:hover": {
+                  bgcolor: isJoined ? "transparent" : "success.dark",
+                },
               }}
               onClick={handleJoinClick}
             >

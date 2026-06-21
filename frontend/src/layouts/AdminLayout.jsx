@@ -10,7 +10,7 @@ import { AdminProvider } from '../stores/AdminStore';
 import { useAuth } from '../hooks/useAuth';
 import Page from '../components/Page';
 
-const HEADER_HEIGHT = 70;
+const HEADER_HEIGHT = 88;
 const SIDEBAR_WIDTH = 280;
 const SIDEBAR_COLLAPSED_WIDTH = 88;
 

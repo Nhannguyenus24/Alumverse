@@ -301,7 +301,7 @@ const AdminFundraisingsPage = () => {
           startIcon={<AddOutlinedIcon />}
           onClick={() => navigate(`/${getOrgSlug()}/post/donation`)}
         >
-          Tạo chiến dịch
+          Mở quỹ quyên góp
         </Button>
       </Box>
 

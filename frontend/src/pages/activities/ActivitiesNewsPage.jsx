@@ -139,6 +139,15 @@ const ActivitiesPage = () => {
                     >
                     TIN TỨC
                   </Typography>
+                  {isAdmin && (
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate('/admin/article')}
+                    >
+                      Quản lý tin tức
+                    </Button>
+                  )}
                 </Box>
 
                 {/* FILTERS */}

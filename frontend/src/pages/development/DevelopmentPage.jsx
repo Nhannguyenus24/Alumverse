@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
+import { useSnackbar } from 'notistack';
 
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import SchoolIcon from '@mui/icons-material/School';
@@ -13,10 +15,13 @@ import DynamicFilterBar from '../../components/DynamicFilterBar';
 import SearchBar from '../../components/SearchBar';
 import ArticleCard from '../../components/articles/ArticleCard';
 import Sidebar from '../../components/Sidebar';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
 import { toCardShape } from '../../hooks/articles/toCardShape';
+import apiClient from '../../utils/axios';
 
 const SIDEBAR = [
   { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
@@ -70,6 +75,9 @@ const PreviewSection = ({
   onSeeMore,
   seeMoreLabel,
   emptyLabel,
+  isAdmin = false,
+  onEdit,
+  onDelete,
 }) => (
   <Box>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -116,7 +124,12 @@ const PreviewSection = ({
               sx={{ cursor: 'pointer' }}
               onClick={() => onOpenArticle(article)}
             >
-              <ArticleCard article={card} />
+              <ArticleCard
+                article={card}
+                isAdmin={isAdmin}
+                onEdit={() => onEdit?.(article)}
+                onDelete={() => onDelete?.(article)}
+              />
             </Box>
           );
         })}
@@ -127,7 +140,10 @@ const PreviewSection = ({
 
 const DevelopmentPage = () => {
   const navigate = useOrgNavigate();
-
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+  const { user, isAuthenticated } = useAuth();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const {
     resources: academics,
@@ -142,10 +158,38 @@ const DevelopmentPage = () => {
   } = usePublishedJobs(0, 3);
 
   const [filters, setFilters] = useState({ all: true });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const openArticle = (article) => {
     if (!article?.id) return;
     navigate(`/article/${article.channel}/${article.id}`);
+  };
+
+  const handleEdit = (article) => {
+    navigate(`/article/${article.channel}/${article.id}/edit`);
+  };
+
+  const handleDelete = (article) => setDeleteTarget(article);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      const endpoint =
+        deleteTarget.channel === 'job'
+          ? '/admin/articles/jobs'
+          : '/admin/articles/learning-resources';
+      await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      queryClient.invalidateQueries({ queryKey: ['publishedJobs'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedLearning'] });
+      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+    } catch (err) {
+      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -179,6 +223,24 @@ const DevelopmentPage = () => {
                   >
                     PHÁT TRIỂN
                   </Typography>
+                  {isAdmin && (
+                    <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => navigate('/admin/mentorship')}
+                      >
+                        Quản lý cố vấn
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => navigate('/admin/article')}
+                      >
+                        Quản lý cơ hội
+                      </Button>
+                    </Stack>
+                  )}
                 </Box>
 
                 <Typography color="text.secondary">
@@ -238,6 +300,9 @@ const DevelopmentPage = () => {
                 onSeeMore={() => navigate('/development/academics')}
                 seeMoreLabel="Xem tất cả"
                 emptyLabel="Chưa có cơ hội học tập nào."
+                isAdmin={isAdmin}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
 
               {/* JOBS SECTION */}
@@ -251,11 +316,23 @@ const DevelopmentPage = () => {
                 onSeeMore={() => navigate('/development/jobs')}
                 seeMoreLabel="Xem tất cả"
                 emptyLabel="Chưa có cơ hội việc làm nào."
+                isAdmin={isAdmin}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
               />
             </Stack>
           </Box>
         </Container>
       </Container>
+
+      <AdminConfirmDeleteDialog
+        open={!!deleteTarget}
+        title="Xoá bài viết"
+        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+      />
     </Page>
   );
 };
