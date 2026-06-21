@@ -30,6 +30,7 @@ import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
+import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
@@ -74,6 +75,7 @@ const NAV_GROUPS = (adminBase) => [
     items: [
       { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: 'Phản hồi', role: 'ADMIN' },
       { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: 'Nhật ký hệ thống', role: 'ADMIN' },
+      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: 'Cấu hình AI Bot', role: 'ADMIN' },
     ],
   },
 ];

@@ -140,6 +140,9 @@ const AdminFundReceivingInfosPage = Loadable(
 const AdminAuditLogsPage = Loadable(
   lazy(() => import("../pages/admin/AdminAuditLogsPage")),
 );
+const AdminAIBotConfigPage = Loadable(
+  lazy(() => import("../pages/admin/AdminAIBotConfigPage")),
+);
 
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
@@ -733,6 +736,14 @@ export const router = createBrowserRouter([
               </ProtectedRoute>
             ),
           },
+          {
+            path: "bot-config",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminAIBotConfigPage />
+              </ProtectedRoute>
+            ),
+          },
         ],
       },
       {
@@ -961,6 +972,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN"]}>
             <AdminAuditLogsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "bot-config",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminAIBotConfigPage />
           </ProtectedRoute>
         ),
       },
