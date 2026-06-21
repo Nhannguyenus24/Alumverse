@@ -57,16 +57,29 @@ const WYSIWYG = ({
   return (
     <Box
       sx={{
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 1,
+        overflow: "hidden",
         "& .quill": {
-          height: `${height}px`,
+          display: "flex",
+          flexDirection: "column",
+        },
+        "& .ql-toolbar": {
+          borderLeft: "none",
+          borderRight: "none",
+          borderTop: "none",
+          flexShrink: 0,
         },
         "& .ql-container": {
-          height: `${height - 42}px`,
+          height: `${height}px`,
           fontSize: "1rem",
+          border: "none",
         },
         "& .ql-editor": {
-          minHeight: `${height - 42}px`,
+          height: "100%",
           fontFamily: "Nunito, 'sans-serif'",
+          overflowY: "auto",
         },
         "& .ql-editor *": {
           fontFamily: "Nunito, sans-serif !important",

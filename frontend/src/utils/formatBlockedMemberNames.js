@@ -21,8 +21,8 @@ export function buildGroupBlockedMembersBannerMessage(blockedMembers, isOwner) {
   const base = `Bạn đã chặn ${names}. Bạn và họ vẫn có thể nhắn tin trong nhóm.`;
 
   if (isOwner) {
-    return `${base} Bạn có thể xóa thành viên khỏi nhóm hoặc rời nhóm trong Quản lý thành viên.`;
+    return `${base} Bạn có thể xóa thành viên khỏi nhóm hoặc rời nhóm trong Settings.`;
   }
 
-  return `${base} Bạn có thể rời nhóm trong Quản lý thành viên.`;
+  return `${base} Bạn có thể rời nhóm trong Settings.`;
 }

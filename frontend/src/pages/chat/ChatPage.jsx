@@ -24,7 +24,7 @@ function normalizeGroupChat(item) {
 function normalizePrivateChat(item) {
   return {
     id: item.id,
-    name: item.peerStudentId ?? item.title ?? '(No name)',
+    name: item.peerFullName ?? item.title ?? '(No name)',
     avatarUrl: item.peerAvatarUrl ?? null,
     preview: item.lastMessagePreview ?? '',
     lastMessageAt: item.lastMessageAt ?? null,

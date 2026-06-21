@@ -136,7 +136,6 @@ class ApiEndpoints {
   static const String funds = '/api/funds';
   static String fundDetail(int id) => '/api/funds/$id';
   static String fundClose(int id) => '/api/funds/$id/close';
-  static const String fundStatuses = '/api/fund-statuses';
   static const String fundStatistics = '/api/funds/statistics';
   static const String fundReceivingActive = '/api/funds/receiving-infos/active';
   static const String fundDonations = '/api/fund-donations';
