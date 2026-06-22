@@ -1,5 +1,8 @@
+import { alpha } from '@mui/material/styles';
+
 const Button = (theme) => {
   const { palette } = theme;
+  const isDark = palette.mode === 'dark';
 
   return {
     MuiButton: {
@@ -45,6 +48,13 @@ const Button = (theme) => {
             backgroundColor: palette.secondary.dark,
           },
         },
+        containedAccent: {
+          backgroundColor: palette.accent?.main,
+          color: palette.accent?.contrastText,
+          "&:hover": {
+            backgroundColor: palette.accent?.dark,
+          },
+        },
         containedTertiary: {
           backgroundColor: palette.tertiary?.main ?? palette.grey[800],
           color: palette.tertiary?.contrastText ?? "#fff",
@@ -64,7 +74,7 @@ const Button = (theme) => {
           "&:hover": {
             borderColor: palette.primary.dark,
             color: palette.primary.dark,
-            backgroundColor: palette.primary.lighter,
+            backgroundColor: isDark ? alpha(palette.primary.main, 0.12) : palette.primary.lighter,
           },
         },
         outlinedSecondary: {
@@ -73,7 +83,16 @@ const Button = (theme) => {
           "&:hover": {
             borderColor: palette.secondary.dark,
             color: palette.secondary.dark,
-            backgroundColor: palette.secondary.lighter,
+            backgroundColor: isDark ? alpha(palette.secondary.main, 0.12) : palette.secondary.lighter,
+          },
+        },
+        outlinedAccent: {
+          borderColor: palette.accent?.main,
+          color: palette.accent?.main,
+          "&:hover": {
+            borderColor: palette.accent?.dark,
+            color: palette.accent?.dark,
+            backgroundColor: isDark ? alpha(palette.accent?.main ?? palette.primary.main, 0.12) : palette.accent?.lighter,
           },
         },
         outlinedTertiary: {
@@ -82,7 +101,7 @@ const Button = (theme) => {
           "&:hover": {
             borderColor: palette.tertiary?.dark ?? palette.grey[900],
             color: palette.tertiary?.dark ?? palette.grey[900],
-            backgroundColor: palette.grey[100],
+            backgroundColor: isDark ? alpha(palette.text.primary, 0.08) : palette.grey[100],
           },
         },
       },

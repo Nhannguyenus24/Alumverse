@@ -18,13 +18,16 @@ import {
   useTheme,
   Select,
   FormControl,
+  Tooltip,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import { useAdminSystemContext } from '../../stores/AdminStore';
+import useThemeModeStore from '../../stores/themeModeStore';
 
 const ADMIN_HEADER_HEIGHT = 88;
 
@@ -33,6 +36,8 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [, startTransition] = useTransition();
+  const themeMode = useThemeModeStore((state) => state.mode);
+  const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
 
   const { organizations, activeOrgId, setActiveOrgId } = useAdminSystemContext();
 
@@ -203,7 +208,21 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
         )}
 
         {/* Right Side: Profile Dropdown Only */}
-        <Stack direction="row" alignItems="center">
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Tooltip title={themeMode === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'} arrow>
+            <IconButton
+              aria-label="Đổi chế độ sáng tối"
+              onClick={toggleThemeMode}
+              sx={{
+                color: 'primary.main',
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+              }}
+            >
+              <Brightness6RoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
           <Button
             onClick={handleOpenUserMenu}
             sx={{

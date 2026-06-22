@@ -1,8 +1,14 @@
 const TextField = (theme) => {
   const { palette } = theme;
   const grey = palette.grey || {};
-  const borderLight = grey[300] || '#DFE3E8';
+  const borderLight = palette.mode === 'dark' ? palette.divider : (grey[300] || '#DFE3E8');
   const borderError = palette.error?.main || '#FF4842';
+  const fieldBackground = palette.mode === 'dark'
+    ? palette.background.paper
+    : '#fff';
+  const hoverBackground = palette.mode === 'dark'
+    ? palette.action.hover
+    : '#fff';
 
   return {
     MuiTextField: {
@@ -21,13 +27,18 @@ const TextField = (theme) => {
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          backgroundColor: '#fff',
+          backgroundColor: fieldBackground,
           borderRadius: 8,
+          color: palette.text.primary,
+          transition: theme.transitions.create(['background-color', 'border-color']),
           '& .MuiOutlinedInput-notchedOutline': {
             borderColor: borderLight,
           },
+          '&:hover': {
+            backgroundColor: hoverBackground,
+          },
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: grey[400] || borderLight,
+            borderColor: palette.mode === 'dark' ? palette.text.secondary : (grey[400] || borderLight),
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderWidth: 1,
@@ -42,9 +53,33 @@ const TextField = (theme) => {
         },
         input: {
           '&::placeholder': {
-            color: grey[500],
+            color: palette.text.secondary,
             opacity: 1,
           },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          color: palette.text.primary,
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          color: palette.text.secondary,
+          '&.Mui-focused': {
+            color: palette.primary.main,
+          },
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        icon: {
+          color: palette.text.secondary,
         },
       },
     },
