@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { Alert, Box, useMediaQuery, useTheme } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import Page from '../../components/Page';
 import NetworkChatPanel from '../../components/network/NetworkChatPanel';
@@ -39,6 +39,7 @@ const ChatPage = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const targetMemberId = searchParams.get('memberId');
   const [searchInput, setSearchInput] = useState('');
@@ -145,9 +146,9 @@ const ChatPage = () => {
     setActiveChatId(chatId);
   }, []);
 
-  const handleBackToList = useCallback(() => {
-    setActiveChatId(null);
-  }, []);
+  const handleBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
   const showMobileChatPanel = isMobile && activeChatId != null;
   const showSidebar = !isMobile || !showMobileChatPanel;
@@ -212,7 +213,7 @@ const ChatPage = () => {
             <NetworkChatPanel
               activeChat={activeChat}
               onLeaveGroup={handleLeaveGroup}
-              onBack={isMobile ? handleBackToList : undefined}
+              onBack={isMobile ? handleBack : undefined}
             />
           ) : null}
         </Box>

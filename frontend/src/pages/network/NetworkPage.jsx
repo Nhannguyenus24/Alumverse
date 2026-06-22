@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   Alert,
   Box,
@@ -21,9 +22,11 @@ import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrent
 import { useBlockUser } from '../../hooks/network/useBlockUser';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import useOrganizationStore from '../../stores/organizationStore';
+import { organizationApi } from '../../utils/api';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 
-const FILTERS = [
+const BASE_FILTERS = [
   {
     type: 'input',
     key: 'program',
@@ -46,10 +49,14 @@ const NetworkPage = () => {
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({
-    all: true,
-    program: '',
-    major: '',
+  // Default to the current member's own organization (guaranteed loaded by
+  // RequireSlugRoute before this page mounts). Users broaden via the filter
+  // bar — pick more orgs, or "Tất cả" to see every organization.
+  const [filters, setFilters] = useState(() => {
+    const currentOrgId = useOrganizationStore.getState().organization?.id;
+    return currentOrgId
+      ? { all: false, program: '', major: '', organizationIds: [currentOrgId] }
+      : { all: true, program: '', major: '', organizationIds: [] };
   });
   const [messagePeer, setMessagePeer] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState(null);
@@ -59,6 +66,26 @@ const NetworkPage = () => {
 
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
+
+  const { data: organizations = [] } = useQuery({
+    queryKey: ['organizations', 'all'],
+    queryFn: () => organizationApi.getAllOrganizations(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const FILTERS = useMemo(() => {
+    if (organizations.length === 0) return BASE_FILTERS;
+    return [
+      {
+        type: 'dropdown',
+        key: 'organizationIds',
+        label: 'Trường / Khoa',
+        multiple: true,
+        options: organizations.map((org) => ({ value: org.id, label: org.name })),
+      },
+      ...BASE_FILTERS,
+    ];
+  }, [organizations]);
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
   const { blockUser, isBlocking } = useBlockUser({
