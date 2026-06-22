@@ -85,6 +85,9 @@ const NAV_GROUPS = (adminBase) => [
 const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRole, collapsed = false, onToggle }) => {
   const theme = useTheme();
   const groups = NAV_GROUPS(adminBase);
+  const logoSrc = theme.palette.mode === 'dark'
+    ? (collapsed ? '/alumverse_logo/Logo_White.svg' : '/alumverse_logo/Logo_White_Full.svg')
+    : (collapsed ? '/alumverse_logo/Logo_Main.svg' : '/alumverse_logo/Logo_Main_Full.svg');
 
   const sidebarContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper', position: 'relative' }}>
@@ -129,7 +132,7 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
       }}>
         <Box
           component="img"
-          src={collapsed ? "/alumverse_logo/Logo_Main.svg" : "/alumverse_logo/Logo_Main_Full.svg"}
+          src={logoSrc}
           alt="ALUMVERSE"
           sx={{ height: collapsed ? 36 : 40, width: 'auto', transition: 'all 0.2s' }}
         />

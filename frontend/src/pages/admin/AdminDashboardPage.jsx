@@ -128,6 +128,12 @@ const AdminDashboardPage = () => {
               onClick={handleRefresh}
               sx={{
                 color: 'primary.main',
+                bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.14 : 0.08),
+                border: '1px solid',
+                borderColor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.24 : 0.12),
+                '&:hover': {
+                  bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
+                },
                 '& svg': {
                   transition: 'transform 0.1s',
                   animation: refreshing ? 'dashboardSpin 0.8s linear infinite' : 'none',
@@ -148,6 +154,7 @@ const AdminDashboardPage = () => {
             sx={{
               fontSize: 12, fontWeight: 700,
               minWidth: 110,
+              bgcolor: 'background.paper',
               '& .MuiSelect-select': { py: 0.75, px: 1.5 },
             }}
           >

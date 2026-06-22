@@ -1,4 +1,5 @@
 import {
+  Alert,
   Avatar,
   Box,
   Button,
@@ -56,6 +57,7 @@ import { adminOrganizationApi } from '../../utils/api';
 import { useSnackbar } from 'notistack';
 import AdminManualMemberDialog from './AdminManualMemberDialog';
 import { fileToBase64 } from '../../utils/imageUtils';
+import { createBrandColor, DEFAULT_BRAND_COLORS, normalizeHexColor } from '../../theme/palette';
 
 const formatOrgDate = (value) => {
   if (!value) {
@@ -111,6 +113,7 @@ const AdminOrganizationMasterDetail = ({
   onDeleteOrganization,
   onRefresh,
   onRefreshIntroduction,
+  onPromoteOrganization,
 }) => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
@@ -173,7 +176,7 @@ const AdminOrganizationMasterDetail = ({
     logoUrl: '',
     faviconUrl: '',
     heroBannerUrl: '',
-    themeColors: { primary: '#1976d2', secondary: '#9c27b0', accent: '#ffb300' },
+    themeColors: { ...DEFAULT_BRAND_COLORS },
   });
   const [identityState, setIdentityState] = useState({
     siteTitle: '',
@@ -284,17 +287,16 @@ const AdminOrganizationMasterDetail = ({
 
       const brand = cfg.brand_config || cfg.brandConfig || {};
       const themeColors = brand.theme_colors || brand.themeColors || {};
-      setBrandState((s) => ({
-        ...s,
-        logoUrl: brand.logo_url || brand.logoUrl || s.logoUrl,
-        faviconUrl: brand.favicon_url || brand.faviconUrl || s.faviconUrl,
-        heroBannerUrl: brand.hero_banner_url || brand.heroBannerUrl || s.heroBannerUrl,
+      setBrandState({
+        logoUrl: brand.logo_url || brand.logoUrl || selectedOrg.logoUrl || '',
+        faviconUrl: brand.favicon_url || brand.faviconUrl || '',
+        heroBannerUrl: brand.hero_banner_url || brand.heroBannerUrl || '',
         themeColors: {
-          primary: themeColors.primary || s.themeColors.primary,
-          secondary: themeColors.secondary || s.themeColors.secondary,
-          accent: themeColors.accent || s.themeColors.accent,
+          primary: normalizeHexColor(themeColors.primary, DEFAULT_BRAND_COLORS.primary),
+          secondary: normalizeHexColor(themeColors.secondary, DEFAULT_BRAND_COLORS.secondary),
+          accent: normalizeHexColor(themeColors.accent, DEFAULT_BRAND_COLORS.accent),
         },
-      }));
+      });
 
       const identity = cfg.site_identity || cfg.siteIdentity || {};
       const intro = identity.introduction || {};
@@ -339,7 +341,7 @@ const AdminOrganizationMasterDetail = ({
           maxHeight: { lg: '88vh' }
         }}
       >
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'white' }}>
+        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Stack spacing={2}>
             <Typography variant="h5" sx={{ color: 'primary.main' }}>
               Tổ chức ({filteredOrganizations.length})
@@ -380,8 +382,13 @@ const AdminOrganizationMasterDetail = ({
                     borderLeft: 4,
                     borderColor: isSelected ? 'primary.main' : 'transparent',
                     '&.Mui-selected': {
-                      bgcolor: 'primary.lighter',
-                      '&:hover': { bgcolor: 'primary.lighter' },
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.16 : 0.1),
+                      '&:hover': {
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.22 : 0.14),
+                      },
+                    },
+                    '&:hover': {
+                      bgcolor: 'action.hover',
                     },
                   }}
                 >
@@ -441,7 +448,7 @@ const AdminOrganizationMasterDetail = ({
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar
                       src={selectedOrg.logoUrl}
-                      sx={{ width: 56, height: 56, border: 2, borderColor: 'primary.main', p: 0.5, bgcolor: 'white' }}
+                      sx={{ width: 56, height: 56, border: 2, borderColor: 'primary.main', p: 0.5, bgcolor: 'background.paper' }}
                     >
                       <BusinessOutlinedIcon sx={{ fontSize: 32 }} />
                     </Avatar>
@@ -711,8 +718,18 @@ const AdminOrganizationMasterDetail = ({
                         </Grid>
                     </DetailSection>
 
-                    <Box sx={{ mt: 2, p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: 1, borderColor: 'primary.light', borderStyle: 'dashed' }}>
-                      <Typography variant="caption" color="primary.darker" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
+                    <Box
+                      sx={{
+                        mt: 2,
+                        p: 2,
+                        bgcolor: (theme) => alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.12 : 0.08),
+                        borderRadius: 2,
+                        border: 1,
+                        borderColor: (theme) => alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.28 : 0.2),
+                        borderStyle: 'dashed',
+                      }}
+                    >
+                      <Typography variant="caption" color="info.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
                         <InfoOutlinedIcon sx={{ fontSize: 14 }} />
                         Lưu ý: Các thay đổi chương trình & chuyên ngành lưu khi bạn nhấn nút "Lưu".
                       </Typography>
@@ -782,51 +799,43 @@ const AdminOrganizationMasterDetail = ({
                             Màu sắc
                           </Typography>
 
-                          <Grid container spacing={2}>
-                            
-                            {/* Primary */}
-                            <Grid item xs={12} md={4}>
-                              <ColorBlock
-                                label="Màu chính"
-                                value={brandState.themeColors.primary}
-                                onChange={(v) =>
-                                  setBrandState((s) => ({
-                                    ...s,
-                                    themeColors: { ...s.themeColors, primary: v },
-                                  }))
-                                }
-                              />
-                            </Grid>
+                          <Stack spacing={1.5}>
+                            <ColorBlock
+                              label="Màu chính"
+                              value={brandState.themeColors.primary}
+                              fallback={DEFAULT_BRAND_COLORS.primary}
+                              onChange={(v) =>
+                                setBrandState((s) => ({
+                                  ...s,
+                                  themeColors: { ...s.themeColors, primary: v },
+                                }))
+                              }
+                            />
 
-                            {/* Secondary */}
-                            <Grid item xs={12} md={4}>
-                              <ColorBlock
-                                label="Màu phụ"
-                                value={brandState.themeColors.secondary}
-                                onChange={(v) =>
-                                  setBrandState((s) => ({
-                                    ...s,
-                                    themeColors: { ...s.themeColors, secondary: v },
-                                  }))
-                                }
-                              />
-                            </Grid>
+                            <ColorBlock
+                              label="Màu phụ"
+                              value={brandState.themeColors.secondary}
+                              fallback={DEFAULT_BRAND_COLORS.secondary}
+                              onChange={(v) =>
+                                setBrandState((s) => ({
+                                  ...s,
+                                  themeColors: { ...s.themeColors, secondary: v },
+                                }))
+                              }
+                            />
 
-                            {/* Accent */}
-                            <Grid item xs={12} md={4}>
-                              <ColorBlock
-                                label="Màu accent"
-                                value={brandState.themeColors.accent}
-                                onChange={(v) =>
-                                  setBrandState((s) => ({
-                                    ...s,
-                                    themeColors: { ...s.themeColors, accent: v },
-                                  }))
-                                }
-                              />
-                            </Grid>
-
-                          </Grid>
+                            <ColorBlock
+                              label="Màu accent"
+                              value={brandState.themeColors.accent}
+                              fallback={DEFAULT_BRAND_COLORS.accent}
+                              onChange={(v) =>
+                                setBrandState((s) => ({
+                                  ...s,
+                                  themeColors: { ...s.themeColors, accent: v },
+                                }))
+                              }
+                            />
+                          </Stack>
                         </Box>
 
                         <Box sx={{ mt: 3 }}>
@@ -834,96 +843,46 @@ const AdminOrganizationMasterDetail = ({
                             Hình ảnh
                           </Typography>
 
-                          <Grid container spacing={3}>
-                            <Grid item xs={12} sm={6}>
-                              <Stack spacing={1} alignItems="center">
-                                <Avatar
-                                  src={brandState.logoUrl}
-                                  variant="rounded"
-                                  sx={{
-                                    width: 96,
-                                    height: 96,
-                                    border: 1,
-                                    borderColor: 'divider',
-                                    bgcolor: 'background.default',
-                                  }}
-                                />
-                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
-                                  Logo
-                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const base64 = await fileToBase64(file);
-                                      setBrandState(s => ({ ...s, logoUrl: base64 }));
-                                    }
-                                  }} />
-                                </Button>
-                              </Stack>
-                            </Grid>
-
-                            <Grid item xs={12} sm={6}>
-                              <Stack spacing={1} alignItems="center">
-                                <Avatar
-                                  src={brandState.faviconUrl}
-                                  variant="rounded"
-                                  sx={{
-                                    width: 96,
-                                    height: 96,
-                                    border: 1,
-                                    borderColor: 'divider',
-                                    bgcolor: 'background.default',
-                                  }}
-                                />
-                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
-                                  Favicon
-                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const base64 = await fileToBase64(file);
-                                      setBrandState(s => ({ ...s, faviconUrl: base64 }));
-                                    }
-                                  }} />
-                                </Button>
-                              </Stack>
-                            </Grid>
-
-                            <Grid item xs={12}>
-                              <Stack spacing={1} alignItems="stretch">
-                                <Box
-                                  sx={{
-                                    width: '100%',
-                                    height: { xs: 140, md: 200 },
-                                    border: 1,
-                                    borderColor: 'divider',
-                                    borderRadius: 2,
-                                    overflow: 'hidden',
-                                    bgcolor: 'background.default',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  {brandState.heroBannerUrl ? (
-                                    <img src={brandState.heroBannerUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                  ) : (
-                                    <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 600 }}>
-                                      Khu vực preview Hero Banner
-                                    </Typography>
-                                  )}
-                                </Box>
-                                <Button component="label" variant="outlined" size="small" startIcon={<CloudUploadIcon />} fullWidth sx={{ textTransform: 'none' }}>
-                                  Hero Banner
-                                  <input type="file" hidden accept="image/*" onChange={async (e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      const base64 = await fileToBase64(file);
-                                      setBrandState(s => ({ ...s, heroBannerUrl: base64 }));
-                                    }
-                                  }} />
-                                </Button>
-                              </Stack>
-                            </Grid>
-                          </Grid>
+                          <Box
+                            sx={{
+                              display: 'grid',
+                              gridTemplateColumns: { xs: '1fr', md: '168px minmax(0, 1fr)' },
+                              gridTemplateRows: { md: '168px auto 168px auto' },
+                              columnGap: 2,
+                              rowGap: 1.5,
+                              alignItems: 'stretch',
+                            }}
+                          >
+                            <ImagePreviewBox
+                              label="Logo"
+                              src={brandState.logoUrl}
+                              sx={{ gridColumn: { md: 1 }, gridRow: { md: 1 } }}
+                            />
+                            <UploadImageButton
+                              label="Logo"
+                              onUpload={(base64) => setBrandState(s => ({ ...s, logoUrl: base64 }))}
+                              sx={{ gridColumn: { md: 1 }, gridRow: { md: 2 } }}
+                            />
+                            <ImagePreviewBox
+                              label="Favicon"
+                              src={brandState.faviconUrl}
+                              sx={{ gridColumn: { md: 1 }, gridRow: { md: 3 } }}
+                            />
+                            <UploadImageButton
+                              label="Favicon"
+                              onUpload={(base64) => setBrandState(s => ({ ...s, faviconUrl: base64 }))}
+                              sx={{ gridColumn: { md: 1 }, gridRow: { md: 4 } }}
+                            />
+                            <HeroBannerPreview
+                              src={brandState.heroBannerUrl}
+                              sx={{ gridColumn: { md: 2 }, gridRow: { md: '1 / 4' } }}
+                            />
+                            <UploadImageButton
+                              label="Hero Banner"
+                              onUpload={(base64) => setBrandState(s => ({ ...s, heroBannerUrl: base64 }))}
+                              sx={{ gridColumn: { md: 2 }, gridRow: { md: 4 } }}
+                            />
+                          </Box>
                         </Box>
 
                         <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
@@ -943,10 +902,15 @@ const AdminOrganizationMasterDetail = ({
                                     logo_url: brandState.logoUrl,
                                     favicon_url: brandState.faviconUrl,
                                     hero_banner_url: brandState.heroBannerUrl,
-                                    theme_colors: { ...brandState.themeColors },
+                                    theme_colors: {
+                                      primary: normalizeHexColor(brandState.themeColors.primary, DEFAULT_BRAND_COLORS.primary),
+                                      secondary: normalizeHexColor(brandState.themeColors.secondary, DEFAULT_BRAND_COLORS.secondary),
+                                      accent: normalizeHexColor(brandState.themeColors.accent, DEFAULT_BRAND_COLORS.accent),
+                                    },
                                   };
                                   const newCfg = { ...cfg, brand_config: brand };
                                   await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
+                                  onPromoteOrganization?.(selectedOrg.id);
                                   enqueueSnackbar('Đã lưu cấu hình giao diện', { variant: 'success' });
                                   onRefresh?.();
                                 } catch (_) {
@@ -1115,49 +1079,232 @@ const DetailItem = ({ label, value, isFullWidth = false }) => (
   </Grid>
 );
 
-const ColorBlock = ({ label, value, onChange }) => (
-  <Box
-    sx={{
-      px: 2.5,
-      py: 1.5,
-      border: 1,
-      borderColor: 'divider',
-      borderRadius: 1,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 1.2,
-    }}
-  >
-    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-      {label}
-    </Typography>
-    
+const getContrastRatio = (colorA, colorB) => {
+  const luminance = (hex) => {
+    const normalized = normalizeHexColor(hex, '#000000').slice(1);
+    const channels = [0, 2, 4].map((start) => parseInt(normalized.slice(start, start + 2), 16) / 255);
+    const [r, g, b] = channels.map((channel) => (
+      channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+    ));
+
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+
+  const l1 = luminance(colorA);
+  const l2 = luminance(colorB);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+
+  return (lighter + 0.05) / (darker + 0.05);
+};
+
+const formatContrast = (value) => `${value.toFixed(2)}:1`;
+
+const ColorBlock = ({ label, value, fallback, onChange }) => {
+  const normalizedValue = normalizeHexColor(value, fallback);
+  const color = createBrandColor(normalizedValue, fallback);
+  const textOnWhiteContrast = getContrastRatio(color.main, '#FFFFFF');
+  const hasLowTextContrast = textOnWhiteContrast < 4.5;
+
+  return (
     <Box
       sx={{
+        py: 1.25,
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 1,
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'stretch', sm: 'center' },
+        gap: 1.25,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        '&:last-of-type': { borderBottom: 0 },
       }}
     >
-      <input
-        type="color"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          width: 44,
-          height: 34,
-          border: 'none',
-          background: 'transparent',
-          cursor: 'pointer',
+      <Box
+        sx={{
+          width: { sm: 178 },
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
         }}
-      />
+      >
+        <Box
+          component="label"
+          sx={{
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            bgcolor: normalizedValue,
+            boxShadow: (theme) => `inset 0 0 0 1px ${theme.palette.divider}`,
+            cursor: 'pointer',
+            overflow: 'hidden',
+            position: 'relative',
+            flexShrink: 0,
+          }}
+        >
+          <input
+            type="color"
+            value={normalizedValue}
+            onChange={(e) => onChange(e.target.value)}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              opacity: 0,
+              cursor: 'pointer',
+            }}
+          />
+        </Box>
 
-      <Typography sx={{ fontWeight: 700, fontSize: 13 }}>
-        {value}
-      </Typography>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+            {label}
+          </Typography>
+          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary' }}>
+            {normalizedValue.toUpperCase()}
+          </Typography>
+        </Box>
+      </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            flex: 1,
+            alignItems: 'center',
+            flexDirection: { xs: 'column', sm: 'row' },
+            gap: 1.5,
+            minWidth: 0,
+          }}
+      >
+        <Box
+          sx={{
+            width: { xs: '100%', sm: 120 },
+            height: 44,
+            borderRadius: 1,
+            bgcolor: color.main,
+            color: color.contrastText,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 900,
+            fontSize: 18,
+            boxShadow: (theme) => `inset 0 0 0 1px ${theme.palette.divider}`,
+            flexShrink: 0,
+          }}
+        >
+          Aa
+        </Box>
+
+        <Box sx={{ minHeight: 42, display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+          {hasLowTextContrast ? (
+            <Alert
+              severity="warning"
+              sx={{
+                width: '100%',
+                py: 0,
+                px: 1,
+                alignItems: 'center',
+                '& .MuiAlert-message': { py: 0.5 },
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                Màu này có thể bị mờ khi dùng làm chữ trên nền trắng
+                {' '}
+                ({formatContrast(textOnWhiteContrast)}, nên đạt từ 4.5:1).
+              </Typography>
+            </Alert>
+          ) : (
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+              Độ rõ ổn khi dùng màu này làm chữ trên nền trắng.
+            </Typography>
+          )}
+        </Box>
+      </Box>
+
     </Box>
+  );
+};
+
+const ImagePreviewBox = ({ label, src, sx }) => (
+  <Box
+    sx={{
+      aspectRatio: '1 / 1',
+      width: '100%',
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 1.5,
+      bgcolor: 'background.default',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      ...sx,
+    }}
+  >
+    {src ? (
+      <Box
+        component="img"
+        src={src}
+        alt={label}
+        sx={{ width: '100%', height: '100%', objectFit: 'contain', p: 1 }}
+      />
+    ) : (
+      <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700 }}>
+        {label}
+      </Typography>
+    )}
   </Box>
+);
+
+const HeroBannerPreview = ({ src, sx }) => (
+  <Box
+    sx={{
+      width: '100%',
+      minHeight: { xs: 180, md: 0 },
+      border: '1px solid',
+      borderColor: 'divider',
+      borderRadius: 1.5,
+      overflow: 'hidden',
+      bgcolor: 'background.default',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...sx,
+    }}
+  >
+    {src ? (
+      <Box
+        component="img"
+        src={src}
+        alt="Hero Banner"
+        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      />
+    ) : (
+      <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700 }}>
+        Khu vực preview Hero Banner
+      </Typography>
+    )}
+  </Box>
+);
+
+const UploadImageButton = ({ label, onUpload, sx }) => (
+  <Button
+    component="label"
+    variant="outlined"
+    size="small"
+    startIcon={<CloudUploadIcon />}
+    fullWidth
+    sx={{ textTransform: 'none', alignSelf: 'stretch', ...sx }}
+  >
+    {label}
+    <input type="file" hidden accept="image/*" onChange={async (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        onUpload(await fileToBase64(file));
+      }
+    }} />
+  </Button>
 );
 
 export default AdminOrganizationMasterDetail;
