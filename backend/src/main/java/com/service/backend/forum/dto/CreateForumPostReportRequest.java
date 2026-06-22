@@ -21,7 +21,4 @@ public class CreateForumPostReportRequest {
     @NotBlank(message = "Reason is required")
     @Size(max = 100, message = "Reason must be less than 100 characters")
     private String reason;
-
-    @Size(max = 1000, message = "Description must be less than 1000 characters")
-    private String description;
 }

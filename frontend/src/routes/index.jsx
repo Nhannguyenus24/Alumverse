@@ -147,6 +147,9 @@ const AdminAIBotConfigPage = Loadable(
 const EditDonationPage = Loadable(
   lazy(() => import("../pages/admin/EditDonationPage")),
 );
+const AdminEducationRequestsPage = Loadable(
+  lazy(() => import("../pages/admin/AdminEducationRequestsPage")),
+);
 
 // Donation pages
 const DonationPage = Loadable(
@@ -729,6 +732,14 @@ export const router = createBrowserRouter([
             ),
           },
           {
+            path: "education-requests",
+            element: (
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminEducationRequestsPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
             path: "audit-logs",
             element: (
               <ProtectedRoute allowedRoles={["ADMIN"]}>
@@ -964,6 +975,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
             <AdminEditArticlePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "education-requests",
+        element: (
+          <ProtectedRoute allowedRoles={["ADMIN"]}>
+            <AdminEducationRequestsPage />
           </ProtectedRoute>
         ),
       },

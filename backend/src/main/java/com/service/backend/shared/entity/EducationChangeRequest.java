@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -13,38 +12,41 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.service.backend.shared.enums.Status;
-import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("forum_post_reports")
-public class ForumPostReport {
+@Table("education_change_requests")
+public class EducationChangeRequest {
+
     @Id
-    private Long id;
+    private Integer id;
 
-    @Column("post_id")
-    private Integer postId;
+    @Column("member_id")
+    private Integer memberId;
 
-    @Column("reporter_member_id")
-    private Integer reporterMemberId;
+    @Column("organization_id")
+    private Integer organizationId;
 
-    private String reason;
+    @Column("old_data")
+    private String oldData;
+
+    @Column("new_data")
+    private String newData;
 
     private Status status;
 
+    @Column("admin_note")
+    private String adminNote;
+
     @Column("reviewed_by_user_id")
     private Integer reviewedByUserId;
-
-    @Column("review_note")
-    private String reviewNote;
 
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
-    @Column("updated_at")
-    private LocalDateTime updatedAt;
+    @Column("reviewed_at")
+    private LocalDateTime reviewedAt;
 }

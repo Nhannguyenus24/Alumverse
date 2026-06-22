@@ -93,6 +93,17 @@ public class AdminForumController {
                 .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Forum post deleted successfully", null)));
     }
 
+    @GetMapping("/admin/posts/hidden/list")
+    public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> adminGetHiddenPosts(
+            @RequestParam(required = false) Integer organizationId,
+            @Parameter(example = "0")
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
+            @Parameter(example = "10")
+            @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
+        return adminForumService.getHiddenPostsWithPagination(organizationId, page, size)
+                .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved hidden forum posts", paginatedResponse)));
+    }
+
     @GetMapping("/admin/posts/banned/list")
     public Mono<ResponseEntity<ApiResponse<PaginatedResponse<ForumPostDTO>>>> adminGetBannedPosts(
             @RequestParam(required = false) Integer organizationId,

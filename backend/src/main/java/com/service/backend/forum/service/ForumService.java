@@ -325,7 +325,6 @@ public class ForumService {
                             .postId(postId)
                             .reporterMemberId(request.getReporterMemberId())
                             .reason(request.getReason())
-                            .description(request.getDescription())
                             .status(Status.PENDING)
                             .build();
                     return forumPostReportRepository.save(report);
@@ -500,7 +499,6 @@ public class ForumService {
                 .postId(report.getPostId())
                 .reporterMemberId(report.getReporterMemberId())
                 .reason(report.getReason())
-                .description(report.getDescription())
                 .status(report.getStatus())
                 .reviewedByUserId(report.getReviewedByUserId())
                 .reviewNote(report.getReviewNote())
