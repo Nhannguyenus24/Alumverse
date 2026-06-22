@@ -23,6 +23,13 @@ function buildSearchParams({ appliedFullName, filters, page, pageSize }) {
     if (major) {
       params.major = major;
     }
+
+    const organizationIds = filters.organizationIds || [];
+    if (organizationIds.length > 0) {
+      // Axios serializes arrays as organizationIds=1&organizationIds=2,
+      // which Spring binds to List<Integer>. Omit when empty → all slugs.
+      params.organizationIds = organizationIds;
+    }
   }
 
   return params;
@@ -37,6 +44,7 @@ export function useNetworkMembers({ appliedFullName, filters, page, pageSize, en
       params.fullName ?? '',
       params.program ?? '',
       params.major ?? '',
+      (params.organizationIds ?? []).join(','),
       params.page,
       params.size,
     ],

@@ -1,5 +1,7 @@
 package com.service.backend.chat.dao;
 
+import java.util.List;
+
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.stereotype.Repository;
@@ -25,7 +27,7 @@ public interface NetworkMemberSearchRepository
             """;
 
     String SEARCH_WHERE = """
-            WHERE om.organization_id = :organizationId
+            WHERE (:filterByOrg = FALSE OR om.organization_id IN (:organizationIds))
               AND om.status = 'ACTIVE'
               AND u.id <> :currentUserId
               AND NOT EXISTS (
@@ -42,18 +44,26 @@ public interface NetworkMemberSearchRepository
                     WHERE val ILIKE :major))
             """;
 
+    // DISTINCT ON (om.user_id) collapses multi-organization members to a single
+    // row (a user may belong to >1 organization); the inner ORDER BY must lead
+    // with om.user_id, so the outer query re-sorts alphabetically for display.
     @Query("""
-            SELECT om.user_id AS user_id,
-                   gp.full_name AS full_name,
-                   CAST(om.program AS text) AS program,
-                   CAST(om.major AS text) AS major,
-                   u.avatar_url AS avatar_url
+            SELECT * FROM (
+                SELECT DISTINCT ON (om.user_id)
+                       om.user_id AS user_id,
+                       gp.full_name AS full_name,
+                       CAST(om.program AS text) AS program,
+                       CAST(om.major AS text) AS major,
+                       u.avatar_url AS avatar_url
             """ + SEARCH_FROM_JOIN + SEARCH_WHERE + """
-            ORDER BY gp.full_name ASC, om.id ASC
+                ORDER BY om.user_id, om.id ASC
+            ) sub
+            ORDER BY sub.full_name ASC, sub.user_id ASC
             LIMIT :limit OFFSET :offset
             """)
     Flux<NetworkMemberSearchItemResponse> searchMembers(
-            Integer organizationId,
+            boolean filterByOrg,
+            List<Integer> organizationIds,
             Long currentUserId,
             String fullName,
             String program,
@@ -62,10 +72,11 @@ public interface NetworkMemberSearchRepository
             int offset);
 
     @Query("""
-            SELECT COUNT(om.id)
+            SELECT COUNT(DISTINCT om.user_id)
             """ + SEARCH_FROM_JOIN + SEARCH_WHERE)
     Mono<Long> countSearchMembers(
-            Integer organizationId,
+            boolean filterByOrg,
+            List<Integer> organizationIds,
             Long currentUserId,
             String fullName,
             String program,

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import useAuthStore from '../../stores/authStore';
 import { useMyMentorProfile } from './useMyMentorProfile';
+import { useMyOrganizationMember } from '../useMyOrganizationMember';
 import { getMyMenteeProfile } from '../../utils/api';
 
 /**
@@ -25,7 +26,14 @@ export const useMentorshipAccessState = () => {
   const mentorStatus = mentorProfileQuery.data?.status ?? null;
   const mentorMemberId = mentorProfileQuery.data?.memberId ?? null;
 
-  const level = isLoggedIn ? (verificationLevel ?? 0) : -1;
+  // The auth store's verificationLevel is only refreshed at login / token
+  // refresh, so it goes stale right after an admin approves verification.
+  // Consult the live OrganizationMember record and take the higher level so
+  // newly-approved users gain access without having to log out and back in.
+  const orgMemberQuery = useMyOrganizationMember();
+  const storeLevel = isLoggedIn ? (verificationLevel ?? 0) : 0;
+  const liveMemberLevel = Number(orgMemberQuery.data?.verificationLevel ?? 0);
+  const level = isLoggedIn ? Math.max(storeLevel, liveMemberLevel) : -1;
 
   const isGuest = !isLoggedIn;
   const needsEmailVerification = isLoggedIn && level < 1;
@@ -68,6 +76,7 @@ export const useMentorshipAccessState = () => {
 
   const isLoading =
     (isLoggedIn && mentorProfileQuery.isLoading) ||
+    (isLoggedIn && orgMemberQuery.isLoading) ||
     (canUseMentorship && menteeProfileQuery.isLoading);
 
   return {

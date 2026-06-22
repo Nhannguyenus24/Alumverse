@@ -21,9 +21,16 @@ import useOrganizationStore from "../../stores/organizationStore";
 import Logo from "../../components/Logo";
 import FitBot from "../../components/FitBot";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { keyframes } from "@emotion/react";
+import apiClient from "../../utils/axios";
 
 const HERO_BG = "/home_page/home_page.png";
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
+
+const scrollAnimation = keyframes`
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+`;
 
 const EXPLORE_ITEMS = [
   {
@@ -70,6 +77,7 @@ const HomePage = () => {
   const { slug } = useParams();
   const { achievements } = usePublishedAchievements(0, 5);
   const [events, setEvents] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
   const navigate = useOrgNavigate();
 
   const organizationId = useOrganizationStore((state) => state.organization?.id);
@@ -86,6 +94,20 @@ const HomePage = () => {
     };
     fetchEvents();
   }, [organizationId]);
+
+  useEffect(() => {
+    const fetchOrgs = async () => {
+      try {
+        const res = await apiClient.get('/organizations');
+        if (res?.data?.data) {
+          setOrganizations(res.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error);
+      }
+    };
+    fetchOrgs();
+  }, []);
 
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
@@ -458,6 +480,92 @@ const HomePage = () => {
           </Stack>
         </Container>
       </Box>
+
+      {/* Các tổ chức trên hệ thống */}
+      {organizations.length > 0 && (
+        <Box sx={{ py: { xs: 4, sm: 5, md: 6 }, backgroundColor: "#f9fafb", overflow: "hidden" }}>
+          <Container sx={{ px: { xs: 2, sm: 3 } }}>
+            <Typography
+              variant="h5"
+              textAlign="center"
+              color="text.primary"
+              sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" }, fontWeight: 700 }}
+            >
+              CÁC TỔ CHỨC KHÁC TRÊN HỆ THỐNG
+            </Typography>
+            <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  width: "max-content",
+                  animation: `${scrollAnimation} ${Math.max(organizations.length * 3, 10)}s linear infinite`,
+                  gap: { xs: 2, md: 4 },
+                  "&:hover": {
+                    animationPlayState: "paused",
+                  },
+                }}
+              >
+                {[...organizations, ...organizations].map((org, idx) => (
+                  <Card
+                    key={`${org.id}-${idx}`}
+                    component="a"
+                    href={`/${org.slug}`}
+                    sx={{
+                      width: 220,
+                      minHeight: 130,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      p: 2,
+                      textDecoration: "none",
+                      flexShrink: 0,
+                      borderRadius: 2,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: 4,
+                      },
+                    }}
+                  >
+                    {org.logoUrl ? (
+                      <>
+                        <Box
+                          component="img"
+                          src={org.logoUrl}
+                          alt={org.name}
+                          sx={{ height: 60, maxWidth: "100%", objectFit: "contain", mb: 1.5 }}
+                        />
+                        <Typography
+                          variant="body2"
+                          textAlign="center"
+                          fontWeight={600}
+                          color="text.secondary"
+                          sx={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {org.name}
+                        </Typography>
+                      </>
+                    ) : (
+                      <Typography variant="subtitle1" textAlign="center" fontWeight={600} color="primary.main">
+                        {org.name}
+                      </Typography>
+                    )}
+                  </Card>
+                ))}
+              </Box>
+            </Box>
+          </Container>
+        </Box>
+      )}
 
       {/* Đối tác */}
       <Box sx={{ py: { xs: 4, sm: 5, md: 6 }, backgroundColor: "#fff" }}>

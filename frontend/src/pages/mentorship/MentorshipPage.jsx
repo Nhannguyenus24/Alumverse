@@ -16,6 +16,7 @@ import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import MentorshipHubActions from '../../components/mentorship/MentorshipHubActions';
 import MentorshipMentorListSection from '../../components/mentorship/MentorshipMentorListSection';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
+import { useAuth } from '../../hooks/useAuth';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
 import { MENTORSHIP_SIDEBAR, MENTORSHIP_STATS } from '../../constants/mentorshipNav';
 import StatsBanner from '../../components/StatsBanner'
@@ -62,7 +63,9 @@ const STEPS = [
 /** Full marketing landing — guest & level 0 only */
 const GuestLandingContent = () => {
   const access = useMentorshipAccessState();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   return (
     <Stack spacing={4}>
@@ -185,6 +188,11 @@ const GuestLandingContent = () => {
         </Typography>
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <MentorshipHubActions />
+          {isAdmin && (
+            <Button color="secondary" variant="outlined" onClick={() => navigate('/admin/mentorship')}>
+              Quản lý cố vấn
+            </Button>
+          )}
           {!access.isGuest && (
             <Button variant="outlined" onClick={() => navigate('/settings/account')}>
               Đi tới cài đặt tài khoản
@@ -197,38 +205,51 @@ const GuestLandingContent = () => {
 };
 
 /** Hub header + mentor list — level 1 & 2 */
-const HubContent = () => (
-  <Stack spacing={4}>
-    <Stack spacing={2}>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 1.5,
-        }}
-      >
-        <Typography
-          variant="h1"
-          fontWeight={800}
-          color="primary.main"
-          sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
-        >
-          CỐ VẤN
-        </Typography>
-        <MentorshipHubActions />
-      </Box>
-      <Typography color="text.secondary">
-        Chương trình cố vấn dành cho sinh viên và cựu sinh viên — kết nối với anh chị đi trước
-        để được hỗ trợ học tập, định hướng nghề nghiệp và phát triển kỹ năng.
-      </Typography>
-    </Stack>
+const HubContent = () => {
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useOrgNavigate();
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
-    <StatsBanner items={MENTORSHIP_STATS} />
-    <MentorshipMentorListSection />
-  </Stack>
-);
+  return (
+    <Stack spacing={4}>
+      <Stack spacing={2}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
+        >
+          <Typography
+            variant="h1"
+            fontWeight={800}
+            color="primary.main"
+            sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
+          >
+            CỐ VẤN
+          </Typography>
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+            <MentorshipHubActions />
+            {isAdmin && (
+              <Button color="secondary" variant="outlined" onClick={() => navigate('/admin/mentorship')}>
+                Quản lý cố vấn
+              </Button>
+            )}
+          </Stack>
+        </Box>
+        <Typography color="text.secondary">
+          Chương trình cố vấn dành cho sinh viên và cựu sinh viên — kết nối với anh chị đi trước
+          để được hỗ trợ học tập, định hướng nghề nghiệp và phát triển kỹ năng.
+        </Typography>
+      </Stack>
+
+      <StatsBanner items={MENTORSHIP_STATS} />
+      <MentorshipMentorListSection />
+    </Stack>
+  );
+};
 
 const MentorshipPage = () => {
   const access = useMentorshipAccessState();

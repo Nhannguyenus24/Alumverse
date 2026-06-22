@@ -1009,7 +1009,12 @@ export const fundApi = {
 
 export const networkApi = {
 	async searchMembers(params = {}) {
-		const response = await apiClient.get('/chat/network/members', { params });
+		const response = await apiClient.get('/chat/network/members', {
+			params,
+			// Repeat array keys without brackets (organizationIds=1&organizationIds=2)
+			// so Spring binds them to List<Integer>; axios defaults to ids[]=1.
+			paramsSerializer: { indexes: null },
+		});
 		return unwrap(response);
 	},
 };
@@ -1241,6 +1246,11 @@ const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTOR}/expertise`, payload);
 	},
 
+	// ME-02: AI-assisted skill tag extraction from a free-text description.
+	extractMentorshipSkills(text) {
+		return apiClient.post('/mentorship/skills/extract', { text });
+	},
+
 	getMyExpertise() {
 		return apiClient.get(`${BASE_MENTOR}/expertise`);
 	},
@@ -1334,6 +1344,7 @@ export const {
 	updateMentorProfile,
 	getMyMentorProfile,
 	addMyExpertise,
+	extractMentorshipSkills,
 	getMyExpertise,
 	deleteMyExpertise,
 	updateMyExpertise,

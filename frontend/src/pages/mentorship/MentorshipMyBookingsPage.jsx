@@ -44,6 +44,7 @@ import {
   updateMentorSessionMeetingLink,
 } from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
+import { validateMeetingLink, meetingLinkPasswordWarning } from '../../utils/meetingLink';
 import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
 
 const DEFAULT_COVER =
@@ -357,6 +358,11 @@ const MentorshipMyBookingsPage = () => {
     const value = linkValue.trim();
     if (!value) {
       setLinkError('Vui lòng nhập link tham gia.');
+      return;
+    }
+    const linkValidationError = validateMeetingLink(value, { optional: false });
+    if (linkValidationError) {
+      setLinkError(linkValidationError);
       return;
     }
     setLinkPending(true);
@@ -732,8 +738,14 @@ const MentorshipMyBookingsPage = () => {
             onChange={(e) => setLinkValue(e.target.value)}
             fullWidth
             placeholder="https://meet.google.com/..."
+            helperText="Chỉ chấp nhận: Google Meet, Zoom, Microsoft Teams, Jitsi Meet, Whereby, Webex, GoToMeeting."
             autoFocus
           />
+          {meetingLinkPasswordWarning(linkValue) && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {meetingLinkPasswordWarning(linkValue)}
+            </Alert>
+          )}
           {linkError && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {linkError}
