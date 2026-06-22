@@ -1046,10 +1046,10 @@ INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to
 (8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, 'VERIFIED', false, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
 
 -- ============= FORUM POST REPORTS DATA =============
-INSERT INTO "forum_post_reports" ("post_id", "reporter_member_id", "reason", "description", "status", "reviewed_by_user_id", "review_note", "created_at", "updated_at") VALUES
-(8, 4, 'SPAM', 'Post repeats promotional content and is not relevant to the discussion.', 'APPROVED', 1, 'Hidden post and warned author', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
-(14, 9, 'OFF_TOPIC', 'Content is not related to the current thread purpose.', 'PENDING', NULL, NULL, NOW() - INTERVAL '8 hours', NOW() - INTERVAL '8 hours'),
-(15, 10, 'ABUSIVE_LANGUAGE', 'Potentially aggressive wording found in the comment.', 'REJECTED', 1, 'No violation after review', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
+INSERT INTO "forum_post_reports" ("post_id", "reporter_member_id", "reason", "status", "reviewed_by_user_id", "review_note", "created_at", "updated_at") VALUES
+(8, 4, 'SPAM', 'APPROVED', 1, 'Hidden post and warned author', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
+(14, 9, 'OFF_TOPIC', 'PENDING', NULL, NULL, NOW() - INTERVAL '8 hours', NOW() - INTERVAL '8 hours'),
+(15, 10, 'ABUSIVE_LANGUAGE', 'REJECTED', 1, 'No violation after review', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
 
 -- ============= ADMIN AUDIT LOGS DATA =============
 INSERT INTO "admin_audit_logs" ("admin_user_id", "target_user_id", "action", "resource_type", "resource_id", "before_data", "after_data", "metadata", "created_at") VALUES

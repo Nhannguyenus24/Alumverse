@@ -1,14 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
 
-const reportPost = async ({ id, reporterMemberId, reason, description }) => {
-  const payload = { reporterMemberId, reason, description };
+const reportPost = async ({ id, reporterMemberId, reason }) => {
+  const payload = { reporterMemberId, reason };
   const response = await apiClient.post(`/forum/post/${id}/report`, payload);
   return response.data;
 };
 
 export const useReportForumPost = () => {
-  
+
 
   const mutation = useMutation({
     mutationFn: reportPost,

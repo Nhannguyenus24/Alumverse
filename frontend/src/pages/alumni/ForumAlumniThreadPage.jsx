@@ -40,7 +40,7 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import { toPlainText } from '../../utils/stringUtils';
 import ReportPostDialog from '../../components/forum/ReportPostDialog';
 
-const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
+const ForumReply = ({ reply, isAdmin, memberId, isGuest, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
   const { showError, showSuccess } = useNotification();
   const reactErrShownRef = useRef(false);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
@@ -159,10 +159,10 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <Tooltip title={!memberId ? "Phải đăng nhập mới có thể bình luận" : ""} placement="left" arrow>
+              <Tooltip title={isGuest ? "Vui lòng xác thực tài khoản để thực hiện chức năng này" : ""} placement="left" arrow>
                 <span>
                   <MenuItem
-                    disabled={!memberId}
+                    disabled={isGuest}
                     onClick={() => {
                       handleCloseActionMenu();
                       onReply?.(reply);
@@ -343,6 +343,7 @@ const ForumAlumniThreadPage = () => {
   const { isAuthenticated, user } = useAuth();
   const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
+  const isGuest = !isAuthenticated || user?.role === 'GUEST';
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const editorRef = useRef(null);
@@ -536,19 +537,18 @@ const ForumAlumniThreadPage = () => {
     setPostToReport(null);
   }, [reportPending]);
 
-  const handleConfirmReport = async ({ reason, description }) => {
+  const handleConfirmReport = async ({ reason }) => {
     if (!postToReport?.id || !user?.id) return;
     try {
       await reportPost({
         id: postToReport.id,
         reporterMemberId: user.id,
         reason,
-        description,
       });
       showSuccess('Gửi báo cáo thành công.');
       setIsReportOpen(false);
       setPostToReport(null);
-    } catch (_) {
+    } catch (err) {
       showError(err?.response?.data?.message ?? err?.message ?? 'Không thể gửi báo cáo.');
     }
   };
@@ -653,8 +653,8 @@ const ForumAlumniThreadPage = () => {
   }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
 
   const handleToggleSubscription = async () => {
-    if (!topicId || !memberId) {
-      showWarning('Vui lòng đăng nhập để thực hiện chức năng này.');
+    if (!topicId || isGuest) {
+      showWarning('Vui lòng xác thực tài khoản để thực hiện chức năng này.');
       return;
     }
     try {
@@ -918,7 +918,7 @@ const ForumAlumniThreadPage = () => {
                       >
                         Sửa
                       </Button>
-                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                      <Tooltip title={isGuest ? "Vui lòng xác thực tài khoản để thực hiện chức năng này" : ""} arrow>
                         <span>
                           <Button
                             fullWidth
@@ -931,7 +931,7 @@ const ForumAlumniThreadPage = () => {
                               const input = editorRef.current?.querySelector?.('textarea');
                               input?.focus?.();
                             }}
-                            disabled={!isAuthenticated}
+                            disabled={isGuest}
                             sx={{ whiteSpace: 'nowrap' }}
                           >
                             Trả lời
@@ -984,7 +984,7 @@ const ForumAlumniThreadPage = () => {
                       >
                         {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
                       </Button>
-                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                      <Tooltip title={isGuest ? "Vui lòng xác thực tài khoản để thực hiện chức năng này" : ""} arrow>
                         <span>
                           <Button
                             variant="contained"
@@ -996,7 +996,7 @@ const ForumAlumniThreadPage = () => {
                               const input = editorRef.current?.querySelector?.('textarea');
                               input?.focus?.();
                             }}
-                            disabled={!isAuthenticated}
+                            disabled={isGuest}
                           >
                             Trả lời
                           </Button>
@@ -1064,6 +1064,7 @@ const ForumAlumniThreadPage = () => {
                       reply={reply}
                       isAdmin={isAdmin}
                       memberId={memberId}
+                      isGuest={isGuest}
                       onReply={handleReply}
                       onDelete={handleDeletePost}
                       onEdit={handleEditPost}
@@ -1198,17 +1199,17 @@ const ForumAlumniThreadPage = () => {
                         </Typography>
                       </Box>
                     ) : null}
-                    <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow placement="top">
+                    <Tooltip title={isGuest ? "Vui lòng xác thực tài khoản để thực hiện chức năng này" : ""} arrow placement="top">
                       <Box>
                         <WYSIWYG
                           value={editorValue}
                           onChange={setEditorValue}
-                          readOnly={!isAuthenticated}
+                          readOnly={isGuest}
                         />
                       </Box>
                     </Tooltip>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                      <Tooltip title={isGuest ? "Vui lòng xác thực tài khoản để thực hiện chức năng này" : ""} arrow>
                         <span>
                           <Button
                             variant="contained"
@@ -1218,7 +1219,7 @@ const ForumAlumniThreadPage = () => {
                               createPending ||
                               answerPending ||
                               !topicId ||
-                              !user?.id ||
+                              isGuest ||
                               !stripHtml(editorValue ?? '')
                             }
                           >
