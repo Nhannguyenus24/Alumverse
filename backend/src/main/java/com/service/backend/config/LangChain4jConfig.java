@@ -72,4 +72,22 @@ public class LangChain4jConfig {
                 .chatLanguageModel(model)
                 .build();
     }
+
+    @Bean
+    public com.service.backend.shared.service.SkillExtractionService skillExtractionService() {
+        if (geminiApiKey == null || geminiApiKey.isBlank()) {
+            // No Gemini key: fall back to a local heuristic so ME-02 still works.
+            return com.service.backend.shared.service.SkillExtractionFallback::extract;
+        }
+
+        GoogleAiGeminiChatModel model = GoogleAiGeminiChatModel.builder()
+                .apiKey(geminiApiKey)
+                .modelName(geminiModelName)
+                .temperature(geminiModelTemperature)
+                .build();
+
+        return AiServices.builder(com.service.backend.shared.service.SkillExtractionService.class)
+                .chatLanguageModel(model)
+                .build();
+    }
 }
