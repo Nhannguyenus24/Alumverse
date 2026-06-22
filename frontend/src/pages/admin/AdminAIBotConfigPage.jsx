@@ -10,7 +10,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 
-const FITBOT_API_URL = 'http://localhost:8000';
+const FITBOT_API_URL = '/ngrok-api';
 
 const AdminAIBotConfigPage = () => {
   const { setBreadcrumbs } = useOutletContext() || {};
@@ -38,7 +38,9 @@ const AdminAIBotConfigPage = () => {
     setLoadingFiles(true);
     setApiError(null);
     try {
-      const res = await fetch(`${FITBOT_API_URL}/api/files`);
+      const res = await fetch(`${FITBOT_API_URL}/api/files`, {
+        headers: { 'ngrok-skip-browser-warning': 'true' }
+      });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
       setFiles(data.files || []);
@@ -63,6 +65,7 @@ const AdminAIBotConfigPage = () => {
     try {
       const res = await fetch(`${FITBOT_API_URL}/api/files/upload?ingest=true`, {
         method: 'POST',
+        headers: { 'ngrok-skip-browser-warning': 'true' },
         body: formData,
       });
       if (!res.ok) throw new Error('Upload failed');
@@ -80,6 +83,7 @@ const AdminAIBotConfigPage = () => {
     try {
       const res = await fetch(`${FITBOT_API_URL}/api/files/${filename}`, {
         method: 'DELETE',
+        headers: { 'ngrok-skip-browser-warning': 'true' },
       });
       if (res.ok) {
         await fetchFiles();
@@ -96,7 +100,10 @@ const AdminAIBotConfigPage = () => {
     try {
       const res = await fetch(`${FITBOT_API_URL}/api/query`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ question, top_k: 7, model: "gemini-2.5-flash", use_reranker: false })
       });
       if (!res.ok) throw new Error('API error');
