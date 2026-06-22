@@ -1,5 +1,6 @@
 package com.service.backend.mentorship.dto;
 
+import com.service.backend.shared.validation.ValidMeetingLink;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,7 @@ public class CreateMentorProfileRequest {
     private String coverUrl;
 
     @Size(max = 500)
+    @ValidMeetingLink
     private String defaultMeetingLink;
 
     @Size(max = 5000)

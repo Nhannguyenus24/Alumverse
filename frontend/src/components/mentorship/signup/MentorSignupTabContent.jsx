@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import { validateMeetingLink, meetingLinkPasswordWarning } from '../../../utils/meetingLink';
 
 const CATEGORIES = [
   { value: 'CAREER', label: 'Định hướng / Chia sẻ kinh nghiệm nghề nghiệp' },
@@ -22,6 +23,8 @@ const blank = () => ({ category: 'CAREER', name: '', description: '', tag: '' })
 const MentorSignupTabContent = ({ values, onChange }) => {
   const items = values.expertises ?? [];
   const meetingLink = values.defaultMeetingLink ?? '';
+  const meetingLinkError = validateMeetingLink(meetingLink, { optional: true });
+  const meetingLinkWarn = meetingLinkPasswordWarning(meetingLink);
 
   const updateExpertises = (next) => onChange({ ...values, expertises: next });
   const updateMeetingLink = (val) => onChange({ ...values, defaultMeetingLink: val });
@@ -121,9 +124,17 @@ const MentorSignupTabContent = ({ values, onChange }) => {
           onChange={(e) => updateMeetingLink(e.target.value)}
           fullWidth
           size="small"
+          error={Boolean(meetingLinkError)}
+          helperText={meetingLinkError ?? undefined}
         />
+        {meetingLinkWarn && (
+          <Typography variant="caption" color="warning.main" display="block" mt={0.5}>
+            {meetingLinkWarn}
+          </Typography>
+        )}
         <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-          (Không bắt buộc) Mentee sẽ nhận link này khi bạn duyệt yêu cầu.
+          (Không bắt buộc) Mentee sẽ nhận link này khi bạn duyệt yêu cầu. Chỉ chấp nhận link từ Google
+          Meet, Zoom, Microsoft Teams, Jitsi Meet, Whereby, Webex, GoToMeeting.
         </Typography>
       </Box>
     </Stack>
