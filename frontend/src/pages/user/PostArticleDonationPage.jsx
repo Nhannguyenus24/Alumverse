@@ -10,13 +10,8 @@ import {
   Button,
   CircularProgress,
   Container,
-  FormControl,
-  FormHelperText,
   Grid,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   TextField,
   Typography,
@@ -31,10 +26,12 @@ import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
 import WYSIWYG from "../../components/WYSIWYG";
+import FundReceivingInfoSelect from "../../components/FundReceivingInfoSelect";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useCreateFund } from "../../hooks/news/useCreateFund";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
-import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
+import FundLogoPreview from "../../components/FundLogoPreview";
+import { useUploadImage, validateImageFile, IMAGE_ACCEPT, FUND_CONTENT_EDITOR_HEIGHT } from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
 
 const isEmptyHtml = (html) => {
@@ -279,23 +276,8 @@ export default function PostArticleDonationPage() {
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
                         Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.
                       </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        {logoPreview && (
-                          <Box
-                            component="img"
-                            src={logoPreview}
-                            alt="Logo preview"
-                            sx={{
-                              width: 72,
-                              height: 72,
-                              borderRadius: 2,
-                              objectFit: "cover",
-                              border: "1px solid",
-                              borderColor: "divider",
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 1.5, width: "100%" }}>
+                        {logoPreview && <FundLogoPreview src={logoPreview} />}
                         <Stack direction="row" spacing={1} alignItems="center">
                           <input
                             ref={logoInputRef}
@@ -316,7 +298,7 @@ export default function PostArticleDonationPage() {
                             <Button
                               variant="text"
                               size="small"
-                              color="error"
+                              color="primary"
                               onClick={handleLogoRemove}
                               sx={{ textTransform: "none" }}
                             >
@@ -329,29 +311,20 @@ export default function PostArticleDonationPage() {
 
                     {/* Tài khoản nhận */}
                     <Grid size={12}>
-                      <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
-                        <InputLabel id="receiving-label">Tài khoản nhận quỹ</InputLabel>
-                        <Controller
-                          name="fundReceivingInfoId"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              labelId="receiving-label"
-                              label="Tài khoản nhận quỹ"
-                              MenuProps={{ disableScrollLock: true }}
-                            >
-                              {receivingInfos.map((info) => (
-                                <MenuItem key={info.id} value={info.id}>
-                                  {`${info.bankName} - ${info.accountName} - ${info.accountNumber}`}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                        <FormHelperText>{errors.fundReceivingInfoId?.message}</FormHelperText>
-                      </FormControl>
+                      <Controller
+                        name="fundReceivingInfoId"
+                        control={control}
+                        render={({ field }) => (
+                          <FundReceivingInfoSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={receivingInfos}
+                            error={!!errors.fundReceivingInfoId}
+                            helperText={errors.fundReceivingInfoId?.message}
+                            labelId="receiving-label"
+                          />
+                        )}
+                      />
                     </Grid>
 
                     {/* Số tiền mục tiêu */}
@@ -448,7 +421,7 @@ export default function PostArticleDonationPage() {
                             value={field.value}
                             onChange={field.onChange}
                             placeholder="Nhập mô tả chi tiết về quỹ quyên góp..."
-                            height={320}
+                            height={FUND_CONTENT_EDITOR_HEIGHT}
                           />
                         )}
                       />

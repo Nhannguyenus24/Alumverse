@@ -36,6 +36,7 @@ import { useAdminSystemContext } from "../../stores/AdminStore";
 import { fundApi } from "../../utils/api";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
@@ -44,6 +45,7 @@ import useAdminFundraisingsData from "../../hooks/admin/useAdminFundraisingsData
 import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 import { useDebounce } from "../../hooks/useDebounce";
+import { exportToCSV } from "../../utils/exportUtils";
 
 // Trạng thái quỹ được suy ra hoàn toàn từ thời gian bắt đầu/kết thúc.
 const getFundPhase = (timeStarted, timeEnded) => {
@@ -104,6 +106,7 @@ const AdminFundraisingsPage = () => {
   const [donationsSearchKeyword, setDonationsSearchKeyword] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [donationsSearchBy, setDonationsSearchBy] = useState("name");
+  const [isExporting, setIsExporting] = useState(false);
 
   const loadCampaignDonations = async (fundId, pageNum = 1, keyword = "", searchByField = "name") => {
     setDonationsLoading(true);
@@ -124,6 +127,38 @@ const AdminFundraisingsPage = () => {
       setDonationsList([]);
     } finally {
       setDonationsLoading(false);
+    }
+  };
+
+  const handleExportDonationsCsv = async () => {
+    const fundId = donationsTarget?.id;
+    if (!fundId) return;
+
+    setIsExporting(true);
+    try {
+      const donations = await fundApi.getAllFundDonationsForExport(fundId);
+      if (!donations.length) {
+        enqueueSnackbar("Không có dữ liệu để xuất.", { variant: "warning" });
+        return;
+      }
+
+      const exportData = donations.map((item) => ({
+        "Họ và tên": item.donorName,
+        "Số điện thoại": item.phone || "",
+        Email: item.email || "",
+        "Địa chỉ": item.address || "",
+        "Số tiền ủng hộ": formatCurrencyVnd(item.amount),
+        "Lời nhắn": item.message || "",
+        "Thời gian": formatDateTime(item.createdAt),
+        "Trạng thái": item.status || "",
+      }));
+
+      exportToCSV(exportData, `donations_${fundId}_${Date.now()}.csv`);
+      enqueueSnackbar("Đã xuất file CSV.", { variant: "success" });
+    } catch {
+      enqueueSnackbar("Không thể xuất danh sách quyên góp.", { variant: "error" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -157,7 +192,7 @@ const AdminFundraisingsPage = () => {
     { id: "id", label: "ID" },
     {
       id: "title",
-      label: "Chiến dịch",
+      label: "Quỹ",
       render: (val) => (
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
           {val}
@@ -192,7 +227,7 @@ const AdminFundraisingsPage = () => {
       render: (val) => (
         <Typography
           variant="body2"
-          color="success.main"
+          color="primary.main"
           sx={{ fontWeight: 700 }}
         >
           {formatCurrencyVnd(val)}
@@ -292,8 +327,7 @@ const AdminFundraisingsPage = () => {
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Giám sát các chiến dịch thiện nguyện, học bổng và quỹ phát triển
-            sinh viên.
+            Giám sát các quỹ thiện nguyện, học bổng và phát triển sinh viên.
           </Typography>
         </Box>
         <Button
@@ -320,10 +354,10 @@ const AdminFundraisingsPage = () => {
           label="Tổng tiền quyên góp"
           value={formatCurrencyVnd(stats.totalRaised)}
           icon={<AccountBalanceWalletIcon />}
-          valueColor="success.main"
+          valueColor="primary.main"
         />
         <AdminDashboardMetricTile
-          label="Chiến dịch đang chạy"
+          label="Quỹ đang chạy"
           value={stats.activeCampaigns}
           icon={<TrendingUpIcon />}
           valueColor="primary.main"
@@ -365,7 +399,7 @@ const AdminFundraisingsPage = () => {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontWeight: 800 }}>Chi tiết chiến dịch</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>Chi tiết quỹ</DialogTitle>
         {detailItem && (
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
@@ -411,7 +445,7 @@ const AdminFundraisingsPage = () => {
                   </Typography>
                   <Typography
                     variant="body2"
-                    color="success.main"
+                    color="primary.main"
                     sx={{ fontWeight: 700 }}
                   >
                     {formatCurrencyVnd(detailItem.raisedAmount)}
@@ -440,7 +474,7 @@ const AdminFundraisingsPage = () => {
                       sx={{
                         width: `${Math.min(100, (detailItem.raisedAmount / detailItem.targetAmount) * 100)}%`,
                         height: "100%",
-                        bgcolor: "success.main",
+                        bgcolor: "primary.main",
                       }}
                     />
                   </Box>
@@ -573,7 +607,7 @@ const AdminFundraisingsPage = () => {
         </Box>
 
         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.secondary", mb: 3 }}>
-          Chiến dịch: <span style={{ color: "#1976d2" }}>{donationsTarget?.title || ""}</span>
+          Quỹ: <Box component="span" sx={{ color: "primary.main", fontWeight: 600 }}>{donationsTarget?.title || ""}</Box>
         </Typography>
 
         <DialogContent dividers sx={{ px: 0, py: 3, borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0" }}>
@@ -618,6 +652,15 @@ const AdminFundraisingsPage = () => {
             >
               Tìm kiếm
             </Button>
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadOutlinedIcon />}
+              onClick={handleExportDonationsCsv}
+              disabled={isExporting}
+              sx={{ borderRadius: 2, fontWeight: 700, px: 3, py: 1, textTransform: "none", flexShrink: 0 }}
+            >
+              {isExporting ? "Đang xuất..." : "Xuất CSV"}
+            </Button>
           </Stack>
 
           {donationsLoading ? (
@@ -652,12 +695,12 @@ const AdminFundraisingsPage = () => {
                     {donationsList.map((item) => (
                       <TableRow key={item.id} hover>
                         <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
-                          {item.donorName || "Nhà hảo tâm"}
+                          {item.donorName}
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>{item.phone || "--"}</TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>{item.email || "--"}</TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>{item.address || "--"}</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "success.main", textAlign: "right" }}>
+                        <TableCell sx={{ fontWeight: 700, color: "primary.main", textAlign: "right" }}>
                           {formatCurrencyVnd(item.amount)}
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary", fontStyle: item.message ? "normal" : "italic", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.message}>

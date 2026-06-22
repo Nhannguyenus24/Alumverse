@@ -984,6 +984,11 @@ export const fundApi = {
 		return unwrap(response);
 	},
 
+	async getAllFundDonationsForExport(fundId) {
+		const response = await apiClient.get(`/admin/fundraising/funds/${fundId}/donations/all`);
+		return unwrap(response) ?? [];
+	},
+
 	async createFundDonation(payload) {
 		const response = await apiClient.post('/fund-donations', payload);
 		return unwrap(response);
