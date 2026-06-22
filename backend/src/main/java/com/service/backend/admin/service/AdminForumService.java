@@ -16,6 +16,7 @@ import com.service.backend.shared.dto.IdCountDTO;
 import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
+import com.service.backend.user.service.NotificationService;
 import com.service.backend.admin.dto.ForumStatisticsDTO;
 import com.service.backend.admin.dto.MonthlyActivityDTO;
 import com.service.backend.admin.dto.OrganizationEngagementDTO;
@@ -59,6 +60,7 @@ public class AdminForumService {
     private final AdminOrganizationRepository adminOrganizationRepository;
     private final AdminUserRepository adminUserRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
+    private final NotificationService notificationService;
 
     // ========== VIEW NEW POSTS ==========
 
@@ -150,6 +152,26 @@ public class AdminForumService {
                 .doOnError(error -> log.error("Error fetching banned forum posts", error));
     }
 
+    public Mono<PaginatedResponse<ForumPostDTO>> getHiddenPostsWithPagination(Integer organizationId, int page, int size) {
+        long offset = (long) page * size;
+        if (organizationId != null) {
+            return PaginationHelper.paginate(
+                        forumPostRepository.findHiddenPostsByOrganizationWithPagination(organizationId, size, (int) offset)
+                                .transform(this::enrichPosts),
+                        forumPostRepository.countHiddenPostsByOrganization(organizationId),
+                        page, size)
+                    .doOnSuccess(r -> log.info("getHiddenPostsWithPagination (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
+                    .doOnError(error -> log.error("Error fetching hidden posts for org {}", organizationId, error));
+        }
+        return PaginationHelper.paginate(
+                    forumPostRepository.findAllHiddenPostsWithPagination(size, offset)
+                            .transform(this::enrichPosts),
+                    forumPostRepository.countByIsHiddenTrue(),
+                    page, size)
+                .doOnSuccess(r -> log.info("getHiddenPostsWithPagination result: {}", JsonUtils.toJson(r)))
+                .doOnError(error -> log.error("Error fetching hidden forum posts", error));
+    }
+
     public Mono<PaginatedResponse<ForumPostDTO>> getAllPostsWithPagination(Integer organizationId, String keyword, int page, int size) {
         long offset = (long) page * size;
         String kw = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
@@ -192,15 +214,20 @@ public class AdminForumService {
     public Mono<ForumPostReportDTO> reviewReport(Long reportId, ReviewForumReportRequest request, Integer adminUserId) {
         return forumPostReportRepository.findById(reportId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_REPORT_NOT_FOUND))))
-                .flatMap(report -> applyModerationAction(report, request, adminUserId)
-                        .then(Mono.defer(() -> {
-                                                        String upperDecision = request.getDecision() == null ? null : request.getDecision().toUpperCase();
-                                                        report.setStatus(Status.valueOf(upperDecision));
-                            report.setReviewedByUserId(adminUserId);
-                            report.setReviewNote(request.getReviewNote());
-                            report.setUpdatedAt(LocalDateTime.now());
-                            return forumPostReportRepository.save(report);
-                        })))
+                .flatMap(report -> {
+                    String upperDecision = request.getDecision() == null ? null : request.getDecision().toUpperCase();
+                    boolean isApproved = "APPROVED".equals(upperDecision);
+                    Mono<Void> moderationMono = isApproved
+                            ? applyModerationAction(report, request, adminUserId)
+                            : Mono.empty();
+                    return moderationMono.then(Mono.defer(() -> {
+                        report.setStatus(Status.valueOf(upperDecision));
+                        report.setReviewedByUserId(adminUserId);
+                        report.setReviewNote(request.getReviewNote());
+                        report.setUpdatedAt(LocalDateTime.now());
+                        return forumPostReportRepository.save(report);
+                    }));
+                })
                 .map(this::convertToReportDTO)
                 .doOnSuccess(r -> log.info("reviewReport result: {}", JsonUtils.toJson(r)));
     }
@@ -590,7 +617,6 @@ public class AdminForumService {
                 .postId(report.getPostId())
                 .reporterMemberId(report.getReporterMemberId())
                 .reason(report.getReason())
-                .description(report.getDescription())
                 .status(report.getStatus())
                 .reviewedByUserId(report.getReviewedByUserId())
                 .reviewNote(report.getReviewNote())
@@ -600,18 +626,40 @@ public class AdminForumService {
     }
 
     private Mono<Void> applyModerationAction(ForumPostReport report, ReviewForumReportRequest request, Integer adminUserId) {
+        if (request.getAction() == null || request.getAction().isBlank()) {
+            return Mono.empty();
+        }
         String action = request.getAction().toUpperCase();
         if ("WARN".equals(action)) {
-            return createAuditLog(adminUserId, null, "WARN_USER", "FORUM_REPORT",
-                    String.valueOf(report.getId()), null, null);
+            return forumPostRepository.findById(report.getPostId())
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
+                    .flatMap(post -> {
+                        notificationService.createNotificationAsync(
+                                post.getAuthorMemberId(),
+                                "Cảnh cáo vi phạm nội dung",
+                                "Bài viết của bạn đã bị cảnh cáo do vi phạm quy định cộng đồng. Vui lòng tuân thủ nội quy để tránh bị xử lý nặng hơn.",
+                                null);
+                        return createAuditLog(adminUserId, post.getAuthorMemberId(), "WARN_USER", "FORUM_REPORT",
+                                String.valueOf(report.getId()), null, null);
+                    });
         }
         return forumPostRepository.findById(report.getPostId())
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_POST_NOT_FOUND))))
                 .flatMap(post -> {
                     if ("HIDE_POST".equals(action)) {
                         post.setIsHidden(true);
+                        notificationService.createNotificationAsync(
+                                post.getAuthorMemberId(),
+                                "Bài viết đã bị ẩn",
+                                "Bài viết của bạn đã bị ẩn do vi phạm quy định cộng đồng. Nội dung sẽ không hiển thị với người dùng khác.",
+                                null);
                     } else if ("BAN_POST".equals(action)) {
                         post.setIsBanned(true);
+                        notificationService.createNotificationAsync(
+                                post.getAuthorMemberId(),
+                                "Bài viết đã bị cấm",
+                                "Bài viết của bạn đã bị cấm vĩnh viễn do vi phạm nghiêm trọng quy định cộng đồng.",
+                                null);
                     }
                     post.setUpdatedAt(LocalDateTime.now());
                     return forumPostRepository.save(post)

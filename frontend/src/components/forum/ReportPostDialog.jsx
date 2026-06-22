@@ -11,20 +11,17 @@ import {
 
 const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
   const [reason, setReason] = useState('');
-  const [description, setDescription] = useState('');
 
   const handleClose = () => {
     if (isPending) return;
     setReason('');
-    setDescription('');
     onClose();
   };
 
   const handleConfirm = () => {
     if (!reason.trim()) return;
-    onConfirm({ reason: reason.trim(), description: description.trim() });
+    onConfirm({ reason: reason.trim() });
     setReason('');
-    setDescription('');
   };
 
   return (
@@ -43,16 +40,6 @@ const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
           size="small"
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          disabled={isPending}
-        />
-        <TextField
-          label="Chi tiết (tuỳ chọn)"
-          fullWidth
-          multiline
-          rows={3}
-          size="small"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
           disabled={isPending}
         />
       </DialogContent>

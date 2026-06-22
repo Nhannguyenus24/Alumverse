@@ -244,5 +244,26 @@ public interface ForumPostRepository extends R2dbcRepository<ForumPost, Integer>
            "AND DATE(fp.created_at) = CURRENT_DATE - INTERVAL '1 day' AND fp.is_banned = false")
     Mono<Long> countPostsCreatedYesterdayByOrganization(@Param("organizationId") Integer organizationId);
 
+    @Query("SELECT * FROM forum_posts WHERE is_hidden = true ORDER BY updated_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findAllHiddenPostsWithPagination(
+            @Param("limit") int limit,
+            @Param("offset") long offset);
+
+    @Query("SELECT COUNT(*) FROM forum_posts WHERE is_hidden = true")
+    Mono<Long> countByIsHiddenTrue();
+
+    @Query("SELECT fp.* FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId AND fp.is_hidden = true " +
+           "ORDER BY fp.updated_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumPost> findHiddenPostsByOrganizationWithPagination(@Param("organizationId") Integer organizationId,
+                                                                @Param("limit") int limit,
+                                                                @Param("offset") int offset);
+
+    @Query("SELECT COUNT(*) FROM forum_posts fp " +
+           "JOIN forum_topics ft ON fp.topic_id = ft.id " +
+           "WHERE ft.organization_id = :organizationId AND fp.is_hidden = true")
+    Mono<Long> countHiddenPostsByOrganization(@Param("organizationId") Integer organizationId);
+
 }
 

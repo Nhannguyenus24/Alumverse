@@ -31,6 +31,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import HistoryEduOutlinedIcon from '@mui/icons-material/HistoryEduOutlined';
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
@@ -49,6 +50,7 @@ const NAV_GROUPS = (adminBase) => [
       { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: 'Người dùng', role: 'ADMIN' },
       { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: 'Tổ chức', role: 'ADMIN' },
       { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: 'Xác thực người dùng', role: 'ADMIN' },
+      { to: `${adminBase}/education-requests`, icon: <HistoryEduOutlinedIcon />, label: 'Yêu cầu thay đổi học vấn', role: 'ADMIN' },
       { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: 'Cố vấn (Mentorship)', role: 'ADMIN' },
     ],
   },

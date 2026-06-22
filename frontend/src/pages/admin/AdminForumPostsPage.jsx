@@ -20,6 +20,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import LockOpenOutlinedIcon from '@mui/icons-material/LockOpenOutlined';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
@@ -121,20 +122,18 @@ const AdminForumPostsPage = () => {
     }
   };
 
+  const authorCell = (_, p) => (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: 'primary.main' }}>
+        {(p.authorName || '?')[0].toUpperCase()}
+      </Avatar>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.authorName || 'Ẩn danh'}</Typography>
+    </Stack>
+  );
+
   const columns = useMemo(() => [
     { id: 'id', label: 'ID', width: 60 },
-    {
-      id: 'author',
-      label: 'Tác giả',
-      render: (_, p) => (
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: 'primary.main' }}>
-            {(p.authorName || '?')[0].toUpperCase()}
-          </Avatar>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.authorName || 'Ẩn danh'}</Typography>
-        </Stack>
-      )
-    },
+    { id: 'author', label: 'Tác giả', render: authorCell },
     { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
     { id: 'content', label: 'Nội dung', render: (val) => truncateText(toPlainText(val), 50) },
     {
@@ -174,6 +173,33 @@ const AdminForumPostsPage = () => {
       )
     }
   ], [handleBan, setForumDeletePost, setForumStatusMenu]);
+
+  const bannedColumns = useMemo(() => [
+    { id: 'id', label: 'ID', width: 60 },
+    { id: 'author', label: 'Tác giả', render: authorCell },
+    { id: 'topicTitle', label: 'Chủ đề', render: (val) => truncateText(val, 30) },
+    { id: 'content', label: 'Nội dung', render: (val) => truncateText(toPlainText(val), 50) },
+    { id: 'updatedAt', label: 'Ngày chặn', render: (val) => formatDateTime(val) },
+    {
+      id: 'actions',
+      label: '',
+      align: 'right',
+      render: (_, p) => (
+        <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
+          <Tooltip title="Khôi phục (bỏ chặn)">
+            <IconButton size="small" color="success" onClick={() => handleUnban(p)}>
+              <LockOpenOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Xóa vĩnh viễn">
+            <IconButton size="small" color="error" onClick={() => setForumDeletePost(p)}>
+              <DeleteOutlineIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      )
+    }
+  ], [handleUnban, setForumDeletePost]);
 
   const stats = {
     total: allPosts?.totalElements ?? 0,
@@ -298,7 +324,7 @@ const AdminForumPostsPage = () => {
 
       {activeTab === 1 && (
         <AdminDataTable
-          columns={columns}
+          columns={bannedColumns}
           rows={bannedPosts?.content ?? []}
           totalCount={bannedPosts?.totalElements ?? 0}
           page={bannedPage}
@@ -324,7 +350,6 @@ const AdminForumPostsPage = () => {
             { id: 'id', label: 'ID' },
             { id: 'postId', label: 'Post ID', render: (v) => `#${v}` },
             { id: 'reason', label: 'Lý do' },
-            { id: 'description', label: 'Chi tiết', render: (v) => truncateText(v, 40) },
             { id: 'status', label: 'Trạng thái', render: (v) => <AdminStatusChip status={v} category="forum" label={v} /> },
             {
               id: 'actions',
@@ -336,10 +361,7 @@ const AdminForumPostsPage = () => {
                     <IconButton
                       size="small"
                       color="primary"
-                      onClick={async () => {
-                        const ok = await reviewReport(r.id, { decision: 'APPROVED', action: 'HIDE_POST', adminUserId });
-                        if (ok) await updatePostVisibility(r.postId, true, adminUserId);
-                      }}
+                      onClick={() => reviewReport(r.id, { decision: 'APPROVED', action: 'HIDE_POST' })}
                     >
                       <VisibilityOffOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -350,7 +372,7 @@ const AdminForumPostsPage = () => {
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="Từ chối">
-                    <IconButton size="small" onClick={() => reviewReport(r.id, { decision: 'REJECTED', action: 'WARN', adminUserId })}>
+                    <IconButton size="small" onClick={() => reviewReport(r.id, { decision: 'REJECTED', reviewNote: '' })}>
                       <CancelOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>

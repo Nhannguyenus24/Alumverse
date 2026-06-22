@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
-  Autocomplete, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem, 
-  FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack, 
+  Autocomplete, Alert, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem,
+  FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack,
   InputAdornment, IconButton, List, ListItem, ListItemText, CircularProgress,
 } from '@mui/material';
 import Avatar from '@mui/material/Avatar';
@@ -29,6 +29,8 @@ import Page from '../../components/Page';
 import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import SendIcon from '@mui/icons-material/Send';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
@@ -91,6 +93,11 @@ export default function SettingPage() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
+  const [pendingEduRequest, setPendingEduRequest] = useState(null);
+  const [isEduEditMode, setIsEduEditMode] = useState(false);
+  const [originalEducations, setOriginalEducations] = useState(null);
+  const [submitEduPending, setSubmitEduPending] = useState(false);
+
   const menuItems = useMemo(() => {
     const items = [
       { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
@@ -148,12 +155,15 @@ export default function SettingPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [profile, member, settings, history] = await Promise.all([
+        const [profile, member, settings, history, pendingEdu] = await Promise.all([
           userSettingsApi.getProfile(),
           organizationId ? userSettingsApi.getOrganizationMember(organizationId) : Promise.resolve(null),
           userSettingsApi.getNotificationSettings(),
           userSettingsApi.getLoginHistory({ page: 0, limit: 10 }),
+          organizationId ? userSettingsApi.getPendingEducationRequest(organizationId).catch(() => null) : Promise.resolve(null),
         ]);
+
+        setPendingEduRequest(pendingEdu ?? null);
 
         setIsTrustedVerifier(member?.isTrustedVerifier ?? false);
 
@@ -269,26 +279,70 @@ export default function SettingPage() {
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
-        program: formData.educations.map((e) => e.program || ''),
-        startedYear: formData.educations.map((e) => e.startedYear || ''),
-        graduatedYear: formData.educations.map((e) => Number(e.graduatedYear) || 0),
-        graduationStatus: formData.educations.map((e) => e.graduationStatus || ''),
-        major: formData.educations.map((e) => e.major || ''),
-        faculty: formData.educations.map((e) => e.faculty || ''),
-        department: formData.educations.map((e) => e.department || ''),
       };
 
       await userSettingsApi.updateProfile(payload);
-      showSuccess('Cập nhật thông tin cá nhân thành công.');
-      
+      showSuccess('Cập nhật thông tin cơ bản thành công.');
+
       setOriginalFormData(null);
       setIsEditMode(false);
-
     } catch (error) {
       console.error('Failed to update profile', error);
       showError(getErrorMessage(error, 'Cập nhật thông tin cá nhân thất bại.'));
     }
   };
+
+  const handleSubmitEduRequest = async () => {
+    if (!organizationId) {
+      showWarning('Không xác định được tổ chức hiện tại.');
+      return;
+    }
+    setSubmitEduPending(true);
+    try {
+      const result = await userSettingsApi.submitEducationRequest({
+        organizationId,
+        program: formData.educations.map((e) => e.program || ''),
+        startedYear: formData.educations.map((e) => e.startedYear || ''),
+        graduatedYear: formData.educations.map((e) => e.graduatedYear || ''),
+        graduationStatus: formData.educations.map((e) => e.graduationStatus || ''),
+        major: formData.educations.map((e) => e.major || ''),
+        faculty: formData.educations.map((e) => e.faculty || ''),
+        department: formData.educations.map((e) => e.department || ''),
+      });
+      setPendingEduRequest(result);
+      setIsEduEditMode(false);
+      setOriginalEducations(null);
+      showSuccess('Yêu cầu thay đổi học vấn đã được gửi và đang chờ admin duyệt.');
+    } catch (error) {
+      showError(getErrorMessage(error, 'Không thể gửi yêu cầu thay đổi học vấn.'));
+    } finally {
+      setSubmitEduPending(false);
+    }
+  };
+
+  const handleCancelEduRequest = async () => {
+    if (!pendingEduRequest?.id || !organizationId) return;
+    try {
+      await userSettingsApi.cancelEducationRequest(pendingEduRequest.id, organizationId);
+      setPendingEduRequest(null);
+      showSuccess('Đã hủy yêu cầu thay đổi học vấn.');
+    } catch (error) {
+      showError(getErrorMessage(error, 'Không thể hủy yêu cầu.'));
+    }
+  };
+
+  const handleStartEduEdit = useCallback(() => {
+    setOriginalEducations(structuredClone(formData.educations));
+    setIsEduEditMode(true);
+  }, [formData.educations]);
+
+  const handleCancelEduEdit = useCallback(() => {
+    if (originalEducations) {
+      setFormData((prev) => ({ ...prev, educations: originalEducations }));
+    }
+    setIsEduEditMode(false);
+    setOriginalEducations(null);
+  }, [originalEducations]);
 
   const handleSaveNotificationSettings = async () => {
     try {
@@ -412,42 +466,89 @@ export default function SettingPage() {
       {/* Thông tin học vấn */}
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h4" fontWeight="bold">Thông tin học vấn</Typography>
-          {isEditMode && (
-            <Button startIcon={<AddIcon />} variant="outlined" onClick={addEducation}>Thêm học vấn</Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography variant="h4" fontWeight="bold">Thông tin học vấn</Typography>
+            {pendingEduRequest && (
+              <Chip
+                icon={<HourglassEmptyIcon sx={{ fontSize: 16 }} />}
+                label="Đang chờ duyệt"
+                color="warning"
+                size="small"
+              />
+            )}
+          </Box>
+          {!pendingEduRequest && !isEduEditMode && (
+            <Button startIcon={<EditIcon />} variant="outlined" size="small" onClick={handleStartEduEdit}>
+              Sửa học vấn
+            </Button>
+          )}
+          {isEduEditMode && (
+            <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={addEducation}>
+              Thêm học vấn
+            </Button>
           )}
         </Box>
+
+        {pendingEduRequest && (
+          <Alert
+            severity="info"
+            sx={{ mb: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={handleCancelEduRequest}>
+                Hủy yêu cầu
+              </Button>
+            }
+          >
+            Yêu cầu thay đổi học vấn đang chờ admin duyệt. Bạn không thể chỉnh sửa cho đến khi yêu cầu được xử lý.
+          </Alert>
+        )}
+
         <Stack spacing={3}>
           {formData.educations.map((edu, index) => (
             <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'grey.50' }}>
-              {isEditMode && formData.educations.length > 1 && (
+              {isEduEditMode && formData.educations.length > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h5">Học vấn</Typography>
+                  <Typography variant="h5">Học vấn {index + 1}</Typography>
                   <IconButton size="small" color="error" onClick={() => removeEducation(index)} sx={{ '&:hover': { bgcolor: 'error.lighter' } }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
               )}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                <TextField fullWidth label="Khoa" value={edu.faculty} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
-                <TextField fullWidth label="Bộ môn" value={edu.department} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
-                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label="Chương trình đào tạo" />} />
-                <TextField fullWidth label="Khoá" value={edu.startedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
-                <TextField fullWidth label="Năm tốt nghiệp" value={edu.graduatedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
-                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label="Chuyên ngành" />} />
-                <Autocomplete freeSolo options={['Đã tốt nghiệp', 'Đang học']} value={edu.graduationStatus} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label="Trạng thái tốt nghiệp" />} />
+                <TextField fullWidth label="Khoa" value={edu.faculty} disabled={!isEduEditMode} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
+                <TextField fullWidth label="Bộ môn" value={edu.department} disabled={!isEduEditMode} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
+                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} disabled={!isEduEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label="Chương trình đào tạo" />} />
+                <TextField fullWidth label="Khoá" value={edu.startedYear} disabled={!isEduEditMode} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
+                <TextField fullWidth label="Năm tốt nghiệp" value={edu.graduatedYear} disabled={!isEduEditMode} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
+                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEduEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label="Chuyên ngành" />} />
+                <Autocomplete freeSolo options={['Đã tốt nghiệp', 'Đang học']} value={edu.graduationStatus} disabled={!isEduEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label="Trạng thái tốt nghiệp" />} />
               </Box>
             </Card>
           ))}
         </Stack>
+
+        {isEduEditMode && (
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
+            <Button variant="outlined" color="inherit" onClick={handleCancelEduEdit}>Huỷ</Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SendIcon />}
+              onClick={handleSubmitEduRequest}
+              disabled={submitEduPending}
+            >
+              {submitEduPending ? 'Đang gửi...' : 'Gửi yêu cầu'}
+            </Button>
+          </Box>
+        )}
       </Box>
 
-      {/* Actions */}
+      {/* Actions — chỉ lưu thông tin cơ bản */}
       {isEditMode && (
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" color="inherit" sx={{ px: 4 }} onClick={handleCancelEdit}>Huỷ</Button>
           <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>Lưu thay đổi</Button>
-       </Box>
+        </Box>
       )}
     </Box>
   );

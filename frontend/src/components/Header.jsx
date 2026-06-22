@@ -83,7 +83,7 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const {isAdmin, isGuestVerificationLevel, isTransparent } = useMemo(() => {
+  const {isAdmin, isGuestVerificationLevel, isTransparent, isOrgRegistrationPage } = useMemo(() => {
     const np = getNormalizedPathname(location.pathname, routeSlug);
     const admin = user?.role === 'ADMIN';
     const home = np === '/';
@@ -91,6 +91,7 @@ const Header = () => {
         isAdmin: admin,
       isGuestVerificationLevel: isAuthenticated && verificationLevel === 0,
       isTransparent: home && !isScrolled,
+      isOrgRegistrationPage: np === '/organization-registration',
     };
   }, [location.pathname, routeSlug, user?.role, isAuthenticated, verificationLevel, isScrolled]);
 
@@ -304,7 +305,7 @@ const Header = () => {
         </Toolbar>
       </AppBar>
 
-      {isGuestVerificationLevel && showVerificationBanner && (
+      {isGuestVerificationLevel && showVerificationBanner && !isOrgRegistrationPage && (
         <Box
           sx={{
             position: 'fixed',

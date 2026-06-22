@@ -17,7 +17,6 @@ public class ForumPostReportDTO {
     private Integer postId;
     private Integer reporterMemberId;
     private String reason;
-    private String description;
     private Status status;
     private Integer reviewedByUserId;
     private String reviewNote;
