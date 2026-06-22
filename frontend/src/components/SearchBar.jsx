@@ -1,4 +1,4 @@
-import { TextField, InputAdornment } from '@mui/material';
+import { TextField, InputAdornment, alpha } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 
 const SearchBar = ({
@@ -33,7 +33,17 @@ const SearchBar = ({
           fontWeight: 500,
           py: 0.75,
           px: 2,
-          bgcolor: 'grey.200',
+          bgcolor: (theme) => theme.palette.mode === 'dark'
+            ? alpha(theme.palette.common.white, 0.06)
+            : 'grey.200',
+          '&:hover': {
+            bgcolor: (theme) => theme.palette.mode === 'dark'
+              ? alpha(theme.palette.common.white, 0.09)
+              : 'grey.200',
+          },
+          '&.Mui-focused': {
+            bgcolor: 'background.paper',
+          },
           ...inputSx,
         },
       }}
