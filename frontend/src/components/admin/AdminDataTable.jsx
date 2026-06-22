@@ -47,6 +47,12 @@ const AdminDataTable = ({
 }) => {
   const theme = useTheme();
   const [expandedRow, setExpandedRow] = useState(null);
+  const tableHeadBg = theme.palette.mode === 'dark'
+    ? alpha(theme.palette.primary.main, 0.22)
+    : theme.palette.primary.main;
+  const tableHeadColor = theme.palette.mode === 'dark'
+    ? theme.palette.text.primary
+    : theme.palette.primary.contrastText;
 
   const handleRowExpand = (id, e) => {
     e.stopPropagation();
@@ -127,11 +133,8 @@ const AdminDataTable = ({
                 <TableCell
                   sx={{
                     width: 48,
-                    bgcolor: (t) =>
-                      t.palette.mode === 'light'
-                        ? 'primary.main'
-                        : 'primary.dark',
-                    color: 'primary.contrastText',
+                    bgcolor: tableHeadBg,
+                    color: tableHeadColor,
                   }}
                 />
               )}
@@ -140,9 +143,9 @@ const AdminDataTable = ({
                   key={column.id}
                   align={column.align || 'left'}
                   sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
+                    bgcolor: tableHeadBg,
                     fontWeight: 700,
-                    color: 'primary.contrastText',
+                    color: tableHeadColor,
                     fontSize: 13,
                     py: 2,
                     textTransform: 'uppercase',
@@ -176,7 +179,7 @@ const AdminDataTable = ({
                       sx={{ 
                         cursor: onRowClick ? 'pointer' : 'default',
                         borderBottom: isExpanded ? 'none' : undefined,
-                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.02) }
+                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.02) }
                       }}
                     >
                       {renderExpandableRow && (

@@ -11,6 +11,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
+import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import Iconify from './Iconify';
 import Notification from './Notification';
 import Logo from './Logo';
@@ -19,6 +20,7 @@ import MessagesNavDropdown from './MessagesNavDropdown';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';
+import useThemeModeStore from '../stores/themeModeStore';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -74,6 +76,8 @@ const Header = () => {
   const location = useLocation();
   const { slug: routeSlug } = useParams();
   const { isAuthenticated, user, verificationLevel } = useAuth();
+  const themeMode = useThemeModeStore((state) => state.mode);
+  const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
   // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
@@ -251,6 +255,23 @@ const Header = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
           {isDesktop ? (
             <>
+              <Tooltip title={themeMode === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'} arrow>
+                <IconButton
+                  size="small"
+                  aria-label="Đổi chế độ sáng tối"
+                  onClick={toggleThemeMode}
+                  sx={{
+                    color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
+                    mr: 0.25,
+                    '&:hover': {
+                      bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : 'action.hover',
+                    },
+                  }}
+                >
+                  <Brightness6RoundedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+
               <Typography component="span"
                 sx={{ fontSize: '0.875rem', fontWeight: 600,
                       color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
@@ -421,10 +442,22 @@ const Header = () => {
                       fontWeight={600} sx={{ mb: 1 }}>
             Ngôn ngữ
           </Typography>
-          <Typography component="span"
-                      sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'primary.main' }}>
-            VI
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title={themeMode === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'} arrow>
+              <IconButton
+                size="small"
+                aria-label="Đổi chế độ sáng tối"
+                onClick={toggleThemeMode}
+                sx={{ color: 'primary.main' }}
+              >
+                <Brightness6RoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Typography component="span"
+                        sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'primary.main' }}>
+              VI
+            </Typography>
+          </Box>
         </Box>
 
         <Divider />

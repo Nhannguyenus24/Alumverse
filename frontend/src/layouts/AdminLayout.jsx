@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useParams, useLocation } from 'react-router';
 import { Box, useTheme, alpha } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
@@ -7,6 +7,7 @@ import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
+import useOrganizationStore from '../stores/organizationStore';
 import { useAuth } from '../hooks/useAuth';
 import Page from '../components/Page';
 
@@ -100,7 +101,11 @@ const AdminLayoutShell = () => {
 
 const AdminLayout = () => {
   const location = useLocation();
-  const system = useAdminSystemData();
+  const { slug } = useParams();
+  const system = useAdminSystemData({
+    slug,
+  });
+  const setOrganization = useOrganizationStore((state) => state.setOrganization);
   const isUsersPage = location.pathname.includes('/users');
   const users = useAdminUsersLocal(system.stableOrgId, isUsersPage);
 
@@ -108,6 +113,12 @@ const AdminLayout = () => {
   // unnecessarily when switching org while on Events / Users / etc.
   const isForumPage = location.pathname.includes('/forum');
   const forum = useAdminForumData(system.stableOrgId, isForumPage);
+
+  useEffect(() => {
+    if (system.activeOrganization) {
+      setOrganization(system.activeOrganization);
+    }
+  }, [setOrganization, system.activeOrganization]);
 
   return (
     <AdminProvider system={system} users={users} forum={forum}>

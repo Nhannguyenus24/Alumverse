@@ -1,4 +1,4 @@
-import { alpha } from '@mui/material/styles';
+import { alpha, darken, getContrastRatio, lighten } from '@mui/material/styles';
 
 function createGradient(color1, color2) {
   return `linear-gradient(to bottom, ${color1}, ${color2})`;
@@ -20,12 +20,20 @@ const SECONDARY = {
   darker: '#000000',
 };
 
+const ACCENT = {
+  lighter: '#FFF8E1',
+  light: '#FFE082',
+  main: '#FFB300',
+  dark: '#C68400',
+  darker: '#6D4700',
+};
+
 const INFO = {
-  lighter: '#D0F2FF',
-  light: '#74CAFF',
-  main: '#1890FF',
-  dark: '#0C53B7',
-  darker: '#04297A',
+  lighter: '#E1F5FE',
+  light: '#4FC3F7',
+  main: '#0277BD',
+  dark: '#01579B',
+  darker: '#003C70',
 };
 
 const SUCCESS = {
@@ -75,6 +83,7 @@ const GREY = {
 
 const GRADIENTS = {
   primary: createGradient(PRIMARY.light, PRIMARY.main),
+  accent: createGradient(ACCENT.light, ACCENT.main),
   info: createGradient(INFO.light, INFO.main),
   success: createGradient(SUCCESS.light, SUCCESS.main),
   warning: createGradient(WARNING.light, WARNING.main),
@@ -93,10 +102,72 @@ const TERTIARY = {
   contrastText: '#fff',
 };
 
+export const DEFAULT_BRAND_COLORS = {
+  primary: PRIMARY.main,
+  secondary: SECONDARY.main,
+  accent: ACCENT.main,
+};
+
+const isValidHexColor = (value) => /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(String(value || '').trim());
+
+export const normalizeHexColor = (value, fallback) => {
+  const color = String(value || '').trim();
+  if (!isValidHexColor(color)) return fallback;
+
+  if (color.length === 4) {
+    const [, r, g, b] = color;
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+
+  return color;
+};
+
+export const createBrandColor = (mainColor, fallback = PRIMARY.main, mode = 'light') => {
+  const sourceMain = normalizeHexColor(mainColor, fallback);
+  const main = mode === 'dark' ? lighten(sourceMain, 0.32) : sourceMain;
+  const contrastTarget = mode === 'dark' ? '#101418' : '#fff';
+  const fallbackContrast = mode === 'dark' ? '#fff' : '#000';
+
+  return {
+    lighter: lighten(main, mode === 'dark' ? 0.72 : 0.9),
+    light: lighten(main, mode === 'dark' ? 0.42 : 0.65),
+    main,
+    dark: darken(main, mode === 'dark' ? 0.2 : 0.25),
+    darker: darken(main, mode === 'dark' ? 0.42 : 0.55),
+    contrastText: getContrastRatio(main, contrastTarget) >= 4.5 ? contrastTarget : fallbackContrast,
+  };
+};
+
+export const createBrandPalette = (themeColors = {}, mode = 'light') => {
+  const primary = createBrandColor(themeColors.primary, DEFAULT_BRAND_COLORS.primary, mode);
+  const secondary = createBrandColor(themeColors.secondary, DEFAULT_BRAND_COLORS.secondary, mode);
+  const accent = createBrandColor(themeColors.accent, DEFAULT_BRAND_COLORS.accent, mode);
+
+  return {
+    primary,
+    secondary,
+    accent,
+    footer: {
+      main: primary.main,
+      dark: primary.dark,
+      contrastText: primary.contrastText,
+    },
+    gradients: {
+      primary: createGradient(primary.light, primary.main),
+      accent: createGradient(accent.light, accent.main),
+      info: GRADIENTS.info,
+      success: GRADIENTS.success,
+      warning: GRADIENTS.warning,
+      error: GRADIENTS.error,
+    },
+  };
+};
+
 const COMMON = {
   common: { black: '#000', white: '#fff' },
   primary: { ...PRIMARY, contrastText: '#fff' },
   secondary: { ...SECONDARY, contrastText: '#fff' },
+  accent: { ...ACCENT, contrastText: '#000' },
   tertiary: { ...TERTIARY },
   footer: { ...FOOTER },
   info: { ...INFO, contrastText: '#fff' },
@@ -128,9 +199,19 @@ const palette = {
   dark: {
     ...COMMON,
     mode: 'dark',
-    text: { primary: '#fff', secondary: GREY[500], disabled: GREY[600] },
-    background: { paper: GREY[800], default: GREY[900], neutral: GREY[500_16] },
-    action: { active: GREY[500], ...COMMON.action },
+    text: { primary: '#F4F7FA', secondary: '#B6C2CF', disabled: GREY[600] },
+    background: { paper: '#171C22', default: '#101418', neutral: alpha('#C8D2E0', 0.08) },
+    divider: alpha('#C8D2E0', 0.14),
+    action: {
+      active: '#B6C2CF',
+      hover: alpha('#C8D2E0', 0.08),
+      selected: alpha('#C8D2E0', 0.14),
+      disabled: alpha('#C8D2E0', 0.42),
+      disabledBackground: alpha('#C8D2E0', 0.12),
+      focus: alpha('#C8D2E0', 0.18),
+      hoverOpacity: 0.08,
+      disabledOpacity: 0.48,
+    },
   },
 };
 
