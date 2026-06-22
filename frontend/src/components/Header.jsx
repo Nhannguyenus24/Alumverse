@@ -48,7 +48,7 @@ const NAV_ITEMS = [
     ],
   },
   {
-    label: 'Hoạt động', href: '/activities',
+    label: 'Hoạt động', href: '/activities', fallbackHref: '/activities/news',
     children: [
       { label: 'Sự kiện', href: '/activities/events', requiresAuth: true },
       { label: 'Tin tức', href: '/activities/news' },
@@ -176,7 +176,7 @@ const Header = () => {
               const buttonContent = (
                 <Button 
                   component={isLocked ? 'button' : Link} 
-                  to={isLocked ? undefined : toOrgPath(item.href)} 
+                  to={isLocked ? undefined : toOrgPath(!isAuthenticated && item.fallbackHref ? item.fallbackHref : item.href)} 
                   sx={navButtonSx}
                   disabled={isLocked}
                 >
@@ -449,7 +449,7 @@ const Header = () => {
                         </Box>
                       }
                       primaryTypographyProps={{ fontWeight: 500 }} 
-                      onClick={() => { if (!isLocked) { navigate(item.href); closeDrawer(); } }}
+                      onClick={() => { if (!isLocked) { navigate(!isAuthenticated && item.fallbackHref ? item.fallbackHref : item.href); closeDrawer(); } }}
                     />
                     <IconButton size="small" disabled={isLocked} onClick={(e) => { e.stopPropagation(); if (!isLocked) toggleDrawerNav(item.label)(); }}>
                       {expandedNav[item.label] ? <ExpandLess /> : <ExpandMore />}
@@ -487,7 +487,7 @@ const Header = () => {
               <Tooltip key={item.label} title={isLocked ? "Vui lòng đăng nhập để sử dụng" : ""} arrow placement="top" disableHoverListener={!isLocked}>
                 <span style={{ display: 'block' }}>
                   <ListItemButton onClick={isLocked ? undefined : closeDrawer} disabled={isLocked}
-                                  component={isLocked ? 'div' : Link} to={isLocked ? undefined : toOrgPath(item.href)}>
+                                  component={isLocked ? 'div' : Link} to={isLocked ? undefined : toOrgPath(!isAuthenticated && item.fallbackHref ? item.fallbackHref : item.href)}>
                     <ListItemText primary={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {item.label}
