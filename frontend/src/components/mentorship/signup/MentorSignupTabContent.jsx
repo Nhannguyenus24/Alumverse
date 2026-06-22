@@ -1,116 +1,163 @@
+import { useState } from 'react';
 import {
+  Alert,
   Box,
   Button,
-  Card,
-  IconButton,
-  MenuItem,
+  Chip,
+  CircularProgress,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../../utils/meetingLink';
+import { extractMentorshipSkills } from '../../../utils/api';
 
-const CATEGORIES = [
-  { value: 'CAREER', label: 'Định hướng / Chia sẻ kinh nghiệm nghề nghiệp' },
-  { value: 'ACADEMIC', label: 'Kinh nghiệm học tập / Học bổng / Nghiên cứu' },
-  { value: 'SOFT_SKILLS', label: 'Kỹ năng mềm' },
-];
-
-const blank = () => ({ category: 'CAREER', name: '', description: '', tag: '' });
-
+/**
+ * Tab 2 of mentor signup. The mentor pastes a free-text description of their
+ * experience; AI (ME-02) extracts skill tags used for mentee filtering. Tags
+ * are editable (remove / add manually). The pasted summary is saved on the
+ * profile (extendedProfile.experienceSummary).
+ */
 const MentorSignupTabContent = ({ values, onChange }) => {
-  const items = values.expertises ?? [];
+  const summary = values.experienceSummary ?? '';
+  const tags = values.expertiseTags ?? [];
   const meetingLink = values.defaultMeetingLink ?? '';
   const meetingLinkError = validateMeetingLink(meetingLink, { optional: true });
   const meetingLinkWarn = meetingLinkPasswordWarning(meetingLink);
 
-  const updateExpertises = (next) => onChange({ ...values, expertises: next });
-  const updateMeetingLink = (val) => onChange({ ...values, defaultMeetingLink: val });
+  const update = (patch) => onChange({ ...values, ...patch });
 
-  const handleAdd = () => updateExpertises([...items, blank()]);
-  const handleRemove = (idx) => updateExpertises(items.filter((_, i) => i !== idx));
-  const handleField = (idx, key, value) =>
-    updateExpertises(items.map((it, i) => (i === idx ? { ...it, [key]: value } : it)));
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState(null);
+  const [extractAttempted, setExtractAttempted] = useState(false);
+  const [manualTag, setManualTag] = useState('');
+
+  // The tag list + editing controls only appear once the user has run an
+  // extraction (or a draft already has tags) — keeps the initial view focused
+  // on writing the description.
+  const showTagEditor = extractAttempted || tags.length > 0;
+
+  const addTags = (incoming) => {
+    const existing = new Set(tags.map((t) => t.toLowerCase()));
+    const merged = [...tags];
+    incoming.forEach((raw) => {
+      // Normalize to a hashtag-safe keyword: drop leading '#', collapse
+      // whitespace into underscores so every chip is a single token.
+      const v = (raw ?? '').trim().replace(/^#+/, '').replace(/\s+/g, '_');
+      if (v && !existing.has(v.toLowerCase())) {
+        existing.add(v.toLowerCase());
+        merged.push(v);
+      }
+    });
+    update({ expertiseTags: merged });
+  };
+  const removeTag = (tag) => update({ expertiseTags: tags.filter((t) => t !== tag) });
+  const handleManualAdd = () => {
+    if (!manualTag.trim()) return;
+    addTags([manualTag]);
+    setManualTag('');
+  };
+
+  const handleExtract = async () => {
+    const text = summary.trim();
+    if (!text) return;
+    setExtracting(true);
+    setExtractError(null);
+    try {
+      const res = await extractMentorshipSkills(text);
+      const got = res?.data?.data?.tags ?? [];
+      if (got.length === 0) {
+        setExtractError('AI chưa trích được thẻ nào. Bạn có thể thêm thẻ thủ công bên dưới.');
+      } else {
+        addTags(got);
+      }
+    } catch (err) {
+      setExtractError(
+        err?.response?.data?.message ??
+          'Không trích xuất được thẻ. Vui lòng thử lại hoặc thêm thẻ thủ công.',
+      );
+    } finally {
+      setExtracting(false);
+      setExtractAttempted(true);
+    }
+  };
 
   return (
     <Stack spacing={3}>
       <Box>
         <Typography fontWeight={700}>
-          Nội dung có thể chia sẻ
+          Kinh nghiệm &amp; kỹ năng
           <Typography component="span" color="error.main">{' *'}</Typography>
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
-          Mỗi nội dung gồm: tên, mô tả, tag — thuộc 1 trong 3 mục bên dưới. Cần ≥ 1 nội dung.
+          Mô tả kinh nghiệm, chuyên môn của bạn trong một đoạn văn, rồi nhấn “Trích xuất thẻ”. AI sẽ
+          tự tạo các thẻ # giúp mentee tìm đúng bạn — không cần nhập tay từng mục.
         </Typography>
 
-        {items.length === 0 ? (
-          <Card sx={{ p: 2, border: '1px dashed', borderColor: 'divider', textAlign: 'center' }} elevation={0}>
-            <Typography variant="body2" color="text.secondary" mb={1}>
-              Chưa có nội dung nào.
+        <TextField
+          placeholder="VD: Mình có 5 năm làm backend Java Spring, từng phỏng vấn tuyển dụng và hướng dẫn thực tập sinh. Quan tâm tới system design và mentoring sinh viên năm cuối."
+          value={summary}
+          onChange={(e) => update({ experienceSummary: e.target.value })}
+          fullWidth
+          multiline
+          minRows={3}
+          maxRows={8}
+        />
+
+        <Stack direction="row" spacing={1} mt={1.5} alignItems="center" justifyContent="flex-end">
+          <Button
+            variant="contained"
+            startIcon={extracting ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+            onClick={handleExtract}
+            disabled={extracting || !summary.trim()}
+          >
+            {extracting ? 'Đang phân tích...' : 'Trích xuất thẻ'}
+          </Button>
+        </Stack>
+
+        {extractError && (
+          <Alert severity="info" sx={{ mt: 1.5 }}>
+            {extractError}
+          </Alert>
+        )}
+
+        {showTagEditor && (
+          <Box mt={2}>
+            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
+              Thẻ kỹ năng (mentee dùng để lọc tìm cố vấn). Bấm × để xoá, hoặc thêm thẻ bên dưới.
             </Typography>
-            <Button startIcon={<AddIcon />} onClick={handleAdd}>
-              Thêm nội dung đầu tiên
-            </Button>
-          </Card>
-        ) : (
-          <Stack spacing={1.5}>
-            {items.map((item, idx) => (
-              <Card key={idx} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }} elevation={0}>
-                <Stack spacing={1.5}>
-                  <TextField
-                    select
-                    label="Mục"
-                    size="small"
-                    value={item.category}
-                    onChange={(e) => handleField(idx, 'category', e.target.value)}
-                    fullWidth
-                  >
-                    {CATEGORIES.map((c) => (
-                      <MenuItem key={c.value} value={c.value}>
-                        {c.label}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                  <TextField
-                    label="Tên kỹ năng / kinh nghiệm"
-                    size="small"
-                    value={item.name}
-                    onChange={(e) => handleField(idx, 'name', e.target.value)}
-                    fullWidth
-                  />
-                  <TextField
-                    label="Mô tả"
-                    size="small"
-                    value={item.description}
-                    onChange={(e) => handleField(idx, 'description', e.target.value)}
-                    fullWidth
-                    multiline
-                    minRows={2}
-                  />
-                  <TextField
-                    label="Tag"
-                    size="small"
-                    placeholder="VD: react, system-design"
-                    value={item.tag}
-                    onChange={(e) => handleField(idx, 'tag', e.target.value)}
-                    fullWidth
-                  />
-                  <Stack direction="row" justifyContent="flex-end">
-                    <IconButton size="small" color="error" onClick={() => handleRemove(idx)}>
-                      <DeleteOutlineIcon />
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              </Card>
-            ))}
-            <Box>
-              <Button startIcon={<AddIcon />} onClick={handleAdd}>
-                Thêm nội dung
+            {tags.length > 0 ? (
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {tags.map((tag) => (
+                  <Chip key={tag} label={`#${tag}`} onDelete={() => removeTag(tag)} color="primary" variant="outlined" />
+                ))}
+              </Stack>
+            ) : (
+              <Typography variant="body2" color="text.disabled">
+                Chưa có thẻ nào — thêm thủ công bên dưới.
+              </Typography>
+            )}
+
+            <Stack direction="row" spacing={1} mt={1.5}>
+              <TextField
+                size="small"
+                placeholder="Thêm thẻ thủ công (Enter để thêm)"
+                value={manualTag}
+                onChange={(e) => setManualTag(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleManualAdd();
+                  }
+                }}
+              />
+              <Button onClick={handleManualAdd} startIcon={<AddIcon />} disabled={!manualTag.trim()}>
+                Thêm
               </Button>
-            </Box>
-          </Stack>
+            </Stack>
+          </Box>
         )}
       </Box>
 
@@ -121,7 +168,7 @@ const MentorSignupTabContent = ({ values, onChange }) => {
         <TextField
           placeholder="VD: https://meet.google.com/abc-defg-hij"
           value={meetingLink}
-          onChange={(e) => updateMeetingLink(e.target.value)}
+          onChange={(e) => update({ defaultMeetingLink: e.target.value })}
           fullWidth
           size="small"
           error={Boolean(meetingLinkError)}

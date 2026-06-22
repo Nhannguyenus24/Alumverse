@@ -51,7 +51,8 @@ const initialValues = {
   awards: [],
   skills: [],
   // Tab 2
-  expertises: [],
+  experienceSummary: '',
+  expertiseTags: [],
   defaultMeetingLink: '',
   // Tab 3
   termsAccepted: false,
@@ -66,8 +67,7 @@ const validateProfile = (v) =>
   (v.experiences ?? []).length > 0;
 
 const validateContent = (v) =>
-  (v.expertises ?? []).length > 0 &&
-  v.expertises.every((e) => e.category && e.name?.trim() && e.description?.trim());
+  Boolean(v.experienceSummary?.trim()) && (v.expertiseTags ?? []).length > 0;
 
 const validateTerms = (v) => Boolean(v.termsAccepted);
 
@@ -96,6 +96,8 @@ const MentorshipSignupPage = () => {
       bio: profile.bio ?? '',
       defaultMeetingLink: profile.defaultMeetingLink ?? '',
       avatarPreview: profile.avatarUrl ?? '',
+      experienceSummary: extended.experienceSummary ?? '',
+      expertiseTags: Array.isArray(extended.expertiseTags) ? extended.expertiseTags : [],
       educations: Array.isArray(extended.educations) ? extended.educations : [],
       experiences: Array.isArray(extended.experiences) ? extended.experiences : [],
       projects: Array.isArray(extended.projects) ? extended.projects : [],
@@ -143,11 +145,13 @@ const MentorshipSignupPage = () => {
           currentCompany: values.currentCompany.trim(),
           bio: values.bio.trim(),
         },
-        expertises: values.expertises,
+        expertiseTags: values.expertiseTags ?? [],
         avatarFile: values.avatarFile,
         coverFile: null,
         defaultMeetingLink: values.defaultMeetingLink?.trim() || null,
         extended: {
+          experienceSummary: values.experienceSummary?.trim() || '',
+          expertiseTags: values.expertiseTags ?? [],
           educations: values.educations ?? [],
           experiences: values.experiences ?? [],
           projects: values.projects ?? [],
@@ -175,6 +179,8 @@ const MentorshipSignupPage = () => {
         coverFile: null,
         defaultMeetingLink: values.defaultMeetingLink?.trim() || null,
         extended: {
+          experienceSummary: values.experienceSummary?.trim() || '',
+          expertiseTags: values.expertiseTags ?? [],
           educations: values.educations ?? [],
           experiences: values.experiences ?? [],
           projects: values.projects ?? [],

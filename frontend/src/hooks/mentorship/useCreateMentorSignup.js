@@ -14,12 +14,12 @@ const uploadImageIfPresent = async (file) => {
  * Submits the full mentor signup form:
  *   1. (optional) Upload avatar + cover images
  *   2. POST /mentor/profile  — core profile + image URLs + meeting link
- *   3. POST /mentor/expertise — one row per "shareable content" item (Tab 2),
- *      with category + tag stored in dedicated columns.
+ *   3. POST /mentor/expertise — one row per AI-extracted skill tag (Tab 2),
+ *      stored as topic + tag for mentee filtering.
  */
 const submitMentorSignup = async ({
   profile,
-  expertises,
+  expertiseTags,
   avatarFile,
   coverFile,
   defaultMeetingLink,
@@ -41,13 +41,15 @@ const submitMentorSignup = async ({
   });
   const profileData = profileRes?.data?.data ?? null;
 
-  for (const item of expertises) {
+  // Each AI-extracted (or manually-added) tag becomes one expertise row so the
+  // existing mentee tag/topic filtering keeps working.
+  for (const rawTag of expertiseTags ?? []) {
+    const tag = (rawTag ?? '').trim();
+    if (!tag) continue;
     await addMyExpertise({
-      topic: (item.name ?? '').slice(0, 255),
+      topic: tag.slice(0, 255),
       yearsExperience: 0,
-      description: (item.description ?? '').slice(0, 2000),
-      category: item.category ?? 'GENERAL',
-      tag: (item.tag ?? '').slice(0, 100) || undefined,
+      tag: tag.slice(0, 100),
     });
   }
 

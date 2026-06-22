@@ -1241,6 +1241,11 @@ const mentorshipApi = {
 		return apiClient.post(`${BASE_MENTOR}/expertise`, payload);
 	},
 
+	// ME-02: AI-assisted skill tag extraction from a free-text description.
+	extractMentorshipSkills(text) {
+		return apiClient.post('/mentorship/skills/extract', { text });
+	},
+
 	getMyExpertise() {
 		return apiClient.get(`${BASE_MENTOR}/expertise`);
 	},
@@ -1334,6 +1339,7 @@ export const {
 	updateMentorProfile,
 	getMyMentorProfile,
 	addMyExpertise,
+	extractMentorshipSkills,
 	getMyExpertise,
 	deleteMyExpertise,
 	updateMyExpertise,
