@@ -45,7 +45,7 @@ export default function DonationListItemCard({ item }) {
         </Badge>
         <Box sx={{ minWidth: 0 }}>
           <Typography sx={{ color: "#0f2f5f", fontWeight: 800, fontSize: "1rem", lineHeight: 1.3 }} noWrap>
-            {item.donorName || "Nhà hảo tâm"}
+            {item.donorName}
           </Typography>
           <Typography
             sx={{

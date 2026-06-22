@@ -9,6 +9,19 @@ const ALLOWED_IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"];
 
 export const IMAGE_ACCEPT = "image/jpeg,image/png,.jpg,.jpeg,.png";
 
+export const FUND_CONTENT_EDITOR_HEIGHT = 320;
+
+export const FUND_LOGO_PREVIEW_SX = {
+  width: "100%",
+  height: FUND_CONTENT_EDITOR_HEIGHT,
+  borderRadius: 1,
+  objectFit: "contain",
+  bgcolor: "grey.50",
+  border: "1px solid",
+  borderColor: "divider",
+  display: "block",
+};
+
 /**
  * Validate an image file (type + max size).
  * @param {File} file

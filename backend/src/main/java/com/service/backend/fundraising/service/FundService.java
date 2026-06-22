@@ -13,6 +13,8 @@ import com.service.backend.fundraising.dto.CreateFundDonationRequest;
 import com.service.backend.fundraising.dto.FundDetailResponse;
 import com.service.backend.fundraising.dto.FundDonationCheckoutResponse;
 import com.service.backend.fundraising.dto.FundDonationListItemResponse;
+import com.service.backend.fundraising.constants.FundDonationConstants;
+import com.service.backend.fundraising.mapper.FundDonationMapper;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.fundraising.dto.FundStatisticsResponse;
 import com.service.backend.fundraising.dto.FundFilterRequest;
@@ -426,9 +428,9 @@ public class FundService {
     public Mono<FundDonations> createFundDonation(CreateFundDonationRequest request) {
         Integer fundId = request.getFundId();
         Integer donorMemberId = request.getDonorMemberId();
-        String resolvedDonorName = (request.getDonorName() != null && !request.getDonorName().isBlank())
-                ? request.getDonorName()
-                : "Ẩn danh";
+        String resolvedDonorName = (request.getDonorName() != null && !request.getDonorName().trim().isBlank())
+                ? request.getDonorName().trim()
+                : FundDonationConstants.DEFAULT_DONOR_DISPLAY_NAME;
 
         // khi guest ko dang nhap ma donate thi field donorMemberId la null
         if (donorMemberId == null) {
@@ -584,7 +586,7 @@ public class FundService {
 
         if (!hasSearch) {
             return PaginationHelper.paginate(
-                    fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.findByFundIdWithPagination(fundId, limit, offset).map(FundDonationMapper::toListItemResponse),
                     fundDonationsRepository.countByFundId(fundId),
                     page,
                     limit);
@@ -593,23 +595,23 @@ public class FundService {
         String normalized = keyword.trim();
         return switch (searchBy) {
             case "name" -> PaginationHelper.paginate(
-                    fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.searchByDonorName(fundId, normalized, limit, offset).map(FundDonationMapper::toListItemResponse),
                     fundDonationsRepository.countSearchByDonorName(fundId, normalized),
                     page, limit);
             case "phone" -> PaginationHelper.paginate(
-                    fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.searchByPhone(fundId, normalized, limit, offset).map(FundDonationMapper::toListItemResponse),
                     fundDonationsRepository.countSearchByPhone(fundId, normalized),
                     page, limit);
             case "address" -> PaginationHelper.paginate(
-                    fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.searchByAddress(fundId, normalized, limit, offset).map(FundDonationMapper::toListItemResponse),
                     fundDonationsRepository.countSearchByAddress(fundId, normalized),
                     page, limit);
             case "message" -> PaginationHelper.paginate(
-                    fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.searchByMessage(fundId, normalized, limit, offset).map(FundDonationMapper::toListItemResponse),
                     fundDonationsRepository.countSearchByMessage(fundId, normalized),
                     page, limit);
             case "email" -> PaginationHelper.paginate(
-                    fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset).map(FundDonationListItemResponse::fromProjection),
+                    fundDonationsRepository.searchByEmail(fundId, normalized, limit, offset).map(FundDonationMapper::toListItemResponse),
                     fundDonationsRepository.countSearchByEmail(fundId, normalized),
                     page, limit);
             default -> Mono.error(new ApplicationException(
@@ -627,7 +629,7 @@ public class FundService {
         int offset = page * limit;
         return PaginationHelper.paginate(
                 fundDonationsRepository.findByDonorMemberIdWithPagination(donorMemberId, limit, offset)
-                        .map(FundDonationListItemResponse::fromProjection),
+                        .map(FundDonationMapper::toListItemResponse),
                 fundDonationsRepository.countByDonorMemberId(donorMemberId),
                 page, limit)
                 .doOnSuccess(r -> org.slf4j.LoggerFactory.getLogger(FundService.class).info("getDonationsByDonorMemberId result: {}", com.service.backend.shared.utils.JsonUtils.toJson(r)));
