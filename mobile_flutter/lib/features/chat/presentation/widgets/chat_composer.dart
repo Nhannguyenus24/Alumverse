@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -10,12 +11,12 @@ class ChatComposer extends StatefulWidget {
     super.key,
     required this.enabled,
     required this.onSend,
-    this.hintText = 'Nhập tin nhắn…',
+    this.hintText,
   });
 
   final bool enabled;
   final ValueChanged<String> onSend;
-  final String hintText;
+  final String? hintText;
 
   @override
   State<ChatComposer> createState() => _ChatComposerState();
@@ -94,8 +95,8 @@ class _ChatComposerState extends State<ChatComposer> {
                 textInputAction: TextInputAction.newline,
                 decoration: InputDecoration(
                   hintText: widget.enabled
-                      ? widget.hintText
-                      : 'Không thể gửi tin nhắn',
+                      ? (widget.hintText ?? 'chat.type_message'.tr())
+                      : 'chat.cannot_send'.tr(),
                   filled: true,
                   fillColor: AppColors.background,
                   contentPadding: const EdgeInsets.symmetric(

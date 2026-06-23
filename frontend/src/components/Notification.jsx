@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   IconButton,
@@ -15,6 +16,7 @@ import { notificationApi } from "../utils/api";
 import { useOrgNavigate } from "../hooks/useOrgNavigate";
 
 const Notification = ({ headerTextColor = "text.primary" }) => {
+  const { t } = useTranslation(['notification', 'common']);
   const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
@@ -97,11 +99,11 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
 
   return (
     <>
-      <Tooltip title="Thông báo" arrow>
+      <Tooltip title={t("notification:tooltip")} arrow>
         <Box sx={{ position: "relative" }}>
           <IconButton
             size="small"
-            aria-label="Thông báo"
+            aria-label={t("notification:tooltip")}
             sx={{ color: headerTextColor }}
             onClick={handleOpen}
             aria-haspopup="true"
@@ -154,9 +156,9 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
           }}
         >
           <Typography variant="h3" sx={{ fontWeight: 700, color: "primary.main" }}>
-            Thông báo
+            {t("notification:heading")}
           </Typography>
-          <Tooltip title="Cài đặt" arrow>
+          <Tooltip title={t("notification:settings_tooltip")} arrow>
             <IconButton 
               size="small" 
               sx={{ color: "text.secondary" }}
@@ -184,7 +186,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
               py: 0.5,
             }}
           >
-            Tất cả
+            {t("notification:tab_all")}
           </Button>
           <Button
             variant={activeTab === 1 ? "contained" : "outlined"}
@@ -198,7 +200,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
               py: 0.5,
             }}
           >
-            Chưa đọc
+            {t("notification:tab_unread")}
           </Button>
         </Box>
 
@@ -310,7 +312,7 @@ const Notification = ({ headerTextColor = "text.primary" }) => {
               }}
             >
               <Typography variant="body2">
-                Không có thông báo nào
+                {t("notification:empty")}
               </Typography>
             </Box>
           )}

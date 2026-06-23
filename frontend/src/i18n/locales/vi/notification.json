@@ -1,0 +1,12 @@
+{
+  "tooltip": "Thông báo",
+  "heading": "Thông báo",
+  "settings_tooltip": "Cài đặt",
+  "tab_all": "Tất cả",
+  "tab_unread": "Chưa đọc",
+  "tab_unread_count": "Chưa đọc ({{count}})",
+  "mark_all_read": "Đánh dấu tất cả đã đọc",
+  "all_caught_up": "Bạn đã xem hết thông báo",
+  "all_caught_up_desc": "Khi có sự kiện hoặc tương tác mới, chúng sẽ xuất hiện ở đây.",
+  "empty": "Không có thông báo nào"
+}

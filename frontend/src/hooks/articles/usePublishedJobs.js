@@ -18,7 +18,7 @@ export const usePublishedJobs = (page = 0, limit = 10) => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách việc làm"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load jobs"
       : null;
 
   return {

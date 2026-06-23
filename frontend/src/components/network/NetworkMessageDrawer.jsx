@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Avatar,
@@ -67,6 +68,7 @@ function NetworkMessageBubble({ message, isOwn }) {
 }
 
 const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
+  const { t } = useTranslation(['network']);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const messagesEndRef = useRef(null);
@@ -78,7 +80,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
   const currentMemberId = useNetworkCurrentMemberId();
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
-  const drawerState = resolveConnectionDrawerState(connectionStatus);
+  const drawerState = resolveConnectionDrawerState(connectionStatus, t);
   const composerEnabled = isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
@@ -162,7 +164,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
           <ChatAvatar avatarUrl={peer?.avatarUrl} name={peer?.fullName} size={48} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
-              {peer?.fullName ?? 'Thành viên'}
+              {peer?.fullName ?? t('network:member_fallback_name')}
             </Typography>
             {academicRows.map((row, index) => (
               <Typography
@@ -177,7 +179,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
             ))}
           </Box>
         </Stack>
-        <IconButton size="small" onClick={onClose} aria-label="Đóng">
+        <IconButton size="small" onClick={onClose} aria-label={t('network:close_aria')}>
           <CloseIcon />
         </IconButton>
       </Box>
@@ -243,7 +245,7 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
         />
         <IconButton
           color="primary"
-          aria-label="Gửi tin nhắn"
+          aria-label={t('network:send_message_aria')}
           disabled={!composerEnabled || isSending || !draft.trim()}
           onClick={handleSend}
           sx={{

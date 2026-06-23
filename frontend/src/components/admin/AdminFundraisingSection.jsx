@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Typography } from '@mui/material';
 import VolunteerActivismOutlinedIcon from '@mui/icons-material/VolunteerActivismOutlined';
 import PlayCircleOutlineOutlinedIcon from '@mui/icons-material/PlayCircleOutlineOutlined';
@@ -19,12 +20,13 @@ const fmtMoney = (n) =>
   Number(n ?? 0).toLocaleString('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 
 const AdminFundraisingSection = () => {
+  const { t } = useTranslation(['admin', 'donation']);
   const { stats } = useAdminFundraisingStats();
 
   const donationStatusData = [
-    { name: 'Thành công', count: Number(stats.successfulDonations) },
-    { name: 'Chờ xử lý', count: Number(stats.pendingDonations) },
-    { name: 'Thất bại', count: Number(stats.failedDonations) },
+    { name: t('donation:status_success'), count: Number(stats.successfulDonations) },
+    { name: t('donation:status_pending'), count: Number(stats.pendingDonations) },
+    { name: t('donation:status_failed'), count: Number(stats.failedDonations) },
   ];
 
   const fmtDate = (str) => {
@@ -38,20 +40,20 @@ const AdminFundraisingSection = () => {
 
   return (
     <AdminSectionPanel
-      title="Quyên góp & Gây quỹ"
-      subtitle="Tổng quan chiến dịch, lượt quyên góp và timeline 30 ngày."
+      title={t('admin:fundraising_section_title')}
+      subtitle={t('admin:fundraising_section_subtitle')}
     >
       <Stack spacing={3}>
         <Stack spacing={2}>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Tổng số chiến dịch" value={fmt(stats.totalFunds)} icon={<VolunteerActivismOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Đang hoạt động" value={fmt(stats.activeFunds)} icon={<PlayCircleOutlineOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Đã kết thúc" value={fmt(stats.completedFunds)} icon={<TaskAltOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_campaigns')} value={fmt(stats.totalFunds)} icon={<VolunteerActivismOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_active_campaigns')} value={fmt(stats.activeFunds)} icon={<PlayCircleOutlineOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_completed_campaigns')} value={fmt(stats.completedFunds)} icon={<TaskAltOutlinedIcon />} />
           </Stack>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Tổng số mục tiêu" value={fmtMoney(stats.totalTarget)} icon={<TrackChangesOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Đã gây quỹ" value={fmtMoney(stats.totalRaised)} icon={<SavingsOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Lượt quyên góp" value={fmt(stats.totalDonations)} icon={<FavoriteBorderOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_target')} value={fmtMoney(stats.totalTarget)} icon={<TrackChangesOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_raised')} value={fmtMoney(stats.totalRaised)} icon={<SavingsOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_donations')} value={fmt(stats.totalDonations)} icon={<FavoriteBorderOutlinedIcon />} />
           </Stack>
         </Stack>
 
@@ -59,7 +61,7 @@ const AdminFundraisingSection = () => {
           <Box flex={2} minWidth={0}>
             <Chart
               type="line"
-              title="Lượt quyên góp theo ngày (30 ngày qua)"
+              title={t('admin:chart_donations_by_day_30d')}
               data={timelineData}
               dataKey="count"
               xAxisKey="date"
@@ -69,7 +71,7 @@ const AdminFundraisingSection = () => {
           <Box flex={1} minWidth={0}>
             <Chart
               type="bar"
-              title="Lượt quyên góp theo trạng thái"
+              title={t('admin:chart_donations_by_status')}
               data={donationStatusData}
               dataKey="count"
               xAxisKey="name"
@@ -81,7 +83,7 @@ const AdminFundraisingSection = () => {
         {(stats.topFundsByRaised || []).length > 0 && (
           <Box sx={{ p: 2.5, border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: 'background.paper' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
-              Top chiến dịch theo số tiền gây quỹ
+              {t('admin:top_campaigns_by_raised')}
             </Typography>
             {stats.topFundsByRaised.slice(0, 5).map((fund, i) => (
               <Box

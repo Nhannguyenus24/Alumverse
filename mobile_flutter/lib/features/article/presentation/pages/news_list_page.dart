@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -25,7 +25,7 @@ class NewsListPage extends ConsumerWidget {
     final async = ref.watch(publishedNewsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tin tức')),
+      appBar: AppBar(title: Text('article.title'.tr())),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(publishedNewsProvider);
@@ -34,7 +34,7 @@ class NewsListPage extends ConsumerWidget {
         child: async.when(
           loading: () => const SkeletonList(count: 4),
           error: (_, __) => ErrorView(
-            message: 'Không tải được tin tức',
+            message: 'article.load_failed'.tr(),
             onRetry: () => ref.invalidate(publishedNewsProvider),
           ),
           data: (news) {
@@ -48,7 +48,7 @@ class NewsListPage extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'TIN TỨC',
+                  'article.title_upper'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.primary,
@@ -61,9 +61,10 @@ class NewsListPage extends ConsumerWidget {
                     .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  const Text(
-                    'Gợi ý',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  Text(
+                    'article.suggestions'.tr(),
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
                   GridView.builder(
@@ -125,7 +126,8 @@ class _FeaturedNewsCard extends StatelessWidget {
                   ? CachedNetworkImage(
                       imageUrl: thumb,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.divider),
+                      placeholder: (_, __) =>
+                          Container(color: AppColors.divider),
                       errorWidget: (_, __, ___) => const _NewsFallback(),
                     )
                   : const _NewsFallback(),
@@ -212,7 +214,8 @@ class _NewsCard extends StatelessWidget {
                   ? CachedNetworkImage(
                       imageUrl: thumb,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.divider),
+                      placeholder: (_, __) =>
+                          Container(color: AppColors.divider),
                       errorWidget: (_, __, ___) => const _NewsFallback(),
                     )
                   : const _NewsFallback(),
@@ -284,10 +287,10 @@ class _NewsEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyView(
+    return EmptyView(
       icon: Icons.article_outlined,
-      title: 'Chưa có tin tức',
-      message: 'Tin tức và bài viết mới sẽ xuất hiện ở đây.',
+      title: 'article.no_news'.tr(),
+      message: 'article.no_news_desc'.tr(),
     );
   }
 }

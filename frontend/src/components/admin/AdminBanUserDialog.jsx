@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -15,6 +16,7 @@ import {
 import { BAN_REASON_OPTIONS } from '../../constants/adminDefaultUsers';
 
 const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false }) => {
+  const { t } = useTranslation(['admin', 'common']);
   const [reason, setReason] = useState('SPAM');
   const [customReason, setCustomReason] = useState('');
   const [isPermanent, setIsPermanent] = useState(true);
@@ -53,7 +55,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
 
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm" scroll="body">
-      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Chặn người dùng</DialogTitle>
+      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>{t('admin:ban_user_dialog_title')}</DialogTitle>
       <DialogContent
         sx={{
           display: 'flex',
@@ -66,7 +68,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
         {user ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-              {user.fullName || 'Người dùng không xác định'}
+              {user.fullName || t('admin:unknown_user')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               ID: {user.studentId || '-'} · {user.email || '-'}
@@ -76,7 +78,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
 
         <TextField
           select
-          label="Lý do"
+          label={t('admin:ban_reason_label')}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           fullWidth
@@ -91,7 +93,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
 
         {reason === 'OTHER' ? (
           <TextField
-            label="Lý do khác"
+            label={t('admin:ban_reason_other')}
             value={customReason}
             onChange={(e) => setCustomReason(e.target.value)}
             fullWidth
@@ -110,13 +112,13 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
               color="primary"
             />
           }
-          label="Chặn vĩnh viễn"
+          label={t('admin:ban_permanent')}
         />
 
         {!isPermanent ? (
           <TextField
             type="number"
-            label="Thời hạn (ngày)"
+            label={t('admin:ban_duration_days')}
             value={durationDays}
             onChange={(e) => setDurationDays(Number(e.target.value))}
             fullWidth
@@ -127,7 +129,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" color="secondary" onClick={onClose} disabled={loading} sx={{ textTransform: 'none' }}>
-          Hủy
+          {t('common:cancel')}
         </Button>
         <Button
           variant="contained"
@@ -135,7 +137,7 @@ const AdminBanUserDialog = ({ open, user, onClose, onConfirm, loading = false })
           disabled={disableConfirm}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          Xác nhận
+          {t('common:confirm')}
         </Button>
       </DialogActions>
     </Dialog>

@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button, Popper, Paper } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +10,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
-import { registerSchema } from '../../utils/regexUtils';
+import { getRegisterSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
@@ -35,6 +36,7 @@ const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 const RegisterPage = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
@@ -53,6 +55,8 @@ const RegisterPage = () => {
     digit: /\d/.test(passwordValue),
     special: /[@$!%*?&]/.test(passwordValue),
   };
+
+  const registerSchema = useMemo(() => getRegisterSchema(t), [t]);
 
   const {
     register,
@@ -74,7 +78,7 @@ const RegisterPage = () => {
   const onSubmit = async (data) => {
     setError(null);
     if (!organizationId) {
-      enqueueSnackbar('Đang tải thông tin tổ chức, vui lòng đợi vài giây rồi thử lại.', { variant: 'warning' });
+      enqueueSnackbar(t('auth:register_org_loading'), { variant: 'warning' });
       return;
     }
     const result = await registerUser({
@@ -87,12 +91,12 @@ const RegisterPage = () => {
       organizationId,
     });
     if (result?.ok) {
-      enqueueSnackbar('Đăng ký thành công. Vui lòng kiểm tra email để nhận mã xác thực.', {
+      enqueueSnackbar(t('auth:register_success'), {
         variant: 'success',
       });
       const fp = await forgotPassword({ email: data.email });
       if (!fp?.ok) {
-        enqueueSnackbar(fp?.error ?? 'Không gửi được mã xác thực.', { variant: 'error' });
+        enqueueSnackbar(fp?.error ?? t('auth:register_verify_send_failed'), { variant: 'error' });
       }
       navigate('/auth/signup-code', { state: { email: data.email }, replace: true });
     } else if (result?.error) {
@@ -102,8 +106,8 @@ const RegisterPage = () => {
 
   return (
     <Page
-      title="Đăng ký"
-      meta={<meta name="description" content="Đăng ký tài khoản mới" />}
+      title={t('auth:register_heading')}
+      meta={<meta name="description" content={t('auth:register_heading')} />}
     >
       <Box
         component="form"
@@ -123,20 +127,20 @@ const RegisterPage = () => {
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
-          Đăng ký
+          {t('auth:register_heading')}
         </Typography>
 
         <Input
-          label="Họ và tên"
-          placeholder="Họ Và Tên"
+          label={t('auth:full_name_label')}
+          placeholder={t('auth:full_name_placeholder')}
           type="text"
           error={!!errors.fullName}
           helperText={errors.fullName?.message}
           {...register('fullName')}
         />
         <Input
-          label="Mã số sinh viên"
-          placeholder="Mã số sinh viên"
+          label={t('auth:student_id_label')}
+          placeholder={t('auth:student_id_placeholder')}
           type="text"
           inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 50 }}
           error={!!errors.studentId}
@@ -152,8 +156,8 @@ const RegisterPage = () => {
           control={control}
           render={({ field }) => (
             <Dropdown
-              label="Năm nhập học"
-              placeholder="Năm nhập học"
+              label={t('auth:enrollment_year_label')}
+              placeholder={t('auth:enrollment_year_placeholder')}
               value={field.value}
               onChange={(e) => field.onChange(e.target.value)}
               options={YEAR_OPTIONS}
@@ -172,7 +176,7 @@ const RegisterPage = () => {
         />
         <Box ref={passwordRef}>
           <Input
-            label="Mật khẩu"
+            label={t('auth:password_label')}
             placeholder="••••••••"
             type="password"
             error={!!errors.password}
@@ -204,38 +208,38 @@ const RegisterPage = () => {
                 fontWeight={600}
                 mb={1}
               >
-                Yêu cầu mật khẩu
+                {t('auth:password_requirements_title')}
               </Typography>
 
               <PasswordRequirementItem
-                label="Tối thiểu 8 ký tự"
+                label={t('auth:password_req_length')}
                 met={passwordRequirements.length}
               />
 
               <PasswordRequirementItem
-                label="Ít nhất 1 chữ viết hoa"
+                label={t('auth:password_req_uppercase')}
                 met={passwordRequirements.uppercase}
               />
 
               <PasswordRequirementItem
-                label="Ít nhất 1 chữ viết thường"
+                label={t('auth:password_req_lowercase')}
                 met={passwordRequirements.lowercase}
               />
 
               <PasswordRequirementItem
-                label="Ít nhất 1 chữ số"
+                label={t('auth:password_req_digit')}
                 met={passwordRequirements.digit}
               />
 
               <PasswordRequirementItem
-                label="Ít nhất 1 ký tự đặc biệt"
+                label={t('auth:password_req_special')}
                 met={passwordRequirements.special}
               />
             </Paper>
           </Popper>
         </Box>
         <Input
-          label="Nhập lại mật khẩu"
+          label={t('auth:confirm_password_label')}
           placeholder="••••••••"
           type="password"
           error={!!errors.confirmPassword}
@@ -252,11 +256,11 @@ const RegisterPage = () => {
           disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang xử lý...' : 'Tiếp tục'}
+          {loading ? t('auth:processing') : t('auth:continue')}
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-          Bạn đã có tài khoản?{' '}
+          {t('auth:have_account_prompt')}{' '}
           <Typography
             component={Link}
             to={toOrgPath('/auth/login')}
@@ -265,7 +269,7 @@ const RegisterPage = () => {
             fontWeight={600}
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
-            Đăng nhập ngay!
+            {t('auth:login_now')}
           </Typography>
         </Typography>
       </Box>

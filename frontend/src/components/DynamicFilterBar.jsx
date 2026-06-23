@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Stack, Button, Select, MenuItem, Checkbox, ListItemText,
   TextField, Slider, Box, Typography, Popover, Paper
@@ -12,6 +13,7 @@ const INPUT_FILTER_DEFAULTS = { text: '', number: '' };
  * Trigger giống Select; bấm mở panel nhập (text hoặc number qua inputMode).
  */
 const FilterInputPopover = ({ filter, value, onCommit }) => {
+  const { t } = useTranslation(['common']);
   const inputMode = filter.inputMode === 'number' ? 'number' : 'text';
   const storedValue = value === undefined || value === null ? INPUT_FILTER_DEFAULTS[inputMode] : String(value);
 
@@ -113,8 +115,8 @@ const FilterInputPopover = ({ filter, value, onCommit }) => {
               }}
             />
             <Stack direction="row" spacing={1} justifyContent="flex-end">
-              <Button size="small" onClick={handleClear}>Xóa</Button>
-              <Button size="small" variant="contained" onClick={handleApply}>Áp dụng</Button>
+              <Button size="small" onClick={handleClear}>{t('common:clear')}</Button>
+              <Button size="small" variant="contained" onClick={handleApply}>{t('common:apply')}</Button>
             </Stack>
           </Stack>
         </Paper>
@@ -131,6 +133,7 @@ const filterBaseSx = (theme, active) => ({
 });
 
 const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
+  const { t } = useTranslation(['common']);
   const [internalValue, setInternalValue] = useState({ all: true, ...value });
 
   const updateState = useCallback((newState) => {
@@ -191,7 +194,7 @@ const DynamicFilterBar = ({ config = [], value = {}, onChange }) => {
     <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="center">
       {/* ===== TẤT CẢ ===== */}
       <Button variant={internalValue.all ? 'contained' : 'outlined'} onClick={handleAllClick} sx={(theme) => filterBaseSx(theme, internalValue.all)}>
-        Tất cả
+        {t('common:all')}
       </Button>
 
       {/* ===== DYNAMIC RENDER ===== */}

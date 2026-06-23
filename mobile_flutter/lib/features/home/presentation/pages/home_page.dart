@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -51,9 +52,10 @@ class HomePage extends ConsumerWidget {
         ),
         actions: [
           _OrgSwitchButton(currentName: org?.name),
+          const _LanguageSwitchButton(),
           const NotificationBell(),
           _AccountMenuButton(
-            userLabel: user?.fullName ?? user?.email ?? 'Tài khoản',
+            userLabel: user?.fullName ?? user?.email ?? 'profile.title'.tr(),
           ),
         ],
       ),
@@ -76,6 +78,26 @@ class HomePage extends ConsumerWidget {
             const SizedBox(height: 24),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Language switcher button in the AppBar. Toggles between vi and en.
+class _LanguageSwitchButton extends StatelessWidget {
+  const _LanguageSwitchButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final isVi = context.locale.languageCode == 'vi';
+    return IconButton(
+      tooltip: isVi ? 'English' : 'Tiếng Việt',
+      onPressed: () {
+        context.setLocale(isVi ? const Locale('en') : const Locale('vi'));
+      },
+      icon: Text(
+        isVi ? '🇻🇳' : '🇺🇸',
+        style: const TextStyle(fontSize: 20),
       ),
     );
   }
@@ -108,7 +130,7 @@ class _AccountMenuButton extends ConsumerWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.person_outline),
-            title: const Text('Hồ sơ của tôi'),
+            title: Text('profile.my_profile'.tr()),
             onTap: () {
               close();
               context.go(RouteNames.profile);
@@ -116,7 +138,7 @@ class _AccountMenuButton extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.favorite_border_rounded),
-            title: const Text('Bài viết đã lưu'),
+            title: Text('article.saved'.tr()),
             onTap: () {
               close();
               context.push(RouteNames.savedArticles);
@@ -124,7 +146,7 @@ class _AccountMenuButton extends ConsumerWidget {
           ),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
-            title: const Text('Cài đặt'),
+            title: Text('common.settings'.tr()),
             onTap: () {
               close();
               context.push(RouteNames.settings);
@@ -133,8 +155,8 @@ class _AccountMenuButton extends ConsumerWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Đăng xuất',
-                style: TextStyle(color: AppColors.error)),
+            title: Text('common.logout'.tr(),
+                style: const TextStyle(color: AppColors.error)),
             onTap: () async {
               close();
               await ref.read(authStateProvider.notifier).logout();
@@ -154,7 +176,7 @@ class _AccountMenuButton extends ConsumerWidget {
       ref.watch(myProfileProvider).valueOrNull?.avatarUrl,
     );
     return IconButton(
-      tooltip: 'Tài khoản',
+      tooltip: 'profile.title'.tr(),
       onPressed: () => _open(context, ref),
       icon: CircleAvatar(
         radius: 15,
@@ -201,18 +223,18 @@ class _OrgSwitchButton extends ConsumerWidget {
                       height: 22,
                       child: CircularProgressIndicator(strokeWidth: 2))),
             ),
-            error: (_, __) => const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Không tải được danh sách tổ chức'),
+            error: (_, __) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('organization.load_failed'.tr()),
             ),
             data: (orgs) => Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(16, 12, 16, 6),
-                  child: Text('Chọn tổ chức',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                  child: Text('organization.select'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
                 ),
                 const Divider(height: 1),
                 for (final o in orgs)
@@ -247,7 +269,9 @@ class _OrgSwitchButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
-      tooltip: currentName != null ? 'Tổ chức: $currentName' : 'Đổi tổ chức',
+      tooltip: currentName != null
+          ? 'home.org_tooltip'.tr(namedArgs: {'name': currentName!})
+          : 'common.change_org'.tr(),
       onPressed: () => _open(context, ref),
       icon: const Icon(Icons.apartment_rounded),
     );

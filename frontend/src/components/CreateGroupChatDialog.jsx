@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -32,6 +33,7 @@ const MAX_OTHER_MEMBERS = 9; // 10 total including creator
 const DIALOG_PAGE_SIZE = 20;
 
 const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
+  const { t } = useTranslation(['network', 'common']);
   const [title, setTitle] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -106,7 +108,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
       <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
         <GroupAddIcon color="primary" fontSize="small" />
         <Typography variant="subtitle1" fontWeight={700} component="span">
-          Tạo nhóm chat
+          {t('network:create_group_chat_title')}
         </Typography>
       </DialogTitle>
 
@@ -114,7 +116,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
 
       <DialogContent sx={{ px: 2.5, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
-          label="Tên nhóm (tùy chọn)"
+          label={t('network:group_name_optional_label')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           size="small"
@@ -124,7 +126,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
         />
 
         <TextField
-          placeholder="Tìm bạn bè..."
+          placeholder={t('network:search_friends_placeholder')}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           size="small"
@@ -164,8 +166,8 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
                 : 'text.secondary'
           }
         >
-          Đã chọn {selectedMembers.length} người (tối thiểu {MIN_OTHER_MEMBERS}, tối đa {MAX_OTHER_MEMBERS})
-          {selectedMembers.length >= MAX_OTHER_MEMBERS ? ' — đã đạt giới hạn' : ''}
+          {t('network:selected_count_with_limits', { count: selectedMembers.length, min: MIN_OTHER_MEMBERS, max: MAX_OTHER_MEMBERS })}
+          {selectedMembers.length >= MAX_OTHER_MEMBERS ? t('network:selected_count_limit_reached') : ''}
         </Typography>
 
         <Box
@@ -184,7 +186,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
           ) : contacts.length === 0 ? (
             <Box sx={{ px: 2, py: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Không tìm thấy kết quả.
+                {t('network:no_search_result')}
               </Typography>
             </Box>
           ) : (
@@ -232,7 +234,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
 
       <DialogActions sx={{ px: 2.5, py: 1.5, gap: 1 }}>
         <Button onClick={handleClose} disabled={isCreating} size="small" color="inherit">
-          Hủy
+          {t('common:cancel')}
         </Button>
         <Button
           onClick={handleSubmit}
@@ -241,7 +243,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
           size="small"
           startIcon={isCreating ? <CircularProgress size={14} color="inherit" /> : null}
         >
-          {isCreating ? 'Đang tạo...' : 'Tạo nhóm'}
+          {isCreating ? t('network:creating') : t('network:create_group')}
         </Button>
       </DialogActions>
     </Dialog>

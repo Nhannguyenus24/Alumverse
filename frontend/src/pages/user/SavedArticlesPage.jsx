@@ -3,6 +3,7 @@ import { Container, Box, Typography, CircularProgress, Card, CardActionArea, Ico
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArticleOutlinedIcon from "@mui/icons-material/ArticleOutlined";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import { savedItemApi } from "../../utils/api";
 import apiClient from "../../utils/axios";
@@ -19,6 +20,7 @@ const fetchNews = async (id) => {
 };
 
 const SavedArticlesPage = () => {
+  const { t } = useTranslation('article');
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useOrgNavigate();
   const [items, setItems] = useState([]);
@@ -38,7 +40,7 @@ const SavedArticlesPage = () => {
       );
       setItems(resolved);
     } catch {
-      enqueueSnackbar("Không tải được bài viết đã lưu.", { variant: "error" });
+      enqueueSnackbar(t('saved_load_error'), { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -54,17 +56,17 @@ const SavedArticlesPage = () => {
     try {
       await savedItemApi.unsave("NEWS", itemId);
       setItems((list) => list.filter((x) => x.itemId !== itemId));
-      enqueueSnackbar("Đã bỏ quan tâm bài viết.", { variant: "info" });
+      enqueueSnackbar(t('saved_unsave_success'), { variant: "info" });
     } catch {
-      enqueueSnackbar("Thao tác thất bại.", { variant: "error" });
+      enqueueSnackbar(t('saved_action_failed'), { variant: "error" });
     }
   };
 
   return (
-    <Page title="Bài viết đã lưu">
+    <Page title={t('saved_articles')}>
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Typography variant="h4" fontWeight={700} color="primary.main" mb={3}>
-          Bài viết đã lưu
+          {t('saved_articles')}
         </Typography>
 
         {loading ? (
@@ -74,15 +76,15 @@ const SavedArticlesPage = () => {
         ) : items.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 8, color: "text.secondary" }}>
             <FavoriteIcon sx={{ fontSize: 48, opacity: 0.4 }} />
-            <Typography mt={1}>Chưa có bài viết đã lưu</Typography>
+            <Typography mt={1}>{t('no_saved_articles')}</Typography>
             <Typography variant="body2">
-              Nhấn biểu tượng quan tâm trên một bài viết để xem lại ở đây.
+              {t('saved_empty_hint')}
             </Typography>
           </Box>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             {items.map((s) => {
-              const title = s.article?.title ?? `Bài viết #${s.itemId}`;
+              const title = s.article?.title ?? t('saved_article_fallback_title', { id: s.itemId });
               const thumb = s.article?.thumbnailUrl;
               return (
                 <Card key={s.id ?? s.itemId} variant="outlined" sx={{ borderRadius: 2 }}>
@@ -113,7 +115,7 @@ const SavedArticlesPage = () => {
                       </Typography>
                     </CardActionArea>
                     <Box sx={{ display: "flex", alignItems: "center", pr: 1 }}>
-                      <Tooltip title="Bỏ quan tâm">
+                      <Tooltip title={t('unsave_article')}>
                         <IconButton color="primary" onClick={(e) => handleUnsave(e, s.itemId)}>
                           <FavoriteIcon />
                         </IconButton>

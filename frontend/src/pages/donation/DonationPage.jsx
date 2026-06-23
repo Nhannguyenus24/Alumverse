@@ -4,6 +4,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import dayjs from "dayjs";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
@@ -21,11 +22,6 @@ import StatsBanner from "../../components/StatsBanner";
 const DEFAULT_ADMIN_STATS = { totalCurrentAmount: 0, totalFunds: 0, totalDonations: 0, totalDonationsAmountThisMonth: 0 };
 const DEFAULT_FILTERS = { all: true, timeStartedFrom: "", timeStartedTo: "", trending: "", amountMin: "", amountMax: "" };
 
-const DONATION_SIDEBAR_ITEMS = [
-  { id: "list", label: "Quyên góp", icon: <FormatListBulletedIcon /> },
-  { id: "create", label: "Mở quỹ quyên góp", icon: <AddCircleOutlineIcon /> },
-];
-
 function formatCurrency(value) {
   return new Intl.NumberFormat("vi-VN").format(Number(value ?? 0));
 }
@@ -39,6 +35,7 @@ function toIsoEndOfDay(value) {
 }
 
 export default function DonationPage() {
+  const { t } = useTranslation(["donation", "common"]);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { user, isAuthenticated } = useAuth();
@@ -59,15 +56,20 @@ export default function DonationPage() {
   const [adminStats, setAdminStats] = useState(DEFAULT_ADMIN_STATS);
   const warningSetRef = useRef(new Set());
 
+  const donationSidebarItems = useMemo(() => [
+    { id: "list", label: t("donation:sidebar_list"), icon: <FormatListBulletedIcon /> },
+    { id: "create", label: t("donation:create_fund"), icon: <AddCircleOutlineIcon /> },
+  ], [t]);
+
   const gridPageSize = 4;
   const handlePageChange = usePaginationScrollToTop({ currentPage: page, setPage });
 
   const donationFilters = useMemo(() => [
-    { type: "date", key: "timeStartedFrom", label: "Từ ngày" },
-    { type: "date", key: "timeStartedTo", label: "Đến ngày" },
-    { type: "dropdown", key: "trending", label: "Xu hướng", multiple: false, options: [{ value: "asc", label: "Cũ nhất" }, { value: "desc", label: "Mới nhất" }] },
-    { type: "range-input", key: "amount", label: "Mức quyên góp" },
-  ], []);
+    { type: "date", key: "timeStartedFrom", label: t("donation:filter_from_date") },
+    { type: "date", key: "timeStartedTo", label: t("donation:filter_to_date") },
+    { type: "dropdown", key: "trending", label: t("donation:filter_trending"), multiple: false, options: [{ value: "asc", label: t("common:oldest") }, { value: "desc", label: t("common:newest") }] },
+    { type: "range-input", key: "amount", label: t("donation:filter_amount_range") },
+  ], [t]);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -85,7 +87,7 @@ export default function DonationPage() {
       .catch((error) => {
         if (ignore) return;
         setAdminStats(DEFAULT_ADMIN_STATS);
-        enqueueSnackbar(error?.response?.data?.message ?? "Không thể tải thống kê quỹ.", { variant: "error" });
+        enqueueSnackbar(error?.response?.data?.message ?? t("donation:error_load_stats"), { variant: "error" });
       });
     return () => { ignore = true; };
   }, [enqueueSnackbar, isAdmin]);
@@ -139,7 +141,7 @@ export default function DonationPage() {
           if (ignore) return;
           setCampaigns([]);
           setPageCount(1);
-          setErrorMessage(error?.response?.data?.message ?? "Không thể tải danh sách quỹ quyên góp.");
+          setErrorMessage(error?.response?.data?.message ?? t("donation:error_load_funds"));
         })
         .finally(() => { if (!ignore) setIsLoading(false); });
 
@@ -149,11 +151,11 @@ export default function DonationPage() {
   }, [filters, search, enqueueSnackbar, organizationId, page, refreshToken]);
 
   const adminBannerItems = useMemo(() => [
-    { value: `${formatCurrency(adminStats.totalCurrentAmount)} VND`, label: "tổng quỹ gây được" },
-    { value: formatCurrency(adminStats.totalFunds), label: "quỹ đang mở" },
-    { value: formatCurrency(adminStats.totalDonations), label: "lượt quyên góp" },
-    { value: `${formatCurrency(adminStats.totalDonationsAmountThisMonth)} VND`, label: "tổng quỹ tháng này" },
-  ], [adminStats]);
+    { value: `${formatCurrency(adminStats.totalCurrentAmount)} VND`, label: t("donation:stats_total_raised") },
+    { value: formatCurrency(adminStats.totalFunds), label: t("donation:stats_open_funds") },
+    { value: formatCurrency(adminStats.totalDonations), label: t("donation:stats_total_donations") },
+    { value: `${formatCurrency(adminStats.totalDonationsAmountThisMonth)} VND`, label: t("donation:stats_this_month") },
+  ], [adminStats, t]);
 
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
@@ -170,23 +172,23 @@ export default function DonationPage() {
     setIsClosingFund(true);
     try {
       await fundApi.closeFund(closeDialogCampaign.id);
-      enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
+      enqueueSnackbar(t("donation:close_fund_success"), { variant: "success" });
       setCloseDialogCampaign(null);
       setRefreshToken((prev) => prev + 1);
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message ?? "Không thể đóng quỹ lúc này.", { variant: "error" });
+      enqueueSnackbar(error?.response?.data?.message ?? t("donation:error_close_fund"), { variant: "error" });
     } finally {
       setIsClosingFund(false);
     }
   };
 
   return (
-    <Page title="Quyên góp" meta={<meta name="description" content="Trang quyên góp hiện đại cho cộng đồng cựu sinh viên." />}>
+    <Page title={t("donation:title")} meta={<meta name="description" content={t("donation:meta_description")} />}>
       <Container maxWidth={isAdmin ? "xl" : "lg"} sx={{ pt: { xs: 2, sm: 3, md: 4 }, pb: 6, px: { xs: 2, sm: 3, lg: 6 } }}>
         <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 } }}>
           {isAdmin && (
             <Stack spacing={2} sx={{ width: { xs: "100%", md: 260 }, flexShrink: 0 }}>
-              <Sidebar items={DONATION_SIDEBAR_ITEMS} useRouting={false} value="list" onChange={(itemId) => { if (itemId === "create") navigate("/post/donation"); }} />
+              <Sidebar items={donationSidebarItems} useRouting={false} value="list" onChange={(itemId) => { if (itemId === "create") navigate("/post/donation"); }} />
             </Stack>
           )}
 
@@ -194,23 +196,23 @@ export default function DonationPage() {
             <Stack spacing={2}>
               <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
                 <Typography variant="h1" fontWeight={800} color="primary.main" sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" } }}>
-                  QUYÊN GÓP
+                  {t("donation:title").toUpperCase()}
                 </Typography>
 
                 {isAdmin && (
                   <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
                     <Button variant="contained" onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
-                      Mở quỹ quyên góp
+                      {t("donation:create_fund")}
                     </Button>
                     <Button variant="outlined" color="primary" onClick={() => navigate("/admin/fundraising")} sx={{ textTransform: "none", fontWeight: 700 }}>
-                      Quản lý quyên góp
+                      {t("donation:manage_funds")}
                     </Button>
                   </Stack>
                 )}
               </Box>
 
               <Typography color="text.secondary">
-                Chung tay giúp đỡ cộng đồng, đồng hành cùng những hoàn cảnh đặc biệt và lan tỏa tinh thần sẻ chia của cựu sinh viên qua từng chiến dịch ý nghĩa.
+                {t("donation:page_description")}
               </Typography>
 
               {isAdmin && (
@@ -218,7 +220,7 @@ export default function DonationPage() {
               )}
 
               <DynamicFilterBar config={donationFilters} value={filters} onChange={handleFiltersChange} />
-              <SearchBar value={search} onChange={handleSearchChange} placeholder="Tìm kiếm chiến dịch quyên góp..." />
+              <SearchBar value={search} onChange={handleSearchChange} placeholder={t("donation:search_placeholder")} />
             </Stack>
 
             {errorMessage && (
@@ -229,7 +231,7 @@ export default function DonationPage() {
 
             {!isLoading && !errorMessage && !featuredCampaign && campaigns.length === 0 && (
               <Box sx={{ mb: 3, p: 2.2, borderRadius: 2, border: "1px solid #dbe6f8", backgroundColor: "#f8fbff" }}>
-                <Typography sx={{ color: "#43608e", fontWeight: 600 }}>Không có quỹ nào phù hợp với bộ lọc hiện tại.</Typography>
+                <Typography sx={{ color: "#43608e", fontWeight: 600 }}>{t("donation:no_funds_filtered")}</Typography>
               </Box>
             )}
 
@@ -248,7 +250,7 @@ export default function DonationPage() {
             {campaigns.length > 0 && (
               <Box>
                 <Typography variant="h4" fontWeight={700} mb={3}>
-                  Các quỹ đang mở
+                  {t("donation:open_funds")}
                 </Typography>
 
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 4 }}>

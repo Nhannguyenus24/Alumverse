@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -38,11 +39,6 @@ import { chatApi } from '../../utils/api';
 
 const MAX_GROUP_SIZE = 10;
 
-const ROLE_LABELS = {
-  OWNER: 'Trưởng nhóm',
-  MEMBER: 'Thành viên',
-};
-
 function formatJoinedAt(isoString) {
   if (!isoString) return '';
   const date = new Date(isoString);
@@ -54,6 +50,7 @@ function formatJoinedAt(isoString) {
 }
 
 function ConfirmDialog({ open, title, description, confirmLabel, confirmColor = 'primary', onConfirm, onCancel, loading }) {
+  const { t } = useTranslation(['common']);
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth>
       <DialogTitle>{title}</DialogTitle>
@@ -62,7 +59,7 @@ function ConfirmDialog({ open, title, description, confirmLabel, confirmColor = 
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel} disabled={loading}>
-          Hủy
+          {t('common:cancel')}
         </Button>
         <Button onClick={onConfirm} color={confirmColor} variant="contained" disabled={loading} startIcon={loading ? <CircularProgress size={14} /> : null}>
           {confirmLabel}
@@ -73,6 +70,7 @@ function ConfirmDialog({ open, title, description, confirmLabel, confirmColor = 
 }
 
 function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, onLeaveSuccess }) {
+  const { t } = useTranslation(['network', 'common']);
   const queryClient = useQueryClient();
   const [kickTarget, setKickTarget] = useState(null);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
@@ -168,7 +166,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
           >
             <Box sx={{ minWidth: 0, pr: 1 }}>
               <Typography variant="subtitle1" fontWeight={700} noWrap>
-                Thành viên
+                {t('network:group_members_title')}
                 {totalItem > 0 ? ` (${totalItem})` : ''}
               </Typography>
               {groupName ? (
@@ -177,7 +175,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                 </Typography>
               ) : null}
             </Box>
-            <IconButton size="small" onClick={onClose} aria-label="Đóng">
+            <IconButton size="small" onClick={onClose} aria-label={t('network:close_aria')}>
               <CloseIcon />
             </IconButton>
           </Box>
@@ -197,14 +195,14 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
 
             {!isPending && !isError && members.length === 0 ? (
               <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-                Chưa có thành viên nào.
+                {t('network:no_members_yet')}
               </Typography>
             ) : null}
 
             {!isPending && !isError && members.length > 0 ? (
               <List disablePadding>
                 {members.map((member) => {
-                  const roleLabel = ROLE_LABELS[member.role] ?? member.role ?? 'Thành viên';
+                  const roleLabel = member.role === 'OWNER' ? t('network:role_owner') : member.role === 'MEMBER' ? t('network:role_member') : (member.role ?? t('network:role_member'));
                   const displayName = member.fullName?.trim() || `User #${member.memberId}`;
                   const isSelf = member.memberId === currentUserId;
                   const canKick = isOwner && !isSelf && member.role !== 'OWNER';
@@ -230,7 +228,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                             {displayName}
                             {isSelf ? (
                               <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.75 }}>
-                                (Bạn)
+                                {t('network:you_label')}
                               </Typography>
                             ) : null}
                           </Typography>
@@ -252,11 +250,11 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                         }
                       />
                       {canKick ? (
-                        <Tooltip title="Xóa khỏi nhóm">
+                        <Tooltip title={t('network:remove_from_group_tooltip')}>
                           <IconButton
                             size="small"
                             color="primary"
-                            aria-label={`Xóa ${displayName}`}
+                            aria-label={`${t('network:kick_confirm_label')} ${displayName}`}
                             onClick={() => setKickTarget(member)}
                             sx={{ flexShrink: 0 }}
                           >
@@ -284,7 +282,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                     onClick={openRenameDialog}
                     disabled={renameMutation.isPending}
                   >
-                    Đổi tên nhóm
+                    {t('network:rename_group')}
                   </Button>
                 ) : null}
                 {isOwner && totalItem < MAX_GROUP_SIZE ? (
@@ -295,7 +293,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                     startIcon={<PersonAddIcon />}
                     onClick={() => setAddMemberDialogOpen(true)}
                   >
-                    Thêm thành viên
+                    {t('network:add_member')}
                   </Button>
                 ) : null}
                 <Button
@@ -306,7 +304,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
                   onClick={() => setLeaveDialogOpen(true)}
                   disabled={leaveMutation.isPending}
                 >
-                  Rời khỏi nhóm
+                  {t('network:leave_group')}
                 </Button>
               </Box>
             </>
@@ -316,9 +314,9 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
 
       <ConfirmDialog
         open={Boolean(kickTarget)}
-        title="Xóa thành viên"
-        description={`Bạn có chắc muốn xóa "${kickTarget?.fullName?.trim() || `User #${kickTarget?.memberId}`}" khỏi nhóm không?`}
-        confirmLabel="Xóa"
+        title={t('network:kick_member_title')}
+        description={t('network:kick_member_confirm', { name: kickTarget?.fullName?.trim() || `User #${kickTarget?.memberId}` })}
+        confirmLabel={t('network:kick_confirm_label')}
         onConfirm={handleKickConfirm}
         onCancel={() => setKickTarget(null)}
         loading={removeMutation.isPending}
@@ -326,26 +324,26 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
 
       <ConfirmDialog
         open={leaveDialogOpen}
-        title="Rời khỏi nhóm"
+        title={t('network:leave_group_title')}
         description={
           isOwner
-            ? 'Bạn là trưởng nhóm. Khi rời, quyền trưởng nhóm sẽ được chuyển cho thành viên tham gia lâu nhất. Bạn có chắc muốn rời không?'
-            : 'Bạn có chắc muốn rời khỏi nhóm không?'
+            ? t('network:leave_group_confirm_owner')
+            : t('network:leave_group_confirm_member')
         }
-        confirmLabel="Rời nhóm"
+        confirmLabel={t('network:leave_confirm_label')}
         onConfirm={handleLeaveConfirm}
         onCancel={() => setLeaveDialogOpen(false)}
         loading={leaveMutation.isPending}
       />
 
       <Dialog open={renameDialogOpen} onClose={() => setRenameDialogOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Đổi tên nhóm</DialogTitle>
+        <DialogTitle>{t('network:rename_group')}</DialogTitle>
         <DialogContent>
           <TextField
             autoFocus
             fullWidth
             margin="dense"
-            label="Tên nhóm"
+            label={t('network:group_name_label')}
             value={renameValue}
             onChange={(e) => setRenameValue(e.target.value)}
             inputProps={{ maxLength: 100 }}
@@ -360,7 +358,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRenameDialogOpen(false)} disabled={renameMutation.isPending}>
-            Hủy
+            {t('common:cancel')}
           </Button>
           <Button
             onClick={handleRenameConfirm}
@@ -368,7 +366,7 @@ function GroupMembersDrawer({ open, onClose, groupId, groupName, currentUserId, 
             disabled={renameMutation.isPending || !renameValue.trim()}
             startIcon={renameMutation.isPending ? <CircularProgress size={14} /> : null}
           >
-            Lưu
+            {t('common:save')}
           </Button>
         </DialogActions>
       </Dialog>

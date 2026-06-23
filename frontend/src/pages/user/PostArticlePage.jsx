@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
@@ -9,6 +10,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const PostArticlePage = () => {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
   const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
@@ -20,7 +22,7 @@ const PostArticlePage = () => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
-      showError('Vui lòng nhập tiêu đề và nội dung');
+      showError(t('error_title_content_required'));
       return;
     }
     try {
@@ -33,16 +35,16 @@ const PostArticlePage = () => {
       };
 
       const result = await createNews(payload);
-      showSuccess('Bài viết đã được đăng thành công!');
+      showSuccess(t('success_news'));
       navigate(`/article/news/${result.id}`);
     } catch (err) {
-      showError(err.response?.data?.message ?? 'Đăng bài thất bại');
+      showError(err.response?.data?.message ?? t('error_post_failed'));
     }
   };
 
   return (
     <PostArticleShell
-      pageTitle="Đăng bài tin tức"
+      pageTitle={t('page_title_news')}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
       onCancel={() => navigate(-1)}
@@ -51,7 +53,7 @@ const PostArticlePage = () => {
     >
       <PostArticleForm
         channel="news"
-        channelLabel="Tin tức"
+        channelLabel={t('channel_news')}
         title={title}
         setTitle={setTitle}
         content={content}

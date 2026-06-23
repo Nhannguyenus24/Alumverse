@@ -1,10 +1,14 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Container, Stack } from '@mui/material';
 
 import Page from '../Page';
 import Sidebar from '../Sidebar';
-import { NETWORK_SIDEBAR_ITEMS } from '../../pages/network/networkSidebarConfig';
+import { getNetworkSidebarItems } from '../../pages/network/networkSidebarConfig';
 
-const NetworkSectionLayout = ({ title, children }) => (
+const NetworkSectionLayout = ({ title, children }) => {
+  const { t } = useTranslation('network');
+  const sidebarItems = getNetworkSidebarItems(t);
+  return (
   <Page title={title}>
     <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
       <Container
@@ -22,7 +26,7 @@ const NetworkSectionLayout = ({ title, children }) => (
           }}
         >
           <Stack sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
-            <Sidebar items={NETWORK_SIDEBAR_ITEMS} />
+            <Sidebar items={sidebarItems} />
           </Stack>
 
           <Stack
@@ -40,6 +44,7 @@ const NetworkSectionLayout = ({ title, children }) => (
       </Container>
     </Container>
   </Page>
-);
+  );
+};
 
 export default NetworkSectionLayout;

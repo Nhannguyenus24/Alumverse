@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,22 +23,28 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
   final _loadingIds = <int>{};
 
   Future<void> _respond(int id, String status, String name) async {
-    final action = status == 'ACCEPTED' ? 'Chấp nhận' : 'Từ chối';
+    final isAccepted = status == 'ACCEPTED';
+    final title = isAccepted
+        ? 'network.accept_request_title'.tr()
+        : 'network.reject_request_title'.tr();
+    final content = isAccepted
+        ? 'network.confirm_accept_request'.tr(namedArgs: {'name': name})
+        : 'network.confirm_reject_request'.tr(namedArgs: {'name': name});
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('$action yêu cầu'),
-        content: Text('$action yêu cầu kết nối từ $name?'),
+        title: Text(title),
+        content: Text(content),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Huỷ')),
+              child: Text('common.cancel'.tr())),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              action,
+              isAccepted ? 'network.accept'.tr() : 'network.reject'.tr(),
               style: TextStyle(
-                  color: status == 'ACCEPTED'
+                  color: isAccepted
                       ? AppColors.primary
                       : AppColors.error),
             ),
@@ -56,7 +63,10 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
       if (status == 'ACCEPTED') ref.invalidate(networkConnectionsProvider);
       if (mounted) {
         AppToast.success(
-            context, status == 'ACCEPTED' ? 'Đã chấp nhận kết nối' : 'Đã từ chối');
+            context,
+            isAccepted
+                ? 'network.accepted_toast'.tr()
+                : 'network.rejected_toast'.tr());
       }
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
@@ -73,7 +83,7 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
     return Column(
       children: [
         NetworkSearchBar(
-          hintText: 'Tìm theo tên…',
+          hintText: 'network.search_requests_hint'.tr(),
           initialValue: query.fullName,
           onSubmit: (v) => ref
               .read(networkRequestsQueryProvider.notifier)
@@ -84,7 +94,7 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
           child: Row(
             children: [
               _FilterChip(
-                label: 'Tất cả',
+                label: 'common.all'.tr(),
                 selected: query.status == null,
                 onTap: () => ref
                     .read(networkRequestsQueryProvider.notifier)
@@ -92,7 +102,7 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
               ),
               const SizedBox(width: 8),
               _FilterChip(
-                label: 'Chờ xác nhận',
+                label: 'network.pending_request'.tr(),
                 selected: query.status == 'PENDING',
                 onTap: () => ref
                     .read(networkRequestsQueryProvider.notifier)
@@ -101,7 +111,7 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
               ),
               const SizedBox(width: 8),
               _FilterChip(
-                label: 'Đã từ chối',
+                label: 'network.filter_rejected'.tr(),
                 selected: query.status == 'REJECTED',
                 onTap: () => ref
                     .read(networkRequestsQueryProvider.notifier)
@@ -130,17 +140,17 @@ class _NetworkRequestsTabState extends ConsumerState<NetworkRequestsTab> {
                   ElevatedButton(
                     onPressed: () =>
                         ref.invalidate(networkRequestsProvider),
-                    child: const Text('Thử lại'),
+                    child: Text('common.retry'.tr()),
                   ),
                 ],
               ),
             ),
             data: (result) {
               if (result.items.isEmpty) {
-                return const EmptyView(
+                return EmptyView(
                   icon: Icons.mark_email_unread_outlined,
-                  title: 'Chưa có yêu cầu kết nối',
-                  message: 'Các lời mời kết nối gửi đến sẽ xuất hiện ở đây.',
+                  title: 'network.no_requests'.tr(),
+                  message: 'network.no_requests_desc'.tr(),
                 );
               }
               return RefreshIndicator(
@@ -251,8 +261,13 @@ class _PaginationBar extends StatelessWidget {
             onPressed: page > 0 ? onPrev : null,
             icon: const Icon(Icons.chevron_left),
           ),
-          Text('Trang ${page + 1} / $totalPage',
-              style: const TextStyle(color: AppColors.textSecondary)),
+          Text(
+            'common.page_indicator'.tr(namedArgs: {
+              'current': (page + 1).toString(),
+              'total': totalPage.toString(),
+            }),
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
           IconButton(
             onPressed: page < totalPage - 1 ? onNext : null,
             icon: const Icon(Icons.chevron_right),

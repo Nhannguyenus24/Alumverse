@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Dialog,
@@ -20,6 +21,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { fileToBase64 } from '../../utils/imageUtils';
 
 const AdminOrganizationEditDialog = ({ open, onClose, organization, onConfirm }) => {
+  const { t } = useTranslation(['admin', 'common']);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -89,10 +91,10 @@ useEffect(() => {
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ p: 3, pb: 2 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>
-          {organization ? 'Chỉnh sửa tổ chức' : 'Thêm tổ chức mới'}
+          {organization ? t('admin:edit_organization') : t('admin:add_organization')}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Cập nhật thông tin cơ bản và cấu hình cho tổ chức.
+          {t('admin:edit_organization_subtitle')}
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 1 }}>
@@ -116,7 +118,7 @@ useEffect(() => {
               startIcon={<CloudUploadIcon />}
               sx={{ mt: 2, textTransform: 'none' }}
             >
-              Tải logo lên
+              {t('admin:upload_logo')}
               <input
                 type="file"
                 hidden
@@ -131,17 +133,17 @@ useEffect(() => {
               />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              Tải ảnh lên để chuyển đổi sang Base64
+              {t('admin:upload_image_base64_hint')}
             </Typography>
           </Box>
 
           <TextField
             fullWidth
-            label="Tên tổ chức"
+            label={t('admin:organization_name')}
             name="name"
             value={formData.name}
             onChange={handleChange}
-            placeholder="Ví dụ: Trường Đại học Khoa học Tự nhiên"
+            placeholder={t('admin:organization_name_placeholder')}
             variant="outlined"
           />
           <Grid container spacing={2}>
@@ -153,20 +155,20 @@ useEffect(() => {
                 value={formData.slug}
                 onChange={handleChange}
                 placeholder="hcmus"
-                helperText="Dùng cho đường dẫn URL"
+                helperText={t('admin:slug_helper_text')}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 select
                 fullWidth
-                label="Trạng thái"
+                label={t('admin:status_label')}
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
               >
-                <MenuItem value="ACTIVE">Active (Đang hoạt động)</MenuItem>
-                <MenuItem value="INACTIVE">Inactive (Tạm ngưng)</MenuItem>
+                <MenuItem value="ACTIVE">{t('common:status_active')}</MenuItem>
+                <MenuItem value="INACTIVE">{t('common:status_inactive')}</MenuItem>
               </TextField>
             </Grid>
           </Grid>
@@ -174,13 +176,13 @@ useEffect(() => {
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: 'action.hover' }}>
         <Button onClick={onClose} variant="outlined" color="secondary">
-          Huỷ
+          {t('common:cancel')}
         </Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
         >
-          {organization ? 'Lưu thay đổi' : 'Tạo tổ chức'}
+          {organization ? t('common:save_changes') : t('admin:create_organization')}
         </Button>
       </DialogActions>
     </Dialog>

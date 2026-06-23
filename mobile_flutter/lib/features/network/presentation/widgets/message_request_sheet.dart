@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -96,7 +97,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
           _sending = false;
           _sentThisSession = true;
         });
-        AppToast.success(context, 'Đã gửi lời nhắn kết nối');
+        AppToast.success(context, 'network.connection_request_sent'.tr());
       }
     } catch (e) {
       if (mounted) {
@@ -135,7 +136,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Nhắn tin cho ${widget.targetName}',
+                      'network.message_to'.tr(namedArgs: {'name': widget.targetName}),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -177,10 +178,10 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
   Widget _buildContent() {
     if (_status == null || _status!.isNull) {
       return _buildComposer(
-        banner: 'Gửi tin nhắn đầu tiên để bắt đầu kết nối.',
+        banner: 'network.send_first_message_banner'.tr(),
         enabled: !_sentThisSession,
         lockedHint: _sentThisSession
-            ? 'Đã gửi lời nhắn. Chờ đối phương phản hồi.'
+            ? 'network.message_sent_hint'.tr()
             : null,
       );
     }
@@ -189,7 +190,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
       return _buildBanner(
         icon: Icons.hourglass_top_rounded,
         color: AppColors.warning,
-        text: 'Đang chờ ${widget.targetName} phản hồi lời nhắn kết nối của bạn.',
+        text: 'network.waiting_reply_banner'.tr(namedArgs: {'name': widget.targetName}),
       );
     }
 
@@ -203,15 +204,14 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
         return _buildBanner(
           icon: Icons.lock_clock_rounded,
           color: AppColors.error,
-          text:
-              'Lời nhắn trước bị từ chối. Bạn có thể gửi lại sau $until.',
+          text: 'network.cooldown_banner'.tr(namedArgs: {'until': until}),
         );
       }
       return _buildComposer(
-        banner: 'Bạn có thể gửi thêm 1 tin nhắn kết nối.',
+        banner: 'network.resend_banner'.tr(),
         enabled: !_sentThisSession,
         lockedHint: _sentThisSession
-            ? 'Đã gửi lời nhắn. Chờ đối phương phản hồi.'
+            ? 'network.message_sent_hint'.tr()
             : null,
       );
     }
@@ -258,7 +258,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
             maxLength: 500,
             enabled: enabled,
             decoration: InputDecoration(
-              hintText: 'Nhập lời nhắn kết nối…',
+              hintText: 'network.message_hint'.tr(),
               hintStyle:
                   const TextStyle(color: AppColors.textSecondary),
               filled: true,
@@ -295,8 +295,8 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
                           strokeWidth: 2,
                           valueColor:
                               AlwaysStoppedAnimation(Colors.white)))
-                  : const Text('Gửi lời nhắn',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  : Text('network.send_message_btn'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ),
         ],
@@ -336,7 +336,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
         _buildBanner(
           icon: Icons.check_circle_outline,
           color: AppColors.success,
-          text: 'Hai bạn đã kết nối. Nhấn bên dưới để mở hộp thư.',
+          text: 'network.accepted_banner'.tr(),
         ),
         const SizedBox(height: 16),
         SizedBox(
@@ -347,7 +347,7 @@ class _MessageRequestSheetState extends ConsumerState<_MessageRequestSheet> {
               context.go(RouteNames.chat);
             },
             icon: const Icon(Icons.chat_rounded),
-            label: const Text('Mở hộp thư'),
+            label: Text('network.open_inbox'.tr()),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,

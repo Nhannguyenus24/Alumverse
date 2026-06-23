@@ -25,7 +25,7 @@ export const useJoinSession = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể tham gia buổi mentoring'
+        'Failed to join session'
       : null;
 
   return {

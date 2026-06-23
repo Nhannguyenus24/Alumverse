@@ -50,7 +50,7 @@ export const useBookSession = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể đặt lịch hẹn'
+        'Failed to book session'
       : null;
 
   return {

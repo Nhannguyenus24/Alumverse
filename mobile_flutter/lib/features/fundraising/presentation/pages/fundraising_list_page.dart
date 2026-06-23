@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -74,7 +74,7 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
     final fundsAsync = ref.watch(fundsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Đóng góp & Quỹ')),
+      appBar: AppBar(title: Text('donation.funds'.tr())),
       body: Column(
         children: [
           Padding(
@@ -87,7 +87,7 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
                     textInputAction: TextInputAction.search,
                     onSubmitted: _submitSearch,
                     decoration: InputDecoration(
-                      hintText: 'Tìm kiếm quỹ...',
+                      hintText: 'donation.search_hint'.tr(),
                       prefixIcon: const Icon(Icons.search),
                       isDense: true,
                       border: OutlineInputBorder(
@@ -102,7 +102,7 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
                   smallSize: 8,
                   child: IconButton.filledTonal(
                     onPressed: _openFilters,
-                    tooltip: 'Bộ lọc',
+                    tooltip: 'donation.filter_title'.tr(),
                     icon: const Icon(Icons.tune),
                   ),
                 ),
@@ -121,7 +121,7 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
                   children: [
                     const SizedBox(height: 80),
                     ErrorView(
-                      message: 'Không tải được danh sách quỹ',
+                      message: 'donation.load_failed'.tr(),
                       onRetry: () => ref.invalidate(fundsProvider),
                     ),
                   ],
@@ -130,13 +130,12 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
                   final funds = page.items;
                   if (funds.isEmpty) {
                     return ListView(
-                      children: const [
-                        SizedBox(height: 80),
+                      children: [
+                        const SizedBox(height: 80),
                         EmptyView(
                           icon: Icons.volunteer_activism_outlined,
-                          title: 'Không có quỹ phù hợp',
-                          message:
-                              'Thử thay đổi từ khóa hoặc bộ lọc tìm kiếm.',
+                          title: 'donation.no_fund_match'.tr(),
+                          message: 'donation.no_fund_match_desc'.tr(),
                         ),
                       ],
                     );
@@ -171,6 +170,7 @@ class _FundraisingListPageState extends ConsumerState<FundraisingListPage> {
 }
 
 String _dateRange(FundSummary f) {
+  // DateFormat is available via easy_localization's intl re-export
   final df = DateFormat('dd/MM/yyyy');
   if (f.timeStarted == null && f.timeEnded == null) return '';
   final start = f.timeStarted != null ? df.format(f.timeStarted!) : '?';
@@ -239,7 +239,10 @@ class _FundCard extends StatelessWidget {
                       Expanded(
                         child: _IconLine(
                             icon: Icons.favorite_border,
-                            text: '${fund.donorCount} người ủng hộ'),
+                            text: 'donation.supporter_count'.tr(
+                                namedArgs: {
+                                  'count': '${fund.donorCount}'
+                                })),
                       ),
                       if (range.isNotEmpty)
                         Expanded(
@@ -300,7 +303,8 @@ class _FundProgress extends StatelessWidget {
           ],
         ),
         Text(
-          'Mục tiêu ${formatVnd(fund.targetAmount)}',
+          'donation.goal_amount'
+              .tr(namedArgs: {'amount': formatVnd(fund.targetAmount)}),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style:
@@ -311,7 +315,7 @@ class _FundProgress extends StatelessWidget {
   }
 }
 
-/// Prev / "Trang X/Y" / Next controls. Hidden when there is a single page.
+/// Prev / page indicator / Next controls. Hidden when there is a single page.
 class _Pagination extends StatelessWidget {
   const _Pagination({
     required this.currentPage,
@@ -338,7 +342,10 @@ class _Pagination extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Trang ${currentPage + 1}/$totalPage',
+            'donation.page_of'.tr(namedArgs: {
+              'current': '${currentPage + 1}',
+              'total': '$totalPage',
+            }),
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),

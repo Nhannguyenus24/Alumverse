@@ -18,7 +18,7 @@ export const useDeleteForumPost = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể xóa bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to delete post"
       : null;
 
   return { deletePost: mutateAsync, isPending, isError, errorMessage };

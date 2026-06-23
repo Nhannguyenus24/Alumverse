@@ -11,6 +11,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import WorkIcon from '@mui/icons-material/Work';
 import BusinessIcon from '@mui/icons-material/Business';
+import { useTranslation } from 'react-i18next';
 
 import ProfileLayout from '../../layouts/ProfileLayout';
 import NetworkMessageDrawer from '../../components/network/NetworkMessageDrawer';
@@ -28,6 +29,7 @@ const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 
 const PublicUserProfile = ({ userId, navigate }) => {
+  const { t } = useTranslation('profile');
   const profileQuery = usePublicProfile(userId);
   const { checkStatus } = useCheckConversationRequestStatus();
   const currentMemberId = useNetworkCurrentMemberId();
@@ -47,7 +49,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
     const targetMemberId = profile?.userId ?? userId;
     if (!targetMemberId) return;
     if (String(targetMemberId) === String(currentMemberId)) {
-      showInfo('Đây là hồ sơ của bạn, nên không thể tự nhắn tin.');
+      showInfo(t('pub_own_profile_msg'));
       return;
     }
 
@@ -60,7 +62,7 @@ const PublicUserProfile = ({ userId, navigate }) => {
       setConnectionStatus(result);
       setIsMessageDrawerOpen(true);
     } catch {
-      showError('Không thể kiểm tra trạng thái kết nối. Vui lòng thử lại.');
+      showError(t('pub_check_connection_error'));
     }
   }, [checkStatus, currentMemberId, navigate, profile?.userId, showError, showInfo, userId]);
 
@@ -80,24 +82,24 @@ const PublicUserProfile = ({ userId, navigate }) => {
   if (profileQuery.isError || !profile) {
     return (
       <Alert severity="error" sx={{ m: 4 }}>
-        Không tải được hồ sơ người dùng. Vui lòng thử lại.
+        {t('pub_load_profile_error')}
       </Alert>
     );
   }
 
   const user = {
     name: profile.fullName ?? `User #${profile.userId}`,
-    role: [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ') || 'Thành viên',
+    role: [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ') || t('member_role_default'),
     avatar: profile.avatarUrl ?? '',
     cover: profile.coverUrl || DEFAULT_COVER,
   };
 
   const hasBio = !!profile.bio?.trim();
   const personalFields = [
-    { icon: PersonIcon, label: 'Họ và tên', value: profile.fullName },
-    { icon: EmailIcon, label: 'Email', value: profile.email },
-    { icon: WorkIcon, label: 'Công việc hiện tại', value: profile.currentJobTitle },
-    { icon: BusinessIcon, label: 'Công ty', value: profile.currentCompany },
+    { icon: PersonIcon, label: t('full_name'), value: profile.fullName },
+    { icon: EmailIcon, label: t('email'), value: profile.email },
+    { icon: WorkIcon, label: t('current_job'), value: profile.currentJobTitle },
+    { icon: BusinessIcon, label: t('company'), value: profile.currentCompany },
   ];
   const academicProfile = profile.organizationMember ?? profile;
   const messagePeer = {
@@ -117,12 +119,12 @@ const PublicUserProfile = ({ userId, navigate }) => {
         onNavigate={navigate}
         mode="userView"
         onUserMessage={handleMessage}
-        userMessageLabel="Nhắn tin"
+        userMessageLabel={t('send_message')}
       >
         <Stack spacing={6}>
           <Grid container spacing={4}>
             <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
-              <ProfileSectionTitle icon={PersonIcon}>Giới thiệu</ProfileSectionTitle>
+              <ProfileSectionTitle icon={PersonIcon}>{t('intro_section')}</ProfileSectionTitle>
               <Typography
                 color={hasBio ? 'text.secondary' : 'text.disabled'}
                 sx={{
@@ -132,13 +134,13 @@ const PublicUserProfile = ({ userId, navigate }) => {
                   fontStyle: hasBio ? 'normal' : 'italic',
                 }}
               >
-                {profile.bio?.trim() || 'Người dùng này chưa cập nhật phần giới thiệu.'}
+                {profile.bio?.trim() || t('pub_no_bio')}
               </Typography>
             </Grid>
 
             <Grid size={{ xs: 12, lg: 4 }}>
               <Box sx={{ height: '100%' }}>
-                <ProfileSectionTitle icon={BusinessIcon}>Thông tin cơ bản</ProfileSectionTitle>
+                <ProfileSectionTitle icon={BusinessIcon}>{t('basic_info')}</ProfileSectionTitle>
                 <Box>
                   {personalFields.map((field) => (
                     <PersonalInfoRow

@@ -7,6 +7,7 @@ import {
   Tooltip,
   CircularProgress,
 } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { formatTimeAgoVi } from "../../utils/dateFormatter";
@@ -15,6 +16,7 @@ import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 
 const NotificationPage = () => {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation("notification");
   const [activeTab, setActiveTab] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,16 +64,16 @@ const NotificationPage = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      // Assuming marking all as read is done by iterating for now, 
-      // or if backend has an endpoint for it. 
+      // Assuming marking all as read is done by iterating for now,
+      // or if backend has an endpoint for it.
       // Current notificationApi doesn't have markAllAsRead but we can add it or just map locally for UI.
       // Based on UserController, there's no markAllAsRead, only mark individual or deleteAll.
       // We'll mark them one by one or just update UI and let user know.
       // For simplicity, let's just mark them locally for now if there's no backend endpoint.
-      
+
       const unreadNotifications = notifications.filter(n => !n.isRead);
       await Promise.all(unreadNotifications.map(n => notificationApi.markAsRead(n.id)));
-      
+
       setNotifications((prev) =>
         prev.map((notif) => ({ ...notif, isRead: true }))
       );
@@ -90,7 +92,7 @@ const NotificationPage = () => {
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
 
   return (
-    <Page title="Thông báo">
+    <Page title={t("heading")}>
       <Box sx={{ maxWidth: 800, mx: "auto", py: 3 }}>
         {/* Header */}
         <Box
@@ -104,9 +106,9 @@ const NotificationPage = () => {
           }}
         >
           <Typography variant="h2" sx={{ fontWeight: 700 }}>
-            Thông báo
+            {t("heading")}
           </Typography>
-          <Tooltip title="Cài đặt">
+          <Tooltip title={t("settings_tooltip")}>
             <IconButton sx={{ color: "text.secondary" }}>
               <SettingsIcon />
             </IconButton>
@@ -136,7 +138,7 @@ const NotificationPage = () => {
                 py: 1,
               }}
             >
-              Tất cả
+              {t("tab_all")}
             </Button>
             <Button
               variant={activeTab === 1 ? "contained" : "outlined"}
@@ -150,7 +152,7 @@ const NotificationPage = () => {
                 py: 1,
               }}
             >
-              Chưa đọc ({unreadCount})
+              {t("tab_unread_count", { count: unreadCount })}
             </Button>
           </Box>
           {unreadCount > 0 && (
@@ -164,7 +166,7 @@ const NotificationPage = () => {
                 fontSize: "1rem",
               }}
             >
-              Đánh dấu tất cả đã đọc
+              {t("mark_all_read")}
             </Button>
           )}
         </Box>
@@ -261,10 +263,10 @@ const NotificationPage = () => {
               }}
             >
               <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 600 }}>
-                Bạn đã xem hết thông báo
+                {t("all_caught_up")}
               </Typography>
               <Typography variant="body2" sx={{ color: "text.secondary", maxWidth: 400 }}>
-                Khi có sự kiện hoặc tương tác mới, chúng sẽ xuất hiện ở đây.
+                {t("all_caught_up_desc")}
               </Typography>
             </Box>
           )}

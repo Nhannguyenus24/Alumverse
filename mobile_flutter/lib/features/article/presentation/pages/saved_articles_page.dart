@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -24,21 +25,21 @@ class SavedArticlesPage extends ConsumerWidget {
     final async = ref.watch(savedArticlesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bài viết đã lưu')),
+      appBar: AppBar(title: Text('article.saved'.tr())),
       body: async.when(
         loading: () => ListView(
           children: List.generate(5, (_) => const SkeletonTile()),
         ),
         error: (_, __) => ErrorView(
-          message: 'Không tải được bài viết đã lưu',
+          message: 'article.saved_load_failed'.tr(),
           onRetry: () => ref.invalidate(savedArticlesProvider),
         ),
         data: (items) {
           if (items.isEmpty) {
-            return const EmptyView(
+            return EmptyView(
               icon: Icons.favorite_border_rounded,
-              title: 'Chưa có bài viết đã lưu',
-              message: 'Nhấn biểu tượng quan tâm trên một bài viết để xem lại ở đây.',
+              title: 'article.no_saved'.tr(),
+              message: 'article.no_saved_desc'.tr(),
             );
           }
           return RefreshIndicator(
@@ -75,7 +76,8 @@ class _SavedCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final articleAsync = ref.watch(newsDetailProvider(item.itemId));
     final article = articleAsync.valueOrNull;
-    final title = article?.title ?? 'Bài viết #${item.itemId}';
+    final title = article?.title ??
+        'article.article_id'.tr(namedArgs: {'id': item.itemId.toString()});
     final thumb = resolveImageUrl(article?.thumbnailUrl);
 
     return InkWell(
@@ -99,8 +101,7 @@ class _SavedCard extends ConsumerWidget {
                       fit: BoxFit.cover,
                       placeholder: (_, __) =>
                           Container(color: AppColors.divider),
-                      errorWidget: (_, __, ___) =>
-                          _placeholder(),
+                      errorWidget: (_, __, ___) => _placeholder(),
                     )
                   : _placeholder(),
             ),
@@ -134,10 +135,9 @@ class _SavedCard extends ConsumerWidget {
               ),
             ),
             IconButton(
-              tooltip: 'Bỏ quan tâm',
+              tooltip: 'article.unsave'.tr(),
               onPressed: () => _unsave(ref),
-              icon: const Icon(Icons.favorite,
-                  color: AppColors.error),
+              icon: const Icon(Icons.favorite, color: AppColors.error),
             ),
           ],
         ),

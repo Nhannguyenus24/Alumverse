@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,12 +39,12 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hồ sơ cố vấn'),
+        title: Text('mentorship.mentor_profile'.tr()),
         bottom: TabBar(
           controller: _tabCtrl,
-          tabs: const [
-            Tab(text: 'Thông tin'),
-            Tab(text: 'Đánh giá'),
+          tabs: [
+            Tab(text: 'mentorship.tab_info'.tr()),
+            Tab(text: 'mentorship.feedback'.tr()),
           ],
         ),
       ),
@@ -53,11 +54,11 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Không tải được hồ sơ'),
+              Text('mentorship.profile_load_failed'.tr()),
               TextButton(
                 onPressed: () =>
                     ref.invalidate(mentorProfileProvider(widget.memberId)),
-                child: const Text('Thử lại'),
+                child: Text('common.retry'.tr()),
               ),
             ],
           ),
@@ -115,9 +116,14 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                         const Icon(Icons.star,
                             color: AppColors.secondary, size: 17),
                         const SizedBox(width: 4),
-                        Text('$rating · ${m.totalSessions} buổi',
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 13)),
+                        Text(
+                          'mentorship.rating_sessions'.tr(namedArgs: {
+                            'rating': rating,
+                            'count': m.totalSessions.toString(),
+                          }),
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -127,7 +133,7 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                         onPressed: () => context.push(
                             '${RouteNames.mentorship}/mentors/${widget.memberId}/book'),
                         icon: const Icon(Icons.calendar_month, size: 18),
-                        label: const Text('Đặt lịch hẹn'),
+                        label: Text('mentorship.book_appointment'.tr()),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: AppColors.primary,
@@ -148,7 +154,7 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                       padding: const EdgeInsets.all(16),
                       children: [
                         if (m.bio != null && m.bio!.isNotEmpty) ...[
-                          const _SectionLabel('Giới thiệu'),
+                          _SectionLabel('mentorship.bio'.tr()),
                           const SizedBox(height: 6),
                           Text(m.bio!,
                               style: const TextStyle(
@@ -156,7 +162,7 @@ class _MentorProfilePageState extends ConsumerState<MentorProfilePage>
                           const SizedBox(height: 20),
                         ],
                         if (m.expertiseTopics.isNotEmpty) ...[
-                          const _SectionLabel('Lĩnh vực chuyên môn'),
+                          _SectionLabel('mentorship.expertise'.tr()),
                           const SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
@@ -215,8 +221,8 @@ class _FeedbackTab extends ConsumerWidget {
                   const Icon(Icons.lock_outline,
                       size: 40, color: AppColors.textSecondary),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Bạn cần xác minh học vấn để xem đánh giá.',
+                  Text(
+                    'mentorship.verify_required_feedback'.tr(),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
@@ -224,7 +230,7 @@ class _FeedbackTab extends ConsumerWidget {
                     onPressed: () =>
                         context.push(RouteNames.organizationRegistration),
                     icon: const Icon(Icons.verified_user_outlined, size: 18),
-                    label: const Text('Xác minh học vấn'),
+                    label: Text('mentorship.verify_academic'.tr()),
                   ),
                 ],
               ),
@@ -235,11 +241,11 @@ class _FeedbackTab extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Không tải được đánh giá'),
+              Text('mentorship.feedbacks_load_failed'.tr()),
               TextButton(
                 onPressed: () =>
                     ref.invalidate(mentorFeedbacksProvider(memberId)),
-                child: const Text('Thử lại'),
+                child: Text('common.retry'.tr()),
               ),
             ],
           ),
@@ -247,15 +253,15 @@ class _FeedbackTab extends ConsumerWidget {
       },
       data: (feedbacks) {
         if (feedbacks.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.rate_review_outlined,
+                const Icon(Icons.rate_review_outlined,
                     size: 48, color: AppColors.textSecondary),
-                SizedBox(height: 12),
-                Text('Chưa có đánh giá nào',
-                    style: TextStyle(color: AppColors.textSecondary)),
+                const SizedBox(height: 12),
+                Text('mentorship.no_feedbacks'.tr(),
+                    style: const TextStyle(color: AppColors.textSecondary)),
               ],
             ),
           );

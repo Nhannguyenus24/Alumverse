@@ -18,7 +18,7 @@ export const usePublishedLearning = (page = 0, limit = 10) => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách học tập"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load learning resources"
       : null;
 
   return {

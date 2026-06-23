@@ -18,7 +18,7 @@ export const useCreateEvent = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo sự kiện"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create event"
       : null;
 
   return { createEvent: mutateAsync, isPending, isError, errorMessage };

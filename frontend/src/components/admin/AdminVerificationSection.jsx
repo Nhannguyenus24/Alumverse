@@ -4,6 +4,7 @@ import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
 import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import { useTranslation } from 'react-i18next';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -14,52 +15,53 @@ const metricRowSx = {
 };
 
 const AdminVerificationSection = () => {
+  const { t } = useTranslation('admin');
   const { stats } = useAdminVerificationStats();
 
   const alumniStatusData = [
-    { name: 'Chờ duyệt', count: Number(stats.pendingAlumniRequests) },
-    { name: 'Đã duyệt', count: Number(stats.approvedAlumniRequests) },
-    { name: 'Từ chối', count: Number(stats.rejectedAlumniRequests) },
-    { name: 'Cần chỉnh sửa', count: Number(stats.needsRevisionRequests) },
+    { name: t('admin:verification_pending'), count: Number(stats.pendingAlumniRequests) },
+    { name: t('admin:verification_approved'), count: Number(stats.approvedAlumniRequests) },
+    { name: t('admin:verification_rejected'), count: Number(stats.rejectedAlumniRequests) },
+    { name: t('admin:verification_needs_revision'), count: Number(stats.needsRevisionRequests) },
   ];
 
   const peerStatusData = [
-    { name: 'Chờ duyệt', count: Number(stats.pendingPeerVerifications) },
-    { name: 'Đã duyệt', count: Number(stats.approvedPeerVerifications) },
+    { name: t('admin:verification_pending'), count: Number(stats.pendingPeerVerifications) },
+    { name: t('admin:verification_approved'), count: Number(stats.approvedPeerVerifications) },
   ];
 
   return (
     <AdminSectionPanel
-      title="Xác minh tài khoản"
-      subtitle="Trạng thái yêu cầu xác minh alumni và xác minh đồng nghiệp."
+      title={t('admin:verification_section_title')}
+      subtitle={t('admin:verification_section_subtitle')}
     >
       <Stack spacing={3}>
         <Stack spacing={2}>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
             <AdminDashboardMetricTile
-              label="Tổng yêu cầu xác minh"
+              label={t('admin:verification_total_requests')}
               value={Number(stats.totalAlumniVerificationRequests).toLocaleString()}
               icon={<VerifiedUserOutlinedIcon />}
             />
             <AdminDashboardMetricTile
-              label="Lượt xác minh đồng nghiệp"
+              label={t('admin:verification_peer_total')}
               value={Number(stats.totalPeerVerifications).toLocaleString()}
               icon={<GroupsOutlinedIcon />}
             />
           </Stack>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
             <AdminDashboardMetricTile
-              label="Chờ duyệt"
+              label={t('admin:verification_pending')}
               value={Number(stats.pendingAlumniRequests).toLocaleString()}
               icon={<PendingActionsOutlinedIcon />}
             />
             <AdminDashboardMetricTile
-              label="Đã duyệt"
+              label={t('admin:verification_approved')}
               value={Number(stats.approvedAlumniRequests).toLocaleString()}
               icon={<TaskAltOutlinedIcon />}
             />
             <AdminDashboardMetricTile
-              label="Bị từ chối"
+              label={t('admin:verification_rejected')}
               value={Number(stats.rejectedAlumniRequests).toLocaleString()}
               icon={<BlockOutlinedIcon />}
             />
@@ -70,7 +72,7 @@ const AdminVerificationSection = () => {
           <Box flex={1} minWidth={0}>
             <Chart
               type="bar"
-              title="Yêu cầu xác minh alumni theo trạng thái"
+              title={t('admin:chart_alumni_verification_by_status')}
               data={alumniStatusData}
               dataKey="count"
               xAxisKey="name"
@@ -80,7 +82,7 @@ const AdminVerificationSection = () => {
           <Box flex={1} minWidth={0}>
             <Chart
               type="bar"
-              title="Xác minh đồng nghiệp theo trạng thái"
+              title={t('admin:chart_peer_verification_by_status')}
               data={peerStatusData}
               dataKey="count"
               xAxisKey="name"

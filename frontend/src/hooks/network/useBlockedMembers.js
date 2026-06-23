@@ -40,7 +40,7 @@ export function useBlockedMembers({ appliedFullName, page, pageSize, enabled = t
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải danh sách người đã chặn.'
+        'Failed to load blocked members'
       : null;
 
   return {

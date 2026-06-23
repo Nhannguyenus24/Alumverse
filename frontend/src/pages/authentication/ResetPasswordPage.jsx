@@ -1,19 +1,24 @@
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { changePasswordSchema } from '../../utils/regexUtils';
+import { getChangePasswordSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
 const ResetPasswordPage = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
   const { resetPassword, isSubmitting: loading, setError } = useAuth();
+
+  const changePasswordSchema = useMemo(() => getChangePasswordSchema(t), [t]);
 
   const {
     register,
@@ -32,7 +37,7 @@ const ResetPasswordPage = () => {
       confirmNewPassword: data.confirmNewPassword,
     });
     if (result?.ok) {
-      enqueueSnackbar(result.message ?? 'Đổi mật khẩu thành công.', { variant: 'success' });
+      enqueueSnackbar(result.message ?? t('auth:reset_password_success'), { variant: 'success' });
       navigate('/dashboard', { replace: true });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
@@ -41,8 +46,8 @@ const ResetPasswordPage = () => {
 
   return (
     <Page
-      title="Đổi mật khẩu"
-      meta={<meta name="description" content="Đặt lại mật khẩu" />}
+      title={t('auth:reset_password_heading')}
+      meta={<meta name="description" content={t('auth:reset_password_meta')} />}
     >
       <Box
         component="form"
@@ -62,11 +67,11 @@ const ResetPasswordPage = () => {
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
-          Đổi mật khẩu
+          {t('auth:reset_password_heading')}
         </Typography>
 
         <Input
-          label="Mật khẩu hiện tại"
+          label={t('auth:current_password_label')}
           placeholder="••••••••"
           type="password"
           error={!!errors.oldPassword}
@@ -74,7 +79,7 @@ const ResetPasswordPage = () => {
           {...register('oldPassword')}
         />
         <Input
-          label="Mật khẩu mới"
+          label={t('auth:new_password_label')}
           placeholder="••••••••"
           type="password"
           error={!!errors.newPassword}
@@ -82,7 +87,7 @@ const ResetPasswordPage = () => {
           {...register('newPassword')}
         />
         <Input
-          label="Nhập lại mật khẩu mới"
+          label={t('auth:confirm_new_password_label')}
           placeholder="••••••••"
           type="password"
           error={!!errors.confirmNewPassword}
@@ -91,7 +96,7 @@ const ResetPasswordPage = () => {
         />
 
         <Typography variant="body2" color="text.secondary" textAlign="center">
-          Nếu bạn không muốn đổi mật khẩu, bỏ qua trang này.
+          {t('auth:reset_password_skip_hint')}
         </Typography>
 
         <Button
@@ -103,7 +108,7 @@ const ResetPasswordPage = () => {
           disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang xử lý...' : 'Đổi mật khẩu'}
+          {loading ? t('auth:processing') : t('auth:reset_password_heading')}
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
@@ -115,7 +120,7 @@ const ResetPasswordPage = () => {
             fontWeight={600}
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
-            Quay lại trang chủ
+            {t('auth:back_to_home')}
           </Typography>
         </Typography>
       </Box>

@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
@@ -41,7 +41,7 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     if (text.isEmpty) return;
     final memberId = _memberId;
     if (memberId == null) {
-      AppToast.info(context, 'Vui lòng đăng nhập để bình luận.');
+      AppToast.info(context, 'forum.login_to_comment'.tr());
       return;
     }
     setState(() => _sending = true);
@@ -56,7 +56,7 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
       if (mounted) FocusScope.of(context).unfocus();
       ref.invalidate(forumPostsProvider(widget.topicId));
     } catch (e) {
-      if (mounted) AppToast.error(context, 'Gửi bình luận thất bại.');
+      if (mounted) AppToast.error(context, 'forum.send_comment_failed'.tr());
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -83,14 +83,15 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
     final async = ref.watch(forumPostsProvider(widget.topicId));
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.topicTitle ?? 'Bài thảo luận')),
+      appBar: AppBar(
+          title: Text(widget.topicTitle ?? 'forum.discussion'.tr())),
       body: Column(
         children: [
           Expanded(
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => ErrorView(
-                message: 'Không tải được bình luận',
+                message: 'forum.load_comments_failed'.tr(),
                 onRetry: () =>
                     ref.invalidate(forumPostsProvider(widget.topicId)),
               ),
@@ -101,11 +102,11 @@ class _ForumThreadPageState extends ConsumerState<ForumThreadPage> {
                 },
                 child: posts.isEmpty
                     ? ListView(
-                        children: const [
-                          SizedBox(height: 120),
+                        children: [
+                          const SizedBox(height: 120),
                           Center(
-                            child: Text('Chưa có bình luận nào',
-                                style: TextStyle(
+                            child: Text('forum.no_comments'.tr(),
+                                style: const TextStyle(
                                     color: AppColors.textSecondary)),
                           ),
                         ],
@@ -147,7 +148,7 @@ class _PostCard extends StatelessWidget {
         : '';
     final name = (post.authorName?.isNotEmpty ?? false)
         ? post.authorName!
-        : 'Thành viên';
+        : 'forum.member'.tr();
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -246,10 +247,10 @@ class _Composer extends StatelessWidget {
                 minLines: 1,
                 maxLines: 4,
                 textInputAction: TextInputAction.newline,
-                decoration: const InputDecoration(
-                  hintText: 'Viết bình luận...',
+                decoration: InputDecoration(
+                  hintText: 'forum.write_comment'.tr(),
                   isDense: true,
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ),

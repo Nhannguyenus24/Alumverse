@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
@@ -33,6 +34,7 @@ const toIsoDateTime = (value) => {
 
 const PostEventPage = () => {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('event');
   const { showSuccess, showError } = useNotification();
   const { createEvent, isPending } = useCreateEvent();
   const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
@@ -60,11 +62,11 @@ const PostEventPage = () => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
-      showError('Vui lòng nhập tiêu đề và nội dung');
+      showError(t('error_title_content_required'));
       return;
     }
     if (!eventData.startDate || !eventData.endDate) {
-      showError('Vui lòng nhập thời gian bắt đầu và kết thúc');
+      showError(t('error_time_required'));
       return;
     }
     try {
@@ -89,33 +91,32 @@ const PostEventPage = () => {
           }
         } catch (qErr) {
           showError(
-            qErr.response?.data?.message ??
-              'Sự kiện đã tạo nhưng lưu câu hỏi thất bại, vui lòng chỉnh sửa lại trong quản lý sự kiện.',
+            qErr.response?.data?.message ?? t('post_questions_failed'),
           );
         }
       }
 
-      showSuccess('Sự kiện đã được đăng thành công!');
+      showSuccess(t('post_success'));
       navigate(`/article/event/${result.id}`);
     } catch (err) {
-      showError(err.response?.data?.message ?? 'Đăng sự kiện thất bại');
+      showError(err.response?.data?.message ?? t('post_failed'));
     }
   };
 
   return (
     <PostArticleShell
-      pageTitle="Đăng sự kiện"
+      pageTitle={t('post_page_title')}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
       onCancel={() => navigate(-1)}
       onSubmit={handleSubmit}
       isPending={isPending}
-      submitLabel="Đăng sự kiện"
-      pendingLabel="Đang đăng..."
+      submitLabel={t('post_submit_label')}
+      pendingLabel={t('post_pending_label')}
     >
       <PostArticleForm
         channel="event"
-        channelLabel="Sự kiện"
+        channelLabel={t('channel_label')}
         title={title}
         setTitle={setTitle}
         content={content}

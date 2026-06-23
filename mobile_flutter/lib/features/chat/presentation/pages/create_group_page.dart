@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -64,7 +65,10 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
       setState(() => _selected.remove(conn.peerMemberId));
     } else {
       if (_selected.length >= _maxMembers) {
-        AppToast.info(context, 'Tối đa $_maxMembers thành viên (tổng 10 cả bạn)');
+        AppToast.info(
+          context,
+          'chat.max_members_toast'.tr(namedArgs: {'max': _maxMembers.toString()}),
+        );
         return;
       }
       setState(() => _selected[conn.peerMemberId] = conn);
@@ -73,7 +77,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
 
   Future<void> _create() async {
     if (_selected.length < 2) {
-      AppToast.info(context, 'Chọn ít nhất 2 người để tạo nhóm');
+      AppToast.info(context, 'chat.min_members_toast'.tr());
       return;
     }
     setState(() => _isCreating = true);
@@ -107,7 +111,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tạo nhóm chat'),
+        title: Text('chat.create_group'.tr()),
         actions: [
           TextButton(
             onPressed: canCreate ? _create : null,
@@ -117,7 +121,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Text('Tạo'),
+                : Text('chat.create'.tr()),
           ),
         ],
       ),
@@ -129,7 +133,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
             child: TextField(
               controller: _titleController,
               decoration: InputDecoration(
-                hintText: 'Tên nhóm (tùy chọn)',
+                hintText: 'chat.group_name_hint'.tr(),
                 prefixIcon: const Icon(Icons.group_outlined),
                 filled: true,
                 fillColor: AppColors.background,
@@ -151,7 +155,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                 if (v.isEmpty) _doSearch('');
               },
               decoration: InputDecoration(
-                hintText: 'Tìm kiên kết…',
+                hintText: 'chat.search_connections'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 filled: true,
@@ -166,7 +170,10 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Đã chọn ${_selected.length}/$_maxMembers',
+              'chat.selected_count'.tr(namedArgs: {
+                'count': _selected.length.toString(),
+                'max': _maxMembers.toString(),
+              }),
               style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
@@ -178,10 +185,10 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
             child: _isSearching
                 ? const Center(child: CircularProgressIndicator())
                 : _searchResults.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
-                          'Không tìm thấy kết nối',
-                          style: TextStyle(color: AppColors.textSecondary),
+                          'chat.no_connections_found'.tr(),
+                          style: const TextStyle(color: AppColors.textSecondary),
                         ),
                       )
                     : ListView.builder(

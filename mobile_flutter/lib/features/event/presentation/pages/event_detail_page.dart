@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
@@ -26,11 +26,11 @@ class EventDetailPage extends ConsumerWidget {
     final detailAsync = ref.watch(eventDetailProvider(eventId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết sự kiện')),
+      appBar: AppBar(title: Text('event.detail_title'.tr())),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => ErrorView(
-          message: 'Không tải được sự kiện',
+          message: 'event.load_failed'.tr(),
           onRetry: () => ref.invalidate(eventDetailProvider(eventId)),
         ),
         data: (event) => _DetailBody(event: event),
@@ -90,20 +90,20 @@ class _DetailBody extends ConsumerWidget {
                         ? '$start → ${df.format(event.endTime!)}'
                         : start;
                   }(),
-                  label: 'Thời gian diễn ra',
+                  label: 'event.time_label'.tr(),
                 ),
               if (event.registrationEndAt != null)
                 _InfoLine(
                   Icons.event_available_outlined,
                   df.format(event.registrationEndAt!),
-                  label: 'Hạn đăng ký',
+                  label: 'event.registration_deadline'.tr(),
                 ),
               if (event.location != null && event.location!.isNotEmpty)
                 _InfoLine(Icons.place_outlined, event.location!,
-                    label: 'Địa điểm'),
+                    label: 'event.location'.tr()),
               if (event.organizer != null && event.organizer!.isNotEmpty)
                 _InfoLine(Icons.groups_outlined, event.organizer!,
-                    label: 'Đơn vị tổ chức'),
+                    label: 'event.organizer_label'.tr()),
 
               // Stats (live from interaction provider, fallback to summary).
               const SizedBox(height: 8),
@@ -178,7 +178,7 @@ class _ActionsState extends ConsumerState<_Actions> {
     } catch (_) {
       // The notifier swallows benign state-mismatch errors (409/404) and
       // resyncs; only unexpected failures land here.
-      if (mounted) AppToast.error(context, 'Thao tác thất bại.');
+      if (mounted) AppToast.error(context, 'common.error'.tr());
     } finally {
       if (mounted) setState(() => _busyInterest = false);
     }
@@ -199,16 +199,16 @@ class _ActionsState extends ConsumerState<_Actions> {
         final ok = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Tham gia sự kiện'),
+            title: Text('event.join_event_title'.tr()),
             content: Text(
-                'Bạn có chắc chắn muốn tham gia "${widget.eventTitle}" không?'),
+                'event.join_confirm_message'.tr(namedArgs: {'title': widget.eventTitle})),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Hủy')),
+                  child: Text('common.cancel'.tr())),
               ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Tham gia')),
+                  child: Text('event.join'.tr())),
             ],
           ),
         );
@@ -230,10 +230,10 @@ class _ActionsState extends ConsumerState<_Actions> {
       }
 
       await _notifier.register(answers);
-      if (mounted) AppToast.success(context, 'Đăng ký tham gia thành công.');
+      if (mounted) AppToast.success(context, 'event.register_success'.tr());
     } catch (e) {
       if (mounted) {
-        AppToast.error(context, 'Đăng ký thất bại (có thể bạn đã đăng ký).');
+        AppToast.error(context, 'event.register_failed'.tr());
       }
     } finally {
       if (mounted) setState(() => _busyRegister = false);
@@ -247,9 +247,9 @@ class _ActionsState extends ConsumerState<_Actions> {
     setState(() => _busyRegister = true);
     try {
       await _notifier.cancelRegistration(reason);
-      if (mounted) AppToast.success(context, 'Đã hủy tham gia.');
+      if (mounted) AppToast.success(context, 'event.cancel_success'.tr());
     } catch (e) {
-      if (mounted) AppToast.error(context, 'Hủy tham gia thất bại.');
+      if (mounted) AppToast.error(context, 'event.cancel_failed'.tr());
     } finally {
       if (mounted) setState(() => _busyRegister = false);
     }
@@ -263,14 +263,14 @@ class _ActionsState extends ConsumerState<_Actions> {
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Hủy tham gia'),
+        title: Text('event.cancel_join'.tr()),
         content: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Vui lòng cho biết lý do bạn hủy tham gia sự kiện này.'),
+              Text('event.cancel_reason_prompt'.tr()),
               const SizedBox(height: 12),
               TextFormField(
                 controller: controller,
@@ -278,11 +278,11 @@ class _ActionsState extends ConsumerState<_Actions> {
                 minLines: 2,
                 maxLines: 4,
                 validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Vui lòng nhập lý do'
+                    ? 'event.cancel_reason_required'.tr()
                     : null,
-                decoration: const InputDecoration(
-                  hintText: 'Nhập lý do hủy...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: 'event.cancel_reason_hint'.tr(),
+                  border: const OutlineInputBorder(),
                   isDense: true,
                 ),
               ),
@@ -292,7 +292,7 @@ class _ActionsState extends ConsumerState<_Actions> {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Đóng')),
+              child: Text('common.close'.tr())),
           ElevatedButton(
             onPressed: () {
               if (formKey.currentState?.validate() ?? false) {
@@ -300,7 +300,7 @@ class _ActionsState extends ConsumerState<_Actions> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Xác nhận hủy'),
+            child: Text('event.confirm_cancel'.tr()),
           ),
         ],
       ),
@@ -319,7 +319,7 @@ class _ActionsState extends ConsumerState<_Actions> {
           child: OutlinedButton.icon(
             onPressed: _busyInterest ? null : () => _toggleInterest(interested),
             icon: Icon(interested ? Icons.notifications_active : Icons.notifications_none),
-            label: Text(interested ? 'Đã quan tâm' : 'Quan tâm'),
+            label: Text(interested ? 'event.already_interested'.tr() : 'event.interested'.tr()),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 14),
               foregroundColor:
@@ -333,7 +333,7 @@ class _ActionsState extends ConsumerState<_Actions> {
               ? OutlinedButton.icon(
                   onPressed: _busyRegister ? null : _onCancelPressed,
                   icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('Hủy tham gia'),
+                  label: Text('event.cancel_join'.tr()),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     foregroundColor: AppColors.error,
@@ -343,7 +343,7 @@ class _ActionsState extends ConsumerState<_Actions> {
               : ElevatedButton.icon(
                   onPressed: _busyRegister ? null : _onRegisterPressed,
                   icon: const Icon(Icons.event_available),
-                  label: const Text('Tham gia'),
+                  label: Text('event.join'.tr()),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -411,9 +411,9 @@ class _StatsRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         children: [
-          _stat('Quan tâm', '$interested'),
+          _stat('event.interested'.tr(), '$interested'),
           const SizedBox(width: 24),
-          _stat('Đã đăng ký',
+          _stat('event.registered'.tr(),
               capacity != null ? '$registered/$capacity' : '$registered'),
         ],
       ),

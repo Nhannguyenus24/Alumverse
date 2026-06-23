@@ -23,7 +23,7 @@ export const useAnswerToForumPost = () => {
     isError && error
       ? error.response?.data?.message ??
         error.message ??
-        "Không thể trả lời bài viết"
+        "Failed to reply to post"
       : null;
 
   return { answerToPost: mutateAsync, isPending, isError, errorMessage };

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -11,14 +12,9 @@ const _storageKey = 'fitbot_chat_history';
 const _ttl = Duration(days: 7);
 const _maxMessages = 30;
 
-const _welcomeText =
-    'Xin chào! 👋 Tôi là trợ lý ảo của HCMUS. Tôi có thể giúp bạn tìm hiểu '
-    'thêm về trường, các chương trình đào tạo, và nhiều thông tin hữu ích khác. '
-    'Có câu hỏi gì cho tôi không?';
-
 FitBotMessage _welcomeMessage() => FitBotMessage(
       id: 'welcome',
-      text: _welcomeText,
+      text: 'fitbot.greeting'.tr(),
       isBot: true,
       timestamp: DateTime.now(),
     );
@@ -85,15 +81,13 @@ class FitBotController extends StateNotifier<FitBotState> {
         _updateBot(botId, buffer.toString());
       }
       if (buffer.isEmpty) {
-        _updateBot(botId,
-            'Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này. Bạn thử hỏi cách khác nhé.');
+        _updateBot(botId, 'fitbot.no_answer'.tr());
       }
     } catch (e) {
       if (e is DioException && CancelToken.isCancel(e)) {
         // Cancelled — leave whatever was streamed so far.
       } else {
-        _updateBot(botId,
-            'Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.');
+        _updateBot(botId, 'fitbot.server_error'.tr());
       }
     } finally {
       state = state.copyWith(isTyping: false);

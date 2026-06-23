@@ -48,7 +48,7 @@ export const useSaveMentorDraft = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể lưu nháp hồ sơ'
+        'Failed to save profile draft'
       : null;
 
   return {

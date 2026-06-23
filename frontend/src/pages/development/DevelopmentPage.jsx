@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, CircularProgress, Container, Paper, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -23,45 +24,45 @@ import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning'
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 
-const SIDEBAR = [
-  { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
-  { id: '/development/mentorship', label: 'Cố vấn', icon: <SchoolIcon /> },
-  { id: '/development/academics', label: 'Cơ hội học tập', icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
+const getSidebar = (t) => [
+  { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
+  { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
+  { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
+  { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
 ];
 
-const FILTERS = [
+const getFilters = (t) => [
   {
     type: 'dropdown',
     key: 'type',
-    label: 'Chủ đề',
+    label: t('dev:filter_topic'),
     multiple: true,
-    options: ['Học bổng', 'Trao đổi', 'Nghiên cứu', 'Workshop', 'Khóa học'],
+    options: [t('dev:topic_scholarship'), t('dev:topic_exchange'), t('dev:topic_research'), 'Workshop', t('dev:topic_course')],
   },
   {
     type: 'dropdown',
     key: 'format',
-    label: 'Hình thức',
+    label: t('dev:filter_format'),
     options: ['Online', 'Offline', 'Hybrid'],
   },
   {
     type: 'dropdown',
     key: 'location',
-    label: 'Địa điểm',
+    label: t('dev:filter_location'),
     multiple: true,
-    options: ['TP.HCM', 'Trong nước', 'Nước ngoài'],
+    options: [t('dev:location_hcm'), t('dev:location_domestic'), t('dev:location_abroad')],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Hạn chót',
+    label: t('dev:filter_deadline'),
   },
   {
     type: 'dropdown',
     key: 'level',
-    label: 'Trình độ',
+    label: t('dev:filter_level'),
     multiple: true,
-    options: ['Đại học', 'Thạc sĩ', 'Tiến sĩ'],
+    options: [t('dev:level_bachelor'), t('dev:level_master'), t('dev:level_phd')],
   },
 ];
 
@@ -139,11 +140,14 @@ const PreviewSection = ({
 );
 
 const DevelopmentPage = () => {
+  const { t } = useTranslation(['dev', 'mentorship', 'common']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const sidebar = getSidebar(t);
+  const filters = getFilters(t);
 
   const {
     resources: academics,
@@ -157,7 +161,7 @@ const DevelopmentPage = () => {
     errorMessage: jobsError,
   } = usePublishedJobs(0, 3);
 
-  const [filters, setFilters] = useState({ all: true });
+  const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -183,9 +187,9 @@ const DevelopmentPage = () => {
       await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
       queryClient.invalidateQueries({ queryKey: ['publishedJobs'] });
       queryClient.invalidateQueries({ queryKey: ['publishedLearning'] });
-      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+      enqueueSnackbar(t('common:success'), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('common:error'), { variant: 'error' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -193,13 +197,13 @@ const DevelopmentPage = () => {
   };
 
   return (
-    <Page title="Phát triển">
+    <Page title={t('dev:title')}>
       <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={sidebar} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -221,7 +225,7 @@ const DevelopmentPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                   >
-                    PHÁT TRIỂN
+                    {t('dev:title').toUpperCase()}
                   </Typography>
                   {isAdmin && (
                     <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
@@ -230,36 +234,35 @@ const DevelopmentPage = () => {
                         color="primary"
                         onClick={() => navigate('/admin/mentorship')}
                       >
-                        Quản lý cố vấn
+                        {t('dev:manage_mentorship')}
                       </Button>
                       <Button
                         variant="outlined"
                         color="primary"
                         onClick={() => navigate('/admin/article')}
                       >
-                        Quản lý cơ hội
+                        {t('dev:manage_opportunities')}
                       </Button>
                     </Stack>
                   )}
                 </Box>
 
                 <Typography color="text.secondary">
-                  Hàng trăm cơ hội phát triển về nhiều lĩnh vực cho sinh viên Khoa Công nghệ Thông tin -
-                  Trường Đại học Khoa học tự nhiên, ĐHQG-HCM.
+                  {t('dev:subtitle')}
                 </Typography>
 
-                <DynamicFilterBar config={FILTERS} value={filters} onChange={setFilters} />
+                <DynamicFilterBar config={filters} value={filterValues} onChange={setFilterValues} />
 
                 <SearchBar
-                  value={filters.search}
-                  onChange={(val) => setFilters((prev) => ({ ...prev, search: val }))}
+                  value={filterValues.search}
+                  onChange={(val) => setFilterValues((prev) => ({ ...prev, search: val }))}
                 />
               </Stack>
 
               {/* MENTORSHIP SECTION */}
               <Box>
                 <Typography variant="h4" fontWeight={700} mb={1}>
-                  Cố vấn
+                  {t('mentorship:title')}
                 </Typography>
                 <Paper
                   elevation={0}
@@ -274,32 +277,30 @@ const DevelopmentPage = () => {
                 >
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="h3" mb={1}>
-                      Chương trình Cố vấn - Mentorship Program
+                      {t('dev:mentorship_program_title')}
                     </Typography>
                     <Typography variant="body1">
-                      Chương trình cố vấn hoàn toàn mới dành cho các bạn Sinh viên muốn tìm các anh chị Cựu
-                      sinh viên để hỗ trợ mình trong học tập và trong công việc. Kết nối 1:1 cùng các tiền bối
-                      trong ngành!
+                      {t('dev:mentorship_program_desc')}
                     </Typography>
                   </Box>
 
                   <Button variant="contained" onClick={() => navigate('/development/mentorship')}>
-                    Tìm cố vấn ngay
+                    {t('dev:find_mentor_now')}
                   </Button>
                 </Paper>
               </Box>
 
               {/* ACADEMICS SECTION */}
               <PreviewSection
-                title="Cơ hội học tập"
-                description="Cơ hội Cử nhân, Thạc sĩ, Tiến sĩ trong nước và ngoại quốc."
+                title={t('dev:academics')}
+                description={t('dev:academics_desc')}
                 isPending={academicsPending}
                 errorMessage={academicsError}
                 articles={academics.slice(0, 3)}
                 onOpenArticle={openArticle}
                 onSeeMore={() => navigate('/development/academics')}
-                seeMoreLabel="Xem tất cả"
-                emptyLabel="Chưa có cơ hội học tập nào."
+                seeMoreLabel={t('common:view_all')}
+                emptyLabel={t('dev:no_academics')}
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
@@ -307,15 +308,15 @@ const DevelopmentPage = () => {
 
               {/* JOBS SECTION */}
               <PreviewSection
-                title="Cơ hội việc làm"
-                description="Những việc làm từ nhiều công ty và tập đoàn hàng đầu vẫn đang chào đón các bạn!"
+                title={t('dev:jobs')}
+                description={t('dev:jobs_desc')}
                 isPending={jobsPending}
                 errorMessage={jobsError}
                 articles={jobs.slice(0, 3)}
                 onOpenArticle={openArticle}
                 onSeeMore={() => navigate('/development/jobs')}
-                seeMoreLabel="Xem tất cả"
-                emptyLabel="Chưa có cơ hội việc làm nào."
+                seeMoreLabel={t('common:view_all')}
+                emptyLabel={t('dev:no_jobs')}
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
@@ -327,8 +328,8 @@ const DevelopmentPage = () => {
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Xoá bài viết"
-        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        title={t('dev:delete_article_title')}
+        description={t('dev:delete_article_desc', { title: deleteTarget?.title ?? '' })}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         loading={deleting}

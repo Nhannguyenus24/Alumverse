@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -22,45 +23,52 @@ import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumni
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 
-const SIDEBAR = [
-  { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: 'Cựu sinh viên', icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: 'Kênh thành tựu', icon: <TrendingUpIcon /> },
+const getSidebar = (t) => [
+  { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
+  { id: '/honors/alumni', label: t('honors:sidebar_alumni'), icon: <GroupsIcon /> },
+  { id: '/honors/achievements', label: t('honors:sidebar_achievements'), icon: <TrendingUpIcon /> },
 ];
 
-const FILTERS = [
+const getFilters = (t) => [
   {
     type: 'topics',
     key: 'topics',
-    label: 'Chủ đề',
-    options: ['Bảng vàng'],
+    label: t('honors:filter_topics_label'),
+    options: [t('honors:filter_topics_option_board')],
   },
   {
     type: 'dropdown',
     key: 'type',
-    label: 'Phân loại',
+    label: t('honors:filter_type_label'),
     multiple: true,
-    options: ['Khởi nghiệp', 'Công nghệ', 'Kinh doanh', 'Nghiên cứu', 'Cộng đồng'],
+    options: [
+      t('honors:filter_type_startup'),
+      t('honors:filter_type_technology'),
+      t('honors:filter_type_business'),
+      t('honors:filter_type_research'),
+      t('honors:filter_type_community'),
+    ],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Ngày đăng',
+    label: t('honors:filter_date_label'),
   },
 ];
 
 const HonorsAlumniPage = () => {
+  const { t } = useTranslation(['honors', 'common']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const sidebar = getSidebar(t);
+  const filters = getFilters(t);
 
   const { articles } = usePublishedAlumniPosts(0, 12);
 
-  const [filters, setFilters] = useState({
-    all: true,
-  });
+  const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -85,9 +93,9 @@ const HonorsAlumniPage = () => {
     try {
       await apiClient.delete(`/admin/articles/alumni-posts/${deleteTarget.id}`);
       queryClient.invalidateQueries({ queryKey: ['publishedAlumniPosts'] });
-      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+      enqueueSnackbar(t('honors:delete_success'), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('honors:delete_failed'), { variant: 'error' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -95,17 +103,13 @@ const HonorsAlumniPage = () => {
   };
 
   return (
-    <Page title="Cựu sinh viên">
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ pb: 6 }}
-      >
+    <Page title={t('honors:alumni_page_title')}>
+      <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={sidebar} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -115,9 +119,7 @@ const HonorsAlumniPage = () => {
             </Stack>
 
             {/* MAIN CONTENT */}
-            <Stack spacing={5}
-                   sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 }}}
-            >
+            <Stack spacing={5} sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 } }}>
               <Stack gap={2}>
                 {/* HEADER */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -127,45 +129,30 @@ const HonorsAlumniPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                   >
-                    CỰU SINH VIÊN
+                    {t('honors:alumni_heading')}
                   </Typography>
 
                   {!isAdmin && isAuthenticated && (
-                    <Button
-                      variant="contained"
-                      onClick={() => navigate('/honors/request-achievements')}
-                    >
-                      Gửi đơn xét thành tựu
+                    <Button variant="contained" onClick={() => navigate('/honors/request-achievements')}>
+                      {t('honors:submit_achievement_request')}
                     </Button>
                   )}
                   {isAdmin && (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => navigate('/admin/article')}
-                    >
-                      Quản lý vinh danh
+                    <Button variant="outlined" color="primary" onClick={() => navigate('/admin/article')}>
+                      {t('honors:manage_honors')}
                     </Button>
                   )}
                 </Box>
 
                 <Typography color="text.secondary">
-                  Những cựu sinh viên tiêu biểu của Trường Đại học Khoa học tự nhiên, ĐHQG-HCM.
+                  {t('honors:alumni_description')}
                 </Typography>
 
-                {/* FILTERS */}
-                <DynamicFilterBar
-                  config={FILTERS}
-                  value={filters}
-                  onChange={setFilters}
-                />
+                <DynamicFilterBar config={filters} value={filterValues} onChange={setFilterValues} />
 
-                {/* SEARCH */}
                 <SearchBar
-                  value={filters.search}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, search: val }))
-                  }
+                  value={filterValues.search}
+                  onChange={(val) => setFilterValues((prev) => ({ ...prev, search: val }))}
                 />
               </Stack>
 
@@ -185,17 +172,13 @@ const HonorsAlumniPage = () => {
               {cards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Cựu sinh viên tiêu biểu
+                    {t('honors:section_alumni')}
                   </Typography>
 
                   <Box
                     sx={{
                       display: 'grid',
-                      gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: '1fr 1fr',
-                        md: '1fr 1fr 1fr',
-                      },
+                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                       gap: 4,
                     }}
                   >
@@ -212,7 +195,6 @@ const HonorsAlumniPage = () => {
                   </Box>
                 </Box>
               )}
-
             </Stack>
           </Box>
         </Container>
@@ -220,8 +202,8 @@ const HonorsAlumniPage = () => {
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Xoá bài viết"
-        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        title={t('honors:delete_dialog_title')}
+        description={t('honors:delete_dialog_desc', { title: deleteTarget?.title ?? '' })}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         loading={deleting}
