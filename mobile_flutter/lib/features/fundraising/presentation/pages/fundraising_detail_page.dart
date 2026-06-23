@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -25,11 +25,11 @@ class FundraisingDetailPage extends ConsumerWidget {
     final detailAsync = ref.watch(fundDetailProvider(fundId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết quỹ')),
+      appBar: AppBar(title: Text('donation.fund_detail'.tr())),
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => ErrorView(
-          message: 'Không tải được thông tin quỹ',
+          message: 'donation.fund_load_failed'.tr(),
           onRetry: () => ref.invalidate(fundDetailProvider(fundId)),
         ),
         data: (fund) => _DetailBody(fund: fund),
@@ -145,7 +145,7 @@ class _ProgressPanel extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Đã quyên góp',
+                    Text('donation.raised'.tr(),
                         style: TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary)),
@@ -173,21 +173,23 @@ class _ProgressPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text('Mục tiêu ${formatVnd(fund.targetAmount)}',
-              style: TextStyle(
-                  fontSize: 12.5, color: AppColors.textSecondary)),
+          Text(
+            'donation.goal_amount'
+                .tr(namedArgs: {'amount': formatVnd(fund.targetAmount)}),
+            style: TextStyle(
+                fontSize: 12.5, color: AppColors.textSecondary)),
           const Divider(height: 24),
-          _row(Icons.favorite_border, 'Số người ủng hộ',
+          _row(Icons.favorite_border, 'donation.donor_count'.tr(),
               '${fund.donorCount}'),
-          _row(Icons.payments_outlined, 'Trung bình mỗi lượt',
+          _row(Icons.payments_outlined, 'donation.avg_donation'.tr(),
               formatVnd(fund.averageDonation)),
           if (fund.managerName != null && fund.managerName!.isNotEmpty)
-            _row(Icons.person_outline, 'Người phụ trách', fund.managerName!),
+            _row(Icons.person_outline, 'donation.manager'.tr(), fund.managerName!),
           if (fund.timeStarted != null)
-            _row(Icons.play_circle_outline, 'Bắt đầu',
+            _row(Icons.play_circle_outline, 'donation.start_date'.tr(),
                 df.format(fund.timeStarted!)),
           if (fund.timeEnded != null)
-            _row(Icons.stop_circle_outlined, 'Kết thúc',
+            _row(Icons.stop_circle_outlined, 'donation.end_date'.tr(),
                 df.format(fund.timeEnded!)),
         ],
       ),
@@ -236,7 +238,8 @@ class _DonateBar extends StatelessWidget {
                 : () => context
                     .push('${RouteNames.fundraising}/${fund.id}/donate'),
             icon: const Icon(Icons.volunteer_activism),
-            label: Text(closed ? 'Quỹ đã kết thúc' : 'Đóng góp'),
+            label: Text(
+                closed ? 'donation.fund_closed'.tr() : 'donation.donate'.tr()),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               textStyle:

@@ -5,6 +5,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useState } from "react";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 import { truncateText } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
@@ -13,6 +14,7 @@ const LOGO_FALLBACK_URL = "https://placehold.co/1200x700/eef3ff/0f3a7a?text=Fund
 const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
 
 const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, onClose, isAdmin }) => {
+  const { t } = useTranslation(['common', 'donation']);
   const data = campaign || article;
 
   const now = dayjs();
@@ -146,18 +148,18 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
 
           {/* ORGANIZER */}
           <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {data?.managerName || data?.organizer || "Ban tổ chức"}
+            {data?.managerName || data?.organizer || t('donation:organizer_fallback')}
           </Typography>
 
           {/* STATS */}
           <Typography variant="caption" color="text.secondary">
-            {data?.donorCount || data?.donors || 0} người đã quyên góp
+            {t('donation:donor_count', { count: data?.donorCount || data?.donors || 0 })}
           </Typography>
 
           {/* CLOSED STATUS */}
           {isEnded && (
             <Box sx={{ mt: 0.5, alignSelf: "flex-start", px: 1.2, py: 0.45, borderRadius: 999, border: "1px solid #d7e5fb", backgroundColor: "#f3f8ff", color: "#5f79a4", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
-              Đã kết thúc
+              {t('common:ended')}
             </Box>
           )}
         </Box>
@@ -201,7 +203,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
               fullWidth variant="outlined" color="primary" sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
               onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
             >
-              Xem
+              {t('common:view')}
             </Button>
           ) : isAdmin ? (
             <Stack spacing={1.2} sx={{ width: "100%" }}>
@@ -209,7 +211,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
                 fullWidth variant="outlined" color="primary" startIcon={<InfoOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
                 onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
               >
-                Thông tin quỹ
+                {t('donation:fund_info')}
               </Button>
 
               <Stack direction="row" spacing={1.2}>
@@ -217,7 +219,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
                   fullWidth variant="outlined" color="secondary" startIcon={<EditOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
                   onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
                 >
-                  Sửa
+                  {t('common:edit')}
                 </Button>
 
                 <Button
@@ -228,7 +230,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
                   }}
                   onClick={(e) => { e.stopPropagation(); onClose?.(); }}
                 >
-                  Đóng
+                  {t('common:close')}
                 </Button>
               </Stack>
             </Stack>
@@ -237,7 +239,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
               fullWidth variant="contained" color="primary" sx={{ textTransform: "none", fontWeight: 600, py: 1.2 }}
               onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
             >
-              Quyên góp
+              {t('donation:donate')}
             </Button>
           )}
         </Box>

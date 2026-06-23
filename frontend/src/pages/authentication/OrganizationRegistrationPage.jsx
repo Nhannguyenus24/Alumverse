@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSnackbar } from "notistack";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
 import {
@@ -25,21 +26,21 @@ import {
 } from "../../utils/api";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
-const validationSchema = z.object({
+const getValidationSchema = (t) => z.object({
   organizationId: z.number().positive("Organization ID must be provided").int(),
-  studentCode: z.string().min(1, "Mã số sinh viên là bắt buộc"),
-  className: z.string().min(1, "Hệ đào tạo là bắt buộc"),
+  studentCode: z.string().min(1, t("auth:validation_student_code_required")),
+  className: z.string().min(1, t("auth:validation_program_required")),
   startYear: z.preprocess(
     (val) => (val === "" || Number.isNaN(val) ? undefined : Number(val)),
-    z.number({ required_error: "Năm bắt đầu là bắt buộc", invalid_type_error: "Năm bắt đầu là bắt buộc" })
-      .positive("Phải là số dương").int(),
+    z.number({ required_error: t("auth:validation_start_year_required"), invalid_type_error: t("auth:validation_start_year_required") })
+      .positive(t("auth:validation_must_be_positive")).int(),
   ),
   graduatedYear: z.preprocess(
     (val) => (val === "" || Number.isNaN(val) ? undefined : Number(val)),
-    z.number({ required_error: "Năm tốt nghiệp là bắt buộc", invalid_type_error: "Năm tốt nghiệp là bắt buộc" })
-      .positive("Phải là số dương").int(),
+    z.number({ required_error: t("auth:validation_graduated_year_required"), invalid_type_error: t("auth:validation_graduated_year_required") })
+      .positive(t("auth:validation_must_be_positive")).int(),
   ),
-  degreeType: z.string().min(1, "Chuyên ngành là bắt buộc"),
+  degreeType: z.string().min(1, t("auth:validation_major_required")),
 });
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ const VerificationOptionCard = ({ icon, title, description, selected, onClick })
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const OrganizationRegistrationPage = () => {
+  const { t } = useTranslation(["auth", "common", "profile"]);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -176,7 +178,7 @@ const OrganizationRegistrationPage = () => {
   const {
     register, handleSubmit, setValue, formState: { errors },
   } = useForm({
-    resolver: zodResolver(validationSchema),
+    resolver: zodResolver(getValidationSchema(t)),
     defaultValues: {
       organizationId: organizationId ?? undefined,
       studentCode: "", className: "", startYear: undefined, graduatedYear: undefined, degreeType: "",
@@ -215,8 +217,8 @@ const OrganizationRegistrationPage = () => {
     if (!file) return;
     const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
     const maxSizeBytes = 5 * 1024 * 1024;
-    if (!allowedTypes.includes(file.type)) { setError("Chỉ hỗ trợ file PDF, JPG hoặc PNG cho minh chứng."); return; }
-    if (file.size > maxSizeBytes) { setError("File minh chứng vượt quá 5MB. Vui lòng chọn file nhỏ hơn."); return; }
+    if (!allowedTypes.includes(file.type)) { setError(t("auth:proof_invalid_type")); return; }
+    if (file.size > maxSizeBytes) { setError(t("auth:proof_too_large")); return; }
     setError(null);
     setProofFile(file);
   };
@@ -236,10 +238,10 @@ const OrganizationRegistrationPage = () => {
 
   const onSubmit = async (data) => {
     setError(null);
-    if (!verificationOption) { setError("Vui lòng chọn một phương thức xác thực."); return; }
-    if (verificationOption === "proof" && !proofFile) { setError("Vui lòng tải lên minh chứng."); return; }
+    if (!verificationOption) { setError(t("auth:select_verification_method")); return; }
+    if (verificationOption === "proof" && !proofFile) { setError(t("auth:upload_proof_required")); return; }
     if ( verificationOption === "verifier" && selectedVerifierUserIds.length === 0) {
-      setError("Vui lòng chọn ít nhất một người xác thực."); return; }
+      setError(t("auth:select_verifier_required")); return; }
     setLoading(true);
     try {
       const payload = {
@@ -261,7 +263,7 @@ const OrganizationRegistrationPage = () => {
               requestPeerVerification({ organizationId: data.organizationId, verifierUserId: Number(verifierId) }),
             ),
           );
-          enqueueSnackbar("Yêu cầu xác thực đồng nghiệp đã được gửi.", { variant: "success" });
+          enqueueSnackbar(t("auth:peer_verification_sent"), { variant: "success" });
         }
 
         // Upload proof document
@@ -273,10 +275,10 @@ const OrganizationRegistrationPage = () => {
               originalFileName: proofFile.name,
               documentType: proofFile.type === "application/pdf" ? "pdf" : "image",
             });
-            enqueueSnackbar("Yêu cầu xác thực minh chứng đã được gửi.", { variant: "success" });
+            enqueueSnackbar(t("auth:proof_verification_sent"), { variant: "success" });
           } catch (proofError) {
             console.error("Failed to submit verification request", proofError);
-            enqueueSnackbar("Gửi yêu cầu xác thực minh chứng thất bại.", { variant: "error" });
+            enqueueSnackbar(t("auth:proof_verification_failed"), { variant: "error" });
             throw proofError;
           }
         }
@@ -305,11 +307,11 @@ const OrganizationRegistrationPage = () => {
   // ── Guard ──────────────────────────────────────────────────────────────────
   if (!organizationId && !organizationLoading) {
     return (
-      <Page title="Organization Registration" meta={<meta name="description" content="Register to organization" />}>
+      <Page title={t("auth:org_registration_title")} meta={<meta name="description" content={t("auth:org_registration_title")} />}>
         <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
-          <Typography variant="h6" color="error">Invalid Organization</Typography>
-          <Typography variant="body2" color="textSecondary">Please provide a valid organization to register.</Typography>
-          <Button variant="contained" onClick={() => navigate("/", { replace: true })}>Back to Login</Button>
+          <Typography variant="h6" color="error">{t("auth:invalid_organization_title")}</Typography>
+          <Typography variant="body2" color="textSecondary">{t("auth:invalid_organization_desc")}</Typography>
+          <Button variant="contained" onClick={() => navigate("/", { replace: true })}>{t("auth:back_to_login_btn")}</Button>
         </Box>
       </Page>
     );
@@ -317,10 +319,10 @@ const OrganizationRegistrationPage = () => {
 
   if (myOrganizationMemberQuery.isLoading) {
     return (
-      <Page title="Organization Registration" meta={<meta name="description" content="Register to organization" />}>
+      <Page title={t("auth:org_registration_title")} meta={<meta name="description" content={t("auth:org_registration_title")} />}>
         <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "50vh", gap: 2 }}>
           <CircularProgress size={28} />
-          <Typography variant="body2" color="textSecondary">Đang kiểm tra trạng thái xác minh...</Typography>
+          <Typography variant="body2" color="textSecondary">{t("auth:checking_verification")}</Typography>
         </Box>
       </Page>
     );
@@ -329,7 +331,7 @@ const OrganizationRegistrationPage = () => {
   if (hasSubmittedVerification) {
     const isFullyVerified = effectiveVerificationLevel >= 2;
     return (
-      <Page title="Organization Registration" meta={<meta name="description" content="Register to organization" />}>
+      <Page title={t("auth:org_registration_title")} meta={<meta name="description" content={t("auth:org_registration_title")} />}>
         <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 8 } }}>
           <Box
             sx={{
@@ -348,20 +350,20 @@ const OrganizationRegistrationPage = () => {
             </Avatar>
             <Box>
               <Typography variant="h4" color="primary.main" fontWeight={800}>
-                {isFullyVerified ? "Tài khoản đã được xác thực" : "Yêu cầu xác minh đã được gửi"}
+                {isFullyVerified ? t("auth:already_verified_title") : t("auth:pending_verification_title")}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ mt: 1, lineHeight: 1.7 }}>
                 {isFullyVerified
-                  ? "Bạn đã hoàn tất xác minh học vấn cho tổ chức này, không cần gửi thêm yêu cầu."
-                  : "Hồ sơ của bạn đang được xử lý. Bạn không cần gửi lại biểu mẫu xác minh trong thời gian chờ duyệt."}
+                  ? t("auth:already_verified_desc")
+                  : t("auth:pending_verification_desc")}
               </Typography>
             </Box>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ pt: 1 }}>
               <Button variant="outlined" fullWidth onClick={() => navigate("/", { replace: true })}>
-                Về trang chủ
+                {t("auth:go_to_home")}
               </Button>
               <Button variant="contained" fullWidth onClick={() => navigate("/profile", { replace: true })}>
-                Xem hồ sơ
+                {t("auth:view_profile")}
               </Button>
             </Stack>
           </Box>
@@ -371,7 +373,7 @@ const OrganizationRegistrationPage = () => {
   }
 
   return (
-    <Page title="Organization Registration" meta={<meta name="description" content="Register to organization" />}>
+    <Page title={t("auth:org_registration_title")} meta={<meta name="description" content={t("auth:org_registration_title")} />}>
       <Container maxWidth="md" sx={{ py: { xs: 3, sm: 5 } }}>
         <Box
           component="form"
@@ -381,67 +383,67 @@ const OrganizationRegistrationPage = () => {
           {/* ── Header ── */}
           <Box>
             <Typography variant="h1" fontWeight={700} color="primary.main" sx={{ mb: 1.5 }}>
-              XÁC MINH HỌC VẤN
+              {t("auth:org_registration_heading")}
             </Typography>
             <Typography variant="body1" color="textSecondary">
-              Điền thông tin sinh viên và học vấn của bạn, sau đó chọn phương thức xác thực phù hợp. <br></br>
-              Yêu cầu xác minh học vấn sẽ được gửi đi khi bạn bấm <strong>Đăng ký tham gia</strong>.
+              {t("auth:org_registration_description")} <br />
+              {t("auth:org_registration_submit_hint")} <strong>{t("auth:org_registration_submit_hint_bold")}</strong>.
             </Typography>
           </Box>
 
-          {/* ── Section 1: Thông tin sinh viên ── */}
+          {/* ── Section 1: Student Information ── */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="h6" color="primary.main">
-              Thông tin sinh viên
+              {t("auth:section_student_info")}
             </Typography>
             <input type="hidden" {...register("organizationId", { valueAsNumber: true })} />
             <Input
-              label="Mã số sinh viên"
-              placeholder="Ví dụ: 1234567"
+              label={t("auth:student_code_label")}
+              placeholder={t("auth:student_code_placeholder")}
               error={!!errors.studentCode}
               helperText={errors.studentCode?.message}
               {...register("studentCode")}
             />
           </Box>
 
-          {/* ── Section 2: Thông tin học vấn ── */}
+          {/* ── Section 2: Academic Information ── */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Typography variant="h6" color="primary.main">
-              Thông tin học vấn
+              {t("auth:section_academic_info")}
             </Typography>
 
             {programOptions.length > 0 ? (
-              <TextField select label="Hệ đào tạo" error={!!errors.className} helperText={errors.className?.message} defaultValue="" {...register("className")}>
-                <MenuItem value="">Chọn hệ đào tạo</MenuItem>
+              <TextField select label={t("auth:program_label")} error={!!errors.className} helperText={errors.className?.message} defaultValue="" {...register("className")}>
+                <MenuItem value="">{t("auth:program_select_placeholder")}</MenuItem>
                 {programOptions.map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
               </TextField>
             ) : (
-              <Input label="Hệ đào tạo" placeholder="Ví dụ: K15" error={!!errors.className} helperText={errors.className?.message} {...register("className")} />
+              <Input label={t("auth:program_label")} placeholder={t("auth:program_placeholder")} error={!!errors.className} helperText={errors.className?.message} {...register("className")} />
             )}
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Input label="Năm bắt đầu" type="number" placeholder="Ví dụ: 2015" error={!!errors.startYear} helperText={errors.startYear?.message} sx={{ flex: 1 }} {...register("startYear", { valueAsNumber: true })} />
-              <Input label="Năm tốt nghiệp" type="number" placeholder="Ví dụ: 2019" error={!!errors.graduatedYear} helperText={errors.graduatedYear?.message} sx={{ flex: 1 }} {...register("graduatedYear", { valueAsNumber: true })} />
+              <Input label={t("auth:start_year_label")} type="number" placeholder={t("auth:start_year_placeholder")} error={!!errors.startYear} helperText={errors.startYear?.message} sx={{ flex: 1 }} {...register("startYear", { valueAsNumber: true })} />
+              <Input label={t("auth:graduated_year_label")} type="number" placeholder={t("auth:graduated_year_placeholder")} error={!!errors.graduatedYear} helperText={errors.graduatedYear?.message} sx={{ flex: 1 }} {...register("graduatedYear", { valueAsNumber: true })} />
             </Stack>
 
             {majorOptions.length > 0 ? (
-              <TextField select label="Chuyên ngành" error={!!errors.degreeType} helperText={errors.degreeType?.message} defaultValue="" {...register("degreeType")}>
-                <MenuItem value="">Chọn chuyên ngành</MenuItem>
+              <TextField select label={t("auth:major_label")} error={!!errors.degreeType} helperText={errors.degreeType?.message} defaultValue="" {...register("degreeType")}>
+                <MenuItem value="">{t("auth:major_select_placeholder")}</MenuItem>
                 {majorOptions.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
               </TextField>
             ) : (
-              <Input label="Chuyên ngành" placeholder="Ví dụ: Khoa học máy tính" error={!!errors.degreeType} helperText={errors.degreeType?.message} {...register("degreeType")} />
+              <Input label={t("auth:major_label")} placeholder={t("auth:major_placeholder")} error={!!errors.degreeType} helperText={errors.degreeType?.message} {...register("degreeType")} />
             )}
           </Box>
 
-          {/* ── Section 3: Phương thức xác thực ── */}
+          {/* ── Section 3: Verification Method ── */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box>
               <Typography variant="h6" color="primary.main">
-                Phương thức xác thực <Typography component="span" variant="caption" color="textSecondary">(Tùy chọn)</Typography>
+                {t("auth:section_verification_method")} <Typography component="span" variant="caption" color="textSecondary">{t("auth:section_verification_optional")}</Typography>
               </Typography>
               <Typography variant="caption" color="textSecondary">
-                Vui lòng chọn một trong hai phương thức xác thực bên dưới để hoàn tất đăng ký.
+                {t("auth:section_verification_hint")}
               </Typography>
             </Box>
 
@@ -449,15 +451,15 @@ const OrganizationRegistrationPage = () => {
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <VerificationOptionCard
                 icon="eva:cloud-upload-fill"
-                title="Tải lên minh chứng"
-                description="Đính kèm file ảnh hoặc PDF làm bằng chứng xác nhận thông tin học vấn."
+                title={t("auth:verification_opt_proof_title")}
+                description={t("auth:verification_opt_proof_desc")}
                 selected={verificationOption === "proof"}
                 onClick={() => handleOptionSelect("proof")}
               />
               <VerificationOptionCard
                 icon="eva:people-fill"
-                title="Chọn người xác thực"
-                description="Nhờ một người quen trong tổ chức xác nhận danh tính thay cho bạn."
+                title={t("auth:verification_opt_verifier_title")}
+                description={t("auth:verification_opt_verifier_desc")}
                 selected={verificationOption === "verifier"}
                 onClick={() => handleOptionSelect("verifier")}
               />
@@ -480,13 +482,13 @@ const OrganizationRegistrationPage = () => {
                   startIcon={<Iconify icon="eva:cloud-upload-fill" />}
                   sx={{ alignSelf: "flex-start" }}
                 >
-                  {proofFile ? "Đổi file minh chứng" : "Chọn file"}
+                  {proofFile ? t("auth:proof_change_file") : t("auth:proof_select_file")}
                   <input hidden type="file" accept=".pdf,image/jpeg,image/png" onChange={handleProofFileChange} />
                 </Button>
                 <Typography variant="caption" color={proofFile ? "success.main" : "textSecondary"}>
                   {proofFile
-                    ? `✓ Đã chọn: ${proofFile.name}`
-                    : "Hỗ trợ PDF, JPG hoặc PNG — tối đa 5MB."}
+                    ? `✓ ${t("auth:proof_selected", { name: proofFile.name })}`
+                    : t("auth:proof_format_hint")}
                 </Typography>
               </Box>
             )}
@@ -503,14 +505,14 @@ const OrganizationRegistrationPage = () => {
                 {trustedVerifiersLoading ? (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 3 }}>
                     <CircularProgress size={20} />
-                    <Typography variant="caption" color="textSecondary">Đang tải danh sách...</Typography>
+                    <Typography variant="caption" color="textSecondary">{t("auth:verifiers_loading")}</Typography>
                   </Box>
                 ) : trustedVerifiers.length === 0 ? (
                   <Box sx={{ textAlign: "center", py: 5, px: 2 }}>
                     <Iconify icon="eva:people-outline" sx={{ fontSize: 40, color: "text.disabled", mb: 1.5 }} />
-                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>Chưa có người xác thực</Typography>
+                    <Typography variant="subtitle2" color="textSecondary" gutterBottom>{t("auth:verifiers_empty_title")}</Typography>
                     <Typography variant="caption" color="textSecondary">
-                      Hiện chưa có người xác thực khả dụng cho tổ chức này.
+                      {t("auth:verifiers_empty_desc")}
                     </Typography>
                   </Box>
                 ) : (
@@ -556,7 +558,7 @@ const OrganizationRegistrationPage = () => {
                 {selectedVerifierUserIds.length > 0 && (
                   <Box sx={{ px: 2.5, py: 1.5, bgcolor: "primary.lighter", borderTop: (theme) => `1px solid ${theme.palette.primary.light}` }}>
                     <Typography variant="caption" color="primary.darker">
-                      Đã chọn {selectedVerifierUserIds.length} người xác thực. Yêu cầu sẽ được gửi đến tất cả sau khi đăng ký.
+                      {t("auth:verifiers_selected_count", { count: selectedVerifierUserIds.length })}
                     </Typography>
                   </Box>
                 )}
@@ -577,12 +579,12 @@ const OrganizationRegistrationPage = () => {
               onClick={() => navigate("/", { replace: true })}
               disabled={loading}
             >
-              Hủy bỏ
+              {t("auth:cancel")}
             </Button>
             <Button type="submit" variant="contained" fullWidth size="large" disabled={loading}>
               {loading
-                ? <><CircularProgress size={20} sx={{ mr: 1 }} />Đang xử lý...</>
-                : "Đăng ký tham gia"}
+                ? <><CircularProgress size={20} sx={{ mr: 1 }} />{t("auth:processing")}</>
+                : t("auth:register_join")}
             </Button>
           </Stack>
         </Box>

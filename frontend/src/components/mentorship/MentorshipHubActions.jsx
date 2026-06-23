@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button, Stack } from '@mui/material';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
@@ -9,6 +10,7 @@ import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAc
  *   tone="onPrimary" renders light buttons for the dark hero banner.
  */
 const MentorshipHubActions = ({ tone = 'default' }) => {
+  const { t } = useTranslation(['mentorship', 'auth']);
   const navigate = useOrgNavigate();
   const access = useMentorshipAccessState();
 
@@ -29,7 +31,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
     return (
       <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
         <Button variant="contained" onClick={() => navigate('/auth/login')}>
-          Đăng nhập
+          {t('mentorship:login')}
         </Button>
         <Button
           variant="outlined"
@@ -37,7 +39,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
           onClick={() => navigate('/auth/register')}
           sx={outlinedOnPrimarySx}
         >
-          Tạo tài khoản
+          {t('mentorship:create_account')}
         </Button>
       </Stack>
     );
@@ -47,7 +49,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
   if (access.needsEmailVerification) {
     return (
       <Button variant="contained" color="warning" onClick={() => navigate('/settings/account')}>
-        Xác thực email để bắt đầu
+        {t('mentorship:verify_email_to_start')}
       </Button>
     );
   }
@@ -62,7 +64,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
         onClick={() => navigate('/settings/account')}
         sx={outlinedOnPrimarySx}
       >
-        Xác minh học vấn tại khoa để tham gia
+        {t('mentorship:verify_academic_to_join')}
       </Button>
     );
   }
@@ -79,7 +81,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
           variant="contained"
           onClick={() => navigate('/development/mentorship/mentee-signup')}
         >
-          Tìm cố vấn cho tôi
+          {t('mentorship:find_mentor_for_me')}
         </Button>
         <Button
           variant="outlined"
@@ -87,7 +89,7 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
           onClick={() => navigate('/development/mentorship/signup')}
           sx={outlinedOnPrimarySx}
         >
-          Trở thành cố vấn
+          {t('mentorship:become_advisor')}
         </Button>
       </Stack>
     );
@@ -102,13 +104,13 @@ const MentorshipHubActions = ({ tone = 'default' }) => {
         onClick={() => navigate('/development/mentorship/my-bookings')}
         sx={outlinedOnPrimarySx}
       >
-        Lịch hẹn của tôi
+        {t('mentorship:my_appointments')}
       </Button>
       <Button
         variant="contained"
         onClick={() => navigate('/development/mentorship/profile')}
       >
-        Trang cá nhân
+        {t('mentorship:personal_page')}
       </Button>
     </Stack>
   );

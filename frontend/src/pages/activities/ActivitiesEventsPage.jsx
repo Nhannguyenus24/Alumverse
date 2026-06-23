@@ -3,7 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-import { ACTIVITIES_SIDEBAR } from '../../constants/activitiesNav';
+import { getActivitiesSidebar } from '../../constants/activitiesNav';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 
@@ -68,6 +69,7 @@ const FILTERS = [
 
 
 const ActivitiesPage = () => {
+  const { t } = useTranslation('nav');
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -124,7 +126,7 @@ const ActivitiesPage = () => {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={ACTIVITIES_SIDEBAR} />
+              <Sidebar items={getActivitiesSidebar(t)} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"

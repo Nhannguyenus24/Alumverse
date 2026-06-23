@@ -1,4 +1,5 @@
 import { Box, Container, Stack, Typography, IconButton } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
 
 const FOOTER_BG = '#0F213A';
@@ -54,6 +55,7 @@ const SocialIcon = ({ href, label, children }) => (
 );
 
 const Footer = () => {
+  const { t } = useTranslation(['footer']);
   return (
     <Box
       component="footer"
@@ -91,10 +93,10 @@ const Footer = () => {
               © AlumVerse (2026)
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
-              Hệ thống kết nối Sinh viên & Cựu sinh viên
+              {t('footer:tagline')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
-              Trường Đại học Khoa học tự nhiên, ĐHQG-HCM
+              {t('footer:institution')}
             </Typography>
           </Box>
 
@@ -105,13 +107,13 @@ const Footer = () => {
               fontWeight={700}
               sx={{ mb: 1.5, fontSize: '1rem' }}
             >
-              Thông tin liên hệ
+              {t('footer:contact_heading')}
             </Typography>
             <Typography variant="body2" fontWeight={600} sx={{ color: 'rgba(255,255,255,0.95)' }}>
-              Văn phòng Khoa Công nghệ Thông tin
+              {t('footer:office_name')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', mt: 0.5, lineHeight: 1.6 }}>
-              Phòng I53, Tòa nhà I, 227 Nguyễn Văn Cừ, Phường Chợ Quán, TP. HCM
+              {t('footer:address')}
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', mt: 1 }}>
               Email: info@fit.hcmus.edu.vn
@@ -120,7 +122,7 @@ const Footer = () => {
               SĐT: (028) 6288 4499
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-              Tuyển sinh: 093 773 4004
+              {t('footer:admissions_label')}: 093 773 4004
             </Typography>
           </Box>
 
@@ -131,7 +133,7 @@ const Footer = () => {
               fontWeight={700}
               sx={{ mb: 1.5, fontSize: '1rem' }}
             >
-              Theo dõi
+              {t('footer:social_heading')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
               {SOCIAL_LINKS.map(({ label, href, icon }) => (

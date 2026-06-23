@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -29,6 +30,7 @@ const AdminSchoolFeedbackDetailDialog = ({
   onClose,
   onMarkAsRead,
 }) => {
+  const { t } = useTranslation('common');
   if (!feedback) {
     return null;
   }
@@ -80,12 +82,12 @@ const AdminSchoolFeedbackDetailDialog = ({
             Đánh dấu đã đọc
           </Button>
         )}
-        <Button 
-          onClick={onClose} 
-          variant="contained" 
-          sx={{ textTransform: 'none', fontWeight: 700, minWidth: 100 }}
+        <Button
+          onClick={onClose}
+          variant="contained"
+          sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          Đóng
+          {t('close')}
         </Button>
       </DialogActions>
     </Dialog>

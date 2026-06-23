@@ -39,9 +39,8 @@ import { useDeleteAvailability } from '../../hooks/mentorship/useDeleteAvailabil
 import { useUpdateAvailability } from '../../hooks/mentorship/useUpdateAvailability';
 import { useUpdateMentorProfile } from '../../hooks/mentorship/useUpdateMentorProfile';
 import { formatFixed } from '../../utils/numberFormatter';
-import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
-
-const TOP_TABS = MENTOR_PROFILE_TABS;
+import { getMentorProfileTabs } from '../../constants/mentorshipNav';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -85,6 +84,8 @@ const expandDates = (startDate, endDate, selectedDayIndexes) => {
 /* ================= COMPONENT ================= */
 
 const MentorshipYourCalendarPage = () => {
+  const { t } = useTranslation('mentorship');
+  const TOP_TABS = getMentorProfileTabs(t);
   const navigate = useOrgNavigate();
 
   const profileQuery = useMyMentorProfile();

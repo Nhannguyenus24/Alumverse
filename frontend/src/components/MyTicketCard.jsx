@@ -1,21 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Box, Typography, Button, Chip, TextField, Stack } from "@mui/material";
 import { Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
 import { QRCodeSVG } from "qrcode.react";
 import { eventApi } from "../utils/api";
-
-const STATUS_CONFIG = {
-  PENDING:   { label: "Chờ duyệt",    color: "default",   canCancel: true  },
-  ISSUED:    { label: "Đã cấp vé",    color: "tertiary",  canCancel: true  },
-  ACTIVE:    { label: "Đang diễn ra", color: "warning",   canCancel: false },
-  USED:      { label: "Đã tham gia",  color: "success",   canCancel: false },
-  CHECKED_IN:{ label: "Đã tham gia",  color: "success",   canCancel: false },
-  EXPIRED:   { label: "Đã hết hạn",   color: "default",   canCancel: false },
-  CANCELLED: { label: "Đã huỷ",       color: "error",     canCancel: false },
-};
 
 const formatDate = (iso) => {
   if (!iso) return "";
@@ -23,6 +14,18 @@ const formatDate = (iso) => {
 };
 
 const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
+  const { t } = useTranslation(["event", "common"]);
+
+  const STATUS_CONFIG = useMemo(() => ({
+    PENDING:   { label: t("event:status_pending"),   color: "default",   canCancel: true  },
+    ISSUED:    { label: t("event:status_issued"),    color: "tertiary",  canCancel: true  },
+    ACTIVE:    { label: t("event:status_active"),    color: "warning",   canCancel: false },
+    USED:      { label: t("event:status_used"),      color: "success",   canCancel: false },
+    CHECKED_IN:{ label: t("event:status_used"),      color: "success",   canCancel: false },
+    EXPIRED:   { label: t("event:status_expired"),   color: "default",   canCancel: false },
+    CANCELLED: { label: t("event:status_cancelled"), color: "error",     canCancel: false },
+  }), [t]);
+
   const statusCfg = STATUS_CONFIG[ticket.status] ?? STATUS_CONFIG.PENDING;
   const [openTicket, setOpenTicket] = useState(false);
   const [openCancelDialog, setOpenCancelDialog] = useState(false);
@@ -37,10 +40,10 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
       await eventApi.cancelTicketByCode(ticket.ticketCode, cancelReason.trim());
       setOpenCancelDialog(false);
       setCancelReason("");
-      enqueueSnackbar("Vé của bạn đã được huỷ.", { variant: "info" });
+      enqueueSnackbar(t("event:cancel_ticket_success"), { variant: "info" });
       onCancelled?.();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || "Huỷ vé thất bại.", { variant: "error" });
+      enqueueSnackbar(err?.response?.data?.message || t("event:cancel_ticket_error"), { variant: "error" });
     } finally {
       setLoading(false);
     }
@@ -82,11 +85,11 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
-            {ticket.organizer ?? "Ban tổ chức"}
+            {ticket.organizer ?? t("event:default_organizer")}
           </Typography>
 
           <Typography variant="caption" color="text.secondary">
-            Mã vé: {ticket.ticketCode ?? "—"}
+            {t("event:ticket_code")}: {ticket.ticketCode ?? "—"}
           </Typography>
         </Box>
 
@@ -109,7 +112,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
                 startIcon={<CancelOutlinedIcon />}
                 onClick={() => setOpenCancelDialog(true)}
               >
-                Huỷ vé
+                {t("event:cancel_ticket")}
               </Button>
             )}
             <Button
@@ -118,7 +121,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
               startIcon={<ConfirmationNumberOutlinedIcon />}
               onClick={() => setOpenTicket(true)}
             >
-              Xem vé
+              {t("event:view_ticket")}
             </Button>
           </Stack>
 
@@ -134,7 +137,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
       {/* VIEW TICKET DIALOG */}
       <Dialog open={openTicket} onClose={() => setOpenTicket(false)} maxWidth="xs" fullWidth>
         <DialogTitle sx={{ textAlign: "center", fontWeight: 700 }}>
-          Vé tham gia sự kiện
+          {t("event:ticket_dialog_title")}
         </DialogTitle>
 
         <DialogContent>
@@ -151,7 +154,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
 
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Mã tham gia
+                {t("event:join_code")}
               </Typography>
               <Typography variant="h5" fontWeight={800} letterSpacing={2} color="primary.main">
                 {ticket.ticketCode ?? "—"}
@@ -162,18 +165,18 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
 
         <DialogActions>
           <Button variant="outlined" color="primary" onClick={() => setOpenTicket(false)}>
-            Đóng
+            {t("common:close")}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* CANCEL TICKET DIALOG */}
       <Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Huỷ vé</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>{t("event:cancel_ticket")}</DialogTitle>
 
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Vui lòng cho biết lý do bạn không thể tham gia sự kiện.
+            {t("event:cancel_ticket_reason_prompt")}
           </Typography>
 
           <TextField
@@ -181,7 +184,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
             multiline
             minRows={4}
             required
-            label="Lý do không tham gia"
+            label={t("event:cancel_reason_label")}
             value={cancelReason}
             onChange={(e) => setCancelReason(e.target.value)}
           />
@@ -196,7 +199,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
               setCancelReason("");
             }}
           >
-            Đóng
+            {t("common:close")}
           </Button>
           <Button
             variant="contained"
@@ -204,7 +207,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
             disabled={!cancelReason.trim() || loading}
             onClick={handleConfirmCancel}
           >
-            Xác nhận huỷ vé
+            {t("event:confirm_cancel_ticket")}
           </Button>
         </DialogActions>
       </Dialog>

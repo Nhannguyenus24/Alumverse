@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -18,6 +19,7 @@ import NetworkConnectionCard from './NetworkConnectionCard';
 const PAGE_SIZE = 5;
 
 const NetworkConnectionsSection = ({ enableBlock = true }) => {
+  const { t } = useTranslation(['network', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
@@ -74,8 +76,8 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
       return (
         <Alert severity="info">
           {hasActiveCriteria
-            ? 'Không có kết quả phù hợp với tìm kiếm hiện tại.'
-            : 'Chưa có kết nối nào.'}
+            ? t('network:no_search_results')
+            : t('network:no_connections_yet')}
         </Alert>
       );
     }
@@ -106,14 +108,14 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
   return (
     <Stack spacing={2}>
       <Typography variant="h4" fontWeight={700}>
-        Kết nối hiện tại
+        {t('network:current_connections')}
       </Typography>
 
       <SearchBar
         value={searchInput}
         onChange={setSearchInput}
         onKeyDown={handleSearchKeyDown}
-        placeholder="Tìm theo họ tên… (Enter để tìm)"
+        placeholder={t('network:search_by_name_placeholder')}
       />
 
       {renderContent()}
@@ -141,18 +143,18 @@ const NetworkConnectionsSection = ({ enableBlock = true }) => {
 
       <ConfirmDialog
         open={Boolean(blockTarget)}
-        title="Chặn người dùng"
+        title={t('network:block_user_title')}
         message={(
           <>
-            {`Bạn có chắc muốn chặn ${blockTarget?.fullName ?? 'người dùng này'}? `}
+            {`${t('network:block_user_confirm_message', { name: blockTarget?.fullName ?? 'người dùng này' })} `}
             <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
-              Lưu ý: việc chặn chỉ áp dụng trong Kết nối và Nhắn tin.
+              {t('network:block_user_note')}
             </strong>
-            {' Bạn sẽ không thể gửi tin nhắn cho họ.'}
+            {` ${t('network:block_user_consequence')}`}
           </>
         )}
-        confirmText="Chặn"
-        cancelText="Hủy"
+        confirmText={t('network:block')}
+        cancelText={t('common:cancel')}
         confirmColor="primary"
         loading={isBlocking}
         onConfirm={() => blockUser()}

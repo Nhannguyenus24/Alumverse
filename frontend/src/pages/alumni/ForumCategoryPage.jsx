@@ -1,4 +1,5 @@
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import Breadcrumb from '../../components/Breadcrumb';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
@@ -9,6 +10,7 @@ import { useOrganization } from '../../hooks/useOrganization';
 import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
 
 const ForumCategoryPage = () => {
+  const { t } = useTranslation(['forum', 'common']);
   const { organization } = useOrganization();
   const organizationId = organization?.id ?? null;
 
@@ -154,7 +156,7 @@ const ForumCategoryPage = () => {
                         onClick={() => navigate('/forum/alumni/career/create-topic')}
                         sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
                       >
-                        Tạo bài đăng
+                        {t('create_post')}
                       </Button>
                     </Box>
                   </Box>
@@ -163,11 +165,11 @@ const ForumCategoryPage = () => {
                 <Box>
                   {topicsPending && !topics?.length ? (
                     <Box sx={{ px: 3, py: 4 }}>
-                      <Typography color="text.secondary">Đang tải…</Typography>
+                      <Typography color="text.secondary">{t('common:loading')}</Typography>
                     </Box>
                   ) : !topics?.length ? (
                     <Box sx={{ px: 3, py: 4 }}>
-                      <Typography color="text.secondary">Chưa có chủ đề trong danh mục này.</Typography>
+                      <Typography color="text.secondary">{t('no_topics_in_category')}</Typography>
                     </Box>
                   ) : (
                     topics.map((topic) => (

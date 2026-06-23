@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -26,26 +27,10 @@ import useOrganizationStore from '../../stores/organizationStore';
 import { organizationApi } from '../../utils/api';
 import { CONVERSATION_REQUEST_STATUS } from '../../constants/conversationRequestStatus';
 
-const BASE_FILTERS = [
-  {
-    type: 'input',
-    key: 'program',
-    label: 'Program',
-    inputMode: 'text',
-    placeholder: 'VD: Regular, Advanced Program…',
-  },
-  {
-    type: 'input',
-    key: 'major',
-    label: 'Major',
-    inputMode: 'text',
-    placeholder: 'VD: Computer Science…',
-  },
-];
-
 const PAGE_SIZE = 9;
 
 const NetworkPage = () => {
+  const { t } = useTranslation(['network', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
@@ -64,6 +49,23 @@ const NetworkPage = () => {
   const [checkingUserId, setCheckingUserId] = useState(null);
   const [blockTarget, setBlockTarget] = useState(null);
 
+  const filters_config = useMemo(() => [
+    {
+      type: 'input',
+      key: 'program',
+      label: t('network:filter_program_label'),
+      inputMode: 'text',
+      placeholder: t('network:filter_program_placeholder'),
+    },
+    {
+      type: 'input',
+      key: 'major',
+      label: t('network:filter_major_label'),
+      inputMode: 'text',
+      placeholder: t('network:filter_major_placeholder'),
+    },
+  ], [t]);
+
   const navigate = useOrgNavigate();
   const currentMemberId = useNetworkCurrentMemberId();
 
@@ -73,19 +75,6 @@ const NetworkPage = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const FILTERS = useMemo(() => {
-    if (organizations.length === 0) return BASE_FILTERS;
-    return [
-      {
-        type: 'dropdown',
-        key: 'organizationIds',
-        label: 'Trường / Khoa',
-        multiple: true,
-        options: organizations.map((org) => ({ value: org.id, label: org.name })),
-      },
-      ...BASE_FILTERS,
-    ];
-  }, [organizations]);
   const { showError, showInfo } = useNotification();
   const { checkStatus } = useCheckConversationRequestStatus();
   const { blockUser, isBlocking } = useBlockUser({
@@ -131,7 +120,7 @@ const NetworkPage = () => {
   const handleOpenMessage = useCallback(
     async (member) => {
       if (String(member.userId) === String(currentMemberId)) {
-        showInfo('Đây là hồ sơ của bạn, nên không thể tự nhắn tin.');
+        showInfo(t('network:self_profile_message'));
         return;
       }
 
@@ -154,12 +143,12 @@ const NetworkPage = () => {
         setConnectionStatus(result);
         setIsMessageDrawerOpen(true);
       } catch {
-        showError('Không thể kiểm tra trạng thái kết nối. Vui lòng thử lại.');
+        showError(t('network:check_connection_error'));
       } finally {
         setCheckingUserId(null);
       }
     },
-    [checkStatus, currentMemberId, navigate, showError, showInfo],
+    [checkStatus, currentMemberId, navigate, showError, showInfo, t],
   );
 
   const handleCloseMessage = useCallback(() => {
@@ -176,15 +165,15 @@ const NetworkPage = () => {
           color="primary.main"
           sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
         >
-          KẾT NỐI
+          {t('network:page_heading')}
         </Typography>
 
         <Typography color="text.secondary">
-          Tìm và kết nối với các sinh viên và các cựu sinh viên trên nền tảng.
+          {t('network:page_subtitle')}
         </Typography>
 
         <DynamicFilterBar
-          config={FILTERS}
+          config={filters_config}
           value={filters}
           onChange={handleFilterChange}
         />
@@ -193,7 +182,7 @@ const NetworkPage = () => {
           value={searchInput}
           onChange={setSearchInput}
           onKeyDown={handleSearchKeyDown}
-          placeholder="Tìm theo họ tên… (Enter để tìm)"
+          placeholder={t('network:search_by_name_placeholder')}
         />
       </Stack>
 
@@ -206,8 +195,8 @@ const NetworkPage = () => {
       ) : showEmptyState ? (
         <Alert severity="info">
           {hasActiveCriteria
-            ? 'Không có kết quả phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
-            : 'Chưa có người để hiển thị.'}
+            ? t('network:no_filter_results')
+            : t('network:no_members_to_show')}
         </Alert>
       ) : items.length > 0 ? (
         <Box
@@ -238,7 +227,7 @@ const NetworkPage = () => {
                 onBlock={isSelf ? null : () => setBlockTarget(member)}
                 isMessageLoading={checkingUserId === member.userId}
                 isBlockLoading={isBlocking && blockTarget?.userId === member.userId}
-                messageButtonLabel={isSelf ? 'Đây là bạn' : 'Nhắn tin'}
+                messageButtonLabel={isSelf ? t('network:this_is_you') : t('network:message')}
               />
             );
           })}
@@ -275,18 +264,18 @@ const NetworkPage = () => {
 
       <ConfirmDialog
         open={Boolean(blockTarget)}
-        title="Chặn người dùng"
+        title={t('network:block_user_title')}
         message={(
           <>
-            {`Bạn có chắc muốn chặn ${blockTarget?.fullName ?? 'người dùng này'}? `}
+            {`${t('network:block_user_confirm_message', { name: blockTarget?.fullName ?? 'người dùng này' })} `}
             <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
-              Lưu ý: việc chặn chỉ áp dụng trong Kết nối và Nhắn tin.
+              {t('network:block_user_note')}
             </strong>
-            {' Bạn sẽ không thể gửi tin nhắn cho họ.'}
+            {` ${t('network:block_user_consequence')}`}
           </>
         )}
-        confirmText="Chặn"
-        cancelText="Hủy"
+        confirmText={t('network:block')}
+        cancelText={t('common:cancel')}
         confirmColor="primary"
         loading={isBlocking}
         onConfirm={() => blockUser()}

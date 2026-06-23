@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/router/route_names.dart';
@@ -13,8 +13,8 @@ import '../../data/repositories/user_repository.dart';
 import '../providers/user_providers.dart';
 
 /// Notification bell for the home AppBar: shows an unread-count badge and, on
-/// tap, opens a dropdown of the 5 most recent notifications with a "Đánh dấu
-/// tất cả đã đọc" action and a "Tất cả" link to the full page. Mirrors the web
+/// tap, opens a dropdown of the 5 most recent notifications with a "mark all
+/// read" action and a "see all" link to the full page. Mirrors the web
 /// notification dropdown rather than navigating to a separate screen.
 class NotificationBell extends ConsumerWidget {
   const NotificationBell({super.key});
@@ -52,7 +52,7 @@ class _BellButtonState extends ConsumerState<_BellButton> {
       clipBehavior: Clip.none,
       children: [
         IconButton(
-          tooltip: 'Thông báo',
+          tooltip: 'common.notifications'.tr(),
           icon: const Icon(Icons.notifications_none_rounded),
           onPressed: _open,
         ),
@@ -143,9 +143,9 @@ class _NotificationDropdown extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
             child: Row(
               children: [
-                const Expanded(
-                  child: Text('Thông báo',
-                      style: TextStyle(
+                Expanded(
+                  child: Text('common.notifications'.tr(),
+                      style: const TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 16)),
                 ),
                 if (unread > 0)
@@ -156,8 +156,8 @@ class _NotificationDropdown extends ConsumerWidget {
                       minimumSize: const Size(0, 32),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text('Đánh dấu đã đọc',
-                        style: TextStyle(fontSize: 12)),
+                    child: Text('notification.mark_read'.tr(),
+                        style: const TextStyle(fontSize: 12)),
                   ),
               ],
             ),
@@ -175,15 +175,17 @@ class _NotificationDropdown extends ConsumerWidget {
                       child: CircularProgressIndicator(strokeWidth: 2))),
             )
           else if (recent.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
               child: Column(
                 children: [
-                  Icon(Icons.notifications_none_rounded,
+                  const Icon(Icons.notifications_none_rounded,
                       size: 36, color: AppColors.textSecondary),
-                  SizedBox(height: 8),
-                  Text('Chưa có thông báo',
-                      style: TextStyle(color: AppColors.textSecondary)),
+                  const SizedBox(height: 8),
+                  Text('notification.empty_title'.tr(),
+                      style:
+                          const TextStyle(color: AppColors.textSecondary)),
                 ],
               ),
             )
@@ -204,17 +206,17 @@ class _NotificationDropdown extends ConsumerWidget {
             ],
 
           const Divider(height: 1),
-          // Footer: "Tất cả"
+          // Footer: "All"
           InkWell(
             onTap: () {
               onClose();
               context.push(RouteNames.notifications);
             },
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
               child: Center(
-                child: Text('Tất cả',
-                    style: TextStyle(
+                child: Text('common.all'.tr(),
+                    style: const TextStyle(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600)),
               ),
@@ -264,8 +266,9 @@ class _DropdownTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                            fontWeight:
-                                item.isRead ? FontWeight.w600 : FontWeight.w700,
+                            fontWeight: item.isRead
+                                ? FontWeight.w600
+                                : FontWeight.w700,
                             fontSize: 13.5)),
                   if (item.message.isNotEmpty)
                     Text(item.message,
@@ -282,7 +285,8 @@ class _DropdownTile extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(time,
                           style: const TextStyle(
-                              fontSize: 11, color: AppColors.textSecondary)),
+                              fontSize: 11,
+                              color: AppColors.textSecondary)),
                     ),
                 ],
               ),

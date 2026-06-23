@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show FilteringTextInputFormatter, LengthLimitingTextInputFormatter;
@@ -29,11 +30,11 @@ class MyProfileEditPage extends ConsumerWidget {
     final async = ref.watch(myProfileProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chỉnh sửa hồ sơ')),
+      appBar: AppBar(title: Text('profile.edit_profile'.tr())),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => ErrorView(
-          message: 'Không tải được hồ sơ',
+          message: 'profile.load_failed'.tr(),
           onRetry: () => ref.invalidate(myProfileProvider),
         ),
         data: (p) => _EditForm(profile: p),
@@ -62,7 +63,13 @@ class _EditFormState extends ConsumerState<_EditForm> {
   String? _avatarUrl;
   bool _uploadingAvatar = false;
 
-  static const _genders = {'male': 'Nam', 'female': 'Nữ', 'other': 'Khác'};
+  static const _genderKeys = ['male', 'female', 'other'];
+
+  Map<String, String> get _genders => {
+        'male': 'profile.gender_male'.tr(),
+        'female': 'profile.gender_female'.tr(),
+        'other': 'profile.gender_other'.tr(),
+      };
 
   @override
   void initState() {
@@ -71,7 +78,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
     _phoneCtl = TextEditingController(text: widget.profile.phone ?? '');
     _dobCtl = TextEditingController(text: widget.profile.dob ?? '');
     final g = widget.profile.gender?.toLowerCase();
-    _gender = _genders.containsKey(g) ? g : null;
+    _gender = _genderKeys.contains(g) ? g : null;
     _avatarUrl = widget.profile.avatarUrl;
   }
 
@@ -87,7 +94,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
     if (file == null) return;
     final length = await file.length();
     if (length > 5 * 1024 * 1024) {
-      if (mounted) AppToast.error(context, 'Ảnh vượt quá 5MB.');
+      if (mounted) AppToast.error(context, 'profile.avatar_too_large'.tr());
       return;
     }
 
@@ -100,10 +107,10 @@ class _EditFormState extends ConsumerState<_EditForm> {
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
       setState(() => _avatarUrl = url);
-      AppToast.success(context, 'Cập nhật ảnh đại diện thành công.');
+      AppToast.success(context, 'profile.avatar_updated'.tr());
     } catch (e) {
       if (!mounted) return;
-      AppToast.error(context, 'Cập nhật ảnh đại diện thất bại.');
+      AppToast.error(context, 'profile.avatar_update_failed'.tr());
     } finally {
       if (mounted) setState(() => _uploadingAvatar = false);
     }
@@ -120,7 +127,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
   Future<void> _save() async {
     final orgId = ref.read(organizationStateProvider).valueOrNull?.id;
     if (orgId == null) {
-      AppToast.error(context, 'Thiếu thông tin tổ chức.');
+      AppToast.error(context, 'profile.org_missing'.tr());
       return;
     }
     final phoneError =
@@ -139,13 +146,13 @@ class _EditFormState extends ConsumerState<_EditForm> {
           );
       ref.invalidate(myProfileProvider);
       if (!mounted) return;
-      AppToast.success(context, 'Cập nhật hồ sơ thành công.');
+      AppToast.success(context, 'profile.update_success'.tr());
       context.pop();
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Cập nhật thất bại';
+          : 'profile.update_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -160,20 +167,20 @@ class _EditFormState extends ConsumerState<_EditForm> {
       children: [
         Center(child: _avatarEditor()),
         const SizedBox(height: 20),
-        _ReadOnlyField(label: 'Họ và tên', value: p.fullName ?? '—'),
+        _ReadOnlyField(label: 'profile.full_name'.tr(), value: p.fullName ?? '—'),
         const SizedBox(height: 12),
-        _ReadOnlyField(label: 'Email', value: p.email),
+        _ReadOnlyField(label: 'profile.email'.tr(), value: p.email),
         const SizedBox(height: 12),
         if (p.studentId != null && p.studentId!.isNotEmpty) ...[
-          _ReadOnlyField(label: 'Mã số sinh viên', value: p.studentId!),
+          _ReadOnlyField(label: 'profile.student_id'.tr(), value: p.studentId!),
           const SizedBox(height: 12),
         ],
         TextField(
           controller: _bioCtl,
           maxLength: 500,
-          decoration: const InputDecoration(
-            labelText: 'Giới thiệu',
-            prefixIcon: Icon(Icons.notes_outlined),
+          decoration: InputDecoration(
+            labelText: 'profile.bio'.tr(),
+            prefixIcon: const Icon(Icons.notes_outlined),
           ),
         ),
         const SizedBox(height: 16),
@@ -186,10 +193,10 @@ class _EditFormState extends ConsumerState<_EditForm> {
             FilteringTextInputFormatter.digitsOnly,
             LengthLimitingTextInputFormatter(10),
           ],
-          decoration: const InputDecoration(
-            labelText: 'Số điện thoại',
-            hintText: 'Ví dụ: 0901234567',
-            prefixIcon: Icon(Icons.phone_outlined),
+          decoration: InputDecoration(
+            labelText: 'profile.phone'.tr(),
+            hintText: 'profile.phone_hint'.tr(),
+            prefixIcon: const Icon(Icons.phone_outlined),
           ),
         ),
         const SizedBox(height: 16),
@@ -198,7 +205,7 @@ class _EditFormState extends ConsumerState<_EditForm> {
           initialSelection: _gender,
           expandedInsets: EdgeInsets.zero,
           requestFocusOnTap: false,
-          hintText: 'Giới tính',
+          hintText: 'profile.gender'.tr(),
           leadingIcon: const Icon(Icons.wc_outlined),
           textStyle: const TextStyle(fontSize: 16),
           menuStyle: MenuStyle(
@@ -228,11 +235,11 @@ class _EditFormState extends ConsumerState<_EditForm> {
         TextField(
           controller: _dobCtl,
           readOnly: true,
-          decoration: const InputDecoration(
-            labelText: 'Ngày sinh',
+          decoration: InputDecoration(
+            labelText: 'profile.dob'.tr(),
             hintText: 'YYYY-MM-DD',
-            prefixIcon: Icon(Icons.cake_outlined),
-            suffixIcon: Icon(Icons.calendar_today_outlined),
+            prefixIcon: const Icon(Icons.cake_outlined),
+            suffixIcon: const Icon(Icons.calendar_today_outlined),
           ),
           onTap: _pickDob,
         ),
@@ -249,7 +256,8 @@ class _EditFormState extends ConsumerState<_EditForm> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white),
                 )
-              : const Text('Lưu thay đổi', style: TextStyle(fontSize: 16)),
+              : Text('profile.save_changes'.tr(),
+                  style: const TextStyle(fontSize: 16)),
         ),
       ],
     );

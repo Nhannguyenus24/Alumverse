@@ -8,6 +8,7 @@ import { GoogleReCaptchaProvider } from '@google-recaptcha/react';
 import { router } from './routes';
 import NotistackProvider from './components/NotistackProvider';
 import ThemeProvider from './theme';
+import './i18n';
 
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';

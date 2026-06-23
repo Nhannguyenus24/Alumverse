@@ -41,10 +41,9 @@ import {
   updateMentorSessionMeetingLink,
 } from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
-import { MENTOR_PROFILE_TABS } from '../../constants/mentorshipNav';
+import { getMentorProfileTabs } from '../../constants/mentorshipNav';
+import { useTranslation } from 'react-i18next';
 import StatsBanner from '../../components/StatsBanner'
-
-const TOP_TABS = MENTOR_PROFILE_TABS;
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -52,6 +51,8 @@ const DEFAULT_COVER =
 const PAGE_SIZE = 50;
 
 const MentorshipDashboardPage = () => {
+  const { t } = useTranslation('mentorship');
+  const TOP_TABS = getMentorProfileTabs(t);
   const navigate = useOrgNavigate();
   const [cancelTarget, setCancelTarget] = useState(null);
   const [cancelReason, setCancelReason] = useState('');

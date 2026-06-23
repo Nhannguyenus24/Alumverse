@@ -1,6 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/app_toast.dart';
@@ -17,11 +17,11 @@ class MentorAvailabilityPage extends ConsumerWidget {
     final async = ref.watch(myAvailabilityProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Lịch rảnh của tôi')),
+      appBar: AppBar(title: Text('mentorship.my_availability'.tr())),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddSlot(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Thêm khung giờ'),
+        label: Text('mentorship.add_slot'.tr()),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -36,10 +36,10 @@ class MentorAvailabilityPage extends ConsumerWidget {
               Center(
                 child: Column(
                   children: [
-                    const Text('Không tải được lịch rảnh'),
+                    Text('mentorship.availability_load_failed'.tr()),
                     TextButton(
                       onPressed: () => ref.invalidate(myAvailabilityProvider),
-                      child: const Text('Thử lại'),
+                      child: Text('common.retry'.tr()),
                     ),
                   ],
                 ),
@@ -58,16 +58,16 @@ class MentorAvailabilityPage extends ConsumerWidget {
 
             if (slots.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 120),
-                  Icon(Icons.calendar_today_outlined,
+                children: [
+                  const SizedBox(height: 120),
+                  const Icon(Icons.calendar_today_outlined,
                       size: 48, color: AppColors.textSecondary),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Center(
                     child: Text(
-                      'Chưa có khung giờ rảnh nào.\nBấm "+ Thêm khung giờ" để bắt đầu.',
+                      'mentorship.no_slots_hint'.tr(),
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.textSecondary),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 ],
@@ -78,11 +78,11 @@ class MentorAvailabilityPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
               children: [
                 if (upcoming.isNotEmpty) ...[
-                  const _GroupLabel('Sắp tới'),
+                  _GroupLabel('mentorship.upcoming_slots'.tr()),
                   ...upcoming.map((s) => _SlotTile(slot: s)),
                 ],
                 if (past.isNotEmpty) ...[
-                  const _GroupLabel('Đã qua'),
+                  _GroupLabel('mentorship.past_slots'.tr()),
                   ...past.map((s) => _SlotTile(slot: s, isPast: true)),
                 ],
               ],
@@ -142,12 +142,12 @@ class _SlotTile extends ConsumerWidget {
         ),
         subtitle: Text(
           '${tf.format(slot.startTime)} – ${tf.format(slot.endTime)}'
-          '${isBooked ? ' · Đã được đặt' : ''}',
+          '${isBooked ? ' · ${'mentorship.slot_booked'.tr()}' : ''}',
           style: const TextStyle(fontSize: 13),
         ),
         trailing: (!isBooked && !isPast)
             ? IconButton(
-                tooltip: 'Xóa slot',
+                tooltip: 'mentorship.delete_slot'.tr(),
                 icon: const Icon(Icons.delete_outline, color: AppColors.error),
                 onPressed: () => _delete(context, ref),
               )
@@ -160,16 +160,16 @@ class _SlotTile extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xóa khung giờ?'),
-        content: const Text('Slot này sẽ không còn hiển thị cho mentee.'),
+        title: Text('mentorship.delete_slot_title'.tr()),
+        content: Text('mentorship.delete_slot_content'.tr()),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Hủy')),
+              child: Text('common.cancel'.tr())),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Xóa',
-                  style: TextStyle(color: AppColors.error))),
+              child: Text('common.delete'.tr(),
+                  style: const TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -178,7 +178,7 @@ class _SlotTile extends ConsumerWidget {
       await ref.read(mentorshipRepositoryProvider).deleteAvailability(slot.id);
       ref.invalidate(myAvailabilityProvider);
       if (context.mounted) {
-        AppToast.success(context, 'Đã xóa khung giờ');
+        AppToast.success(context, 'mentorship.slot_deleted'.tr());
       }
     } catch (e) {
       if (context.mounted) {
@@ -234,13 +234,13 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
 
   Future<void> _save() async {
     if (_date == null || _startTime == null || _endTime == null) {
-      AppToast.info(context, 'Vui lòng chọn đầy đủ ngày và giờ');
+      AppToast.info(context, 'mentorship.slot_fill_required'.tr());
       return;
     }
     final start = _combine(_date!, _startTime!);
     final end = _combine(_date!, _endTime!);
     if (!end.isAfter(start)) {
-      AppToast.error(context, 'Giờ kết thúc phải sau giờ bắt đầu');
+      AppToast.error(context, 'mentorship.slot_end_after_start'.tr());
       return;
     }
 
@@ -252,7 +252,7 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
       ref.invalidate(myAvailabilityProvider);
       if (!mounted) return;
       Navigator.of(context).pop();
-      AppToast.success(context, 'Đã thêm khung giờ');
+      AppToast.success(context, 'mentorship.slot_added'.tr());
     } catch (e) {
       if (!mounted) return;
       AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
@@ -278,14 +278,14 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Thêm khung giờ rảnh',
+          Text('mentorship.add_slot_title'.tr(),
               style:
-                  TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
           _PickerTile(
             icon: Icons.calendar_today,
-            label: 'Ngày',
-            value: _date != null ? df.format(_date!) : 'Chọn ngày',
+            label: 'mentorship.slot_date'.tr(),
+            value: _date != null ? df.format(_date!) : 'mentorship.pick_date'.tr(),
             onTap: _pickDate,
           ),
           const SizedBox(height: 12),
@@ -294,11 +294,11 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
               Expanded(
                 child: _PickerTile(
                   icon: Icons.access_time,
-                  label: 'Bắt đầu',
+                  label: 'mentorship.slot_start'.tr(),
                   value: _startTime != null
                       ? tf.format(_combine(
                           _date ?? now, _startTime!))
-                      : 'Chọn giờ',
+                      : 'mentorship.pick_time'.tr(),
                   onTap: () => _pickTime(true),
                 ),
               ),
@@ -306,11 +306,11 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
               Expanded(
                 child: _PickerTile(
                   icon: Icons.access_time_filled,
-                  label: 'Kết thúc',
+                  label: 'mentorship.slot_end'.tr(),
                   value: _endTime != null
                       ? tf.format(_combine(
                           _date ?? now, _endTime!))
-                      : 'Chọn giờ',
+                      : 'mentorship.pick_time'.tr(),
                   onTap: () => _pickTime(false),
                 ),
               ),
@@ -329,8 +329,8 @@ class _AddSlotSheetState extends ConsumerState<_AddSlotSheet> {
                       width: 20,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white))
-                  : const Text('Lưu khung giờ',
-                      style: TextStyle(fontSize: 16)),
+                  : Text('mentorship.save_slot'.tr(),
+                      style: const TextStyle(fontSize: 16)),
             ),
           ),
         ],

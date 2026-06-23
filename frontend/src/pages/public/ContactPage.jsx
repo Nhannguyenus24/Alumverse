@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Container, Typography, Button, Stack, TextField } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
@@ -18,15 +19,8 @@ const CONTACT_INFO = {
   admissions: '093 773 4004',
 };
 
-const SUBJECT_OPTIONS = [
-  { value: 'general', label: 'Chủ đề chung' },
-  { value: 'admissions', label: 'Tuyển sinh' },
-  { value: 'alumni', label: 'Cựu sinh viên' },
-  { value: 'partnership', label: 'Hợp tác' },
-  { value: 'other', label: 'Khác' },
-];
-
 const ContactPage = () => {
+  const { t } = useTranslation('contact');
   const { organization } = useOrganization();
   const { showError, showSuccess } = useNotification();
   const [form, setForm] = useState({
@@ -38,11 +32,18 @@ const ContactPage = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  const SUBJECT_OPTIONS = [
+    { value: 'general', label: t('subject_general') },
+    { value: 'admissions', label: t('subject_admissions') },
+    { value: 'alumni', label: t('subject_alumni') },
+    { value: 'partnership', label: t('subject_partnership') },
+    { value: 'other', label: t('subject_other') },
+  ];
+
   const handleChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
-  // Phone is required here; show a VN-format error once the user types.
   const phoneError = form.phone.trim()
     ? validateVietnamPhone(form.phone)
     : null;
@@ -61,11 +62,11 @@ const ContactPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!organization?.id) {
-      showError('Không tìm thấy thông tin trường để gửi góp ý.');
+      showError(t('error_no_org'));
       return;
     }
     if (!canSubmit) {
-      showError('Vui lòng điền đầy đủ thông tin bắt buộc.');
+      showError(t('error_fill_required'));
       return;
     }
     const phoneErr = validateVietnamPhone(form.phone);
@@ -84,16 +85,10 @@ const ContactPage = () => {
         content: form.content.trim(),
       });
 
-      setForm({
-        fullName: '',
-        email: '',
-        phone: '',
-        subject: '',
-        content: '',
-      });
-      showSuccess('Gửi góp ý thành công. Cảm ơn bạn đã liên hệ.');
+      setForm({ fullName: '', email: '', phone: '', subject: '', content: '' });
+      showSuccess(t('success'));
     } catch (error) {
-      const message = error?.response?.data?.message ?? 'Không thể gửi góp ý lúc này. Vui lòng thử lại sau.';
+      const message = error?.response?.data?.message ?? t('error_send_failed');
       showError(message);
     } finally {
       setLoading(false);
@@ -102,13 +97,8 @@ const ContactPage = () => {
 
   return (
     <Page
-      title="Liên hệ"
-      meta={
-        <meta
-          name="description"
-          content="Liên hệ với Văn phòng Khoa Công nghệ Thông tin - Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
-        />
-      }
+      title={t('page_title')}
+      meta={<meta name="description" content={t('page_meta_desc')} />}
     >
       <Container maxWidth={false} disableGutters sx={{ display: 'flex', flexDirection: 'column' }}>
         <Box
@@ -119,7 +109,6 @@ const ContactPage = () => {
             overflow: 'hidden',
           }}
         >
-          {/* Background image */}
           <Box
             sx={{
               position: 'absolute',
@@ -131,15 +120,7 @@ const ContactPage = () => {
             }}
           />
 
-          {/* White card overlapping background */}
-          <Box
-            sx={{
-              position: 'relative',
-              zIndex: 1,
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
+          <Box sx={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center' }}>
             <Box
               component="form"
               onSubmit={handleSubmit}
@@ -161,7 +142,7 @@ const ContactPage = () => {
                 textAlign="center"
                 sx={{ mb: 5, fontSize: { xs: '1.8rem', md: '2.3rem' } }}
               >
-                LIÊN HỆ
+                {t('heading')}
               </Typography>
 
               <Stack
@@ -181,7 +162,7 @@ const ContactPage = () => {
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight={700} color="text.primary">
-                    Thông tin liên hệ
+                    {t('contact_info_title')}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" fontWeight={600}>
                     {CONTACT_INFO.office}
@@ -193,10 +174,10 @@ const ContactPage = () => {
                     Email: {CONTACT_INFO.email}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    SĐT: {CONTACT_INFO.phone}
+                    {t('label_phone')}: {CONTACT_INFO.phone}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Tuyển sinh: {CONTACT_INFO.admissions}
+                    {t('label_admissions')}: {CONTACT_INFO.admissions}
                   </Typography>
                 </Box>
 
@@ -212,16 +193,16 @@ const ContactPage = () => {
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight={700} color="text.primary">
-                    Thông tin người gửi
+                    {t('sender_info_title')}
                   </Typography>
                   <Box sx={{ width: '100%' }}>
-                    <Input label="" placeholder="Họ và tên" value={form.fullName} onChange={handleChange('fullName')} />
+                    <Input label="" placeholder={t('placeholder_fullname')} value={form.fullName} onChange={handleChange('fullName')} />
                   </Box>
                   <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1.5, width: '100%', flexWrap: 'wrap' }}>
                     <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
                       <Input
                         label=""
-                        placeholder="Email"
+                        placeholder={t('placeholder_email')}
                         type="email"
                         value={form.email}
                         onChange={handleChange('email')}
@@ -230,13 +211,11 @@ const ContactPage = () => {
                     <Box sx={{ flex: '1 1 200px', minWidth: 0 }}>
                       <Input
                         label=""
-                        placeholder="Số điện thoại"
+                        placeholder={t('placeholder_phone')}
                         value={form.phone}
                         onChange={handleChange('phone')}
                         inputProps={{ inputMode: 'numeric', maxLength: 10 }}
-                        onInput={(e) => {
-                          e.target.value = e.target.value.replace(/\D/g, '');
-                        }}
+                        onInput={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); }}
                         error={Boolean(phoneError)}
                         helperText={phoneError || ''}
                       />
@@ -244,12 +223,12 @@ const ContactPage = () => {
                   </Box>
 
                   <Typography variant="subtitle1" fontWeight={700} color="text.primary" sx={{ mt: 0.5 }}>
-                    Nội dung
+                    {t('content_title')}
                   </Typography>
                   <Box sx={{ width: '100%' }}>
                     <Dropdown
-                      label="Chủ đề"
-                      placeholder="Chủ đề"
+                      label={t('subject_label')}
+                      placeholder={t('subject_label')}
                       options={SUBJECT_OPTIONS}
                       value={form.subject}
                       onChange={(e) => setForm((prev) => ({ ...prev, subject: e.target.value }))}
@@ -257,7 +236,7 @@ const ContactPage = () => {
                   </Box>
                   <Box sx={{ width: '100%' }}>
                     <TextField
-                      placeholder="Viết nội dung góp ý..."
+                      placeholder={t('placeholder_content')}
                       multiline
                       rows={4}
                       value={form.content}
@@ -276,7 +255,7 @@ const ContactPage = () => {
                       disabled={!canSubmit}
                       sx={{ fontWeight: 600, px: 4 }}
                     >
-                      {loading ? 'Đang gửi...' : 'Gửi góp ý'}
+                      {loading ? t('sending') : t('submit')}
                     </Button>
                   </Box>
                 </Box>

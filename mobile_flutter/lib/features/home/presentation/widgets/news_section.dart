@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -25,10 +25,10 @@ class NewsSection extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionTitle(
-          'Tin tức',
+          'article.title'.tr(),
           action: TextButton(
             onPressed: () => context.push(RouteNames.news),
-            child: const Text('Xem tất cả'),
+            child: Text('home.view_all'.tr()),
           ),
         ),
         newsAsync.when(
@@ -38,14 +38,14 @@ class NewsSection extends ConsumerWidget {
           ),
           error: (e, _) => _Message(
             icon: Icons.cloud_off_rounded,
-            text: 'Không tải được tin tức',
+            text: 'article.load_failed'.tr(),
             onRetry: () => ref.invalidate(publishedNewsProvider),
           ),
           data: (news) {
             if (news.isEmpty) {
-              return const _Message(
+              return _Message(
                 icon: Icons.article_outlined,
-                text: 'Chưa có tin tức nào',
+                text: 'article.no_news'.tr(),
               );
             }
             return Column(
@@ -194,7 +194,7 @@ class _Message extends StatelessWidget {
             Text(text, style: const TextStyle(color: AppColors.textSecondary)),
             if (onRetry != null) ...[
               const SizedBox(height: 8),
-              TextButton(onPressed: onRetry, child: const Text('Thử lại')),
+              TextButton(onPressed: onRetry, child: Text('common.retry'.tr())),
             ],
           ],
         ),

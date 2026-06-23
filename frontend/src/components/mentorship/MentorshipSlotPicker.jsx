@@ -2,10 +2,8 @@ import { useMemo, useState } from 'react';
 import { Box, Button, IconButton, Stack, Typography } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
-
-const WEEK_DAY_LABELS_VI = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const WEEK_DAY_FULL_VI = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
 const buildMiniCalendar = (anchor) => {
   const startOfMonth = anchor.startOf('month');
@@ -30,10 +28,6 @@ const buildMiniCalendar = (anchor) => {
   return cells;
 };
 
-/**
- * availabilityMap is { "YYYY-MM-DD": [{ id, startTime, endTime }, ...] }.
- * Returns the list of bookable slots for the given date (empty if none).
- */
 const getSlotsForDate = (date, availabilityMap) => {
   const key = date.format('YYYY-MM-DD');
   return availabilityMap[key] ?? [];
@@ -49,8 +43,16 @@ const MentorshipSlotPicker = ({
   availabilityMap = {},
   selectedSlot,
   onSelectSlot,
-  timezoneLabel = '(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh',
+  timezoneLabel,
 }) => {
+  const { t, i18n } = useTranslation('mentorship');
+
+  const defaultTimezoneLabel =
+    i18n.language === 'vi'
+      ? '(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh'
+      : '(GMT+07:00) Indochina Time - Ho Chi Minh City';
+  const resolvedTimezoneLabel = timezoneLabel ?? defaultTimezoneLabel;
+
   const today = useMemo(() => dayjs().startOf('day'), []);
   const initialAnchor = useMemo(() => {
     const keys = Object.keys(availabilityMap)
@@ -74,6 +76,16 @@ const MentorshipSlotPicker = ({
     setSelectedDate(cellDate);
   };
 
+  // Weekday labels — locale-aware via dayjs
+  const weekDayLabels = useMemo(() => {
+    const base = dayjs().startOf('week');
+    return Array.from({ length: 7 }, (_, i) =>
+      base.add(i, 'day').format('dd').toUpperCase(),
+    );
+  }, [i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const selectedDayLabel = selectedDate.format('dddd, DD/MM/YYYY');
+
   return (
     <Box
       sx={{
@@ -92,9 +104,9 @@ const MentorshipSlotPicker = ({
         spacing={1}
         mb={2}
       >
-        <Typography fontWeight={600}>Chọn thời gian cho lịch hẹn</Typography>
+        <Typography fontWeight={600}>{t('slot_picker_header')}</Typography>
         <Typography variant="caption" color="text.secondary">
-          {timezoneLabel}
+          {resolvedTimezoneLabel}
         </Typography>
       </Stack>
 
@@ -109,7 +121,7 @@ const MentorshipSlotPicker = ({
         <Box sx={{ width: { xs: '100%', md: 240 }, flexShrink: 0 }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
             <Typography fontWeight={600} fontSize={14}>
-              {`Tháng ${anchorDate.month() + 1}, ${anchorDate.year()}`}
+              {t('slot_picker_month', { month: anchorDate.month() + 1, year: anchorDate.year() })}
             </Typography>
             <Stack direction="row">
               <IconButton size="small" onClick={() => setAnchorDate((d) => d.subtract(1, 'month'))}>
@@ -122,7 +134,7 @@ const MentorshipSlotPicker = ({
           </Stack>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: 0.5 }}>
-            {WEEK_DAY_LABELS_VI.map((d) => (
+            {weekDayLabels.map((d) => (
               <Typography
                 key={d}
                 variant="caption"
@@ -136,7 +148,6 @@ const MentorshipSlotPicker = ({
               const hasAny = getSlotsForDate(date, availabilityMap).length > 0;
               const isPast = date.isBefore(today);
               const isSelected = date.isSame(selectedDate, 'day');
-
               const disabled = !inMonth || isPast || !hasAny;
 
               return (
@@ -172,12 +183,12 @@ const MentorshipSlotPicker = ({
         {/* SLOT LIST FOR SELECTED DAY */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography fontWeight={600} mb={1.5}>
-            {`${WEEK_DAY_FULL_VI[selectedDate.day()]}, ${selectedDate.format('DD/MM/YYYY')}`}
+            {selectedDayLabel}
           </Typography>
 
           {daySlots.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-              Không có khung giờ trống trong ngày này. Hãy chọn ngày khác trên lịch.
+              {t('slot_picker_no_slots_day')}
             </Typography>
           ) : (
             <Box

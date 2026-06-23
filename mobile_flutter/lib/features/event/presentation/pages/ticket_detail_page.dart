@@ -1,8 +1,8 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/router/route_names.dart';
@@ -30,11 +30,11 @@ class TicketDetailPage extends ConsumerWidget {
         : ref.watch(ticketByCodeProvider(code));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết vé')),
+      appBar: AppBar(title: Text('event.ticket_detail_title'.tr())),
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => ErrorView(
-          message: 'Không tải được vé',
+          message: 'event.ticket_load_failed'.tr(),
           onRetry: () => ref.invalidate(ticketByCodeProvider(code)),
         ),
         data: (ticket) => _Body(ticket: ticket),
@@ -53,7 +53,8 @@ class _Body extends ConsumerWidget {
         ? AsyncValue.data(ticket.eventTitle!)
         : ref.watch(eventDetailProvider(ticket.eventId)
             .select((a) => a.whenData((e) => e.title)));
-    final title = titleAsync.valueOrNull ?? 'Sự kiện #${ticket.eventId}';
+    final title = titleAsync.valueOrNull ??
+        'event.event_number'.tr(namedArgs: {'id': ticket.eventId.toString()});
 
     final reg = ticket.registeredAt != null
         ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.registeredAt!)
@@ -68,7 +69,7 @@ class _Body extends ConsumerWidget {
         _TicketCard(code: ticket.ticketCode, badge: ticket),
         const SizedBox(height: 20),
 
-        _SectionTitle('Sự kiện'),
+        _SectionTitle('event.title'.tr()),
         InkWell(
           onTap: () => context.push('${RouteNames.events}/${ticket.eventId}'),
           child: Row(
@@ -84,30 +85,32 @@ class _Body extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
 
-        _SectionTitle('Trạng thái'),
+        _SectionTitle('event.status_label'.tr()),
         TicketStatusBadge(ticket: ticket),
         const SizedBox(height: 16),
 
         if (reg != null) ...[
-          _InfoRow(Icons.schedule, 'Thời gian đăng ký', reg),
+          _InfoRow(Icons.schedule, 'event.registration_time'.tr(), reg),
         ],
         if (checkin != null)
-          _InfoRow(Icons.how_to_reg_outlined, 'Thời gian tham dự', checkin),
+          _InfoRow(Icons.how_to_reg_outlined, 'event.checkin_time'.tr(), checkin),
 
         if (ticket.isCancelled &&
             ticket.cancelReason != null &&
             ticket.cancelReason!.isNotEmpty) ...[
           const SizedBox(height: 8),
-          _InfoRow(Icons.cancel_outlined, 'Lý do hủy', ticket.cancelReason!,
+          _InfoRow(Icons.cancel_outlined, 'event.cancel_reason_label'.tr(),
+              ticket.cancelReason!,
               color: AppColors.error),
         ],
         if (ticket.rejectReason != null && ticket.rejectReason!.isNotEmpty)
-          _InfoRow(Icons.block, 'Lý do từ chối', ticket.rejectReason!,
+          _InfoRow(Icons.block, 'event.reject_reason_label'.tr(),
+              ticket.rejectReason!,
               color: AppColors.error),
 
         if (ticket.registrationAnswers.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _SectionTitle('Thông tin đăng ký'),
+          _SectionTitle('event.registration_info'.tr()),
           ...ticket.registrationAnswers.map(_answerTile),
         ],
       ],
@@ -156,12 +159,12 @@ class _TicketCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.confirmation_number, color: Colors.white70, size: 20),
-              SizedBox(width: 8),
-              Text('VÉ THAM GIA SỰ KIỆN',
-                  style: TextStyle(
+              const Icon(Icons.confirmation_number, color: Colors.white70, size: 20),
+              const SizedBox(width: 8),
+              Text('event.ticket_header'.tr(),
+                  style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -173,8 +176,8 @@ class _TicketCard extends StatelessWidget {
           // to a third-party QR service). Encodes the same payload as web.
           Center(child: _QrBox(code: code, ticket: badge)),
           const SizedBox(height: 16),
-          const Text('Mã vé',
-              style: TextStyle(color: Colors.white70, fontSize: 12)),
+          Text('event.ticket_code'.tr(),
+              style: const TextStyle(color: Colors.white70, fontSize: 12)),
           const SizedBox(height: 4),
           Row(
             children: [
@@ -190,10 +193,10 @@ class _TicketCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Sao chép mã',
+                tooltip: 'event.copy_code'.tr(),
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: code));
-                  AppToast.success(context, 'Đã sao chép mã vé.');
+                  AppToast.success(context, 'event.code_copied'.tr());
                 },
                 icon: const Icon(Icons.copy, color: Colors.white70, size: 20),
               ),
@@ -246,7 +249,9 @@ class _QrBox extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                ticket.isCancelled ? 'ĐÃ HỦY' : 'ĐÃ SỬ DỤNG',
+                ticket.isCancelled
+                    ? 'event.status_cancelled_upper'.tr()
+                    : 'event.status_used_upper'.tr(),
                 style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,

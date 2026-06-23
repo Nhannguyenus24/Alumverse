@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -49,6 +50,7 @@ function formatTime(isoString) {
 const SCROLL_TOP_THRESHOLD = 8;
 
 const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
+  const { t } = useTranslation('network');
   const [draft, setDraft] = useState('');
   const draftInputRef = useRef(null);
   const [membersDrawerOpen, setMembersDrawerOpen] = useState(false);
@@ -356,9 +358,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               color="inherit"
               size="small"
               onClick={() => setMembersDrawerOpen(true)}
-              sx={{ fontWeight: 700, textTransform: 'none', whiteSpace: 'nowrap' }}
+              sx={{ fontWeight: 700, textTransform: 'none' }}
             >
-              Kiểm tra setting
+              {t('group_settings')}
             </Button>
           }
         >
@@ -399,7 +401,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         {/* No more older messages hint */}
         {!hasMore && messages.length > 0 && (
           <Typography variant="caption" color="text.disabled" align="center" display="block" sx={{ py: 0.5 }}>
-            Đã tải hết tin nhắn
+            {t('messages_all_loaded')}
           </Typography>
         )}
 
@@ -414,7 +416,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         {!isLoading && messages.length === 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Chưa có tin nhắn nào.
+              {t('no_messages_yet')}
             </Typography>
           </Box>
         )}

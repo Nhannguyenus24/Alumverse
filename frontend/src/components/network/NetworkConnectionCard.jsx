@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Avatar,
   Box,
@@ -26,6 +27,7 @@ const NetworkConnectionCard = ({
   onBlock,
   isBlockLoading = false,
 }) => {
+  const { t } = useTranslation('network');
   const navigate = useOrgNavigate();
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(connection.peerMemberId);
@@ -104,9 +106,8 @@ const NetworkConnectionCard = ({
             size="small"
             type="button"
             onClick={handleMessage}
-            sx={{ minWidth: 100 }}
           >
-            Nhắn tin
+            {t('message')}
           </Button>
 
           {enableBlock ? (

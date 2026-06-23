@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -9,6 +10,7 @@ import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
 
 const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
+  const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
@@ -41,7 +43,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
         setIsInterested(true);
       }
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Thao tác thất bại', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: 'error' });
     } finally {
       setLoadingInterest(false);
     }
@@ -63,13 +65,13 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
       await eventApi.registerForEvent(article.id, payload);
       setIsJoined(true);
       setOpenJoinDialog(false);
-      enqueueSnackbar('Đăng ký thành công! Xem vé trong Vé của tôi.', { variant: 'success' });
+      enqueueSnackbar(t('event:register_success'), { variant: 'success' });
     } catch (err) {
       if (err?.response?.status === 409) {
         setIsJoined(true);
-        enqueueSnackbar('Bạn đã đăng ký sự kiện này rồi.', { variant: 'info' });
+        enqueueSnackbar(t('event:already_registered'), { variant: 'info' });
       } else {
-        enqueueSnackbar(err?.response?.data?.message || 'Đăng ký thất bại', { variant: 'error' });
+        enqueueSnackbar(err?.response?.data?.message || t('event:register_failed'), { variant: 'error' });
       }
     } finally {
       setLoadingJoin(false);
@@ -144,11 +146,11 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
         </Box>
 
         <Typography variant="body2" color="text.secondary">
-          {article.organizer || 'Ban tổ chức'}
+          {article.organizer || t('event:organizer_fallback')}
         </Typography>
 
         <Typography variant="caption" color="text.secondary">
-          {article.participants || 0} người tham gia · {article.interested || 0} người quan tâm
+          {t('event:participants_interested', { participants: article.participants || 0, interested: article.interested || 0 })}
         </Typography>
       </Box>
 
@@ -176,7 +178,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
             sx={{ textTransform: 'none', fontWeight: 600 }}
             onClick={onEdit}
           >
-            Sửa
+            {t('common:edit')}
           </Button>
           <Button
             fullWidth
@@ -186,7 +188,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
             sx={{ textTransform: 'none', fontWeight: 600 }}
             onClick={onDelete}
           >
-            Xoá
+            {t('common:delete')}
           </Button>
         </Stack>
       ) : (
@@ -199,7 +201,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
             sx={{ bgcolor: isInterested ? 'white' : 'primary.main' }}
             onClick={handleInterest}
           >
-            {isInterested ? 'Đã quan tâm' : 'Quan tâm'}
+            {isInterested ? t('event:interested') : t('event:mark_interested')}
           </Button>
 
           <Button
@@ -210,7 +212,7 @@ const ArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
             sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
             onClick={handleJoinClick}
           >
-            {isJoined ? 'Đã tham gia' : 'Tham gia'}
+            {isJoined ? t('event:joined') : t('event:join')}
           </Button>
         </Stack>
       )}

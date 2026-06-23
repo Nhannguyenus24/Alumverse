@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -21,6 +22,7 @@ const NetworkIncomingRequestCard = ({
   onReject,
   isResponding = false,
 }) => {
+  const { t } = useTranslation('network');
   const previewMessage = request.message ?? '';
   const isPending = request.status === CONVERSATION_REQUEST_STATUS.PENDING;
   const { navigateToProfile, stopActionPropagation } =
@@ -141,9 +143,8 @@ const NetworkIncomingRequestCard = ({
               size="small"
               onClick={handleAccept}
               disabled={isResponding}
-              sx={{ minWidth: 100 }}
             >
-              {isResponding ? <CircularProgress size={16} color="inherit" /> : 'Chấp nhận'}
+              {isResponding ? <CircularProgress size={16} color="inherit" /> : t('accept')}
             </Button>
             <Button
               variant="outlined"
@@ -152,11 +153,10 @@ const NetworkIncomingRequestCard = ({
               onClick={handleReject}
               disabled={isResponding}
               sx={(theme) => ({
-                minWidth: 100,
                 borderColor: alpha(theme.palette.text.primary, 0.23),
               })}
             >
-              Từ chối
+              {t('reject')}
             </Button>
           </Stack>
         ) : null}

@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
@@ -19,14 +20,14 @@ class OrganizationIntroductionPage extends ConsumerWidget {
     final org = ref.watch(organizationStateProvider).valueOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Giới thiệu')),
+      appBar: AppBar(title: Text('organization.introduction'.tr())),
       body: org == null
-          ? const ErrorView(message: 'Chưa chọn tổ chức')
+          ? ErrorView(message: 'organization.not_found'.tr())
           : ref.watch(organizationIntroductionProvider(org.id)).when(
                 loading: () =>
                     const Center(child: CircularProgressIndicator()),
                 error: (_, __) => ErrorView(
-                  message: 'Không tải được thông tin giới thiệu',
+                  message: 'organization.intro_load_failed'.tr(),
                   onRetry: () => ref
                       .invalidate(organizationIntroductionProvider(org.id)),
                 ),
@@ -47,13 +48,13 @@ class _Content extends StatelessWidget {
     final banner = resolveImageUrl(intro.bannerUrl);
 
     if (intro.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Text(
-            'Tổ chức này chưa cập nhật nội dung giới thiệu.',
+            'organization.intro_empty'.tr(),
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary),
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
         ),
       );
@@ -79,7 +80,7 @@ class _Content extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'GIỚI THIỆU',
+                'organization.introduction_upper'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: AppColors.primary,
@@ -111,17 +112,16 @@ class _Content extends StatelessWidget {
                   },
                 ),
               if (intro.vision != null && intro.vision!.isNotEmpty)
-                _InfoBlock(title: 'Tầm nhìn', body: intro.vision!),
+                _InfoBlock(title: 'organization.vision'.tr(), body: intro.vision!),
               if (intro.mission != null && intro.mission!.isNotEmpty)
-                _InfoBlock(title: 'Sứ mệnh', body: intro.mission!),
+                _InfoBlock(title: 'organization.mission'.tr(), body: intro.mission!),
               if (intro.coreValues != null && intro.coreValues!.isNotEmpty)
-                _InfoBlock(title: 'Giá trị cốt lõi', body: intro.coreValues!),
+                _InfoBlock(title: 'organization.core_values'.tr(), body: intro.coreValues!),
               if (intro.imageUrls.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                const Text(
-                  'Hình ảnh hoạt động',
-                  style:
-                      TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                Text(
+                  'organization.activity_photos'.tr(),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
                 GridView.builder(

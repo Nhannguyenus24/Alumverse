@@ -1,4 +1,5 @@
 import { useState, useTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router';
 import {
   AppBar,
@@ -33,6 +34,7 @@ const ADMIN_HEADER_HEIGHT = 88;
 
 const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
+  const { t } = useTranslation(['admin']);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [, startTransition] = useTransition();
@@ -108,7 +110,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               sx={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500 }}
             >
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />
-              Quản trị
+              {t('admin:breadcrumb_admin')}
             </MuiLink>
             
             {breadcrumbs && (
@@ -152,7 +154,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                 onChange={(e) => startTransition(() => setActiveOrgId(e.target.value))}
                 disableUnderline
                 id="admin-org-selector"
-                inputProps={{ 'aria-label': 'Chọn tổ chức' }}
+                inputProps={{ 'aria-label': t('admin:select_organization_aria') }}
                 sx={{
                   fontSize: 13,
                   fontWeight: 700,
@@ -280,7 +282,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                 {user?.fullName || user?.studentId}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {user?.role} · Quản trị viên
+                {user?.role} · {t('admin:administrator_role_caption')}
               </Typography>
             </Box>
             <Box sx={{ bgcolor: 'divider', height: 1, my: 0.5 }} />

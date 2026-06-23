@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip } from "@mui/material";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -217,6 +218,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
 };
 
 const ArticlePage = () => {
+  const { t } = useTranslation('common');
   const { channel, id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
   const loadErrorShownRef = useRef(false);
@@ -307,7 +309,7 @@ const ArticlePage = () => {
               {/* Breadcrumb */}
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
-                  Quay lại
+                  {t('back')}
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
                 <SaveArticleButton itemId={Number(id)} />

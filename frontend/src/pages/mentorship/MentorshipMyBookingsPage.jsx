@@ -44,8 +44,9 @@ import {
   updateMentorSessionMeetingLink,
 } from '../../utils/api';
 import { reasonsForStatus } from '../../components/mentorship/reportReasons';
+import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../utils/meetingLink';
-import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
@@ -64,6 +65,7 @@ const STATUS_FILTERS = [
 const PAGE_SIZE = 50;
 
 const MentorshipMyBookingsPage = () => {
+  const { t } = useTranslation('mentorship');
   const navigate = useOrgNavigate();
   const access = useMentorshipAccessState();
 
@@ -391,7 +393,7 @@ const MentorshipMyBookingsPage = () => {
     cover: profile?.coverUrl ?? DEFAULT_COVER,
   };
 
-  const tabs = isMentor ? MENTOR_PROFILE_TABS : MENTEE_PROFILE_TABS;
+  const tabs = isMentor ? getMentorProfileTabs(t) : getMenteeProfileTabs(t);
 
   const renderItem = (session) => {
     if (session._role === 'mentor') {

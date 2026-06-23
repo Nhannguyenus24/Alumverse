@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,7 +59,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
   Future<void> _submit() async {
     final otp = _controllers.map((c) => c.text).join();
     if (otp.length != 6) {
-      AppToast.info(context, 'Vui lòng nhập đủ 6 chữ số');
+      AppToast.info(context, 'auth.enter_6_digits'.tr());
       return;
     }
 
@@ -69,14 +70,14 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
           .verifyOtp(email: widget.email, otp: otp);
 
       if (!mounted) return;
-      AppToast.success(context, 'Xác thực thành công! Vui lòng đăng nhập.');
+      AppToast.success(context, 'auth.verify_success'.tr());
       // Account is now active — go back to login.
       context.go(RouteNames.login);
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Xác thực mã thất bại';
+          : 'auth.verify_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _verifying = false);
@@ -88,12 +89,12 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
     try {
       await ref.read(authStateProvider.notifier).sendOtp(widget.email);
       if (!mounted) return;
-      AppToast.success(context, 'Đã gửi lại mã xác thực');
+      AppToast.success(context, 'auth.resend_success'.tr());
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Gửi lại mã thất bại';
+          : 'auth.resend_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _resending = false);
@@ -104,7 +105,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Xác thực'),
+        title: Text('auth.verify_account'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -118,7 +119,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
               const Center(child: AlumverseLogo(size: 80)),
               const SizedBox(height: 48),
               Text(
-                'Nhập mã xác thực',
+                'auth.enter_code'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
@@ -127,7 +128,7 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Mã đăng ký đã được gửi đến email:\n${widget.email}',
+                'auth.verify_desc'.tr(namedArgs: {'email': widget.email}),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
@@ -148,7 +149,8 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
                       ],
                       onChanged: (v) => _onChanged(v, index),
                       decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 12),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -172,7 +174,8 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
+                    : Text('common.next'.tr(),
+                        style: const TextStyle(fontSize: 16)),
               ),
               const SizedBox(height: 24),
               Center(
@@ -180,8 +183,8 @@ class _SignupCodePageState extends ConsumerState<SignupCodePage> {
                   onPressed: _resending ? null : _resend,
                   child: Text(
                     _resending
-                        ? 'Đang gửi lại...'
-                        : 'Chưa nhận được mã? Gửi lại mã',
+                        ? 'auth.resending'.tr()
+                        : 'auth.resend_code'.tr(),
                   ),
                 ),
               ),

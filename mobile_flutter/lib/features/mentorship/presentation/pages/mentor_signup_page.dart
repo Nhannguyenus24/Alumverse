@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,11 +7,11 @@ import '../../../../shared/widgets/app_toast.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 
-const _categories = <(String, String)>[
-  ('CAREER', 'Nghề nghiệp'),
-  ('ACADEMIC', 'Học thuật'),
-  ('SOFT_SKILLS', 'Kỹ năng mềm'),
-  ('GENERAL', 'Tổng quát'),
+List<(String, String)> _categories(BuildContext context) => [
+  ('CAREER', 'mentorship.type_career'.tr()),
+  ('ACADEMIC', 'mentorship.type_academic'.tr()),
+  ('SOFT_SKILLS', 'mentorship.type_soft_skills'.tr()),
+  ('GENERAL', 'mentorship.type_general'.tr()),
 ];
 
 /// Draft of one expertise row in the signup form.
@@ -57,11 +58,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
         .where((e) => e.topic.trim().isNotEmpty)
         .toList();
     if (validExpertises.isEmpty) {
-      AppToast.info(context, 'Vui lòng thêm ít nhất một lĩnh vực chuyên môn');
+      AppToast.info(context, 'mentorship.signup_expertise_required'.tr());
       return;
     }
     if (!_termsAccepted) {
-      AppToast.info(context, 'Vui lòng đồng ý điều khoản');
+      AppToast.info(context, 'mentorship.signup_terms_required'.tr());
       return;
     }
 
@@ -84,11 +85,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
       }
       ref.invalidate(myMentorProfileProvider);
       if (!mounted) return;
-      AppToast.success(context, 'Đăng ký cố vấn thành công! Hồ sơ đang chờ duyệt.');
+      AppToast.success(context, 'mentorship.signup_success'.tr());
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
-      AppToast.fromError(context, e, fallback: 'Đăng ký cố vấn thất bại');
+      AppToast.fromError(context, e, fallback: 'mentorship.signup_failed'.tr());
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -96,36 +97,38 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categories = _categories(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Trở thành cố vấn')),
+      appBar: AppBar(title: Text('mentorship.become_mentor'.tr())),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _Label('Thông tin cố vấn'),
+            _Label('mentorship.signup_mentor_info'.tr()),
             const SizedBox(height: 12),
             TextFormField(
               controller: _jobCtl,
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Vui lòng nhập chức danh'
+                  ? 'mentorship.signup_job_required'.tr()
                   : null,
-              decoration: const InputDecoration(
-                labelText: 'Chức danh hiện tại *',
+              decoration: InputDecoration(
+                labelText: 'mentorship.signup_job_label'.tr(),
                 hintText: 'VD: Senior Software Engineer',
-                prefixIcon: Icon(Icons.work_outline),
+                prefixIcon: const Icon(Icons.work_outline),
               ),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _companyCtl,
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Vui lòng nhập công ty'
+                  ? 'mentorship.signup_company_required'.tr()
                   : null,
-              decoration: const InputDecoration(
-                labelText: 'Công ty *',
+              decoration: InputDecoration(
+                labelText: 'mentorship.signup_company_label'.tr(),
                 hintText: 'VD: FPT Software',
-                prefixIcon: Icon(Icons.apartment_outlined),
+                prefixIcon: const Icon(Icons.apartment_outlined),
               ),
             ),
             const SizedBox(height: 12),
@@ -133,11 +136,11 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
               controller: _bioCtl,
               maxLines: 4,
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Vui lòng giới thiệu bản thân'
+                  ? 'mentorship.signup_bio_required'.tr()
                   : null,
-              decoration: const InputDecoration(
-                labelText: 'Giới thiệu *',
-                hintText: 'Mô tả ngắn về kinh nghiệm và lĩnh vực bạn có thể hỗ trợ...',
+              decoration: InputDecoration(
+                labelText: 'mentorship.signup_bio_label'.tr(),
+                hintText: 'mentorship.signup_bio_hint'.tr(),
                 alignLabelWithHint: true,
               ),
             ),
@@ -145,21 +148,21 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
             TextFormField(
               controller: _meetingCtl,
               keyboardType: TextInputType.url,
-              decoration: const InputDecoration(
-                labelText: 'Link họp mặc định (tùy chọn)',
+              decoration: InputDecoration(
+                labelText: 'mentorship.signup_meeting_link_label'.tr(),
                 hintText: 'VD: https://meet.google.com/...',
-                prefixIcon: Icon(Icons.video_call_outlined),
+                prefixIcon: const Icon(Icons.video_call_outlined),
               ),
             ),
             const SizedBox(height: 24),
             Row(
               children: [
-                const Expanded(child: _Label('Lĩnh vực chuyên môn')),
+                Expanded(child: _Label('mentorship.expertise'.tr())),
                 TextButton.icon(
                   onPressed: () =>
                       setState(() => _expertises.add(_ExpertiseDraft())),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Thêm'),
+                  label: Text('common.add'.tr()),
                 ),
               ],
             ),
@@ -168,6 +171,7 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                   (e) => _ExpertiseCard(
                     draft: e.value,
                     index: e.key,
+                    categories: categories,
                     canRemove: _expertises.length > 1,
                     onRemove: () =>
                         setState(() => _expertises.removeAt(e.key)),
@@ -179,9 +183,9 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
               onChanged: (v) => setState(() => _termsAccepted = v ?? false),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              title: const Text(
-                'Tôi đồng ý với điều khoản chương trình cố vấn',
-                style: TextStyle(fontSize: 14),
+              title: Text(
+                'mentorship.signup_terms_label'.tr(),
+                style: const TextStyle(fontSize: 14),
               ),
             ),
             const SizedBox(height: 16),
@@ -198,14 +202,16 @@ class _MentorSignupPageState extends ConsumerState<MentorSignupPage> {
                         width: 20,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : const Text('Gửi đăng ký', style: TextStyle(fontSize: 16)),
+                    : Text('mentorship.signup_submit'.tr(),
+                        style: const TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Hồ sơ của bạn sẽ được quản trị viên duyệt trước khi hiển thị.',
+            Text(
+              'mentorship.signup_pending_notice'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+              style: const TextStyle(
+                  color: AppColors.textSecondary, fontSize: 12.5),
             ),
           ],
         ),
@@ -218,12 +224,14 @@ class _ExpertiseCard extends StatelessWidget {
   const _ExpertiseCard({
     required this.draft,
     required this.index,
+    required this.categories,
     required this.canRemove,
     required this.onRemove,
   });
 
   final _ExpertiseDraft draft;
   final int index;
+  final List<(String, String)> categories;
   final bool canRemove;
   final VoidCallback onRemove;
 
@@ -246,9 +254,9 @@ class _ExpertiseCard extends StatelessWidget {
                   child: TextFormField(
                     initialValue: draft.topic,
                     onChanged: (v) => draft.topic = v,
-                    decoration: const InputDecoration(
-                      labelText: 'Chủ đề *',
-                      hintText: 'VD: Lập trình web',
+                    decoration: InputDecoration(
+                      labelText: 'mentorship.expertise_topic_label'.tr(),
+                      hintText: 'mentorship.expertise_topic_hint'.tr(),
                       isDense: true,
                     ),
                   ),
@@ -269,9 +277,9 @@ class _ExpertiseCard extends StatelessWidget {
                   child: DropdownButtonFormField<String>(
                     value: draft.category,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                        labelText: 'Lĩnh vực', isDense: true),
-                    items: _categories
+                    decoration: InputDecoration(
+                        labelText: 'mentorship.category'.tr(), isDense: true),
+                    items: categories
                         .map((c) => DropdownMenuItem(
                             value: c.$1, child: Text(c.$2)))
                         .toList(),
@@ -285,8 +293,9 @@ class _ExpertiseCard extends StatelessWidget {
                     initialValue: draft.years?.toString() ?? '',
                     keyboardType: TextInputType.number,
                     onChanged: (v) => draft.years = int.tryParse(v),
-                    decoration: const InputDecoration(
-                        labelText: 'Năm KN', isDense: true),
+                    decoration: InputDecoration(
+                        labelText: 'mentorship.expertise_years_label'.tr(),
+                        isDense: true),
                   ),
                 ),
               ],

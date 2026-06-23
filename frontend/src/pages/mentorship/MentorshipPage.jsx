@@ -18,50 +18,37 @@ import MentorshipMentorListSection from '../../components/mentorship/MentorshipM
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
 import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAccessState';
-import { MENTORSHIP_SIDEBAR, MENTORSHIP_STATS } from '../../constants/mentorshipNav';
+import { getMentorshipSidebar, getMentorshipStats } from '../../constants/mentorshipNav';
+import { useTranslation } from 'react-i18next';
 import StatsBanner from '../../components/StatsBanner'
 
-const BENEFITS = [
+const getBenefits = (t) => [
   {
     icon: <GroupsOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-    title: 'Kết nối cộng đồng',
-    description:
-      'Gặp gỡ cựu sinh viên và chuyên gia cùng khoa, sẵn sàng chia sẻ kinh nghiệm thực tế.',
+    title: t('mentorship:benefit_community_title'),
+    description: t('mentorship:benefit_community_desc'),
   },
   {
     icon: <EventAvailableOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-    title: 'Đặt lịch linh hoạt',
-    description:
-      'Chọn khung giờ phù hợp và nhận xác nhận ngay — không cần chờ duyệt từng buổi hẹn.',
+    title: t('mentorship:benefit_flexible_title'),
+    description: t('mentorship:benefit_flexible_desc'),
   },
   {
     icon: <VerifiedUserOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />,
-    title: 'Tin cậy & an toàn',
-    description:
-      'Chỉ thành viên đã xác minh học vấn tại khoa mới tham gia; cố vấn được khoa phê duyệt trước khi hỗ trợ.',
+    title: t('mentorship:benefit_trusted_title'),
+    description: t('mentorship:benefit_trusted_desc'),
   },
 ];
 
-const STEPS = [
-  {
-    step: '1',
-    title: 'Xác minh tài khoản',
-    text: 'Xác thực email và thông tin học vấn tại khoa bạn đang tham gia.',
-  },
-  {
-    step: '2',
-    title: 'Tìm cố vấn phù hợp',
-    text: 'Duyệt danh sách cố vấn theo lĩnh vực, kinh nghiệm và thời gian rảnh.',
-  },
-  {
-    step: '3',
-    title: 'Đặt lịch & trao đổi',
-    text: 'Chọn slot, gửi mục tiêu buổi hẹn và bắt đầu buổi mentoring.',
-  },
+const getSteps = (t) => [
+  { step: '1', title: t('mentorship:step1_title'), text: t('mentorship:step1_text') },
+  { step: '2', title: t('mentorship:step2_title'), text: t('mentorship:step2_text') },
+  { step: '3', title: t('mentorship:step3_title'), text: t('mentorship:step3_text') },
 ];
 
 /** Full marketing landing — guest & level 0 only */
 const GuestLandingContent = () => {
+  const { t } = useTranslation(['nav', 'mentorship']);
   const access = useMentorshipAccessState();
   const { user, isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
@@ -80,27 +67,26 @@ const GuestLandingContent = () => {
         }}
       >
         <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: 2 }}>
-          CHƯƠNG TRÌNH CỐ VẤN
+          {t('mentorship:landing_overline')}
         </Typography>
         <Typography
           variant="h3"
           fontWeight={800}
           sx={{ mt: 1, mb: 2, fontSize: { xs: '1.75rem', md: '2.25rem' } }}
         >
-          Kết nối kinh nghiệm — Định hướng tương lai
+          {t('mentorship:landing_headline')}
         </Typography>
         <Typography sx={{ opacity: 0.92, maxWidth: 640, mb: 3, lineHeight: 1.7 }}>
-          Chương trình cố vấn phi lợi nhuận dành cho sinh viên và cựu sinh viên HCMUS.
-          Tìm anh chị đi trước để được hỗ trợ học tập, định hướng nghề nghiệp và phát triển kỹ năng.
+          {t('mentorship:landing_desc')}
         </Typography>
         <MentorshipHubActions tone="onPrimary" />
       </Box>
 
-      <StatsBanner items={MENTORSHIP_STATS} />
+      <StatsBanner items={getMentorshipStats(t)} />
 
       <Box>
         <Typography variant="h4" fontWeight={700} mb={3}>
-          Lợi ích khi tham gia
+          {t('mentorship:benefits_heading')}
         </Typography>
         <Box
           sx={{
@@ -109,7 +95,7 @@ const GuestLandingContent = () => {
             gap: 2,
           }}
         >
-          {BENEFITS.map((item) => (
+          {getBenefits(t).map((item) => (
             <Card key={item.title} sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
               <Box mb={1.5}>{item.icon}</Box>
               <Typography fontWeight={700} mb={1}>
@@ -125,10 +111,10 @@ const GuestLandingContent = () => {
 
       <Box>
         <Typography variant="h4" fontWeight={700} mb={3}>
-          Cách hoạt động
+          {t('mentorship:steps_heading')}
         </Typography>
         <Stack spacing={2}>
-          {STEPS.map((item) => (
+          {getSteps(t).map((item) => (
             <Card
               key={item.step}
               sx={{
@@ -179,23 +165,21 @@ const GuestLandingContent = () => {
         elevation={0}
       >
         <Typography variant="h5" fontWeight={700} mb={1}>
-          {access.isGuest ? 'Sẵn sàng bắt đầu?' : 'Xác thực email để tiếp tục'}
+          {access.isGuest ? t('mentorship:cta_guest_heading') : t('mentorship:cta_verify_heading')}
         </Typography>
         <Typography color="text.secondary" mb={3} maxWidth={520} mx="auto">
-          {access.isGuest
-            ? 'Đăng nhập hoặc tạo tài khoản để tham gia chương trình cố vấn cùng cộng đồng khoa.'
-            : 'Bạn cần xác thực email trước khi xem danh sách cố vấn và đặt lịch.'}
+          {access.isGuest ? t('mentorship:cta_guest_desc') : t('mentorship:cta_verify_desc')}
         </Typography>
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <MentorshipHubActions />
           {isAdmin && (
             <Button color="secondary" variant="outlined" onClick={() => navigate('/admin/mentorship')}>
-              Quản lý cố vấn
+              {t('mentorship:manage_mentors')}
             </Button>
           )}
           {!access.isGuest && (
             <Button variant="outlined" onClick={() => navigate('/settings/account')}>
-              Đi tới cài đặt tài khoản
+              {t('mentorship:go_to_account_settings')}
             </Button>
           )}
         </Stack>
@@ -206,6 +190,7 @@ const GuestLandingContent = () => {
 
 /** Hub header + mentor list — level 1 & 2 */
 const HubContent = () => {
+  const { t } = useTranslation(['nav', 'mentorship']);
   const { user, isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
@@ -228,35 +213,35 @@ const HubContent = () => {
             color="primary.main"
             sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
           >
-            CỐ VẤN
+            {t('mentorship:hub_heading')}
           </Typography>
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
             <MentorshipHubActions />
             {isAdmin && (
               <Button color="secondary" variant="outlined" onClick={() => navigate('/admin/mentorship')}>
-                Quản lý cố vấn
+                {t('mentorship:manage_mentors')}
               </Button>
             )}
           </Stack>
         </Box>
         <Typography color="text.secondary">
-          Chương trình cố vấn dành cho sinh viên và cựu sinh viên — kết nối với anh chị đi trước
-          để được hỗ trợ học tập, định hướng nghề nghiệp và phát triển kỹ năng.
+          {t('mentorship:hub_desc')}
         </Typography>
       </Stack>
 
-      <StatsBanner items={MENTORSHIP_STATS} />
+      <StatsBanner items={getMentorshipStats(t)} />
       <MentorshipMentorListSection />
     </Stack>
   );
 };
 
 const MentorshipPage = () => {
+  const { t } = useTranslation(['nav', 'mentorship']);
   const access = useMentorshipAccessState();
   const showGuestLanding = access.isGuest || access.needsEmailVerification;
 
   return (
-    <Page title={showGuestLanding ? 'Chương trình Cố vấn' : 'Cố vấn'}>
+    <Page title={showGuestLanding ? t('mentorship:page_title_landing') : t('mentorship:page_title_hub')}>
       <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
@@ -267,7 +252,7 @@ const MentorshipPage = () => {
             }}
           >
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={MENTORSHIP_SIDEBAR} />
+              <Sidebar items={getMentorshipSidebar(t)} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"

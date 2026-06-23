@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -95,20 +96,21 @@ class NetworkMemberCard extends StatelessWidget {
             onPressed: onMessage,
             icon: const Icon(Icons.chat_bubble_outline,
                 color: AppColors.primary, size: 22),
-            tooltip: 'Nhắn tin',
+            tooltip: 'network.message'.tr(),
           ),
           PopupMenuButton<_Action>(
             onSelected: (action) {
               if (action == _Action.block) onBlock();
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _Action.block,
                 child: Row(
                   children: [
-                    Icon(Icons.block, color: AppColors.error, size: 18),
-                    SizedBox(width: 8),
-                    Text('Chặn', style: TextStyle(color: AppColors.error)),
+                    const Icon(Icons.block, color: AppColors.error, size: 18),
+                    const SizedBox(width: 8),
+                    Text('network.block'.tr(),
+                        style: const TextStyle(color: AppColors.error)),
                   ],
                 ),
               ),

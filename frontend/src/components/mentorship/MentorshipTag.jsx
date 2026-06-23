@@ -21,7 +21,7 @@ const MentorshipTag = ({ label, sx = {} }) => {
         sx={{
           lineHeight: 1,
           textAlign: "center",
-          whiteSpace: "nowrap", // Tránh xuống dòng trong tag
+          wordBreak: "break-word",
         }}
       >
         #{label}

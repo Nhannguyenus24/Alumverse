@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Box, Chip, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import StarOutlinedIcon from '@mui/icons-material/StarOutlined';
@@ -37,6 +38,7 @@ const metricRowSx = {
 };
 
 const AdminDashboardSections = ({ aggregates, forumStats }) => {
+  const { t } = useTranslation(['admin', 'forum']);
   const { user, forum, organization } = aggregates;
   const stats = forumStats || {};
 
@@ -44,25 +46,25 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
     <Box>
       {/* Users */}
       <AdminSectionPanel
-        title="Người dùng"
-        subtitle="Tài khoản, xu hướng đăng ký và phân loại trạng thái."
+        title={t('admin:section_users_title')}
+        subtitle={t('admin:section_users_subtitle')}
       >
         <Stack spacing={3}>
           <Stack spacing={2}>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-              <AdminDashboardMetricTile label="Tổng người dùng" value={user.totalUsers} icon={<PeopleAltOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Tham gia tuần này" value={user.newUsersWeek} icon={<PersonAddAltOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Tham gia tháng này" value={user.newUsersMonth} icon={<CalendarMonthOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_total_users')} value={user.totalUsers} icon={<PeopleAltOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_joined_this_week')} value={user.newUsersWeek} icon={<PersonAddAltOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_joined_this_month')} value={user.newUsersMonth} icon={<CalendarMonthOutlinedIcon />} />
             </Stack>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-              <AdminDashboardMetricTile label="Hoạt động" value={user.activeUsers} icon={<CheckCircleOutlineOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Chưa kích hoạt" value={user.inactiveUsers} icon={<PersonOffOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Đã khóa" value={user.bannedUsers} icon={<BlockOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_active_users')} value={user.activeUsers} icon={<CheckCircleOutlineOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_inactive_users')} value={user.inactiveUsers} icon={<PersonOffOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_banned_users')} value={user.bannedUsers} icon={<BlockOutlinedIcon />} />
             </Stack>
           </Stack>
           <Chart
             type="line"
-            title="Đăng ký mới theo ngày (14 ngày qua)"
+            title={t('admin:chart_new_registrations')}
             data={user.userGrowthSeries}
             dataKey="count"
             xAxisKey="date"
@@ -73,26 +75,26 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
 
       {/* Forum */}
       <AdminSectionPanel
-        title="Diễn đàn"
-        subtitle="Khối lượng bài viết, tình trạng kiểm duyệt và thống kê trực tiếp từ API."
+        title={t('admin:section_forum_title')}
+        subtitle={t('admin:section_forum_subtitle')}
       >
         <Stack spacing={3}>
           <Stack spacing={2}>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-              <AdminDashboardMetricTile label="Tổng bài viết" value={stats.totalPosts ?? forum.totalPosts} icon={<ArticleOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Tổng chủ đề" value={stats.totalTopics ?? 0} icon={<TopicOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Tổng danh mục" value={stats.totalCategories ?? 0} icon={<CategoryOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_total_posts')} value={stats.totalPosts ?? forum.totalPosts} icon={<ArticleOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_total_topics')} value={stats.totalTopics ?? 0} icon={<TopicOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_total_categories')} value={stats.totalCategories ?? 0} icon={<CategoryOutlinedIcon />} />
             </Stack>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-              <AdminDashboardMetricTile label="Chủ đề hôm nay" value={stats.newTopicsToday ?? 0} icon={<TodayOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Bài viết hôm nay" value={stats.newPostsToday ?? 0} icon={<ArticleOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Chờ duyệt" value={forum.pending} icon={<WarningAmberOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Đã duyệt" value={forum.approved} icon={<TaskAltOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_topics_today')} value={stats.newTopicsToday ?? 0} icon={<TodayOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_posts_today')} value={stats.newPostsToday ?? 0} icon={<ArticleOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_pending_posts')} value={forum.pending} icon={<WarningAmberOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_approved_posts')} value={forum.approved} icon={<TaskAltOutlinedIcon />} />
             </Stack>
             <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-              <AdminDashboardMetricTile label="Bị báo cáo" value={forum.flagged} icon={<ReportGmailerrorredOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Báo xấu" value={forum.totalFlags} icon={<FlagOutlinedIcon />} />
-              <AdminDashboardMetricTile label="Đã khóa" value={stats.bannedPosts ?? 0} icon={<LockOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_flagged_posts')} value={forum.flagged} icon={<ReportGmailerrorredOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_total_flags')} value={forum.totalFlags} icon={<FlagOutlinedIcon />} />
+              <AdminDashboardMetricTile label={t('admin:metric_banned_posts')} value={stats.bannedPosts ?? 0} icon={<LockOutlinedIcon />} />
             </Stack>
           </Stack>
 
@@ -100,7 +102,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
             <Box flex={1} minWidth={0}>
               <Chart
                 type="line"
-                title="Bài viết theo ngày (7 ngày qua)"
+                title={t('admin:chart_posts_by_day')}
                 data={forum.forumPostsByDay}
                 dataKey="count"
                 xAxisKey="date"
@@ -110,7 +112,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
             <Box flex={1} minWidth={0}>
               <Chart
                 type="bar"
-                title="Bài viết theo trạng thái kiểm duyệt"
+                title={t('admin:chart_posts_by_moderation_status')}
                 data={forum.forumModerationBar}
                 dataKey="count"
                 xAxisKey="name"
@@ -136,15 +138,15 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <StarOutlinedIcon sx={{ color: 'warning.main', fontSize: 20 }} />
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'warning.main' }}>
-                      Chủ đề nổi bật nhất
+                      {t('admin:most_popular_topic')}
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
                     {stats.mostPopularTopic.title || stats.mostPopularTopic.topicTitle || '-'}
                   </Typography>
                   <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                    <Chip label={`${stats.mostPopularTopic.postCount ?? 0} bài viết`} size="small" variant="outlined" color="primary" />
-                    <Chip label={`${stats.mostPopularTopic.viewCount ?? 0} lượt xem`} size="small" variant="outlined" />
+                    <Chip label={t('admin:chip_posts_count', { count: stats.mostPopularTopic.postCount ?? 0 })} size="small" variant="outlined" color="primary" />
+                    <Chip label={t('admin:chip_views_count', { count: stats.mostPopularTopic.viewCount ?? 0 })} size="small" variant="outlined" />
                   </Stack>
                 </Box>
               )}
@@ -163,15 +165,15 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                     <StarOutlinedIcon sx={{ color: 'success.main', fontSize: 20 }} />
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'success.main' }}>
-                      Danh mục nổi bật nhất
+                      {t('admin:most_popular_category')}
                     </Typography>
                   </Box>
                   <Typography variant="body1" sx={{ fontWeight: 600 }}>
                     {stats.mostPopularCategory.categoryName || stats.mostPopularCategory.name || '-'}
                   </Typography>
                   <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                    <Chip label={`${stats.mostPopularCategory.topicCount ?? 0} chủ đề`} size="small" variant="outlined" color="primary" />
-                    <Chip label={`${stats.mostPopularCategory.postCount ?? 0} bài viết`} size="small" variant="outlined" />
+                    <Chip label={t('admin:chip_topics_count', { count: stats.mostPopularCategory.topicCount ?? 0 })} size="small" variant="outlined" color="primary" />
+                    <Chip label={t('admin:chip_posts_count', { count: stats.mostPopularCategory.postCount ?? 0 })} size="small" variant="outlined" />
                   </Stack>
                 </Box>
               )}
@@ -183,10 +185,10 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                 <WarningAmberOutlinedIcon sx={{ color: 'error.main', fontSize: 20 }} />
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'error.main' }}>
-                  Chủ đề bị lãng quên ({stats.ghostTopics.length})
+                  {t('admin:ghost_topics_title', { count: stats.ghostTopics.length })}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  — Các chủ đề không có phản hồi trong 7 ngày qua
+                  — {t('admin:ghost_topics_subtitle')}
                 </Typography>
               </Box>
               <List
@@ -200,8 +202,11 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                     sx={{ borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 'none' } }}
                   >
                     <ListItemText
-                      primary={gt.title || gt.topicTitle || `Chủ đề #${gt.id || gt.topicId}`}
-                      secondary={`Lượt xem: ${gt.viewCount ?? 0} · Ngày tạo: ${gt.createdAt ? new Date(gt.createdAt).toLocaleDateString('vi-VN') : '-'}`}
+                      primary={gt.title || gt.topicTitle || t('admin:ghost_topic_fallback', { id: gt.id || gt.topicId })}
+                      secondary={t('admin:ghost_topic_secondary', {
+                        views: gt.viewCount ?? 0,
+                        date: gt.createdAt ? new Date(gt.createdAt).toLocaleDateString('vi-VN') : '-',
+                      })}
                       primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
                       secondaryTypographyProps={{ variant: 'caption' }}
                     />
@@ -215,18 +220,18 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
 
       {/* Organizations */}
       <AdminSectionPanel
-        title="Tổ chức & Đơn vị"
-        subtitle="Tổng quan về vòng đời và các cộng đồng hàng đầu theo số lượng thành viên."
+        title={t('admin:section_orgs_title')}
+        subtitle={t('admin:section_orgs_subtitle')}
       >
         <Stack spacing={3}>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)', md: '1 1 0' } } }}>
-            <AdminDashboardMetricTile label="Tổng số tổ chức" value={organization.totalOrganizations} icon={<BusinessCenterOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Đang hoạt động" value={organization.activeOrganizations} icon={<DomainVerificationOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Ngừng hoạt động" value={organization.inactiveOrganizations} icon={<BusinessOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_orgs')} value={organization.totalOrganizations} icon={<BusinessCenterOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_active_orgs')} value={organization.activeOrganizations} icon={<DomainVerificationOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_inactive_orgs')} value={organization.inactiveOrganizations} icon={<BusinessOutlinedIcon />} />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="flex-start">
             <Box flex={1} minWidth={260}>
-              <Typography variant="h6" sx={{ color: 'warning.main', pb: 2 }}>Top theo thành viên</Typography>
+              <Typography variant="h6" sx={{ color: 'warning.main', pb: 2 }}>{t('admin:top_by_members')}</Typography>
               <List disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.default' }}>
                 {organization.topOrganizationsByMembers.map((org, index) => (
                   <ListItem
@@ -235,7 +240,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                   >
                     <ListItemText
                       primary={`${index + 1}. ${org.name}`}
-                      secondary={`${org.members ?? 0} thành viên`}
+                      secondary={t('admin:org_members_count', { count: org.members ?? 0 })}
                       primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
                       secondaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                     />
@@ -244,12 +249,12 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
               </List>
             </Box>
             <Box flex={1} minWidth={260}>
-              <Typography variant="h6" sx={{ color: 'success.main', pb: 2 }}>Tổ chức đang hoạt động</Typography>
+              <Typography variant="h6" sx={{ color: 'success.main', pb: 2 }}>{t('admin:active_organizations')}</Typography>
               <List disablePadding sx={{ border: 1, borderColor: 'divider', borderRadius: 3, overflow: 'hidden', bgcolor: 'background.default' }}>
                 {organization.activeOrganizationsList.length === 0 ? (
                   <ListItem sx={{ py: 3, justifyContent: 'center' }}>
                     <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                      Không có tổ chức nào đang hoạt động
+                      {t('admin:no_active_orgs')}
                     </Typography>
                   </ListItem>
                 ) : (
@@ -260,7 +265,7 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
                     >
                       <ListItemText
                         primary={org.name}
-                        secondary={`${org.members ?? 0} thành viên`}
+                        secondary={t('admin:org_members_count', { count: org.members ?? 0 })}
                         primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
                         secondaryTypographyProps={{ variant: 'caption', fontWeight: 600 }}
                       />
