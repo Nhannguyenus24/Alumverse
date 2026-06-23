@@ -24,7 +24,7 @@ export const useAddExpertise = () => {
   return {
     submit: mutation.mutateAsync,
     isPending: mutation.isPending,
-    errorMessage: extractError(mutation, 'Không thể thêm nội dung chia sẻ'),
+    errorMessage: extractError(mutation, 'Failed to add expertise'),
   };
 };
 
@@ -40,7 +40,7 @@ export const useUpdateExpertise = () => {
   return {
     submit: mutation.mutateAsync,
     isPending: mutation.isPending,
-    errorMessage: extractError(mutation, 'Không thể cập nhật nội dung chia sẻ'),
+    errorMessage: extractError(mutation, 'Failed to update expertise'),
   };
 };
 
@@ -56,6 +56,6 @@ export const useDeleteExpertise = () => {
   return {
     submit: mutation.mutateAsync,
     isPending: mutation.isPending,
-    errorMessage: extractError(mutation, 'Không thể xoá nội dung chia sẻ'),
+    errorMessage: extractError(mutation, 'Failed to delete expertise'),
   };
 };

@@ -30,7 +30,7 @@ class MentorProfile {
   /// "Title @ Company" line, falling back to a generic label.
   String get roleLine {
     final parts = [currentJobTitle, currentCompany].where((e) => e != null && e.isNotEmpty);
-    return parts.isEmpty ? 'Cố vấn' : parts.join(' @ ');
+    return parts.isEmpty ? 'Mentor' : parts.join(' @ ');
   }
 
   String get displayName => fullName ?? 'Mentor #$memberId';

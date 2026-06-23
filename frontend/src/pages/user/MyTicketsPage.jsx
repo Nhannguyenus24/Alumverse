@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Container, Stack, Box, Typography, CircularProgress } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import SearchBar from "../../components/SearchBar";
 import MyTicketCard from "../../components/MyTicketCard";
@@ -16,6 +17,7 @@ const useMyTickets = () => {
 };
 
 const MyTicketsPage = () => {
+  const { t } = useTranslation(["event"]);
   const [search, setSearch] = useState("");
   const [searchParams] = useSearchParams();
   const highlightCode = searchParams.get("ticket");
@@ -41,7 +43,7 @@ const MyTicketsPage = () => {
   };
 
   return (
-    <Page title="Vé của tôi">
+    <Page title={t("event:my_tickets")}>
       <Container
         maxWidth="lg"
         sx={{
@@ -59,7 +61,7 @@ const MyTicketsPage = () => {
                 color="primary.main"
                 sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" } }}
               >
-                VÉ CỦA TÔI
+                {t("event:my_tickets").toUpperCase()}
               </Typography>
             </Box>
 
@@ -74,13 +76,13 @@ const MyTicketsPage = () => {
 
           {isError && (
             <Typography color="text.secondary" textAlign="center">
-              Không thể tải danh sách vé.
+              {t("event:error_load_tickets")}
             </Typography>
           )}
 
           {!isPending && !isError && filtered.length === 0 && (
             <Typography color="text.secondary" textAlign="center">
-              Bạn chưa có vé nào.
+              {t("event:no_tickets")}
             </Typography>
           )}
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { Box, Container, Typography } from "@mui/material";
 import Page from "../../components/Page";
@@ -96,13 +97,15 @@ const FACULTIES = [
 ];
 
 const FacultiesPage = () => {
+  const { t } = useTranslation("home");
+
   return (
     <Page
-      title="Các Khoa"
+      title={t("faculties_page_title")}
       meta={
         <meta
           name="description"
-          content="Các Khoa - Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+          content={t("faculties_page_meta_desc")}
         />
       }
     >
@@ -133,7 +136,7 @@ const FacultiesPage = () => {
               textTransform: "uppercase",
             }}
           >
-            CÁC KHOA
+            {t("faculties_heading")}
           </Typography>
         </Box>
 
@@ -203,7 +206,7 @@ const FacultiesPage = () => {
                 }}
               >
                 <Typography sx={{ fontSize: "0.8rem" }}>
-                  {faculty.type === "VIỆN" ? "Viện trưởng:" : "Trưởng khoa:"}
+                  {faculty.type === "VIỆN" ? t("faculties_institute_director") : t("faculties_dean")}
                 </Typography>
                 <Typography sx={{ fontSize: "0.8rem", fontWeight: 700 }}>
                   {faculty.truongKhoa}
@@ -212,8 +215,8 @@ const FacultiesPage = () => {
                   <>
                     <Typography sx={{ fontSize: "0.8rem", mt: 0.5 }}>
                       {faculty.type === "VIỆN"
-                        ? "Phó Viện trưởng:"
-                        : "Phó Trưởng khoa:"}
+                        ? t("faculties_vice_institute_director")
+                        : t("faculties_vice_dean")}
                     </Typography>
                     {faculty.phoTruongKhoa.split(",").map((name, i) => (
                       <Typography

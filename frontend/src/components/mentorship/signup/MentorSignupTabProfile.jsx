@@ -15,8 +15,12 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
+import { useTranslation } from 'react-i18next';
 
-const SectionList = ({ title, subtitle, items, onChange, fields, required = false, addLabel = 'Thêm' }) => {
+const SectionList = ({ title, subtitle, items, onChange, fields, required = false, addLabel }) => {
+  const { t } = useTranslation('mentorship');
+  const resolvedAddLabel = addLabel ?? t('signup_profile_add_default');
+
   const handleAdd = () => {
     const empty = Object.fromEntries(fields.map((f) => [f.key, '']));
     onChange([...items, empty]);
@@ -45,14 +49,14 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
           )}
         </Box>
         <Button size="small" startIcon={<AddIcon />} onClick={handleAdd}>
-          {addLabel}
+          {resolvedAddLabel}
         </Button>
       </Stack>
 
       {items.length === 0 ? (
         <Card sx={{ p: 2, border: '1px dashed', borderColor: 'divider', textAlign: 'center' }} elevation={0}>
           <Typography variant="body2" color="text.secondary">
-            Chưa có mục nào. Bấm "{addLabel}" để thêm.
+            {t('signup_profile_no_items', { label: resolvedAddLabel })}
           </Typography>
         </Card>
       ) : (
@@ -88,6 +92,7 @@ const SectionList = ({ title, subtitle, items, onChange, fields, required = fals
 };
 
 const MentorSignupTabProfile = ({ values, onChange }) => {
+  const { t } = useTranslation('mentorship');
   const cvInputRef = useRef(null);
   const avatarInputRef = useRef(null);
 
@@ -122,13 +127,13 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between">
           <Box>
             <Typography fontWeight={700} color="primary.main">
-              Điền nhanh từ CV
+              {t('signup_profile_cv_title')}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Tự động trích xuất học vấn, kinh nghiệm,... từ CV của bạn (PDF/DOC/DOCX).
+              {t('signup_profile_cv_desc')}
             </Typography>
           </Box>
-          <Tooltip title="Tính năng đang phát triển" placement="top">
+          <Tooltip title={t('signup_profile_cv_tooltip')} placement="top">
             <span>
               <Button
                 variant="contained"
@@ -144,7 +149,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
         </Stack>
         {values.cvFile && (
           <Typography variant="caption" mt={1} display="block">
-            Đã chọn: {values.cvFile.name}
+            {t('signup_profile_cv_selected', { name: values.cvFile.name })}
           </Typography>
         )}
       </Card>
@@ -152,7 +157,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
       {/* Avatar */}
       <Box>
         <Typography fontWeight={700} mb={1}>
-          Ảnh đại diện
+          {t('signup_profile_avatar_title')}
           <Typography component="span" color="error.main">{' *'}</Typography>
         </Typography>
         <Stack direction="row" spacing={2} alignItems="center">
@@ -165,7 +170,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             startIcon={<PhotoCameraIcon />}
             onClick={() => avatarInputRef.current?.click()}
           >
-            {values.avatarFile ? 'Đổi ảnh' : 'Chọn ảnh'}
+            {values.avatarFile ? t('signup_profile_change_avatar') : t('signup_profile_pick_avatar')}
           </Button>
           <input ref={avatarInputRef} hidden type="file" accept="image/*" onChange={handleAvatarPick} />
         </Stack>
@@ -174,11 +179,11 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
       {/* Core profile (BE-supported) */}
       <Box>
         <Typography fontWeight={700} mb={1.5}>
-          Vị trí hiện tại
+          {t('signup_profile_current_position')}
         </Typography>
         <Stack spacing={1.5}>
           <TextField
-            label="Chức danh"
+            label={t('signup_profile_job_title_label')}
             placeholder="VD: Senior Software Engineer"
             value={values.currentJobTitle ?? ''}
             onChange={(e) => update('currentJobTitle', e.target.value)}
@@ -186,7 +191,7 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             size="small"
           />
           <TextField
-            label="Công ty"
+            label={t('signup_profile_company_label')}
             placeholder="VD: Google"
             value={values.currentCompany ?? ''}
             onChange={(e) => update('currentCompany', e.target.value)}
@@ -194,8 +199,8 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
             size="small"
           />
           <TextField
-            label="Giới thiệu (bio)"
-            placeholder="Vài câu giới thiệu về bạn..."
+            label={t('signup_profile_bio_label')}
+            placeholder={t('signup_profile_bio_placeholder')}
             value={values.bio ?? ''}
             onChange={(e) => update('bio', e.target.value)}
             fullWidth
@@ -209,66 +214,66 @@ const MentorSignupTabProfile = ({ values, onChange }) => {
       <Divider />
 
       <SectionList
-        title="Học vấn"
-        subtitle="VD: Cử nhân CNTT @ HCMUS, 2022 — 2026"
+        title={t('signup_profile_education_title')}
+        subtitle={t('signup_profile_education_subtitle')}
         required
         items={values.educations ?? []}
         onChange={(v) => update('educations', v)}
-        addLabel="Thêm học vấn"
+        addLabel={t('signup_profile_add_education')}
         fields={[
-          { key: 'school', label: 'Trường', placeholder: 'VD: HCMUS' },
-          { key: 'degree', label: 'Bằng cấp / chuyên ngành', placeholder: 'VD: Cử nhân CNTT' },
-          { key: 'period', label: 'Thời gian', placeholder: 'VD: 2022 — 2026' },
+          { key: 'school', label: t('signup_profile_edu_school'), placeholder: 'VD: HCMUS' },
+          { key: 'degree', label: t('signup_profile_edu_degree'), placeholder: t('signup_profile_edu_degree_placeholder') },
+          { key: 'period', label: t('signup_profile_edu_period'), placeholder: t('signup_profile_edu_period_placeholder') },
         ]}
       />
 
       <SectionList
-        title="Kinh nghiệm làm việc"
-        subtitle="Vị trí, công ty, mô tả công việc — outcome, thời gian"
+        title={t('signup_profile_experience_title')}
+        subtitle={t('signup_profile_experience_subtitle')}
         required
         items={values.experiences ?? []}
         onChange={(v) => update('experiences', v)}
-        addLabel="Thêm kinh nghiệm"
+        addLabel={t('signup_profile_add_experience')}
         fields={[
-          { key: 'title', label: 'Vị trí', placeholder: 'VD: Software Engineer' },
-          { key: 'company', label: 'Công ty', placeholder: 'VD: Google' },
-          { key: 'period', label: 'Thời gian', placeholder: 'VD: 06/2024 — Hiện tại' },
-          { key: 'description', label: 'Mô tả công việc / outcome', multiline: true },
+          { key: 'title', label: t('signup_profile_exp_title'), placeholder: 'VD: Software Engineer' },
+          { key: 'company', label: t('signup_profile_exp_company'), placeholder: 'VD: Google' },
+          { key: 'period', label: t('signup_profile_exp_period'), placeholder: t('signup_profile_exp_period_placeholder') },
+          { key: 'description', label: t('signup_profile_exp_description'), multiline: true },
         ]}
       />
 
       <SectionList
-        title="Project tiêu biểu"
+        title={t('signup_profile_projects_title')}
         items={values.projects ?? []}
         onChange={(v) => update('projects', v)}
-        addLabel="Thêm project"
+        addLabel={t('signup_profile_add_project')}
         fields={[
-          { key: 'name', label: 'Tên project' },
-          { key: 'description', label: 'Mô tả', multiline: true },
-          { key: 'link', label: 'Link (nếu có)' },
+          { key: 'name', label: t('signup_profile_project_name') },
+          { key: 'description', label: t('signup_profile_project_desc'), multiline: true },
+          { key: 'link', label: t('signup_profile_project_link') },
         ]}
       />
 
       <SectionList
-        title="Giải thưởng"
+        title={t('signup_profile_awards_title')}
         items={values.awards ?? []}
         onChange={(v) => update('awards', v)}
-        addLabel="Thêm giải thưởng"
+        addLabel={t('signup_profile_add_award')}
         fields={[
-          { key: 'name', label: 'Tên giải thưởng' },
-          { key: 'year', label: 'Năm' },
-          { key: 'description', label: 'Mô tả ngắn' },
+          { key: 'name', label: t('signup_profile_award_name') },
+          { key: 'year', label: t('signup_profile_award_year') },
+          { key: 'description', label: t('signup_profile_award_desc') },
         ]}
       />
 
       <SectionList
-        title="Kỹ năng & chứng chỉ"
+        title={t('signup_profile_skills_title')}
         items={values.skills ?? []}
         onChange={(v) => update('skills', v)}
-        addLabel="Thêm kỹ năng / chứng chỉ"
+        addLabel={t('signup_profile_add_skill')}
         fields={[
-          { key: 'name', label: 'Tên kỹ năng / chứng chỉ' },
-          { key: 'issuer', label: 'Đơn vị cấp (nếu có)' },
+          { key: 'name', label: t('signup_profile_skill_name') },
+          { key: 'issuer', label: t('signup_profile_skill_issuer') },
         ]}
       />
     </Stack>

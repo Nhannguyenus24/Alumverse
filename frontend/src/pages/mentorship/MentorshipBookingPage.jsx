@@ -17,6 +17,7 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import MentorshipSlotPicker from '../../components/mentorship/MentorshipSlotPicker';
@@ -27,9 +28,8 @@ import { useMentorAvailability } from '../../hooks/mentorship/useMentorAvailabil
 import { useBookSession } from '../../hooks/mentorship/useBookSession';
 import { formatRating } from '../../utils/numberFormatter';
 
-const STEPS = ['Chọn khung giờ', 'Điền thông tin'];
-
 const MentorshipBookingPage = () => {
+  const { t } = useTranslation(['mentorship', 'common']);
   const navigate = useOrgNavigate();
   const { mentorId } = useParams();
   const mentorMemberId = Number(mentorId);
@@ -49,6 +49,8 @@ const MentorshipBookingPage = () => {
   });
 
   const mentor = profileQuery.data;
+
+  const STEPS = [t('mentorship:booking_step_pick_slot'), t('mentorship:booking_step_fill_info')];
 
   const handleSelectSlot = (slot) => setSelectedSlot(slot);
   const handleNext = () => selectedSlot && setActiveStep(1);
@@ -75,7 +77,7 @@ const MentorshipBookingPage = () => {
   const isLoading = profileQuery.isLoading || availabilityQuery.isLoading;
 
   return (
-    <Page title="Đặt lịch hẹn cố vấn">
+    <Page title={t('mentorship:booking_page_title')}>
       <Container maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -83,25 +85,25 @@ const MentorshipBookingPage = () => {
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
-          Quay lại
+          {t('common:back')}
         </Button>
 
         <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
-          ĐẶT LỊCH HẸN
+          {t('mentorship:booking_heading')}
         </Typography>
         <Typography color="text.secondary" mb={4}>
-          Chọn khung giờ phù hợp và cung cấp thông tin để mentor chuẩn bị tốt hơn cho buổi gặp.
+          {t('mentorship:booking_desc')}
         </Typography>
 
         {profileQuery.isError && (
           <Alert severity="error" sx={{ mb: 3 }}>
-            Không thể tải thông tin mentor. Vui lòng thử lại.
+            {t('mentorship:booking_error_load_mentor')}
           </Alert>
         )}
 
         {submitSuccess && (
           <Alert severity="success" sx={{ mb: 3 }}>
-            Đặt lịch thành công! Buổi mentoring của bạn đã được xác nhận. Đang chuyển về trang Cố vấn...
+            {t('mentorship:booking_success')}
           </Alert>
         )}
 
@@ -137,11 +139,11 @@ const MentorshipBookingPage = () => {
                   </Box>
                 ) : availabilityQuery.isError ? (
                   <Alert severity="error">
-                    Không tải được lịch trống của mentor. Vui lòng thử lại.
+                    {t('mentorship:booking_error_load_slots')}
                   </Alert>
                 ) : Object.keys(availabilityQuery.availabilityMap).length === 0 ? (
                   <Alert severity="info">
-                    Mentor này hiện chưa có lịch trống. Vui lòng quay lại sau.
+                    {t('mentorship:booking_no_slots')}
                   </Alert>
                 ) : (
                   <MentorshipSlotPicker
@@ -157,7 +159,7 @@ const MentorshipBookingPage = () => {
                     disabled={!selectedSlot}
                     onClick={handleNext}
                   >
-                    Tiếp tục
+                    {t('mentorship:booking_continue')}
                   </Button>
                 </Stack>
               </Stack>
@@ -223,7 +225,7 @@ const MentorshipBookingPage = () => {
                       </Typography>
                       {mentor.totalSessions != null && (
                         <Typography variant="body2" color="text.secondary">
-                          ({mentor.totalSessions} buổi)
+                          {t('mentorship:sidebar_sessions_count', { count: mentor.totalSessions })}
                         </Typography>
                       )}
                     </Stack>
@@ -232,20 +234,22 @@ const MentorshipBookingPage = () => {
 
                 <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                    Thời lượng
+                    {t('mentorship:sidebar_duration')}
                   </Typography>
                   <Typography fontWeight={600}>
                     {selectedSlot
-                      ? `${dayjs(selectedSlot.endTime).diff(dayjs(selectedSlot.startTime), 'minute')} phút`
-                      : 'Tùy theo khung giờ bạn chọn'}
+                      ? t('mentorship:sidebar_duration_minutes', {
+                          minutes: dayjs(selectedSlot.endTime).diff(dayjs(selectedSlot.startTime), 'minute'),
+                        })
+                      : t('mentorship:sidebar_duration_flexible')}
                   </Typography>
                 </Box>
 
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
-                    Hình thức
+                    {t('mentorship:sidebar_format')}
                   </Typography>
-                  <Typography fontWeight={600}>Online (Google Meet)</Typography>
+                  <Typography fontWeight={600}>{t('mentorship:sidebar_format_value')}</Typography>
                 </Box>
               </>
             )}

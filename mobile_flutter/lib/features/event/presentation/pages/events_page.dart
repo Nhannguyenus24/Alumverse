@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -26,7 +26,7 @@ class EventsPage extends ConsumerWidget {
     final pastAsync = ref.watch(pastEventsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sự kiện')),
+      appBar: AppBar(title: Text('event.title'.tr())),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(allUpcomingEventsProvider);
@@ -36,7 +36,7 @@ class EventsPage extends ConsumerWidget {
         child: upcomingAsync.when(
           loading: () => const SkeletonList(count: 3),
           error: (_, __) => ErrorView(
-            message: 'Không tải được sự kiện',
+            message: 'event.load_failed'.tr(),
             onRetry: () => ref.invalidate(allUpcomingEventsProvider),
           ),
           data: (upcoming) {
@@ -48,7 +48,7 @@ class EventsPage extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 Text(
-                  'SỰ KIỆN',
+                  'event.title_upper'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.primary,
@@ -62,23 +62,23 @@ class EventsPage extends ConsumerWidget {
                       .slideY(begin: 0.08, curve: Curves.easeOut),
                 if (rest.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  const _SectionHeader('Sắp diễn ra'),
+                  _SectionHeader('event.upcoming'.tr()),
                   const SizedBox(height: 12),
                   _EventGrid(events: rest),
                 ],
                 if (past.isNotEmpty) ...[
                   const SizedBox(height: 24),
-                  const _SectionHeader('Đã diễn ra'),
+                  _SectionHeader('event.past'.tr()),
                   const SizedBox(height: 12),
                   _EventGrid(events: past),
                 ],
                 if (featured == null && past.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
                     child: EmptyView(
                       icon: Icons.event_busy_outlined,
-                      title: 'Chưa có sự kiện',
-                      message: 'Các sự kiện và hội thảo sắp tới sẽ hiện ở đây.',
+                      title: 'event.no_events'.tr(),
+                      message: 'event.no_events_desc'.tr(),
                     ),
                   ),
                 const SizedBox(height: 24),

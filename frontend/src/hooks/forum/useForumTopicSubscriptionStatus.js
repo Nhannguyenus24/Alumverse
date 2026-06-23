@@ -28,7 +28,7 @@ export const useForumTopicSubscriptionStatus = (topicId, memberId) => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải trạng thái theo dõi"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load subscription status"
       : null;
 
   return { isSubscribed: !!isSubscribed, isPending, isError, errorMessage };

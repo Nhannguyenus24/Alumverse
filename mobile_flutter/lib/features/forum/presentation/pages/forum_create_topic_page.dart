@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -45,7 +46,7 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
     final memberId = currentMemberIdFromUserId(
         ref.read(authStateProvider).valueOrNull?.user?.id);
     if (orgId == null || memberId == null) {
-      AppToast.error(context, 'Thiếu thông tin tổ chức hoặc tài khoản.');
+      AppToast.error(context, 'forum.missing_info'.tr());
       return;
     }
 
@@ -72,10 +73,10 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
       }
 
       if (!mounted) return;
-      AppToast.success(context, 'Đã tạo bài thảo luận.');
+      AppToast.success(context, 'forum.create_success'.tr());
       context.pop();
     } catch (e) {
-      if (mounted) AppToast.error(context, 'Tạo bài thảo luận thất bại.');
+      if (mounted) AppToast.error(context, 'forum.create_failed'.tr());
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -89,7 +90,7 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tạo bài thảo luận')),
+      appBar: AppBar(title: Text('forum.create_topic'.tr())),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -101,16 +102,17 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
                 if (widget.categoryName != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: Text('Chuyên mục: ${widget.categoryName}'),
+                    child: Text('forum.category_label'.tr(
+                        namedArgs: {'name': widget.categoryName!})),
                   ),
                 TextFormField(
                   controller: _titleCtl,
                   validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Tiêu đề là bắt buộc'
+                      ? 'forum.title_required'.tr()
                       : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Tiêu đề',
-                    prefixIcon: Icon(Icons.title),
+                  decoration: InputDecoration(
+                    labelText: 'forum.post_title'.tr(),
+                    prefixIcon: const Icon(Icons.title),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -118,10 +120,10 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
                   controller: _contentCtl,
                   minLines: 5,
                   maxLines: 10,
-                  decoration: const InputDecoration(
-                    labelText: 'Nội dung (tùy chọn)',
+                  decoration: InputDecoration(
+                    labelText: 'forum.post_content_optional'.tr(),
                     alignLabelWithHint: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -137,7 +139,8 @@ class _ForumCreateTopicPageState extends ConsumerState<ForumCreateTopicPage> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Text('Đăng bài', style: TextStyle(fontSize: 16)),
+                      : Text('forum.create_post'.tr(),
+                          style: const TextStyle(fontSize: 16)),
                 ),
               ],
             ),

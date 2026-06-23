@@ -15,7 +15,7 @@ export function useGroupMembers(groupId, { enabled = true } = {}) {
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải danh sách thành viên.'
+        'Failed to load members'
       : null;
 
   return {

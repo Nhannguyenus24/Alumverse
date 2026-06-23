@@ -20,7 +20,7 @@ class TrustedVerifier {
   });
 
   String get displayName =>
-      (fullName?.isNotEmpty ?? false) ? fullName! : (studentId ?? 'Ẩn danh');
+      (fullName?.isNotEmpty ?? false) ? fullName! : (studentId ?? 'Anonymous');
 
   factory TrustedVerifier.fromJson(Map<String, dynamic> json) {
     return TrustedVerifier(

@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Box, Button, Card, Container, Dialog, DialogActions, DialogContent, DialogTitle, Grid, MenuItem, Switch, TextField, Typography, LinearProgress } from "@mui/material";
 import { zodResolver } from "@hookform/resolvers/zod";
 import styled from "@emotion/styled";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
 import MoneyField from "../../components/MoneyField";
@@ -13,29 +14,29 @@ import { useAuth } from "../../hooks/useAuth";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 
-const donationSchema = z.object({
-  amountOption: z.string().min(1, "Vui lòng chọn số tiền"),
+const getDonationSchema = (t) => z.object({
+  amountOption: z.string().min(1, t('donation:amount_required')),
   customAmount: z.coerce.number().optional(),
   isAnonymous: z.boolean().default(false),
-  donorName: z.string().trim().max(50, "Tên tối đa 50 ký tự").optional().or(z.literal("")),
-  email: z.string().trim().max(255, "Email tối đa 255 ký tự").optional().or(z.literal("")),
+  donorName: z.string().trim().max(50, t('donation:name_max_length')).optional().or(z.literal("")),
+  email: z.string().trim().max(255, t('donation:email_max_length')).optional().or(z.literal("")),
   phone: z
     .string()
     .trim()
     .optional()
     .or(z.literal(""))
     .refine((v) => !v || VIETNAM_PHONE_REGEX.test(v), {
-      message: "Số điện thoại không hợp lệ (10 số, đầu số Việt Nam)",
+      message: t('donation:phone_invalid'),
     }),
-  address: z.string().trim().max(500, "Địa chỉ tối đa 500 ký tự").optional().or(z.literal("")),
-  message: z.string().trim().max(100, "Lời nhắn nhủ tối đa 100 ký tự").optional().or(z.literal("")),
+  address: z.string().trim().max(500, t('donation:address_max_length')).optional().or(z.literal("")),
+  message: z.string().trim().max(100, t('donation:message_max_length')).optional().or(z.literal("")),
 }).superRefine((data, ctx) => {
   if (data.amountOption === "custom") {
     if (!data.customAmount || Number.isNaN(data.customAmount) || data.customAmount <= 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["customAmount"],
-        message: "Vui lòng nhập số tiền hợp lệ lớn hơn 0",
+        message: t('donation:custom_amount_invalid'),
       });
     }
   }
@@ -44,7 +45,7 @@ const donationSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["donorName"],
-      message: "Vui lòng nhập họ và tên/tổ chức",
+      message: t('donation:donor_name_required'),
     });
   }
 
@@ -52,7 +53,7 @@ const donationSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["email"],
-      message: "Email không đúng định dạng",
+      message: t('donation:email_invalid'),
     });
   }
 });
@@ -80,33 +81,40 @@ const CircleLogo = styled("img")`
 `;
 
 function DonationHeaderCard({ fundDetail }) {
+  const { t } = useTranslation('donation');
   return (
     <SurfaceCard sx={{ px: { xs: 2.5, md: 4 }, py: { xs: 3.5, md: 4.5 }, mb: 3 }}>
       <Box sx={{ textAlign: "center" }}>
         <CircleLogo src={fundDetail?.logoUrl || LOGO_FALLBACK_URL} alt="HCMUS Alumni logo" />
         <Typography variant="h4" sx={{ mt: 2.2, fontWeight: 800, color: "#122f5a", fontSize: { xs: "1.6rem", md: "2rem" } }}>
-          {fundDetail?.name || "Chi tiết quỹ"}
+          {fundDetail?.name || t('fund_detail')}
         </Typography>
       </Box>
     </SurfaceCard>
   );
 }
 
-const DONATION_AMOUNTS = [
+const FIXED_DONATION_AMOUNTS = [
   { value: "100000", label: "100,000 VND" },
   { value: "200000", label: "200,000 VND" },
   { value: "500000", label: "500,000 VND" },
   { value: "1000000", label: "1,000,000 VND" },
-  { value: "custom", label: "Nhập số tiền khác" },
 ];
 
 function DonationContributionForm({ fundDetail }) {
+  const { t } = useTranslation('donation');
+  const DONATION_AMOUNTS = [
+    ...FIXED_DONATION_AMOUNTS,
+    { value: "custom", label: t('amount_custom') },
+  ];
   const { user, isAuthenticated } = useAuth();
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [isCheckoutPopupOpen, setIsCheckoutPopupOpen] = useState(false);
   const [isQrFailed, setIsQrFailed] = useState(false);
+
+  const donationSchema = useMemo(() => getDonationSchema(t), [t]);
 
   const { control, watch, handleSubmit, reset, setValue, formState: { errors } } = useForm({
     resolver: zodResolver(donationSchema),
@@ -137,7 +145,7 @@ function DonationContributionForm({ fundDetail }) {
       const checkoutData = await fundApi.createFundDonation(payload);
       const nextCheckoutUrl = checkoutData?.checkoutUrl;
       if (!nextCheckoutUrl) {
-        throw new Error("Không nhận được liên kết thanh toán.");
+        throw new Error(t('error_no_checkout_url'));
       }
 
       setCheckoutUrl(nextCheckoutUrl);
@@ -145,7 +153,7 @@ function DonationContributionForm({ fundDetail }) {
       setIsCheckoutPopupOpen(true);
       reset();
     } catch (error) {
-      setSubmitError(error?.response?.data?.message ?? error?.message ?? "Không thể tạo lượt đóng góp.");
+      setSubmitError(error?.response?.data?.message ?? error?.message ?? t('error_create_donation'));
     } finally {
       setIsSubmitting(false);
     }
@@ -161,7 +169,7 @@ function DonationContributionForm({ fundDetail }) {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field} select fullWidth label="Số tiền"
+                  {...field} select fullWidth label={t('amount')}
                   SelectProps={{ MenuProps: { disableScrollLock: true } }}
                   error={Boolean(errors.amountOption)} helperText={errors.amountOption?.message}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
@@ -182,7 +190,7 @@ function DonationContributionForm({ fundDetail }) {
                 control={control}
                 render={({ field }) => (
                   <MoneyField
-                    fullWidth label="Nhập số tiền bất kỳ" placeholder="VD: 350,000"
+                    fullWidth label={t('amount_custom_label')} placeholder={t('amount_custom_placeholder')}
                     value={field.value} onChange={field.onChange} onBlur={field.onBlur}
                     error={Boolean(errors.customAmount)} helperText={errors.customAmount?.message}
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
@@ -200,7 +208,7 @@ function DonationContributionForm({ fundDetail }) {
                   control={control}
                   render={({ field }) => (
                     <TextField
-                      {...field} fullWidth label="Họ và tên/tổ chức đóng góp"
+                      {...field} fullWidth label={t('donor_name_label')}
                       error={Boolean(errors.donorName)} helperText={errors.donorName?.message}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
                     />
@@ -214,7 +222,7 @@ function DonationContributionForm({ fundDetail }) {
                   control={control}
                   render={({ field }) => (
                     <TextField
-                      {...field} fullWidth label="Email" placeholder="Nhập email (không bắt buộc)"
+                      {...field} fullWidth label="Email" placeholder={t('field_optional_placeholder', { field: 'Email' })}
                       error={Boolean(errors.email)} helperText={errors.email?.message}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
                     />
@@ -228,7 +236,7 @@ function DonationContributionForm({ fundDetail }) {
                   control={control}
                   render={({ field }) => (
                     <TextField
-                      {...field} fullWidth label="Số điện thoại" placeholder="VD: 0976312345 (không bắt buộc)"
+                      {...field} fullWidth label={t('phone_label')} placeholder={t('phone_placeholder')}
                       error={Boolean(errors.phone)} helperText={errors.phone?.message}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
                     />
@@ -242,7 +250,7 @@ function DonationContributionForm({ fundDetail }) {
                   control={control}
                   render={({ field }) => (
                     <TextField
-                      {...field} fullWidth label="Địa chỉ" placeholder="VD: 59C Nguyễn Đình Chiểu... (không bắt buộc)"
+                      {...field} fullWidth label={t('address_label')} placeholder={t('address_placeholder')}
                       error={Boolean(errors.address)} helperText={errors.address?.message}
                       sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
                     />
@@ -258,9 +266,9 @@ function DonationContributionForm({ fundDetail }) {
               control={control}
               render={({ field }) => (
                 <TextField
-                  {...field} fullWidth label="Lời nhắn nhủ" placeholder="Nhập lời nhắn của bạn (không bắt buộc)..." multiline minRows={3}
+                  {...field} fullWidth label={t('message_label')} placeholder={t('message_placeholder')} multiline minRows={3}
                   onChange={(event) => field.onChange(event.target.value.slice(0, 100))}
-                  error={Boolean(errors.message)} helperText={errors.message?.message || `${field.value?.length || 0}/100 (không bắt buộc)`}
+                  error={Boolean(errors.message)} helperText={errors.message?.message || `${field.value?.length || 0}/100 (${t('optional')})`}
                   inputProps={{ maxLength: 100 }} sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2, backgroundColor: "#f7f9fc" } }}
                 />
               )}
@@ -292,10 +300,10 @@ function DonationContributionForm({ fundDetail }) {
             >
               <Box>
                 <Typography sx={{ fontWeight: 700, color: "#0f2f5f", fontSize: "0.94rem" }}>
-                  Quyên góp ẩn danh
+                  {t('anonymous_label')}
                 </Typography>
                 <Typography sx={{ color: "#5f78a4", fontSize: "0.8rem", mt: 0.2 }}>
-                  Chỉ cần nhập số tiền, thông tin cá nhân sẽ được ẩn
+                  {t('anonymous_desc')}
                 </Typography>
               </Box>
               <Switch
@@ -323,42 +331,42 @@ function DonationContributionForm({ fundDetail }) {
           type="submit" fullWidth variant="contained" disabled={isSubmitting}
           sx={{ mt: 2.2, height: 46, borderRadius: 2, textTransform: "none", fontWeight: 700, backgroundColor: "#0f2f5f", boxShadow: "0 6px 14px rgba(15, 47, 95, 0.25)", "&:hover": { backgroundColor: "#0b2448", boxShadow: "0 8px 16px rgba(15, 47, 95, 0.3)" } }}
         >
-          {isSubmitting ? "Đang xử lý..." : "Thực hiện đóng góp"}
+          {isSubmitting ? t('submit_processing') : t('submit_donate')}
         </Button>
         {submitError ? (
           <Typography sx={{ mt: 1, color: "#9f2f2f", fontWeight: 600, fontSize: "0.9rem" }}>{submitError}</Typography>
         ) : null}
 
         <Box sx={{ mt: 2.6 }}>
-          <Typography sx={{ color: "#df5e2d", fontWeight: 800, mb: 1 }}>Lưu ý:</Typography>
+          <Typography sx={{ color: "#df5e2d", fontWeight: 800, mb: 1 }}>{t('note_heading')}</Typography>
           <Typography component="div" sx={{ color: "#4f617e", fontSize: "0.92rem", lineHeight: 1.7 }}>
             <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
-              <Box component="li">Vui lòng hoàn tất thanh toán dùng QR Code.</Box>
-              <Box component="li">Nếu cần hỗ trợ, bạn có thể chọn hình thức chuyển khoản hoặc đóng góp trực tiếp.</Box>
+              <Box component="li">{t('note_qr')}</Box>
+              <Box component="li">{t('note_support')}</Box>
             </Box>
           </Typography>
           <Typography sx={{ mt: 1.5, color: "#3f5477", fontSize: "0.92rem", lineHeight: 1.7 }}>
-            Hotline: +84 906 060 606 <br /> Email: giaovu@hcmus.edu.vn
+            {t('note_hotline')}
           </Typography>
         </Box>
       </Box>
       <Dialog open={isCheckoutPopupOpen} onClose={() => setIsCheckoutPopupOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle sx={{ color: "#123b7a", fontWeight: 800 }}>Hoàn tất thanh toán</DialogTitle>
+        <DialogTitle sx={{ color: "#123b7a", fontWeight: 800 }}>{t('checkout_dialog_title')}</DialogTitle>
         <DialogContent>
           <Typography sx={{ color: "#4f617e", fontSize: "0.92rem", mb: 1.5 }}>
-            Vui lòng quét mã QR bên dưới để hoàn tất đóng góp.
+            {t('checkout_dialog_desc')}
           </Typography>
           {!isQrFailed ? (
-            <Box component="img" src={checkoutUrl} alt="Mã QR thanh toán" onError={() => setIsQrFailed(true)} sx={{ width: "100%", maxWidth: 280, mx: "auto", display: "block", borderRadius: 2, border: "1px solid #dce7f8" }} />
+            <Box component="img" src={checkoutUrl} alt={t('checkout_qr_alt')} onError={() => setIsQrFailed(true)} sx={{ width: "100%", maxWidth: 280, mx: "auto", display: "block", borderRadius: 2, border: "1px solid #dce7f8" }} />
           ) : (
             <Typography sx={{ color: "#9f2f2f", fontWeight: 600, fontSize: "0.9rem" }}>
-              Không thể hiển thị QR trực tiếp. Bạn vui lòng mở liên kết thanh toán.
+              {t('checkout_qr_failed')}
             </Typography>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, justifyContent: "center" }}>
           <Button variant="contained" onClick={() => setIsCheckoutPopupOpen(false)} sx={{ textTransform: "none", fontWeight: 700, backgroundColor: "#0f2f5f", "&:hover": { backgroundColor: "#0b2448" } }}>
-            Đóng
+            {t('close_fund_cancel')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -367,6 +375,7 @@ function DonationContributionForm({ fundDetail }) {
 }
 
 export default function DetailDonationPage() {
+  const { t } = useTranslation('donation');
   const { id } = useParams();
   const navigate = useOrgNavigate();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -393,7 +402,7 @@ export default function DetailDonationPage() {
       } catch (error) {
         if (ignore) return;
         setFundDetail(null);
-        setErrorMessage(error?.response?.data?.message ?? "Không thể tải chi tiết quỹ.");
+        setErrorMessage(error?.response?.data?.message ?? t('error_load_fund_detail'));
       } finally {
         if (!ignore) setIsLoading(false);
       }
@@ -404,11 +413,11 @@ export default function DetailDonationPage() {
   }, [id]);
 
   return (
-    <Page title={fundDetail?.name || "Chi tiết quỹ"} meta={<meta name="description" content="Chi tiết quỹ quyên góp cộng đồng cựu sinh viên khoa học." />}>
+    <Page title={fundDetail?.name || t('fund_detail')} meta={<meta name="description" content={t('meta_description')} />}>
       <PageBackground>
         <Container maxWidth={false} sx={{ maxWidth: 1140 }}>
           <Box sx={{ mb: 3 }}>
-            <Breadcrumb items={[{ label: "QUYÊN GÓP", path: "/donations" }, { label: fundDetail?.name || "Chi tiết quỹ", path: `/donations/${id}` }, { label: "Quyên góp" }]} fontSize="0.8rem" />
+            <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: fundDetail?.name || t('fund_detail'), path: `/donations/${id}` }, { label: t('donate_btn') }]} fontSize="0.8rem" />
           </Box>
 
           {!isLoading && errorMessage ? (

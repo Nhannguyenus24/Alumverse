@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url.dart';
@@ -24,7 +24,7 @@ class ArticleDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chi tiết bài viết'),
+        title: Text('article.detail_title'.tr()),
         actions: [_SaveButton(articleId: articleId)],
       ),
       body: async.when(
@@ -38,11 +38,11 @@ class ArticleDetailPage extends ConsumerWidget {
                 const Icon(Icons.cloud_off_rounded,
                     size: 48, color: AppColors.textSecondary),
                 const SizedBox(height: 12),
-                const Text('Không tải được bài viết'),
+                Text('article.load_failed_detail'.tr()),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: () => ref.invalidate(newsDetailProvider(articleId)),
-                  child: const Text('Thử lại'),
+                  child: Text('common.retry'.tr()),
                 ),
               ],
             ),
@@ -159,10 +159,10 @@ class _SaveButtonState extends ConsumerState<_SaveButton> {
     try {
       if (currentlySaved) {
         await repo.unsave(widget.articleId);
-        if (mounted) AppToast.info(context, 'Đã bỏ quan tâm bài viết.');
+        if (mounted) AppToast.info(context, 'article.unsaved_toast'.tr());
       } else {
         await repo.save(widget.articleId);
-        if (mounted) AppToast.success(context, 'Đã quan tâm bài viết.');
+        if (mounted) AppToast.success(context, 'article.saved_toast'.tr());
       }
     } catch (_) {
       // Tolerate already-saved/not-saved races; resync below reflects truth.
@@ -179,7 +179,7 @@ class _SaveButtonState extends ConsumerState<_SaveButton> {
         ref.watch(isArticleSavedProvider(widget.articleId)).valueOrNull ??
             false;
     return IconButton(
-      tooltip: saved ? 'Bỏ quan tâm' : 'Quan tâm',
+      tooltip: saved ? 'article.unsave'.tr() : 'article.save_action'.tr(),
       onPressed: _busy ? null : () => _toggle(saved),
       icon: Icon(saved ? Icons.favorite : Icons.favorite_border),
       color: saved ? AppColors.error : null,

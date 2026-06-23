@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,7 +24,7 @@ class NetworkSearchTab extends ConsumerWidget {
     return Column(
       children: [
         NetworkSearchBar(
-          hintText: 'Tìm theo tên thành viên…',
+          hintText: 'network.search_members_hint'.tr(),
           initialValue: query.fullName,
           showFilters: true,
           programValue: query.program,
@@ -57,17 +58,17 @@ class NetworkSearchTab extends ConsumerWidget {
                   ElevatedButton(
                     onPressed: () =>
                         ref.invalidate(networkSearchProvider),
-                    child: const Text('Thử lại'),
+                    child: Text('common.retry'.tr()),
                   ),
                 ],
               ),
             ),
             data: (result) {
               if (result.items.isEmpty) {
-                return const EmptyView(
+                return EmptyView(
                   icon: Icons.person_search_outlined,
-                  title: 'Không tìm thấy thành viên',
-                  message: 'Hãy thử tìm kiếm với từ khoá khác.',
+                  title: 'network.no_members_title'.tr(),
+                  message: 'network.no_members_desc'.tr(),
                 );
               }
               return RefreshIndicator(
@@ -121,16 +122,16 @@ class NetworkSearchTab extends ConsumerWidget {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Chặn thành viên'),
-        content: Text('Bạn có chắc muốn chặn $name?'),
+        title: Text('network.block_member_title'.tr()),
+        content: Text('network.confirm_block_member'.tr(namedArgs: {'name': name})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Huỷ')),
+              child: Text('common.cancel'.tr())),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Chặn',
-                  style: TextStyle(color: AppColors.error))),
+              child: Text('network.block'.tr(),
+                  style: const TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -139,7 +140,7 @@ class NetworkSearchTab extends ConsumerWidget {
       await ref.read(networkRepositoryProvider).block(memberId);
       ref.invalidate(networkSearchProvider);
       ref.invalidate(networkBlockedProvider);
-      if (context.mounted) AppToast.success(context, 'Đã chặn $name');
+      if (context.mounted) AppToast.success(context, 'network.blocked_toast'.tr(namedArgs: {'name': name}));
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
     }
@@ -172,7 +173,10 @@ class _PaginationBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left),
           ),
           Text(
-            'Trang ${page + 1} / $totalPage',
+            'common.page_indicator'.tr(namedArgs: {
+              'current': (page + 1).toString(),
+              'total': totalPage.toString(),
+            }),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           IconButton(

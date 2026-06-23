@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { NavLink, useOutletContext } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Box, Button, IconButton, MenuItem, Select, Skeleton, Stack,
   Tooltip, Typography, alpha, useTheme,
@@ -22,17 +23,9 @@ import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggr
 import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';
 import { useAuth } from '../../hooks/useAuth';
 
-const INTERVALS = [
-  { value: '0', label: 'Không tự làm mới' },
-  { value: '1', label: 'Mỗi 1 phút' },
-  { value: '5', label: 'Mỗi 5 phút' },
-  { value: '15', label: 'Mỗi 15 phút' },
-];
-
-const SYSTEM_STATUS_ITEMS = [['Cơ sở dữ liệu'], ['Máy chủ Email'], ['Lưu trữ hình ảnh']];
-
 const AdminDashboardPage = () => {
   const theme = useTheme();
+  const { t } = useTranslation(['admin']);
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const { loading: systemLoading, organizations } = useAdminSystemContext();
@@ -44,6 +37,19 @@ const AdminDashboardPage = () => {
   const { setBreadcrumbs } = useOutletContext();
   const displayName = user?.fullName || user?.name || user?.studentId || 'ADMIN';
 
+  const INTERVALS = useMemo(() => [
+    { value: '0', label: t('admin:refresh_interval_none') },
+    { value: '1', label: t('admin:refresh_interval_1m') },
+    { value: '5', label: t('admin:refresh_interval_5m') },
+    { value: '15', label: t('admin:refresh_interval_15m') },
+  ], [t]);
+
+  const SYSTEM_STATUS_ITEMS = useMemo(() => [
+    [t('admin:system_db')],
+    [t('admin:system_email')],
+    [t('admin:system_image_storage')],
+  ], [t]);
+
   const [refreshInterval, setRefreshInterval] = useState('0');
   const [sectionRefreshKey, setSectionRefreshKey] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState(null);
@@ -51,8 +57,8 @@ const AdminDashboardPage = () => {
   const intervalRef = useRef(null);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Dashboard', active: true }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs?.([{ label: t('admin:breadcrumb_dashboard'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   const handleRefresh = useCallback(() => {
     reload?.();
@@ -109,10 +115,10 @@ const AdminDashboardPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Chào mừng trở lại, {displayName}!
+            {t('admin:welcome_back', { name: displayName })}
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Đây là tổng quan về hoạt động của hệ thống AlumVerse ngày hôm nay.
+            {t('admin:system_overview_subtitle')}
           </Typography>
         </Box>
 
@@ -122,7 +128,7 @@ const AdminDashboardPage = () => {
               {lastRefreshed.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </Typography>
           )}
-          <Tooltip title="Làm mới ngay">
+          <Tooltip title={t('admin:refresh_now')}>
             <IconButton
               size="small"
               onClick={handleRefresh}
@@ -177,19 +183,19 @@ const AdminDashboardPage = () => {
           sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } } }}
         >
           <AdminDashboardMetricTile
-            label="Tổng thành viên"
+            label={t('admin:total_members')}
             value={totalUsers.toLocaleString()}
             icon={<PeopleAltOutlinedIcon />}
             trend={12}
           />
           <AdminDashboardMetricTile
-            label="Bài viết chờ duyệt"
+            label={t('admin:posts_pending_moderation')}
             value={pendingPosts}
             icon={<MarkChatUnreadOutlinedIcon />}
-            caption="Cần xử lý ngay"
+            caption={t('admin:posts_pending_moderation_caption')}
           />
           <AdminDashboardMetricTile
-            label="Tổ chức / Đơn vị"
+            label={t('admin:organizations_units')}
             value={totalOrgs}
             icon={<BusinessCenterOutlinedIcon />}
             trend={2}
@@ -203,22 +209,22 @@ const AdminDashboardPage = () => {
           sx={{ '& > *': { flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 0' } } }}
         >
           <AdminDashboardMetricTile
-            label="Hoạt động hệ thống"
+            label={t('admin:system_activity')}
             value={(metrics?.auditLogsCountToday || 0).toLocaleString()}
             icon={<TrendingUpIcon />}
-            caption="Bản ghi mới hôm nay"
+            caption={t('admin:system_activity_caption')}
           />
           <AdminDashboardMetricTile
-            label="Chờ xác minh"
+            label={t('admin:pending_verification')}
             value={(metrics?.pendingVerifications || 0).toLocaleString()}
             icon={<VerifiedUserOutlinedIcon />}
-            caption="Yêu cầu xác minh"
+            caption={t('admin:pending_verification_caption')}
           />
           <AdminDashboardMetricTile
-            label="Quyên góp gần đây"
+            label={t('admin:recent_donations')}
             value={donationsFormatted}
             icon={<VolunteerActivismOutlinedIcon />}
-            caption={`${(metrics?.totalDonationsCount || 0).toLocaleString()} lượt trong 30 ngày qua`}
+            caption={t('admin:donations_caption', { count: (metrics?.totalDonationsCount || 0).toLocaleString() })}
           />
         </Stack>
       </Stack>
@@ -237,8 +243,8 @@ const AdminDashboardPage = () => {
             }}
           >
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>Biểu đồ hoạt động</Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>7 ngày qua</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: 'primary.main' }}>{t('admin:activity_chart')}</Typography>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>{t('admin:last_7_days')}</Typography>
             </Box>
             <Chart
               type="area"
@@ -262,7 +268,7 @@ const AdminDashboardPage = () => {
               }}
             >
               <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>
-                Thao tác nhanh
+                {t('admin:quick_actions')}
               </Typography>
               <Stack spacing={1.5}>
                 <Button
@@ -274,7 +280,7 @@ const AdminDashboardPage = () => {
                   sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                   disabled={!isAdmin}
                 >
-                  Quản lý người dùng
+                  {t('admin:manage_users')}
                 </Button>
                 <Button
                   component={NavLink}
@@ -284,7 +290,7 @@ const AdminDashboardPage = () => {
                   startIcon={<ForumOutlinedIcon />}
                   sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                 >
-                  Duyệt bài viết diễn đàn
+                  {t('admin:moderate_forum_posts')}
                 </Button>
                 <Button
                   component={NavLink}
@@ -295,19 +301,19 @@ const AdminDashboardPage = () => {
                   sx={{ justifyContent: 'flex-start', py: 1.2, fontWeight: 700, textTransform: 'none', borderRadius: 1 }}
                   disabled={!isAdmin}
                 >
-                  Xem nhật ký hệ thống
+                  {t('admin:view_audit_logs')}
                 </Button>
               </Stack>
             </Box>
 
             <Box sx={{ p: 3, bgcolor: 'background.paper', borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>Trạng thái hệ thống</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, color: 'primary.main' }}>{t('admin:system_status')}</Typography>
               <Stack spacing={2}>
                 {SYSTEM_STATUS_ITEMS.map(([label]) => (
                   <Box key={label} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="body2" color="text.secondary">{label}</Typography>
                     <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 700, px: 1, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>
-                      ỔN ĐỊNH
+                      {t('admin:system_status_stable')}
                     </Typography>
                   </Box>
                 ))}

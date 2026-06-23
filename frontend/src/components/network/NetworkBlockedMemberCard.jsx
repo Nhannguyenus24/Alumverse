@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../utils/dateFormatter';
 
@@ -15,6 +16,7 @@ const NetworkBlockedMemberCard = ({
   onUnblock,
   isUnblockLoading = false,
 }) => {
+  const { t } = useTranslation('network');
   const displayName = member.fullName || 'N/A';
 
   return (
@@ -48,7 +50,7 @@ const NetworkBlockedMemberCard = ({
               noWrap
               sx={{ display: 'block', mt: 0.25, lineHeight: 1.3 }}
             >
-              Chặn lúc {formatDateTime(member.blockedAt, 'Không rõ')}
+              {t('blocked_at', { datetime: formatDateTime(member.blockedAt, t('unknown_datetime')) })}
             </Typography>
           </Box>
         </Stack>
@@ -63,7 +65,7 @@ const NetworkBlockedMemberCard = ({
             disabled={isUnblockLoading}
             sx={{ minWidth: 100 }}
           >
-            {isUnblockLoading ? <CircularProgress size={16} color="inherit" /> : 'Bỏ chặn'}
+            {isUnblockLoading ? <CircularProgress size={16} color="inherit" /> : t('unblock')}
           </Button>
         </Box>
       </Stack>

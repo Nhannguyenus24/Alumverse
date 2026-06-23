@@ -1,4 +1,5 @@
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrganization } from '../../hooks/useOrganization';
@@ -12,6 +13,7 @@ import { useForumManageMode } from '../../hooks/forum/useForumManageMode';
 import ForumManageView from '../../components/forum/ForumManageView';
 
 const ForumPage = () => {
+  const { t } = useTranslation(['forum', 'common']);
   const { user } = useAuth();
   const { organization } = useOrganization();
   const notification = useNotification();
@@ -46,8 +48,8 @@ const ForumPage = () => {
 
   return (
     <Page
-      title="Diễn đàn"
-      meta={<meta name="description" content="Diễn đàn AlumVerse" />}
+      title={t('forum:page_title')}
+      meta={<meta name="description" content={t('forum:page_meta_description')} />}
     >
       <Container
         maxWidth={false}
@@ -69,7 +71,7 @@ const ForumPage = () => {
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 }, flexShrink: 0 }}>
               <ForumFilterPanel filters={filters} selectedId={selectedFilterId} onChange={handleFilterChange} />
               <ForumSponsoredCard
-                title="Sponsored"
+                title={t('forum:sponsored')}
                 imageSrc="/forum/metro_station.png"
                 imageAlt="HCMC Metro Opening"
                 caption="HCMC Metro Opening"
@@ -104,16 +106,16 @@ const ForumPage = () => {
                     letterSpacing: 1,
                   }}
                 >
-                  DIỄN ĐÀN
+                  {t('forum:forum_heading')}
                 </Typography>
                 {isAdmin &&
                   (isManageMode ? (
                     <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                       <Button variant="outlined" color="primary" onClick={handleCloseManageMode}>
-                        Huỷ
+                        {t('common:cancel')}
                       </Button>
                       <Button variant="contained" color="primary" onClick={handleSaveTopics}>
-                        Lưu
+                        {t('common:save')}
                       </Button>
                     </Box>
                   ) : (
@@ -123,7 +125,7 @@ const ForumPage = () => {
                       sx={{ flexShrink: 0 }}
                       onClick={handleOpenManageMode}
                     >
-                      Thay đổi chủ đề
+                      {t('forum:manage_topics')}
                     </Button>
                   ))}
               </Box>

@@ -20,7 +20,7 @@ export const useAddAvailability = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể thêm lịch'
+        'Failed to add availability'
       : null;
 
   return {

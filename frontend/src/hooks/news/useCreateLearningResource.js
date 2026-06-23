@@ -18,7 +18,7 @@ export const useCreateLearningResource = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo tài liệu"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create learning resource"
       : null;
 
   return { createLearningResource: mutateAsync, isPending, isError, errorMessage };

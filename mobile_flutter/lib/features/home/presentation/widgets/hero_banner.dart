@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -151,10 +152,9 @@ class _AlumverseSlide extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Hệ thống kết nối Sinh viên & Cựu sinh viên, tạo cầu nối '
-            'giữa sinh viên và cơ hội nghề nghiệp.',
-            style: TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
+          Text(
+            'home.hero_tagline'.tr(),
+            style: const TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
           ),
           if (organizationName != null) ...[
             const SizedBox(height: 14),
@@ -212,8 +212,9 @@ class _IntroSlide extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               organizationName != null
-                  ? 'Giới thiệu về ${organizationName!}'
-                  : 'Giới thiệu',
+                  ? 'home.intro_title_with_org'
+                      .tr(namedArgs: {'name': organizationName!})
+                  : 'organization.introduction'.tr(),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -223,10 +224,10 @@ class _IntroSlide extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Tìm hiểu về tầm nhìn, sứ mệnh và các hoạt động của tổ chức.',
-              style:
-                  TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
+            Text(
+              'home.intro_subtitle'.tr(),
+              style: const TextStyle(
+                  color: Colors.white70, height: 1.5, fontSize: 14),
             ),
             const SizedBox(height: 14),
             Row(
@@ -239,16 +240,16 @@ class _IntroSlide extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Xem giới thiệu',
-                          style: TextStyle(
+                      Text('home.view_intro'.tr(),
+                          style: const TextStyle(
                               color: Colors.white,
                               fontSize: 13,
                               fontWeight: FontWeight.w600)),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_rounded,
+                      const SizedBox(width: 4),
+                      const Icon(Icons.arrow_forward_rounded,
                           color: Colors.white, size: 16),
                     ],
                   ),

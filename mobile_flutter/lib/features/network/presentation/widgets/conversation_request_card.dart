@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -125,7 +126,7 @@ class ConversationRequestCard extends StatelessWidget {
                               side: const BorderSide(
                                   color: AppColors.error),
                             ),
-                            child: const Text('Từ chối'),
+                            child: Text('network.reject'.tr()),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -136,7 +137,7 @@ class ConversationRequestCard extends StatelessWidget {
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                             ),
-                            child: const Text('Chấp nhận'),
+                            child: Text('network.accept'.tr()),
                           ),
                         ),
                       ],
@@ -165,7 +166,9 @@ class _StatusChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
-        isPending ? 'Chờ xác nhận' : 'Đã từ chối',
+        isPending
+            ? 'network.pending_request'.tr()
+            : 'network.filter_rejected'.tr(),
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,

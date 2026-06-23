@@ -18,7 +18,7 @@ export const usePublishedAlumniPosts = (page = 0, limit = 10) => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách bài viết cựu sinh viên"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load alumni posts"
       : null;
 
   return {

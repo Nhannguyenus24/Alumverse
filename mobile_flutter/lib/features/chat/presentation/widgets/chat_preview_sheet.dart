@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -11,7 +11,7 @@ import '../../data/models/chat_recent_preview.dart';
 import '../providers/chat_list_provider.dart';
 
 /// Bottom sheet that mirrors the web MessagesPreviewPanel. Tap any item or
-/// "Xem tất cả" to navigate to the full chat list.
+/// the see-all button to navigate to the full chat list.
 class ChatPreviewSheet extends ConsumerWidget {
   const ChatPreviewSheet({super.key});
 
@@ -45,7 +45,7 @@ class ChatPreviewSheet extends ConsumerWidget {
           child: Row(
             children: [
               Text(
-                'Tin nhắn',
+                'chat.title'.tr(),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: AppColors.primary,
@@ -63,23 +63,23 @@ class ChatPreviewSheet extends ConsumerWidget {
               padding: EdgeInsets.symmetric(vertical: 40),
               child: Center(child: CircularProgressIndicator()),
             ),
-            error: (_, __) => const Padding(
-              padding: EdgeInsets.symmetric(vertical: 40),
+            error: (_, __) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 40),
               child: Center(
                 child: Text(
-                  'Không thể tải tin nhắn.',
-                  style: TextStyle(color: AppColors.textSecondary),
+                  'chat.load_failed'.tr(),
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
               ),
             ),
             data: (items) {
               if (items.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 40),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Center(
                     child: Text(
-                      'Chưa có tin nhắn nào.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      'chat.no_conversations'.tr(),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ),
                 );
@@ -101,16 +101,16 @@ class ChatPreviewSheet extends ConsumerWidget {
           ),
         ),
         const Divider(height: 1, color: AppColors.divider),
-        // "Xem tất cả" button
+        // See-all button
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: SizedBox(
             width: double.infinity,
             child: TextButton(
               onPressed: () => _goToChat(context),
-              child: const Text(
-                'Xem tất cả',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              child: Text(
+                'chat.see_all'.tr(),
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ),
           ),

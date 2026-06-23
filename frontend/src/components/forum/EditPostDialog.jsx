@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { useNotification } from '../../hooks/useNotification';
 import WYSIWYG from '../WYSIWYG';
+import { useTranslation } from 'react-i18next';
 
 const EditPostDialog = ({
   open,
@@ -20,6 +21,7 @@ const EditPostDialog = ({
   isError,
   errorMessage,
 }) => {
+  const { t } = useTranslation(['forum', 'common']);
   const [editContent, setEditContent] = useState('');
   const { showError } = useNotification();
   const wasErrorRef = useRef(false);
@@ -59,7 +61,7 @@ const EditPostDialog = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Chỉnh sửa bài viết</DialogTitle>
+      <DialogTitle>{t('forum:edit_post_dialog_title')}</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2 }}>
           <WYSIWYG
@@ -72,7 +74,7 @@ const EditPostDialog = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={isPending}>
-          Hủy
+          {t('common:cancel')}
         </Button>
         <Button
           onClick={handleSave}
@@ -84,7 +86,7 @@ const EditPostDialog = ({
           }
           startIcon={isPending ? <CircularProgress size={20} /> : undefined}
         >
-          {isPending ? 'Đang lưu...' : 'Lưu'}
+          {isPending ? t('forum:saving') : t('common:save')}
         </Button>
       </DialogActions>
     </Dialog>

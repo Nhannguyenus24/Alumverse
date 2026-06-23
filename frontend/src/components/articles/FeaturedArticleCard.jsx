@@ -1,5 +1,6 @@
 import { Box, Typography, Button, Stack } from '@mui/material';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -10,6 +11,7 @@ const FeaturedArticleCard = ({
   onEdit,
   onDelete,
 }) => {
+  const { t } = useTranslation(['common']);
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -136,7 +138,7 @@ const FeaturedArticleCard = ({
                 onEdit?.();
               }}
             >
-              Sửa
+              {t('common:edit')}
             </Button>
 
             <Button
@@ -153,7 +155,7 @@ const FeaturedArticleCard = ({
                 onDelete?.();
               }}
             >
-              Xoá
+              {t('common:delete')}
             </Button>
           </Stack>
         )}

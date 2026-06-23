@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import {
   Box,
@@ -32,30 +33,29 @@ const scrollAnimation = keyframes`
   100% { transform: translateX(-50%); }
 `;
 
-const EXPLORE_ITEMS = [
+const getExploreItems = (t) => [
   {
     iconSrc: "/icons/ho_tro_tu_van.svg",
-    title: "Cố vấn",
-    description: "Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.",
+    title: t("home:explore_mentorship_title"),
+    description: t("home:explore_mentorship_desc"),
     path: "/development/mentorship",
   },
   {
     iconSrc: "/icons/ket_noi_csv.svg",
-    title: "Kết nối cựu sinh viên",
-    description:
-      "Kết nối cộng đồng cựu sinh viên, chia sẻ kiến thức và kinh nghiệm.",
+    title: t("home:explore_connect_title"),
+    description: t("home:explore_connect_desc"),
     path: "/forum",
   },
   {
     iconSrc: "/icons/tim_kiem_csv.svg",
-    title: "Tìm kiếm cựu sinh viên",
-    description: "Dễ dàng tìm kiếm và kết nối với cựu sinh viên.",
+    title: t("home:explore_find_title"),
+    description: t("home:explore_find_desc"),
     path: "/search",
   },
   {
     iconSrc: "/icons/su_kien_hoi_thao.svg",
-    title: "Sự kiện & Hội thảo",
-    description: "Tham gia sự kiện mở rộng mối quan hệ và cơ hội nghề nghiệp.",
+    title: t("home:explore_events_title"),
+    description: t("home:explore_events_desc"),
     path: "/activities/events",
   },
 ];
@@ -74,6 +74,7 @@ const PARTNER_LOGOS = [
 ];
 
 const HomePage = () => {
+  const { t } = useTranslation(['home', 'common']);
   const { slug } = useParams();
   const { achievements } = usePublishedAchievements(0, 5);
   const [events, setEvents] = useState([]);
@@ -109,16 +110,17 @@ const HomePage = () => {
     fetchOrgs();
   }, []);
 
+  const exploreItems = getExploreItems(t);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
   return (
     <Page
-      title="AlumVerse - Nền tảng kết nối Sinh viên & Cựu sinh viên"
+      title={t("home:page_title")}
       meta={
         <meta
           name="description"
-          content="AlumVerse - Hệ thống kết nối Sinh viên & Cựu sinh viên, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+          content={t("home:page_meta_desc")}
         />
       }
     >
@@ -183,9 +185,7 @@ const HomePage = () => {
                   color: "rgba(255,255,255,0.95)",
                 }}
               >
-                Hệ thống kết nối cựu sinh viên và doanh nghiệp, tạo cầu nối giữa
-                sinh viên và các cơ hội nghề nghiệp. Đồng hành cùng Trường Đại
-                học Khoa học Tự nhiên, ĐHQG-HCM.
+                {t("home:hero_body")}
               </Typography>
               <Box sx={{ display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
                 <Button
@@ -203,7 +203,7 @@ const HomePage = () => {
                     },
                   }}
                 >
-                  Giới thiệu
+                  {t("home:hero_intro_btn")}
                 </Button>
               </Box>
             </Box>
@@ -236,7 +236,7 @@ const HomePage = () => {
             textAlign="center"
             sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
-            KHÁM PHÁ
+            {t("home:section_explore")}
           </Typography>
           <Stack
             direction="row"
@@ -245,11 +245,11 @@ const HomePage = () => {
             spacing={{ xs: 2, sm: 3 }}
             sx={{ alignItems: "stretch" }}
           >
-            {EXPLORE_ITEMS.map((item) => {
+            {exploreItems.map((item) => {
               const { iconSrc, title, description, path } = item;
               return (
                 <Box
-                  key={item.title}
+                  key={item.iconSrc}
                   sx={{
                     flex: "1 1 100%",
                     minWidth: 0,
@@ -271,6 +271,7 @@ const HomePage = () => {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
+                    height: "100%",
                     cursor: "pointer",
                     "&:hover": {
                       boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
@@ -284,6 +285,7 @@ const HomePage = () => {
                       justifyContent: "center",
                       mb: { xs: 1.5, md: 2 },
                       minHeight: { xs: 48, md: 56 },
+                      flexShrink: 0,
                     }}
                   >
                     <Box
@@ -313,6 +315,7 @@ const HomePage = () => {
                       fontSize: { xs: "0.8125rem", md: "0.875rem" },
                       maxWidth: 240,
                       mx: "auto",
+                      flex: 1,
                     }}
                   >
                     {description}
@@ -335,7 +338,7 @@ const HomePage = () => {
             textAlign="center"
             sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
-            TIN TỨC
+            {t("home:section_news")}
           </Typography>
           <Stack
             direction="row"
@@ -404,7 +407,7 @@ const HomePage = () => {
             textAlign="center"
             sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
           >
-            CỰU SINH VIÊN TIÊU BIỂU
+            {t("home:section_featured_alumni")}
           </Typography>
           <Stack
             direction="row"
@@ -491,7 +494,7 @@ const HomePage = () => {
               color="text.primary"
               sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" }, fontWeight: 700 }}
             >
-              CÁC TỔ CHỨC KHÁC TRÊN HỆ THỐNG
+              {t("home:section_other_orgs")}
             </Typography>
             <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
               <Box
@@ -576,7 +579,7 @@ const HomePage = () => {
             color="text.primary"
             sx={{ mb: { xs: 2, md: 3 }, fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" } }}
           >
-            Hơn 100+ doanh nghiệp liên kết
+            {t("common:partners_count")}
           </Typography>
           <Box
             sx={{

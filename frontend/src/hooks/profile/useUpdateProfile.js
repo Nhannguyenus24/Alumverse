@@ -15,7 +15,7 @@ export const useUpdateProfile = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể cập nhật hồ sơ'
+        'Failed to update profile'
       : null;
 
   return {

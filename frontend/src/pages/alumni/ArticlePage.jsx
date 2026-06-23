@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import { Box, Container, Typography, CircularProgress, Button, Stack, IconButton, Tooltip } from "@mui/material";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -18,6 +19,7 @@ import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEv
 /** Heart toggle to save ("quan tâm") an article. itemType is fixed to NEWS. */
 const SaveArticleButton = ({ itemId }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation(['common', 'article']);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -37,21 +39,21 @@ const SaveArticleButton = ({ itemId }) => {
       if (saved) {
         await savedItemApi.unsave("NEWS", itemId);
         setSaved(false);
-        enqueueSnackbar("Đã bỏ quan tâm bài viết.", { variant: "info" });
+        enqueueSnackbar(t('article:unsaved_article'), { variant: "info" });
       } else {
         await savedItemApi.save("NEWS", itemId);
         setSaved(true);
-        enqueueSnackbar("Đã quan tâm bài viết.", { variant: "success" });
+        enqueueSnackbar(t('article:saved_article'), { variant: "success" });
       }
     } catch {
-      enqueueSnackbar("Thao tác thất bại.", { variant: "error" });
+      enqueueSnackbar(t('common:action_failed'), { variant: "error" });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Tooltip title={saved ? "Bỏ quan tâm" : "Quan tâm"}>
+    <Tooltip title={saved ? t('article:unsave') : t('article:save_interest')}>
       <IconButton onClick={toggle} disabled={busy} color={saved ? "primary" : "default"}>
         {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
       </IconButton>
@@ -61,6 +63,7 @@ const SaveArticleButton = ({ itemId }) => {
 
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation(['common', 'article', 'event', 'donation']);
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
@@ -105,7 +108,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         setInterestedCount((c) => c + 1);
       }
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || "Thao tác thất bại", { variant: "error" });
+      enqueueSnackbar(err?.response?.data?.message || t('common:action_failed'), { variant: "error" });
     } finally {
       setLoadingInterest(false);
     }
@@ -127,13 +130,13 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
       setIsJoined(true);
       setJoinedCount((c) => c + 1);
       setOpenJoinDialog(false);
-      enqueueSnackbar("Đăng ký tham gia thành công! Xem vé trong Vé của tôi.", { variant: "success" });
+      enqueueSnackbar(t('event:registered_success'), { variant: "success" });
     } catch (err) {
       if (err?.response?.status === 409) {
         setIsJoined(true);
-        enqueueSnackbar("Bạn đã đăng ký sự kiện này rồi.", { variant: "info" });
+        enqueueSnackbar(t('event:already_registered'), { variant: "info" });
       } else {
-        enqueueSnackbar(err?.response?.data?.message || "Đăng ký thất bại", { variant: "error" });
+        enqueueSnackbar(err?.response?.data?.message || t('event:register_failed'), { variant: "error" });
       }
     } finally {
       setLoadingJoin(false);
@@ -142,8 +145,8 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
 
   const displayStats = channel === "event"
     ? [
-        { value: interestedCount, label: "người quan tâm" },
-        { value: joinedCount, label: "người tham gia" },
+        { value: interestedCount, label: t('article:stat_interested') },
+        { value: joinedCount, label: t('event:stat_joined') },
       ]
     : data.stats;
 
@@ -171,7 +174,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
 
         {/* BUTTONS */}
         {channel === "donation" ? (
-          <Button fullWidth variant="contained">Quyên góp</Button>
+          <Button fullWidth variant="contained">{t('donation:donate_button')}</Button>
         ) : (
           <Stack direction="row" spacing={1}>
             <Button
@@ -180,7 +183,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
               disabled={loadingInterest}
               onClick={handleInterest}
             >
-              {isInterested ? "Đã quan tâm" : "Quan tâm"}
+              {isInterested ? t('article:interested') : t('article:interest_action')}
             </Button>
 
             <Button
@@ -196,7 +199,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
               }}
               onClick={handleJoinClick}
             >
-              {isJoined ? "Đã đăng ký" : "Tham gia"}
+              {isJoined ? t('event:registered') : t('event:register_action')}
             </Button>
           </Stack>
         )}
@@ -217,6 +220,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
 };
 
 const ArticlePage = () => {
+  const { t } = useTranslation(['common', 'article', 'event', 'donation']);
   const { channel, id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
   const loadErrorShownRef = useRef(false);
@@ -249,7 +253,7 @@ const ArticlePage = () => {
     if (isPending) return;
     if (isError || !article) {
       if (!loadErrorShownRef.current) {
-        enqueueSnackbar(errorMessage ?? "Không tìm thấy bài viết", { variant: "error" });
+        enqueueSnackbar(errorMessage ?? t('article:not_found'), { variant: "error" });
         loadErrorShownRef.current = true;
       }
       return;
@@ -268,7 +272,7 @@ const ArticlePage = () => {
   if (isError || !article) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <Typography color="text.secondary">Không thể hiển thị bài viết.</Typography>
+        <Typography color="text.secondary">{t('article:display_error')}</Typography>
       </Box>
     );
   }
@@ -278,19 +282,19 @@ const ArticlePage = () => {
   const highlightData =
     resolvedChannel === "event"
       ? {
-          channel: "Sự kiện",
+          channel: t('event:channel_label'),
           title: article.title,
           organizer: article.organizer ?? article.location ?? "",
           date: formatDateRange(article.eventDate, article.eventEndDate),
-          stats: [{ value: article.interestedCount ?? 0, label: "người quan tâm" }, { value: article.joinedCount ?? 0, label: "người tham gia" }],
+          stats: [{ value: article.interestedCount ?? 0, label: t('article:stat_interested') }, { value: article.joinedCount ?? 0, label: t('event:stat_joined') }],
         }
       : resolvedChannel === "donation"
       ? {
-          channel: "Quyên góp",
+          channel: t('donation:channel_label'),
           title: article.title,
           organizer: article.organizer ?? "",
           date: formatDateRange(article.donationDate, article.donationEndDate),
-          stats: [{ value: article.donorCount ?? 0, label: "người quyên góp" }, { value: article.targetAmount != null ? `${formatNumberVi(article.targetAmount)} VNĐ` : "0 VNĐ", label: "mục tiêu" }],
+          stats: [{ value: article.donorCount ?? 0, label: t('donation:stat_donors') }, { value: article.targetAmount != null ? `${formatNumberVi(article.targetAmount)} VNĐ` : "0 VNĐ", label: t('donation:stat_target') }],
         }
       : null;
   
@@ -307,7 +311,7 @@ const ArticlePage = () => {
               {/* Breadcrumb */}
               <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                 <Button startIcon={<NavigateBeforeIcon />} onClick={() => navigate(-1)} size="small" sx={{ color: "text.secondary", textTransform: "none", pl: 0 }}>
-                  Quay lại
+                  {t('back')}
                 </Button>
                 <Box sx={{ flexGrow: 1 }} />
                 <SaveArticleButton itemId={Number(id)} />

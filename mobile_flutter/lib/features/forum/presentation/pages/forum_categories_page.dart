@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,7 @@ class ForumCategoriesPage extends ConsumerWidget {
     final async = ref.watch(forumCategoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Diễn đàn')),
+      appBar: AppBar(title: Text('forum.title'.tr())),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(forumCategoriesProvider);
@@ -31,15 +32,15 @@ class ForumCategoriesPage extends ConsumerWidget {
             children: List.generate(6, (_) => const SkeletonTile()),
           ),
           error: (_, __) => ErrorView(
-            message: 'Không tải được diễn đàn',
+            message: 'forum.load_failed'.tr(),
             onRetry: () => ref.invalidate(forumCategoriesProvider),
           ),
           data: (categories) {
             if (categories.isEmpty) {
-              return const EmptyView(
+              return EmptyView(
                 icon: Icons.forum_outlined,
-                title: 'Chưa có chuyên mục',
-                message: 'Diễn đàn chưa có chuyên mục nào.',
+                title: 'forum.no_categories'.tr(),
+                message: 'forum.no_categories_desc'.tr(),
               );
             }
             final parents = categories.where((c) => c.isParent).toList();
@@ -126,16 +127,24 @@ class _CategoryTile extends StatelessWidget {
                     const Icon(Icons.forum_outlined,
                         size: 13, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
-                    Text('${category.topicCount ?? 0} bài',
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary)),
+                    Text(
+                      'forum.posts_count'.tr(namedArgs: {
+                        'count': '${category.topicCount ?? 0}',
+                      }),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.textSecondary),
+                    ),
                     const SizedBox(width: 12),
                     const Icon(Icons.people_outline,
                         size: 13, color: AppColors.textSecondary),
                     const SizedBox(width: 4),
-                    Text('${category.participantCount ?? 0} thành viên',
-                        style: const TextStyle(
-                            fontSize: 12, color: AppColors.textSecondary)),
+                    Text(
+                      'forum.members_count'.tr(namedArgs: {
+                        'count': '${category.participantCount ?? 0}',
+                      }),
+                      style: const TextStyle(
+                          fontSize: 12, color: AppColors.textSecondary),
+                    ),
                   ],
                 ),
               ),

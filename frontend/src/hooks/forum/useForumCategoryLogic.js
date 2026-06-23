@@ -1,11 +1,13 @@
 import { useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useOrgNavigate } from '../useOrgNavigate';
 import { useForumCategories } from './useForumCategories';
 import { useForumTopics } from './useForumTopics';
 import { useNotification } from '../useNotification';
 
 export const useForumCategoryLogic = (organizationId) => {
+  const { t } = useTranslation('forum');
   const { categoryId: categoryIdParam } = useParams();
   const navigate = useOrgNavigate();
   const location = useLocation();
@@ -28,7 +30,7 @@ export const useForumCategoryLogic = (organizationId) => {
       return;
     }
     if (!invalidCategoryShownRef.current) {
-      showError('Danh mục không hợp lệ.');
+      showError(t('forum:invalid_category'));
       invalidCategoryShownRef.current = true;
     }
   }, [categoryId, showError]);
@@ -37,7 +39,7 @@ export const useForumCategoryLogic = (organizationId) => {
     if (categoryId == null) return;
     if (isError) {
       if (!hasShownTopicsErrorRef.current) {
-        showError('Không thể tải danh sách chủ đề.');
+        showError(t('forum:load_topics_error'));
         hasShownTopicsErrorRef.current = true;
       }
       return;
@@ -53,10 +55,10 @@ export const useForumCategoryLogic = (organizationId) => {
 
   const filters = useMemo(() => {
     if (categoriesPending && !categories?.length) {
-      return [{ id: 'all', label: 'Tất cả' }];
+      return [{ id: 'all', label: t('forum:filter_all') }];
     }
-    return [{ id: 'all', label: 'Tất cả' }, ...parentCategories.map((p) => ({ id: `parent-${p.id}`, label: p.name }))];
-  }, [categories, categoriesPending, parentCategories]);
+    return [{ id: 'all', label: t('filter_all') }, ...parentCategories.map((p) => ({ id: `parent-${p.id}`, label: p.name }))];
+  }, [categories, categoriesPending, parentCategories, t]);
 
   const activeCategory = useMemo(
     () => (categoryId != null ? categories?.find((c) => c.id === categoryId) : null),
@@ -100,11 +102,13 @@ export const useForumCategoryLogic = (organizationId) => {
         state: { selectedFilterId: `parent-${parentCategory.id}` },
       });
     }
-    items.push({ label: activeCategory?.name ?? 'Danh mục' });
+    items.push({ label: activeCategory?.name ?? t('forum:category') });
     return items;
   }, [activeCategory, parentCategory]);
 
-  const pageTitle = activeCategory?.name ? `${activeCategory.name} — Diễn đàn` : 'Diễn đàn — Danh mục';
+  const pageTitle = activeCategory?.name
+    ? t('forum:forum_topic_page_title', { name: activeCategory.name })
+    : t('forum:forum_category_page_title');
 
   return {
     categoryId,

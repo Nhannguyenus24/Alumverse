@@ -19,7 +19,7 @@ export function useGroupChatList({ searchQuery = '', page = 1 }) {
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải danh sách nhóm chat.'
+        'Failed to load group chats'
       : null;
 
   return {

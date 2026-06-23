@@ -19,7 +19,7 @@ export function usePrivateChatList({ searchQuery = '', page = 1, pageSize = DEFA
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải danh sách chat cá nhân.'
+        'Failed to load private chats'
       : null;
 
   return {

@@ -19,7 +19,7 @@ export const useDeleteForumTopic = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể xóa chủ đề"
+      ? error.response?.data?.message ?? error.message ?? "Failed to delete topic"
       : null;
 
   return { deleteTopic: mutateAsync, isPending, isError, errorMessage };

@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 import SearchBar from '../SearchBar';
 import ConfirmDialog from '../ConfirmDialog';
@@ -18,6 +19,7 @@ import NetworkBlockedMemberCard from './NetworkBlockedMemberCard';
 const PAGE_SIZE = 5;
 
 const NetworkBlockedMembersSection = () => {
+  const { t } = useTranslation('network');
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
@@ -74,8 +76,8 @@ const NetworkBlockedMembersSection = () => {
       return (
         <Alert severity="info">
           {hasActiveCriteria
-            ? 'Không có kết quả phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
-            : 'Bạn chưa chặn ai.'}
+            ? t('no_blocked_search_results')
+            : t('no_blocked_users')}
         </Alert>
       );
     }
@@ -111,7 +113,7 @@ const NetworkBlockedMembersSection = () => {
         value={searchInput}
         onChange={setSearchInput}
         onKeyDown={handleSearchKeyDown}
-        placeholder="Tìm theo họ tên… (Enter để tìm)"
+        placeholder={t('search_blocked_placeholder')}
       />
 
       {renderContent()}
@@ -139,10 +141,10 @@ const NetworkBlockedMembersSection = () => {
 
       <ConfirmDialog
         open={Boolean(unblockTarget)}
-        title="Bỏ chặn người dùng"
-        message={`Bạn có chắc muốn bỏ chặn ${unblockTarget?.fullName ?? 'người dùng này'}?`}
-        confirmText="Bỏ chặn"
-        cancelText="Hủy"
+        title={t('unblock_user_title')}
+        message={t('unblock_user_confirm', { name: unblockTarget?.fullName ?? t('member_fallback_name') })}
+        confirmText={t('unblock')}
+        cancelText={t('cancel')}
         confirmColor="primary"
         loading={isUnblocking}
         onConfirm={() => unblockUser()}

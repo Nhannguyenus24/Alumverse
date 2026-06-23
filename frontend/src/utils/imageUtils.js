@@ -25,11 +25,12 @@ export const FUND_LOGO_PREVIEW_SX = {
 /**
  * Validate an image file (type + max size).
  * @param {File} file
+ * @param {Function} [t] - optional i18next t function for translated messages
  * @returns {{ valid: true } | { valid: false, message: string }}
  */
-export const validateImageFile = (file) => {
+export const validateImageFile = (file, t = null) => {
   if (!file) {
-    return { valid: false, message: "Không có file được chọn." };
+    return { valid: false, message: t ? t('common:no_file_selected') : "Không có file được chọn." };
   }
 
   const extension = file.name.toLowerCase().match(/\.[^.]+$/)?.[0] ?? "";
@@ -40,14 +41,14 @@ export const validateImageFile = (file) => {
   if (!isAllowedType) {
     return {
       valid: false,
-      message: "Chỉ hỗ trợ file JPG, JPEG hoặc PNG.",
+      message: t ? t('common:image_type_error') : "Chỉ hỗ trợ file JPG, JPEG hoặc PNG.",
     };
   }
 
   if (file.size > IMAGE_MAX_SIZE_BYTES) {
     return {
       valid: false,
-      message: "Ảnh vượt quá 2MB. Vui lòng chọn file nhỏ hơn.",
+      message: t ? t('common:image_size_error') : "Ảnh vượt quá 2MB. Vui lòng chọn file nhỏ hơn.",
     };
   }
 
@@ -67,7 +68,7 @@ export const fileToBase64 = (file) =>
     }
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error ?? new Error("Không thể đọc file"));
+    reader.onerror = () => reject(reader.error ?? new Error("file_read_error"));
     reader.readAsDataURL(file);
   });
 
@@ -98,7 +99,7 @@ export const useUploadImage = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải ảnh lên"
+      ? error.response?.data?.message ?? error.message ?? "image_upload_error"
       : null;
 
   return { uploadFile, uploadBase64: mutateAsync, isPending, isError, errorMessage };

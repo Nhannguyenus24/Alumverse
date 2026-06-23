@@ -18,7 +18,7 @@ export const useCreateAchievement = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo thành tựu"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create achievement"
       : null;
 
   return { createAchievement: mutateAsync, isPending, isError, errorMessage };

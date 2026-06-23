@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
+import { useTranslation } from 'react-i18next';
 import AdminDataTable from '../../components/admin/AdminDataTable';
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import useAdminFundReceivingInfosData from '../../hooks/admin/useAdminFundReceivingInfosData';
@@ -42,6 +43,7 @@ const getBankLabel = (bank) => {
 
 const AdminFundReceivingInfosPage = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation('admin');
   const { setBreadcrumbs } = useOutletContext();
   const [banksPayload, setBanksPayload] = useState({ message: '', banks: [] });
   const [banksLoading, setBanksLoading] = useState(true);
@@ -67,10 +69,10 @@ const AdminFundReceivingInfosPage = () => {
 
   useEffect(() => {
     setBreadcrumbs?.([
-      { label: 'Quyên góp', path: '/admin/fundraising' },
-      { label: 'Tài khoản ngân hàng', active: true },
+      { label: t('nav_fundraising'), path: '/admin/fundraising' },
+      { label: t('nav_bank_accounts'), active: true },
     ]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
   useEffect(() => {
     const loadBanks = async () => {
@@ -78,12 +80,12 @@ const AdminFundReceivingInfosPage = () => {
       try {
         const data = await fundApi.getSupportedBanks();
         setBanksPayload({
-          message: data?.message || 'Chỉ các ngân hàng được hỗ trợ mới có thể dùng cho quyên góp.',
+          message: data?.message || t('fund_bank_supported_message'),
           banks: data?.banks ?? [],
         });
       } catch {
         setBanksPayload({
-          message: 'Không thể tải danh sách ngân hàng được hỗ trợ.',
+          message: t('fund_bank_load_error'),
           banks: [],
         });
       } finally {
@@ -108,23 +110,23 @@ const AdminFundReceivingInfosPage = () => {
     () => [
       {
         id: 'bankName',
-        label: 'Ngân hàng',
+        label: t('fund_col_bank'),
         render: (_, row) => bankLabelByCode.get(row.bankName) || row.bankName || '-',
       },
-      { id: 'accountName', label: 'Tên tài khoản' },
-      { id: 'accountNumber', label: 'Số tài khoản' },
+      { id: 'accountName', label: t('fund_col_account_name') },
+      { id: 'accountNumber', label: t('fund_col_account_number') },
       {
         id: 'isActive',
-        label: 'Trạng thái',
+        label: t('fund_col_status'),
         render: (_, row) => (
           <AdminStatusChip
-            label={row.active || row.isActive ? 'Đang hoạt động' : 'Không hoạt động'}
+            label={row.active || row.isActive ? t('fund_account_active') : t('fund_account_inactive')}
             status={row.active || row.isActive ? 'ACTIVE' : 'INACTIVE'}
           />
         ),
       },
     ],
-    [bankLabelByCode],
+    [bankLabelByCode, t],
   );
 
   const handleOpenCreateDialog = () => {
@@ -149,15 +151,15 @@ const AdminFundReceivingInfosPage = () => {
     const bankName = createForm.bankName.trim();
 
     if (accountNumber.length < 3) {
-      enqueueSnackbar('Số tài khoản phải có ít nhất 3 ký tự', { variant: 'warning' });
+      enqueueSnackbar(t('fund_account_number_min_length'), { variant: 'warning' });
       return;
     }
     if (accountName.length < 3) {
-      enqueueSnackbar('Tên tài khoản phải có ít nhất 3 ký tự', { variant: 'warning' });
+      enqueueSnackbar(t('fund_account_name_min_length'), { variant: 'warning' });
       return;
     }
     if (!bankName) {
-      enqueueSnackbar('Vui lòng chọn ngân hàng', { variant: 'warning' });
+      enqueueSnackbar(t('fund_select_bank_required'), { variant: 'warning' });
       return;
     }
 
@@ -168,13 +170,13 @@ const AdminFundReceivingInfosPage = () => {
         accountName,
         bankName,
       });
-      enqueueSnackbar('Đã thêm tài khoản ngân hàng', { variant: 'success' });
+      enqueueSnackbar(t('fund_account_created'), { variant: 'success' });
       setCreateDialogOpen(false);
       setCreateForm(initialForm);
       reload();
     } catch (error) {
       enqueueSnackbar(
-        error?.response?.data?.message || 'Không thể thêm tài khoản ngân hàng',
+        error?.response?.data?.message || t('fund_account_create_failed'),
         { variant: 'error' },
       );
     } finally {
@@ -193,14 +195,14 @@ const AdminFundReceivingInfosPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Tài khoản ngân hàng
+            {t('fund_bank_accounts_title')}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Quản lý tài khoản nhận quỹ dùng cho các chiến dịch gây quỹ.
+            {t('fund_bank_accounts_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -209,7 +211,7 @@ const AdminFundReceivingInfosPage = () => {
           onClick={handleOpenCreateDialog}
           disabled={banksLoading || banksPayload.banks.length === 0}
         >
-          Thêm tài khoản
+          {t('fund_btn_add_account')}
         </Button>
       </Stack>
 
@@ -246,7 +248,7 @@ const AdminFundReceivingInfosPage = () => {
 
       {loadError && (
         <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          Không thể tải danh sách tài khoản ngân hàng.
+          {t('fund_account_list_load_error')}
         </Alert>
       )}
 
@@ -269,13 +271,13 @@ const AdminFundReceivingInfosPage = () => {
             submitSearch();
           }
         }}
-        searchPlaceholder="Tìm theo ngân hàng, tên hoặc số tài khoản... (Enter để tìm)"
+        searchPlaceholder={t('fund_bank_search_placeholder')}
         emptyMessage={
           loading
-            ? 'Đang tải...'
+            ? t('fund_loading')
             : searchQuery
-              ? 'Không tìm thấy tài khoản phù hợp.'
-              : 'Chưa có tài khoản ngân hàng nào.'
+              ? t('fund_account_not_found')
+              : t('fund_account_empty')
         }
       />
 
@@ -286,14 +288,14 @@ const AdminFundReceivingInfosPage = () => {
         maxWidth="sm"
       >
         <Box component="form" onSubmit={handleCreateAccount}>
-          <DialogTitle sx={{ fontWeight: 800 }}>Thêm tài khoản ngân hàng</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 800 }}>{t('fund_add_account_dialog_title')}</DialogTitle>
           <DialogContent>
             <Stack spacing={2.5} sx={{ mt: 1 }}>
               <FormControl fullWidth required>
-                <InputLabel id="bank-name-label">Ngân hàng</InputLabel>
+                <InputLabel id="bank-name-label">{t('fund_col_bank')}</InputLabel>
                 <Select
                   labelId="bank-name-label"
-                  label="Ngân hàng"
+                  label={t('fund_col_bank')}
                   value={createForm.bankName}
                   onChange={(event) => handleInputChange('bankName', event.target.value)}
                   MenuProps={{ disableScrollLock: true }}
@@ -304,13 +306,13 @@ const AdminFundReceivingInfosPage = () => {
                     </MenuItem>
                   ))}
                 </Select>
-                <FormHelperText>Chỉ chọn ngân hàng nằm trong danh sách được hỗ trợ.</FormHelperText>
+                <FormHelperText>{t('fund_bank_helper_text')}</FormHelperText>
               </FormControl>
 
               <TextField
                 fullWidth
                 required
-                label="Tên tài khoản"
+                label={t('fund_col_account_name')}
                 placeholder="VD: HCMUS Student Scholarship Fund"
                 value={createForm.accountName}
                 onChange={(event) => handleInputChange('accountName', event.target.value)}
@@ -320,7 +322,7 @@ const AdminFundReceivingInfosPage = () => {
               <TextField
                 fullWidth
                 required
-                label="Số tài khoản"
+                label={t('fund_col_account_number')}
                 placeholder="VD: 1234567890"
                 value={createForm.accountNumber}
                 onChange={(event) => handleInputChange('accountNumber', event.target.value)}
@@ -330,10 +332,10 @@ const AdminFundReceivingInfosPage = () => {
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2.5 }}>
             <Button onClick={handleCloseCreateDialog} disabled={isSubmitting}>
-              Hủy
+              {t('fund_btn_cancel')}
             </Button>
             <Button type="submit" variant="contained" disabled={isSubmitting}>
-              {isSubmitting ? 'Đang lưu...' : 'Thêm tài khoản'}
+              {isSubmitting ? t('fund_btn_saving') : t('fund_btn_add_account')}
             </Button>
           </DialogActions>
         </Box>

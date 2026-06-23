@@ -22,6 +22,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 import MessagesPreviewPanel from './MessagesPreviewPanel';
 import { useMessagesPreviewMenu } from '../hooks/chat/useMessagesPreviewMenu';
+import { useTranslation } from 'react-i18next';
 
 const pulse = keyframes`
   0%, 100% {
@@ -84,6 +85,7 @@ const PanelBody = styled(Box)(({ theme }) => ({
 }));
 
 export default function ChatFloatingButton() {
+  const { t } = useTranslation('common');
   const { isAuthenticated } = useAuth();
   const navigate = useOrgNavigate();
   const location = useLocation();
@@ -120,7 +122,7 @@ export default function ChatFloatingButton() {
 
   return (
     <Box sx={{ position: 'relative' }}>
-      <Tooltip title="Tin nhắn" placement="left">
+      <Tooltip title={t('chat_tooltip')} placement="left">
         <AnimatedAvatar
           onClick={handleClick}
           isAnimating={!showLoginPanel && !menuOpen}
@@ -162,12 +164,12 @@ export default function ChatFloatingButton() {
               sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}
             >
               <ChatBubbleOutlineIcon />
-              Tin nhắn
+              {t('chat_tooltip')}
             </Typography>
             <IconButton
               size="small"
               onClick={handleClosePanel}
-              aria-label="Đóng"
+              aria-label={t('close')}
               sx={{ color: 'common.white' }}
             >
               <CloseIcon fontSize="small" />
@@ -176,15 +178,15 @@ export default function ChatFloatingButton() {
 
           <PanelBody>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-              Vui lòng đăng nhập để sử dụng tính năng chat với cựu sinh viên và bạn bè.
+              {t('chat_login_prompt')}
             </Typography>
 
             <Stack spacing={1.5}>
               <Button variant="contained" fullWidth onClick={goToLogin}>
-                Đăng nhập
+                {t('login')}
               </Button>
               <Button variant="outlined" fullWidth onClick={goToRegister}>
-                Tạo tài khoản
+                {t('register')}
               </Button>
             </Stack>
           </PanelBody>

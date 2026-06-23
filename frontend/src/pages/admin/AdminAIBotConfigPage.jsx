@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Box, Card, CardContent, Typography, Button, TextField,
   Stack, Table, TableBody, TableCell, TableContainer,
@@ -13,6 +14,7 @@ import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 const FITBOT_API_URL = '/ngrok-api';
 
 const AdminAIBotConfigPage = () => {
+  const { t } = useTranslation('admin');
   const { setBreadcrumbs } = useOutletContext() || {};
   const [files, setFiles] = useState([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -27,8 +29,8 @@ const AdminAIBotConfigPage = () => {
   useEffect(() => {
     if (setBreadcrumbs) {
       setBreadcrumbs([
-        { label: 'Trang chủ admin', path: '../' },
-        { label: 'Cấu hình AI Bot' },
+        { label: t('breadcrumb_admin'), path: '../' },
+        { label: t('nav_bot_config') },
       ]);
     }
     fetchFiles();
@@ -46,7 +48,7 @@ const AdminAIBotConfigPage = () => {
       setFiles(data.files || []);
     } catch (error) {
       console.error(error);
-      setApiError('Không thể kết nối đến Bot API. Vui lòng kiểm tra lại server FitBOT.');
+      setApiError(t('bot_api_connect_error'));
       setFiles([]);
     } finally {
       setLoadingFiles(false);
@@ -79,7 +81,7 @@ const AdminAIBotConfigPage = () => {
   };
 
   const handleDeleteFile = async (filename) => {
-    if (!window.confirm(`Bạn có chắc muốn xóa file ${filename}?`)) return;
+    if (!window.confirm(t('bot_confirm_delete_file', { filename }))) return;
     try {
       const res = await fetch(`${FITBOT_API_URL}/api/files/${filename}`, {
         method: 'DELETE',
@@ -110,7 +112,7 @@ const AdminAIBotConfigPage = () => {
       const data = await res.json();
       setBotResponse(data);
     } catch (error) {
-      setBotResponse({ answer: 'Có lỗi xảy ra: ' + error.message });
+      setBotResponse({ answer: t('bot_error_prefix') + error.message });
     } finally {
       setAsking(false);
     }
@@ -121,7 +123,7 @@ const AdminAIBotConfigPage = () => {
       <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
         <SmartToyOutlinedIcon sx={{ fontSize: 40, color: 'primary.main' }} />
         <Typography variant="h4" fontWeight={700}>
-          Cấu hình & Test AI Bot
+          {t('bot_config_title')}
         </Typography>
       </Box>
 
@@ -130,14 +132,14 @@ const AdminAIBotConfigPage = () => {
         <Card>
           <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Typography variant="h6" fontWeight={600}>Quản lý tài liệu (Knowledge Base)</Typography>
+              <Typography variant="h6" fontWeight={600}>{t('bot_kb_title')}</Typography>
               <Button
                 variant="contained"
                 component="label"
                 startIcon={uploading ? <CircularProgress size={20} color="inherit" /> : <UploadFileIcon />}
                 disabled={uploading}
               >
-                Tải lên & Index
+                {t('bot_upload_btn')}
                 <input type="file" hidden onChange={handleFileUpload} accept=".txt,.pdf,.md,.csv,.json" />
               </Button>
             </Box>
@@ -148,8 +150,8 @@ const AdminAIBotConfigPage = () => {
               <Table>
                 <TableHead sx={{ bgcolor: 'action.hover' }}>
                   <TableRow>
-                    <TableCell>Tên file</TableCell>
-                    <TableCell align="right">Hành động</TableCell>
+                    <TableCell>{t('bot_filename')}</TableCell>
+                    <TableCell align="right">{t('col_actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -165,7 +167,7 @@ const AdminAIBotConfigPage = () => {
                     </TableRow>
                   ) : files.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={2} align="center">Chưa có tài liệu nào.</TableCell>
+                      <TableCell colSpan={2} align="center">{t('bot_no_files')}</TableCell>
                     </TableRow>
                   ) : (
                     files.map((file) => (
@@ -188,12 +190,12 @@ const AdminAIBotConfigPage = () => {
         {/* Bot Testing Section */}
         <Card>
           <CardContent>
-            <Typography variant="h6" fontWeight={600} mb={2}>Kiểm tra Bot (Test Query)</Typography>
+            <Typography variant="h6" fontWeight={600} mb={2}>{t('bot_test_title')}</Typography>
             <Stack direction="row" spacing={2} mb={2}>
               <TextField
                 fullWidth
                 variant="outlined"
-                placeholder="Nhập câu hỏi để test bot..."
+                placeholder={t('bot_question_placeholder')}
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAskBot()}
@@ -205,20 +207,20 @@ const AdminAIBotConfigPage = () => {
                 disabled={asking || !question.trim()}
                 sx={{ minWidth: 120 }}
               >
-                {asking ? <CircularProgress size={24} color="inherit" /> : 'Gửi'}
+                {asking ? <CircularProgress size={24} color="inherit" /> : t('bot_send')}
               </Button>
             </Stack>
 
             {botResponse && (
               <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="subtitle2" color="text.secondary" mb={1}>Trả lời:</Typography>
+                <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_answer_label')}</Typography>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
                   {botResponse.answer}
                 </Typography>
                 
                 {botResponse.sources && botResponse.sources.length > 0 && (
                   <Box mt={2}>
-                    <Typography variant="subtitle2" color="text.secondary" mb={1}>Nguồn tham khảo:</Typography>
+                    <Typography variant="subtitle2" color="text.secondary" mb={1}>{t('bot_sources_label')}</Typography>
                     <Stack direction="row" flexWrap="wrap" gap={1}>
                       {botResponse.sources.map((src, i) => (
                         <Chip key={i} label={src.metadata?.source || `Source ${i+1}`} size="small" variant="outlined" />

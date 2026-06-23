@@ -18,7 +18,7 @@ export const useCreateFund = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo quỹ quyên góp"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create fund"
       : null;
 
   return { createFund: mutateAsync, isPending, isError, errorMessage };

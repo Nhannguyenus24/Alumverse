@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 import { Box, Button, Container, InputAdornment, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -19,6 +20,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 const CAREER_CATEGORY_ID = 1;
 
 const ForumAlumniCareerPage = () => {
+  const { t } = useTranslation(['forum', 'common']);
   const navigate = useOrgNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
@@ -32,17 +34,17 @@ const ForumAlumniCareerPage = () => {
 
   const filters = useMemo(() => {
     if (!categories?.length) {
-      return [{ id: 'all', label: 'Tất cả' }];
+      return [{ id: 'all', label: t('common:all') }];
     }
     const parentCategories = categories
       .filter((c) => c.parentId == null)
       .slice()
       .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi'));
     return [
-      { id: 'all', label: 'Tất cả' },
+      { id: 'all', label: t('common:all') },
       ...parentCategories.map((c) => ({ id: `parent-${c.id}`, label: c.name })),
     ];
-  }, [categories]);
+  }, [categories, t]);
 
   const selectedSidebarId = useMemo(() => {
     const sid = location.state?.selectedFilterId;
@@ -57,13 +59,13 @@ const ForumAlumniCareerPage = () => {
   useEffect(() => {
     if (isError) {
       if (!hasShownTopicsErrorRef.current) {
-        showError('Không thể tải danh sách chủ đề.');
+        showError(t('forum:error_loading_topics'));
         hasShownTopicsErrorRef.current = true;
       }
       return;
     }
     hasShownTopicsErrorRef.current = false;
-  }, [isError, showError]);
+  }, [isError, showError, t]);
 
   const handleFilterChange = useCallback(
     (id) => {
@@ -81,16 +83,13 @@ const ForumAlumniCareerPage = () => {
 
   return (
     <Page
-      title="Diễn đàn - Cựu sinh viên"
-      meta={<meta name="description" content="Diễn đàn Cựu sinh viên - Hướng nghiệp" />}
+      title={t('forum:page_title_alumni_career')}
+      meta={<meta name="description" content={t('forum:page_meta_alumni_career')} />}
     >
       <Container
         maxWidth={false}
         disableGutters
-        sx={{
-          pb: { xs: 4, md: 6 },
-          overflowX: 'hidden',
-        }}
+        sx={{ pb: { xs: 4, md: 6 }, overflowX: 'hidden' }}
       >
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
@@ -134,8 +133,8 @@ const ForumAlumniCareerPage = () => {
               >
                 <Breadcrumb
                   items={[
-                    { label: 'Cựu sinh viên', path: '/forum/alumni/career' },
-                    { label: 'Hướng nghiệp' },
+                    { label: t('forum:alumni_career_breadcrumb'), path: '/forum/alumni/career' },
+                    { label: t('forum:alumni_career_breadcrumb_sub') },
                   ]}
                   uppercase
                   color="primary"
@@ -159,7 +158,7 @@ const ForumAlumniCareerPage = () => {
                       wordBreak: 'break-word',
                     }}
                   >
-                    HƯỚNG NGHIỆP
+                    {t('forum:alumni_career_title')}
                   </Typography>
                   <Box
                     sx={{
@@ -172,7 +171,7 @@ const ForumAlumniCareerPage = () => {
                   >
                     <TextField
                       size="small"
-                      placeholder="Tìm kiếm chủ đề..."
+                      placeholder={t('forum:search_topic_placeholder')}
                       value={searchKeyword}
                       onChange={(e) => setSearchKeyword(e.target.value)}
                       sx={{ width: { xs: '100%', sm: 260 } }}
@@ -184,18 +183,16 @@ const ForumAlumniCareerPage = () => {
                         ),
                       }}
                     />
-                    <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể tạo bài đăng" : ""} arrow>
+                    <Tooltip title={!isAuthenticated ? t('forum:login_required_to_post') : ''} arrow>
                       <span>
                         <Button
                           variant="contained"
                           color="primary"
-                          onClick={() =>
-                            navigate('/forum/alumni/career/create-topic')
-                          }
+                          onClick={() => navigate('/forum/alumni/career/create-topic')}
                           disabled={!isAuthenticated}
                           sx={{ minWidth: { xs: '100%', sm: 'auto' }, height: 40 }}
                         >
-                          Tạo bài đăng
+                          {t('forum:create_post')}
                         </Button>
                       </span>
                     </Tooltip>
@@ -213,7 +210,7 @@ const ForumAlumniCareerPage = () => {
                       borderColor: 'divider',
                     }}
                   >
-                    <Typography color="text.secondary">Đang tải chủ đề...</Typography>
+                    <Typography color="text.secondary">{t('forum:loading_topics')}</Typography>
                   </Box>
                 )}
                 {isError && !isPending && !topics.length && (
@@ -225,7 +222,7 @@ const ForumAlumniCareerPage = () => {
                       borderColor: 'divider',
                     }}
                   >
-                    <Typography color="text.secondary">Không thể tải danh sách chủ đề.</Typography>
+                    <Typography color="text.secondary">{t('forum:error_loading_topics')}</Typography>
                   </Box>
                 )}
                 {!isPending && !isError && topics.length === 0 && (
@@ -242,7 +239,9 @@ const ForumAlumniCareerPage = () => {
                     }}
                   >
                     <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
-                      {debouncedKeyword ? `Không tìm thấy chủ đề nào cho "${debouncedKeyword}"` : "Chưa có chủ đề nào trong danh mục này."}
+                      {debouncedKeyword
+                        ? t('forum:no_topics_for_keyword', { keyword: debouncedKeyword })
+                        : t('forum:no_topics_in_category')}
                     </Typography>
                   </Box>
                 )}
@@ -275,20 +274,10 @@ const ForumAlumniCareerPage = () => {
                       borderTop: 1,
                       borderColor: 'divider',
                       cursor: 'pointer',
-                      '&:hover': {
-                        backgroundColor: 'action.hover',
-                      },
+                      '&:hover': { backgroundColor: 'action.hover' },
                     }}
                   >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1.5,
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
                       <Box
                         sx={{
                           position: 'relative',
@@ -303,9 +292,7 @@ const ForumAlumniCareerPage = () => {
                           flexShrink: 0,
                         }}
                       >
-                        <Typography variant="subtitle2" fontWeight={700}>
-                          A
-                        </Typography>
+                        <Typography variant="subtitle2" fontWeight={700}>A</Typography>
                         <Box
                           sx={{
                             position: 'absolute',
@@ -334,7 +321,7 @@ const ForumAlumniCareerPage = () => {
                           {topic.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {`Thành viên #${topic.createdByMemberId ?? '—'}`} • {formatRelativeTimeVi(topic.createdAt)}
+                          {`${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`} • {formatRelativeTimeVi(topic.createdAt)}
                         </Typography>
                       </Box>
                     </Box>
@@ -351,19 +338,15 @@ const ForumAlumniCareerPage = () => {
                     >
                       <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                          Lượt xem
+                          {t('forum:views')}
                         </Typography>
-                        <Typography variant="body2" fontWeight={800}>
-                          {topic.viewCount ?? 0}
-                        </Typography>
+                        <Typography variant="body2" fontWeight={800}>{topic.viewCount ?? 0}</Typography>
                       </Box>
                       <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
                         <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                          Thảo luận
+                          {t('forum:discussions')}
                         </Typography>
-                        <Typography variant="body2" fontWeight={800}>
-                          —
-                        </Typography>
+                        <Typography variant="body2" fontWeight={800}>—</Typography>
                       </Box>
                       <Box
                         sx={{
@@ -391,7 +374,7 @@ const ForumAlumniCareerPage = () => {
                         </Box>
                         <Box sx={{ textAlign: 'left' }}>
                           <Typography variant="body2" fontWeight={600}>
-                            {`Thành viên #${topic.createdByMemberId ?? '—'}`}
+                            {`${t('forum:member_prefix')}${topic.createdByMemberId ?? '—'}`}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {formatRelativeTimeVi(topic.updatedAt ?? topic.createdAt)}

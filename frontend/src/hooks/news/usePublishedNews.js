@@ -17,7 +17,7 @@ export const usePublishedNews = (page = 0, limit = 10) => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load news"
       : null;
 
   return {

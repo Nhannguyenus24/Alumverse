@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -10,13 +10,6 @@ import '../../data/models/mentorship_session.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 import '../widgets/feedback_dialog.dart';
-
-const _tabDefs = [
-  (key: 'all', label: 'Tất cả'),
-  (key: 'upcoming', label: 'Sắp tới'),
-  (key: 'completed', label: 'Đã hoàn thành'),
-  (key: 'cancelled', label: 'Đã hủy / Từ chối'),
-];
 
 bool _matchTab(String key, MentorshipSession s) {
   final st = (s.status ?? '').toUpperCase();
@@ -37,8 +30,26 @@ class MyBookingsPage extends ConsumerStatefulWidget {
 
 class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
     with SingleTickerProviderStateMixin {
-  late final TabController _tabCtrl =
-      TabController(length: _tabDefs.length, vsync: this);
+  // Tab definitions are built in build() so they can access context for .tr()
+  late TabController _tabCtrl;
+  late List<({String key, String label})> _tabDefs;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tabDefs = [
+      (key: 'all', label: 'common.all'.tr()),
+      (key: 'upcoming', label: 'mentorship.tab_upcoming'.tr()),
+      (key: 'completed', label: 'mentorship.status_completed'.tr()),
+      (key: 'cancelled', label: 'mentorship.tab_cancelled'.tr()),
+    ];
+    if (!_tabCtrlInitialised) {
+      _tabCtrl = TabController(length: _tabDefs.length, vsync: this);
+      _tabCtrlInitialised = true;
+    }
+  }
+
+  bool _tabCtrlInitialised = false;
 
   @override
   void dispose() {
@@ -52,7 +63,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lịch hẹn của tôi'),
+        title: Text('mentorship.my_bookings'.tr()),
         bottom: TabBar(
           controller: _tabCtrl,
           isScrollable: true,
@@ -66,10 +77,10 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Không tải được lịch hẹn'),
+              Text('mentorship.bookings_load_failed'.tr()),
               TextButton(
                 onPressed: () => ref.invalidate(mySessionsProvider),
-                child: const Text('Thử lại'),
+                child: Text('common.retry'.tr()),
               ),
             ],
           ),
@@ -107,15 +118,15 @@ class _SessionList extends ConsumerWidget {
             const SizedBox(height: 12),
             Text(
               tabKey == 'all'
-                  ? 'Bạn chưa có lịch hẹn nào'
-                  : 'Không có lịch hẹn trong mục này',
+                  ? 'mentorship.no_bookings_yet'.tr()
+                  : 'mentorship.no_bookings_in_tab'.tr(),
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             if (tabKey == 'all') ...[
               const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () => context.go(RouteNames.mentorship),
-                child: const Text('Tìm mentor'),
+                child: Text('mentorship.find_mentor'.tr()),
               ),
             ],
           ],
@@ -149,7 +160,7 @@ class _SessionCard extends ConsumerWidget {
     final canCancel = st == 'PENDING' || st == 'CONFIRMED';
     final when = session.startTime != null
         ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
-        : 'Chưa xác định';
+        : 'mentorship.time_unconfirmed'.tr();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -164,7 +175,9 @@ class _SessionCard extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     session.mentorName ??
-                        'Cố vấn #${session.mentorMemberId ?? '-'}',
+                        'mentorship.mentor_fallback'.tr(namedArgs: {
+                          'id': session.mentorMemberId?.toString() ?? '-'
+                        }),
                     style: const TextStyle(
                         fontWeight: FontWeight.bold, fontSize: 16),
                   ),
@@ -198,16 +211,17 @@ class _SessionCard extends ConsumerWidget {
                     onPressed: () => _openFeedback(context),
                     icon: const Icon(Icons.star_outline,
                         size: 16, color: AppColors.secondary),
-                    label: const Text('Đánh giá',
-                        style: TextStyle(color: AppColors.secondary)),
+                    label: Text('mentorship.feedback'.tr(),
+                        style:
+                            const TextStyle(color: AppColors.secondary)),
                   ),
                 if (canCancel)
                   TextButton.icon(
                     onPressed: () => _confirmCancel(context, ref),
                     icon: const Icon(Icons.close,
                         size: 16, color: AppColors.error),
-                    label: const Text('Hủy',
-                        style: TextStyle(color: AppColors.error)),
+                    label: Text('mentorship.cancel_session'.tr(),
+                        style: const TextStyle(color: AppColors.error)),
                   ),
               ],
             ),
@@ -218,9 +232,9 @@ class _SessionCard extends ConsumerWidget {
   }
 
   String _typeLabel(String t) => switch (t.toUpperCase()) {
-        'CAREER' => 'Nghề nghiệp',
-        'ACADEMIC' => 'Học thuật',
-        'SOFT_SKILLS' => 'Kỹ năng mềm',
+        'CAREER' => 'mentorship.type_career'.tr(),
+        'ACADEMIC' => 'mentorship.type_academic'.tr(),
+        'SOFT_SKILLS' => 'mentorship.type_soft_skills'.tr(),
         _ => t,
       };
 
@@ -239,16 +253,16 @@ class _SessionCard extends ConsumerWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Hủy lịch hẹn?'),
-        content: const Text('Bạn chắc chắn muốn hủy buổi hẹn này?'),
+        title: Text('mentorship.cancel_booking_title'.tr()),
+        content: Text('mentorship.cancel_booking_content'.tr()),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Không')),
+              child: Text('common.no'.tr())),
           TextButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Hủy lịch',
-                  style: TextStyle(color: AppColors.error))),
+              child: Text('mentorship.cancel_session'.tr(),
+                  style: const TextStyle(color: AppColors.error))),
         ],
       ),
     );
@@ -257,7 +271,7 @@ class _SessionCard extends ConsumerWidget {
       await ref.read(mentorshipRepositoryProvider).cancelSession(session.id);
       ref.invalidate(mySessionsProvider);
       if (context.mounted) {
-        AppToast.success(context, 'Đã hủy lịch hẹn');
+        AppToast.success(context, 'mentorship.booking_cancelled'.tr());
       }
     } catch (e) {
       if (context.mounted) {
@@ -275,11 +289,11 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = (status ?? '').toUpperCase();
     final (label, color) = switch (s) {
-      'PENDING' => ('Chờ duyệt', AppColors.warning),
-      'CONFIRMED' => ('Đã xác nhận', AppColors.info),
-      'COMPLETED' => ('Hoàn thành', AppColors.success),
-      'CANCELLED' => ('Đã hủy', AppColors.error),
-      'REJECTED' => ('Bị từ chối', AppColors.error),
+      'PENDING' => ('mentorship.status_pending'.tr(), AppColors.warning),
+      'CONFIRMED' => ('mentorship.status_confirmed'.tr(), AppColors.info),
+      'COMPLETED' => ('mentorship.status_completed'.tr(), AppColors.success),
+      'CANCELLED' => ('mentorship.status_cancelled'.tr(), AppColors.error),
+      'REJECTED' => ('mentorship.status_rejected'.tr(), AppColors.error),
       _ => (status ?? '—', AppColors.textSecondary),
     };
     return Container(

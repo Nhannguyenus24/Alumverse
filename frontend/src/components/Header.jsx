@@ -2,8 +2,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import {
   AppBar, Toolbar, Box, Typography,
-  Button, IconButton, Drawer, List, 
-  ListItemButton, ListItemText, Collapse, 
+  Button, IconButton, Drawer, List,
+  ListItemButton, ListItemText, Collapse,
   Divider, useTheme, useMediaQuery, alpha, Tooltip
 } from '@mui/material';
 import ExpandLess from '@mui/icons-material/ExpandLess';
@@ -12,11 +12,13 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
+import { useTranslation } from 'react-i18next';
 import Iconify from './Iconify';
 import Notification from './Notification';
 import Logo from './Logo';
 import AccountMenu from './AccountMenu';
 import MessagesNavDropdown from './MessagesNavDropdown';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';
@@ -32,44 +34,45 @@ const VERIFICATION_LABELS = {
   3: 'Student',
 };
 
-const NAV_ITEMS = [
-  { label: 'Trang chủ', href: '/' },
-  { label: 'Giới thiệu', href: '/introduction',
+const getNavItems = (t) => [
+  { label: t('nav:home'), href: '/' },
+  { label: t('nav:introduction'), href: '/introduction',
     children: [
-      { label: 'Thông tin chung', href: '/introduction' },
-      { label: 'Ban lãnh đạo', href: '/introduction/leaders' },
-      { label: 'Đội ngũ', href: '/introduction/team' },
+      { label: t('nav:intro_general'), href: '/introduction' },
+      { label: t('nav:intro_leaders'), href: '/introduction/leaders' },
+      { label: t('nav:intro_team'), href: '/introduction/team' },
     ]
-   },
-  { label: 'Kết nối', href: '/search', requiresAuth: true },
+  },
+  { label: t('nav:network'), href: '/search', requiresAuth: true },
   {
-    label: 'Vinh danh', href: '/honors',
+    label: t('nav:honors'), href: '/honors',
     children: [
-      { label: 'Cựu sinh viên', href: '/honors/alumni' },
-      { label: 'Kênh thành tựu', href: '/honors/achievements' },
+      { label: t('nav:honors_alumni'), href: '/honors/alumni' },
+      { label: t('nav:honors_achievements'), href: '/honors/achievements' },
     ],
   },
   {
-    label: 'Hoạt động', href: '/activities', fallbackHref: '/activities/news',
+    label: t('nav:activities'), href: '/activities',
     children: [
-      { label: 'Sự kiện', href: '/activities/events', requiresAuth: true },
-      { label: 'Tin tức', href: '/activities/news' },
+      { label: t('nav:events'), href: '/activities/events', requiresAuth: true },
+      { label: t('nav:news'), href: '/activities/news' },
     ],
   },
   {
-    label: 'Phát triển', href: '/development', requiresAuth: true,
+    label: t('nav:development'), href: '/development', requiresAuth: true,
     children: [
-      { label: 'Cố vấn', href: '/development/mentorship' },
-      { label: 'Cơ hội học tập', href: '/development/academics' },
-      { label: 'Cơ hội việc làm', href: '/development/jobs' },
+      { label: t('nav:mentorship'), href: '/development/mentorship' },
+      { label: t('nav:academics'), href: '/development/academics' },
+      { label: t('nav:jobs'), href: '/development/jobs' },
     ],
   },
-  { label: 'Diễn đàn', href: '/forum' },
-  { label: 'Quyên góp', href: '/donations' },
-  { label: 'Liên hệ', href: '/contact' },
+  { label: t('nav:forum'), href: '/forum' },
+  { label: t('nav:donation'), href: '/donations' },
+  { label: t('nav:contact'), href: '/contact' },
 ];
 
 const Header = () => {
+  const { t } = useTranslation(['nav', 'auth']);
   const theme = useTheme();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
@@ -78,7 +81,6 @@ const Header = () => {
   const { isAuthenticated, user, verificationLevel } = useAuth();
   const themeMode = useThemeModeStore((state) => state.mode);
   const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
-  // State for Scroll and UI
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -87,12 +89,12 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const {isAdmin, isGuestVerificationLevel, isTransparent, isOrgRegistrationPage } = useMemo(() => {
+  const { isAdmin, isGuestVerificationLevel, isTransparent, isOrgRegistrationPage } = useMemo(() => {
     const np = getNormalizedPathname(location.pathname, routeSlug);
     const admin = user?.role === 'ADMIN';
     const home = np === '/';
     return {
-        isAdmin: admin,
+      isAdmin: admin,
       isGuestVerificationLevel: isAuthenticated && verificationLevel === 0,
       isTransparent: home && !isScrolled,
       isOrgRegistrationPage: np === '/organization-registration',
@@ -108,7 +110,6 @@ const Header = () => {
         rafRef.current = null;
       });
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -125,14 +126,16 @@ const Header = () => {
     return { displayName: name, displayRole: isAdmin ? 'Admin' : verLabel };
   }, [user, verificationLevel, isAdmin]);
 
+  const navItems = useMemo(() => getNavItems(t), [t]);
+
   const handleDrawerToggle = useCallback(() => setMobileOpen((prev) => !prev), []);
   const closeDrawer = useCallback(() => setMobileOpen(false), []);
   const toggleDrawerNav = useCallback((label) => () => {
     setExpandedNav((prev) => ({ ...prev, [label]: !prev[label] }));
   }, []);
 
-  const headerTextColor = isTransparent 
-    ? '#FFFFFF' 
+  const headerTextColor = isTransparent
+    ? '#FFFFFF'
     : (isAdmin ? 'primary.contrastText' : 'text.primary');
 
   const navButtonSx = useMemo(() => ({
@@ -159,170 +162,168 @@ const Header = () => {
           transition: 'all 0.4s ease-in-out',
         }}
       >
-        <Toolbar sx={{ minHeight: appBarMinHeight,
-                       px: { xs: 1.5, sm: 2 },
-                       justifyContent: 'space-between', gap: 2 }}>
+        <Toolbar sx={{ minHeight: appBarMinHeight, px: { xs: 1.5, sm: 2 }, justifyContent: 'space-between', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
             <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
-              <Logo 
-                variant="image" 
-                src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC} 
-                alt="AlumVerse" 
-                size="medium" 
+              <Logo
+                variant="image"
+                src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC}
+                alt="AlumVerse"
+                size="medium"
               />
             </Link>
           </Box>
 
-        {isDesktop && (
-          <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                     display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
-            {NAV_ITEMS.map((item) => {
-              const isLocked = item.requiresAuth && !isAuthenticated;
-              const buttonContent = (
-                <Button 
-                  component={isLocked ? 'button' : Link} 
-                  to={isLocked ? undefined : toOrgPath(!isAuthenticated && item.fallbackHref ? item.fallbackHref : item.href)} 
-                  sx={navButtonSx}
-                  disabled={isLocked}
-                >
-                  {item.label}
-                  {isLocked && (
-                    <Box component="span" sx={{ ml: 0.5, display: 'inline-flex', verticalAlign: 'middle' }}>
-                      <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.7 }} />
-                    </Box>
-                  )}
-                </Button>
-              );
+          {isDesktop && (
+            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+                       display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
+              {navItems.map((item) => {
+                const isLocked = item.requiresAuth && !isAuthenticated;
+                const buttonContent = (
+                  <Button
+                    component={isLocked ? 'button' : Link}
+                    to={isLocked ? undefined : toOrgPath(item.href)}
+                    sx={navButtonSx}
+                    disabled={isLocked}
+                  >
+                    {item.label}
+                    {isLocked && (
+                      <Box component="span" sx={{ ml: 0.5, display: 'inline-flex', verticalAlign: 'middle' }}>
+                        <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.7 }} />
+                      </Box>
+                    )}
+                  </Button>
+                );
 
-              return (
-              <Box
-                key={item.label}
-                onMouseEnter={() => !isLocked && item.children && setHoveredNav(item.label)}
-                onMouseLeave={() => setHoveredNav(null)}
-                sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
-              >
-                {isLocked ? (
-                  <Tooltip title="Vui lòng đăng nhập để sử dụng" arrow placement="bottom">
-                    <span style={{ display: 'inline-block' }}>{buttonContent}</span>
-                  </Tooltip>
-                ) : buttonContent}
-
-                {item.children && hoveredNav === item.label && (
+                return (
                   <Box
-                    onMouseEnter={() => setHoveredNav(item.label)}
+                    key={item.label}
+                    onMouseEnter={() => !isLocked && item.children && setHoveredNav(item.label)}
                     onMouseLeave={() => setHoveredNav(null)}
-                    sx={{
-                      position: 'absolute', top: '100%', pt: 1, left: '50%', transform: 'translateX(-50%)',
-                      display: 'flex', flexDirection: 'column', bgcolor: 'background.paper',
-                      borderRadius: 1, boxShadow: 3, py: 0.5, px: 0.5,
-                      width: 'max-content', minWidth: 180, zIndex: 10,
-                      border: '1px solid', borderColor: 'divider'
-                    }} >
-                    {item.children.map((child) => {
-                      const isChildLocked = child.requiresAuth && !isAuthenticated;
-                      const childButtonContent = (
-                        <Button
-                          key={child.label} 
-                          component={isChildLocked ? 'button' : Link} 
-                          to={isChildLocked ? undefined : toOrgPath(child.href)}
-                          disabled={isChildLocked}
-                          sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
-                                textTransform: 'none', color: 'text.primary', width: '100%', fontWeight: 500,
-                                '&:hover': { bgcolor: 'action.hover' } }}
-                        >
-                          {child.label}
-                          {isChildLocked && (
-                            <Box component="span" sx={{ ml: 1, display: 'inline-flex', verticalAlign: 'middle' }}>
-                              <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
-                            </Box>
-                          )}
-                        </Button>
-                      );
-                      
-                      return isChildLocked ? (
-                        <Tooltip key={child.label} title="Vui lòng đăng nhập để sử dụng" arrow placement="right">
-                          <Box component="span" sx={{ display: 'block', width: '100%' }}>{childButtonContent}</Box>
-                        </Tooltip>
-                      ) : childButtonContent;
-                    })}
+                    sx={{ position: 'relative', display: 'flex', alignItems: 'center', py: 2.5 }}
+                  >
+                    {isLocked ? (
+                      <Tooltip title={t('nav:login_required')} arrow placement="bottom">
+                        <span style={{ display: 'inline-block' }}>{buttonContent}</span>
+                      </Tooltip>
+                    ) : buttonContent}
+
+                    {item.children && hoveredNav === item.label && (
+                      <Box
+                        onMouseEnter={() => setHoveredNav(item.label)}
+                        onMouseLeave={() => setHoveredNav(null)}
+                        sx={{
+                          position: 'absolute', top: '100%', pt: 1, left: '50%', transform: 'translateX(-50%)',
+                          display: 'flex', flexDirection: 'column', bgcolor: 'background.paper',
+                          borderRadius: 1, boxShadow: 3, py: 0.5, px: 0.5,
+                          width: 'max-content', minWidth: 180, zIndex: 10,
+                          border: '1px solid', borderColor: 'divider'
+                        }}
+                      >
+                        {item.children.map((child) => {
+                          const isChildLocked = child.requiresAuth && !isAuthenticated;
+                          const childButtonContent = (
+                            <Button
+                              key={child.label}
+                              component={isChildLocked ? 'button' : Link}
+                              to={isChildLocked ? undefined : toOrgPath(child.href)}
+                              disabled={isChildLocked}
+                              sx={{ justifyContent: 'flex-start', textAlign: 'left', px: 2, py: 1,
+                                    textTransform: 'none', color: 'text.primary', width: '100%', fontWeight: 500,
+                                    '&:hover': { bgcolor: 'action.hover' } }}
+                            >
+                              {child.label}
+                              {isChildLocked && (
+                                <Box component="span" sx={{ ml: 1, display: 'inline-flex', verticalAlign: 'middle' }}>
+                                  <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
+                                </Box>
+                              )}
+                            </Button>
+                          );
+
+                          return isChildLocked ? (
+                            <Tooltip key={child.label} title={t('nav:login_required')} arrow placement="right">
+                              <Box component="span" sx={{ display: 'block', width: '100%' }}>{childButtonContent}</Box>
+                            </Tooltip>
+                          ) : childButtonContent;
+                        })}
+                      </Box>
+                    )}
                   </Box>
-                )}
-              </Box>
-            )})}
-          </Box>
-        )}
-
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-          {isDesktop ? (
-            <>
-              <Tooltip title={themeMode === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'} arrow>
-                <IconButton
-                  size="small"
-                  aria-label="Đổi chế độ sáng tối"
-                  onClick={toggleThemeMode}
-                  sx={{
-                    color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
-                    mr: 0.25,
-                    '&:hover': {
-                      bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : 'action.hover',
-                    },
-                  }}
-                >
-                  <Brightness6RoundedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              <Typography component="span"
-                sx={{ fontSize: '0.875rem', fontWeight: 600,
-                      color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
-                      mr: 1, cursor: 'pointer', transition: 'color 0.3s' }}
-              >
-                VI
-              </Typography>
-
-              {isAuthenticated ? (
-                <>
-                  <Notification headerTextColor={headerTextColor} />
-                  <MessagesNavDropdown headerTextColor={headerTextColor} />
-                  <AccountMenu
-                    displayName={displayName} displayRole={displayRole}
-                    avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin} />
-                </>
-              ) : (
-                <>
-                  <Button component={Link} to={toOrgPath('/auth/register')}
-                          variant="outlined" size="small"
-                          sx={{
-                            fontWeight: 600,
-                            color: isTransparent ? '#FFFFFF' : 'primary.main',
-                            borderColor: isTransparent ? '#FFFFFF' : 'primary.main',
-                            '&:hover': isTransparent
-                              ? { borderColor: '#FFFFFF', color: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)', }
-                              : { borderColor: 'primary.dark', color: 'primary.main', bgcolor: 'primary.lighter', },
-                          }}
-                  >
-                    Đăng ký
-                  </Button>
-                  <Button component={Link} to={toOrgPath('/auth/login')}
-                          variant="contained" size="small"
-                          sx={{ 
-                            fontWeight: 600,
-                            bgcolor: isTransparent ? '#FFFFFF' : 'primary.main',
-                            color: isTransparent ? 'primary.main' : 'primary.contrastText',
-                            '&:hover': { bgcolor: isTransparent ? '#f0f0f0' : 'primary.dark' }
-                          }}
-                  >
-                    Đăng nhập
-                  </Button>
-                </>
-              )}
-            </>
-          ) : (
-            <IconButton onClick={handleDrawerToggle} sx={{ color: headerTextColor }}>
-              <MenuIcon />
-            </IconButton>
+                );
+              })}
+            </Box>
           )}
-        </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+            {isDesktop ? (
+              <>
+                <Tooltip
+                  title={themeMode === 'dark'
+                    ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
+                    : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
+                  arrow
+                >
+                  <IconButton
+                    size="small"
+                    aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
+                    onClick={toggleThemeMode}
+                    sx={{
+                      color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
+                      mr: 0.25,
+                      '&:hover': {
+                        bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : 'action.hover',
+                      },
+                    }}
+                  >
+                    <Brightness6RoundedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <LanguageSwitcher contrastMode={isTransparent || isAdmin} />
+
+                {isAuthenticated ? (
+                  <>
+                    <Notification headerTextColor={headerTextColor} />
+                    <MessagesNavDropdown headerTextColor={headerTextColor} />
+                    <AccountMenu
+                      displayName={displayName} displayRole={displayRole}
+                      avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin} />
+                  </>
+                ) : (
+                  <>
+                    <Button component={Link} to={toOrgPath('/auth/register')}
+                            variant="outlined" size="small"
+                            sx={{
+                              fontWeight: 600,
+                              color: isTransparent ? '#FFFFFF' : 'primary.main',
+                              borderColor: isTransparent ? '#FFFFFF' : 'primary.main',
+                              '&:hover': isTransparent
+                                ? { borderColor: '#FFFFFF', color: '#FFFFFF', bgcolor: 'rgba(255,255,255,0.1)' }
+                                : { borderColor: 'primary.dark', color: 'primary.main', bgcolor: 'primary.lighter' },
+                            }}
+                    >
+                      {t('auth:register')}
+                    </Button>
+                    <Button component={Link} to={toOrgPath('/auth/login')}
+                            variant="contained" size="small"
+                            sx={{
+                              fontWeight: 600,
+                              bgcolor: isTransparent ? '#FFFFFF' : 'primary.main',
+                              color: isTransparent ? 'primary.main' : 'primary.contrastText',
+                              '&:hover': { bgcolor: isTransparent ? '#f0f0f0' : 'primary.dark' }
+                            }}
+                    >
+                      {t('auth:login')}
+                    </Button>
+                  </>
+                )}
+              </>
+            ) : (
+              <IconButton onClick={handleDrawerToggle} sx={{ color: headerTextColor }}>
+                <MenuIcon />
+              </IconButton>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -364,40 +365,32 @@ const Header = () => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, width: '100%' }}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: '50%', 
+              <Box
+                sx={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 40, height: 40, borderRadius: '50%',
                   bgcolor: (theme) => alpha(theme.palette.warning.main, 0.12),
-                  color: 'warning.dark',
-                  flexShrink: 0
+                  color: 'warning.dark', flexShrink: 0
                 }}
               >
                 <Iconify icon="eva:shield-outline" width={24} height={24} />
               </Box>
               <Box sx={{ minWidth: 0 }}>
                 <Typography variant="subtitle2" fontWeight={700} color="text.primary" sx={{ lineHeight: 1.35 }}>
-                  Tài khoản đang ở chế độ Guest
+                  {t('auth:guest_banner_title')}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.35 }}>
-                  Hoàn tất xác thực để mở khóa đầy đủ tính năng và nhận vai trò phù hợp.
+                  {t('auth:guest_banner_desc')}
                 </Typography>
               </Box>
             </Box>
 
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 1, 
-                flexShrink: 0, 
-                borderLeft: { xs: 'none', sm: '1px solid' }, 
+            <Box
+              sx={{
+                display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0,
+                borderLeft: { xs: 'none', sm: '1px solid' },
                 borderTop: { xs: '1px solid', sm: 'none' },
-                borderColor: 'divider', 
+                borderColor: 'divider',
                 pl: { xs: 0, sm: 2 },
                 pt: { xs: 1.5, sm: 0 },
                 width: { xs: '100%', sm: 'auto' },
@@ -405,24 +398,21 @@ const Header = () => {
               }}
             >
               <Button
-                variant="text"
-                size="small"
+                variant="text" size="small"
                 onClick={() => navigate('/organization-registration')}
                 endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
                 sx={{
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  color: 'warning.dark',
+                  fontWeight: 600, whiteSpace: 'nowrap', color: 'warning.dark',
                   '&:hover': { bgcolor: (theme) => alpha(theme.palette.warning.main, 0.08) },
                   px: 1.5
                 }}
               >
-                Xác thực ngay
+                {t('auth:verify_now')}
               </Button>
 
               <IconButton
                 size="small"
-                aria-label="Ẩn banner xác thực"
+                aria-label={t('auth:hide_banner')}
                 onClick={() => setShowVerificationBanner(false)}
                 sx={{ color: 'text.secondary' }}
               >
@@ -437,91 +427,93 @@ const Header = () => {
         variant="temporary" anchor="right" open={mobileOpen} onClose={closeDrawer}
         slotProps={{ paper: { sx: { width: { xs: '85%', sm: 320 } } } }}
       >
-        <Box sx={{ py: 2, px: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary" 
-                      fontWeight={600} sx={{ mb: 1 }}>
-            Ngôn ngữ
+        <Box sx={{ py: 2, px: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+            {t('nav:language')}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title={themeMode === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'} arrow>
+            <Tooltip
+              title={themeMode === 'dark'
+                ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
+                : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
+              arrow
+            >
               <IconButton
                 size="small"
-                aria-label="Đổi chế độ sáng tối"
+                aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
                 onClick={toggleThemeMode}
                 sx={{ color: 'primary.main' }}
               >
                 <Brightness6RoundedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Typography component="span"
-                        sx={{ fontSize: '0.875rem', fontWeight: 600, color: 'primary.main' }}>
-              VI
-            </Typography>
+            <LanguageSwitcher />
           </Box>
         </Box>
 
         <Divider />
 
         <List component="nav" sx={{ py: 1 }}>
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isLocked = item.requiresAuth && !isAuthenticated;
-            
+
             return item.children ? (
-            <Box key={item.label}>
-              <Tooltip title={isLocked ? "Vui lòng đăng nhập để sử dụng" : ""} arrow placement="top" disableHoverListener={!isLocked}>
-                <span>
-                  <ListItemButton sx={{ py: 1.25 }} disabled={isLocked}>
-                    <ListItemText 
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {item.label}
-                          {isLocked && (
-                            <Box component="span" sx={{ ml: 1, display: 'inline-flex' }}>
-                              <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
-                            </Box>
-                          )}
-                        </Box>
-                      }
-                      primaryTypographyProps={{ fontWeight: 500 }} 
-                      onClick={() => { if (!isLocked) { navigate(!isAuthenticated && item.fallbackHref ? item.fallbackHref : item.href); closeDrawer(); } }}
-                    />
-                    <IconButton size="small" disabled={isLocked} onClick={(e) => { e.stopPropagation(); if (!isLocked) toggleDrawerNav(item.label)(); }}>
-                      {expandedNav[item.label] ? <ExpandLess /> : <ExpandMore />}
-                    </IconButton>
-                  </ListItemButton>
-                </span>
-              </Tooltip>
-              <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
-                <List component="div" disablePadding>
-                  {item.children.map((child) => {
-                    const isChildLocked = child.requiresAuth && !isAuthenticated;
-                    return (
-                    <Tooltip key={child.label} title={isChildLocked ? "Vui lòng đăng nhập để sử dụng" : ""} arrow placement="top" disableHoverListener={!isChildLocked}>
-                      <span style={{ display: 'block' }}>
-                        <ListItemButton component={isChildLocked ? 'div' : Link} to={isChildLocked ? undefined : toOrgPath(child.href)} 
-                                        onClick={isChildLocked ? undefined : closeDrawer} sx={{ pl: 4 }} disabled={isChildLocked}>
-                          <ListItemText primary={
-                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                              {child.label}
-                              {isChildLocked && (
-                                <Box component="span" sx={{ ml: 1, display: 'inline-flex' }}>
-                                  <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
+              <Box key={item.label}>
+                <Tooltip title={isLocked ? t('nav:login_required') : ''} arrow placement="top" disableHoverListener={!isLocked}>
+                  <span>
+                    <ListItemButton sx={{ py: 1.25 }} disabled={isLocked}>
+                      <ListItemText
+                        primary={
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            {item.label}
+                            {isLocked && (
+                              <Box component="span" sx={{ ml: 1, display: 'inline-flex' }}>
+                                <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
+                              </Box>
+                            )}
+                          </Box>
+                        }
+                        primaryTypographyProps={{ fontWeight: 500 }}
+                        onClick={() => { if (!isLocked) { navigate(item.href); closeDrawer(); } }}
+                      />
+                      <IconButton size="small" disabled={isLocked} onClick={(e) => { e.stopPropagation(); if (!isLocked) toggleDrawerNav(item.label)(); }}>
+                        {expandedNav[item.label] ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </ListItemButton>
+                  </span>
+                </Tooltip>
+                <Collapse in={expandedNav[item.label]} timeout="auto" unmountOnExit>
+                  <List component="div" disablePadding>
+                    {item.children.map((child) => {
+                      const isChildLocked = child.requiresAuth && !isAuthenticated;
+                      return (
+                        <Tooltip key={child.label} title={isChildLocked ? t('nav:login_required') : ''} arrow placement="top" disableHoverListener={!isChildLocked}>
+                          <span style={{ display: 'block' }}>
+                            <ListItemButton component={isChildLocked ? 'div' : Link} to={isChildLocked ? undefined : toOrgPath(child.href)}
+                                            onClick={isChildLocked ? undefined : closeDrawer} sx={{ pl: 4 }} disabled={isChildLocked}>
+                              <ListItemText primary={
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  {child.label}
+                                  {isChildLocked && (
+                                    <Box component="span" sx={{ ml: 1, display: 'inline-flex' }}>
+                                      <Iconify icon="eva:lock-fill" width={14} height={14} sx={{ opacity: 0.5 }} />
+                                    </Box>
+                                  )}
                                 </Box>
-                              )}
-                            </Box>
-                          } primaryTypographyProps={{ variant: 'body2' }} />
-                        </ListItemButton>
-                      </span>
-                    </Tooltip>
-                  )})}
-                </List>
-              </Collapse>
-            </Box>
+                              } primaryTypographyProps={{ variant: 'body2' }} />
+                            </ListItemButton>
+                          </span>
+                        </Tooltip>
+                      );
+                    })}
+                  </List>
+                </Collapse>
+              </Box>
             ) : (
-              <Tooltip key={item.label} title={isLocked ? "Vui lòng đăng nhập để sử dụng" : ""} arrow placement="top" disableHoverListener={!isLocked}>
+              <Tooltip key={item.label} title={isLocked ? t('nav:login_required') : ''} arrow placement="top" disableHoverListener={!isLocked}>
                 <span style={{ display: 'block' }}>
                   <ListItemButton onClick={isLocked ? undefined : closeDrawer} disabled={isLocked}
-                                  component={isLocked ? 'div' : Link} to={isLocked ? undefined : toOrgPath(!isAuthenticated && item.fallbackHref ? item.fallbackHref : item.href)}>
+                                  component={isLocked ? 'div' : Link} to={isLocked ? undefined : toOrgPath(item.href)}>
                     <ListItemText primary={
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         {item.label}
@@ -535,7 +527,7 @@ const Header = () => {
                   </ListItemButton>
                 </span>
               </Tooltip>
-            )
+            );
           })}
         </List>
 
@@ -564,12 +556,12 @@ const Header = () => {
               <Button component={Link} to={toOrgPath('/auth/register')} variant="outlined"
                 fullWidth onClick={closeDrawer}
               >
-                Đăng ký
+                {t('auth:register')}
               </Button>
               <Button component={Link} to={toOrgPath('/auth/login')} variant="contained"
                 fullWidth onClick={closeDrawer}
               >
-                Đăng nhập
+                {t('auth:login')}
               </Button>
             </>
           )}

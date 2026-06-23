@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button, TextField } from '@mui/material';
 import Page from '../../components/Page';
 import { verifyOtpSchema } from '../../utils/regexUtils';
@@ -10,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
 const SignupCodePage = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const location = useLocation();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
@@ -113,7 +115,7 @@ const SignupCodePage = () => {
     setError(null);
     const result = await verifySignupCode({ email: data.email, otp: data.otp });
     if (result?.ok) {
-      enqueueSnackbar(result.message ?? 'Xác thực thành công. Bạn có thể đăng nhập.', { variant: 'success' });
+      enqueueSnackbar(result.message ?? t('auth:verify_success'), { variant: 'success' });
       navigate('/auth/login', { replace: true });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
@@ -131,12 +133,12 @@ const SignupCodePage = () => {
     setError(null);
     const email = getValues('email');
     if (!email) {
-      enqueueSnackbar('Vui lòng nhập email.', { variant: 'warning' });
+      enqueueSnackbar(t('auth:enter_email_first'), { variant: 'warning' });
       return;
     }
     const fp = await forgotPassword({ email });
     if (fp?.ok) {
-      enqueueSnackbar(fp.message ?? 'Đã gửi lại mã đến email của bạn.', { variant: 'success' });
+      enqueueSnackbar(fp.message ?? t('auth:resend_success'), { variant: 'success' });
       setCountdown(60);
     } else if (fp?.error) {
       enqueueSnackbar(fp.error, { variant: 'error' });
@@ -145,8 +147,8 @@ const SignupCodePage = () => {
 
   return (
     <Page
-      title="Đăng ký"
-      meta={<meta name="description" content="Nhập mã đăng ký" />}
+      title={t('auth:signup_code_heading')}
+      meta={<meta name="description" content={t('auth:signup_code_heading')} />}
     >
       <Box
         component="form"
@@ -166,11 +168,11 @@ const SignupCodePage = () => {
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
-          Đăng ký
+          {t('auth:signup_code_heading')}
         </Typography>
 
         <Typography variant="body2" color="text.secondary" textAlign="center">
-          Mã đăng ký đã được gửi đến email của bạn.
+          {t('auth:signup_code_hint')}
         </Typography>
 
         <input type="hidden" {...register('otp')} />
@@ -198,7 +200,7 @@ const SignupCodePage = () => {
         </Box>
 
         <Typography variant="body2" color="text.main" textAlign="center">
-          Chưa nhận được mã?{' '}
+          {t('auth:otp_not_received')}{' '}
           <Typography
             component="button"
             type="button"
@@ -216,7 +218,7 @@ const SignupCodePage = () => {
               '&:hover': { textDecoration: countdown > 0 ? 'none' : 'underline' },
             }}
           >
-            {countdown > 0 ? `Gửi lại mã (${countdown}s)` : 'Gửi lại mã.'}
+            {countdown > 0 ? t('auth:resend_code_countdown', { count: countdown }) : t('auth:resend_code')}
           </Typography>
         </Typography>
 
@@ -229,7 +231,7 @@ const SignupCodePage = () => {
           disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang xử lý...' : 'Tiếp tục'}
+          {loading ? t('auth:processing') : t('auth:continue')}
         </Button>
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
@@ -241,7 +243,7 @@ const SignupCodePage = () => {
             fontWeight={600}
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
-            Quay lại đăng nhập
+            {t('auth:back_to_login')}
           </Typography>
         </Typography>
       </Box>

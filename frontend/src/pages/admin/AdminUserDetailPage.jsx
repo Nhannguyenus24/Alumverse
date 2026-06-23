@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMatch, useNavigate, useParams, useOutletContext } from 'react-router';
 import {
   Avatar,
@@ -38,6 +39,7 @@ import { getLoginHistoryByUser, getUserActivity, adminOrganizationApi } from '..
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUserDetailPage = () => {
+  const { t } = useTranslation('admin');
   const { userId } = useParams();
   const navigate = useNavigate();
   const slugMatchWildcard = useMatch('/:slug/admin/*');
@@ -52,7 +54,7 @@ const AdminUserDetailPage = () => {
   useEffect(() => {
     if (user) {
       setBreadcrumbs?.([
-        { label: 'Người dùng', path: `${adminBase}/users` },
+        { label: t('breadcrumb_users'), path: `${adminBase}/users` },
         { label: user.fullName || `ID: ${user.studentId}` || `ID: ${user.id}`, active: true },
       ]);
     }
@@ -95,9 +97,9 @@ const AdminUserDetailPage = () => {
           logins.map((entry) => ({
             id: entry.id,
             timestamp: entry.loginAt,
-            action: entry.loginMethod ?? 'ĐĂNG NHẬP',
+            action: entry.loginMethod ?? t('user_detail_login_action_default'),
             status: 'SUCCESS',
-            description: `Đăng nhập qua ${entry.loginMethod ?? 'mật khẩu'} từ ${entry.loginIp ?? 'không xác định'}`,
+            description: t('user_detail_login_desc', { method: entry.loginMethod ?? t('user_detail_login_method_default'), ip: entry.loginIp ?? t('user_detail_ip_unknown') }),
             ipAddress: entry.loginIp,
             userAgent: entry.userAgent,
           })),
@@ -114,9 +116,9 @@ const AdminUserDetailPage = () => {
               items.map((entry) => ({
                 id: entry.id,
                 timestamp: entry.loginAt,
-                action: entry.loginMethod ?? 'ĐĂNG NHẬP',
+                action: entry.loginMethod ?? t('user_detail_login_action_default'),
                 status: 'SUCCESS',
-                description: `Đăng nhập qua ${entry.loginMethod ?? 'mật khẩu'} từ ${entry.loginIp ?? 'không xác định'}`,
+                description: t('user_detail_login_desc', { method: entry.loginMethod ?? t('user_detail_login_method_default'), ip: entry.loginIp ?? t('user_detail_ip_unknown') }),
                 ipAddress: entry.loginIp,
                 userAgent: entry.userAgent,
               })),
@@ -174,9 +176,9 @@ const AdminUserDetailPage = () => {
 
   if (!user) {
     return (
-      <AdminSectionPanel title="Không tìm thấy người dùng" subtitle="ID này không có trong danh sách hiện tại.">
+      <AdminSectionPanel title={t('user_detail_not_found')} subtitle={t('user_detail_not_found_subtitle')}>
         <Button startIcon={<ArrowBackOutlinedIcon />} onClick={() => navigate(`${adminBase}/users`)} sx={{ textTransform: 'none' }}>
-          Quay lại danh sách
+          {t('user_detail_back_to_list')}
         </Button>
       </AdminSectionPanel>
     );
@@ -186,13 +188,13 @@ const AdminUserDetailPage = () => {
     <>
       <Stack spacing={2}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Tooltip title="Quay lại">
+          <Tooltip title={t('user_detail_go_back')}>
             <IconButton onClick={() => navigate(`${adminBase}/users`)} color="primary">
               <ArrowBackOutlinedIcon />
             </IconButton>
           </Tooltip>
           <Typography variant="h6" sx={{ fontWeight: 800 }}>
-            Người dùng #{user.id}
+            {`${t('user_detail_user_label')} #${user.id}`}
           </Typography>
         </Box>
 
@@ -213,12 +215,12 @@ const AdminUserDetailPage = () => {
                 <AdminStatusChip status={user.status} category="account" />
               </Box>
               <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 1 }}>
-                Ngày tạo: {formatDateTime(user.createdAt)} · Cập nhật: {formatDateTime(user.updatedAt)}
+                {t('user_detail_created_at')}: {formatDateTime(user.createdAt)} · {t('user_detail_updated_at')}: {formatDateTime(user.updatedAt)}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, ml: { md: 'auto' } }}>
               <Button variant="outlined" color="secondary" size="small" onClick={() => setEditOpen(true)} sx={{ textTransform: 'none' }}>
-                Sửa thông tin
+                {t('user_detail_edit_info')}
               </Button>
               {user.status === 'BANNED' ? (
                 <Button
@@ -235,7 +237,7 @@ const AdminUserDetailPage = () => {
                   }}
                   sx={{ textTransform: 'none' }}
                 >
-                  Bỏ chặn
+                  {t('unban')}
                 </Button>
               ) : (
                 <Button
@@ -246,11 +248,11 @@ const AdminUserDetailPage = () => {
                   onClick={() => setBanOpen(true)}
                   sx={{ textTransform: 'none' }}
                 >
-                  Chặn
+                  {t('ban')}
                 </Button>
               )}
               <Button variant="contained" color="error" size="small" onClick={() => setDeleteOpen(true)} sx={{ textTransform: 'none' }}>
-                Xóa tài khoản
+                {t('user_detail_delete_account')}
               </Button>
             </Box>
           </Box>
@@ -258,31 +260,31 @@ const AdminUserDetailPage = () => {
 
         <Paper variant="outlined" sx={{ borderRadius: 2 }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="scrollable" scrollButtons="auto">
-            <Tab label="Thông tin chung" sx={{ textTransform: 'none' }} />
-            <Tab label="Học vấn" sx={{ textTransform: 'none' }} />
-            <Tab label="Thành viên" sx={{ textTransform: 'none' }} />
-            <Tab label="Hoạt động" sx={{ textTransform: 'none' }} />
-            <Tab label="Kiểm duyệt" sx={{ textTransform: 'none' }} />
-            <Tab label="Hành động / Nhật ký" sx={{ textTransform: 'none' }} />
+            <Tab label={t('user_detail_tab_general')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('user_detail_tab_academic')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('user_detail_tab_membership')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('user_detail_tab_activity')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('user_detail_tab_moderation')} sx={{ textTransform: 'none' }} />
+            <Tab label={t('user_detail_tab_audit')} sx={{ textTransform: 'none' }} />
           </Tabs>
           <Divider />
           <Box sx={{ p: 2 }}>
             {tab === 0 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>Họ tên:</strong> {user.fullName || '-'}
+                  <strong>{t('user_detail_field_fullname')}:</strong> {user.fullName || '-'}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Số điện thoại:</strong> {profile.phone}
+                  <strong>{t('user_detail_field_phone')}:</strong> {profile.phone}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Ngày sinh:</strong> {profile.dob}
+                  <strong>{t('user_detail_field_dob')}:</strong> {profile.dob}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Giới tính:</strong> {profile.gender}
+                  <strong>{t('user_detail_field_gender')}:</strong> {profile.gender}
                 </Typography>
                 <Typography variant="body2">
-                  <strong>Tiểu sử:</strong> {profile.bio}
+                  <strong>{t('user_detail_field_bio')}:</strong> {profile.bio}
                 </Typography>
               </Stack>
             ) : null}
@@ -290,11 +292,11 @@ const AdminUserDetailPage = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>MSSV</TableCell>
-                    <TableCell>Bằng cấp</TableCell>
-                    <TableCell>Lớp</TableCell>
-                    <TableCell>Bắt đầu</TableCell>
-                    <TableCell>Tốt nghiệp</TableCell>
+                    <TableCell>{t('user_detail_academic_student_code')}</TableCell>
+                    <TableCell>{t('user_detail_academic_degree')}</TableCell>
+                    <TableCell>{t('user_detail_academic_class')}</TableCell>
+                    <TableCell>{t('user_detail_academic_start')}</TableCell>
+                    <TableCell>{t('user_detail_academic_graduated')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -310,7 +312,7 @@ const AdminUserDetailPage = () => {
                   {academic.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5}>
-                        <Typography variant="body2" color="text.secondary">Chưa có thông tin học vấn từ API.</Typography>
+                        <Typography variant="body2" color="text.secondary">{t('user_detail_academic_empty')}</Typography>
                       </TableCell>
                     </TableRow>
                   ) : null}
@@ -323,7 +325,7 @@ const AdminUserDetailPage = () => {
                   <ListItem key={m.organizationName} disablePadding sx={{ py: 0.5 }}>
                     <ListItemText
                       primary={m.organizationName}
-                      secondary={`Xác thực: ${m.verificationLevel} · Trạng thái: ${m.status}`}
+                      secondary={`${t('user_detail_membership_verification')}: ${m.verificationLevel} · ${t('col_status')}: ${m.status}`}
                     />
                   </ListItem>
                 ))}
@@ -331,33 +333,33 @@ const AdminUserDetailPage = () => {
             ) : null}
             {tab === 3 ? (
               <Stack spacing={0.5}>
-                <Typography variant="body2">Bài viết đã tạo: {activity?.postsCreated ?? '-'}</Typography>
-                <Typography variant="body2">Bình luận: {activity?.comments ?? '-'}</Typography>
-                <Typography variant="body2">Sự kiện đã tham gia: {activity?.eventsAttended ?? '-'}</Typography>
-                <Typography variant="body2">Lượt xem trang: {activity?.pageViewsSample ?? '-'}</Typography>
+                <Typography variant="body2">{t('user_detail_activity_posts')}: {activity?.postsCreated ?? '-'}</Typography>
+                <Typography variant="body2">{t('user_detail_activity_comments')}: {activity?.comments ?? '-'}</Typography>
+                <Typography variant="body2">{t('user_detail_activity_events')}: {activity?.eventsAttended ?? '-'}</Typography>
+                <Typography variant="body2">{t('user_detail_activity_page_views')}: {activity?.pageViewsSample ?? '-'}</Typography>
               </Stack>
             ) : null}
             {tab === 4 ? (
               <Stack spacing={1}>
                 <Typography variant="body2">
-                  <strong>Trạng thái tài khoản:</strong> {formatAccountStatusLabel(user.status)}
+                  <strong>{t('user_detail_account_status')}:</strong> {formatAccountStatusLabel(user.status)}
                 </Typography>
                 {user.banReason ? (
                   <Typography variant="body2">
-                    <strong>Lý do chặn:</strong> {user.banReason}
+                    <strong>{t('user_detail_ban_reason')}:</strong> {user.banReason}
                   </Typography>
                 ) : null}
                 {user.bannedUntil ? (
                   <Typography variant="body2">
-                    <strong>Bị chặn đến:</strong> {formatDateTime(user.bannedUntil)}
+                    <strong>{t('user_detail_banned_until')}:</strong> {formatDateTime(user.bannedUntil)}
                   </Typography>
                 ) : user.status === 'BANNED' ? (
                   <Typography variant="body2">
-                    <strong>Bị chặn đến:</strong> Vĩnh viễn
+                    <strong>{t('user_detail_banned_until')}:</strong> {t('user_detail_ban_permanent')}
                   </Typography>
                 ) : null}
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 1 }}>
-                  Lịch sử chặn
+                  {t('user_detail_ban_history')}
                 </Typography>
                 {(user.banHistory && user.banHistory.length > 0
                   ? user.banHistory
@@ -372,7 +374,7 @@ const AdminUserDetailPage = () => {
             {tab === 5 ? (
               <Stack spacing={2}>
                 <Typography variant="body2" color="text.secondary">
-                  Lịch sử đăng nhập cho tài khoản này được lấy từ dịch vụ nhật ký.
+                  {t('user_detail_login_history_desc')}
                 </Typography>
                 {auditLoading ? (
                   <Stack spacing={1}>
@@ -384,10 +386,10 @@ const AdminUserDetailPage = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Thời gian</TableCell>
-                        <TableCell>Hành động</TableCell>
-                        <TableCell>Kết quả</TableCell>
-                        <TableCell>Mô tả</TableCell>
+                        <TableCell>{t('user_detail_col_time')}</TableCell>
+                        <TableCell>{t('user_detail_col_action')}</TableCell>
+                        <TableCell>{t('user_detail_col_result')}</TableCell>
+                        <TableCell>{t('user_detail_col_description')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -395,7 +397,7 @@ const AdminUserDetailPage = () => {
                         <TableRow>
                           <TableCell colSpan={4}>
                             <Typography variant="body2" color="text.secondary">
-                              Không tìm thấy lịch sử đăng nhập cho người dùng này.
+                              {t('user_detail_login_history_empty')}
                             </Typography>
                           </TableCell>
                         </TableRow>
@@ -419,19 +421,19 @@ const AdminUserDetailPage = () => {
                   onClick={() => navigate(`${adminBase}/audit-logs`)}
                   sx={{ textTransform: 'none', alignSelf: 'flex-start' }}
                 >
-                  Mở trang nhật ký đầy đủ
+                  {t('user_detail_open_audit_logs')}
                 </Button>
                 {userVerificationLogs.length > 0 ? (
                   <>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      Yêu cầu xác thực
+                      {t('user_detail_verification_requests')}
                     </Typography>
                     <List dense>
                       {userVerificationLogs.map((item, idx) => (
                         <ListItem key={`${item.id || idx}`} disablePadding sx={{ py: 0.5 }}>
                           <ListItemText
-                            primary={`#${item.id || '-'} · ${item.status || 'không xác định'}`}
-                            secondary={`Loại: ${item.documentType || '-'} · Ngày tạo: ${formatDateTime(item.createdAt)}`}
+                            primary={`#${item.id || '-'} · ${item.status || t('user_detail_status_unknown')}`}
+                            secondary={`${t('user_detail_type_label')}: ${item.documentType || '-'} · ${t('user_detail_created_at_label')}: ${formatDateTime(item.createdAt)}`}
                           />
                         </ListItem>
                       ))}
@@ -441,16 +443,16 @@ const AdminUserDetailPage = () => {
                 {userAdminActions.length > 0 ? (
                   <>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      Hành động quản trị
+                      {t('user_detail_admin_actions')}
                     </Typography>
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell>Thời gian</TableCell>
-                          <TableCell>Hành động</TableCell>
-                          <TableCell>Đối tượng</TableCell>
-                          <TableCell>Trước</TableCell>
-                          <TableCell>Sau</TableCell>
+                          <TableCell>{t('user_detail_col_time')}</TableCell>
+                          <TableCell>{t('user_detail_col_action')}</TableCell>
+                          <TableCell>{t('user_detail_col_target')}</TableCell>
+                          <TableCell>{t('user_detail_col_before')}</TableCell>
+                          <TableCell>{t('user_detail_col_after')}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -504,8 +506,8 @@ const AdminUserDetailPage = () => {
 
       <AdminConfirmDeleteDialog
         open={deleteOpen}
-        title="Xóa tài khoản"
-        description={`Xóa người dùng ${user.fullName} (#${user.id})?`}
+        title={t('user_detail_delete_account')}
+        description={t('user_detail_delete_confirm', { name: user.fullName, id: user.id })}
         onClose={() => setDeleteOpen(false)}
         onConfirm={async () => {
           try {

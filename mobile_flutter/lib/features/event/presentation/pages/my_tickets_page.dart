@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -21,21 +21,21 @@ class MyTicketsPage extends ConsumerWidget {
     final async = ref.watch(myTicketsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Vé của tôi')),
+      appBar: AppBar(title: Text('event.my_tickets'.tr())),
       body: async.when(
         loading: () => ListView(
           children: List.generate(5, (_) => const SkeletonTile()),
         ),
         error: (_, __) => ErrorView(
-          message: 'Không tải được danh sách vé',
+          message: 'event.tickets_load_failed'.tr(),
           onRetry: () => ref.invalidate(myTicketsProvider),
         ),
         data: (tickets) {
           if (tickets.isEmpty) {
-            return const EmptyView(
+            return EmptyView(
               icon: Icons.confirmation_number_outlined,
-              title: 'Bạn chưa có vé nào',
-              message: 'Đăng ký tham gia một sự kiện để nhận vé của bạn.',
+              title: 'event.no_tickets'.tr(),
+              message: 'event.no_tickets_desc'.tr(),
             );
           }
           return RefreshIndicator(
@@ -68,7 +68,8 @@ class _TicketCard extends ConsumerWidget {
         : ref.watch(eventDetailProvider(ticket.eventId).select(
             (a) => a.whenData((e) => e.title),
           ));
-    final title = titleAsync.valueOrNull ?? 'Sự kiện #${ticket.eventId}';
+    final title = titleAsync.valueOrNull ??
+        'event.event_number'.tr(namedArgs: {'id': ticket.eventId.toString()});
     final date = ticket.registeredAt != null
         ? DateFormat('dd/MM/yyyy • HH:mm').format(ticket.registeredAt!)
         : '';
@@ -109,7 +110,8 @@ class _TicketCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Text('Mã: ${ticket.ticketCode}',
+                      Text(
+                          'event.ticket_code_label'.tr(namedArgs: {'code': ticket.ticketCode}),
                           style: const TextStyle(
                               fontSize: 12, color: AppColors.textSecondary)),
                       if (date.isNotEmpty) ...[
@@ -162,7 +164,7 @@ class TicketStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        ticket.statusLabel,
+        ticket.statusKey.tr(),
         style: TextStyle(
             color: color, fontSize: 12, fontWeight: FontWeight.w700),
       ),

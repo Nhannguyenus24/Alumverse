@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { useTranslation } from 'react-i18next';
 import { validateMeetingLink, meetingLinkPasswordWarning } from '../../../utils/meetingLink';
 import { extractMentorshipSkills } from '../../../utils/api';
 
@@ -21,6 +22,7 @@ import { extractMentorshipSkills } from '../../../utils/api';
  * profile (extendedProfile.experienceSummary).
  */
 const MentorSignupTabContent = ({ values, onChange }) => {
+  const { t } = useTranslation('mentorship');
   const summary = values.experienceSummary ?? '';
   const tags = values.expertiseTags ?? [];
   const meetingLink = values.defaultMeetingLink ?? '';
@@ -69,14 +71,13 @@ const MentorSignupTabContent = ({ values, onChange }) => {
       const res = await extractMentorshipSkills(text);
       const got = res?.data?.data?.tags ?? [];
       if (got.length === 0) {
-        setExtractError('AI chưa trích được thẻ nào. Bạn có thể thêm thẻ thủ công bên dưới.');
+        setExtractError(t('signup_tab_extract_empty'));
       } else {
         addTags(got);
       }
     } catch (err) {
       setExtractError(
-        err?.response?.data?.message ??
-          'Không trích xuất được thẻ. Vui lòng thử lại hoặc thêm thẻ thủ công.',
+        err?.response?.data?.message ?? t('signup_tab_extract_error'),
       );
     } finally {
       setExtracting(false);
@@ -88,16 +89,15 @@ const MentorSignupTabContent = ({ values, onChange }) => {
     <Stack spacing={3}>
       <Box>
         <Typography fontWeight={700}>
-          Kinh nghiệm &amp; kỹ năng
+          {t('signup_tab_content_title')}
           <Typography component="span" color="error.main">{' *'}</Typography>
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
-          Mô tả kinh nghiệm, chuyên môn của bạn trong một đoạn văn, rồi nhấn “Trích xuất thẻ”. AI sẽ
-          tự tạo các thẻ # giúp mentee tìm đúng bạn — không cần nhập tay từng mục.
+          {t('signup_tab_content_desc')}
         </Typography>
 
         <TextField
-          placeholder="VD: Mình có 5 năm làm backend Java Spring, từng phỏng vấn tuyển dụng và hướng dẫn thực tập sinh. Quan tâm tới system design và mentoring sinh viên năm cuối."
+          placeholder={t('signup_tab_content_placeholder')}
           value={summary}
           onChange={(e) => update({ experienceSummary: e.target.value })}
           fullWidth
@@ -113,7 +113,7 @@ const MentorSignupTabContent = ({ values, onChange }) => {
             onClick={handleExtract}
             disabled={extracting || !summary.trim()}
           >
-            {extracting ? 'Đang phân tích...' : 'Trích xuất thẻ'}
+            {extracting ? t('signup_tab_extract_analyzing') : t('signup_tab_extract_btn')}
           </Button>
         </Stack>
 
@@ -126,7 +126,7 @@ const MentorSignupTabContent = ({ values, onChange }) => {
         {showTagEditor && (
           <Box mt={2}>
             <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-              Thẻ kỹ năng (mentee dùng để lọc tìm cố vấn). Bấm × để xoá, hoặc thêm thẻ bên dưới.
+              {t('signup_tab_tags_hint')}
             </Typography>
             {tags.length > 0 ? (
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -136,14 +136,14 @@ const MentorSignupTabContent = ({ values, onChange }) => {
               </Stack>
             ) : (
               <Typography variant="body2" color="text.disabled">
-                Chưa có thẻ nào — thêm thủ công bên dưới.
+                {t('signup_tab_no_tags')}
               </Typography>
             )}
 
             <Stack direction="row" spacing={1} mt={1.5}>
               <TextField
                 size="small"
-                placeholder="Thêm thẻ thủ công (Enter để thêm)"
+                placeholder={t('signup_tab_manual_tag_placeholder')}
                 value={manualTag}
                 onChange={(e) => setManualTag(e.target.value)}
                 onKeyDown={(e) => {
@@ -154,7 +154,7 @@ const MentorSignupTabContent = ({ values, onChange }) => {
                 }}
               />
               <Button onClick={handleManualAdd} startIcon={<AddIcon />} disabled={!manualTag.trim()}>
-                Thêm
+                {t('signup_tab_add_btn')}
               </Button>
             </Stack>
           </Box>
@@ -163,10 +163,10 @@ const MentorSignupTabContent = ({ values, onChange }) => {
 
       <Box>
         <Typography fontWeight={700} mb={1}>
-          Link cuộc họp mặc định
+          {t('signup_tab_meeting_link_title')}
         </Typography>
         <TextField
-          placeholder="VD: https://meet.google.com/abc-defg-hij"
+          placeholder={t('signup_tab_meeting_link_placeholder')}
           value={meetingLink}
           onChange={(e) => update({ defaultMeetingLink: e.target.value })}
           fullWidth
@@ -180,8 +180,7 @@ const MentorSignupTabContent = ({ values, onChange }) => {
           </Typography>
         )}
         <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-          (Không bắt buộc) Mentee sẽ nhận link này khi bạn duyệt yêu cầu. Chỉ chấp nhận link từ Google
-          Meet, Zoom, Microsoft Teams, Jitsi Meet, Whereby, Webex, GoToMeeting.
+          {t('signup_tab_meeting_link_hint')}
         </Typography>
       </Box>
     </Stack>

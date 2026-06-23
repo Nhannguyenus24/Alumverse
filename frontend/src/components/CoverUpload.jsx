@@ -1,8 +1,10 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import { useTranslation } from 'react-i18next';
 
 const CoverUpload = ({ value, onChange, accept = "image/*" }) => {
+  const { t } = useTranslation('profile');
   return (
     <Box
       sx={{
@@ -28,21 +30,20 @@ const CoverUpload = ({ value, onChange, accept = "image/*" }) => {
           '&:hover': { backgroundColor: '#fff' },
           textTransform: 'none',
           fontWeight: 600,
-          // Sử dụng absolute để khớp với layout cũ của bạn
           position: 'absolute',
           top: 16,
           right: 16,
         }}
       >
-        {value ? 'Sửa ảnh bìa' : 'Thêm ảnh bìa'}
-        <input 
-          hidden 
-          type="file" 
+        {value ? t('edit_cover_photo') : t('add_cover_photo')}
+        <input
+          hidden
+          type="file"
           accept={accept}
           onChange={(e) => {
             onChange(e);
             e.target.value = null;
-          }} 
+          }}
         />
       </Button>
     </Box>

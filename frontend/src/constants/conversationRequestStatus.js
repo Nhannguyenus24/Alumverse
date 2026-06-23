@@ -4,11 +4,11 @@ export const CONVERSATION_REQUEST_STATUS = {
   REJECTED: 'REJECTED',
 };
 
-const CONVERSATION_REQUEST_STATUS_MESSAGES = {
+export const getConversationRequestStatusMessages = (t) => ({
   [CONVERSATION_REQUEST_STATUS.PENDING]:
-    'Yêu cầu kết nối đang chờ phản hồi.',
+    t ? t('network:request_pending_desc') : 'Yêu cầu kết nối đang chờ phản hồi.',
   [CONVERSATION_REQUEST_STATUS.ACCEPTED]:
-    'Bạn đã được chấp nhận kết nối.',
+    t ? t('network:request_accepted_desc') : 'Bạn đã được chấp nhận kết nối.',
   [CONVERSATION_REQUEST_STATUS.REJECTED]:
-    'Yêu cầu kết nối đã bị từ chối.',
-};
+    t ? t('network:request_rejected_desc') : 'Yêu cầu kết nối đã bị từ chối.',
+});

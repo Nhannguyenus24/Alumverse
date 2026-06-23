@@ -60,7 +60,7 @@ export const useArticleById = (channel, id) => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load article"
       : null;
 
   return { article: data, isPending, isError, errorMessage };
