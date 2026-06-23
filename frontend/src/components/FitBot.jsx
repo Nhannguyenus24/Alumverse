@@ -4,14 +4,15 @@ import { Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
 import { styled, keyframes } from '@mui/material/styles';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from 'react-i18next';
 
 const CHAT_HISTORY_STORAGE_KEY = 'fitbot_chat_history';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const CHAT_HISTORY_MAX_MESSAGES = 30;
 
-const buildDefaultMessage = () => ({
+const buildDefaultMessage = (greeting) => ({
   id: 1,
-  text: 'Xin chào! 👋 Tôi là trợ lý ảo của HCMUS. Tôi có thể giúp bạn tìm hiểu thêm về trường, các chương trình đào tạo, và nhiều thông tin hữu ích khác. Có câu hỏi gì cho tôi không?',
+  text: greeting,
   isBot: true,
   timestamp: new Date(),
 });
@@ -46,22 +47,22 @@ const normalizeAndPruneMessages = (messages) => {
   return normalized.slice(-CHAT_HISTORY_MAX_MESSAGES);
 };
 
-const loadMessagesFromStorage = () => {
+const loadMessagesFromStorage = (greeting) => {
   try {
     const rawHistory = localStorage.getItem(CHAT_HISTORY_STORAGE_KEY);
     if (!rawHistory) {
-      return [buildDefaultMessage()];
+      return [buildDefaultMessage(greeting)];
     }
 
     const parsedHistory = JSON.parse(rawHistory);
     if (!Array.isArray(parsedHistory)) {
-      return [buildDefaultMessage()];
+      return [buildDefaultMessage(greeting)];
     }
 
     const prunedHistory = normalizeAndPruneMessages(parsedHistory);
-    return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage()];
+    return prunedHistory.length > 0 ? prunedHistory : [buildDefaultMessage(greeting)];
   } catch (_) {
-    return [buildDefaultMessage()];
+    return [buildDefaultMessage(greeting)];
   }
 };
 
@@ -261,18 +262,18 @@ const TypingIndicator = styled(Box)(({ theme }) => ({
   },
 }));
 
-// Mock suggestions list
-const SUGGESTIONS = [
-  'Bạn muốn tìm hiểu về khoa CNTT?',
-  'Hỏi về quy trình tuyển sinh',
-  'Muốn biết thêm về học bổng?',
-  'Hỏi về các câu lạc bộ sinh viên',
-  'Tìm hiểu về chương trình thực tập',
-  'Hỏi về các hoạt động ngoại khóa',
-  'Muốn biết điều kiện admission?',
-  'Hỏi về dormitory và facilities',
-  'Tìm hiểu về career support',
-  'Liên hệ với administrative office',
+// Suggestion keys for i18n lookup — values defined in common locale
+const SUGGESTION_KEYS = [
+  'fitbot_suggestion_cntt',
+  'fitbot_suggestion_admission',
+  'fitbot_suggestion_scholarship',
+  'fitbot_suggestion_clubs',
+  'fitbot_suggestion_internship',
+  'fitbot_suggestion_extracurricular',
+  'fitbot_suggestion_admission_requirements',
+  'fitbot_suggestion_dormitory',
+  'fitbot_suggestion_career',
+  'fitbot_suggestion_admin_office',
 ];
 
 // SSE response handler using fetch
@@ -394,9 +395,10 @@ const streamSSEResponse = async (userMessage, onChunk, onComplete, onError, sign
 };
 
 export default function FitBot() {
+  const { t } = useTranslation('common');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const isAnimating = !isChatOpen;
-  const [messages, setMessages] = useState(() => loadMessagesFromStorage());
+  const [messages, setMessages] = useState(() => loadMessagesFromStorage(t('fitbot_greeting')));
   const [inputValue, setInputValue] = useState('');
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [currentSuggestion, setCurrentSuggestion] = useState('');
@@ -438,8 +440,9 @@ export default function FitBot() {
     if (!isChatOpen) {
       const scheduleNextSuggestion = () => {
         suggestionTimeoutRef.current = setTimeout(() => {
-          const randomSuggestion =
-            SUGGESTIONS[Math.floor(Math.random() * SUGGESTIONS.length)];
+          const randomKey =
+            SUGGESTION_KEYS[Math.floor(Math.random() * SUGGESTION_KEYS.length)];
+          const randomSuggestion = t(randomKey);
           setCurrentSuggestion(randomSuggestion);
           setShowSuggestion(true);
 
@@ -459,7 +462,7 @@ export default function FitBot() {
         clearTimeout(suggestionHideTimeoutRef.current);
       };
     }
-  }, [isChatOpen]);
+  }, [isChatOpen, t]);
 
 
   const handleSendMessage = useCallback(async (messageText) => {
@@ -524,8 +527,7 @@ export default function FitBot() {
       },
       (error) => {
         // On error - show fallback message
-        const errorMessage =
-          'Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.';
+        const errorMessage = t('fitbot_error_message');
         fullResponse = errorMessage;
         setMessages((prev) => {
           const updatedMessages = [...prev];
@@ -580,7 +582,7 @@ export default function FitBot() {
     <>
       {/* Avatar */}
       <AvatarWrapper>
-        <Tooltip title={isChatOpen ? '' : 'Chat với trợ lý ảo'} placement="left">
+        <Tooltip title={isChatOpen ? '' : t('fitbot_chat_tooltip')} placement="left">
           <AnimatedAvatar
             onClick={() => setIsChatOpen(true)}
             isAnimating={isAnimating}
@@ -662,7 +664,7 @@ export default function FitBot() {
             <TextField
               fullWidth
               size="small"
-              placeholder="Gửi tin nhắn..."
+              placeholder={t('fitbot_send_placeholder')}
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={(e) => {

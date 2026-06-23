@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,48 +22,48 @@ class SettingsPage extends ConsumerWidget {
     final settingsAsync = ref.watch(notificationSettingsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Cài đặt')),
+      appBar: AppBar(title: Text('common.settings'.tr())),
       body: ListView(
         children: [
-          const _GroupHeader('Tài khoản'),
+          _GroupHeader('settings.account'.tr()),
           ListTile(
             leading: const Icon(Icons.person_outline),
-            title: const Text('Chỉnh sửa hồ sơ'),
+            title: Text('profile.edit_profile'.tr()),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.profileEdit),
           ),
           ListTile(
             leading: const Icon(Icons.lock_outline),
-            title: const Text('Đổi mật khẩu'),
+            title: Text('profile.change_password'.tr()),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.resetPassword),
           ),
           ListTile(
             leading: const Icon(Icons.verified_user_outlined),
-            title: const Text('Xác thực tài khoản'),
-            subtitle: const Text('Cung cấp minh chứng để dùng đầy đủ tính năng'),
+            title: Text('auth.verify_account'.tr()),
+            subtitle: Text('settings.verify_subtitle'.tr()),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.push(RouteNames.organizationRegistration),
           ),
           const Divider(),
-          const _GroupHeader('Thông báo'),
+          _GroupHeader('profile.notification_settings'.tr()),
           settingsAsync.when(
             loading: () => const Padding(
               padding: EdgeInsets.all(24),
               child: Center(child: CircularProgressIndicator()),
             ),
             error: (_, __) => ErrorView(
-              message: 'Không tải được cài đặt thông báo',
+              message: 'settings.load_notif_failed'.tr(),
               onRetry: () => ref.invalidate(notificationSettingsProvider),
             ),
             data: (s) => _NotificationToggles(initial: s),
           ),
           const Divider(),
-          const _GroupHeader('Phiên đăng nhập'),
+          _GroupHeader('settings.session'.tr()),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Đăng xuất',
-                style: TextStyle(color: AppColors.error)),
+            title: Text('auth.logout'.tr(),
+                style: const TextStyle(color: AppColors.error)),
             onTap: () async {
               await ref.read(authStateProvider.notifier).logout();
               if (context.mounted) context.go(RouteNames.login);
@@ -100,7 +101,7 @@ class _NotificationTogglesState extends ConsumerState<_NotificationToggles> {
       // Revert on failure.
       if (mounted) {
         setState(() => _s = prev);
-        AppToast.error(context, 'Cập nhật cài đặt thất bại');
+        AppToast.error(context, 'settings.update_failed'.tr());
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -111,15 +112,15 @@ class _NotificationTogglesState extends ConsumerState<_NotificationToggles> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _toggle('Trả lời diễn đàn', _s.forumReplyEnabled,
+        _toggle('settings.notif_forum_reply'.tr(), _s.forumReplyEnabled,
             (v) => _update(_s.copyWith(forumReplyEnabled: v))),
-        _toggle('Nhắc nhở sự kiện', _s.eventReminderEnabled,
+        _toggle('settings.notif_event_reminder'.tr(), _s.eventReminderEnabled,
             (v) => _update(_s.copyWith(eventReminderEnabled: v))),
-        _toggle('Tin tức', _s.newsEnabled,
+        _toggle('settings.notif_news'.tr(), _s.newsEnabled,
             (v) => _update(_s.copyWith(newsEnabled: v))),
-        _toggle('Thông báo qua email', _s.emailEnabled,
+        _toggle('settings.notif_email'.tr(), _s.emailEnabled,
             (v) => _update(_s.copyWith(emailEnabled: v))),
-        _toggle('Thông báo đẩy (Push)', _s.pushEnabled,
+        _toggle('settings.notif_push'.tr(), _s.pushEnabled,
             (v) => _update(_s.copyWith(pushEnabled: v))),
       ],
     );

@@ -15,7 +15,7 @@ export function useNetworkConversationActions(peerMemberId) {
     },
     onError: (error) => {
       const msg =
-        error?.response?.data?.message ?? error?.message ?? 'Không gửi được tin nhắn.';
+        error?.response?.data?.message ?? error?.message ?? 'Failed to send message';
       enqueueSnackbar(msg, { variant: 'warning' });
     },
   });

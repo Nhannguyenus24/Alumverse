@@ -2,31 +2,34 @@ import { Box, Container, Typography, Chip, Stack, Card } from '@mui/material';
 import BuildIcon from '@mui/icons-material/Build';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import UpdateIcon from '@mui/icons-material/Update';
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 
 export default function MaintenancePage() {
+  const { t } = useTranslation('common');
+
   const maintenanceUpdates = [
     {
       icon: <UpdateIcon sx={{ color: 'primary.main' }} />,
-      title: 'System Upgrade',
-      description: 'Upgrading to latest server infrastructure',
-      status: 'In Progress',
+      title: t('maintenance_update_system_upgrade_title'),
+      description: t('maintenance_update_system_upgrade_desc'),
+      status: t('maintenance_update_status_in_progress'),
     },
     {
       icon: <UpdateIcon sx={{ color: 'primary.main' }} />,
-      title: 'Security Updates',
-      description: 'Applying latest security patches',
-      status: 'In Progress',
+      title: t('maintenance_update_security_title'),
+      description: t('maintenance_update_security_desc'),
+      status: t('maintenance_update_status_in_progress'),
     },
   ];
 
   return (
     <Page
-      title="Under Maintenance"
+      title={t('maintenance_title')}
       meta={
         <meta
           name="description"
-          content="Hệ thống đang bảo trì - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+          content={t('maintenance_meta_desc')}
         />
       }
     >
@@ -89,7 +92,7 @@ export default function MaintenancePage() {
                 color: 'text.primary',
               }}
             >
-              Under Maintenance
+              {t('maintenance_subtitle')}
             </Typography>
 
             <Typography
@@ -97,8 +100,7 @@ export default function MaintenancePage() {
               color="text.secondary"
               sx={{ mb: 2, maxWidth: 600, mx: 'auto', lineHeight: 1.8 }}
             >
-              We're currently performing scheduled maintenance to improve your
-              experience. We'll be back online shortly!
+              {t('maintenance_desc')}
             </Typography>
 
             <Stack
@@ -114,12 +116,12 @@ export default function MaintenancePage() {
                 color="text.secondary"
                 sx={{ fontWeight: 500 }}
               >
-                Estimated downtime: 2-4 hours
+                {t('maintenance_estimated_downtime')}
               </Typography>
             </Stack>
 
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
-              What We're Working On
+              {t('maintenance_working_on')}
             </Typography>
 
             <Stack spacing={2} sx={{ width: '100%', maxWidth: 700 }}>

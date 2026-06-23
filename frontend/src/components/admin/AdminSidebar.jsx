@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Drawer,
@@ -37,54 +38,54 @@ const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
 const ADMIN_HEADER_HEIGHT = 88;
 
-const NAV_GROUPS = (adminBase) => [
+const NAV_GROUPS = (adminBase, t) => [
   {
-    title: 'Tổng quan',
+    title: t('admin:nav_group_overview'),
     items: [
-      { to: adminBase, end: true, icon: <DashboardOutlinedIcon />, label: 'Bảng điều khiển' },
+      { to: adminBase, end: true, icon: <DashboardOutlinedIcon />, label: t('admin:nav_dashboard') },
     ],
   },
   {
-    title: 'Quản lý thực thể',
+    title: t('admin:nav_group_entity_management'),
     items: [
-      { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: 'Người dùng', role: 'ADMIN' },
-      { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: 'Tổ chức', role: 'ADMIN' },
-      { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: 'Xác thực người dùng', role: 'ADMIN' },
-      { to: `${adminBase}/education-requests`, icon: <HistoryEduOutlinedIcon />, label: 'Yêu cầu thay đổi học vấn', role: 'ADMIN' },
-      { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: 'Cố vấn (Mentorship)', role: 'ADMIN' },
+      { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: t('admin:nav_users'), role: 'ADMIN' },
+      { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: t('admin:nav_organizations'), role: 'ADMIN' },
+      { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: t('admin:nav_verifications'), role: 'ADMIN' },
+      { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: t('admin:nav_mentorship'), role: 'ADMIN' },
     ],
   },
   {
-    title: 'Diễn đàn',
+    title: t('admin:nav_group_forum'),
     items: [
-      { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: 'Bài viết' },
-      { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: 'Chủ đề', role: 'ADMIN' },
-      { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: 'Danh mục', role: 'ADMIN' },
-      { to: `${adminBase}/forum/reports`, icon: <FlagOutlinedIcon />, label: 'Báo cáo vi phạm', role: 'ADMIN' },
+      { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: t('admin:nav_forum_posts') },
+      { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: t('admin:nav_forum_topics'), role: 'ADMIN' },
+      { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: t('admin:nav_forum_categories'), role: 'ADMIN' },
+      { to: `${adminBase}/forum/reports`, icon: <FlagOutlinedIcon />, label: t('admin:nav_forum_reports'), role: 'ADMIN' },
     ],
   },
     {
-    title: 'Nội dung & Cộng đồng',
+    title: t('admin:nav_group_content_community'),
     items: [
-      { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: 'Bài viết', role: 'ADMIN' },
-      { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: 'Sự kiện', role: 'ADMIN' },
-      { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: 'Quyên góp', role: 'ADMIN' },
-      { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: 'Tài khoản ngân hàng', role: 'ADMIN' },
+      { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: t('admin:nav_article'), role: 'ADMIN' },
+      { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: t('admin:nav_events'), role: 'ADMIN' },
+      { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: t('admin:nav_fundraising'), role: 'ADMIN' },
+      { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: t('admin:nav_bank_accounts'), role: 'ADMIN' },
     ],
   },
   {
-    title: 'Hệ thống',
+    title: t('admin:nav_group_system'),
     items: [
-      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: 'Phản hồi', role: 'ADMIN' },
-      { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: 'Nhật ký hệ thống', role: 'ADMIN' },
-      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: 'Cấu hình AI Bot', role: 'ADMIN' },
+      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: t('admin:nav_feedbacks'), role: 'ADMIN' },
+      { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: t('admin:nav_audit_logs'), role: 'ADMIN' },
+      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_bot_config'), role: 'ADMIN' },
     ],
   },
 ];
 
 const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRole, collapsed = false, onToggle }) => {
   const theme = useTheme();
-  const groups = NAV_GROUPS(adminBase);
+  const { t } = useTranslation(['admin']);
+  const groups = NAV_GROUPS(adminBase, t);
   const logoSrc = theme.palette.mode === 'dark'
     ? (collapsed ? '/alumverse_logo/Logo_White.svg' : '/alumverse_logo/Logo_White_Full.svg')
     : (collapsed ? '/alumverse_logo/Logo_Main.svg' : '/alumverse_logo/Logo_Main_Full.svg');

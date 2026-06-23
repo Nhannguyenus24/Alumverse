@@ -31,7 +31,7 @@ export function useRecentChatPreviews({ enabled = true } = {}) {
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải tin nhắn gần nhất.'
+        'Failed to load recent messages'
       : null;
 
   return {

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -17,7 +18,7 @@ class NetworkPage extends StatelessWidget {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Kết nối'),
+          title: Text('network.title'.tr()),
           bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
@@ -25,11 +26,11 @@ class NetworkPage extends StatelessWidget {
             unselectedLabelColor: AppColors.textSecondary,
             indicatorColor: AppColors.primary,
             indicatorWeight: 3,
-            tabs: const [
-              Tab(text: 'Tìm kiếm'),
-              Tab(text: 'Yêu cầu'),
-              Tab(text: 'Kết nối'),
-              Tab(text: 'Đã chặn'),
+            tabs: [
+              Tab(text: 'network.search'.tr()),
+              Tab(text: 'network.requests'.tr()),
+              Tab(text: 'network.connections'.tr()),
+              Tab(text: 'network.blocked'.tr()),
             ],
           ),
         ),

@@ -1,6 +1,7 @@
 import { Box, Divider, Typography } from '@mui/material';
 import ChatBubbleOutlineOutlinedIcon from '@mui/icons-material/ChatBubbleOutlineOutlined';
 import PersonIcon from '@mui/icons-material/Person';
+import { useTranslation } from 'react-i18next';
 
 const StatCell = ({ label, value, showLabel = true }) => {
   return (
@@ -18,6 +19,7 @@ const StatCell = ({ label, value, showLabel = true }) => {
 };
 
 const ForumBoardRow = ({ board, onClick }) => {
+  const { t } = useTranslation(['forum']);
   const last = board?.lastPost;
   return (
     <Box
@@ -88,8 +90,8 @@ const ForumBoardRow = ({ board, onClick }) => {
           }}
         >
           <Box sx={{ display: 'flex', gap: 3 }}>
-            <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
-            <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
+            <StatCell label={t('forum:topic_count_label')} value={board?.topicCount ?? '-'} />
+            <StatCell label={t('forum:member_count_label')} value={board?.participantCount ?? '-'} />
           </Box>
         </Box>
 
@@ -98,8 +100,8 @@ const ForumBoardRow = ({ board, onClick }) => {
           <Divider sx={{ mb: 1.25 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
-              <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
+              <StatCell label={t('forum:stat_topics')} value={board?.topicCount ?? '-'} />
+              <StatCell label={t('forum:stat_members')} value={board?.participantCount ?? '-'} />
             </Box>
           </Box>
           <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>

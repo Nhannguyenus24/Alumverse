@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -9,12 +10,12 @@ class FeaturePlaceholderPage extends StatelessWidget {
     super.key,
     required this.title,
     required this.icon,
-    this.message = 'Tính năng đang được phát triển',
+    this.message,
   });
 
   final String title;
   final IconData icon;
-  final String message;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,7 @@ class FeaturePlaceholderPage extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                message,
+                message ?? 'common.feature_coming_soon'.tr(),
                 style: const TextStyle(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),

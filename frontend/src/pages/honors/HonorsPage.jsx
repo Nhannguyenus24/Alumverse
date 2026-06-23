@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -23,34 +24,45 @@ import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumni
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 
-const SIDEBAR = [
-  { id: '/honors', label: 'Vinh danh', icon: <EmojiEventsIcon /> },
-  { id: '/honors/alumni', label: 'Cựu sinh viên', icon: <GroupsIcon /> },
-  { id: '/honors/achievements', label: 'Kênh thành tựu', icon: <TrendingUpIcon /> },
+const getSidebar = (t) => [
+  { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
+  { id: '/honors/alumni', label: t('honors:sidebar_alumni'), icon: <GroupsIcon /> },
+  { id: '/honors/achievements', label: t('honors:sidebar_achievements'), icon: <TrendingUpIcon /> },
 ];
 
-const FILTERS = [
+const getFilters = (t) => [
   {
     type: 'topics',
     key: 'topics',
-    label: 'Chủ đề',
-    options: ['Cựu sinh viên', 'Thành tựu', 'Bảng vàng'],
+    label: t('honors:filter_topics_label'),
+    options: [
+      t('honors:filter_topics_option_alumni'),
+      t('honors:filter_topics_option_achievements'),
+      t('honors:filter_topics_option_board'),
+    ],
   },
   {
     type: 'dropdown',
     key: 'type',
-    label: 'Phân loại',
+    label: t('honors:filter_type_label'),
     multiple: true,
-    options: ['Khởi nghiệp', 'Công nghệ', 'Kinh doanh', 'Nghiên cứu', 'Cộng đồng'],
+    options: [
+      t('honors:filter_type_startup'),
+      t('honors:filter_type_technology'),
+      t('honors:filter_type_business'),
+      t('honors:filter_type_research'),
+      t('honors:filter_type_community'),
+    ],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Ngày đăng',
+    label: t('honors:filter_date_label'),
   },
 ];
 
 const HonorsPage = () => {
+  const { t } = useTranslation(['honors', 'common']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -93,9 +105,9 @@ const HonorsPage = () => {
       await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
       queryClient.invalidateQueries({ queryKey: ['publishedAlumniPosts'] });
       queryClient.invalidateQueries({ queryKey: ['publishedAchievements'] });
-      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+      enqueueSnackbar(t('honors:delete_success'), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('honors:delete_failed'), { variant: 'error' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -103,7 +115,7 @@ const HonorsPage = () => {
   };
 
   return (
-    <Page title="Vinh danh">
+    <Page title={t('honors:page_title')}>
       <Container
         maxWidth={false}
         disableGutters
@@ -113,7 +125,7 @@ const HonorsPage = () => {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={getSidebar(t)} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -135,7 +147,7 @@ const HonorsPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                   >
-                    VINH DANH
+                    {t('honors:heading')}
                   </Typography>
 
                   {!isAdmin && isAuthenticated && (
@@ -143,7 +155,7 @@ const HonorsPage = () => {
                       variant="contained"
                       onClick={() => navigate('/honors/request-achievements')}
                     >
-                      Gửi đơn xét thành tựu
+                      {t('honors:submit_achievement_request')}
                     </Button>
                   )}
                   {isAdmin && (
@@ -152,18 +164,18 @@ const HonorsPage = () => {
                       color="primary"
                       onClick={() => navigate('/admin/article')}
                     >
-                      Quản lý vinh danh
+                      {t('honors:manage_honors')}
                     </Button>
                   )}
                 </Box>
 
                 <Typography color="text.secondary">
-                  Vinh danh những cựu sinh viên và sinh viên có thành tựu và đóng góp quan trọng.
+                  {t('honors:description')}
                 </Typography>
 
                 {/* FILTERS */}
                 <DynamicFilterBar
-                  config={FILTERS}
+                  config={getFilters(t)}
                   value={filters}
                   onChange={setFilters}
                 />
@@ -193,7 +205,7 @@ const HonorsPage = () => {
               {alumniCards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Cựu sinh viên tiêu biểu
+                    {t('honors:section_alumni')}
                   </Typography>
 
                   <Box
@@ -225,7 +237,7 @@ const HonorsPage = () => {
               {achievementCards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Thành tựu gần đây
+                    {t('honors:section_achievements')}
                   </Typography>
 
                   <Box
@@ -259,8 +271,8 @@ const HonorsPage = () => {
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Xoá bài viết"
-        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        title={t('honors:delete_dialog_title')}
+        description={t('honors:delete_dialog_desc', { title: deleteTarget?.title })}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         loading={deleting}

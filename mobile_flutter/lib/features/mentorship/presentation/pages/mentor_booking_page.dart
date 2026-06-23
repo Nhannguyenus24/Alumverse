@@ -1,8 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/router/route_names.dart';
@@ -12,10 +12,10 @@ import '../../data/models/mentor_availability.dart';
 import '../../data/repositories/mentorship_repository.dart';
 import '../providers/mentorship_providers.dart';
 
-const _sessionTypes = <(String, String)>[
-  ('CAREER', 'Nghề nghiệp'),
-  ('ACADEMIC', 'Học thuật'),
-  ('SOFT_SKILLS', 'Kỹ năng mềm'),
+List<(String, String)> _sessionTypes(BuildContext context) => [
+  ('CAREER', 'mentorship.type_career'.tr()),
+  ('ACADEMIC', 'mentorship.type_academic'.tr()),
+  ('SOFT_SKILLS', 'mentorship.type_soft_skills'.tr()),
 ];
 
 /// Book a session with a mentor: pick an available slot, fill in the form,
@@ -78,7 +78,7 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
 
   Future<void> _submit() async {
     if (_slot == null) {
-      AppToast.info(context, 'Vui lòng chọn khung giờ');
+      AppToast.info(context, 'mentorship.booking_select_slot'.tr());
       return;
     }
     if (!_formKey.currentState!.validate()) return;
@@ -95,7 +95,7 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
       ref.invalidate(mySessionsProvider);
       ref.invalidate(mentorAvailabilityProvider(widget.memberId));
       if (!mounted) return;
-      AppToast.success(context, 'Đặt lịch thành công!');
+      AppToast.success(context, 'mentorship.booking_success'.tr());
       Navigator.of(context).pop();
     } catch (e) {
       if (!mounted) return;
@@ -108,15 +108,16 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
   @override
   Widget build(BuildContext context) {
     final slotsAsync = ref.watch(mentorAvailabilityProvider(widget.memberId));
+    final sessionTypes = _sessionTypes(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Đặt lịch hẹn')),
+      appBar: AppBar(title: Text('mentorship.book_appointment'.tr())),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _Label('1. Chọn khung giờ'),
+            _Label('1. ${'mentorship.booking_step_slot'.tr()}'),
             const SizedBox(height: 8),
             slotsAsync.when(
               loading: () => const Center(
@@ -132,10 +133,10 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                     .toList()
                   ..sort((a, b) => a.startTime.compareTo(b.startTime));
                 if (allOpen.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 12),
-                    child: Text('Cố vấn chưa mở khung giờ rảnh nào.',
-                        style: TextStyle(color: AppColors.textSecondary)),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('mentorship.no_open_slots'.tr(),
+                        style: const TextStyle(color: AppColors.textSecondary)),
                   );
                 }
 
@@ -171,8 +172,8 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                     children: [
                       rangeRow,
                       const SizedBox(height: 10),
-                      const Text('Không có khung giờ trong khoảng đã chọn.',
-                          style: TextStyle(color: AppColors.textSecondary)),
+                      Text('mentorship.no_slots_in_range'.tr(),
+                          style: const TextStyle(color: AppColors.textSecondary)),
                     ],
                   );
                 }
@@ -239,11 +240,11 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
               },
             ),
             const SizedBox(height: 20),
-            const _Label('2. Loại buổi hẹn'),
+            _Label('2. ${'mentorship.booking_step_type'.tr()}'),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
-              children: _sessionTypes.map((t) {
+              children: sessionTypes.map((t) {
                 final selected = _sessionType == t.$1;
                 return ChoiceChip(
                   label: Text(t.$2),
@@ -253,23 +254,23 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
               }).toList(),
             ),
             if (_sessionType == null)
-              const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text('Vui lòng chọn loại buổi hẹn',
-                    style: TextStyle(color: AppColors.error, fontSize: 12)),
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('mentorship.booking_select_type'.tr(),
+                    style: const TextStyle(color: AppColors.error, fontSize: 12)),
               ),
             const SizedBox(height: 20),
-            const _Label('3. Thông tin'),
+            _Label('3. ${'mentorship.booking_step_info'.tr()}'),
             const SizedBox(height: 8),
             TextFormField(
               controller: _introCtl,
               maxLines: 3,
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Vui lòng giới thiệu ngắn về bạn'
+                  ? 'mentorship.booking_intro_required'.tr()
                   : null,
-              decoration: const InputDecoration(
-                labelText: 'Giới thiệu *',
-                hintText: 'Giới thiệu ngắn về bạn và mục tiêu...',
+              decoration: InputDecoration(
+                labelText: 'mentorship.booking_intro_label'.tr(),
+                hintText: 'mentorship.booking_intro_hint'.tr(),
                 alignLabelWithHint: true,
               ),
             ),
@@ -277,8 +278,8 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
             TextFormField(
               controller: _descCtl,
               maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Nội dung mong muốn trao đổi',
+              decoration: InputDecoration(
+                labelText: 'mentorship.booking_desc_label'.tr(),
                 alignLabelWithHint: true,
               ),
             ),
@@ -296,8 +297,8 @@ class _MentorBookingPageState extends ConsumerState<MentorBookingPage> {
                         width: 20,
                         child: CircularProgressIndicator(
                             strokeWidth: 2, color: Colors.white))
-                    : const Text('Xác nhận đặt lịch',
-                        style: TextStyle(fontSize: 16)),
+                    : Text('mentorship.booking_confirm'.tr(),
+                        style: const TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -337,9 +338,9 @@ class _SlotsError extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Bạn cần xác minh học vấn trước khi đặt lịch cố vấn.',
-              style: TextStyle(fontWeight: FontWeight.w600),
+            Text(
+              'mentorship.verify_required_booking'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
             Align(
@@ -348,19 +349,19 @@ class _SlotsError extends StatelessWidget {
                 onPressed: () =>
                     context.push(RouteNames.organizationRegistration),
                 icon: const Icon(Icons.verified_user_outlined, size: 18),
-                label: const Text('Xác minh học vấn'),
+                label: Text('mentorship.verify_academic'.tr()),
               ),
             ),
           ],
         ),
       );
     }
-    return const Text('Không tải được khung giờ.',
-        style: TextStyle(color: AppColors.textSecondary));
+    return Text('mentorship.slots_load_failed'.tr(),
+        style: const TextStyle(color: AppColors.textSecondary));
   }
 }
 
-/// "Từ ngày / Đến ngày" date-range filter for the slot picker.
+/// Date-range filter for the slot picker.
 class _RangeFilter extends StatelessWidget {
   const _RangeFilter({
     required this.start,
@@ -383,7 +384,7 @@ class _RangeFilter extends StatelessWidget {
       children: [
         Expanded(
           child: _DateButton(
-            label: 'Từ ngày',
+            label: 'mentorship.range_from'.tr(),
             value: start != null ? df.format(start!) : null,
             onTap: onPickStart,
           ),
@@ -391,14 +392,14 @@ class _RangeFilter extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: _DateButton(
-            label: 'Đến ngày',
+            label: 'mentorship.range_to'.tr(),
             value: end != null ? df.format(end!) : null,
             onTap: onPickEnd,
           ),
         ),
         if (onClear != null)
           IconButton(
-            tooltip: 'Xóa lọc',
+            tooltip: 'mentorship.clear_filter'.tr(),
             onPressed: onClear,
             icon: const Icon(Icons.close, size: 20),
           ),
@@ -469,7 +470,10 @@ class _SlotTile extends StatelessWidget {
         ),
         title: Text(
             '${tf.format(slot.startTime)} - ${tf.format(slot.endTime)}'),
-        subtitle: mins > 0 ? Text('$mins phút') : null,
+        subtitle: mins > 0
+            ? Text('mentorship.slot_duration_minutes'.tr(
+                namedArgs: {'count': mins.toString()}))
+            : null,
       ),
     );
   }

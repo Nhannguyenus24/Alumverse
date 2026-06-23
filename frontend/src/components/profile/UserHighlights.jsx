@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Typography,
@@ -18,6 +19,7 @@ import { formatDate } from '../../utils/dateFormatter';
 import { formatCurrency } from '../../utils/numberFormatter';
 
 const UserHighlights = ({ userId, navigate }) => {
+  const { t } = useTranslation(['profile']);
   const articlesQuery = useUserAlumniPosts(userId, 0, 5, { enabled: Boolean(userId) });
   const donationsQuery = useUserDonations(userId, 0, 5, { enabled: Boolean(userId) });
 
@@ -31,14 +33,14 @@ const UserHighlights = ({ userId, navigate }) => {
   return (
     <Box sx={{ mt: 4, pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
       <Typography variant="h4" fontWeight={800} color="primary.main" mb={4} textAlign="center" textTransform="uppercase">
-        Hoạt động nổi bật
+        {t('profile:highlights_title')}
       </Typography>
 
       <Grid container spacing={4}>
         {articles.length > 0 && (
           <Grid item xs={12} md={donations.length > 0 ? 6 : 12}>
             <Typography variant="h6" fontWeight={700} color="text.primary" mb={2} display="flex" alignItems="center" gap={1}>
-              <ArticleIcon color="primary" /> Bài viết đã đăng
+              <ArticleIcon color="primary" /> {t('profile:posted_articles')}
             </Typography>
             <Stack spacing={2}>
               {articles.map((article) => (
@@ -69,7 +71,7 @@ const UserHighlights = ({ userId, navigate }) => {
         {donations.length > 0 && (
           <Grid item xs={12} md={articles.length > 0 ? 6 : 12}>
             <Typography variant="h6" fontWeight={700} color="text.primary" mb={2} display="flex" alignItems="center" gap={1}>
-              <VolunteerActivismIcon color="error" /> Lịch sử quyên góp
+              <VolunteerActivismIcon color="error" /> {t('profile:donation_history')}
             </Typography>
             <Stack spacing={2}>
               {donations.map((donation) => (
@@ -78,7 +80,7 @@ const UserHighlights = ({ userId, navigate }) => {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <Box>
                         <Typography variant="subtitle1" fontWeight={700} color="text.primary">
-                          Quyên góp Quỹ #{donation.fundId}
+                          {t('profile:donation_to_fund', { fundId: donation.fundId })}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                           {formatDate(donation.createdAt)}

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,24 +20,24 @@ class MainScaffold extends StatelessWidget {
   final Widget child;
   final int currentIndex;
 
-  static const _tabs = <_TabSpec>[
-    _TabSpec(RouteNames.home, Icons.home_outlined, Icons.home_rounded, 'Trang chủ'),
-    _TabSpec(RouteNames.forum, Icons.forum_outlined, Icons.forum_rounded, 'Diễn đàn'),
-    _TabSpec(RouteNames.mentorship, Icons.school_outlined, Icons.school_rounded, 'Cố vấn'),
-    _TabSpec(RouteNames.events, Icons.event_outlined, Icons.event_rounded, 'Sự kiện'),
+  static const _tabSpecs = <_TabSpec>[
+    _TabSpec(RouteNames.home, Icons.home_outlined, Icons.home_rounded, 'nav.home'),
+    _TabSpec(RouteNames.forum, Icons.forum_outlined, Icons.forum_rounded, 'nav.forum'),
+    _TabSpec(RouteNames.mentorship, Icons.school_outlined, Icons.school_rounded, 'nav.mentorship'),
+    _TabSpec(RouteNames.events, Icons.event_outlined, Icons.event_rounded, 'nav.events'),
     _TabSpec(RouteNames.chat, Icons.chat_bubble_outline_rounded,
-        Icons.chat_bubble_rounded, 'Tin nhắn'),
+        Icons.chat_bubble_rounded, 'nav.messages'),
   ];
 
   /// Whether one of the bottom-nav tabs is the current screen. Screens opened
   /// outside the tab set (e.g. profile from the header) pass a negative index
   /// so no tab is highlighted.
   bool get _hasSelectedTab =>
-      currentIndex >= 0 && currentIndex < _tabs.length;
+      currentIndex >= 0 && currentIndex < _tabSpecs.length;
 
   void _onTap(BuildContext context, int index) {
     if (index == currentIndex) return;
-    context.go(_tabs[index].route);
+    context.go(_tabSpecs[index].route);
   }
 
   @override
@@ -77,13 +78,13 @@ class MainScaffold extends StatelessWidget {
           onDestinationSelected: (i) => _onTap(context, i),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           destinations: [
-            for (final t in _tabs)
+            for (final t in _tabSpecs)
               NavigationDestination(
                 icon: Icon(t.icon),
                 // When no tab is current, keep the outline icon even on the
                 // fallback index 0 so nothing looks selected.
                 selectedIcon: Icon(_hasSelectedTab ? t.activeIcon : t.icon),
-                label: t.label,
+                label: t.labelKey.tr(),
               ),
           ],
         ),
@@ -96,6 +97,6 @@ class _TabSpec {
   final String route;
   final IconData icon;
   final IconData activeIcon;
-  final String label;
-  const _TabSpec(this.route, this.icon, this.activeIcon, this.label);
+  final String labelKey;
+  const _TabSpec(this.route, this.icon, this.activeIcon, this.labelKey);
 }

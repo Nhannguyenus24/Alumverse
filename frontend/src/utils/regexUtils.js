@@ -18,13 +18,14 @@ export const VIETNAM_PHONE_REGEX = /^0[35789]\d{8}$/;
 /**
  * Validate a Vietnamese phone string. Returns an error message or null.
  * Used outside zod (e.g. plain-state forms like ContactPage).
+ * Pass `t` as the third argument for i18n error messages.
  */
-export const validateVietnamPhone = (value, { optional = false } = {}) => {
+export const validateVietnamPhone = (value, { optional = false } = {}, t) => {
   const v = (value ?? '').trim();
-  if (!v) return optional ? null : 'Số điện thoại không được để trống';
-  if (!/^\d+$/.test(v)) return 'Số điện thoại chỉ gồm chữ số';
-  if (v.length !== 10) return 'Số điện thoại phải có đúng 10 chữ số';
-  if (!VIETNAM_PHONE_REGEX.test(v)) return 'Số điện thoại không hợp lệ (đầu số Việt Nam)';
+  if (!v) return optional ? null : (t ? t('auth:phone_required') : 'Số điện thoại không được để trống');
+  if (!/^\d+$/.test(v)) return t ? t('auth:phone_digits_only') : 'Số điện thoại chỉ gồm chữ số';
+  if (v.length !== 10) return t ? t('auth:phone_length') : 'Số điện thoại phải có đúng 10 chữ số';
+  if (!VIETNAM_PHONE_REGEX.test(v)) return t ? t('auth:phone_invalid') : 'Số điện thoại không hợp lệ (đầu số Việt Nam)';
   return null;
 };
 
@@ -34,77 +35,95 @@ export const validateVietnamPhone = (value, { optional = false } = {}) => {
  */
 
 /** Login: backend LoginRequest — email, password */
-export const loginSchema = z.object({
-  email: z.string().min(1, "Email hoặc mật khẩu không đúng"),
-  password: z.string().min(1, "Email hoặc mật khẩu không đúng"),
+export const getLoginSchema = (t) => z.object({
+  email: z.string().min(1, t ? t('auth:login_invalid') : "Email hoặc mật khẩu không đúng"),
+  password: z.string().min(1, t ? t('auth:login_invalid') : "Email hoặc mật khẩu không đúng"),
   rememberMe: z.boolean().optional(),
-  recaptchaToken: z.string().min(1, "Vui lòng xác nhận bạn không phải là người máy"),
+  recaptchaToken: z.string().min(1, t ? t('auth:captcha_required') : "Vui lòng xác nhận bạn không phải là người máy"),
 });
 
+/** @deprecated Use getLoginSchema(t) instead */
+export const loginSchema = getLoginSchema(null);
+
 /** Register: backend RegisterRequest — email, studentId, fullName, password; UI: studentId, enrollmentYear (bắt buộc) */
-export const registerSchema = z
+export const getRegisterSchema = (t) => z
   .object({
     fullName: z
       .string()
-      .min(1, 'Họ và tên là bắt buộc')
-      .min(2, 'Họ và tên từ 2–100 ký tự')
-      .max(100, 'Họ và tên từ 2–100 ký tự'),
+      .min(1, t ? t('auth:fullname_required') : 'Họ và tên là bắt buộc')
+      .min(2, t ? t('auth:fullname_length') : 'Họ và tên từ 2–100 ký tự')
+      .max(100, t ? t('auth:fullname_length') : 'Họ và tên từ 2–100 ký tự'),
     studentId: z
       .string()
-      .min(1, 'Mã số sinh viên là bắt buộc')
-      .min(3, 'Mã số sinh viên từ 3–50 ký tự')
-      .max(50, 'Mã số sinh viên từ 3–50 ký tự')
-      .regex(STUDENT_ID_REGEX, 'Mã số sinh viên chỉ được chứa chữ số'),
-    enrollmentYear: z.string().min(1, 'Vui lòng chọn năm nhập học'),
-    email: z.email("Email là bắt buộc"),
+      .min(1, t ? t('auth:student_id_required') : 'Mã số sinh viên là bắt buộc')
+      .min(3, t ? t('auth:student_id_length') : 'Mã số sinh viên từ 3–50 ký tự')
+      .max(50, t ? t('auth:student_id_length') : 'Mã số sinh viên từ 3–50 ký tự')
+      .regex(STUDENT_ID_REGEX, t ? t('auth:student_id_digits_only') : 'Mã số sinh viên chỉ được chứa chữ số'),
+    enrollmentYear: z.string().min(1, t ? t('auth:enrollment_year_required') : 'Vui lòng chọn năm nhập học'),
+    email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
     password: z
       .string()
-      .min(1, 'Mật khẩu là bắt buộc')
-      .min(8, 'Mật khẩu từ 8–100 ký tự')
-      .max(100, 'Mật khẩu từ 8–100 ký tự')
-      .regex(PASSWORD_REGEX, 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
-    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu'),
+      .min(1, t ? t('auth:password_required') : 'Mật khẩu là bắt buộc')
+      .min(8, t ? t('auth:password_length') : 'Mật khẩu từ 8–100 ký tự')
+      .max(100, t ? t('auth:password_length') : 'Mật khẩu từ 8–100 ký tự')
+      .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
+    confirmPassword: z.string().min(1, t ? t('auth:confirm_password_required') : 'Vui lòng nhập lại mật khẩu'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Mật khẩu không trùng khớp',
+    message: t ? t('auth:passwords_not_match') : 'Mật khẩu không trùng khớp',
     path: ['confirmPassword'],
   });
 
+/** @deprecated Use getRegisterSchema(t) instead */
+export const registerSchema = getRegisterSchema(null);
+
 /** Send OTP: backend SendOtpRequest — email (forgot password / resend code) */
-export const sendOtpSchema = z.object({
-  email: z.email("Email là bắt buộc"),
+export const getSendOtpSchema = (t) => z.object({
+  email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
 });
+
+/** @deprecated Use getSendOtpSchema(t) instead */
+export const sendOtpSchema = getSendOtpSchema(null);
 
 /** Verify OTP: backend VerifyOtpRequest — email, otp */
-export const verifyOtpSchema = z.object({
-  email: z.email("Email là bắt buộc"),
-  otp: z.string().min(1, 'Mã OTP là bắt buộc').regex(OTP_REGEX, 'Mã OTP phải là 6 chữ số'),
+export const getVerifyOtpSchema = (t) => z.object({
+  email: z.email(t ? t('auth:email_required') : "Email là bắt buộc"),
+  otp: z.string().min(1, t ? t('auth:otp_required') : 'Mã OTP là bắt buộc').regex(OTP_REGEX, t ? t('auth:otp_format') : 'Mã OTP phải là 6 chữ số'),
 });
 
+/** @deprecated Use getVerifyOtpSchema(t) instead */
+export const verifyOtpSchema = getVerifyOtpSchema(null);
+
 /** Change password: backend ChangePasswordRequest — oldPassword, newPassword (userId from store) */
-export const changePasswordSchema = z.object({
-  oldPassword: z.string().min(1, 'Mật khẩu hiện tại là bắt buộc'),
+export const getChangePasswordSchema = (t) => z.object({
+  oldPassword: z.string().min(1, t ? t('auth:old_password_required') : 'Mật khẩu hiện tại là bắt buộc'),
   newPassword: z
     .string()
-    .min(1, 'Mật khẩu mới là bắt buộc')
-    .min(8, 'Mật khẩu mới từ 8–50 ký tự')
-    .max(50, 'Mật khẩu mới từ 8–50 ký tự')
-    .regex(PASSWORD_REGEX, 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
-  confirmNewPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
+    .min(1, t ? t('auth:new_password_required') : 'Mật khẩu mới là bắt buộc')
+    .min(8, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
+    .max(50, t ? t('auth:new_password_length') : 'Mật khẩu mới từ 8–50 ký tự')
+    .regex(PASSWORD_REGEX, t ? t('auth:password_complexity') : 'Mật khẩu phải có ít nhất một chữ hoa, chữ thường, số và ký tự đặc biệt (@$!%*?&)'),
+  confirmNewPassword: z.string().min(1, t ? t('auth:confirm_new_password_required') : 'Vui lòng nhập lại mật khẩu mới'),
 }).refine((data) => data.newPassword === data.confirmNewPassword, {
-  message: 'Mật khẩu mới không trùng khớp',
+  message: t ? t('auth:new_passwords_not_match') : 'Mật khẩu mới không trùng khớp',
   path: ['confirmNewPassword'],
 });
 
+/** @deprecated Use getChangePasswordSchema(t) instead */
+export const changePasswordSchema = getChangePasswordSchema(null);
+
 // --- Donation Schemas & Utils ---
 
-export const DONATION_SEARCH_OPTIONS = [
-  { value: "name", label: "Tên" },
-  { value: "phone", label: "Số điện thoại" },
-  { value: "address", label: "Địa chỉ" },
-  { value: "message", label: "Thông điệp" },
+export const getDonationSearchOptions = (t) => [
+  { value: "name", label: t ? t('contact:field_name') : "Tên" },
+  { value: "phone", label: t ? t('contact:field_phone') : "Số điện thoại" },
+  { value: "address", label: t ? t('contact:field_address') : "Địa chỉ" },
+  { value: "message", label: t ? t('contact:field_message') : "Thông điệp" },
   { value: "email", label: "Email" },
 ];
+
+/** @deprecated Use getDonationSearchOptions(t) instead */
+export const DONATION_SEARCH_OPTIONS = getDonationSearchOptions(null);
 
 export const DONATION_AVATAR_FALLBACK = "/school_logo/HCMUS_Logo_Main.svg";
 

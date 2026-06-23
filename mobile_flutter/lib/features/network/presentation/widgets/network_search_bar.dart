@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -71,7 +72,7 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
                 Expanded(
                   child: _buildField(
                     controller: _programCtrl,
-                    hint: 'VD: Regular, Advanced…',
+                    hint: 'network.program_filter_hint'.tr(),
                     prefixIcon: Icons.school_outlined,
                     onSubmit: widget.onProgramSubmit ?? (_) {},
                     dense: true,
@@ -81,7 +82,7 @@ class _NetworkSearchBarState extends State<NetworkSearchBar> {
                 Expanded(
                   child: _buildField(
                     controller: _majorCtrl,
-                    hint: 'VD: Computer Science…',
+                    hint: 'network.major_filter_hint'.tr(),
                     prefixIcon: Icons.book_outlined,
                     onSubmit: widget.onMajorSubmit ?? (_) {},
                     dense: true,

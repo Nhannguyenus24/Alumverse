@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../organization/presentation/providers/organization_provider.dart';
@@ -41,7 +42,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final orgId = _organizationId;
     if (orgId == null) {
       state = AsyncError(
-        Exception('Vui lòng chọn tổ chức trước khi đăng nhập'),
+        Exception('auth.select_org_first'.tr()),
         StackTrace.current,
       );
       return;
@@ -64,7 +65,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
     final orgId = _organizationId;
     if (orgId == null) {
       state = AsyncError(
-        Exception('Vui lòng chọn tổ chức trước khi đăng nhập'),
+        Exception('auth.select_org_first'.tr()),
         StackTrace.current,
       );
       return;
@@ -93,7 +94,7 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }) async {
     final orgId = _organizationId;
     if (orgId == null) {
-      throw Exception('Vui lòng chọn tổ chức trước khi đăng ký');
+      throw Exception('auth.select_org_before_register'.tr());
     }
     await _repo.register(
       email: email,
@@ -122,11 +123,11 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   }) async {
     final userId = state.valueOrNull?.user?.id;
     if (userId == null) {
-      throw Exception('Vui lòng đăng nhập để đổi mật khẩu');
+      throw Exception('auth.login_required_change_password'.tr());
     }
     final parsedId = int.tryParse(userId);
     if (parsedId == null) {
-      throw Exception('Tài khoản không hợp lệ');
+      throw Exception('auth.invalid_account'.tr());
     }
     await _repo.changePassword(
       userId: parsedId,

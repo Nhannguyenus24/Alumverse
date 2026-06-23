@@ -4,6 +4,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
+import { useTranslation } from 'react-i18next';
 
 const ForumManageTopicItem = ({
   topic,
@@ -13,6 +14,7 @@ const ForumManageTopicItem = ({
   onDeleteTopic,
   onDeleteBoard,
 }) => {
+  const { t } = useTranslation('forum');
   return (
     <Paper
       elevation={0}
@@ -54,14 +56,14 @@ const ForumManageTopicItem = ({
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>
-          <IconButton size="small" sx={{ color: '#fff' }} aria-label="Sửa chủ đề">
+          <IconButton size="small" sx={{ color: '#fff' }} aria-label={t('edit_topic_aria')}>
             <EditOutlinedIcon fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
             sx={{ color: '#fff' }}
             onClick={() => onDeleteTopic(topic.id)}
-            aria-label="Xóa chủ đề"
+            aria-label={t('delete_topic_aria')}
           >
             <DeleteOutlineOutlinedIcon fontSize="small" />
           </IconButton>
@@ -94,14 +96,14 @@ const ForumManageTopicItem = ({
               )}
             </Box>
             <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <IconButton size="small" sx={{ color: 'text.primary' }} aria-label="Sửa chủ đề con">
+              <IconButton size="small" sx={{ color: 'text.primary' }} aria-label={t('edit_board_aria')}>
                 <EditOutlinedIcon fontSize="small" />
               </IconButton>
               <IconButton
                 size="small"
                 sx={{ color: 'error.main' }}
                 onClick={() => onDeleteBoard(topic.id, board.id)}
-                aria-label="Xóa chủ đề con"
+                aria-label={t('delete_board_aria')}
               >
                 <DeleteOutlineOutlinedIcon fontSize="small" />
               </IconButton>
@@ -128,7 +130,7 @@ const ForumManageTopicItem = ({
             <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
               <TextField
                 fullWidth
-                placeholder="Thêm chủ đề con"
+                placeholder={t('add_subtopic_placeholder')}
                 value={newSubTopicValue ?? ''}
                 onChange={(e) => onNewSubTopicChange(topic.id, e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onAddSubTopic(topic.id)}
@@ -137,7 +139,7 @@ const ForumManageTopicItem = ({
               />
               <TextField
                 fullWidth
-                placeholder="Mô tả chủ đề con"
+                placeholder={t('subtopic_desc_placeholder')}
                 size="small"
                 InputProps={{ sx: { backgroundColor: 'grey.50' } }}
               />
@@ -146,7 +148,7 @@ const ForumManageTopicItem = ({
               size="small"
               onClick={() => onAddSubTopic(topic.id)}
               sx={{ color: 'success.main', flexShrink: 0 }}
-              aria-label="Lưu chủ đề con"
+              aria-label={t('save_subtopic_aria')}
             >
               <SaveIcon sx={{ fontSize: 28 }} />
             </IconButton>

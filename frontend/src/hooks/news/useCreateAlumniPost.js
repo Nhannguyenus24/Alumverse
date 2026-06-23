@@ -18,7 +18,7 @@ export const useCreateAlumniPost = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create alumni post"
       : null;
 
   return { createAlumniPost: mutateAsync, isPending, isError, errorMessage };

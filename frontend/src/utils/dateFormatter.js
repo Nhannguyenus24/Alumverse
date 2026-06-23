@@ -68,32 +68,32 @@ export const formatDateTimeWithSeconds = (value, fallback = '-') => {
   });
 };
 
-export const formatRelativeTimeVi = (value, fallback = '—') => {
+export const formatRelativeTimeVi = (value, fallback = '—', t = null) => {
   const date = toValidDate(value);
   if (!date) return fallback;
 
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Vừa xong';
-  if (diffMins < 60) return `${diffMins} phút trước`;
+  if (diffMins < 1) return t ? t('common:just_now') : 'Vừa xong';
+  if (diffMins < 60) return t ? t('common:minutes_ago', { count: diffMins }) : `${diffMins} phút trước`;
 
   const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours} giờ trước`;
+  if (diffHours < 24) return t ? t('common:hours_ago', { count: diffHours }) : `${diffHours} giờ trước`;
 
   return formatDate(date);
 };
 
-export const formatTimeAgoVi = (value, fallback = '—') => {
+export const formatTimeAgoVi = (value, fallback = '—', t = null) => {
   const date = toValidDate(value);
   if (!date) return fallback;
 
   const now = new Date();
   const diffInSeconds = Math.floor((now - date) / 1000);
-  if (diffInSeconds < 60) return 'Vừa xong';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
-  return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
+  if (diffInSeconds < 60) return t ? t('common:just_now') : 'Vừa xong';
+  if (diffInSeconds < 3600) return t ? t('common:minutes_ago', { count: Math.floor(diffInSeconds / 60) }) : `${Math.floor(diffInSeconds / 60)} phút trước`;
+  if (diffInSeconds < 86400) return t ? t('common:hours_ago', { count: Math.floor(diffInSeconds / 3600) }) : `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+  return t ? t('common:days_ago', { count: Math.floor(diffInSeconds / 86400) }) : `${Math.floor(diffInSeconds / 86400)} ngày trước`;
 };
 
 export const formatDateRange = (start, end, fallback = '') => {

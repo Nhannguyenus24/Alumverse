@@ -18,7 +18,7 @@ export const useCreateJob = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo việc làm"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create job"
       : null;
 
   return { createJob: mutateAsync, isPending, isError, errorMessage };

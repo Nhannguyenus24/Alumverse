@@ -1,8 +1,9 @@
 import React from 'react';
-
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Typography } from '@mui/material';
 
 const AcademicCard = ({ icon: Icon, label, value }) => {
+  const { t } = useTranslation('common');
   return (
     <Box
       sx={{
@@ -35,7 +36,7 @@ const AcademicCard = ({ icon: Icon, label, value }) => {
           variant="body1"
           fontWeight={600}
         >
-          {value || 'Chưa cập nhật'}
+          {value || t('not_updated')}
         </Typography>
       </Stack>
     </Box>

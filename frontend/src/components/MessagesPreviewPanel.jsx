@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -18,6 +19,7 @@ export default function MessagesPreviewPanel({
   queryEnabled = true,
   onContentReady,
 }) {
+  const { t } = useTranslation('network');
   const navigate = useOrgNavigate();
   const { previews, isPending, isError } = useRecentChatPreviews({ enabled: queryEnabled });
 
@@ -52,7 +54,7 @@ export default function MessagesPreviewPanel({
         }}
       >
         <Typography variant="h3" fontWeight={700} sx={{ color: 'primary.main' }}>
-          Tin nhắn
+          {t('conversations')}
         </Typography>
       </Box>
 
@@ -68,7 +70,7 @@ export default function MessagesPreviewPanel({
         {isError && !isPending && (
           <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              Không thể tải tin nhắn.
+              {t('messages_load_error')}
             </Typography>
           </Box>
         )}
@@ -76,7 +78,7 @@ export default function MessagesPreviewPanel({
         {!isPending && !isError && previews.length === 0 && (
           <Box sx={{ px: 2, py: 3, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              Chưa có tin nhắn nào.
+              {t('no_messages_yet')}
             </Typography>
           </Box>
         )}
@@ -149,7 +151,7 @@ export default function MessagesPreviewPanel({
           onClick={goToChat}
           sx={{ fontWeight: 700, textTransform: 'none', py: 1 }}
         >
-          Xem tất cả
+          {t('view_all_messages')}
         </Button>
       </Box>
     </Box>

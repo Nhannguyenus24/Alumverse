@@ -1,9 +1,11 @@
 import { useMemo, useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useOrgNavigate } from '../useOrgNavigate';
 import { useForumCategories } from './useForumCategories';
 
 export const useForumPageLogic = (organizationId) => {
+  const { t } = useTranslation('forum');
   const location = useLocation();
   const navigate = useOrgNavigate();
 
@@ -53,10 +55,10 @@ export const useForumPageLogic = (organizationId) => {
 
   const filters = useMemo(() => {
     if (isPending && !categories?.length) {
-      return [{ id: 'all', label: 'Tất cả' }];
+      return [{ id: 'all', label: t('forum:filter_all') }];
     }
-    return [{ id: 'all', label: 'Tất cả' }, ...parentCategories.map((p) => ({ id: `parent-${p.id}`, label: p.name }))];
-  }, [categories, isPending, parentCategories]);
+    return [{ id: 'all', label: t('filter_all') }, ...parentCategories.map((p) => ({ id: `parent-${p.id}`, label: p.name }))];
+  }, [categories, isPending, parentCategories, t]);
 
   const sections = useMemo(() => {
     return parentCategories.map((parent) => ({

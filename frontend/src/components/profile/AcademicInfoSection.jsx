@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Grid, IconButton, Stack, Typography } from '@mui/material';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -12,18 +13,19 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 import AcademicInfoRowCard from './AcademicInfoRowCard';
 import ProfileSectionTitle from './ProfileSectionTitle';
-import { ACADEMIC_EMPTY_LABEL, buildAcademicRecords } from '../../utils/academicUtils';
+import { buildAcademicRecords } from '../../utils/academicUtils';
 
 const ACADEMIC_FIELD_CONFIG = [
-  { key: 'faculty', label: 'Khoa', icon: AccountBalanceIcon },
-  { key: 'major', label: 'Chuyên ngành', icon: AccountTreeIcon },
-  { key: 'program', label: 'Chương trình', icon: MenuBookIcon },
-  { key: 'startedYear', label: 'Khoá', icon: CalendarMonthIcon },
-  { key: 'graduatedYear', label: 'Năm tốt nghiệp', icon: EventAvailableIcon },
-  { key: 'graduationStatus', label: 'Trạng thái tốt nghiệp', icon: VerifiedIcon },
+  { key: 'faculty', labelKey: 'field_faculty', icon: AccountBalanceIcon },
+  { key: 'major', labelKey: 'field_major', icon: AccountTreeIcon },
+  { key: 'program', labelKey: 'field_program', icon: MenuBookIcon },
+  { key: 'startedYear', labelKey: 'field_started_year', icon: CalendarMonthIcon },
+  { key: 'graduatedYear', labelKey: 'field_graduated_year', icon: EventAvailableIcon },
+  { key: 'graduationStatus', labelKey: 'field_graduation_status', icon: VerifiedIcon },
 ];
 
 const AcademicInfoSection = ({ academicProfile }) => {
+  const { t } = useTranslation(['profile']);
   const records = useMemo(
     () => buildAcademicRecords(academicProfile),
     [academicProfile],
@@ -33,7 +35,7 @@ const AcademicInfoSection = ({ academicProfile }) => {
   const activeRecord = records[safeActiveIndex] ?? records[0] ?? {};
   const hasMultipleRecords = records.length > 1;
   const activeAcademicLabel =
-    activeRecord.program || `Học thuật ${safeActiveIndex + 1}`;
+    activeRecord.program || t('profile:academic_record_label', { index: safeActiveIndex + 1 });
 
   const moveRecord = (direction) => {
     setActiveIndex((current) => {
@@ -54,7 +56,7 @@ const AcademicInfoSection = ({ academicProfile }) => {
         mb={2}
       >
         <ProfileSectionTitle icon={SchoolIcon} sx={{ mb: 0 }}>
-          Thông tin học thuật
+          {t('profile:academic_info')}
         </ProfileSectionTitle>
 
         {hasMultipleRecords ? (
@@ -63,7 +65,7 @@ const AcademicInfoSection = ({ academicProfile }) => {
               size="small"
               type="button"
               disableRipple
-              aria-label="Xem bộ học thuật trước"
+              aria-label={t('profile:prev_academic_record')}
               onClick={() => moveRecord(-1)}
               sx={{
                 color: 'text.secondary',
@@ -86,7 +88,7 @@ const AcademicInfoSection = ({ academicProfile }) => {
               size="small"
               type="button"
               disableRipple
-              aria-label="Xem bộ học thuật tiếp theo"
+              aria-label={t('profile:next_academic_record')}
               onClick={() => moveRecord(1)}
               sx={{
                 color: 'text.secondary',
@@ -107,8 +109,8 @@ const AcademicInfoSection = ({ academicProfile }) => {
           <Grid key={field.key} size={{ xs: 12, sm: 6, md: 4 }}>
             <AcademicInfoRowCard
               icon={field.icon}
-              label={field.label}
-              value={activeRecord[field.key] || ACADEMIC_EMPTY_LABEL}
+              label={t(`profile:${field.labelKey}`)}
+              value={activeRecord[field.key] || t('profile:not_updated')}
             />
           </Grid>
         ))}

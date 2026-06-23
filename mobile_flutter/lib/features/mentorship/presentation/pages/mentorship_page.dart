@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,12 +43,12 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cố vấn'),
+        title: Text('mentorship.title'.tr()),
         actions: [
           TextButton.icon(
             onPressed: () => context.push(RouteNames.mentorshipMyBookings),
             icon: const Icon(Icons.event_note, size: 18),
-            label: const Text('Lịch hẹn'),
+            label: Text('mentorship.appointments'.tr()),
           ),
         ],
       ),
@@ -60,17 +61,18 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'CỐ VẤN',
-              style: TextStyle(
+              'mentorship.title_upper'.tr(),
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w800,
                 fontSize: 28,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Tìm các anh chị Cựu sinh viên để được hỗ trợ trong học tập và công việc.',
-              style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+            Text(
+              'mentorship.desc'.tr(),
+              style: const TextStyle(
+                  color: AppColors.textSecondary, height: 1.5),
             ),
             const SizedBox(height: 12),
             const _BecomeMentorBanner(),
@@ -82,7 +84,7 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _applyKeyword(),
               decoration: InputDecoration(
-                hintText: 'Tìm theo tên, chức danh, công ty...',
+                hintText: 'mentorship.search_hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.arrow_forward),
@@ -106,11 +108,12 @@ class _MentorshipPageState extends ConsumerState<MentorshipPage> {
                   return EmptyView(
                     icon: Icons.person_search_outlined,
                     title: query.keyword.isNotEmpty
-                        ? 'Không tìm thấy cố vấn'
-                        : 'Chưa có cố vấn',
+                        ? 'mentorship.no_mentor_found'.tr()
+                        : 'mentorship.no_mentor'.tr(),
                     message: query.keyword.isNotEmpty
-                        ? 'Không có cố vấn nào khớp "${query.keyword}".'
-                        : 'Hiện chưa có cố vấn nào trong hệ thống.',
+                        ? 'mentorship.no_mentor_keyword'.tr(
+                            namedArgs: {'keyword': query.keyword})
+                        : 'mentorship.no_mentor_desc'.tr(),
                   );
                 }
                 return Column(
@@ -158,7 +161,7 @@ class _BecomeMentorBanner extends ConsumerWidget {
                 child: OutlinedButton.icon(
                   onPressed: () => context.push(RouteNames.mentorAvailability),
                   icon: const Icon(Icons.calendar_month, size: 16),
-                  label: const Text('Lịch rảnh'),
+                  label: Text('mentorship.available_slots'.tr()),
                 ),
               ),
               const SizedBox(width: 8),
@@ -166,7 +169,7 @@ class _BecomeMentorBanner extends ConsumerWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => context.push(RouteNames.mentorDashboard),
                   icon: const Icon(Icons.dashboard, size: 16),
-                  label: const Text('Duyệt yêu cầu'),
+                  label: Text('mentorship.review_requests'.tr()),
                 ),
               ),
             ],
@@ -175,13 +178,15 @@ class _BecomeMentorBanner extends ConsumerWidget {
 
         // Other statuses (PENDING, REJECTED, DRAFT) — show status chip.
         final (label, color) = switch (st) {
-          'PENDING' => ('Hồ sơ cố vấn đang chờ duyệt', AppColors.warning),
-          'REJECTED' => ('Hồ sơ cố vấn bị từ chối — bấm để đăng ký lại', AppColors.error),
-          'DRAFT' => ('Hồ sơ cố vấn (nháp)', AppColors.textSecondary),
-          _ => ('Bạn đã đăng ký làm cố vấn', AppColors.info),
+          'PENDING' => ('mentorship.banner_pending'.tr(), AppColors.warning),
+          'REJECTED' => ('mentorship.banner_rejected'.tr(), AppColors.error),
+          'DRAFT' => ('mentorship.banner_draft'.tr(), AppColors.textSecondary),
+          _ => ('mentorship.banner_registered'.tr(), AppColors.info),
         };
         return GestureDetector(
-          onTap: st == 'REJECTED' ? () => context.push(RouteNames.mentorshipSignup) : null,
+          onTap: st == 'REJECTED'
+              ? () => context.push(RouteNames.mentorshipSignup)
+              : null,
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -211,7 +216,7 @@ class _BecomeMentorBanner extends ConsumerWidget {
       child: OutlinedButton.icon(
         onPressed: () => context.push(RouteNames.mentorshipSignup),
         icon: const Icon(Icons.school_outlined),
-        label: const Text('Trở thành cố vấn'),
+        label: Text('mentorship.become_mentor'.tr()),
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -225,10 +230,10 @@ class _StatsBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const stats = [
-      ('500+', 'cố vấn'),
-      ('2,000+', 'buổi họp'),
-      ('100%', 'alumni xác nhận'),
+    final stats = [
+      ('500+', 'mentorship.stats_mentors'.tr()),
+      ('2,000+', 'mentorship.stats_sessions'.tr()),
+      ('100%', 'mentorship.stats_alumni'.tr()),
     ];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -272,7 +277,7 @@ class _FilterBar extends ConsumerWidget {
       children: [
         Expanded(
           child: _Dropdown(
-            hint: 'Lĩnh vực',
+            hint: 'mentorship.category'.tr(),
             value: query.category,
             options: categories,
             onChanged: (v) => notifier.state = v == null
@@ -283,7 +288,7 @@ class _FilterBar extends ConsumerWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _Dropdown(
-            hint: 'Chủ đề',
+            hint: 'mentorship.topic'.tr(),
             value: query.expertise,
             options: topics,
             onChanged: (v) => notifier.state = v == null
@@ -319,8 +324,10 @@ class _Dropdown extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
       items: [
-        const DropdownMenuItem(value: null, child: Text('Tất cả')),
-        ...options.map((o) => DropdownMenuItem(value: o, child: Text(o, overflow: TextOverflow.ellipsis))),
+        DropdownMenuItem(value: null, child: Text('common.all'.tr())),
+        ...options.map((o) => DropdownMenuItem(
+            value: o,
+            child: Text(o, overflow: TextOverflow.ellipsis))),
       ],
       onChanged: onChanged,
     );
@@ -335,7 +342,8 @@ class _ErrorBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = _messageFrom(error);
-    final needsVerification = _statusFrom(error) == 401 || _statusFrom(error) == 403;
+    final needsVerification =
+        _statusFrom(error) == 401 || _statusFrom(error) == 403;
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Center(
@@ -350,7 +358,7 @@ class _ErrorBox extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message ?? 'Không tải được danh sách cố vấn',
+              message ?? 'mentorship.load_failed'.tr(),
               textAlign: TextAlign.center,
               style: const TextStyle(color: AppColors.textSecondary),
             ),
@@ -360,10 +368,11 @@ class _ErrorBox extends StatelessWidget {
                 onPressed: () =>
                     context.push(RouteNames.organizationRegistration),
                 icon: const Icon(Icons.verified_user_outlined, size: 18),
-                label: const Text('Xác thực tài khoản'),
+                label: Text('mentorship.verify_account'.tr()),
               )
             else
-              TextButton(onPressed: onRetry, child: const Text('Thử lại')),
+              TextButton(
+                  onPressed: onRetry, child: Text('common.retry'.tr())),
           ],
         ),
       ),

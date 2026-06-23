@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,12 +61,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Map<String, bool> get _passwordRules {
     final v = _passCtl.text;
     return {
-      'Tối thiểu 8 ký tự': v.length >= 8,
-      'Ít nhất 1 chữ viết hoa (A-Z)': RegExp(r'[A-Z]').hasMatch(v),
-      'Ít nhất 1 chữ viết thường (a-z)': RegExp(r'[a-z]').hasMatch(v),
-      'Ít nhất 1 chữ số (0-9)': RegExp(r'\d').hasMatch(v),
-      'Ít nhất 1 ký tự đặc biệt (@\$!%*?&)':
-          RegExp(r'[@$!%*?&]').hasMatch(v),
+      'auth.pass_rule_min8'.tr(): v.length >= 8,
+      'auth.pass_rule_upper'.tr(): RegExp(r'[A-Z]').hasMatch(v),
+      'auth.pass_rule_lower'.tr(): RegExp(r'[a-z]').hasMatch(v),
+      'auth.pass_rule_digit'.tr(): RegExp(r'\d').hasMatch(v),
+      'auth.pass_rule_special'.tr(): RegExp(r'[@$!%*?&]').hasMatch(v),
     };
   }
 
@@ -74,7 +74,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedYear == null) {
-      AppToast.info(context, 'Vui lòng chọn năm nhập học');
+      AppToast.info(context, 'auth.select_year_required'.tr());
       return;
     }
 
@@ -98,7 +98,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Đăng ký thất bại';
+          : 'auth.register_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -109,7 +109,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đăng ký'),
+        title: Text('auth.register'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -125,7 +125,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const Center(child: AlumverseLogo(size: 60)),
                 const SizedBox(height: 32),
                 Text(
-                  'Tạo tài khoản mới',
+                  'auth.create_account'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
@@ -135,10 +135,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 24),
                 BlurValidatedField(
                   controller: _fullNameCtl,
-                  validator: (v) => Validators.required(v, field: 'Họ và tên'),
-                  decoration: const InputDecoration(
-                    labelText: 'Họ và tên',
-                    prefixIcon: Icon(Icons.person_outline),
+                  validator: (v) =>
+                      Validators.required(v, field: 'auth.full_name'.tr()),
+                  decoration: InputDecoration(
+                    labelText: 'auth.full_name'.tr(),
+                    prefixIcon: const Icon(Icons.person_outline),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -147,9 +148,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   validator: Validators.studentId,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(
-                    labelText: 'Mã số sinh viên',
-                    prefixIcon: Icon(Icons.badge_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'auth.student_id'.tr(),
+                    prefixIcon: const Icon(Icons.badge_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -159,7 +160,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   initialSelection: _selectedYear,
                   expandedInsets: EdgeInsets.zero,
                   requestFocusOnTap: false,
-                  hintText: 'Năm nhập học',
+                  hintText: 'auth.enrollment_year'.tr(),
                   leadingIcon: const Icon(Icons.calendar_today_outlined),
                   menuHeight: 240, // ~5 rows then scroll
                   textStyle: const TextStyle(fontSize: 16),
@@ -191,9 +192,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   controller: _emailCtl,
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'auth.email'.tr(),
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -203,13 +204,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   obscureText: _obscurePass,
                   validator: Validators.password,
                   decoration: InputDecoration(
-                    labelText: 'Mật khẩu',
+                    labelText: 'auth.password'.tr(),
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePass ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () => setState(() => _obscurePass = !_obscurePass),
+                      onPressed: () =>
+                          setState(() => _obscurePass = !_obscurePass),
                     ),
                   ),
                 ),
@@ -226,13 +228,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 BlurValidatedField(
                   controller: _confirmPassCtl,
                   obscureText: _obscureConfirm,
-                  validator: (v) => Validators.confirmPassword(v, _passCtl.text),
+                  validator: (v) =>
+                      Validators.confirmPassword(v, _passCtl.text),
                   decoration: InputDecoration(
-                    labelText: 'Nhập lại mật khẩu',
+                    labelText: 'auth.repeat_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_clock_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                        _obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
@@ -254,18 +259,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
+                      : Text('common.next'.tr(),
+                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Bạn đã có tài khoản?'),
+                    Text('auth.have_account'.tr()),
                     TextButton(
                       onPressed: () => context.pop(),
-                      child: const Text(
-                        'Đăng nhập ngay!',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      child: Text(
+                        'auth.login_now'.tr(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -297,9 +303,9 @@ class _PasswordRules extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Yêu cầu mật khẩu:',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          Text(
+            'auth.password_rules_title'.tr(),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
           ),
           const SizedBox(height: 6),
           ...rules.entries.map(

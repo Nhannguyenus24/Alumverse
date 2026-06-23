@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -54,13 +55,14 @@ import { useAdminSystemContext } from "../../stores/AdminStore";
 import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
-const publishStatusChip = (isPublished) =>
-  isPublished
-    ? { color: "success", label: "Đã đăng" }
-    : { color: "default", label: "Bản nháp" };
-
 const AdminEventsPage = () => {
+  const { t } = useTranslation(["admin", "common"]);
   const { enqueueSnackbar } = useSnackbar();
+
+  const publishStatusChip = (isPublished) =>
+    isPublished
+      ? { color: "success", label: t("admin:published_chip") }
+      : { color: "default", label: t("admin:draft_chip") };
   const orgNavigate = useOrgNavigate();
   const { stableOrgId } = useAdminSystemContext();
   const {
@@ -95,7 +97,7 @@ const AdminEventsPage = () => {
   }, [debouncedSearch, setSearch]);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Sự kiện', active: true }]);
+    setBreadcrumbs?.([{ label: t('admin:events'), active: true }]);
   }, [setBreadcrumbs]);
 
   const [detailItem, setDetailItem] = useState(null);
@@ -111,14 +113,14 @@ const AdminEventsPage = () => {
 
   const handlePublish = async (event) => {
     const ok = await publishEvent(event.id);
-    enqueueSnackbar(ok ? "Event published." : "Failed to publish event.", {
+    enqueueSnackbar(ok ? t("admin:event_published") : t("admin:event_publish_failed"), {
       variant: ok ? "success" : "error",
     });
   };
 
   const handleUnpublish = async (event) => {
     const ok = await unpublishEvent(event.id);
-    enqueueSnackbar(ok ? "Event unpublished." : "Failed to unpublish event.", {
+    enqueueSnackbar(ok ? t("admin:event_unpublished") : t("admin:event_unpublish_failed"), {
       variant: ok ? "success" : "warning",
     });
   };
@@ -126,7 +128,7 @@ const AdminEventsPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteEvent(deleteTarget.id);
-    enqueueSnackbar(ok ? "Event deleted." : "Failed to delete event.", {
+    enqueueSnackbar(ok ? t("admin:event_deleted") : t("admin:event_delete_failed"), {
       variant: ok ? "success" : "error",
     });
     setDeleteTarget(null);
@@ -135,7 +137,7 @@ const AdminEventsPage = () => {
   const handleEditSubmit = async (payload) => {
     if (!editTarget) return false;
     const ok = await updateEvent(editTarget.id, payload);
-    enqueueSnackbar(ok ? "Event updated." : "Failed to update event.", {
+    enqueueSnackbar(ok ? t("admin:event_updated") : t("admin:event_update_failed"), {
       variant: ok ? "success" : "error",
     });
     return ok;
@@ -146,61 +148,61 @@ const AdminEventsPage = () => {
     ? [
         [
           {
-            label: "Tổng sự kiện",
+            label: t("admin:stats_total_events"),
             value: statistics.totalEvents,
             icon: <EventNoteOutlinedIcon />,
           },
           {
-            label: "Lượt quan tâm",
+            label: t("admin:stats_total_interests"),
             value: statistics.totalInterests,
             icon: <FavoriteBorderOutlinedIcon />,
           },
           {
-            label: "Sự kiện hôm nay",
+            label: t("admin:stats_new_today"),
             value: statistics.newEventsToday,
             icon: <TodayOutlinedIcon />,
           },
           {
-            label: "Đang diễn ra",
+            label: t("admin:stats_ongoing"),
             value: statistics.ongoingEvents,
             icon: <PlayCircleOutlineOutlinedIcon />,
           },
         ],
         [
           {
-            label: "Đã diễn ra",
+            label: t("admin:stats_past"),
             value: statistics.pastEvents,
             icon: <HistoryOutlinedIcon />,
           },
           {
-            label: "Đã công bố",
+            label: t("admin:stats_published"),
             value: statistics.publishedEvents,
             icon: <CampaignOutlinedIcon />,
           },
           {
-            label: "Bản nháp",
+            label: t("admin:stats_draft"),
             value: statistics.unpublishedEvents,
             icon: <DraftsOutlinedIcon />,
           },
           {
-            label: "Sắp tới",
+            label: t("admin:stats_upcoming"),
             value: statistics.upcomingEvents,
             icon: <UpcomingOutlinedIcon />,
           },
         ],
         [
           {
-            label: "Vé đã đăng ký",
+            label: t("admin:stats_registered_tickets"),
             value: statistics.registeredTickets,
             icon: <ConfirmationNumberOutlinedIcon />,
           },
           {
-            label: "Vé đã check-in",
+            label: t("admin:stats_checked_in_tickets"),
             value: statistics.checkedInTickets,
             icon: <HowToRegOutlinedIcon />,
           },
           {
-            label: "Vé đã hủy",
+            label: t("admin:stats_cancelled_tickets"),
             value: statistics.cancelledTickets,
             icon: <EventBusyOutlinedIcon />,
           },
@@ -222,14 +224,14 @@ const AdminEventsPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: "primary.main" }}>
-            Quản lý sự kiện
+            {t("admin:manage_events")}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Danh sách sự kiện, kiểm duyệt và xóa sự kiện trên toàn hệ thống.
+            {t("admin:manage_events_desc")}
           </Typography>
         </Box>
       </Box>
@@ -277,7 +279,7 @@ const AdminEventsPage = () => {
             { id: "id", label: "ID" },
             {
               id: "title",
-              label: "Tiêu đề",
+              label: t("admin:col_title"),
               render: (val) => (
                 <Typography variant="body2" noWrap sx={{ maxWidth: 240 }}>
                   {val}
@@ -286,7 +288,7 @@ const AdminEventsPage = () => {
             },
             {
               id: "organizationId",
-              label: "Tổ chức",
+              label: t("admin:col_organization"),
               render: (val) => (
                 <Typography variant="body2" noWrap sx={{ maxWidth: 180 }}>
                   {orgLabel(val)}
@@ -295,7 +297,7 @@ const AdminEventsPage = () => {
             },
             {
               id: "isPublished",
-              label: "Trạng thái",
+              label: t("admin:col_status"),
               render: (val) => {
                 const chip = publishStatusChip(val);
                 return (
@@ -310,29 +312,29 @@ const AdminEventsPage = () => {
             },
             {
               id: "time",
-              label: "Thời gian",
+              label: t("admin:col_time"),
               render: (_, event) => `${formatDateTime(event.startTime)} - ${formatDateTime(event.endTime)}`,
             },
             {
               id: "maxCapacity",
-              label: "Sức chứa",
+              label: t("admin:col_capacity"),
               align: "right",
               render: (val) => val ?? "-",
             },
             {
               id: "interestedCount",
-              label: "Quan tâm",
+              label: t("admin:col_interested"),
               align: "right",
               render: (val) => val ?? 0,
             },
             {
               id: "createdAt",
-              label: "Ngày tạo",
+              label: t("admin:col_created_at"),
               render: (val) => formatDateTime(val),
             },
             {
               id: "actions",
-              label: "Thao tác",
+              label: t("admin:col_actions"),
               align: "right",
               render: (_, event) => (
                 <Box
@@ -343,7 +345,7 @@ const AdminEventsPage = () => {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip title="Xem">
+                  <Tooltip title={t("common:view_more")}>
                     <IconButton
                       size="small"
                       color="primary"
@@ -352,7 +354,7 @@ const AdminEventsPage = () => {
                       <VisibilityOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Chỉnh sửa">
+                  <Tooltip title={t("common:edit")}>
                     <IconButton
                       size="small"
                       color="primary"
@@ -361,7 +363,7 @@ const AdminEventsPage = () => {
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Tổ chức sự kiện">
+                  <Tooltip title={t("admin:tooltip_organize_event")}>
                     <IconButton
                       size="small"
                       color="primary"
@@ -370,7 +372,7 @@ const AdminEventsPage = () => {
                       <EventAvailableOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Vé & lượt quan tâm">
+                  <Tooltip title={t("admin:tooltip_tickets_interests")}>
                     <IconButton
                       size="small"
                       color="primary"
@@ -380,7 +382,7 @@ const AdminEventsPage = () => {
                     </IconButton>
                   </Tooltip>
                   {event.isPublished ? (
-                    <Tooltip title="Gỡ đăng">
+                    <Tooltip title={t("admin:tooltip_unpublish")}>
                       <IconButton
                         size="small"
                         color="warning"
@@ -390,7 +392,7 @@ const AdminEventsPage = () => {
                       </IconButton>
                     </Tooltip>
                   ) : (
-                    <Tooltip title="Đăng sự kiện">
+                    <Tooltip title={t("admin:tooltip_publish")}>
                       <IconButton
                         size="small"
                         color="success"
@@ -400,7 +402,7 @@ const AdminEventsPage = () => {
                       </IconButton>
                     </Tooltip>
                   )}
-                  <Tooltip title="Xóa">
+                  <Tooltip title={t("common:delete")}>
                     <IconButton
                       size="small"
                       color="error"
@@ -427,14 +429,14 @@ const AdminEventsPage = () => {
           setPage(0);
         }}
         searchValue={searchTerm}
-        searchPlaceholder="Tiêu đề hoặc mô tả..."
+        searchPlaceholder={t("admin:search_event_placeholder")}
         onRowClick={(event) => setDetailItem(event)}
         filters={
           <Stack direction="row" spacing={1}>
             <TextField
               select
               size="small"
-              label="Trạng thái"
+              label={t("admin:col_status")}
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -451,7 +453,7 @@ const AdminEventsPage = () => {
             <TextField
               select
               size="small"
-              label="Sắp xếp"
+              label={t("admin:filter_sort_label")}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               sx={{ minWidth: 140 }}
@@ -465,13 +467,13 @@ const AdminEventsPage = () => {
             <TextField
               select
               size="small"
-              label="Thứ tự"
+              label={t("admin:filter_order_label")}
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
               sx={{ minWidth: 110 }}
             >
-              <MenuItem value="DESC">Giảm dần</MenuItem>
-              <MenuItem value="ASC">Tăng dần</MenuItem>
+              <MenuItem value="DESC">{t("admin:order_desc")}</MenuItem>
+              <MenuItem value="ASC">{t("admin:order_asc")}</MenuItem>
             </TextField>
           </Stack>
         }
@@ -484,7 +486,7 @@ const AdminEventsPage = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
-          Chi tiết sự kiện
+          {t("admin:event_detail_title")}
         </DialogTitle>
         {detailItem ? (
           <DialogContent
@@ -494,47 +496,47 @@ const AdminEventsPage = () => {
               <strong>ID:</strong> {detailItem.id}
             </Typography>
             <Typography variant="body2">
-              <strong>Tiêu đề:</strong> {detailItem.title}
+              <strong>{t("admin:col_title")}:</strong> {detailItem.title}
             </Typography>
             <Typography variant="body2">
-              <strong>Tổ chức:</strong>{" "}
+              <strong>{t("admin:col_organization")}:</strong>{" "}
               {orgLabel(detailItem.organizationId)}
             </Typography>
             <Typography variant="body2">
-              <strong>ID thành viên tạo:</strong>{" "}
+              <strong>{t("admin:event_detail_creator")}:</strong>{" "}
               {detailItem.creatorMemberId ?? "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Trạng thái:</strong>{" "}
-              {detailItem.isPublished ? "Đã đăng" : "Bản nháp"}
+              <strong>{t("admin:col_status")}:</strong>{" "}
+              {detailItem.isPublished ? t("admin:published_chip") : t("admin:draft_chip")}
             </Typography>
             <Typography variant="body2">
-              <strong>Địa điểm:</strong> {detailItem.location || "-"}
+              <strong>{t("admin:event_field_location")}:</strong> {detailItem.location || "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Bắt đầu:</strong> {formatDateTime(detailItem.startTime)}
+              <strong>{t("admin:event_detail_start")}:</strong> {formatDateTime(detailItem.startTime)}
             </Typography>
             <Typography variant="body2">
-              <strong>Kết thúc:</strong> {formatDateTime(detailItem.endTime)}
+              <strong>{t("admin:event_detail_end")}:</strong> {formatDateTime(detailItem.endTime)}
             </Typography>
             <Typography variant="body2">
-              <strong>Thời gian đăng ký:</strong>{" "}
+              <strong>{t("admin:event_detail_registration_time")}:</strong>{" "}
               {formatDateTime(detailItem.registrationStartAt)} -{" "}
               {formatDateTime(detailItem.registrationEndAt)}
             </Typography>
             <Typography variant="body2">
-              <strong>Sức chứa:</strong> {detailItem.maxCapacity ?? "-"}
+              <strong>{t("admin:col_capacity")}:</strong> {detailItem.maxCapacity ?? "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Quan tâm:</strong> {detailItem.interestedCount ?? 0}
+              <strong>{t("admin:col_interested")}:</strong> {detailItem.interestedCount ?? 0}
             </Typography>
             <Typography variant="body2">
-              <strong>Ngày tạo:</strong>{" "}
+              <strong>{t("admin:col_created_at")}:</strong>{" "}
               {formatDateTime(detailItem.createdAt)}
             </Typography>
             {detailItem.description ? (
               <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>Mô tả:</strong> {detailItem.description}
+                <strong>{t("admin:event_detail_description")}:</strong> {detailItem.description}
               </Typography>
             ) : null}
           </DialogContent>
@@ -549,7 +551,7 @@ const AdminEventsPage = () => {
             }}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Vé & lượt quan tâm
+            {t("admin:btn_tickets_interests")}
           </Button>
           <Button
             variant="outlined"
@@ -560,14 +562,14 @@ const AdminEventsPage = () => {
             }}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Chỉnh sửa
+            {t("common:edit")}
           </Button>
           <Button
             variant="contained"
             onClick={() => setDetailItem(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Đóng
+            {t("common:close")}
           </Button>
         </DialogActions>
       </Dialog>
@@ -587,10 +589,10 @@ const AdminEventsPage = () => {
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Xóa sự kiện"
+        title={t("admin:delete_event_title")}
         description={
           deleteTarget
-            ? `Xóa vĩnh viễn sự kiện "${deleteTarget.title}" (#${deleteTarget.id})?`
+            ? t("admin:delete_event_desc", { title: deleteTarget.title, id: deleteTarget.id })
             : ""
         }
         onClose={() => setDeleteTarget(null)}

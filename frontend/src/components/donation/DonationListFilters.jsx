@@ -1,6 +1,7 @@
 import { InputAdornment, MenuItem, Stack, TextField } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { DONATION_SEARCH_OPTIONS } from "../../utils/regexUtils";
+import { useTranslation } from "react-i18next";
+import { getDonationSearchOptions } from "../../utils/regexUtils";
 
 export default function DonationListFilters({
   searchBy,
@@ -9,6 +10,9 @@ export default function DonationListFilters({
   onSearchInputChange,
   onSearchSubmit,
 }) {
+  const { t } = useTranslation(['donation', 'contact']);
+  const DONATION_SEARCH_OPTIONS = getDonationSearchOptions(t);
+
   return (
     <Stack direction={{ xs: "column", md: "row" }} spacing={1.2} sx={{ mb: 2.5 }}>
       <TextField
@@ -36,7 +40,7 @@ export default function DonationListFilters({
       </TextField>
       <TextField
         fullWidth
-        placeholder="Tìm kiếm"
+        placeholder={t('donation:search_placeholder_input')}
         value={searchInput}
         onChange={(event) => onSearchInputChange(event.target.value)}
         onKeyDown={(event) => {

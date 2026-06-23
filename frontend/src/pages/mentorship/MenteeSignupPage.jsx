@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
@@ -21,23 +22,6 @@ import { useMyOrganizationMember } from '../../hooks/useMyOrganizationMember';
 import { useMyMenteeProfile, useSaveMenteeProfile } from '../../hooks/mentorship/useMyMenteeProfile';
 
 const MIN_VERIFICATION_LEVEL = 2;
-
-const ACADEMIC_YEAR_OPTIONS = [
-  'Năm 1',
-  'Năm 2',
-  'Năm 3',
-  'Năm 4',
-  'Năm 5+',
-  'Đã tốt nghiệp',
-];
-
-const COMMITMENTS = [
-  'Cung cấp thông tin hồ sơ trung thực, rõ ràng và phù hợp với mục đích nhận cố vấn.',
-  'Tôn trọng thời gian của cố vấn, phản hồi sớm và báo trước nếu cần hủy hoặc đổi lịch hẹn.',
-  'Bảo mật các thông tin cá nhân hoặc nội dung nhạy cảm được chia sẻ trong quá trình trao đổi.',
-  'Không sử dụng ngôn từ, hành vi quấy rối, phân biệt đối xử, xúc phạm hoặc vi phạm pháp luật.',
-  'Cho phép hệ thống lưu lại lịch sử buổi hẹn và đánh giá để nâng cao chất lượng chương trình.',
-];
 
 const initialValues = {
   mentoringGoal: '',
@@ -49,6 +33,7 @@ const initialValues = {
 
 const MenteeSignupPage = () => {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('mentorship');
   const orgMemberQuery = useMyOrganizationMember();
   const existingQuery = useMyMenteeProfile();
   const saveMutation = useSaveMenteeProfile();
@@ -56,6 +41,23 @@ const MenteeSignupPage = () => {
   const [values, setValues] = useState(initialValues);
   const [hydratedKey, setHydratedKey] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  const ACADEMIC_YEAR_OPTIONS = [
+    t('mentee_signup_academic_year_1'),
+    t('mentee_signup_academic_year_2'),
+    t('mentee_signup_academic_year_3'),
+    t('mentee_signup_academic_year_4'),
+    t('mentee_signup_academic_year_5plus'),
+    t('mentee_signup_academic_year_graduated'),
+  ];
+
+  const COMMITMENTS = [
+    t('mentee_signup_commitment_1'),
+    t('mentee_signup_commitment_2'),
+    t('mentee_signup_commitment_3'),
+    t('mentee_signup_commitment_4'),
+    t('mentee_signup_commitment_5'),
+  ];
 
   const hydratedValues = useMemo(() => {
     const p = existingQuery.data;
@@ -105,7 +107,7 @@ const MenteeSignupPage = () => {
 
   if (orgMemberQuery.isFetching) {
     return (
-      <Page title="Hoàn thiện hồ sơ Mentorship">
+      <Page title={t('mentee_signup_page_title')}>
         <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
           <CircularProgress />
         </Container>
@@ -119,7 +121,7 @@ const MenteeSignupPage = () => {
   if (!isVerified) {
     const needsEmail = verificationLevel < 1;
     return (
-      <Page title="Hoàn thiện hồ sơ Mentorship">
+      <Page title={t('mentee_signup_page_title')}>
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -127,16 +129,16 @@ const MenteeSignupPage = () => {
             sx={{ mb: 2, textTransform: 'none' }}
             color="inherit"
           >
-            Về trang Cố vấn
+            {t('mentee_signup_go_back')}
           </Button>
           <Alert severity="warning">
             <Typography fontWeight={700} mb={0.5}>
-              Bạn chưa đủ điều kiện sử dụng tính năng Mentorship
+              {t('mentee_signup_not_eligible_title')}
             </Typography>
             <Typography variant="body2">
               {needsEmail
-                ? 'Vui lòng xác thực email để tiếp tục sử dụng các tính năng cộng đồng.'
-                : 'Bạn cần xác minh thông tin học vấn tại khoa để sử dụng tính năng này.'}
+                ? t('mentee_signup_not_eligible_email')
+                : t('mentee_signup_not_eligible_academic')}
             </Typography>
           </Alert>
         </Container>
@@ -147,7 +149,7 @@ const MenteeSignupPage = () => {
   const hasExisting = Boolean(existingQuery.data);
 
   return (
-    <Page title="Hoàn thiện hồ sơ Mentorship">
+    <Page title={t('mentee_signup_page_title')}>
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -155,19 +157,19 @@ const MenteeSignupPage = () => {
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
-          Về trang Cố vấn
+          {t('mentee_signup_go_back')}
         </Button>
 
         <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
-          {hasExisting ? 'CẬP NHẬT HỒ SƠ MENTORSHIP' : 'HOÀN THIỆN HỒ SƠ MENTORSHIP'}
+          {hasExisting ? t('mentee_signup_update_heading') : t('mentee_signup_create_heading')}
         </Typography>
         <Typography color="text.secondary" mb={3}>
-          Cho mentor biết bạn đang ở đâu trên hành trình và muốn được hỗ trợ điều gì.
+          {t('mentee_signup_subtitle')}
         </Typography>
 
         {success && (
           <Alert severity="success" sx={{ mb: 2 }}>
-            Đã lưu hồ sơ Mentee. Đang quay lại trang Cố vấn...
+            {t('mentee_signup_saved_alert')}
           </Alert>
         )}
 
@@ -180,8 +182,8 @@ const MenteeSignupPage = () => {
         <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 2 }}>
           <Stack spacing={2.5}>
             <TextField
-              label="Mục tiêu mentoring"
-              placeholder="Bạn muốn được hỗ trợ điều gì trong buổi mentoring?"
+              label={t('mentee_signup_goal_label')}
+              placeholder={t('mentee_signup_goal_placeholder')}
               value={values.mentoringGoal}
               onChange={setField('mentoringGoal')}
               multiline
@@ -192,14 +194,14 @@ const MenteeSignupPage = () => {
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <TextField
-                label="Ngành học"
+                label={t('mentee_signup_major_label')}
                 value={values.major}
                 onChange={setField('major')}
                 required
                 fullWidth
               />
               <TextField
-                label="Năm học"
+                label={t('mentee_signup_year_label')}
                 value={values.academicYear}
                 onChange={setField('academicYear')}
                 select
@@ -215,26 +217,26 @@ const MenteeSignupPage = () => {
             </Stack>
 
             <TextField
-              label="Lĩnh vực quan tâm"
-              placeholder="VD: Backend, AI, Career, Startup..."
+              label={t('mentee_signup_interests_label')}
+              placeholder={t('mentee_signup_interests_placeholder')}
               value={values.interests}
               onChange={setField('interests')}
               multiline
               minRows={2}
               fullWidth
-              helperText="Cách nhau bằng dấu phẩy"
+              helperText={t('mentee_signup_interests_helper')}
             />
 
             <Box>
               <Typography fontWeight={700} mb={1}>
-                Điều khoản sử dụng tính năng Mentorship
+                {t('mentee_signup_terms_title')}
               </Typography>
               <Paper
                 variant="outlined"
                 sx={{ p: 2, maxHeight: 220, overflowY: 'auto', bgcolor: 'background.default' }}
               >
                 <Typography variant="body2" color="text.secondary" mb={1}>
-                  Khi sử dụng tính năng Mentorship, người dùng đồng ý:
+                  {t('mentee_signup_terms_agree_header')}
                 </Typography>
                 <Box component="ol" sx={{ pl: 3, m: 0 }}>
                   {COMMITMENTS.map((c, i) => (
@@ -254,7 +256,7 @@ const MenteeSignupPage = () => {
                     }
                   />
                 }
-                label="Tôi đã đọc và đồng ý với các điều khoản trên"
+                label={t('mentee_signup_terms_accept_label')}
               />
             </Box>
           </Stack>
@@ -271,7 +273,7 @@ const MenteeSignupPage = () => {
             color="inherit"
             onClick={() => navigate('/development/mentorship')}
           >
-            Hủy
+            {t('mentee_signup_cancel')}
           </Button>
           <Button
             variant="contained"
@@ -279,10 +281,10 @@ const MenteeSignupPage = () => {
             onClick={handleSubmit}
           >
             {saveMutation.isPending
-              ? 'Đang lưu...'
+              ? t('mentee_signup_saving')
               : hasExisting
-                ? 'Cập nhật hồ sơ'
-                : 'Hoàn thành'}
+                ? t('mentee_signup_update_btn')
+                : t('mentee_signup_complete_btn')}
           </Button>
         </Stack>
       </Container>

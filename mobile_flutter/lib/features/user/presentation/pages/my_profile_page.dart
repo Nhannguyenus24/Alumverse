@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +12,7 @@ import '../../data/models/user_profile.dart';
 import '../providers/user_providers.dart';
 
 /// My profile (view) — native port of the web `MyProfilePage`. Shows avatar,
-/// name, student id, email, bio and basic info. "Chỉnh sửa" opens the edit page.
+/// name, student id, email, bio and basic info. Edit button opens the edit page.
 class MyProfilePage extends ConsumerWidget {
   const MyProfilePage({super.key});
 
@@ -24,11 +25,11 @@ class MyProfilePage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Hồ sơ của tôi'),
+        title: Text('profile.my_profile'.tr()),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Chỉnh sửa',
+            tooltip: 'common.edit'.tr(),
             onPressed: () => context.push(RouteNames.profileEdit),
           ),
         ],
@@ -41,7 +42,7 @@ class MyProfilePage extends ConsumerWidget {
         child: async.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (_, __) => ErrorView(
-            message: 'Không tải được hồ sơ',
+            message: 'profile.load_failed'.tr(),
             onRetry: () => ref.invalidate(myProfileProvider),
           ),
           data: (p) => _ProfileView(profile: p, showVerifier: isVerifier),
@@ -78,14 +79,15 @@ class _ProfileView extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                profile.fullName ?? 'Chưa cập nhật',
+                profile.fullName ?? 'profile.not_updated'.tr(),
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               if (profile.studentId != null && profile.studentId!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
-                    'MSSV: ${profile.studentId}',
+                    'profile.student_id_label'
+                        .tr(namedArgs: {'id': profile.studentId!}),
                     style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
@@ -94,7 +96,7 @@ class _ProfileView extends StatelessWidget {
                 onPressed: () =>
                     context.push(RouteNames.organizationRegistration),
                 icon: const Icon(Icons.verified_user_outlined, size: 18),
-                label: const Text('Xác minh học vấn'),
+                label: Text('profile.verify_education'.tr()),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primary,
                   side: const BorderSide(color: AppColors.primary),
@@ -108,46 +110,49 @@ class _ProfileView extends StatelessWidget {
         ),
         const SizedBox(height: 24),
         if (profile.bio != null && profile.bio!.isNotEmpty) ...[
-          const _SectionTitle('Giới thiệu'),
+          _SectionTitle('profile.bio'.tr()),
           Text(profile.bio!, style: const TextStyle(height: 1.6)),
           const SizedBox(height: 20),
         ],
-        const _SectionTitle('Thông tin cơ bản'),
-        _InfoRow(icon: Icons.email_outlined, label: 'Email', value: profile.email),
+        _SectionTitle('profile.basic_info'.tr()),
+        _InfoRow(
+            icon: Icons.email_outlined,
+            label: 'profile.email'.tr(),
+            value: profile.email),
         if (profile.phone != null && profile.phone!.isNotEmpty)
           _InfoRow(
               icon: Icons.phone_outlined,
-              label: 'Số điện thoại',
+              label: 'profile.phone'.tr(),
               value: profile.phone!),
         if (profile.gender != null && profile.gender!.isNotEmpty)
           _InfoRow(
               icon: Icons.wc_outlined,
-              label: 'Giới tính',
+              label: 'profile.gender'.tr(),
               value: _genderLabel(profile.gender!)),
         if (profile.dob != null && profile.dob!.isNotEmpty)
           _InfoRow(
               icon: Icons.cake_outlined,
-              label: 'Ngày sinh',
+              label: 'profile.dob'.tr(),
               value: profile.dob!),
         const SizedBox(height: 20),
-        const _SectionTitle('Hoạt động'),
+        _SectionTitle('profile.activities'.tr()),
         _ActivityTile(
           icon: Icons.confirmation_number_outlined,
-          title: 'Vé của tôi',
+          title: 'event.my_tickets'.tr(),
           onTap: () => context.push(RouteNames.myTickets),
         ),
         if (showVerifier) ...[
           const SizedBox(height: 10),
           _ActivityTile(
             icon: Icons.verified_user_outlined,
-            title: 'Xác minh cựu sinh viên',
+            title: 'profile.verify_alumni'.tr(),
             onTap: () => context.push(RouteNames.alumniVerification),
           ),
         ],
         const SizedBox(height: 10),
         _ActivityTile(
           icon: Icons.volunteer_activism_outlined,
-          title: 'Lịch sử đóng góp',
+          title: 'donation.my_donations'.tr(),
           onTap: () => context.push(RouteNames.fundraisingMyDonations),
         ),
       ],
@@ -157,11 +162,11 @@ class _ProfileView extends StatelessWidget {
   String _genderLabel(String g) {
     switch (g.toLowerCase()) {
       case 'male':
-        return 'Nam';
+        return 'profile.gender_male'.tr();
       case 'female':
-        return 'Nữ';
+        return 'profile.gender_female'.tr();
       default:
-        return 'Khác';
+        return 'profile.gender_other'.tr();
     }
   }
 }

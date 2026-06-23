@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 
-import { ACTIVITIES_SIDEBAR } from '../../constants/activitiesNav';
+import { getActivitiesSidebar } from '../../constants/activitiesNav';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 
@@ -22,30 +23,30 @@ import { useSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 
 
-const FILTERS = [
+const getNewsFilters = (t) => [
   {
     type: 'dropdown',
     key: 'type',
-    label: 'Chủ đề',
+    label: t('article:filter_topic'),
     multiple: true,
     options: [
-      'Học thuật',
-      'Sinh viên',
-      'Sự kiện trường',
-      'Cộng đồng',
-      'Thông báo',
+      t('article:opt_academic'),
+      t('article:opt_student'),
+      t('article:opt_school_event'),
+      t('article:opt_community'),
+      t('article:opt_announcement'),
     ],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Ngày',
+    label: t('article:filter_date'),
   },
   {
     type: 'topics',
     key: 'topics',
-    label: 'Chủ đề',
-    options: ['Thịnh hành', 'Mới nhất', 'Quan tâm'],
+    label: t('article:filter_topic'),
+    options: [t('article:opt_trending'), t('article:opt_newest'), t('article:opt_interested')],
   },
 ];
 
@@ -58,6 +59,7 @@ const CHANNEL_TO_ENDPOINT = {
 };
 
 const ActivitiesPage = () => {
+  const { t } = useTranslation(['nav', 'article']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -95,9 +97,9 @@ const ActivitiesPage = () => {
       const endpoint = CHANNEL_TO_ENDPOINT[deleteTarget.channel];
       if (endpoint) await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
       queryClient.invalidateQueries({ queryKey: ['publishedNews'] });
-      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+      enqueueSnackbar(t('article:delete_success'), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('article:delete_failed'), { variant: 'error' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -105,7 +107,7 @@ const ActivitiesPage = () => {
   };
 
   return (
-    <Page title="Tin tức">
+    <Page title={t('article:news')}>
       <Container
         maxWidth={false}
         disableGutters
@@ -115,7 +117,7 @@ const ActivitiesPage = () => {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={ACTIVITIES_SIDEBAR} />
+              <Sidebar items={getActivitiesSidebar(t)} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -137,7 +139,7 @@ const ActivitiesPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                     >
-                    TIN TỨC
+                    {t('article:news').toUpperCase()}
                   </Typography>
                   {isAdmin && (
                     <Button
@@ -145,14 +147,14 @@ const ActivitiesPage = () => {
                       color="primary"
                       onClick={() => navigate('/admin/article')}
                     >
-                      Quản lý tin tức
+                      {t('article:manage_news')}
                     </Button>
                   )}
                 </Box>
 
                 {/* FILTERS */}
                 <DynamicFilterBar
-                  config={FILTERS}
+                  config={getNewsFilters(t)}
                   value={filters}
                   onChange={setFilters}
                 />
@@ -182,7 +184,7 @@ const ActivitiesPage = () => {
               {suggestionCards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Gợi ý
+                    {t('article:suggestions')}
                   </Typography>
 
                   <Box
@@ -214,7 +216,7 @@ const ActivitiesPage = () => {
               {dailyCards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Hàng ngày
+                    {t('article:daily')}
                   </Typography>
                   <Box
                     sx={{
@@ -251,8 +253,8 @@ const ActivitiesPage = () => {
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Xoá bài viết"
-        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        title={t('article:delete_article')}
+        description={t('article:confirm_delete_desc', { title: deleteTarget?.title })}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         loading={deleting}

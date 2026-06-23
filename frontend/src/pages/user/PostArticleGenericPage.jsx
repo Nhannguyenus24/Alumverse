@@ -1,4 +1,5 @@
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import PostArticleForm from '../../components/PostArticleForm';
 import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
@@ -13,19 +14,19 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useState } from 'react';
 
 /**
- * Per-channel configuration.
+ * Per-channel static configuration (no translated strings here).
  * useHook: a React hook — called unconditionally in the component below.
  * payloadBuilder: (title, content, coverFile) => Promise<object>
  * redirect: (id) => string
- * channelLabel: label shown in PostArticleForm
- * pageTitle: browser/page title
- * successMsg: snackbar success message
+ * channelKey: article namespace key for channelLabel
+ * pageTitleKey: article namespace key for pageTitle
+ * successMsgKey: article namespace key for success snackbar
  */
 const CHANNEL_CONFIG = {
   news: {
-    channelLabel: 'Tin tức',
-    pageTitle: 'Đăng bài tin tức',
-    successMsg: 'Bài viết đã được đăng thành công!',
+    channelKey: 'channel_news',
+    pageTitleKey: 'page_title_news',
+    successMsgKey: 'success_news',
     redirect: (id) => `/article/news/${id}`,
     useHook: useCreateNews,
     payloadKey: 'thumbnailBase64',
@@ -33,9 +34,9 @@ const CHANNEL_CONFIG = {
     contentKey: 'content',
   },
   alumni: {
-    channelLabel: 'Cựu sinh viên',
-    pageTitle: 'Đăng bài cựu sinh viên',
-    successMsg: 'Bài viết cựu sinh viên đã được đăng thành công!',
+    channelKey: 'channel_alumni',
+    pageTitleKey: 'page_title_alumni',
+    successMsgKey: 'success_alumni',
     redirect: (id) => `/article/alumni/${id}`,
     useHook: useCreateAlumniPost,
     payloadKey: 'thumbnailBase64',
@@ -43,9 +44,9 @@ const CHANNEL_CONFIG = {
     contentKey: 'content',
   },
   achievement: {
-    channelLabel: 'Thành tựu',
-    pageTitle: 'Đăng bài thành tựu',
-    successMsg: 'Bài viết thành tựu đã được đăng thành công!',
+    channelKey: 'channel_achievement',
+    pageTitleKey: 'page_title_achievement',
+    successMsgKey: 'success_achievement',
     redirect: (id) => `/article/achievement/${id}`,
     useHook: useCreateAchievement,
     payloadKey: 'imageBase64',
@@ -53,9 +54,9 @@ const CHANNEL_CONFIG = {
     contentKey: 'description',
   },
   job: {
-    channelLabel: 'Cơ hội việc làm',
-    pageTitle: 'Đăng bài việc làm',
-    successMsg: 'Bài đăng việc làm đã được đăng thành công!',
+    channelKey: 'channel_job',
+    pageTitleKey: 'page_title_job',
+    successMsgKey: 'success_job',
     redirect: (id) => `/article/job/${id}`,
     useHook: useCreateJob,
     payloadKey: null,
@@ -63,9 +64,9 @@ const CHANNEL_CONFIG = {
     contentKey: 'description',
   },
   learning: {
-    channelLabel: 'Cơ hội học tập',
-    pageTitle: 'Đăng bài học tập',
-    successMsg: 'Bài viết học tập đã được đăng thành công!',
+    channelKey: 'channel_learning',
+    pageTitleKey: 'page_title_learning',
+    successMsgKey: 'success_learning',
     redirect: (id) => `/article/learning/${id}`,
     useHook: useCreateLearningResource,
     payloadKey: null,
@@ -86,6 +87,7 @@ const useAllHooks = () => ({
 const PostArticleGenericPage = () => {
   const { channel } = useParams();
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
 
@@ -108,7 +110,7 @@ const PostArticleGenericPage = () => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
-      showError('Vui lòng nhập tiêu đề và nội dung');
+      showError(t('error_title_content_required'));
       return;
     }
     try {
@@ -121,16 +123,16 @@ const PostArticleGenericPage = () => {
       };
 
       const result = await createFn(payload);
-      showSuccess(config.successMsg);
+      showSuccess(t(config.successMsgKey));
       navigate(config.redirect(result.id));
     } catch (err) {
-      showError(err.response?.data?.message ?? 'Đăng bài thất bại');
+      showError(err.response?.data?.message ?? t('error_post_failed'));
     }
   };
 
   return (
     <PostArticleShell
-      pageTitle={config.pageTitle}
+      pageTitle={t(config.pageTitleKey)}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
       onCancel={() => navigate(-1)}
@@ -139,7 +141,7 @@ const PostArticleGenericPage = () => {
     >
       <PostArticleForm
         channel={channel}
-        channelLabel={config.channelLabel}
+        channelLabel={t(config.channelKey)}
         title={title}
         setTitle={setTitle}
         content={content}

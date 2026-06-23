@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
@@ -8,6 +9,7 @@ import { sendOtpSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 
 const ForgotPasswordPage = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const { enqueueSnackbar } = useSnackbar();
   const { forgotPassword, isSubmitting: loading, setError } = useAuth();
 
@@ -24,7 +26,7 @@ const ForgotPasswordPage = () => {
     setError(null);
     const result = await forgotPassword({ email: data.email });
     if (result?.ok) {
-      enqueueSnackbar(result.message ?? 'Đã gửi mã đến email của bạn.', { variant: 'success' });
+      enqueueSnackbar(result.message ?? t('auth:code_sent'), { variant: 'success' });
     } else if (result?.error) {
       enqueueSnackbar(result.error, { variant: 'error' });
     }
@@ -32,8 +34,8 @@ const ForgotPasswordPage = () => {
 
   return (
     <Page
-      title="Quên mật khẩu"
-      meta={<meta name="description" content="Khôi phục mật khẩu" />}
+      title={t('auth:forgot_password_heading')}
+      meta={<meta name="description" content={t('auth:forgot_password_meta')} />}
     >
       <Box
         component="form"
@@ -53,7 +55,7 @@ const ForgotPasswordPage = () => {
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
-          Quên mật khẩu
+          {t('auth:forgot_password_heading')}
         </Typography>
 
         <Input
@@ -67,7 +69,7 @@ const ForgotPasswordPage = () => {
         />
 
         <Typography variant="body2" color="text.secondary" textAlign="center">
-          Mã phục hồi tài khoản sẽ được gửi qua email đăng ký.
+          {t('auth:forgot_password_hint')}
         </Typography>
 
         <Button
@@ -79,7 +81,7 @@ const ForgotPasswordPage = () => {
           disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang gửi...' : 'Gửi mã'}
+          {loading ? t('auth:sending') : t('auth:send_code')}
         </Button>
       </Box>
     </Page>

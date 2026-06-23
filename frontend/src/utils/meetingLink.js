@@ -43,12 +43,15 @@ export const isAllowedMeetingLink = (rawUrl) => {
  * Blocking validation. Returns an error message, or null when valid.
  * @param {string} value
  * @param {{ optional?: boolean }} opts when optional, blank passes.
+ * @param {Function} [t] - optional i18next t function for translated messages
  */
-export const validateMeetingLink = (value, { optional = true } = {}) => {
+export const validateMeetingLink = (value, { optional = true } = {}, t = null) => {
   const v = (value ?? '').trim();
-  if (!v) return optional ? null : 'Vui lòng nhập link họp';
+  if (!v) return optional ? null : (t ? t('mentorship:meeting_link_required') : 'Vui lòng nhập link họp');
   if (!isAllowedMeetingLink(v)) {
-    return `Link họp không hợp lệ. Chỉ chấp nhận link từ: ${ALLOWED_MEETING_PLATFORMS_LABEL}.`;
+    return t
+      ? t('mentorship:meeting_link_invalid', { platforms: ALLOWED_MEETING_PLATFORMS_LABEL })
+      : `Link họp không hợp lệ. Chỉ chấp nhận link từ: ${ALLOWED_MEETING_PLATFORMS_LABEL}.`;
   }
   return null;
 };
@@ -56,9 +59,11 @@ export const validateMeetingLink = (value, { optional = true } = {}) => {
 /**
  * Non-blocking advisory. Returns a warning when the link looks like it will
  * require a manually-entered password (preference is for passwordless links).
+ * @param {string} value
+ * @param {Function} [t] - optional i18next t function for translated messages
  * @returns {string|null}
  */
-export const meetingLinkPasswordWarning = (value) => {
+export const meetingLinkPasswordWarning = (value, t = null) => {
   const v = (value ?? '').trim();
   if (!v || !isAllowedMeetingLink(v)) return null;
   const host = extractHost(v);
@@ -66,7 +71,9 @@ export const meetingLinkPasswordWarning = (value) => {
   // Zoom join links carry an embedded password via `pwd=`; without it the room
   // usually prompts for a password manually.
   if (host && host.endsWith('zoom.us') && lower.includes('/j/') && !lower.includes('pwd=')) {
-    return 'Link Zoom này có thể yêu cầu nhập mật khẩu thủ công. Ưu tiên link không cần mật khẩu để mentee vào được ngay.';
+    return t
+      ? t('mentorship:meeting_link_zoom_warning')
+      : 'Link Zoom này có thể yêu cầu nhập mật khẩu thủ công. Ưu tiên link không cần mật khẩu để mentee vào được ngay.';
   }
   return null;
 };

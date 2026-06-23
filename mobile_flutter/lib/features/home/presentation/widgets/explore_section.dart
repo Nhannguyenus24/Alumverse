@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -7,33 +8,31 @@ import 'section_title.dart';
 
 class _ExploreItem {
   final IconData icon;
-  final String title;
-  final String description;
+  final String titleKey;
+  final String descKey;
   final String route;
-  const _ExploreItem(this.icon, this.title, this.description, this.route);
+  const _ExploreItem(this.icon, this.titleKey, this.descKey, this.route);
 }
 
 const _items = <_ExploreItem>[
-  _ExploreItem(Icons.newspaper_rounded, 'Tin tức',
-      'Cập nhật tin tức, thông báo mới nhất từ tổ chức.',
+  _ExploreItem(Icons.newspaper_rounded,
+      'home.explore_news_title', 'home.explore_news_desc',
       RouteNames.news),
-  _ExploreItem(Icons.support_agent_rounded, 'Cố vấn',
-      'Giải đáp nhanh chóng và tư vấn cùng đội ngũ cựu sinh viên.',
+  _ExploreItem(Icons.support_agent_rounded,
+      'home.explore_mentorship_title', 'home.explore_mentorship_desc',
       RouteNames.mentorship),
-  _ExploreItem(Icons.groups_rounded, 'Kết nối cựu sinh viên',
-      'Kết nối và chia sẻ với cộng đồng.',
+  _ExploreItem(Icons.groups_rounded,
+      'home.explore_network_title', 'home.explore_network_desc',
       RouteNames.network),
-  _ExploreItem(Icons.event_available_rounded, 'Sự kiện & Hội thảo',
-      'Tham gia sự kiện mở rộng quan hệ và cơ hội nghề nghiệp.',
+  _ExploreItem(Icons.event_available_rounded,
+      'home.explore_events_title', 'home.explore_events_desc',
       RouteNames.events),
-  _ExploreItem(Icons.forum_rounded, 'Diễn đàn',
-      'Thảo luận, đặt câu hỏi và chia sẻ cùng cộng đồng.',
+  _ExploreItem(Icons.forum_rounded,
+      'home.explore_forum_title', 'home.explore_forum_desc',
       RouteNames.forum),
-  _ExploreItem(Icons.volunteer_activism_rounded, 'Đóng góp & Quỹ',
-      'Ủng hộ các chiến dịch gây quỹ và hoạt động cộng đồng.',
+  _ExploreItem(Icons.volunteer_activism_rounded,
+      'home.explore_donation_title', 'home.explore_donation_desc',
       RouteNames.fundraising),
-  
-
 ];
 
 /// "Khám phá" — 2-column grid of feature cards (web shows 4 across on desktop,
@@ -46,7 +45,7 @@ class ExploreSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle('Khám phá'),
+        SectionTitle('home.explore'.tr()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: GridView.count(
@@ -100,7 +99,7 @@ class _ExploreCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                item.title,
+                item.titleKey.tr(),
                 style: const TextStyle(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -110,7 +109,7 @@ class _ExploreCard extends StatelessWidget {
               const SizedBox(height: 6),
               Expanded(
                 child: Text(
-                  item.description,
+                  item.descKey.tr(),
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 12.5,

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -38,14 +39,14 @@ class _OrganizationSelectPageState
       data: (org) {
         if (org != null) context.go(RouteNames.login);
       },
-      error: (e, _) => AppToast.error(context, 'Không vào được tổ chức này.'),
+      error: (e, _) => AppToast.error(context, 'organization.cannot_enter'.tr()),
     );
   }
 
   Future<void> _submitDropdown() async {
     final slug = _selectedSlug;
     if (slug == null) {
-      AppToast.info(context, 'Vui lòng chọn tổ chức');
+      AppToast.info(context, 'organization.select_org_please'.tr());
       return;
     }
     await _enter(slug);
@@ -72,15 +73,15 @@ class _OrganizationSelectPageState
               const Center(child: AlumverseLogo(size: 80)),
               const SizedBox(height: 48),
               Text(
-                'Chọn tổ chức',
+                'organization.select'.tr(),
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Chọn đơn vị bạn muốn truy cập để tiếp tục.',
+              Text(
+                'organization.select_org_desc'.tr(),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
@@ -117,7 +118,7 @@ class _OrganizationSelectPageState
                         expandedInsets: EdgeInsets.zero, // match field width
                         enabled: !loading,
                         requestFocusOnTap: false,
-                        hintText: 'Chọn tổ chức',
+                        hintText: 'organization.select'.tr(),
                         leadingIcon: const Icon(Icons.apartment_rounded),
                         menuStyle: MenuStyle(
                           shape: WidgetStatePropertyAll(
@@ -152,8 +153,8 @@ class _OrganizationSelectPageState
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2, color: Colors.white),
                               )
-                            : const Text('Tiếp tục',
-                                style: TextStyle(fontSize: 16)),
+                            : Text('common.next'.tr(),
+                                style: const TextStyle(fontSize: 16)),
                       ),
                     ],
                   );
@@ -190,20 +191,21 @@ class _Fallback extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Không tải được danh sách tổ chức. Bạn có thể nhập định danh tổ chức.',
+          Text(
+            'organization.org_list_load_failed'.tr(),
             textAlign: TextAlign.center,
           ),
-          TextButton(onPressed: onRetry, child: const Text('Thử lại')),
+          TextButton(onPressed: onRetry, child: Text('common.retry'.tr())),
           const SizedBox(height: 8),
           TextFormField(
             controller: controller,
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Vui lòng nhập định danh tổ chức' : null,
-            decoration: const InputDecoration(
-              labelText: 'Định danh tổ chức',
-              hintText: 'vd: cs-hcmus',
-              prefixIcon: Icon(Icons.link),
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'organization.org_identifier_required'.tr()
+                : null,
+            decoration: InputDecoration(
+              labelText: 'organization.org_identifier'.tr(),
+              hintText: 'organization.org_identifier_hint'.tr(),
+              prefixIcon: const Icon(Icons.link),
             ),
             onFieldSubmitted: (_) => onSubmit(),
           ),
@@ -220,7 +222,7 @@ class _Fallback extends StatelessWidget {
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white),
                   )
-                : const Text('Tiếp tục', style: TextStyle(fontSize: 16)),
+                : Text('common.next'.tr(), style: const TextStyle(fontSize: 16)),
           ),
         ],
       ),

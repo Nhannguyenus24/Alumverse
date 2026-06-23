@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,8 +10,8 @@ import '../providers/user_providers.dart';
 
 /// Public profile of another member. Mirrors the web page
 /// (`/:slug/profile/:id`, `PublicUserProfile.jsx` + `ProfileLayout`):
-/// cover banner + overlapping avatar + name/role, an "Giới thiệu" card and a
-/// "Thông tin cơ bản" grid. Same endpoint/DTO as web — no backend change.
+/// cover banner + overlapping avatar + name/role, an "About" card and a
+/// "Basic info" grid. Same endpoint/DTO as web — no backend change.
 class PublicProfilePage extends ConsumerWidget {
   const PublicProfilePage({super.key, required this.userId});
 
@@ -48,9 +49,9 @@ class _ProfileBody extends StatelessWidget {
     final name = profile.fullName?.isNotEmpty == true
         ? profile.fullName!
         : 'User #${profile.userId}';
-    // Web role = `currentJobTitle @ currentCompany` || 'Thành viên'. Those
-    // fields are not in the DTO, so this is always 'Thành viên' (same as web).
-    const role = 'Thành viên';
+    // Web role = `currentJobTitle @ currentCompany` || 'Member'. Those
+    // fields are not in the DTO, so this always shows 'Member' (same as web).
+    final role = 'profile.member'.tr();
 
     return SingleChildScrollView(
       child: Column(
@@ -120,10 +121,10 @@ class _ProfileBody extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          const Center(
+          Center(
             child: Text(
               role,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -131,16 +132,16 @@ class _ProfileBody extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // ===== GIỚI THIỆU =====
+          // ===== BIO SECTION =====
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: _SectionCard(
               icon: Icons.person_outline,
-              title: 'Giới thiệu',
+              title: 'profile.bio'.tr(),
               child: Text(
                 profile.bio?.trim().isNotEmpty == true
                     ? profile.bio!.trim()
-                    : 'Người dùng này chưa cập nhật phần giới thiệu.',
+                    : 'profile.bio_empty'.tr(),
                 style: TextStyle(
                   height: 1.6,
                   fontStyle: profile.bio?.trim().isNotEmpty == true
@@ -155,16 +156,16 @@ class _ProfileBody extends StatelessWidget {
           ),
           const SizedBox(height: 8),
 
-          // ===== THÔNG TIN CƠ BẢN =====
+          // ===== BASIC INFO SECTION =====
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: Row(
-              children: const [
-                Icon(Icons.badge_outlined, color: AppColors.primary),
-                SizedBox(width: 8),
+              children: [
+                const Icon(Icons.badge_outlined, color: AppColors.primary),
+                const SizedBox(width: 8),
                 Text(
-                  'Thông tin cơ bản',
-                  style: TextStyle(
+                  'profile.basic_info'.tr(),
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.primary,
@@ -179,23 +180,23 @@ class _ProfileBody extends StatelessWidget {
               children: [
                 _InfoTile(
                   icon: Icons.person_outline,
-                  label: 'HỌ VÀ TÊN',
+                  label: 'profile.full_name'.tr().toUpperCase(),
                   value: profile.fullName,
                 ),
                 if (profile.email.isNotEmpty)
                   _InfoTile(
                     icon: Icons.email_outlined,
-                    label: 'EMAIL',
+                    label: 'profile.email'.tr().toUpperCase(),
                     value: profile.email,
                   ),
-                const _InfoTile(
+                _InfoTile(
                   icon: Icons.work_outline,
-                  label: 'CÔNG VIỆC HIỆN TẠI',
+                  label: 'profile.current_job'.tr().toUpperCase(),
                   value: null,
                 ),
-                const _InfoTile(
+                _InfoTile(
                   icon: Icons.business_outlined,
-                  label: 'CÔNG TY',
+                  label: 'profile.company'.tr().toUpperCase(),
                   value: null,
                 ),
               ],
@@ -207,7 +208,7 @@ class _ProfileBody extends StatelessWidget {
   }
 }
 
-/// A titled card (matches the web "Giới thiệu" card).
+/// A titled card (matches the web "About" card).
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.icon,
@@ -305,7 +306,7 @@ class _InfoTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  hasValue ? value!.trim() : 'Chưa cập nhật',
+                  hasValue ? value!.trim() : 'profile.not_updated'.tr(),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -336,12 +337,13 @@ class _ErrorView extends StatelessWidget {
         children: [
           const Icon(Icons.error_outline, size: 48, color: AppColors.error),
           const SizedBox(height: 12),
-          const Text(
-            'Không thể tải hồ sơ',
-            style: TextStyle(color: AppColors.textSecondary),
+          Text(
+            'profile.load_failed'.tr(),
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(onPressed: onRetry, child: const Text('Thử lại')),
+          ElevatedButton(
+              onPressed: onRetry, child: Text('common.retry'.tr())),
         ],
       ),
     );

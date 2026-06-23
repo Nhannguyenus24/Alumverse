@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -14,10 +15,10 @@ import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlin
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import dayjs from 'dayjs';
 
-const SESSION_OPTIONS = [
-  { value: 'CAREER', label: 'Định hướng / Chia sẻ kinh nghiệm nghề nghiệp' },
-  { value: 'ACADEMIC', label: 'Kinh nghiệm học tập / Học bổng / Nghiên cứu' },
-  { value: 'SOFT_SKILLS', label: 'Kỹ năng mềm' },
+const getSessionOptions = (t) => [
+  { value: 'CAREER', label: t('mentorship:session_type_career') },
+  { value: 'ACADEMIC', label: t('mentorship:session_type_academic') },
+  { value: 'SOFT_SKILLS', label: t('mentorship:session_type_soft_skills') },
 ];
 
 const MentorshipBookingForm = ({
@@ -28,7 +29,10 @@ const MentorshipBookingForm = ({
   onSubmit,
   submitting = false,
 }) => {
+  const { t } = useTranslation(['mentorship', 'common']);
   const fileInputRef = useRef(null);
+
+  const SESSION_OPTIONS = getSessionOptions(t);
 
   const update = (key, value) => onChange({ ...values, [key]: value });
 
@@ -57,7 +61,7 @@ const MentorshipBookingForm = ({
         }}
       >
         <Typography fontWeight={700} color="primary.main" mb={1}>
-          Khung giờ đã chọn
+          {t('mentorship:selected_slot')}
         </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Stack direction="row" spacing={1} alignItems="center">
@@ -76,7 +80,7 @@ const MentorshipBookingForm = ({
       {/* SESSION TYPE */}
       <TextField
         select
-        label="Loại buổi tư vấn"
+        label={t('mentorship:session_type')}
         value={values.sessionType}
         onChange={(e) => update('sessionType', e.target.value)}
         required
@@ -91,8 +95,8 @@ const MentorshipBookingForm = ({
 
       {/* INTRODUCTION */}
       <TextField
-        label="Giới thiệu bản thân"
-        placeholder="Tự giới thiệu ngắn gọn về bạn (sinh viên năm mấy, ngành học, kinh nghiệm hiện tại,...)"
+        label={t('mentorship:self_introduction')}
+        placeholder={t('mentorship:self_introduction_placeholder')}
         value={values.introduction}
         onChange={(e) => update('introduction', e.target.value)}
         required
@@ -103,8 +107,8 @@ const MentorshipBookingForm = ({
 
       {/* DESCRIPTION */}
       <TextField
-        label="Mục đích buổi gặp"
-        placeholder="Bạn muốn trao đổi nội dung gì với mentor? Câu hỏi cụ thể? Kỳ vọng sau buổi gặp?"
+        label={t('mentorship:meeting_purpose')}
+        placeholder={t('mentorship:meeting_purpose_placeholder')}
         value={values.description}
         onChange={(e) => update('description', e.target.value)}
         multiline
@@ -115,10 +119,10 @@ const MentorshipBookingForm = ({
       {/* CV UPLOAD */}
       <Box>
         <Typography fontWeight={600} mb={1}>
-          CV (không bắt buộc)
+          {t('mentorship:cv_optional')}
         </Typography>
         <Typography variant="caption" color="text.secondary" display="block" mb={1.5}>
-          Đính kèm CV để mentor hiểu rõ hơn về bạn. Hỗ trợ PDF, DOC, DOCX (≤ 10MB).
+          {t('mentorship:cv_hint')}
         </Typography>
 
         <input
@@ -144,7 +148,7 @@ const MentorshipBookingForm = ({
             startIcon={<UploadFileOutlinedIcon />}
             onClick={handlePickFile}
           >
-            Chọn file CV
+            {t('mentorship:pick_cv_file')}
           </Button>
         )}
       </Box>
@@ -157,14 +161,14 @@ const MentorshipBookingForm = ({
         pt={1}
       >
         <Button variant="outlined" color="inherit" onClick={onBack} disabled={submitting}>
-          Quay lại
+          {t('common:back')}
         </Button>
         <Button
           variant="contained"
           onClick={onSubmit}
           disabled={!isValid || submitting}
         >
-          {submitting ? 'Đang gửi...' : 'Xác nhận đặt lịch'}
+          {submitting ? t('mentorship:submitting') : t('mentorship:confirm_booking')}
         </Button>
       </Stack>
     </Stack>

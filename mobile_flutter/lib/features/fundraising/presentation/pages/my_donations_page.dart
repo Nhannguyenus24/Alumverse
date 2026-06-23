@@ -1,6 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/currency.dart';
@@ -20,7 +20,7 @@ class MyDonationsPage extends ConsumerWidget {
     final async = ref.watch(myDonationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Lịch sử đóng góp')),
+      appBar: AppBar(title: Text('donation.my_donations'.tr())),
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(myDonationsProvider);
@@ -32,7 +32,7 @@ class MyDonationsPage extends ConsumerWidget {
             children: [
               const SizedBox(height: 80),
               ErrorView(
-                message: 'Không tải được lịch sử đóng góp',
+                message: 'donation.history_load_failed'.tr(),
                 onRetry: () => ref.invalidate(myDonationsProvider),
               ),
             ],
@@ -40,12 +40,12 @@ class MyDonationsPage extends ConsumerWidget {
           data: (page) {
             if (page.items.isEmpty) {
               return ListView(
-                children: const [
-                  SizedBox(height: 80),
+                children: [
+                  const SizedBox(height: 80),
                   EmptyView(
                     icon: Icons.receipt_long_outlined,
-                    title: 'Chưa có đóng góp',
-                    message: 'Các khoản đóng góp của bạn sẽ hiện ở đây.',
+                    title: 'donation.no_history'.tr(),
+                    message: 'donation.no_history_desc'.tr(),
                   ),
                 ],
               );
@@ -122,9 +122,9 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, color) = switch (status?.toUpperCase()) {
-      'SUCCESS' => ('Thành công', AppColors.success),
-      'FAILED' => ('Thất bại', AppColors.error),
-      _ => ('Đang xử lý', AppColors.warning),
+      'SUCCESS' => ('donation.status_success'.tr(), AppColors.success),
+      'FAILED' => ('donation.status_failed'.tr(), AppColors.error),
+      _ => ('donation.status_processing'.tr(), AppColors.warning),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),

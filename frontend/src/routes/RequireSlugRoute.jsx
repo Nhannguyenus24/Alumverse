@@ -1,9 +1,11 @@
 import { Navigate, useLocation, useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useOrganization } from '../hooks/useOrganization';
 import { isBlockedOrgFetchPath } from './routeGuards';
 import LoadingScreen from '../components/LoadingScreen';
 
 const RequireSlugRoute = ({ children }) => {
+  const { t } = useTranslation('common');
   const { slug } = useParams();
   const { pathname } = useLocation();
 
@@ -31,7 +33,7 @@ const RequireSlugRoute = ({ children }) => {
   const isInitialLoad = !organization && !loading && !error && !isOrganizationNotFound;
 
   if (loading || isStale || isInitialLoad) {
-    return <LoadingScreen message="Đang tải dữ liệu tổ chức..." />;
+    return <LoadingScreen message={t('loading_org_data')} />;
   }
 
   /**
