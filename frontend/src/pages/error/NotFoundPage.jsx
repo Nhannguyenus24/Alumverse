@@ -18,18 +18,19 @@ export default function NotFoundPage() {
         />
       }
     >
-      <Container maxWidth="md">
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            textAlign: 'center',
-            py: 5,
-          }}
-        >
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Container maxWidth="md">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100vh',
+              textAlign: 'center',
+              py: 5,
+            }}
+          >
           <SearchOffIcon
             sx={{
               fontSize: 120,
@@ -107,8 +108,9 @@ export default function NotFoundPage() {
               {t('not_found_go_back')}
             </Button>
           </Box>
-        </Box>
-      </Container>
+          </Box>
+        </Container>
+      </Box>
     </Page>
   );
 }
