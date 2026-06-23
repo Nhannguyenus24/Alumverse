@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -29,10 +29,10 @@ class EventsSection extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SectionTitle(
-              'Sự kiện sắp tới',
+              'home.upcoming_events'.tr(),
               action: TextButton(
                 onPressed: () => context.push(RouteNames.events),
-                child: const Text('Xem tất cả'),
+                child: Text('home.view_all'.tr()),
               ),
             ),
             SizedBox(

@@ -5,8 +5,10 @@ import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import 'yet-another-react-lightbox/styles.css';
 import { FUND_LOGO_PREVIEW_SX } from '../utils/imageUtils';
+import { useTranslation } from 'react-i18next';
 
 const FundLogoPreview = ({ src, alt = 'Logo preview' }) => {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
 
   const slides = useMemo(() => [{ src, alt }], [src, alt]);
@@ -25,7 +27,7 @@ const FundLogoPreview = ({ src, alt = 'Logo preview' }) => {
             setOpen(true);
           }
         }}
-        aria-label="Xem ảnh logo phóng to"
+        aria-label={t('fund_logo_view_zoom')}
         sx={{
           position: 'relative',
           width: '100%',
@@ -59,7 +61,7 @@ const FundLogoPreview = ({ src, alt = 'Logo preview' }) => {
         >
           <ZoomInOutlinedIcon sx={{ fontSize: 36 }} />
           <Typography variant="caption" sx={{ fontWeight: 600 }}>
-            Nhấn để phóng to
+            {t('click_to_zoom')}
           </Typography>
         </Box>
       </Box>

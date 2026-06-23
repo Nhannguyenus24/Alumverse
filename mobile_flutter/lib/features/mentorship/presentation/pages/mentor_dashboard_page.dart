@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -42,10 +42,10 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quản lý cố vấn'),
+        title: Text('mentorship.manage_mentor'.tr()),
         actions: [
           IconButton(
-            tooltip: 'Lịch rảnh của tôi',
+            tooltip: 'mentorship.my_availability'.tr(),
             icon: const Icon(Icons.calendar_month),
             onPressed: () => context.push(RouteNames.mentorAvailability),
           ),
@@ -54,10 +54,10 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
           controller: _tabCtrl,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
-          tabs: const [
-            Tab(text: 'Chờ duyệt'),
-            Tab(text: 'Sắp tới'),
-            Tab(text: 'Đánh giá nhận được'),
+          tabs: [
+            Tab(text: 'mentorship.tab_pending'.tr()),
+            Tab(text: 'mentorship.tab_upcoming'.tr()),
+            Tab(text: 'mentorship.tab_feedbacks_received'.tr()),
           ],
         ),
       ),
@@ -83,10 +83,10 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _Stat(value: '${sessions.length}', label: 'Lượt đặt'),
-                    _Stat(value: '$pending', label: 'Chờ duyệt'),
-                    _Stat(value: '$completed', label: 'Hoàn thành'),
-                    _Stat(value: ratingLabel, label: 'Đánh giá'),
+                    _Stat(value: '${sessions.length}', label: 'mentorship.stat_bookings'.tr()),
+                    _Stat(value: '$pending', label: 'mentorship.tab_pending'.tr()),
+                    _Stat(value: '$completed', label: 'mentorship.stat_completed'.tr()),
+                    _Stat(value: ratingLabel, label: 'mentorship.feedback'.tr()),
                   ],
                 ),
               );
@@ -101,11 +101,11 @@ class _MentorDashboardPageState extends ConsumerState<MentorDashboardPage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('Không tải được danh sách'),
+                    Text('mentorship.sessions_load_failed'.tr()),
                     TextButton(
                       onPressed: () =>
                           ref.invalidate(mentorSessionsProvider),
-                      child: const Text('Thử lại'),
+                      child: Text('common.retry'.tr()),
                     ),
                   ],
                 ),
@@ -145,15 +145,15 @@ class _PendingList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (sessions.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined,
+            const Icon(Icons.inbox_outlined,
                 size: 48, color: AppColors.textSecondary),
-            SizedBox(height: 12),
-            Text('Không có yêu cầu chờ duyệt',
-                style: TextStyle(color: AppColors.textSecondary)),
+            const SizedBox(height: 12),
+            Text('mentorship.no_pending_requests'.tr(),
+                style: const TextStyle(color: AppColors.textSecondary)),
           ],
         ),
       );
@@ -180,7 +180,7 @@ class _PendingCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final when = session.startTime != null
         ? DateFormat('dd/MM/yyyy • HH:mm').format(session.startTime!)
-        : 'Chờ xác nhận thời gian';
+        : 'mentorship.pending_time'.tr();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -221,9 +221,9 @@ class _PendingCard extends ConsumerWidget {
   }
 
   String _typeLabel(String t) => switch (t.toUpperCase()) {
-        'CAREER' => 'Nghề nghiệp',
-        'ACADEMIC' => 'Học thuật',
-        'SOFT_SKILLS' => 'Kỹ năng mềm',
+        'CAREER' => 'mentorship.type_career'.tr(),
+        'ACADEMIC' => 'mentorship.type_academic'.tr(),
+        'SOFT_SKILLS' => 'mentorship.type_soft_skills'.tr(),
         _ => t,
       };
 }
@@ -262,7 +262,9 @@ class _AcceptRejectButtonsState
       if (mounted) {
         AppToast.success(
           context,
-          status == 'CONFIRMED' ? 'Đã xác nhận lịch hẹn' : 'Đã từ chối yêu cầu',
+          status == 'CONFIRMED'
+              ? 'mentorship.session_confirmed'.tr()
+              : 'mentorship.session_rejected'.tr(),
         );
       }
     } catch (e) {
@@ -279,22 +281,22 @@ class _AcceptRejectButtonsState
     return showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Link họp'),
+        title: Text('mentorship.meeting_link_title'.tr()),
         content: TextField(
           controller: ctl,
           keyboardType: TextInputType.url,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: 'https://meet.google.com/...',
-            labelText: 'Link meeting (tùy chọn)',
+            labelText: 'mentorship.meeting_link_label'.tr(),
           ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy')),
+              child: Text('common.cancel'.tr())),
           ElevatedButton(
               onPressed: () => Navigator.pop(context, ctl.text.trim()),
-              child: const Text('Xác nhận')),
+              child: Text('common.confirm'.tr())),
         ],
       ),
     );
@@ -318,7 +320,7 @@ class _AcceptRejectButtonsState
                     width: 16,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: AppColors.error))
-                : const Text('Từ chối'),
+                : Text('common.reject'.tr()),
           ),
         ),
         const SizedBox(width: 8),
@@ -333,7 +335,7 @@ class _AcceptRejectButtonsState
                     width: 16,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Text('Xác nhận'),
+                : Text('common.confirm'.tr()),
           ),
         ),
       ],
@@ -350,9 +352,9 @@ class _UpcomingList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (sessions.isEmpty) {
-      return const Center(
-        child: Text('Không có buổi nào sắp tới',
-            style: TextStyle(color: AppColors.textSecondary)),
+      return Center(
+        child: Text('mentorship.no_upcoming_sessions'.tr(),
+            style: const TextStyle(color: AppColors.textSecondary)),
       );
     }
     return ListView.builder(
@@ -418,19 +420,19 @@ class _FeedbackList extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Không tải được đánh giá'),
+            Text('mentorship.feedbacks_load_failed'.tr()),
             TextButton(
               onPressed: () => ref.invalidate(myMentorFeedbacksProvider),
-              child: const Text('Thử lại'),
+              child: Text('common.retry'.tr()),
             ),
           ],
         ),
       ),
       data: (feedbacks) {
         if (feedbacks.isEmpty) {
-          return const Center(
-            child: Text('Chưa có đánh giá nào',
-                style: TextStyle(color: AppColors.textSecondary)),
+          return Center(
+            child: Text('mentorship.no_feedbacks'.tr(),
+                style: const TextStyle(color: AppColors.textSecondary)),
           );
         }
         return ListView.builder(

@@ -31,23 +31,23 @@ class EventTicket {
     return s == 'CHECKED_IN' || s == 'USED';
   }
 
-  /// Vietnamese status label for display.
-  String get statusLabel {
+  /// i18n key for the status label. Use `.tr()` in the UI layer.
+  String get statusKey {
     switch (status.toUpperCase()) {
       case 'ISSUED':
       case 'ACTIVE':
-        return 'Đã đăng ký';
+        return 'event.ticket_status_registered';
       case 'CHECKED_IN':
       case 'USED':
-        return 'Đã tham dự';
+        return 'event.ticket_status_attended';
       case 'CANCELLED':
-        return 'Đã hủy';
+        return 'event.ticket_status_cancelled';
       case 'PENDING':
-        return 'Chờ duyệt';
+        return 'event.ticket_status_pending';
       case 'REJECTED':
-        return 'Bị từ chối';
+        return 'event.ticket_status_rejected';
       default:
-        return status;
+        return 'event.ticket_status_registered';
     }
   }
 

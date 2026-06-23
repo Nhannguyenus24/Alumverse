@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Chip,
@@ -21,14 +22,14 @@ import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
 
-const CHANNEL_OPTIONS = [
-  { value: 'news', label: 'Tin tức' },
-  { value: 'alumni', label: 'Cựu sinh viên' },
-  { value: 'achievement', label: 'Kênh thành tựu' },
-  { value: 'job', label: 'Cơ hội việc làm' },
-  { value: 'learning', label: 'Cơ hội học tập' },
-  { value: 'event', label: 'Sự kiện' },
-  { value: 'donation', label: 'Quyên góp' },
+const getChannelOptions = (t) => [
+  { value: 'news', label: t('admin:channel_news') },
+  { value: 'alumni', label: t('admin:channel_alumni') },
+  { value: 'achievement', label: t('admin:channel_achievement') },
+  { value: 'job', label: t('admin:channel_job') },
+  { value: 'learning', label: t('admin:channel_learning') },
+  { value: 'event', label: t('admin:channel_event') },
+  { value: 'donation', label: t('admin:channel_donation') },
 ];
 
 
@@ -38,6 +39,7 @@ const idOf = (a) => a.id;
 const createdOf = (a) => a.createdAt || a.created_at || a.timeStarted || a.eventDate || a.publishedAt;
 
 const AdminArticlesPage = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const { setBreadcrumbs } = useOutletContext();
   const navigate = useOrgNavigate();
   const { stableOrgId } = useAdminSystemContext();
@@ -60,7 +62,7 @@ const AdminArticlesPage = () => {
   }, [debouncedSearch, backendSearch, setBackendSearch, setPage]);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Bài viết', active: true }]);
+    setBreadcrumbs?.([{ label: t('admin:articles'), active: true }]);
   }, [setBreadcrumbs]);
 
   const openEdit = (a) => navigate(`/admin/article/${channel}/${idOf(a)}/edit`);
@@ -80,14 +82,14 @@ const AdminArticlesPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Quản lý bài viết
+            {t('admin:manage_articles')}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Chỉnh sửa bất kỳ bài viết nào đã đăng trên 7 chuyên mục.
+            {t('admin:manage_articles_desc')}
           </Typography>
         </Box>
       </Box>
@@ -100,7 +102,7 @@ const AdminArticlesPage = () => {
             { id: "id", label: "ID", render: (_, a) => idOf(a) },
             {
               id: "title",
-              label: "Tiêu đề",
+              label: t('admin:col_title'),
               render: (_, a) => (
                 <Typography variant="body2" noWrap sx={{ maxWidth: 360 }}>
                   {titleOf(a)}
@@ -109,24 +111,24 @@ const AdminArticlesPage = () => {
             },
             {
               id: "createdAt",
-              label: "Ngày tạo",
+              label: t('admin:col_created_at'),
               render: (_, a) => formatDateTime(createdOf(a)),
             },
             {
               id: "actions",
-              label: "Thao tác",
+              label: t('admin:col_actions'),
               align: "right",
               render: (_, a) => (
                 <Box
                   sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip title="Xem trang công khai">
+                  <Tooltip title={t('admin:view_public_page')}>
                     <IconButton size="small" color="primary" onClick={() => openView(a)}>
                       <VisibilityOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Chỉnh sửa">
+                  <Tooltip title={t('common:edit')}>
                     <IconButton size="small" color="primary" onClick={() => openEdit(a)}>
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -149,14 +151,14 @@ const AdminArticlesPage = () => {
             setPage(0);
           }}
           searchValue={searchTerm}
-          searchPlaceholder="Tìm kiếm tiêu đề..."
+          searchPlaceholder={t('admin:search_title_placeholder')}
           onRowClick={(a) => openEdit(a)}
           filters={
             <Stack direction="row" spacing={1} alignItems="center">
               <TextField
                 select
                 size="small"
-                label="Chuyên mục"
+                label={t('admin:channel_label')}
                 value={channel}
                 onChange={(e) => {
                   setChannel(e.target.value);
@@ -165,7 +167,7 @@ const AdminArticlesPage = () => {
                 }}
                 sx={{ minWidth: 220 }}
               >
-                {CHANNEL_OPTIONS.map((opt) => (
+                {getChannelOptions(t).map((opt) => (
                   <MenuItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </MenuItem>

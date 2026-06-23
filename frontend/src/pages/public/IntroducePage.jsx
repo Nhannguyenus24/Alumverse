@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation, useParams } from "react-router";
 import {
   Box,
@@ -16,6 +17,7 @@ import { getIntroduction } from "../../utils/api";
 const BANNER_IMG = "/home_page/home_page.png";
 
 const IntroducePage = () => {
+  const { t } = useTranslation('home');
   const { organization } = useOrganization();
   const location = useLocation();
   const [introduction, setIntroduction] = useState(null);
@@ -53,17 +55,11 @@ const IntroducePage = () => {
   const getPageConfig = () => {
     switch (mode) {
       case "leaders":
-        return {
-          title: "BAN LÃNH ĐẠO",
-        };
+        return { title: t('intro_leaders_title') };
       case "team":
-        return {
-          title: "ĐỘI NGŨ",
-        };
+        return { title: t('intro_team_title') };
       default:
-        return {
-          title: "GIỚI THIỆU",
-        };
+        return { title: t('intro_title') };
     }
   };
 
@@ -93,7 +89,7 @@ const IntroducePage = () => {
       {introduction?.imageUrls && introduction.imageUrls.length > 0 && (
         <Box sx={{ mt: 4, mb: 4 }}>
           <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
-            Hình ảnh hoạt động
+            {t('intro_activity_images')}
           </Typography>
           <Grid container spacing={2}>
             {introduction.imageUrls.map((url, index) => (
@@ -135,7 +131,7 @@ const IntroducePage = () => {
         gutterBottom
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
-        Tầm nhìn
+        {t('intro_vision')}
       </Typography>
       <Typography
         variant="body2"
@@ -155,7 +151,7 @@ const IntroducePage = () => {
         gutterBottom
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
-        Sứ mệnh
+        {t('intro_mission')}
       </Typography>
       <Typography
         variant="body2"
@@ -175,7 +171,7 @@ const IntroducePage = () => {
         gutterBottom
         sx={{ display: "flex", alignItems: "center", gap: 1 }}
       >
-        Giá trị cốt lõi
+        {t('intro_core_values')}
       </Typography>
       <Typography
         variant="body2"
@@ -197,7 +193,7 @@ const IntroducePage = () => {
       {introduction?.leaders && introduction.leaders.length > 0 && (
         <Box sx={{ mt: 4 }}>
           <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
-            Ban Lãnh đạo
+            {t('intro_leaders_title')}
           </Typography>
           <Stack spacing={2}>
             {introduction.leaders.map((leader, index) => (
@@ -262,7 +258,7 @@ const IntroducePage = () => {
       {introduction?.teamMembers && introduction.teamMembers.length > 0 && (
         <Box sx={{ mt: 4 }}>
           <Typography variant="h6" color="primary" fontWeight={700} sx={{ mb: 3 }}>
-            Thành viên tiêu biểu
+            {t('intro_team_title')}
           </Typography>
           <Stack spacing={2}>
             {introduction.teamMembers.map((member, index) => (
@@ -339,7 +335,7 @@ const IntroducePage = () => {
       meta={
         <meta
           name="description"
-          content={`Giới thiệu về ${organization?.name || "tổ chức"}`}
+          content={t('intro_meta_desc', { name: organization?.name || t('intro_org_fallback') })}
         />
       }
     >
@@ -413,10 +409,10 @@ const IntroducePage = () => {
                 {!introduction ? (
                   <Stack alignItems="center" spacing={2} sx={{ py: 10 }}>
                     <Typography variant="h5" color="text.secondary">
-                      Chưa có thông tin giới thiệu
+                      {t('intro_empty_title')}
                     </Typography>
                     <Typography variant="body1" color="text.secondary" textAlign="center">
-                      Tổ chức này chưa cập nhật nội dung giới thiệu. Vui lòng quay lại sau.
+                      {t('intro_empty_desc')}
                     </Typography>
                   </Stack>
                 ) : (

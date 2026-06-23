@@ -2,6 +2,7 @@ import { Box, IconButton, Paper, TextField } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
 import ForumManageTopicItem from './ForumManageTopicItem';
+import { useTranslation } from 'react-i18next';
 
 const ForumManageView = ({
   manageTopics,
@@ -14,6 +15,8 @@ const ForumManageView = ({
   handleDeleteTopic,
   handleDeleteBoard,
 }) => {
+  const { t } = useTranslation('forum');
+
   const handleNewSubTopicChange = (topicId, value) => {
     setNewSubTopics((prev) => ({ ...prev, [topicId]: value }));
   };
@@ -42,7 +45,7 @@ const ForumManageView = ({
           <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
             <TextField
               fullWidth
-              placeholder="Thêm chủ đề chính"
+              placeholder={t('add_main_topic_placeholder')}
               value={newMainTopic}
               onChange={(e) => setNewMainTopic(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddMainTopic()}
@@ -51,7 +54,7 @@ const ForumManageView = ({
             />
             <TextField
               fullWidth
-              placeholder="Mô tả chủ đề chính"
+              placeholder={t('main_topic_desc_placeholder')}
               size="small"
               InputProps={{ sx: { backgroundColor: 'grey.50' } }}
             />
@@ -60,7 +63,7 @@ const ForumManageView = ({
             size="small"
             onClick={handleAddMainTopic}
             sx={{ color: 'success.main', flexShrink: 0 }}
-            aria-label="Lưu chủ đề chính"
+            aria-label={t('save_main_topic_aria')}
           >
             <SaveIcon sx={{ fontSize: 28 }} />
           </IconButton>

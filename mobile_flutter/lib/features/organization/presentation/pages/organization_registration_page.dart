@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -70,7 +71,7 @@ class _OrganizationRegistrationPageState
     final length = await file.length();
     if (length > 5 * 1024 * 1024) {
       if (!mounted) return;
-      AppToast.error(context, 'File minh chứng vượt quá 5MB.');
+      AppToast.error(context, 'organization.proof_too_large'.tr());
       return;
     }
     setState(() => _proofFile = file);
@@ -103,17 +104,17 @@ class _OrganizationRegistrationPageState
     // "required" rule here when the academic info isn't optional.
     if (!_isAcademicOptional) {
       if (programOptions.isNotEmpty && _selectedProgram == null) {
-        AppToast.info(context, 'Vui lòng chọn hệ đào tạo.');
+        AppToast.info(context, 'organization.select_program_required'.tr());
         return;
       }
       if (majorOptions.isNotEmpty && _selectedMajor == null) {
-        AppToast.info(context, 'Vui lòng chọn chuyên ngành.');
+        AppToast.info(context, 'organization.select_major_required'.tr());
         return;
       }
     }
     final userId = ref.read(authStateProvider).valueOrNull?.user?.id;
     if (orgId == null || userId == null) {
-      AppToast.error(context, 'Thiếu thông tin tổ chức hoặc tài khoản.');
+      AppToast.error(context, 'organization.missing_org_or_account'.tr());
       return;
     }
     final parsedUserId = int.tryParse(userId);
@@ -149,10 +150,14 @@ class _OrganizationRegistrationPageState
         }
         if (mounted) {
           if (failed == 0) {
-            AppToast.success(context, 'Đã gửi yêu cầu xác thực tới người bạn chọn.');
+            AppToast.success(context, 'organization.verification_sent'.tr());
           } else {
-            AppToast.error(context,
-                'Một số yêu cầu xác thực gửi không thành công ($failed).');
+            AppToast.error(
+              context,
+              'organization.verification_send_partial'.tr(
+                namedArgs: {'count': failed.toString()},
+              ),
+            );
           }
         }
       }
@@ -167,23 +172,23 @@ class _OrganizationRegistrationPageState
                 documentType: 'image',
               );
           if (mounted) {
-            AppToast.success(context, 'Yêu cầu xác thực minh chứng đã được gửi.');
+            AppToast.success(context, 'organization.proof_sent'.tr());
           }
         } catch (_) {
           if (mounted) {
-            AppToast.error(context, 'Gửi yêu cầu xác thực minh chứng thất bại.');
+            AppToast.error(context, 'organization.proof_send_failed'.tr());
           }
         }
       }
 
       if (!mounted) return;
-      AppToast.success(context, 'Đăng ký tham gia tổ chức thành công.');
+      AppToast.success(context, 'organization.join_success'.tr());
       context.go(RouteNames.home);
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Đăng ký tổ chức thất bại';
+          : 'organization.join_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -198,7 +203,7 @@ class _OrganizationRegistrationPageState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Xác minh học vấn'),
+        title: Text('organization.academic_verification'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -212,29 +217,25 @@ class _OrganizationRegistrationPageState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'XÁC MINH HỌC VẤN',
+                  'organization.academic_verification_upper'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppColors.primary,
                       ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Vui lòng cung cấp thông tin học thuật của bạn để xác minh '
-                  'học vấn và tham gia tổ chức.',
-                  style: TextStyle(color: AppColors.textSecondary),
+                Text(
+                  'organization.academic_verification_desc'.tr(),
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 16),
 
                 if (_isAllOptional)
-                  _InfoBanner(
-                    'Bạn đã chọn người xác thực, không cần điền các thông tin '
-                    'bên dưới.',
-                  ),
+                  _InfoBanner('organization.verifier_selected_banner'.tr()),
 
                 // --- Student info ---
                 _SectionLabel(
-                  'Thông tin sinh viên',
+                  'organization.student_info'.tr(),
                   required: !_isAllOptional,
                 ),
                 TextFormField(
@@ -242,19 +243,19 @@ class _OrganizationRegistrationPageState
                   validator: _isAllOptional
                       ? null
                       : (v) => (v == null || v.trim().isEmpty)
-                          ? 'Mã số sinh viên là bắt buộc'
+                          ? 'organization.student_code_required'.tr()
                           : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Mã số sinh viên',
-                    hintText: 'Ví dụ: 1234567',
-                    prefixIcon: Icon(Icons.badge_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'organization.student_code'.tr(),
+                    hintText: 'organization.student_code_hint'.tr(),
+                    prefixIcon: const Icon(Icons.badge_outlined),
                   ),
                 ),
                 const SizedBox(height: 16),
 
                 // --- Academic info ---
                 _SectionLabel(
-                  'Thông tin học thuật',
+                  'organization.academic_info'.tr(),
                   required: !_isAcademicOptional,
                 ),
                 if (programOptions.isNotEmpty)
@@ -264,7 +265,7 @@ class _OrganizationRegistrationPageState
                     initialSelection: _selectedProgram,
                     expandedInsets: EdgeInsets.zero,
                     requestFocusOnTap: false,
-                    hintText: 'Hệ đào tạo',
+                    hintText: 'organization.program'.tr(),
                     leadingIcon: const Icon(Icons.school_outlined),
                     menuHeight: 240,
                     textStyle: const TextStyle(fontSize: 16),
@@ -298,12 +299,12 @@ class _OrganizationRegistrationPageState
                     validator: _isAcademicOptional
                         ? null
                         : (v) => (v == null || v.trim().isEmpty)
-                            ? 'Hệ đào tạo là bắt buộc'
+                            ? 'organization.program_required'.tr()
                             : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Hệ đào tạo',
-                      hintText: 'Ví dụ: K15',
-                      prefixIcon: Icon(Icons.school_outlined),
+                    decoration: InputDecoration(
+                      labelText: 'organization.program'.tr(),
+                      hintText: 'organization.program_hint'.tr(),
+                      prefixIcon: const Icon(Icons.school_outlined),
                     ),
                   ),
                 const SizedBox(height: 16),
@@ -316,10 +317,10 @@ class _OrganizationRegistrationPageState
                         validator: _isAcademicOptional
                             ? null
                             : (v) => (v == null || v.trim().isEmpty)
-                                ? 'Bắt buộc'
+                                ? 'common.required_field'.tr()
                                 : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Năm bắt đầu',
+                        decoration: InputDecoration(
+                          labelText: 'organization.start_year'.tr(),
                           hintText: '2015',
                         ),
                       ),
@@ -332,10 +333,10 @@ class _OrganizationRegistrationPageState
                         validator: _isAcademicOptional
                             ? null
                             : (v) => (v == null || v.trim().isEmpty)
-                                ? 'Bắt buộc'
+                                ? 'common.required_field'.tr()
                                 : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Năm tốt nghiệp',
+                        decoration: InputDecoration(
+                          labelText: 'profile.graduation_year'.tr(),
                           hintText: '2019',
                         ),
                       ),
@@ -348,7 +349,7 @@ class _OrganizationRegistrationPageState
                     initialSelection: _selectedMajor,
                     expandedInsets: EdgeInsets.zero,
                     requestFocusOnTap: false,
-                    hintText: 'Chuyên ngành',
+                    hintText: 'profile.major'.tr(),
                     leadingIcon: const Icon(Icons.book_outlined),
                     menuHeight: 240,
                     textStyle: const TextStyle(fontSize: 16),
@@ -382,25 +383,25 @@ class _OrganizationRegistrationPageState
                     validator: _isAcademicOptional
                         ? null
                         : (v) => (v == null || v.trim().isEmpty)
-                            ? 'Chuyên ngành là bắt buộc'
+                            ? 'organization.major_required'.tr()
                             : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Chuyên ngành',
-                      hintText: 'Ví dụ: Khoa học máy tính',
-                      prefixIcon: Icon(Icons.book_outlined),
+                    decoration: InputDecoration(
+                      labelText: 'profile.major'.tr(),
+                      hintText: 'organization.major_hint'.tr(),
+                      prefixIcon: const Icon(Icons.book_outlined),
                     ),
                   ),
                 const SizedBox(height: 24),
 
                 // --- Proof upload (optional) ---
-                const _SectionLabel('Minh chứng (Tùy chọn)', required: false),
+                _SectionLabel('organization.proof_optional'.tr(), required: false),
                 OutlinedButton.icon(
                   onPressed: _submitting ? null : _pickProof,
                   icon: const Icon(Icons.cloud_upload_outlined),
                   label: Text(
                     _proofFile != null
-                        ? 'Đổi file minh chứng'
-                        : 'Tải lên minh chứng',
+                        ? 'organization.change_proof'.tr()
+                        : 'organization.upload_proof'.tr(),
                   ),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -410,8 +411,10 @@ class _OrganizationRegistrationPageState
                   padding: const EdgeInsets.only(top: 6),
                   child: Text(
                     _proofFile != null
-                        ? 'Đã chọn: ${_proofFile!.name}'
-                        : 'Hỗ trợ ảnh JPG/PNG, tối đa 5MB.',
+                        ? 'organization.proof_selected'.tr(
+                            namedArgs: {'name': _proofFile!.name},
+                          )
+                        : 'organization.proof_hint'.tr(),
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
@@ -421,11 +424,10 @@ class _OrganizationRegistrationPageState
                 const SizedBox(height: 24),
 
                 // --- Trusted verifiers ---
-                const _SectionLabel('Người xác thực tin cậy', required: false),
-                const Text(
-                  'Chọn một hoặc nhiều người bạn quen biết trong tổ chức để xác '
-                  'thực danh tính, giúp yêu cầu được phê duyệt nhanh hơn.',
-                  style: TextStyle(
+                _SectionLabel('organization.trusted_verifiers'.tr(), required: false),
+                Text(
+                  'organization.trusted_verifiers_desc'.tr(),
+                  style: const TextStyle(
                       fontSize: 13, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 12),
@@ -448,7 +450,7 @@ class _OrganizationRegistrationPageState
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Hủy bỏ'),
+                        child: Text('common.cancel'.tr()),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -467,7 +469,7 @@ class _OrganizationRegistrationPageState
                                   color: Colors.white,
                                 ),
                               )
-                            : const Text('Xác minh học vấn'),
+                            : Text('organization.academic_verification'.tr()),
                       ),
                     ),
                   ],
@@ -492,7 +494,7 @@ class _SectionLabel extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
-        '$text ${required ? "(Bắt buộc)" : "(Tùy chọn)"}',
+        '$text ${required ? "(${('common.required'.tr())})" : "(${('common.optional'.tr())})"}',
         style: TextStyle(
           fontWeight: FontWeight.w600,
           color: required ? AppColors.primary : AppColors.textSecondary,
@@ -550,17 +552,17 @@ class _VerifierList extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 24),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (_, __) => const Text(
-        'Không tải được danh sách người xác thực.',
-        style: TextStyle(color: AppColors.textSecondary),
+      error: (_, __) => Text(
+        'organization.verifiers_load_failed'.tr(),
+        style: const TextStyle(color: AppColors.textSecondary),
       ),
       data: (verifiers) {
         if (verifiers.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Text(
-              'Hiện chưa có người xác thực khả dụng cho tổ chức này.',
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              'organization.no_verifiers'.tr(),
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           );
         }

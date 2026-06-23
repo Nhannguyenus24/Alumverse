@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { Box, Button, Grid, Paper, Stack, Typography, Skeleton } from '@mui/material';
 import { useOutletContext } from 'react-router';
@@ -59,6 +60,7 @@ const sortOrganizationsByRecent = (organizations) => (
 );
 
 const AdminOrganizationsPage = () => {
+  const { t } = useTranslation('admin');
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
@@ -70,7 +72,7 @@ const AdminOrganizationsPage = () => {
   const localTouchRef = useRef(readLocalTouchMap());
   
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Tổ chức', active: true }]);
+    setBreadcrumbs?.([{ label: t('nav_organizations'), active: true }]);
   }, [setBreadcrumbs]);
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -90,7 +92,7 @@ const AdminOrganizationsPage = () => {
         : []);
     } catch (error) {
       setOrganizations([]);
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể tải danh sách tổ chức', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_load_error'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -178,20 +180,20 @@ const AdminOrganizationsPage = () => {
         return sortOrganizationsByRecent([updatedItem, ...prev.filter((item) => item.id !== targetId)]);
       });
       setEditDialogOpen(false);
-      enqueueSnackbar('Đã cập nhật thông tin tổ chức', { variant: 'success' });
+      enqueueSnackbar(t('org_update_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật tổ chức', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
     }
   }, [editTarget, enqueueSnackbar]);
 
   const handleDeleteOrganization = useCallback(async (orgId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa tổ chức này?')) return;
+    if (!window.confirm(t('org_delete_confirm'))) return;
     try {
       await adminOrganizationApi.deleteOrganization(orgId);
       setOrganizations((prev) => prev.filter((item) => item.id !== orgId));
-      enqueueSnackbar('Đã xóa tổ chức thành công', { variant: 'success' });
+      enqueueSnackbar(t('org_delete_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể xóa tổ chức', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_delete_error'), { variant: 'error' });
     }
   }, [enqueueSnackbar]);
 
@@ -201,9 +203,9 @@ const AdminOrganizationsPage = () => {
       const updated = await adminOrganizationApi.upsertIntroduction(selectedOrganizationId, payload);
       setIntroduction(updated || { ...introduction, ...payload });
       setIntroDialogOpen(false);
-      enqueueSnackbar('Đã cập nhật giới thiệu tổ chức', { variant: 'success' });
+      enqueueSnackbar(t('org_intro_update_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật giới thiệu', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_intro_update_error'), { variant: 'error' });
     }
   }, [selectedOrganizationId, introduction, enqueueSnackbar]);
 
@@ -249,9 +251,9 @@ const AdminOrganizationsPage = () => {
         ...prev,
       ]));
       setEditDialogOpen(false);
-      enqueueSnackbar('Đã tạo tổ chức mới thành công', { variant: 'success' });
+      enqueueSnackbar(t('org_create_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể tạo tổ chức mới', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_create_error'), { variant: 'error' });
     }
   }, [enqueueSnackbar]);
 
@@ -274,10 +276,10 @@ const AdminOrganizationsPage = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Quản lý tổ chức
+            {t('org_page_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Cấu hình thông tin, giới thiệu và nhân sự cho các đơn vị trường học/tổ chức.
+            {t('org_page_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -286,7 +288,7 @@ const AdminOrganizationsPage = () => {
           onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
           sx={{ borderRadius: 1, fontWeight: 700, textTransform: 'none' }}
         >
-          Thêm tổ chức
+          {t('org_add_btn')}
         </Button>
       </Box>
 
@@ -302,18 +304,18 @@ const AdminOrganizationsPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng tổ chức"
+          label={t('metric_total_orgs')}
           value={stats.total}
           icon={<BusinessIcon />}
         />
         <AdminDashboardMetricTile
-          label="Đang hoạt động"
+          label={t('metric_active_orgs')}
           value={stats.active}
           icon={<CheckCircleIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Tạm ngưng"
+          label={t('org_metric_suspended')}
           value={stats.inactive}
           icon={<ErrorIcon />}
           valueColor="error.main"

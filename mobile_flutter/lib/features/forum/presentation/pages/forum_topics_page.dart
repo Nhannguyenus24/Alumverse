@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,7 +29,7 @@ class ForumTopicsPage extends ConsumerWidget {
     final async = ref.watch(forumTopicsProvider(categoryId));
 
     return Scaffold(
-      appBar: AppBar(title: Text(categoryName ?? 'Chuyên mục')),
+      appBar: AppBar(title: Text(categoryName ?? 'forum.categories'.tr())),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           await context.push(
@@ -38,7 +39,7 @@ class ForumTopicsPage extends ConsumerWidget {
           ref.invalidate(forumTopicsProvider(categoryId));
         },
         icon: const Icon(Icons.add),
-        label: const Text('Tạo bài'),
+        label: Text('forum.create_topic_short'.tr()),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -50,15 +51,15 @@ class ForumTopicsPage extends ConsumerWidget {
             children: List.generate(6, (_) => const SkeletonTile()),
           ),
           error: (_, __) => ErrorView(
-            message: 'Không tải được danh sách bài thảo luận',
+            message: 'forum.load_topics_failed'.tr(),
             onRetry: () => ref.invalidate(forumTopicsProvider(categoryId)),
           ),
           data: (topics) {
             if (topics.isEmpty) {
-              return const EmptyView(
+              return EmptyView(
                 icon: Icons.chat_bubble_outline,
-                title: 'Chưa có bài thảo luận',
-                message: 'Hãy là người đầu tiên tạo bài trong chuyên mục này.',
+                title: 'forum.no_topics'.tr(),
+                message: 'forum.no_topics_desc'.tr(),
               );
             }
             return ListView.separated(
@@ -99,16 +100,20 @@ class _TopicTile extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              'Được tạo lúc · ${formatRelativeTimeVi(topic.createdAt)}',
+              '${'forum.created_at'.tr()} · ${formatRelativeTimeVi(topic.createdAt)}',
               style: const TextStyle(
                   fontSize: 12, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                _Stat(label: 'Lượt xem', value: topic.viewCount),
+                _Stat(
+                    label: 'forum.topic_views'.tr(),
+                    value: topic.viewCount),
                 const SizedBox(width: 24),
-                _Stat(label: 'Thảo luận', value: topic.replyCount),
+                _Stat(
+                    label: 'forum.topic_replies'.tr(),
+                    value: topic.replyCount),
                 const Spacer(),
                 _AuthorChip(
                   memberId: topic.createdByMemberId,
@@ -165,9 +170,12 @@ class _AuthorChip extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Thành viên #${memberId ?? '—'}',
-                style: const TextStyle(
-                    fontWeight: FontWeight.w600, fontSize: 13)),
+            Text(
+              'forum.member_id'.tr(
+                  namedArgs: {'id': '${memberId ?? '—'}'}),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, fontSize: 13),
+            ),
             Text(formatRelativeTimeVi(updatedAt),
                 style: const TextStyle(
                     fontSize: 11, color: AppColors.textSecondary)),

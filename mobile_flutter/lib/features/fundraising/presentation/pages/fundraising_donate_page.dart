@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,7 +66,7 @@ class _FundraisingDonatePageState
     if (!_formKey.currentState!.validate()) return;
     final amount = _amount;
     if (amount == null || amount <= 0) {
-      AppToast.error(context, 'Vui lòng nhập số tiền hợp lệ.');
+      AppToast.error(context, 'donation.invalid_amount'.tr());
       return;
     }
 
@@ -92,7 +93,7 @@ class _FundraisingDonatePageState
 
       if (!mounted) return;
       if (checkoutUrl.isEmpty) {
-        AppToast.error(context, 'Không tạo được liên kết thanh toán.');
+        AppToast.error(context, 'donation.payment_link_failed'.tr());
         return;
       }
       await _showQrDialog(checkoutUrl);
@@ -103,7 +104,7 @@ class _FundraisingDonatePageState
       }
     } catch (e) {
       if (mounted) {
-        AppToast.fromError(context, e, fallback: 'Đóng góp thất bại.');
+        AppToast.fromError(context, e, fallback: 'donation.donate_failed'.tr());
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -120,7 +121,7 @@ class _FundraisingDonatePageState
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('Quét mã QR để thanh toán'),
+        title: Text('donation.qr_title'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -135,8 +136,8 @@ class _FundraisingDonatePageState
                 ),
                 errorWidget: (_, __, ___) => Column(
                   children: [
-                    const Text(
-                      'Không tải được mã QR. Vui lòng mở liên kết thanh toán.',
+                    Text(
+                      'donation.qr_load_failed'.tr(),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
@@ -146,25 +147,25 @@ class _FundraisingDonatePageState
                         mode: LaunchMode.externalApplication,
                       ),
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('Mở liên kết thanh toán'),
+                      label: Text('donation.qr_open_link'.tr()),
                     ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Dùng app ngân hàng quét mã để hoàn tất đóng góp. '
-              'Giao dịch sẽ được ghi nhận sau khi thanh toán thành công.',
+            Text(
+              'donation.qr_instruction'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+              style: const TextStyle(
+                  fontSize: 12.5, color: AppColors.textSecondary),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Hoàn tất'),
+            child: Text('donation.done'.tr()),
           ),
         ],
       ),
@@ -184,13 +185,13 @@ class _FundraisingDonatePageState
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Đóng góp')),
+      appBar: AppBar(title: Text('donation.donate'.tr())),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            const _Label('Chọn số tiền'),
+            _Label('donation.select_amount'.tr()),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -206,7 +207,7 @@ class _FundraisingDonatePageState
                     }),
                   ),
                 ChoiceChip(
-                  label: const Text('Tùy chọn'),
+                  label: Text('donation.custom_amount'.tr()),
                   selected: _custom,
                   onSelected: (_) => setState(() => _custom = true),
                 ),
@@ -218,15 +219,17 @@ class _FundraisingDonatePageState
                 controller: _customController,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Số tiền (VND)',
+                decoration: InputDecoration(
+                  labelText: 'donation.amount_vnd'.tr(),
                   suffixText: '₫',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) {
                   if (!_custom) return null;
                   final n = int.tryParse((v ?? '').trim());
-                  if (n == null || n <= 0) return 'Nhập số tiền hợp lệ';
+                  if (n == null || n <= 0) {
+                    return 'donation.invalid_amount_field'.tr();
+                  }
                   return null;
                 },
               ),
@@ -234,8 +237,8 @@ class _FundraisingDonatePageState
             const SizedBox(height: 20),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Đóng góp ẩn danh'),
-              subtitle: const Text('Không hiển thị thông tin của bạn'),
+              title: Text('donation.anonymous'.tr()),
+              subtitle: Text('donation.anonymous_desc'.tr()),
               value: _anonymous,
               onChanged: (v) => setState(() => _anonymous = v),
             ),
@@ -244,13 +247,15 @@ class _FundraisingDonatePageState
               TextFormField(
                 controller: _nameController,
                 maxLength: 50,
-                decoration: const InputDecoration(
-                  labelText: 'Họ và tên *',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'donation.full_name_required'.tr(),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) {
                   if (_anonymous) return null;
-                  if ((v ?? '').trim().isEmpty) return 'Vui lòng nhập họ tên';
+                  if ((v ?? '').trim().isEmpty) {
+                    return 'donation.full_name_error'.tr();
+                  }
                   return null;
                 },
               ),
@@ -258,32 +263,33 @@ class _FundraisingDonatePageState
                 controller: _emailController,
                 maxLength: 255,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'profile.email'.tr(),
+                  border: const OutlineInputBorder(),
                 ),
                 validator: (v) {
                   final t = (v ?? '').trim();
                   if (t.isEmpty) return null;
-                  final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
-                  return ok ? null : 'Email không hợp lệ';
+                  final ok =
+                      RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(t);
+                  return ok ? null : 'donation.email_invalid'.tr();
                 },
               ),
               TextFormField(
                 controller: _phoneController,
                 maxLength: 50,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Số điện thoại',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'donation.phone'.tr(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               TextFormField(
                 controller: _addressController,
                 maxLength: 500,
-                decoration: const InputDecoration(
-                  labelText: 'Địa chỉ',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'donation.address'.tr(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -292,10 +298,10 @@ class _FundraisingDonatePageState
               controller: _messageController,
               maxLength: 100,
               maxLines: 2,
-              decoration: const InputDecoration(
-                labelText: 'Lời nhắn',
-                helperText: '(Không bắt buộc)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'donation.message'.tr(),
+                helperText: 'donation.message_optional'.tr(),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
@@ -312,8 +318,8 @@ class _FundraisingDonatePageState
                         width: 22,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Tiếp tục thanh toán',
-                        style: TextStyle(
+                    : Text('donation.proceed_payment'.tr(),
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w700)),
               ),
             ),

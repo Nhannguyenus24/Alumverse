@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
@@ -122,9 +123,9 @@ class EventRepository {
   Future<void> cancelRegistration(int eventId, String reason) async {
     final code = await _findMyTicketCode(eventId);
     if (code == null) {
-      throw const ApiException(
+      throw ApiException(
         statusCode: 404,
-        message: 'Không tìm thấy vé đăng ký để hủy.',
+        message: 'event.ticket_not_found'.tr(),
       );
     }
     await _dio.post(

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -32,6 +33,7 @@ const MAX_GROUP_SIZE = 10;
 const DIALOG_PAGE_SIZE = 20;
 
 const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], currentMemberCount = 0 }) => {
+  const { t } = useTranslation(['network', 'common']);
   const [searchInput, setSearchInput] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
 
@@ -104,7 +106,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
   }, [open]);
 
   const errorMessage = isError
-    ? error?.response?.data?.message ?? error?.message ?? 'Đã xảy ra lỗi'
+    ? error?.response?.data?.message ?? error?.message ?? t('network:generic_error')
     : null;
 
   return (
@@ -118,7 +120,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
       <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
         <PersonAddIcon color="primary" fontSize="small" />
         <Typography variant="subtitle1" fontWeight={700} component="span">
-          Thêm thành viên
+          {t('network:add_member_dialog_title')}
         </Typography>
       </DialogTitle>
 
@@ -133,16 +135,16 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
 
         {remainingSlots <= 0 ? (
           <Alert severity="warning" sx={{ borderRadius: 1.5 }}>
-            Nhóm đã đạt giới hạn {MAX_GROUP_SIZE} thành viên.
+            {t('network:group_full_warning', { max: MAX_GROUP_SIZE })}
           </Alert>
         ) : (
           <>
             <Typography variant="caption" color="text.secondary">
-              Còn <strong>{remainingSlots}</strong> chỗ trống (tối đa {MAX_GROUP_SIZE} thành viên)
+              {t('network:remaining_slots', { count: remainingSlots, max: MAX_GROUP_SIZE })}
             </Typography>
 
             <TextField
-              placeholder="Tìm bạn bè..."
+              placeholder={t('network:search_friends_placeholder')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               size="small"
@@ -173,7 +175,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
             )}
 
             <Typography variant="caption" color={selectedMembers.length === 0 ? 'text.secondary' : 'primary'}>
-              Đã chọn {selectedMembers.length} người
+              {t('network:selected_count', { count: selectedMembers.length })}
             </Typography>
 
             <Box
@@ -193,8 +195,8 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
                 <Box sx={{ px: 2, py: 2 }}>
                   <Typography variant="body2" color="text.secondary">
                     {contacts.length === 0
-                      ? 'Không tìm thấy kết quả.'
-                      : 'Tất cả kết nối đã có trong nhóm.'}
+                      ? t('network:no_search_result')
+                      : t('network:all_connections_in_group')}
                   </Typography>
                 </Box>
               ) : (
@@ -245,7 +247,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
 
       <DialogActions sx={{ px: 2.5, py: 1.5, gap: 1 }}>
         <Button onClick={handleClose} disabled={isAdding} size="small" color="inherit">
-          Hủy
+          {t('common:cancel')}
         </Button>
         <Button
           onClick={handleSubmit}
@@ -254,7 +256,7 @@ const AddGroupMemberDialog = ({ open, onClose, groupId, existingMemberIds = [], 
           size="small"
           startIcon={isAdding ? <CircularProgress size={14} color="inherit" /> : null}
         >
-          {isAdding ? 'Đang thêm...' : 'Thêm vào nhóm'}
+          {isAdding ? t('network:adding') : t('network:add_to_group')}
         </Button>
       </DialogActions>
     </Dialog>

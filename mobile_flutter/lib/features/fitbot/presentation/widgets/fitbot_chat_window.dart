@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
@@ -115,14 +116,14 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
             ),
           ),
           IconButton(
-            tooltip: 'Xóa hội thoại',
+            tooltip: 'fitbot.clear_conversation'.tr(),
             onPressed: () =>
                 ref.read(fitBotControllerProvider.notifier).clear(),
             icon: const Icon(Icons.delete_outline, color: Colors.white70),
             visualDensity: VisualDensity.compact,
           ),
           IconButton(
-            tooltip: 'Đóng',
+            tooltip: 'common.close'.tr(),
             onPressed: widget.onClose,
             icon: const Icon(Icons.close, color: Colors.white),
             visualDensity: VisualDensity.compact,
@@ -148,7 +149,7 @@ class _FitBotChatWindowState extends ConsumerState<FitBotChatWindow> {
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _send(),
                 decoration: InputDecoration(
-                  hintText: 'Gửi tin nhắn...',
+                  hintText: 'fitbot.input_hint'.tr(),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16, vertical: 12),

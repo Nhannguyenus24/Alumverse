@@ -24,19 +24,20 @@ function isCooldownExpired(cooldownUntil) {
  *   cooldownUntil?: string | null;
  *   latestMessage?: object | null;
  * } | null} connectionStatus
+ * @param {function} t - i18next translation function
  */
-export function resolveConnectionDrawerState(connectionStatus) {
+export function resolveConnectionDrawerState(connectionStatus, t) {
   if (connectionStatus == null) {
     return {
       banner: {
         severity: 'info',
-        text: 'Gửi tin nhắn đầu tiên để bắt đầu kết nối.',
+        text: t('network:drawer_banner_first_message'),
       },
       canCompose: true,
       singleMessageOnly: true,
       messages: [],
-      emptyHint: 'Chưa có tin nhắn. Hãy gửi lời chào đầu tiên.',
-      composerPlaceholder: 'Nhập tin nhắn…',
+      emptyHint: t('network:drawer_empty_first'),
+      composerPlaceholder: t('network:drawer_placeholder_type'),
     };
   }
 
@@ -47,13 +48,13 @@ export function resolveConnectionDrawerState(connectionStatus) {
     return {
       banner: {
         severity: 'info',
-        text: 'Đang chờ người kia phản hồi. Bạn không thể gửi thêm tin nhắn lúc này.',
+        text: t('network:drawer_banner_pending'),
       },
       canCompose: false,
       singleMessageOnly: false,
       messages,
-      emptyHint: 'Chưa có tin nhắn.',
-      composerPlaceholder: 'Không thể gửi tin nhắn lúc này',
+      emptyHint: t('network:no_messages_yet'),
+      composerPlaceholder: t('network:drawer_placeholder_disabled'),
     };
   }
 
@@ -61,13 +62,13 @@ export function resolveConnectionDrawerState(connectionStatus) {
     return {
       banner: {
         severity: 'success',
-        text: 'Hai người đã kết nối.',
+        text: t('network:drawer_banner_accepted'),
       },
       canCompose: false,
       singleMessageOnly: false,
       messages,
-      emptyHint: 'Chưa có tin nhắn.',
-      composerPlaceholder: 'Không thể gửi tin nhắn lúc này',
+      emptyHint: t('network:no_messages_yet'),
+      composerPlaceholder: t('network:drawer_placeholder_disabled'),
     };
   }
 
@@ -78,26 +79,26 @@ export function resolveConnectionDrawerState(connectionStatus) {
       return {
         banner: {
           severity: 'info',
-          text: 'Bạn có thể gửi thêm 1 tin nhắn.',
+          text: t('network:drawer_banner_retry'),
         },
         canCompose: true,
         singleMessageOnly: true,
         messages,
-        emptyHint: 'Chưa có tin nhắn.',
-        composerPlaceholder: 'Nhập tin nhắn…',
+        emptyHint: t('network:no_messages_yet'),
+        composerPlaceholder: t('network:drawer_placeholder_type'),
       };
     }
 
     return {
       banner: {
         severity: 'warning',
-        text: `Yêu cầu kết nối đã bị từ chối. Bạn có thể gửi lại sau ${formatDateTime(cooldownUntil, 'thời điểm cooldown')}.`,
+        text: t('network:drawer_banner_rejected', { datetime: formatDateTime(cooldownUntil, '') }),
       },
       canCompose: false,
       singleMessageOnly: false,
       messages,
-      emptyHint: 'Chưa có tin nhắn.',
-      composerPlaceholder: 'Không thể gửi tin nhắn lúc này',
+      emptyHint: t('network:no_messages_yet'),
+      composerPlaceholder: t('network:drawer_placeholder_disabled'),
     };
   }
 
@@ -106,8 +107,8 @@ export function resolveConnectionDrawerState(connectionStatus) {
     canCompose: false,
     singleMessageOnly: false,
     messages,
-    emptyHint: 'Chưa có tin nhắn.',
-    composerPlaceholder: 'Không thể gửi tin nhắn lúc này',
+    emptyHint: t('network:no_messages_yet'),
+    composerPlaceholder: t('network:drawer_placeholder_disabled'),
   };
 }
 

@@ -1,11 +1,12 @@
 import { TextField, InputAdornment, alpha } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { useTranslation } from 'react-i18next';
 
 const SearchBar = ({
   value = '',
   onChange,
   onKeyDown,
-  placeholder = 'Tìm kiếm',
+  placeholder,
   size = 'small',
   disabled = false,
   fullWidth = true,
@@ -15,6 +16,8 @@ const SearchBar = ({
   iconSx,
   ...props
 }) => {
+  const { t } = useTranslation(['common']);
+  const resolvedPlaceholder = placeholder !== undefined ? placeholder : t('common:search_placeholder');
   return (
     <TextField
       fullWidth={fullWidth}
@@ -23,7 +26,7 @@ const SearchBar = ({
       value={value}
       onChange={(e) => onChange?.(e.target.value)}
       onKeyDown={onKeyDown}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       variant="outlined"
       sx={{
         ...sx,

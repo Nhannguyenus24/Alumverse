@@ -1,43 +1,47 @@
+import 'package:easy_localization/easy_localization.dart';
+
 class Validators {
   Validators._();
 
-  static String? required(String? value, {String field = 'Trường này'}) {
+  static String? required(String? value, {String field = ''}) {
     if (value == null || value.trim().isEmpty) {
-      return '$field không được để trống';
+      return field.isNotEmpty
+          ? 'validation.field_required'.tr(namedArgs: {'field': field})
+          : 'validation.required'.tr();
     }
     return null;
   }
 
   static String? email(String? value) {
     final v = value?.trim() ?? '';
-    if (v.isEmpty) return 'Email không được để trống';
+    if (v.isEmpty) return 'validation.email_empty'.tr();
     final regex = RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,}$');
-    if (!regex.hasMatch(v)) return 'Email không hợp lệ';
+    if (!regex.hasMatch(v)) return 'validation.email_invalid'.tr();
     return null;
   }
 
   static String? password(String? value) {
     final v = value ?? '';
-    if (v.isEmpty) return 'Mật khẩu không được để trống';
-    if (v.length < 8) return 'Mật khẩu tối thiểu 8 ký tự';
-    
+    if (v.isEmpty) return 'validation.password_empty'.tr();
+    if (v.length < 8) return 'validation.password_min_length'.tr();
+
     // Add same requirements as frontend
-    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'Cần ít nhất 1 chữ viết hoa';
-    if (!RegExp(r'[a-z]').hasMatch(v)) return 'Cần ít nhất 1 chữ viết thường';
-    if (!RegExp(r'\d').hasMatch(v)) return 'Cần ít nhất 1 chữ số';
-    if (!RegExp(r'[@$!%*?&]').hasMatch(v)) return 'Cần ít nhất 1 ký tự đặc biệt';
-    
+    if (!RegExp(r'[A-Z]').hasMatch(v)) return 'validation.password_uppercase'.tr();
+    if (!RegExp(r'[a-z]').hasMatch(v)) return 'validation.password_lowercase'.tr();
+    if (!RegExp(r'\d').hasMatch(v)) return 'validation.password_digit'.tr();
+    if (!RegExp(r'[@$!%*?&]').hasMatch(v)) return 'validation.password_special'.tr();
+
     return null;
   }
 
   static String? confirmPassword(String? value, String password) {
-    if (value == null || value.isEmpty) return 'Vui lòng nhập lại mật khẩu';
-    if (value != password) return 'Mật khẩu không khớp';
+    if (value == null || value.isEmpty) return 'validation.confirm_password_empty'.tr();
+    if (value != password) return 'validation.password_mismatch'.tr();
     return null;
   }
 
   static String? studentId(String? value) {
-    if (value == null || value.trim().isEmpty) return 'MSSV không được để trống';
+    if (value == null || value.trim().isEmpty) return 'validation.student_id_empty'.tr();
     // Add specific student ID validation if needed
     return null;
   }
@@ -48,16 +52,16 @@ class Validators {
   static String? vietnamPhone(String? value, {bool optional = false}) {
     final v = value?.trim() ?? '';
     if (v.isEmpty) {
-      return optional ? null : 'Số điện thoại không được để trống';
+      return optional ? null : 'validation.phone_empty'.tr();
     }
     if (!RegExp(r'^\d+$').hasMatch(v)) {
-      return 'Số điện thoại chỉ gồm chữ số';
+      return 'validation.phone_digits_only'.tr();
     }
     if (v.length != 10) {
-      return 'Số điện thoại phải có đúng 10 chữ số';
+      return 'validation.phone_length'.tr();
     }
     if (!RegExp(r'^0[35789]\d{8}$').hasMatch(v)) {
-      return 'Số điện thoại không hợp lệ';
+      return 'validation.phone_invalid'.tr();
     }
     return null;
   }

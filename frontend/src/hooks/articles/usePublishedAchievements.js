@@ -19,7 +19,7 @@ export const usePublishedAchievements = (page = 0, limit = 10, status = "APPROVE
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách thành tựu"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load achievements"
       : null;
 
   return {

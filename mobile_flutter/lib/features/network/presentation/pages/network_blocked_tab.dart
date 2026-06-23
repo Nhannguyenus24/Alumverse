@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,16 +24,16 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Bỏ chặn'),
-        content: Text('Bỏ chặn $name?'),
+        title: Text('network.unblock'.tr()),
+        content: Text('network.confirm_unblock'.tr(namedArgs: {'name': name})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Huỷ')),
+              child: Text('common.cancel'.tr())),
           TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Bỏ chặn',
-                  style: TextStyle(color: AppColors.primary))),
+              child: Text('network.unblock'.tr(),
+                  style: const TextStyle(color: AppColors.primary))),
         ],
       ),
     );
@@ -43,7 +44,7 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
       await ref.read(networkRepositoryProvider).unblock(memberId);
       ref.invalidate(networkBlockedProvider);
       ref.invalidate(networkConnectionsProvider);
-      if (mounted) AppToast.success(context, 'Đã bỏ chặn $name');
+      if (mounted) AppToast.success(context, 'network.unblocked_toast'.tr(namedArgs: {'name': name}));
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
     } finally {
@@ -59,7 +60,7 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
     return Column(
       children: [
         NetworkSearchBar(
-          hintText: 'Tìm trong danh sách đã chặn…',
+          hintText: 'network.search_blocked_hint'.tr(),
           initialValue: query.fullName,
           onSubmit: (v) => ref
               .read(networkBlockedQueryProvider.notifier)
@@ -84,17 +85,17 @@ class _NetworkBlockedTabState extends ConsumerState<NetworkBlockedTab> {
                   ElevatedButton(
                     onPressed: () =>
                         ref.invalidate(networkBlockedProvider),
-                    child: const Text('Thử lại'),
+                    child: Text('common.retry'.tr()),
                   ),
                 ],
               ),
             ),
             data: (result) {
               if (result.items.isEmpty) {
-                return const EmptyView(
+                return EmptyView(
                   icon: Icons.block_outlined,
-                  title: 'Chưa chặn ai',
-                  message: 'Danh sách chặn của bạn trống.',
+                  title: 'network.no_blocked_title'.tr(),
+                  message: 'network.no_blocked_desc'.tr(),
                 );
               }
               return RefreshIndicator(
@@ -161,8 +162,13 @@ class _PaginationBar extends StatelessWidget {
             onPressed: page > 0 ? onPrev : null,
             icon: const Icon(Icons.chevron_left),
           ),
-          Text('Trang ${page + 1} / $totalPage',
-              style: const TextStyle(color: AppColors.textSecondary)),
+          Text(
+            'common.page_indicator'.tr(namedArgs: {
+              'current': (page + 1).toString(),
+              'total': totalPage.toString(),
+            }),
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
           IconButton(
             onPressed: page < totalPage - 1 ? onNext : null,
             icon: const Icon(Icons.chevron_right),

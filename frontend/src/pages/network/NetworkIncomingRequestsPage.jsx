@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   CircularProgress,
@@ -18,22 +19,11 @@ import { useNetworkIncomingRequests } from '../../hooks/network/useNetworkIncomi
 import { useRespondConversationRequest } from '../../hooks/network/useRespondConversationRequest';
 import { useNotification } from '../../hooks/useNotification';
 
-const STATUS_FILTERS = [
-  {
-    type: 'dropdown',
-    key: 'status',
-    label: 'Trạng thái',
-    multiple: false,
-    options: [
-      { value: 'PENDING', label: 'Đang chờ' },
-      { value: 'REJECTED', label: 'Đã từ chối' },
-    ],
-  },
-];
-
 const PAGE_SIZE = 5;
 
 const NetworkIncomingRequestsPage = () => {
+  const { t } = useTranslation('network');
+
   const [searchInput, setSearchInput] = useState('');
   const [appliedFullName, setAppliedFullName] = useState('');
   const [page, setPage] = useState(1);
@@ -47,6 +37,22 @@ const NetworkIncomingRequestsPage = () => {
   const [pendingAction, setPendingAction] = useState(null);
 
   const { showSuccess, showError } = useNotification();
+
+  const STATUS_FILTERS = useMemo(
+    () => [
+      {
+        type: 'dropdown',
+        key: 'status',
+        label: t('incoming_filter_status_label'),
+        multiple: false,
+        options: [
+          { value: 'PENDING', label: t('incoming_status_pending') },
+          { value: 'REJECTED', label: t('incoming_status_rejected') },
+        ],
+      },
+    ],
+    [t],
+  );
 
   const { items, totalPage, isLoading, isError } = useNetworkIncomingRequests({
     appliedFullName,
@@ -92,13 +98,13 @@ const NetworkIncomingRequestsPage = () => {
       setRespondingId(null);
       showSuccess(
         status === 'ACCEPTED'
-          ? 'Đã chấp nhận yêu cầu kết nối.'
-          : 'Đã từ chối yêu cầu kết nối.',
+          ? t('incoming_accept_success')
+          : t('incoming_reject_success'),
       );
     },
     onError: () => {
       setRespondingId(null);
-      showError('Đã xảy ra lỗi. Vui lòng thử lại.');
+      showError(t('incoming_respond_error'));
     },
   });
 
@@ -125,15 +131,15 @@ const NetworkIncomingRequestsPage = () => {
   const confirmDialogConfig =
     pendingAction?.status === 'ACCEPTED'
       ? {
-          title: 'Chấp nhận yêu cầu kết nối',
-          message: 'Bạn có chắc muốn chấp nhận yêu cầu kết nối này không?',
-          confirmText: 'Chấp nhận',
+          title: t('incoming_accept_dialog_title'),
+          message: t('incoming_accept_dialog_message'),
+          confirmText: t('incoming_accept_dialog_confirm'),
           confirmColor: 'primary',
         }
       : {
-          title: 'Từ chối yêu cầu kết nối',
-          message: 'Bạn có chắc muốn từ chối yêu cầu kết nối này không?',
-          confirmText: 'Từ chối',
+          title: t('incoming_reject_dialog_title'),
+          message: t('incoming_reject_dialog_message'),
+          confirmText: t('incoming_reject_dialog_confirm'),
           confirmColor: 'primary',
         };
 
@@ -154,7 +160,7 @@ const NetworkIncomingRequestsPage = () => {
     if (isError) {
       return (
         <Alert severity="error">
-          Không thể tải danh sách yêu cầu. Vui lòng thử lại.
+          {t('incoming_load_error')}
         </Alert>
       );
     }
@@ -163,8 +169,8 @@ const NetworkIncomingRequestsPage = () => {
       return (
         <Alert severity="info">
           {hasActiveCriteria
-            ? 'Không có yêu cầu nào phù hợp với tìm kiếm hoặc bộ lọc hiện tại.'
-            : 'Chưa có yêu cầu kết nối nào.'}
+            ? t('incoming_no_filter_results')
+            : t('incoming_no_requests')}
         </Alert>
       );
     }
@@ -186,7 +192,7 @@ const NetworkIncomingRequestsPage = () => {
   };
 
   return (
-    <NetworkSectionLayout title="Yêu cầu kết nối">
+    <NetworkSectionLayout title={t('incoming_layout_title')}>
       <Stack spacing={2}>
         <Typography
           variant="h1"
@@ -194,11 +200,11 @@ const NetworkIncomingRequestsPage = () => {
           color="primary.main"
           sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
         >
-          YÊU CẦU KẾT NỐI
+          {t('incoming_heading')}
         </Typography>
 
         <Typography color="text.secondary">
-          Xem và phản hồi các yêu cầu kết nối từ sinh viên và cựu sinh viên khác.
+          {t('incoming_subheading')}
         </Typography>
 
         <DynamicFilterBar
@@ -214,7 +220,7 @@ const NetworkIncomingRequestsPage = () => {
           value={searchInput}
           onChange={setSearchInput}
           onKeyDown={handleSearchKeyDown}
-          placeholder="Tìm theo họ tên… (Enter để tìm)"
+          placeholder={t('search_by_name_placeholder')}
         />
       </Stack>
 
@@ -257,7 +263,7 @@ const NetworkIncomingRequestsPage = () => {
         message={confirmDialogConfig.message}
         confirmText={confirmDialogConfig.confirmText}
         confirmColor={confirmDialogConfig.confirmColor}
-        cancelText="Hủy"
+        cancelText={t('incoming_cancel')}
         onConfirm={handleConfirmRespond}
         onCancel={handleCancelRespond}
       />

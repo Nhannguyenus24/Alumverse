@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Avatar,
   Box,
@@ -26,6 +27,7 @@ const NetworkConnectionCard = ({
   onBlock,
   isBlockLoading = false,
 }) => {
+  const { t } = useTranslation('network');
   const navigate = useOrgNavigate();
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(connection.peerMemberId);
@@ -104,15 +106,14 @@ const NetworkConnectionCard = ({
             size="small"
             type="button"
             onClick={handleMessage}
-            sx={{ minWidth: 100 }}
           >
-            Nhắn tin
+            {t('message')}
           </Button>
 
           {enableBlock ? (
             <IconButtonMenu
               menuId={`network-connection-card-menu-${connection.peerMemberId}`}
-              buttonAriaLabel="Tùy chọn kết nối"
+              buttonAriaLabel={t('network:connection_options_aria')}
             >
               {({ close }) => (
                 <MenuItem
@@ -127,7 +128,7 @@ const NetworkConnectionCard = ({
                     <BlockOutlinedIcon fontSize="small" color="primary" />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Chặn người dùng"
+                    primary={t('network:block_user')}
                     primaryTypographyProps={{ variant: 'body2' }}
                   />
                 </MenuItem>

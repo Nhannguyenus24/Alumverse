@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -66,7 +67,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (e is DioException) {
       final inner = e.error;
       if (inner is ApiException) return inner.message;
-      return e.message ?? 'Đăng nhập thất bại';
+      return e.message ?? 'auth.login_failed'.tr();
     }
     if (e is ApiException) return e.message;
     return e.toString().replaceFirst('Exception: ', '');
@@ -91,7 +92,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 const Center(child: AlumverseLogo(size: 80)),
                 const SizedBox(height: 32),
                 Text(
-                  'Đăng nhập',
+                  'auth.login'.tr(),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
@@ -114,10 +115,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Email hoặc MSSV',
-                    hintText: 'email@example.com',
-                    prefixIcon: Icon(Icons.person_outline),
+                  decoration: InputDecoration(
+                    labelText: 'auth.email_or_student_id'.tr(),
+                    hintText: 'auth.email_placeholder'.tr(),
+                    prefixIcon: const Icon(Icons.person_outline),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -125,11 +126,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   controller: _passCtl,
                   obscureText: _obscure,
                   validator: (v) =>
-                      Validators.required(v, field: 'Mật khẩu'),
+                      Validators.required(v, field: 'auth.password'.tr()),
                   textInputAction: TextInputAction.done,
                   onFieldSubmitted: (_) => loading ? null : _submit(),
                   decoration: InputDecoration(
-                    labelText: 'Mật khẩu',
+                    labelText: 'auth.password'.tr(),
                     hintText: '••••••••',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
@@ -144,7 +145,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => context.push(RouteNames.forgotPassword),
-                    child: const Text('Quên mật khẩu?'),
+                    child: Text('auth.forgot_password'.tr()),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -162,7 +163,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Đăng nhập', style: TextStyle(fontSize: 16)),
+                      : Text('auth.login'.tr(),
+                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -171,7 +173,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'hoặc tiếp tục với',
+                        'auth.or_continue_with'.tr(),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -186,10 +188,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           // TODO: Google Sign-In — gọi google_sign_in để lấy
                           // idToken rồi ref.read(authStateProvider.notifier)
                           // .loginWithGoogle(idToken).
-                          AppToast.info(context, 'Đăng nhập Google sắp ra mắt');
+                          AppToast.info(
+                              context, 'auth.google_coming_soon'.tr());
                         },
                   icon: const Icon(Icons.g_mobiledata, size: 30),
-                  label: const Text('Tiếp tục với Google'),
+                  label: Text('auth.continue_with_google'.tr()),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -198,12 +201,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Bạn chưa có tài khoản?'),
+                    Text('auth.no_account'.tr()),
                     TextButton(
                       onPressed: () => context.push(RouteNames.register),
-                      child: const Text(
-                        'Đăng ký ngay!',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      child: Text(
+                        'auth.register_now'.tr(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
@@ -213,9 +216,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   onPressed: () {
                     ref.read(organizationStateProvider.notifier).reset();
                   },
-                  child: const Text(
-                    'Đổi tổ chức',
-                    style: TextStyle(color: Colors.grey),
+                  child: Text(
+                    'auth.change_organization'.tr(),
+                    style: const TextStyle(color: Colors.grey),
                   ),
                 ),
               ],

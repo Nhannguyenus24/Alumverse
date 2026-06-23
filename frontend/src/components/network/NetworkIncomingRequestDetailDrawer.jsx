@@ -7,6 +7,7 @@ import {
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import { useTranslation } from 'react-i18next';
 
 import Scrollbar from '../Scrollbar';
 import { formatDateTime } from '../../utils/dateFormatter';
@@ -40,6 +41,7 @@ function MessageBubble({ body, createdAt }) {
 }
 
 const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
+  const { t } = useTranslation(['network']);
   if (!request) return null;
 
   
@@ -77,11 +79,11 @@ const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
               {request.fullName}
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Gửi lúc {formatDateTime(request.messageCreatedAt)}
+              {t('network:sent_at', { datetime: formatDateTime(request.messageCreatedAt) })}
             </Typography>
           </Box>
         </Stack>
-        <IconButton size="small" onClick={onClose} aria-label="Đóng">
+        <IconButton size="small" onClick={onClose} aria-label={t('network:close_aria')}>
           <CloseIcon />
         </IconButton>
       </Box>
@@ -101,7 +103,7 @@ const NetworkIncomingRequestDetailDrawer = ({ open, onClose, request }) => {
           <MessageBubble body={request.message} createdAt={request.messageCreatedAt} />
         ) : (
           <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-            Chưa có tin nhắn.
+            {t('network:no_messages_yet')}
           </Typography>
         )}
       </Scrollbar>

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,7 +44,7 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
       ref.invalidate(mySessionsProvider);
       if (!mounted) return;
       Navigator.of(context).pop();
-      AppToast.success(context, 'Cảm ơn bạn đã đánh giá!');
+      AppToast.success(context, 'mentorship.feedback_thanks'.tr());
     } catch (e) {
       if (!mounted) return;
       AppToast.error(context, e.toString().replaceFirst('Exception: ', ''));
@@ -66,18 +67,18 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Đánh giá buổi cố vấn',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            'mentorship.feedback_title'.tr(),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Hãy chia sẻ trải nghiệm của bạn để giúp các Mentee khác.',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          Text(
+            'mentorship.feedback_subtitle'.tr(),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
           const SizedBox(height: 20),
-          const Text('Đánh giá sao',
-              style: TextStyle(fontWeight: FontWeight.w600)),
+          Text('mentorship.feedback_star_label'.tr(),
+              style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Row(
             children: List.generate(
@@ -99,9 +100,9 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
           TextField(
             controller: _commentCtl,
             maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Nhận xét (tùy chọn)',
-              hintText: 'Chia sẻ cảm nhận về buổi cố vấn...',
+            decoration: InputDecoration(
+              labelText: 'mentorship.feedback_comment_label'.tr(),
+              hintText: 'mentorship.feedback_comment_hint'.tr(),
               alignLabelWithHint: true,
             ),
           ),
@@ -113,10 +114,10 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
                 onChanged: (v) => setState(() => _isPublic = v),
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Hiển thị công khai trên hồ sơ cố vấn',
-                  style: TextStyle(fontSize: 13),
+                  'mentorship.feedback_public_label'.tr(),
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
             ],
@@ -135,8 +136,8 @@ class _FeedbackBottomSheetState extends ConsumerState<FeedbackBottomSheet> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Gửi đánh giá',
-                      style: TextStyle(fontSize: 16)),
+                  : Text('mentorship.submit_feedback'.tr(),
+                      style: const TextStyle(fontSize: 16)),
             ),
           ),
         ],

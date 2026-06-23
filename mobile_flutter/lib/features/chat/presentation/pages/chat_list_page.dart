@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -49,11 +50,11 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tin nhắn'),
+        title: Text('chat.title'.tr()),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_comment_outlined),
-            tooltip: 'Tạo nhóm chat',
+            tooltip: 'chat.create_group'.tr(),
             onPressed: () => context.push('${RouteNames.chat}/new'),
           ),
         ],
@@ -68,7 +69,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
               onSubmitted: (v) =>
                   ref.read(chatListQueryProvider.notifier).state = v.trim(),
               decoration: InputDecoration(
-                hintText: 'Tìm hội thoại…',
+                hintText: 'chat.search_hint'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 filled: true,
@@ -89,11 +90,10 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
               ),
               data: (items) {
                 if (items.isEmpty) {
-                  return const EmptyView(
+                  return EmptyView(
                     icon: Icons.forum_outlined,
-                    title: 'Chưa có hội thoại',
-                    message:
-                        'Kết nối với mọi người trong mục Kết nối để bắt đầu trò chuyện.',
+                    title: 'chat.no_conversations'.tr(),
+                    message: 'chat.empty_desc'.tr(),
                   );
                 }
                 return RefreshIndicator(

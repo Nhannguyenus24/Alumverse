@@ -2,6 +2,7 @@ import { Stack } from '@mui/material';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import MarkEmailUnreadOutlinedIcon from '@mui/icons-material/MarkEmailUnreadOutlined';
 import DraftsOutlinedIcon from '@mui/icons-material/DraftsOutlined';
+import { useTranslation } from 'react-i18next';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -12,6 +13,7 @@ const metricRowSx = {
 };
 
 const AdminFeedbackSection = () => {
+  const { t } = useTranslation('admin');
   const { stats } = useAdminFeedbackStats();
 
   const fmtDate = (str) => {
@@ -25,23 +27,23 @@ const AdminFeedbackSection = () => {
 
   return (
     <AdminSectionPanel
-      title="Phản hồi trường"
-      subtitle="Tổng quan phản hồi từ cựu sinh viên và xu hướng 30 ngày."
+      title={t('feedback_section_title')}
+      subtitle={t('feedback_section_subtitle')}
     >
       <Stack spacing={3}>
         <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
           <AdminDashboardMetricTile
-            label="Tổng phản hồi"
+            label={t('feedback_total')}
             value={Number(stats.totalFeedbacks).toLocaleString()}
             icon={<FeedbackOutlinedIcon />}
           />
           <AdminDashboardMetricTile
-            label="Chưa đọc"
+            label={t('feedback_unread')}
             value={Number(stats.unreadFeedbacks).toLocaleString()}
             icon={<MarkEmailUnreadOutlinedIcon />}
           />
           <AdminDashboardMetricTile
-            label="Đã đọc"
+            label={t('feedback_read')}
             value={Number(stats.readFeedbacks).toLocaleString()}
             icon={<DraftsOutlinedIcon />}
           />
@@ -49,7 +51,7 @@ const AdminFeedbackSection = () => {
 
         <Chart
           type="line"
-          title="Phản hồi theo ngày (30 ngày qua)"
+          title={t('feedback_chart_title')}
           data={timelineData}
           dataKey="count"
           xAxisKey="date"

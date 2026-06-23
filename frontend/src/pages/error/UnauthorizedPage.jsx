@@ -1,15 +1,18 @@
 import { Link } from 'react-router';
 import { Box, Typography, Button, Container } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 
 const UnauthorizedPage = () => {
+  const { t } = useTranslation('common');
+
   return (
     <Page
-      title="403 Unauthorized"
+      title={t('unauthorized_title')}
       meta={
         <meta
           name="description"
-          content="Không có quyền truy cập - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+          content={t('unauthorized_meta_desc')}
         />
       }
     >
@@ -28,12 +31,12 @@ const UnauthorizedPage = () => {
           <Typography variant="h1" sx={{ fontSize: '8rem', fontWeight: 700 }}>
             403
           </Typography>
-          <Typography variant="h5">Unauthorized Access</Typography>
+          <Typography variant="h5">{t('unauthorized_heading')}</Typography>
           <Typography variant="body1" color="text.secondary">
-            You don't have permission to access this page.
+            {t('unauthorized_desc')}
           </Typography>
           <Button component={Link} to="/" variant="contained" sx={{ mt: 2 }}>
-            Go to Home
+            {t('not_found_go_home')}
           </Button>
         </Box>
       </Container>

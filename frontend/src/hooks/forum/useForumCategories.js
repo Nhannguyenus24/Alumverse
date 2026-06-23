@@ -28,7 +28,7 @@ export const useForumCategories = (organizationId) => {
   const categories = data ?? [];
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh mục"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load categories"
       : null;
 
   return { categories, isPending, isError, errorMessage };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
@@ -23,66 +24,61 @@ import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
 
-const SIDEBAR = [
-  { id: '/development', label: 'Phát triển', icon: <TrendingUpIcon /> },
-  { id: '/development/mentorship', label: 'Cố vấn', icon: <SchoolIcon /> },
-  { id: '/development/academics', label: 'Cơ hội học tập', icon: <MenuBookIcon /> },
-  { id: '/development/jobs', label: 'Cơ hội việc làm', icon: <WorkIcon /> },
+const getSidebar = (t) => [
+  { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
+  { id: '/development/mentorship', label: t('mentorship:title'), icon: <SchoolIcon /> },
+  { id: '/development/academics', label: t('dev:academics'), icon: <MenuBookIcon /> },
+  { id: '/development/jobs', label: t('dev:jobs'), icon: <WorkIcon /> },
 ];
 
-const FILTERS = [
+const getFilters = (t) => [
   {
     type: 'dropdown',
     key: 'type',
-    label: 'Chủ đề',
+    label: t('dev:filter_topic'),
     multiple: true,
-    options: [
-      'Học bổng',
-      'Trao đổi',
-      'Nghiên cứu',
-      'Workshop',
-      'Khóa học',
-    ],
+    options: [t('dev:topic_scholarship'), t('dev:topic_exchange'), t('dev:topic_research'), 'Workshop', t('dev:topic_course')],
   },
   {
     type: 'dropdown',
     key: 'format',
-    label: 'Hình thức',
+    label: t('dev:filter_format'),
     options: ['Online', 'Offline', 'Hybrid'],
   },
   {
     type: 'dropdown',
     key: 'location',
-    label: 'Địa điểm',
+    label: t('dev:filter_location'),
     multiple: true,
-    options: ['TP.HCM', 'Trong nước', 'Nước ngoài'],
+    options: [t('dev:location_hcm'), t('dev:location_domestic'), t('dev:location_abroad')],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Hạn chót',
+    label: t('dev:filter_deadline'),
   },
   {
     type: 'dropdown',
     key: 'level',
-    label: 'Trình độ',
+    label: t('dev:filter_level'),
     multiple: true,
-    options: ['Đại học', 'Thạc sĩ', 'Tiến sĩ']
+    options: [t('dev:level_bachelor'), t('dev:level_master'), t('dev:level_phd')],
   },
 ];
 
 const DevelopmentJobsPage = () => {
+  const { t } = useTranslation(['dev', 'mentorship', 'common']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
+  const sidebar = getSidebar(t);
+  const filters = getFilters(t);
 
   const { jobs } = usePublishedJobs(0, 12);
 
-  const [filters, setFilters] = useState({
-    all: true,
-  });
+  const [filterValues, setFilterValues] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -107,9 +103,9 @@ const DevelopmentJobsPage = () => {
     try {
       await apiClient.delete(`/admin/articles/jobs/${deleteTarget.id}`);
       queryClient.invalidateQueries({ queryKey: ['publishedJobs'] });
-      enqueueSnackbar('Đã xoá thành công.', { variant: 'success' });
+      enqueueSnackbar(t('common:success'), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('common:error'), { variant: 'error' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -117,17 +113,13 @@ const DevelopmentJobsPage = () => {
   };
 
   return (
-    <Page title="Cơ hội việc làm">
-      <Container
-        maxWidth={false}
-        disableGutters
-        sx={{ pb: 6 }}
-      >
+    <Page title={t('dev:jobs')}>
+      <Container maxWidth={false} disableGutters sx={{ pb: 6 }}>
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={SIDEBAR} />
+              <Sidebar items={sidebar} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -137,9 +129,7 @@ const DevelopmentJobsPage = () => {
             </Stack>
 
             {/* MAIN CONTENT */}
-            <Stack spacing={5}
-                   sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 }}}
-            >
+            <Stack spacing={5} sx={{ flex: 1, minWidth: 0, width: '100%', px: { xs: 1.5, sm: 2, md: 2.75 } }}>
               <Stack gap={2}>
                 {/* HEADER */}
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -149,44 +139,29 @@ const DevelopmentJobsPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                   >
-                    CƠ HỘI VIỆC LÀM
+                    {t('dev:jobs').toUpperCase()}
                   </Typography>
 
                   {isAdmin ? (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => navigate('/admin/article')}
-                    >
-                      Quản lý cơ hội
+                    <Button variant="outlined" color="primary" onClick={() => navigate('/admin/article')}>
+                      {t('dev:manage_opportunities')}
                     </Button>
                   ) : (
-                    <Button
-                      variant="contained"
-                      onClick={() => navigate('/post/job')}
-                    >
-                      Đăng bài
+                    <Button variant="contained" onClick={() => navigate('/post/job')}>
+                      {t('common:create')}
                     </Button>
                   )}
                 </Box>
 
                 <Typography color="text.secondary">
-                    Những việc làm từ nhiều công ty và tập đoàn hàng đầu vẫn đang chào đón các bạn!
+                  {t('dev:jobs_desc')}
                 </Typography>
 
-                {/* FILTERS */}
-                <DynamicFilterBar
-                  config={FILTERS}
-                  value={filters}
-                  onChange={setFilters}
-                />
+                <DynamicFilterBar config={filters} value={filterValues} onChange={setFilterValues} />
 
-                {/* SEARCH */}
                 <SearchBar
-                  value={filters.search}
-                  onChange={(val) =>
-                    setFilters((prev) => ({ ...prev, search: val }))
-                  }
+                  value={filterValues.search}
+                  onChange={(val) => setFilterValues((prev) => ({ ...prev, search: val }))}
                 />
               </Stack>
 
@@ -206,17 +181,13 @@ const DevelopmentJobsPage = () => {
               {cards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Tất cả việc làm
+                    {t('dev:jobs')}
                   </Typography>
 
                   <Box
                     sx={{
                       display: 'grid',
-                      gridTemplateColumns: {
-                        xs: '1fr',
-                        sm: '1fr 1fr',
-                        md: '1fr 1fr 1fr',
-                      },
+                      gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' },
                       gap: 4,
                     }}
                   >
@@ -233,7 +204,6 @@ const DevelopmentJobsPage = () => {
                   </Box>
                 </Box>
               )}
-
             </Stack>
           </Box>
         </Container>
@@ -241,8 +211,8 @@ const DevelopmentJobsPage = () => {
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Xoá bài viết"
-        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        title={t('dev:delete_article_title')}
+        description={t('dev:delete_article_desc', { title: deleteTarget?.title ?? '' })}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         loading={deleting}

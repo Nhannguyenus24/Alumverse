@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Container, Stack, Typography, Avatar, Button } from '@mui/material';
 import TopTabFilter from '../components/mentorship/TopTabFilter';
 import CoverUpload from '../components/CoverUpload';
@@ -7,53 +8,49 @@ const ProfileLayout = ({
   user,
   tabs,
   onNavigate,
-  mode = 'mentor', // 'mentor' | 'mentorEdit' | 'mentee' for MENTORSHIP PROFILE
-                   // 'user' | 'userEdit' | 'userView' for USER PROFILE
+  mode = 'mentor',
   cover,
   onCoverChange,
   mentorId,
   canBook = true,
   onUserMessage,
-  userMessageLabel = 'Nhắn tin',
+  userMessageLabel,
   children,
   avatarSlot
 }) => {
+  const { t } = useTranslation('profile');
 
   const handleBack = useCallback(() => {
     if (window.history.length > 1) { window.history.back(); }
     else { onNavigate('/'); }
   }, [onNavigate]);
 
+  const resolvedMessageLabel = userMessageLabel ?? t('send_message');
+
   const BUTTON_CONFIG = useMemo(() => ({
     mentor: [
-      { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
-      { label: 'Sửa trang cá nhân', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
+      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
+      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile/edit') },
     ],
-    mentorEdit: [
-      //{ label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/development/mentorship/profile') },
-      //{ label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/development/mentorship/profile') },
-    ],
+    mentorEdit: [],
     menteeOwn: [
-      { label: 'Chỉnh sửa hồ sơ', variant: 'outlined', onClick: () => onNavigate('/development/mentorship/mentee-signup') },
-      { label: 'Trở thành cố vấn', variant: 'contained', color: 'primary', onClick: () => onNavigate('/development/mentorship/signup') },
+      { label: t('edit_mentee_profile'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship/mentee-signup') },
+      { label: t('become_mentor'), variant: 'contained', color: 'primary', onClick: () => onNavigate('/development/mentorship/signup') },
     ],
     mentee: [
-      { label: 'Về trang Cố vấn', variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
-      { label: 'Đặt lịch hẹn', variant: 'contained', disabled: !canBook, onClick: canBook ? () => onNavigate(`/development/mentorship/mentors/${mentorId}/book`) : undefined },
+      { label: t('back_to_mentorship'), variant: 'outlined', onClick: () => onNavigate('/development/mentorship') },
+      { label: t('book_appointment'), variant: 'contained', disabled: !canBook, onClick: canBook ? () => onNavigate(`/development/mentorship/mentors/${mentorId}/book`) : undefined },
     ],
     user: [
-      { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
-      { label: 'Sửa trang cá nhân', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
+      { label: t('back'), variant: 'outlined', onClick: handleBack },
+      { label: t('edit_profile'), variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile/edit') },
     ],
-    userEdit: [
-      //{ label: 'Huỷ', variant: 'outlined', color: 'secondary', onClick: () => onNavigate('/profile') },
-      //{ label: 'Lưu thay đổi', variant: 'contained', onClick: () => onNavigate('/profile') },
-    ],
+    userEdit: [],
     userView: [
-      { label: 'Quay lại', variant: 'outlined', onClick: handleBack },
-      { label: userMessageLabel, variant: 'contained', disabled: !onUserMessage, onClick: onUserMessage },
+      { label: t('back'), variant: 'outlined', onClick: handleBack },
+      { label: resolvedMessageLabel, variant: 'contained', disabled: !onUserMessage, onClick: onUserMessage },
     ],
-  }), [onNavigate, mentorId, canBook, handleBack, onUserMessage, userMessageLabel]);
+  }), [t, onNavigate, mentorId, canBook, handleBack, onUserMessage, resolvedMessageLabel]);
 
   const renderButtons = () =>
     (BUTTON_CONFIG[mode] ?? []).map(({ label, ...props }, i) => (

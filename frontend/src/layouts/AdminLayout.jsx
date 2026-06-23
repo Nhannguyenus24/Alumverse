@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useParams, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Box, useTheme, alpha } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -16,6 +17,7 @@ const SIDEBAR_WIDTH = 280;
 const SIDEBAR_COLLAPSED_WIDTH = 88;
 
 const AdminLayoutShell = () => {
+  const { t } = useTranslation('admin');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState(null);
@@ -30,8 +32,8 @@ const AdminLayoutShell = () => {
 
   return (
     <Page
-      title="Quản trị hệ thống"
-      meta={<meta name="description" content="Khu vực quản trị HCMUS Alumni" />}
+      title={t('settings')}
+      meta={<meta name="description" content="HCMUS Alumni Admin" />}
       sx={{
         display: 'flex',
         minHeight: '100vh',

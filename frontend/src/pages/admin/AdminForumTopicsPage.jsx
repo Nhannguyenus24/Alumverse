@@ -18,6 +18,7 @@ import {
 import { useOutletContext, useParams } from "react-router";
 import { useDebounce } from "../../hooks/useDebounce";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -36,6 +37,7 @@ import { formatDate } from "../../utils/dateFormatter";
 
 const AdminForumTopicsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation("admin");
   const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const {
     topics: topicsPaginated,
@@ -57,8 +59,8 @@ const AdminForumTopicsPage = () => {
   const orgSlug = slug || activeOrganization?.slug;
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Chủ đề', active: true }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs?.([{ label: t('forum_topics_breadcrumb'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   const { user } = useAuth();
 
@@ -89,7 +91,7 @@ const AdminForumTopicsPage = () => {
     { id: "id", label: "ID", width: 60 },
     {
       id: "title",
-      label: "Tiêu đề",
+      label: t('forum_col_title'),
       render: (val, row) => (
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
@@ -104,17 +106,17 @@ const AdminForumTopicsPage = () => {
     },
     {
       id: "createdByName",
-      label: "Người tạo",
+      label: t('forum_col_created_by'),
       render: (val, row) => val || row.createdByMemberId || "-",
     },
-    { id: "viewCount", label: "Lượt xem", align: "center" },
+    { id: "viewCount", label: t('forum_col_views'), align: "center" },
     {
       id: "isLocked",
-      label: "Trạng thái",
+      label: t('forum_col_status'),
       render: (val, row) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {val ? (
-            <Tooltip title="Mở khóa">
+            <Tooltip title={t('forum_action_unlock')}>
               <IconButton
                 size="small"
                 color="warning"
@@ -127,7 +129,7 @@ const AdminForumTopicsPage = () => {
               </IconButton>
             </Tooltip>
           ) : (
-            <Tooltip title="Khóa">
+            <Tooltip title={t('forum_action_lock')}>
               <IconButton
                 size="small"
                 color="inherit"
@@ -141,12 +143,12 @@ const AdminForumTopicsPage = () => {
             </Tooltip>
           )}
           <Typography variant="caption" sx={{ fontWeight: 600 }}>
-            {val ? "Đã khóa" : "Mở"}
+            {val ? t('forum_status_locked') : t('forum_status_open')}
           </Typography>
         </Box>
       ),
     },
-    { id: "createdAt", label: "Ngày tạo", render: (val) => formatDate(val) },
+    { id: "createdAt", label: t('forum_col_created_at_date'), render: (val) => formatDate(val) },
     {
       id: "actions",
       label: "",
@@ -158,17 +160,17 @@ const AdminForumTopicsPage = () => {
           justifyContent="flex-end"
           onClick={(e) => e.stopPropagation()}
         >
-          <Tooltip title="Chi tiết">
+          <Tooltip title={t('forum_action_detail')}>
             <IconButton size="small" color="primary" onClick={() => setDetailTopic(row)}>
               <VisibilityOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t('forum_action_edit')}>
             <IconButton size="small" onClick={() => openEdit(row)}>
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Xóa">
+          <Tooltip title={t('forum_action_delete')}>
             <IconButton
               size="small"
               color="error"
@@ -194,7 +196,7 @@ const AdminForumTopicsPage = () => {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      enqueueSnackbar("Vui lòng nhập tiêu đề.", { variant: "warning" });
+      enqueueSnackbar(t('forum_topic_title_required'), { variant: "warning" });
       return;
     }
     if (dialog.mode === "create") {
@@ -204,7 +206,7 @@ const AdminForumTopicsPage = () => {
         form.title,
         Number(user?.id),
       );
-      enqueueSnackbar(ok ? "Đã tạo chủ đề." : "Lỗi tạo chủ đề.", {
+      enqueueSnackbar(ok ? t('forum_topic_created') : t('forum_topic_create_failed'), {
         variant: ok ? "success" : "error",
       });
     } else {
@@ -213,7 +215,7 @@ const AdminForumTopicsPage = () => {
         form.title,
         form.categoryId,
       );
-      enqueueSnackbar(ok ? "Đã cập nhật chủ đề." : "Lỗi cập nhật.", {
+      enqueueSnackbar(ok ? t('forum_topic_updated') : t('forum_topic_update_failed'), {
         variant: ok ? "success" : "error",
       });
     }
@@ -223,7 +225,7 @@ const AdminForumTopicsPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteTopic?.(deleteTarget.id);
-    enqueueSnackbar(ok ? "Đã xóa chủ đề." : "Lỗi xóa.", {
+    enqueueSnackbar(ok ? t('forum_topic_deleted') : t('forum_topic_delete_failed'), {
       variant: ok ? "success" : "error",
     });
     setDeleteTarget(null);
@@ -251,15 +253,14 @@ const AdminForumTopicsPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Chủ đề diễn đàn
+            {t('forum_topics_title')}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Quản lý các cuộc thảo luận, khóa chủ đề không phù hợp và phân loại
-            nội dung.
+            {t('forum_topics_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -267,7 +268,7 @@ const AdminForumTopicsPage = () => {
           startIcon={<AddOutlinedIcon />}
           onClick={openCreate}
         >
-          Tạo chủ đề
+          {t('forum_topic_create_btn')}
         </Button>
       </Box>
 
@@ -283,24 +284,24 @@ const AdminForumTopicsPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng chủ đề"
+          label={t('forum_stat_total_topics')}
           value={stats.total}
           icon={<ForumOutlinedIcon />}
         />
         <AdminDashboardMetricTile
-          label="Đang thảo luận"
+          label={t('forum_stat_discussing')}
           value={stats.total - stats.locked}
           icon={<ChatOutlinedIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Lượt xem cao nhất"
+          label={t('forum_stat_most_viewed')}
           value={stats.mostViewed}
           icon={<VisibilityIcon />}
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label="Chủ đề bị khóa"
+          label={t('forum_stat_locked')}
           value={stats.locked}
           icon={<LockOutlinedIcon />}
           valueColor="warning.main"
@@ -323,7 +324,7 @@ const AdminForumTopicsPage = () => {
           setTopicsPage?.(0);
         }}
         searchValue={searchTerm}
-        searchPlaceholder="Tìm kiếm tiêu đề..."
+        searchPlaceholder={t('forum_search_topic_placeholder')}
         loading={topicsLoading}
         onRowClick={(row) => window.open(orgSlug ? `/${orgSlug}/forum/alumni/career/${row.id}` : `/forum/alumni/career/${row.id}`, "_blank")}
       />
@@ -335,7 +336,7 @@ const AdminForumTopicsPage = () => {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>Chi tiết chủ đề</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>{t('forum_topic_detail_title')}</DialogTitle>
         {detailTopic && (
           <DialogContent
             sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}
@@ -344,23 +345,23 @@ const AdminForumTopicsPage = () => {
               <strong>ID:</strong> {detailTopic.id}
             </Typography>
             <Typography variant="body2">
-              <strong>Tiêu đề:</strong> {detailTopic.title}
+              <strong>{t('forum_col_title')}:</strong> {detailTopic.title}
             </Typography>
             <Typography variant="body2">
-              <strong>Người tạo:</strong>{" "}
+              <strong>{t('forum_col_created_by')}:</strong>{" "}
               {detailTopic.createdByName ||
                 detailTopic.createdByMemberId ||
                 "-"}
             </Typography>
             <Typography variant="body2">
-              <strong>Lượt xem:</strong> {detailTopic.viewCount ?? 0}
+              <strong>{t('forum_col_views')}:</strong> {detailTopic.viewCount ?? 0}
             </Typography>
             <Typography variant="body2">
-              <strong>Trạng thái:</strong>{" "}
-              {detailTopic.isLocked ? "Đã khóa" : "Đang mở"}
+              <strong>{t('forum_col_status')}:</strong>{" "}
+              {detailTopic.isLocked ? t('forum_status_locked') : t('forum_status_open')}
             </Typography>
             <Typography variant="body2">
-              <strong>Ngày tạo:</strong> {formatDate(detailTopic.createdAt)}
+              <strong>{t('forum_col_created_at_date')}:</strong> {formatDate(detailTopic.createdAt)}
             </Typography>
           </DialogContent>
         )}
@@ -370,7 +371,7 @@ const AdminForumTopicsPage = () => {
             variant="outlined"
             color="secondary"
           >
-            Đóng
+            {t('forum_btn_close')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -383,11 +384,11 @@ const AdminForumTopicsPage = () => {
         maxWidth="sm"
       >
         <DialogTitle sx={{ fontWeight: 700 }}>
-          {dialog.mode === "create" ? "Tạo chủ đề mới" : "Chỉnh sửa chủ đề"}
+          {dialog.mode === "create" ? t('forum_topic_create_dialog_title') : t('forum_topic_edit_dialog_title')}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
           <TextField
-            label="Tiêu đề"
+            label={t('forum_col_title')}
             required
             fullWidth
             value={form.title}
@@ -396,7 +397,7 @@ const AdminForumTopicsPage = () => {
           />
           <TextField
             select
-            label="Danh mục"
+            label={t('forum_col_category')}
             fullWidth
             value={form.categoryId}
             onChange={(e) =>
@@ -413,23 +414,23 @@ const AdminForumTopicsPage = () => {
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button variant="outlined" color="secondary" onClick={() => setDialog((d) => ({ ...d, open: false }))}>
-            Hủy
+            {t('forum_btn_cancel')}
           </Button>
           <Button
             variant="contained"
             onClick={handleSave}
           >
-            Lưu
+            {t('forum_btn_save')}
           </Button>
         </DialogActions>
       </Dialog>
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Xóa chủ đề"
+        title={t('forum_topic_delete_title')}
         description={
           deleteTarget
-            ? `Bạn có chắc chắn muốn xóa chủ đề "${deleteTarget.title}"?`
+            ? t('forum_topic_delete_desc', { title: deleteTarget.title })
             : ""
         }
         onClose={() => setDeleteTarget(null)}

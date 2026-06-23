@@ -57,7 +57,7 @@ export const useForumPosts = (topicId, memberId, page = 0, size = 20) => {
   const pageInfo = data?.pageInfo ?? null;
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load posts"
       : null;
 
   return { posts, pageInfo, isPending, isError, errorMessage };

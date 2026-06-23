@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
@@ -70,7 +71,7 @@ class BlockedMemberCard extends StatelessWidget {
                         horizontal: 12, vertical: 6),
                     textStyle: const TextStyle(fontSize: 13),
                   ),
-                  child: const Text('Bỏ chặn'),
+                  child: Text('network.unblock'.tr()),
                 ),
         ],
       ),

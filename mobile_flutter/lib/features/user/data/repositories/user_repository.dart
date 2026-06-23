@@ -38,7 +38,7 @@ class UserRepository {
   Future<String> updateAvatarFromBase64(String base64String) async {
     final url = await _api.uploadImage(base64String);
     if (url.isEmpty) {
-      throw Exception('Tải ảnh thất bại');
+      throw Exception('Failed to upload image');
     }
     await _api.updateAvatar(url);
     return url;

@@ -5,6 +5,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useState } from "react";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 import { truncateText } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
@@ -13,6 +14,7 @@ const CAMPAIGN_DESCRIPTION_MAX_CHARS = 120;
 const LOGO_FALLBACK_URL = "https://placehold.co/800x450/eef3ff/0f3a7a?text=Fund";
 
 const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin }) => {
+  const { t } = useTranslation(['common', 'donation']);
   const now = dayjs();
   const startTime = campaign.timeStarted ? dayjs(campaign.timeStarted) : null;
   const endTime = campaign.timeEnded ? dayjs(campaign.timeEnded) : null;
@@ -133,18 +135,18 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
 
         {/* ORGANIZER */}
         <Typography variant="body2" color="text.secondary" sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {campaign.managerName || "Ban tổ chức"}
+          {campaign.managerName || t('donation:organizer_fallback')}
         </Typography>
 
         {/* STATS */}
         <Typography variant="caption" color="text.secondary">
-          {campaign.donorCount ?? 0} người đã quyên góp
+          {t('donation:donor_count', { count: campaign.donorCount ?? 0 })}
         </Typography>
 
         {/* ENDED STATUS */}
         {isEnded && (
           <Box sx={{ mt: 1, alignSelf: "flex-start", px: 1, py: 0.35, borderRadius: 999, border: "1px solid #d7e5fb", backgroundColor: "#f3f8ff", color: "#5f79a4", fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.2 }}>
-            Đã kết thúc
+            {t('common:ended')}
           </Box>
         )}
       </Box>
@@ -181,7 +183,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
           fullWidth variant="outlined" color="primary" sx={{ textTransform: "none", fontWeight: 600 }}
           onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
         >
-          Xem
+          {t('common:view')}
         </Button>
       ) : isAdmin ? (
         <Stack spacing={1}>
@@ -189,7 +191,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
             fullWidth variant="outlined" color="primary" startIcon={<InfoOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }}
             onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
           >
-            Thông tin quỹ
+            {t('donation:fund_info')}
           </Button>
 
           <Stack direction="row" spacing={1}>
@@ -197,7 +199,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
               fullWidth variant="outlined" color="secondary" startIcon={<EditOutlinedIcon />} sx={{ textTransform: "none", fontWeight: 600 }}
               onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
             >
-              Sửa
+              {t('common:edit')}
             </Button>
 
             <Button
@@ -208,7 +210,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
               }}
               onClick={(e) => { e.stopPropagation(); onClose?.(); }}
             >
-              Đóng
+              {t('common:close')}
             </Button>
           </Stack>
         </Stack>
@@ -217,7 +219,7 @@ const ArticleDonationCard = ({ campaign, onNavigate, onEdit, onClose, isAdmin })
           fullWidth variant="contained" color="primary" sx={{ textTransform: "none", fontWeight: 600 }}
           onClick={(e) => { e.stopPropagation(); onNavigate?.(); }}
         >
-          Quyên góp
+          {t('donation:donate')}
         </Button>
       )}
     </Box>

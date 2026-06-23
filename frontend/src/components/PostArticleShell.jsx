@@ -1,6 +1,7 @@
 import { Box, Button, Container, Typography } from '@mui/material';
 import Page from './Page';
 import CoverUpload from './CoverUpload';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Shared layout shell for all PostArticle pages.
@@ -15,61 +16,67 @@ const PostArticleShell = ({
   onCancel,
   onSubmit,
   isPending,
-  submitLabel = 'Đăng bài',
-  pendingLabel = 'Đang đăng...',
+  submitLabel,
+  pendingLabel,
   children,
-}) => (
-  <Page
-    title={pageTitle}
-    meta={<meta name="description" content={pageDescription ?? `${pageTitle} - AlumVerse`} />}
-  >
-    <Box sx={{ minHeight: '100vh' }}>
-      <CoverUpload value={coverPreview} onChange={onCoverChange} />
+}) => {
+  const { t } = useTranslation(['article', 'common']);
+  const resolvedSubmitLabel = submitLabel ?? t('article:publish');
+  const resolvedPendingLabel = pendingLabel ?? t('article:publishing');
 
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
-        <Box
-          sx={{
-            width: { xs: '100%', md: '85%', lg: '75%' },
-            mx: 'auto',
-            mt: -10,
-            mb: 6,
-            backgroundColor: 'background.paper',
-            borderRadius: 2,
-            boxShadow: (theme) => theme.customShadows?.z24 || 10,
-            p: { xs: 3, md: 5 },
-            border: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Typography
-            variant="h1"
-            fontWeight={800}
-            color="primary.main"
-            sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
+  return (
+    <Page
+      title={pageTitle}
+      meta={<meta name="description" content={pageDescription ?? `${pageTitle} - AlumVerse`} />}
+    >
+      <Box sx={{ minHeight: '100vh' }}>
+        <CoverUpload value={coverPreview} onChange={onCoverChange} />
+
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
+          <Box
+            sx={{
+              width: { xs: '100%', md: '85%', lg: '75%' },
+              mx: 'auto',
+              mt: -10,
+              mb: 6,
+              backgroundColor: 'background.paper',
+              borderRadius: 2,
+              boxShadow: (theme) => theme.customShadows?.z24 || 10,
+              p: { xs: 3, md: 5 },
+              border: '1px solid',
+              borderColor: 'divider',
+            }}
           >
-            ĐĂNG BÀI
-          </Typography>
-
-          {children}
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
-            <Button variant="outlined" color="inherit" onClick={onCancel} sx={{ px: 4 }}>
-              Huỷ
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={onSubmit}
-              disabled={isPending}
-              sx={{ px: 4 }}
+            <Typography
+              variant="h1"
+              fontWeight={800}
+              color="primary.main"
+              sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
             >
-              {isPending ? pendingLabel : submitLabel}
-            </Button>
+              {t('article:post_article_heading')}
+            </Typography>
+
+            {children}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
+              <Button variant="outlined" color="inherit" onClick={onCancel} sx={{ px: 4 }}>
+                {t('common:cancel')}
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={onSubmit}
+                disabled={isPending}
+                sx={{ px: 4 }}
+              >
+                {isPending ? resolvedPendingLabel : resolvedSubmitLabel}
+              </Button>
+            </Box>
           </Box>
-        </Box>
-      </Container>
-    </Box>
-  </Page>
-);
+        </Container>
+      </Box>
+    </Page>
+  );
+};
 
 export default PostArticleShell;

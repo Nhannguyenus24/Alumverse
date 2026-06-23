@@ -1,4 +1,5 @@
 import { Avatar, Badge, Box, Stack, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import {
   DONATION_AVATAR_FALLBACK,
   formatDonationAmount,
@@ -6,6 +7,8 @@ import {
 } from "../../utils/regexUtils";
 
 export default function DonationListItemCard({ item }) {
+  const { t } = useTranslation('donation');
+
   return (
     <Box
       sx={{
@@ -68,7 +71,7 @@ export default function DonationListItemCard({ item }) {
               lineHeight: 1.45,
             }}
           >
-            SĐT: {item.phone || "--"} | Email: {item.email || "--"}
+            {t('donation:donor_phone_email', { phone: item.phone || '--', email: item.email || '--' })}
           </Typography>
           <Typography
             sx={{
@@ -82,7 +85,7 @@ export default function DonationListItemCard({ item }) {
             }}
             title={item.address || "--"}
           >
-            Địa chỉ: {item.address || "--"}
+            {t('donation:donor_address', { address: item.address || '--' })}
           </Typography>
           <Typography sx={{ color: "#8c9ab2", fontSize: "0.78rem", mt: 0.45 }}>
             {formatDonationTimestamp(item.createdAt)}

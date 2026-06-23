@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -43,19 +44,20 @@ const safeFetch = async (request, fallback) => {
   }
 };
 
-const ticketStatusChip = (status) => {
+const getTicketStatusChip = (t, status) => {
   const key = String(status || '').toUpperCase();
-  if (key === 'PENDING')    return { color: 'warning',  label: 'Chờ duyệt' };
-  if (key === 'ISSUED')     return { color: 'info',     label: 'Đã phát hành' };
+  if (key === 'PENDING')    return { color: 'warning',  label: t('event:ticket_status_pending') };
+  if (key === 'ISSUED')     return { color: 'info',     label: t('event:ticket_status_issued') };
   if (key === 'ACTIVE')     return { color: 'success',  label: 'Active' };
   if (key === 'CHECKED_IN') return { color: 'success',  label: 'Checked-in' };
-  if (key === 'USED')       return { color: 'default',  label: 'Đã dùng' };
-  if (key === 'EXPIRED')    return { color: 'default',  label: 'Hết hạn' };
-  if (key === 'CANCELLED')  return { color: 'error',    label: 'Đã huỷ' };
+  if (key === 'USED')       return { color: 'default',  label: t('event:ticket_status_used') };
+  if (key === 'EXPIRED')    return { color: 'default',  label: t('event:ticket_status_expired') };
+  if (key === 'CANCELLED')  return { color: 'error',    label: t('event:ticket_status_cancelled') };
   return { color: 'default', label: status || '-' };
 };
 
 const AdminEventTicketsDialog = ({ open, event, onClose }) => {
+  const { t } = useTranslation(['event', 'common']);
   const { enqueueSnackbar } = useSnackbar();
   const eventId = event?.id ?? null;
 
@@ -144,65 +146,65 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
   const handleApprove = async (ticket) => {
     try {
       await api.approveTicket(ticket.id);
-      enqueueSnackbar('Đã duyệt vé.', { variant: 'success' });
+      enqueueSnackbar(t('event:ticket_approve_success'), { variant: 'success' });
       await loadPending();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Duyệt thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_approve_error'), { variant: 'error' });
     }
   };
 
   const handleReject = async (ticket) => {
     try {
       await api.rejectTicket(ticket.id, {});
-      enqueueSnackbar('Đã từ chối.', { variant: 'success' });
+      enqueueSnackbar(t('event:ticket_reject_success'), { variant: 'success' });
       await loadPending();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Từ chối thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_reject_error'), { variant: 'error' });
     }
   };
 
   const handleApproveAll = async () => {
     try {
       const count = extractData(await api.approveAllPending(eventId));
-      enqueueSnackbar(`Đã duyệt ${count ?? 0} vé.`, { variant: 'success' });
+      enqueueSnackbar(t('event:ticket_approve_all_success', { count: count ?? 0 }), { variant: 'success' });
       await loadPending();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Duyệt hàng loạt thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_approve_all_error'), { variant: 'error' });
     }
   };
 
   const handleSendTicketEmails = async () => {
     try {
       const count = extractData(await api.sendIssuedTicketEmails(eventId));
-      enqueueSnackbar(`Đã gửi mail vé cho ${count ?? 0} người.`, { variant: 'success' });
+      enqueueSnackbar(t('event:ticket_send_email_success', { count: count ?? 0 }), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Gửi mail thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_send_email_error'), { variant: 'error' });
     }
   };
 
   const handleCancel = async (ticket) => {
     if (!ticket?.ticketCode) {
-      enqueueSnackbar('Không có ticket code.', { variant: 'error' });
+      enqueueSnackbar(t('event:ticket_no_code_error'), { variant: 'error' });
       return;
     }
     try {
       await api.cancelTicket(ticket.ticketCode);
-      enqueueSnackbar('Đã huỷ vé.', { variant: 'success' });
+      enqueueSnackbar(t('event:ticket_cancel_success'), { variant: 'success' });
       await loadTickets();
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Huỷ thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('event:ticket_cancel_error'), { variant: 'error' });
     }
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        Quản lý tham dự {event ? `— ${event.title} (#${event.id})` : ''}
+        {t('event:manage_attendance_title')} {event ? `— ${event.title} (#${event.id})` : ''}
       </DialogTitle>
       <DialogContent sx={{ pt: 1 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 1 }}>
-          <Tab value="tickets"   label={`Tất cả vé (${tickets.totalItem ?? 0})`} />
-          <Tab value="interests" label={`Quan tâm (${interests.totalItem ?? 0})`} />
+          <Tab value="tickets"   label={t('event:tab_all_tickets', { count: tickets.totalItem ?? 0 })} />
+          <Tab value="interests" label={t('event:tab_interests', { count: interests.totalItem ?? 0 })} />
         </Tabs>
 
         {/* ── PENDING TAB ── */}
@@ -217,7 +219,7 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                 onClick={handleApproveAll}
                 disabled={!pending.totalItem}
               >
-                Duyệt tất cả
+                {t('event:btn_approve_all')}
               </Button>
               <Button
                 size="small"
@@ -225,7 +227,7 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                 startIcon={<MarkEmailReadIcon />}
                 onClick={handleSendTicketEmails}
               >
-                Gửi mail vé (ISSUED)
+                {t('event:btn_send_ticket_emails')}
               </Button>
             </Stack>
 
@@ -239,8 +241,8 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                     <TableCell>Ticket code</TableCell>
                     <TableCell>Member ID</TableCell>
                     <TableCell>Guest</TableCell>
-                    <TableCell>Đăng ký lúc</TableCell>
-                    <TableCell align="right">Thao tác</TableCell>
+                    <TableCell>{t('event:col_registered_at')}</TableCell>
+                    <TableCell align="right">{t('common:col_actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -248,29 +250,29 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                     <TableRow>
                       <TableCell colSpan={6}>
                         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                          Không có yêu cầu chờ duyệt.
+                          {t('event:pending_empty')}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    pending.items.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell>{t.id}</TableCell>
-                        <TableCell>{t.ticketCode || '-'}</TableCell>
-                        <TableCell>{t.memberId ?? '-'}</TableCell>
+                    pending.items.map((ticket) => (
+                      <TableRow key={ticket.id}>
+                        <TableCell>{ticket.id}</TableCell>
+                        <TableCell>{ticket.ticketCode || '-'}</TableCell>
+                        <TableCell>{ticket.memberId ?? '-'}</TableCell>
                         <TableCell>
-                          {t.guestName || '-'}
-                          {t.guestEmail ? ` <${t.guestEmail}>` : ''}
+                          {ticket.guestName || '-'}
+                          {ticket.guestEmail ? ` <${ticket.guestEmail}>` : ''}
                         </TableCell>
-                        <TableCell>{formatDateTime(t.registeredAt)}</TableCell>
+                        <TableCell>{formatDateTime(ticket.registeredAt)}</TableCell>
                         <TableCell align="right">
-                          <Tooltip title="Duyệt">
-                            <IconButton size="small" color="success" onClick={() => handleApprove(t)}>
+                          <Tooltip title={t('event:tooltip_approve')}>
+                            <IconButton size="small" color="success" onClick={() => handleApprove(ticket)}>
                               <CheckCircleOutlineIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title="Từ chối">
-                            <IconButton size="small" color="error" onClick={() => handleReject(t)}>
+                          <Tooltip title={t('event:tooltip_reject')}>
+                            <IconButton size="small" color="error" onClick={() => handleReject(ticket)}>
                               <DoDisturbAltIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
@@ -306,10 +308,10 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                     <TableCell>Ticket code</TableCell>
                     <TableCell>Member ID</TableCell>
                     <TableCell>Guest</TableCell>
-                    <TableCell>Trạng thái</TableCell>
-                    <TableCell>Đăng ký lúc</TableCell>
-                    <TableCell>Check-in lúc</TableCell>
-                    <TableCell align="right">Thao tác</TableCell>
+                    <TableCell>{t('common:col_status')}</TableCell>
+                    <TableCell>{t('event:col_registered_at')}</TableCell>
+                    <TableCell>{t('event:col_checked_in_at')}</TableCell>
+                    <TableCell align="right">{t('common:col_actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -317,34 +319,34 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                     <TableRow>
                       <TableCell colSpan={8}>
                         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                          Chưa có vé nào.
+                          {t('event:tickets_empty')}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
-                    tickets.items.map((t) => {
-                      const chip = ticketStatusChip(t.status);
+                    tickets.items.map((ticket) => {
+                      const chip = getTicketStatusChip(t, ticket.status);
                       const cancellable = !['CANCELLED', 'USED', 'EXPIRED', 'CHECKED_IN'].includes(
-                        String(t.status).toUpperCase(),
+                        String(ticket.status).toUpperCase(),
                       );
                       return (
-                        <TableRow key={t.id}>
-                          <TableCell>{t.id}</TableCell>
-                          <TableCell>{t.ticketCode || '-'}</TableCell>
-                          <TableCell>{t.memberId ?? '-'}</TableCell>
+                        <TableRow key={ticket.id}>
+                          <TableCell>{ticket.id}</TableCell>
+                          <TableCell>{ticket.ticketCode || '-'}</TableCell>
+                          <TableCell>{ticket.memberId ?? '-'}</TableCell>
                           <TableCell>
-                            {t.guestName || '-'}
-                            {t.guestEmail ? ` <${t.guestEmail}>` : ''}
+                            {ticket.guestName || '-'}
+                            {ticket.guestEmail ? ` <${ticket.guestEmail}>` : ''}
                           </TableCell>
                           <TableCell>
                             <Chip size="small" color={chip.color} label={chip.label} />
                           </TableCell>
-                          <TableCell>{formatDateTime(t.registeredAt)}</TableCell>
-                          <TableCell>{formatDateTime(t.checkedInAt)}</TableCell>
+                          <TableCell>{formatDateTime(ticket.registeredAt)}</TableCell>
+                          <TableCell>{formatDateTime(ticket.checkedInAt)}</TableCell>
                           <TableCell align="right">
                             {cancellable && (
-                              <Tooltip title="Huỷ vé">
-                                <IconButton size="small" color="warning" onClick={() => handleCancel(t)}>
+                              <Tooltip title={t('event:tooltip_cancel_ticket')}>
+                                <IconButton size="small" color="warning" onClick={() => handleCancel(ticket)}>
                                   <CancelOutlinedIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
@@ -380,7 +382,7 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                   <TableRow>
                     <TableCell>ID</TableCell>
                     <TableCell>Member ID</TableCell>
-                    <TableCell>Thời gian</TableCell>
+                    <TableCell>{t('common:col_time')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -388,7 +390,7 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
                     <TableRow>
                       <TableCell colSpan={3}>
                         <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                          Chưa có ai quan tâm.
+                          {t('event:interests_empty')}
                         </Typography>
                       </TableCell>
                     </TableRow>
@@ -418,13 +420,13 @@ const AdminEventTicketsDialog = ({ open, event, onClose }) => {
 
         <Box sx={{ mt: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            Dữ liệu tại thời điểm mở dialog — mở lại để refresh.
+            {t('common:data_stale_hint')}
           </Typography>
         </Box>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="contained" onClick={onClose} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Đóng
+          {t('common:btn_close')}
         </Button>
       </DialogActions>
     </Dialog>

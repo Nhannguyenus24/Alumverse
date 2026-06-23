@@ -4,6 +4,7 @@ import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import { useTranslation } from 'react-i18next';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -14,6 +15,7 @@ const metricRowSx = {
 };
 
 const AdminUserGrowthSection = () => {
+  const { t } = useTranslation('admin');
   const { stats } = useAdminUserGrowthStats();
 
   const fmtDate = (str) => {
@@ -27,38 +29,38 @@ const AdminUserGrowthSection = () => {
 
   return (
     <AdminSectionPanel
-      title="Tăng trưởng người dùng"
-      subtitle="Đăng ký mới theo ngày và phân loại trạng thái tài khoản."
+      title={t('admin:user_growth_section_title')}
+      subtitle={t('admin:user_growth_section_subtitle')}
     >
       <Stack spacing={3}>
         <Stack spacing={2}>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
             <AdminDashboardMetricTile
-              label="Người dùng mới trong tuần"
+              label={t('admin:user_growth_new_week')}
               value={Number(stats.newUsersLast7Days).toLocaleString()}
-              caption="Trong 7 ngày qua"
+              caption={t('admin:user_growth_last_7_days')}
               icon={<PersonAddOutlinedIcon />}
             />
             <AdminDashboardMetricTile
-              label="Người dùng mới trong tháng"
+              label={t('admin:user_growth_new_month')}
               value={Number(stats.newUsersLast30Days).toLocaleString()}
-              caption="Trong 30 ngày qua"
+              caption={t('admin:user_growth_last_30_days')}
               icon={<CalendarMonthOutlinedIcon />}
             />
           </Stack>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
             <AdminDashboardMetricTile
-              label="Đang hoạt động"
+              label={t('admin:user_growth_active')}
               value={Number(stats.totalActiveUsers).toLocaleString()}
               icon={<CheckCircleOutlineOutlinedIcon />}
             />
             <AdminDashboardMetricTile
-              label="Đã khóa"
+              label={t('admin:user_growth_banned')}
               value={Number(stats.totalBannedUsers).toLocaleString()}
               icon={<BlockOutlinedIcon />}
             />
             <AdminDashboardMetricTile
-              label="Đã xóa"
+              label={t('admin:user_growth_deleted')}
               value={Number(stats.totalDeletedUsers).toLocaleString()}
               icon={<DeleteOutlineOutlinedIcon />}
             />
@@ -67,7 +69,7 @@ const AdminUserGrowthSection = () => {
 
         <Chart
           type="line"
-          title="Đăng ký mới theo ngày (30 ngày qua)"
+          title={t('admin:chart_new_registrations_30d')}
           data={dailyData}
           dataKey="count"
           xAxisKey="date"
