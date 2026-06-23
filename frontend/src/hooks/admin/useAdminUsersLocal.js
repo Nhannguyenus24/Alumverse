@@ -97,6 +97,23 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     }
   }, [loadUsers]);
 
+  const bulkImportUsers = useCallback(async ({ organizationId, members }) => {
+    try {
+      const res = await adminUserApi.bulkImportMembers({ organizationId, members });
+      const data = res?.data?.data ?? res?.data ?? res;
+      enqueueSnackbar(
+        `Nhập xong: ${data.successCount ?? 0} thành công, ${data.failureCount ?? 0} thất bại.`,
+        { variant: data.failureCount === 0 ? 'success' : 'warning' }
+      );
+      await loadUsers();
+      return data;
+    } catch (e) {
+      const msg = e?.response?.data?.message || 'Lỗi khi nhập hàng loạt.';
+      enqueueSnackbar(msg, { variant: 'error' });
+      throw e;
+    }
+  }, [loadUsers]);
+
   const updateUser = useCallback(
     async (id, payload) => {
       const uid = Number(id);
@@ -291,6 +308,7 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
     rowsPerPage,
     setRowsPerPage,
     createUser,
+    bulkImportUsers,
     updateUser,
     updateUserStatus,
     deleteUser,
@@ -300,7 +318,7 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
   }), [
     loading, allUsers, totalCount, pagedUsers, sortedUsers,
     search, roleFilter, statusFilter, sortBy, sortOrder, page, rowsPerPage,
-    createUser, updateUser, updateUserStatus, deleteUser, banUser, unbanUser, loadUsers
+    createUser, bulkImportUsers, updateUser, updateUserStatus, deleteUser, banUser, unbanUser, loadUsers
   ]);
 };
 

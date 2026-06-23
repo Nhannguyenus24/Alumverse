@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.service.backend.admin.dto.BanUserRequest;
 import com.service.backend.admin.dto.AdminResetPasswordRequest;
+import com.service.backend.admin.dto.BulkCreateOrganizationMembersRequest;
+import com.service.backend.admin.dto.BulkImportResult;
 import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.CreateOrganizationMemberRequest;
 import com.service.backend.admin.dto.DeleteUserRequest;
@@ -217,6 +219,7 @@ public class AdminUserController {
                         request.getUserId(),
                         request.getEmail(),
                         request.getFullName(),
+                        request.getStudentId(),
                         request.getRole(),
                         request.getAvatarUrl(),
                         request.getPassword(),
@@ -234,6 +237,14 @@ public class AdminUserController {
                         return Mono.error(new ApplicationException(ErrorCode.RESOURCES_NOT_FOUND, "Failed to add user to organization"));
                     }
                 });
+    }
+
+    @PostMapping("/organization-members/bulk")
+    public Mono<ResponseEntity<ApiResponse<BulkImportResult>>> bulkCreateOrganizationMembers(
+            @Valid @RequestBody BulkCreateOrganizationMembersRequest request) {
+        return adminUserService.bulkCreateOrganizationMembers(request)
+                .map(result -> ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new ApiResponse<>("Bulk import completed", result)));
     }
 
     @PatchMapping("/{userId}/organizations/{organizationId}/trusted-verifier")
