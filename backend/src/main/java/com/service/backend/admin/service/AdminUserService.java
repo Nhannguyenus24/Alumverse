@@ -17,6 +17,8 @@ import org.springframework.util.StringUtils;
 
 import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.admin.dao.AdminUserOrganizationPreviewRepository;
+import com.service.backend.admin.dto.BulkCreateOrganizationMembersRequest;
+import com.service.backend.admin.dto.BulkImportResult;
 import com.service.backend.admin.dto.CreateAdminRequest;
 import com.service.backend.admin.dto.AdminResetPasswordRequest;
 import com.service.backend.admin.dto.UserActivityResponse;
@@ -104,7 +106,8 @@ public class AdminUserService {
 
     @Transactional
     public Mono<Boolean> createOrganizationMember(Integer organizationId, Integer userId,
-                                                  String email, String fullName, String role, String avatarUrl,
+                                                  String email, String fullName, String studentId,
+                                                  String role, String avatarUrl,
                                                   String password,
                                                   List<Integer> graduatedYear, List<String> graduationStatus,
                                                   List<String> program, List<String> major,
@@ -188,6 +191,7 @@ public class AdminUserService {
                     ? adminUserRepository.updateOrganizationMemberByUserId(
                         organizationId,
                         actualUserId,
+                        studentId,
                         graduatedYearJson,
                         graduationStatusJson,
                         programJson,
@@ -197,6 +201,7 @@ public class AdminUserService {
                     : adminUserRepository.createOrganizationMember(
                         organizationId,
                         actualUserId,
+                        studentId,
                         graduatedYearJson,
                         graduationStatusJson,
                         programJson,
@@ -208,6 +213,89 @@ public class AdminUserService {
                 .doOnError(error -> logger.error("Error adding user {} to organization {}", actualUserId, organizationId, error))
             );
         });
+    }
+
+    public Mono<BulkImportResult> bulkCreateOrganizationMembers(BulkCreateOrganizationMembersRequest request) {
+        List<BulkCreateOrganizationMembersRequest.MemberEntry> members = request.getMembers();
+        Integer organizationId = request.getOrganizationId();
+
+        return Flux.fromIterable(members)
+                .index()
+                .concatMap(indexed -> {
+                    int rowIndex = (int) indexed.getT1().longValue();
+                    BulkCreateOrganizationMembersRequest.MemberEntry entry = indexed.getT2();
+
+                    if (entry.getEmail() == null || entry.getEmail().isBlank()) {
+                        return Mono.just(BulkImportResult.RowResult.builder()
+                                .rowIndex(rowIndex)
+                                .email("")
+                                .fullName(entry.getFullName())
+                                .studentId(entry.getStudentId())
+                                .status("FAILED")
+                                .reason("Email is required")
+                                .build());
+                    }
+
+                    List<Integer> graduatedYearList = entry.getGraduatedYear() != null
+                            ? List.of(entry.getGraduatedYear()) : null;
+                    List<String> graduationStatusList = entry.getGraduationStatus() != null && !entry.getGraduationStatus().isBlank()
+                            ? List.of(entry.getGraduationStatus()) : null;
+                    List<String> programList = entry.getProgram() != null && !entry.getProgram().isBlank()
+                            ? List.of(entry.getProgram()) : null;
+                    List<String> majorList = entry.getMajor() != null && !entry.getMajor().isBlank()
+                            ? List.of(entry.getMajor()) : null;
+
+                    return createOrganizationMember(
+                            organizationId, null,
+                            entry.getEmail().trim(),
+                            entry.getFullName(),
+                            entry.getStudentId(),
+                            entry.getRole(),
+                            null,
+                            entry.getPassword(),
+                            graduatedYearList,
+                            graduationStatusList,
+                            programList,
+                            majorList,
+                            entry.getVerificationLevel() != null ? entry.getVerificationLevel() : 0,
+                            entry.getStatus())
+                            .map(success -> BulkImportResult.RowResult.builder()
+                                    .rowIndex(rowIndex)
+                                    .email(entry.getEmail())
+                                    .fullName(entry.getFullName())
+                                    .studentId(entry.getStudentId())
+                                    .status(success ? "SUCCESS" : "FAILED")
+                                    .reason(success ? null : "Failed to create or link user")
+                                    .build())
+                            .onErrorResume(e -> {
+                                String reason = e instanceof ApplicationException ae
+                                        ? ae.getErrorCode().name()
+                                        : e.getMessage();
+                                logger.warn("Bulk import row {} failed: {}", rowIndex, reason);
+                                return Mono.just(BulkImportResult.RowResult.builder()
+                                        .rowIndex(rowIndex)
+                                        .email(entry.getEmail())
+                                        .fullName(entry.getFullName())
+                                        .studentId(entry.getStudentId())
+                                        .status("FAILED")
+                                        .reason(reason)
+                                        .build());
+                            });
+                })
+                .collectList()
+                .map(results -> {
+                    long success = results.stream().filter(r -> "SUCCESS".equals(r.getStatus())).count();
+                    long failed = results.stream().filter(r -> "FAILED".equals(r.getStatus())).count();
+                    return BulkImportResult.builder()
+                            .total(results.size())
+                            .successCount((int) success)
+                            .failureCount((int) failed)
+                            .results(results)
+                            .build();
+                })
+                .doOnSuccess(r -> logger.info("bulkCreateOrganizationMembers: total={}, success={}, failed={}",
+                        r.getTotal(), r.getSuccessCount(), r.getFailureCount()))
+                .doOnError(e -> logger.error("Error in bulk import", e));
     }
 
     public Mono<UserResponse> getUserById(Integer userId) {
