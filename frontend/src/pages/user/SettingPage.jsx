@@ -293,7 +293,7 @@ export default function SettingPage() {
 
   const handleSubmitEduRequest = async () => {
     if (!organizationId) {
-      showWarning('Không xác định được tổ chức hiện tại.');
+      showWarning(t('org_not_found'));
       return;
     }
     setSubmitEduPending(true);
@@ -311,9 +311,9 @@ export default function SettingPage() {
       setPendingEduRequest(result);
       setIsEduEditMode(false);
       setOriginalEducations(null);
-      showSuccess('Yêu cầu thay đổi học vấn đã được gửi và đang chờ admin duyệt.');
+      showSuccess(t('edu_request_sent'));
     } catch (error) {
-      showError(getErrorMessage(error, 'Không thể gửi yêu cầu thay đổi học vấn.'));
+      showError(getErrorMessage(error, t('edu_request_failed')));
     } finally {
       setSubmitEduPending(false);
     }
@@ -324,9 +324,9 @@ export default function SettingPage() {
     try {
       await userSettingsApi.cancelEducationRequest(pendingEduRequest.id, organizationId);
       setPendingEduRequest(null);
-      showSuccess('Đã hủy yêu cầu thay đổi học vấn.');
+      showSuccess(t('edu_request_cancelled'));
     } catch (error) {
-      showError(getErrorMessage(error, 'Không thể hủy yêu cầu.'));
+      showError(getErrorMessage(error, t('cancel_request_failed')));
     }
   };
 
@@ -477,11 +477,11 @@ export default function SettingPage() {
             sx={{ mb: 2 }}
             action={
               <Button color="inherit" size="small" onClick={handleCancelEduRequest}>
-                Hủy yêu cầu
+                {t('cancel_request')}
               </Button>
             }
           >
-            Yêu cầu thay đổi học vấn đang chờ admin duyệt. Bạn không thể chỉnh sửa cho đến khi yêu cầu được xử lý.
+            {t('edu_request_pending_note')}
           </Alert>
         )}
 
@@ -511,7 +511,7 @@ export default function SettingPage() {
 
         {isEduEditMode && (
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
-            <Button variant="outlined" color="inherit" onClick={handleCancelEduEdit}>Huỷ</Button>
+            <Button variant="outlined" color="inherit" onClick={handleCancelEduEdit}>{t('cancel')}</Button>
             <Button
               variant="contained"
               color="primary"
@@ -519,7 +519,7 @@ export default function SettingPage() {
               onClick={handleSubmitEduRequest}
               disabled={submitEduPending}
             >
-              {submitEduPending ? 'Đang gửi...' : 'Gửi yêu cầu'}
+              {submitEduPending ? t('submitting') : t('submit_request')}
             </Button>
           </Box>
         )}
@@ -615,7 +615,7 @@ export default function SettingPage() {
       <Paper sx={{ p: 3, bgcolor: 'primary.light' }}>
         <Typography variant="h5" sx={{ color: 'primary.main' }}>{t('advisor_contact_title')}</Typography>
         <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2 }}>Email: admin@hcmus.edu.vn</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block">Điện thoại: 028 3821 4444</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block">{t('advisor_contact_phone')}</Typography>
       </Paper>
     </Box>
   );

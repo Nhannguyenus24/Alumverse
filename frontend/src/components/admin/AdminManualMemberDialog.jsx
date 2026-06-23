@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogTitle,
@@ -17,7 +18,8 @@ import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { fileToBase64 } from '../../utils/imageUtils';
 
-const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title = "Thông tin nhân sự" }) => {
+const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title }) => {
+  const { t } = useTranslation(['admin', 'common']);
   const [formData, setFormData] = useState({
     name: '',
     positions: '',
@@ -62,7 +64,7 @@ const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title = "Th
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ p: 3, pb: 1 }}>
-        <Typography variant="h6" fontWeight={800}>{title}</Typography>
+        <Typography variant="h6" fontWeight={800}>{title ?? t('admin:manual_member_dialog_title')}</Typography>
       </DialogTitle>
       <Divider />
       <DialogContent sx={{ p: 3 }}>
@@ -81,7 +83,7 @@ const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title = "Th
               startIcon={<CloudUploadIcon />}
               sx={{ textTransform: 'none' }}
             >
-              Tải ảnh chân dung
+              {t('admin:upload_portrait_photo')}
               <input
                 type="file"
                 hidden
@@ -95,30 +97,30 @@ const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title = "Th
                 }}
               />
             </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>Chỉ chấp nhận ảnh (Base64)</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>{t('admin:image_accept_base64_only')}</Typography>
           </Box>
 
           <TextField
             fullWidth
-            label="Họ và tên"
+            label={t('common:full_name')}
             name="name"
             value={formData.name}
             onChange={handleChange}
             required
             size="small"
-            placeholder="Ví dụ: GS. TS. Nguyễn Văn A"
+            placeholder={t('admin:full_name_placeholder')}
             error={!formData.name.trim()}
-            helperText={!formData.name.trim() ? "Vui lòng nhập họ tên" : ""}
+            helperText={!formData.name.trim() ? t('common:please_enter_full_name') : ""}
           />
 
           <TextField
             fullWidth
-            label="Chức vụ"
+            label={t('admin:position')}
             name="positions"
             value={formData.positions}
             onChange={handleChange}
             size="small"
-            placeholder="Ví dụ: Hiệu trưởng"
+            placeholder={t('admin:position_placeholder')}
           />
 
           <TextField
@@ -133,27 +135,27 @@ const AdminManualMemberDialog = ({ open, onClose, member, onConfirm, title = "Th
 
           <TextField
             fullWidth
-            label="Mô tả / Thông tin thêm"
+            label={t('common:description_additional_info')}
             name="content"
             value={formData.content}
             onChange={handleChange}
             multiline
             rows={3}
             size="small"
-            placeholder="Tóm tắt tiểu sử hoặc thành tựu..."
+            placeholder={t('admin:bio_summary_placeholder')}
           />
         </Stack>
       </DialogContent>
       <Divider />
       <DialogActions sx={{ p: 2, px: 3 }}>
-        <Button onClick={onClose} variant="outlined" color="secondary">Huỷ</Button>
+        <Button onClick={onClose} variant="outlined" color="secondary">{t('common:cancel')}</Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
           disabled={!formData.name.trim()}
           startIcon={<SaveOutlinedIcon />}
         >
-          Lưu thông tin
+          {t('common:save_info')}
         </Button>
       </DialogActions>
     </Dialog>

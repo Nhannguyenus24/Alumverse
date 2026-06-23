@@ -33,7 +33,7 @@ export const useForumPostReactionCount = (postId) => {
     isError && error
       ? error.response?.data?.message ??
         error.message ??
-        "Không thể tải số lượt thích"
+        "Failed to load reaction count"
       : null;
 
   return { likes, isPending, isError, errorMessage };

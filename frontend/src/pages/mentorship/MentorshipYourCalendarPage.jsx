@@ -45,8 +45,8 @@ import { useTranslation } from 'react-i18next';
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 
-const WEEK_DAYS = ['Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy', 'Chủ nhật'];
-const WEEK_DAYS_SHORT = ['Hai', 'Ba', 'Tư', 'Năm', 'Sáu', 'Bảy', 'CN'];
+const WEEK_DAYS_KEYS = ['cal_day_mon', 'cal_day_tue', 'cal_day_wed', 'cal_day_thu', 'cal_day_fri', 'cal_day_sat', 'cal_day_sun'];
+const WEEK_DAYS_SHORT_KEYS = ['cal_day_short_mon', 'cal_day_short_tue', 'cal_day_short_wed', 'cal_day_short_thu', 'cal_day_short_fri', 'cal_day_short_sat', 'cal_day_short_sun'];
 
 const buildMonthCells = (anchor) => {
   const startOfMonth = anchor.startOf('month');
@@ -85,6 +85,8 @@ const expandDates = (startDate, endDate, selectedDayIndexes) => {
 
 const MentorshipYourCalendarPage = () => {
   const { t } = useTranslation('mentorship');
+  const WEEK_DAYS = WEEK_DAYS_KEYS.map((k) => t(k));
+  const WEEK_DAYS_SHORT = WEEK_DAYS_SHORT_KEYS.map((k) => t(k));
   const TOP_TABS = getMentorProfileTabs(t);
   const navigate = useOrgNavigate();
 
@@ -138,11 +140,11 @@ const MentorshipYourCalendarPage = () => {
   const submitEditSlot = useCallback(async () => {
     if (!editingSlot || !editStartTime || !editEndTime) return;
     if (!editEndTime.isAfter(editStartTime)) {
-      setEditError('Giờ kết thúc phải sau giờ bắt đầu.');
+      setEditError(t('postpone_error_end_before_start'));
       return;
     }
     if (!editStartTime.isAfter(dayjs())) {
-      setEditError('Slot phải nằm trong tương lai.');
+      setEditError(t('cal_slot_must_be_future'));
       return;
     }
     try {
@@ -154,7 +156,7 @@ const MentorshipYourCalendarPage = () => {
       closeEditSlot();
     } catch (err) {
       const message =
-        err?.response?.data?.message ?? updateAvailabilityMutation.errorMessage ?? 'Không cập nhật được slot.';
+        err?.response?.data?.message ?? updateAvailabilityMutation.errorMessage ?? t('cal_slot_update_error');
       setEditError(message);
     }
   }, [editingSlot, editStartTime, editEndTime, updateAvailabilityMutation, closeEditSlot]);
@@ -212,18 +214,18 @@ const MentorshipYourCalendarPage = () => {
     try {
       const today = dayjs();
       if (!startTime || !endTime) {
-        setSubmitMessage({ severity: 'error', text: 'Hãy chọn giờ bắt đầu và giờ kết thúc.' });
+        setSubmitMessage({ severity: 'error', text: t('cal_error_pick_times') });
         return;
       }
       let dates = [];
       if (repeatWeekly) {
         if (selectedDays.length === 0) {
-          setSubmitMessage({ severity: 'error', text: 'Hãy chọn ít nhất 1 thứ trong tuần.' });
+          setSubmitMessage({ severity: 'error', text: t('cal_error_pick_day') });
           return;
         }
         dates = expandDates(startDate, endDate, selectedDays);
         if (dates.length === 0) {
-          setSubmitMessage({ severity: 'error', text: 'Không có ngày nào khớp khoảng thời gian + thứ đã chọn.' });
+          setSubmitMessage({ severity: 'error', text: t('cal_error_no_matching_dates') });
           return;
         }
       } else {
@@ -240,12 +242,12 @@ const MentorshipYourCalendarPage = () => {
         (s) => s.endTime.isBefore(s.startTime) || s.endTime.isSame(s.startTime),
       );
       if (invalid) {
-        setSubmitMessage({ severity: 'error', text: 'Giờ kết thúc phải sau giờ bắt đầu.' });
+        setSubmitMessage({ severity: 'error', text: t('postpone_error_end_before_start') });
         return;
       }
       const inPast = slots.some((s) => s.startTime.isBefore(today));
       if (inPast) {
-        setSubmitMessage({ severity: 'error', text: 'Không thể tạo slot trong quá khứ.' });
+        setSubmitMessage({ severity: 'error', text: t('cal_error_slot_in_past') });
         return;
       }
 
@@ -259,46 +261,46 @@ const MentorshipYourCalendarPage = () => {
           });
           success += 1;
         } catch (err) {
-          const message = err?.response?.data?.message ?? 'lỗi không xác định';
+          const message = err?.response?.data?.message ?? t('cal_error_unknown');
           failures.push(`${slot.startTime.format('DD/MM HH:mm')}: ${message}`);
         }
       }
-      const baseText = `Đã thêm ${success}/${slots.length} slot.`;
+      const baseText = t('cal_slots_added', { success, total: slots.length });
       setSubmitMessage({
         severity: success === slots.length ? 'success' : failures.length === slots.length ? 'error' : 'warning',
-        text: failures.length ? `${baseText} Lỗi: ${failures.slice(0, 3).join('; ')}` : baseText,
+        text: failures.length ? `${baseText} ${t('cal_error_prefix')}${failures.slice(0, 3).join('; ')}` : baseText,
       });
     } catch {
-      setSubmitMessage({ severity: 'error', text: addMutation.errorMessage ?? 'Không thể thêm lịch.' });
+      setSubmitMessage({ severity: 'error', text: addMutation.errorMessage ?? t('cal_error_add_schedule') });
     }
   }, [startTime, endTime, repeatWeekly, selectedDays, startDate, endDate, singleDate, addMutation]);
 
   const handleDeleteSlot = useCallback(async (id) => {
-    if (!window.confirm('Xóa slot này khỏi lịch?')) return;
+    if (!window.confirm(t('cal_confirm_delete_slot'))) return;
     try {
       await deleteMutation.deleteAvailability(id);
     } catch {
       /* surfaced via deleteMutation.errorMessage */
     }
-  }, [deleteMutation]);
+  }, [deleteMutation, t]);
 
   const calendarUser = useMemo(() => ({
-    name: profile?.fullName ?? 'Tài khoản của tôi',
+    name: profile?.fullName ?? t('my_account_fallback'),
     role:
       profile && (profile.currentJobTitle || profile.currentCompany)
         ? [profile.currentJobTitle, profile.currentCompany].filter(Boolean).join(' @ ')
-        : 'Mentor',
+        : t('mentor'),
     avatar: profile?.avatarUrl ?? '',
     cover: DEFAULT_COVER,
-  }), [profile]);
+  }), [profile, t]);
 
   return (
-    <Page title="Cố vấn - Quản lý khung giờ">
+    <Page title={t('page_title_calendar')}>
       <MentorshipProfileLayout user={calendarUser} cover={calendarUser.cover} tabs={TOP_TABS} onNavigate={navigate} mode="mentor">
         <Stack spacing={4}>
           <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
-              QUẢN LÝ KHUNG GIỜ
+              {t('cal_heading')}
             </Typography>
           </Box>
 
@@ -314,7 +316,7 @@ const MentorshipYourCalendarPage = () => {
                   <ChevronLeftIcon />
                 </IconButton>
                 <Typography fontWeight={700}>
-                  Tháng {anchorMonth.month() + 1}, {anchorMonth.year()}
+                  {t('slot_picker_month', { month: anchorMonth.month() + 1, year: anchorMonth.year() })}
                 </Typography>
                 <IconButton onClick={() => setAnchorMonth((d) => d.add(1, 'month'))}>
                   <ChevronRightIcon />
@@ -428,7 +430,7 @@ const MentorshipYourCalendarPage = () => {
                 {/* 1. UPCOMING APPOINTMENTS */}
                 <Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Typography fontWeight={700} mb={2} variant="subtitle1">
-                    Lịch hẹn sắp tới
+                    {t('cal_upcoming_title')}
                   </Typography>
                   {sessionsQuery.isLoading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
@@ -436,7 +438,7 @@ const MentorshipYourCalendarPage = () => {
                     </Box>
                   ) : upcomingSessions.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">
-                      Bạn chưa có lịch hẹn nào sắp tới.
+                      {t('cal_no_upcoming')}
                     </Typography>
                   ) : (
                     <Box sx={{ maxHeight: 360, overflowY: 'auto', pr: 1 }}>
@@ -469,7 +471,7 @@ const MentorshipYourCalendarPage = () => {
                     onClick={() => setShowAddTime((prev) => !prev)}
                   >
                     <Typography fontWeight={700} variant="subtitle1">
-                      Thêm lịch rảnh
+                      {t('cal_add_availability_title')}
                     </Typography>
                     <Typography sx={{ fontSize: 18 }}>{showAddTime ? '▴' : '▾'}</Typography>
                   </Box>
@@ -477,22 +479,22 @@ const MentorshipYourCalendarPage = () => {
                   {showAddTime && (
                     <Box sx={{ px: 3, pb: 3 }}>
                       <Typography variant="body2" color="text.secondary" mb={1}>
-                        Chọn khung giờ và ngày để mentee có thể đặt lịch.
+                        {t('cal_pick_slot_hint')}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" display="block" mb={2}>
-                        Múi giờ: (GMT+07:00) Giờ Đông Dương — TP Hồ Chí Minh
+                        {t('cal_timezone_note')}
                       </Typography>
                       <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Stack spacing={2}>
                           <Stack direction="row" spacing={1}>
                             <TimePicker
-                              label="Bắt đầu"
+                              label={t('postpone_label_start')}
                               value={startTime}
                               onChange={setStartTime}
                               slotProps={{ textField: { size: 'small', fullWidth: true } }}
                             />
                             <TimePicker
-                              label="Kết thúc"
+                              label={t('postpone_label_end')}
                               value={endTime}
                               onChange={setEndTime}
                               slotProps={{ textField: { size: 'small', fullWidth: true } }}
@@ -507,7 +509,7 @@ const MentorshipYourCalendarPage = () => {
                                 onChange={(e) => setRepeatWeekly(e.target.checked)}
                               />
                             }
-                            label={<Typography variant="body2">Lặp lại theo tuần</Typography>}
+                            label={<Typography variant="body2">{t('cal_repeat_weekly')}</Typography>}
                           />
 
                           {repeatWeekly ? (
@@ -534,14 +536,14 @@ const MentorshipYourCalendarPage = () => {
                               </Box>
                               <Stack spacing={1.5}>
                                 <DatePicker
-                                  label="Từ ngày"
+                                  label={t('cal_from_date')}
                                   value={startDate}
                                   onChange={setStartDate}
                                   minDate={dayjs()}
                                   slotProps={{ textField: { size: 'small', fullWidth: true } }}
                                 />
                                 <DatePicker
-                                  label="Đến ngày"
+                                  label={t('cal_to_date')}
                                   value={endDate}
                                   onChange={setEndDate}
                                   minDate={startDate ?? dayjs()}
@@ -551,7 +553,7 @@ const MentorshipYourCalendarPage = () => {
                             </>
                           ) : (
                             <DatePicker
-                              label="Ngày"
+                              label={t('cal_single_date')}
                               value={singleDate}
                               onChange={setSingleDate}
                               minDate={dayjs()}
@@ -569,7 +571,7 @@ const MentorshipYourCalendarPage = () => {
                             onClick={handleSave}
                             disabled={addMutation.isPending}
                           >
-                            {addMutation.isPending ? 'Đang lưu...' : 'Cập nhật lịch'}
+                            {addMutation.isPending ? t('dialog_saving') : t('cal_update_schedule')}
                           </Button>
                         </Stack>
                       </LocalizationProvider>
@@ -580,25 +582,25 @@ const MentorshipYourCalendarPage = () => {
                 {/* 4. SUMMARY CARD */}
                 <Card sx={{ p: 3, border: '1px solid', borderColor: 'divider' }} elevation={0}>
                   <Typography fontWeight={700} mb={2} variant="subtitle1">
-                    Tổng kết (sắp tới)
+                    {t('cal_summary_title')}
                   </Typography>
                   <Stack spacing={1}>
                     <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      Số slot trống:
+                      {t('cal_summary_slots')}
                       <Box component="span" color="primary.main" fontWeight={700}>
                         {summary.slotCount}
                       </Box>
                     </Typography>
                     <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      Tổng thời gian:
+                      {t('cal_summary_total_hours')}
                       <Box component="span" color="primary.main" fontWeight={700}>
-                        {summary.totalHours} giờ
+                        {t('cal_summary_hours_value', { hours: summary.totalHours })}
                       </Box>
                     </Typography>
                     <Typography variant="body2" sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      Trung bình mỗi slot:
+                      {t('cal_summary_avg')}
                       <Box component="span" color="primary.main" fontWeight={700}>
-                        {summary.avgMinutes} phút
+                        {t('cal_summary_minutes_value', { minutes: summary.avgMinutes })}
                       </Box>
                     </Typography>
                   </Stack>
@@ -609,15 +611,15 @@ const MentorshipYourCalendarPage = () => {
         </Stack>
 
         <Dialog open={Boolean(editingSlot)} onClose={closeEditSlot} fullWidth maxWidth="xs">
-          <DialogTitle>Chỉnh sửa slot</DialogTitle>
+          <DialogTitle>{t('cal_edit_slot_title')}</DialogTitle>
           <DialogContent>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Stack spacing={2} mt={1}>
                 <Typography variant="caption" color="text.secondary">
-                  Múi giờ: (GMT+07:00) Giờ Đông Dương — TP Hồ Chí Minh
+                  {t('cal_timezone_note')}
                 </Typography>
                 <DatePicker
-                  label="Ngày"
+                  label={t('cal_single_date')}
                   value={editStartTime}
                   onChange={(value) => {
                     if (!value) return;
@@ -635,13 +637,13 @@ const MentorshipYourCalendarPage = () => {
                 />
                 <Stack direction="row" spacing={1}>
                   <TimePicker
-                    label="Bắt đầu"
+                    label={t('postpone_label_start')}
                     value={editStartTime}
                     onChange={setEditStartTime}
                     slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
                   <TimePicker
-                    label="Kết thúc"
+                    label={t('postpone_label_end')}
                     value={editEndTime}
                     onChange={setEditEndTime}
                     slotProps={{ textField: { size: 'small', fullWidth: true } }}
@@ -653,14 +655,14 @@ const MentorshipYourCalendarPage = () => {
           </DialogContent>
           <DialogActions>
             <Button onClick={closeEditSlot} disabled={updateAvailabilityMutation.isPending}>
-              Huỷ
+              {t('dialog_cancel')}
             </Button>
             <Button
               variant="contained"
               onClick={submitEditSlot}
               disabled={updateAvailabilityMutation.isPending}
             >
-              {updateAvailabilityMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+              {updateAvailabilityMutation.isPending ? t('dialog_saving') : t('cal_save_slot')}
             </Button>
           </DialogActions>
         </Dialog>

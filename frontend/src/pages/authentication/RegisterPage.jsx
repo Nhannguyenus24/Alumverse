@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button, Popper, Paper } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
@@ -10,7 +10,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
 import Dropdown from '../../components/Dropdown';
-import { registerSchema } from '../../utils/regexUtils';
+import { getRegisterSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
@@ -55,6 +55,8 @@ const RegisterPage = () => {
     digit: /\d/.test(passwordValue),
     special: /[@$!%*?&]/.test(passwordValue),
   };
+
+  const registerSchema = useMemo(() => getRegisterSchema(t), [t]);
 
   const {
     register,

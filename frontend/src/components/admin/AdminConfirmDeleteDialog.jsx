@@ -6,6 +6,7 @@ import {
   DialogTitle,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const AdminConfirmDeleteDialog = ({
   open,
@@ -14,10 +15,12 @@ const AdminConfirmDeleteDialog = ({
   onClose,
   onConfirm,
   loading,
-  confirmLabel = 'Xóa',
+  confirmLabel,
   titleColor = 'error.main',
   confirmColor = 'error',
 }) => {
+  const { t } = useTranslation('common');
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ color: titleColor, fontWeight: 700 }}>{title}</DialogTitle>
@@ -28,7 +31,7 @@ const AdminConfirmDeleteDialog = ({
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" color="secondary" onClick={onClose} sx={{ textTransform: 'none' }}>
-          Hủy
+          {t('cancel')}
         </Button>
         <Button
           color={confirmColor}
@@ -37,7 +40,7 @@ const AdminConfirmDeleteDialog = ({
           disabled={loading}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          {confirmLabel}
+          {confirmLabel ?? t('delete')}
         </Button>
       </DialogActions>
     </Dialog>

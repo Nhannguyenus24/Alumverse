@@ -121,11 +121,11 @@ const NetworkIncomingRequestCard = ({
                 lineHeight: 1.35,
               }}
             >
-              {previewMessage || 'Không có tin nhắn.'}
+              {previewMessage || t('network:no_message')}
             </Typography>
 
             <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.3 }}>
-              Gửi lúc {formatDateTime(request.messageCreatedAt)}
+              {t('network:sent_at', { datetime: formatDateTime(request.messageCreatedAt) })}
             </Typography>
           </Box>
         </Stack>

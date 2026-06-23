@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import apiClient, { refreshSessionAccessToken, syncAuthStoreFromAccessToken } from '../utils/axios';
 import { userFromAccessToken, isTokenExpired, getSecondsUntilExpire } from '../utils/jwt';
 import {
@@ -12,13 +13,13 @@ import {
 import useAuthStore from '../stores/authStore';
 import useOrganizationStore from '../stores/organizationStore';
 
-function getFirstZodMessage(error) {
-  return error?.issues?.[0]?.message ?? 'Dữ liệu không hợp lệ';
-}
-
 export const useAuth = () => {
+  const { t } = useTranslation('auth');
   const queryClient = useQueryClient();
   const store = useAuthStore();
+
+  const getFirstZodMessage = (error) =>
+    error?.issues?.[0]?.message ?? t('invalid_data');
   const organizationIdFromStore = useOrganizationStore((state) => state.organization?.id ?? null);
   const { user, token, loading, error, verificationLevel } = store;
 
@@ -141,9 +142,9 @@ export const useAuth = () => {
         organizationId,
         rememberMe,
       });
-      return applyAccessTokenToStore(data, 'Đăng nhập thất bại');
+      return applyAccessTokenToStore(data, t('login_failed'));
     } catch (err) {
-      const message = err.response?.data?.message ?? err.message ?? 'Đăng nhập thất bại';
+      const message = err.response?.data?.message ?? err.message ?? t('login_failed');
       store.reset();
       store.setError(message);
       return { ok: false, error: message };
@@ -152,7 +153,7 @@ export const useAuth = () => {
 
   const loginWithGoogle = useCallback(async (idToken, rememberMe = false) => {
     if (!idToken || typeof idToken !== 'string') {
-      const msg = 'Google ID token không hợp lệ';
+      const msg = t('google_token_invalid');
       store.setError(msg);
       return { ok: false, error: msg };
     }
@@ -170,9 +171,9 @@ export const useAuth = () => {
         organizationId: organizationIdFromStore,
         rememberMe,
       });
-      return applyAccessTokenToStore(data, 'Đăng nhập Google thất bại');
+      return applyAccessTokenToStore(data, t('google_login_failed'));
     } catch (err) {
-      const message = err.response?.data?.message ?? err.message ?? 'Đăng nhập Google thất bại';
+      const message = err.response?.data?.message ?? err.message ?? t('google_login_failed');
       store.reset();
       store.setError(message);
       return { ok: false, error: message };
@@ -202,7 +203,7 @@ export const useAuth = () => {
         organizationId,
       });
       if (!data?.data) {
-        const msg = data?.message ?? 'Đăng ký thất bại';
+        const msg = data?.message ?? t('register_failed');
         store.reset();
         store.setError(msg);
         return { ok: false, error: msg };
@@ -211,7 +212,7 @@ export const useAuth = () => {
       store.setError(null);
       return { ok: true };
     } catch (err) {
-      const message = err.response?.data?.message ?? err.message ?? 'Đăng ký thất bại';
+      const message = err.response?.data?.message ?? err.message ?? t('register_failed');
       store.reset();
       store.setError(message);
       return { ok: false, error: message };
@@ -229,7 +230,7 @@ export const useAuth = () => {
     try {
       const { data } = await apiClient.post('/auth/send-otp', parsed.data);
       if (!data?.data) {
-        const msg = data?.message ?? 'Gửi mã thất bại';
+        const msg = data?.message ?? t('send_otp_failed');
         store.setError(msg);
         return { ok: false, error: msg };
       }
@@ -237,7 +238,7 @@ export const useAuth = () => {
       store.setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
-      const message = err.response?.data?.message ?? err.message ?? 'Gửi mã thất bại';
+      const message = err.response?.data?.message ?? err.message ?? t('send_otp_failed');
       store.setError(message);
       return { ok: false, error: message };
     }
@@ -254,7 +255,7 @@ export const useAuth = () => {
     try {
       const { data } = await apiClient.post('/auth/verify-otp', parsed.data);
       if (!data?.data) {
-        const msg = data?.message ?? 'Xác thực mã thất bại';
+        const msg = data?.message ?? t('verify_otp_failed');
         store.setError(msg);
         return { ok: false, error: msg };
       }
@@ -262,7 +263,7 @@ export const useAuth = () => {
       store.setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
-      const message = err.response?.data?.message ?? err.message ?? 'Xác thực mã thất bại';
+      const message = err.response?.data?.message ?? err.message ?? t('verify_otp_failed');
       store.setError(message);
       return { ok: false, error: message };
     }
@@ -276,7 +277,7 @@ export const useAuth = () => {
       return { ok: false, error: msg };
     }
     if (!store.user?.id) {
-      const msg = 'Vui lòng đăng nhập để đổi mật khẩu';
+      const msg = t('login_required_for_change_password');
       store.setError(msg);
       return { ok: false, error: msg };
     }
@@ -287,7 +288,7 @@ export const useAuth = () => {
         newPassword: parsed.data.newPassword,
       });
       if (!data?.data) {
-        const msg = data?.message ?? 'Đổi mật khẩu thất bại';
+        const msg = data?.message ?? t('change_password_failed');
         store.setError(msg);
         return { ok: false, error: msg };
       }
@@ -295,7 +296,7 @@ export const useAuth = () => {
       store.setError(null);
       return { ok: true, message: data?.message };
     } catch (err) {
-      const message = err.response?.data?.message ?? err.message ?? 'Đổi mật khẩu thất bại';
+      const message = err.response?.data?.message ?? err.message ?? t('change_password_failed');
       store.setError(message);
       return { ok: false, error: message };
     }

@@ -18,7 +18,7 @@ export const useSubmitSessionFeedback = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể gửi đánh giá'
+        'Failed to submit feedback'
       : null;
 
   return {

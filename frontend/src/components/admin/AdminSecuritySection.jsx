@@ -1,6 +1,7 @@
 import { Box, Stack } from '@mui/material';
 import SecurityOutlinedIcon from '@mui/icons-material/SecurityOutlined';
 import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
+import { useTranslation } from 'react-i18next';
 import Chart from '../Chart';
 import AdminSectionPanel from './AdminSectionPanel';
 import AdminDashboardMetricTile from './AdminDashboardMetricTile';
@@ -11,6 +12,7 @@ const metricRowSx = {
 };
 
 const AdminSecuritySection = () => {
+  const { t } = useTranslation('admin');
   const { loginStats, suspiciousLogins } = useAdminSecurityStats();
 
   const fmtDate = (str) => {
@@ -23,7 +25,7 @@ const AdminSecuritySection = () => {
     .reverse();
 
   const methodData = (loginStats.methodStats || []).map((m) => ({
-    name: m.method || 'Khác',
+    name: m.method || t('admin:security_method_other'),
     count: Number(m.count ?? 0),
   }));
 
@@ -32,21 +34,21 @@ const AdminSecuritySection = () => {
 
   return (
     <AdminSectionPanel
-      title="Bảo mật & Kiểm toán"
-      subtitle="Lịch sử đăng nhập, phương thức xác thực và các tài khoản đáng ngờ."
+      title={t('admin:security_section_title')}
+      subtitle={t('admin:security_section_subtitle')}
     >
       <Stack spacing={3}>
         <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
           <AdminDashboardMetricTile
-            label="Đăng nhập"
+            label={t('admin:security_logins_label')}
             value={totalLogins30d.toLocaleString()}
             icon={<SecurityOutlinedIcon />}
-            caption="Lượt đăng nhập trong 30 ngày qua"
+            caption={t('admin:security_logins_30d_caption')}
           />
           <AdminDashboardMetricTile
-            label="IP đáng ngờ (7 ngày)"
+            label={t('admin:security_suspicious_ip_label')}
             value={suspiciousCount.toLocaleString()}
-            caption={suspiciousCount > 0 ? 'Cần kiểm tra ngay' : 'Không có bất thường'}
+            caption={suspiciousCount > 0 ? t('admin:security_suspicious_needs_review') : t('admin:security_no_anomalies')}
             icon={<TravelExploreOutlinedIcon />}
           />
         </Stack>
@@ -55,7 +57,7 @@ const AdminSecuritySection = () => {
           <Box flex={2} minWidth={0}>
             <Chart
               type="line"
-              title="Đăng nhập theo ngày (30 ngày qua)"
+              title={t('admin:security_chart_daily_logins_title')}
               data={dailyData}
               dataKey="count"
               xAxisKey="date"
@@ -65,7 +67,7 @@ const AdminSecuritySection = () => {
           <Box flex={1} minWidth={0}>
             <Chart
               type="bar"
-              title="Phương thức đăng nhập"
+              title={t('admin:security_chart_login_methods_title')}
               data={methodData}
               dataKey="count"
               xAxisKey="name"

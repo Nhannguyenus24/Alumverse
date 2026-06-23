@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { useSupportedBanks } from '../hooks/fundraising/useSupportedBanks';
 import { formatReceivingInfoOptionLabel } from '../utils/bankUtils';
+import { useTranslation } from 'react-i18next';
 
 const COUNTDOWN_SECONDS = 5;
 
@@ -25,9 +26,11 @@ const FundReceivingInfoSelect = ({
   error = false,
   helperText,
   labelId = 'fund-receiving-info-label',
-  label = 'Tài khoản nhận quỹ',
+  label,
 }) => {
+  const { t } = useTranslation('donation');
   const { getBankLabel } = useSupportedBanks();
+  const resolvedLabel = label ?? t('fund_receiving_account_label');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingId, setPendingId] = useState(null);
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
@@ -68,12 +71,12 @@ const FundReceivingInfoSelect = ({
   return (
     <>
       <FormControl fullWidth error={error} disabled={disabled}>
-        <InputLabel id={labelId}>{label}</InputLabel>
+        <InputLabel id={labelId}>{resolvedLabel}</InputLabel>
         <Select
           value={value || ''}
           onChange={handleSelectChange}
           labelId={labelId}
-          label={label}
+          label={resolvedLabel}
           MenuProps={{ disableScrollLock: true }}
         >
           {options.map((info) => (
@@ -86,21 +89,23 @@ const FundReceivingInfoSelect = ({
       </FormControl>
 
       <Dialog open={dialogOpen} onClose={handleCancel} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Xác nhận tài khoản nhận quỹ</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('confirm_account_title')}</DialogTitle>
         <DialogContent>
           <Typography sx={{ lineHeight: 1.7 }}>
-            Đây là tài khoản nhận quỹ thuộc ngân hàng{' '}
-            <strong>{getBankLabel(pendingInfo?.bankName)}</strong>, số tài khoản là{' '}
-            <strong>{pendingInfo?.accountNumber}</strong>, tên người nhận là{' '}
+            {t('confirm_account_bank_prefix')}{' '}
+            <strong>{getBankLabel(pendingInfo?.bankName)}</strong>
+            {t('confirm_account_number_prefix')}{' '}
+            <strong>{pendingInfo?.accountNumber}</strong>
+            {t('confirm_account_name_prefix')}{' '}
             <strong>{pendingInfo?.accountName}</strong>.
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Vui lòng kiểm tra kỹ trước khi tiếp tục. Tiền quyên góp sẽ được chuyển vào tài khoản này.
+            {t('confirm_account_warning')}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
           <Button onClick={handleCancel} sx={{ textTransform: 'none', fontWeight: 700 }}>
-            Hủy
+            {t('close_fund_cancel')}
           </Button>
           <Button
             variant="contained"
@@ -108,7 +113,7 @@ const FundReceivingInfoSelect = ({
             disabled={countdown > 0}
             sx={{ textTransform: 'none', fontWeight: 700 }}
           >
-            {countdown > 0 ? `Xác nhận (${countdown})` : 'Xác nhận'}
+            {countdown > 0 ? t('confirm_with_countdown', { count: countdown }) : t('close_fund_confirm')}
           </Button>
         </DialogActions>
       </Dialog>

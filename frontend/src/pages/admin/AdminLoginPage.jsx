@@ -1,4 +1,5 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { GoogleReCaptchaCheckbox, useGoogleReCaptcha } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,12 +24,13 @@ import SecurityIcon from '@mui/icons-material/Security';
 import LockIcon from '@mui/icons-material/Lock';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { loginSchema } from '../../utils/regexUtils';
+import { getLoginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
 
 const AdminLoginPage = () => {
+  const { t } = useTranslation(['admin', 'auth']);
   const theme = useTheme();
   const navigate = useOrgNavigate();
   const location = useLocation();
@@ -38,6 +40,8 @@ const AdminLoginPage = () => {
   const { reset } = useGoogleReCaptcha();
 
   const redirectTo = location.state?.from?.pathname || '/admin';
+
+  const loginSchema = useMemo(() => getLoginSchema(t), [t]);
 
   const {
     register,
@@ -79,13 +83,13 @@ const AdminLoginPage = () => {
       recaptchaToken: data.recaptchaToken
     });
     if (result?.ok) {
-      enqueueSnackbar('Đăng nhập admin thành công.', { variant: 'success' });
+      enqueueSnackbar(t('admin_login_success'), { variant: 'success' });
 
       // Check if user has admin role
       if (result?.data?.user?.role === 'ADMIN' || result?.data?.user?.role === 'MODERATOR') {
         navigate(redirectTo, { replace: true });
       } else {
-        enqueueSnackbar('Bạn không có quyền truy cập trang admin.', { variant: 'error' });
+        enqueueSnackbar(t('admin_login_no_permission'), { variant: 'error' });
         // Redirect to regular login or home page
         navigate('/', { replace: true });
       }
@@ -98,10 +102,10 @@ const AdminLoginPage = () => {
       if (result?.error && result.error.includes('Account is not verified')) {
         const fp = await forgotPassword({ email: data.email });
         if (!fp?.ok) {
-          enqueueSnackbar(fp?.error ?? 'Gửi mã xác thực thất bại.', { variant: 'error' });
+          enqueueSnackbar(fp?.error ?? t('admin_login_send_code_failed'), { variant: 'error' });
           return;
         }
-        enqueueSnackbar('Mã xác thực đã được gửi đến email của bạn.', { variant: 'success' });
+        enqueueSnackbar(t('admin_login_code_sent'), { variant: 'success' });
         navigate('/auth/signup-code', { state: { email: data.email } });
       } else if (result?.error) {
         enqueueSnackbar(result.error, { variant: 'error' });
@@ -112,7 +116,7 @@ const AdminLoginPage = () => {
   return (
     <Page
       title="Admin Login"
-      meta={<meta name="description" content="Đăng nhập trang quản trị hệ thống" />}
+      meta={<meta name="description" content={t('admin_login_meta_desc')} />}
     >
       <Box
         sx={{
@@ -189,7 +193,7 @@ const AdminLoginPage = () => {
                   Admin Login
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Hệ thống quản trị HCMUS Alumni
+                  {t('admin_login_subtitle')}
                 </Typography>
               </Box>
 
@@ -198,7 +202,7 @@ const AdminLoginPage = () => {
                 icon={<SecurityIcon fontSize="small" />}
                 sx={{ mb: 3, borderRadius: 2, fontSize: '0.85rem' }}
               >
-                Chỉ dành cho Quản trị viên và Điều phối viên.
+                {t('admin_login_alert')}
               </Alert>
 
               <Box
@@ -207,14 +211,14 @@ const AdminLoginPage = () => {
                 sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
               >
                 <Input
-                  label="Email Admin"
+                  label={t('admin_login_email_label')}
                   placeholder="admin@example.com"
                   error={!!errors.email}
                   helperText={errors.email?.message}
                   {...register('email')}
                 />
                 <Input
-                  label="Mật khẩu"
+                  label={t('admin_login_password_label')}
                   placeholder="••••••••"
                   type="password"
                   error={!!errors.password}
@@ -225,7 +229,7 @@ const AdminLoginPage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <FormControlLabel
                     control={<Checkbox size="small" {...register('rememberMe')} />}
-                    label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
+                    label={<Typography variant="body2">{t('admin_login_remember_me')}</Typography>}
                   />
                   <Typography
                     component={Link}
@@ -238,7 +242,7 @@ const AdminLoginPage = () => {
                       '&:hover': { textDecoration: 'underline' }
                     }}
                   >
-                    Quên mật khẩu?
+                    {t('admin_login_forgot_password')}
                   </Typography>
                 </Box>
 
@@ -262,12 +266,12 @@ const AdminLoginPage = () => {
                   size="large"
                   disabled={loading}
                 >
-                  {loading ? 'Đang xác thực...' : 'Đăng nhập vào Hệ thống'}
+                  {loading ? t('admin_login_loading') : t('admin_login_submit')}
                 </Button>
 
                 <Box sx={{ mt: 1.5, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
-                    Bạn không có quyền quản trị?{' '}
+                    {t('admin_login_no_admin_question')}{' '}
                     <Typography
                       component={Link}
                       to="/"
@@ -276,7 +280,7 @@ const AdminLoginPage = () => {
                       fontWeight={600}
                       sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                     >
-                      Quay lại trang chủ
+                      {t('admin_login_back_home')}
                     </Typography>
                   </Typography>
                 </Box>
@@ -319,10 +323,10 @@ const AdminLoginPage = () => {
             }}
           >
             <Typography variant="h2" sx={{ fontWeight: 800, mb: 2, lineHeight: 1.2 }}>
-              Quản trị Hệ thống <br /> HCMUS Alumni
+              {t('admin_login_hero_title')}
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 400, opacity: 0.9, maxWidth: 480 }}>
-              Chào mừng bạn trở lại. Hãy đăng nhập để quản lý cộng đồng cựu sinh viên và các hoạt động của trường.
+              {t('admin_login_hero_subtitle')}
             </Typography>
           </Box>
         </Box>

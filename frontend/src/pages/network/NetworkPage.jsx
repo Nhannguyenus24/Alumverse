@@ -267,7 +267,7 @@ const NetworkPage = () => {
         title={t('network:block_user_title')}
         message={(
           <>
-            {`${t('network:block_user_confirm_message', { name: blockTarget?.fullName ?? 'người dùng này' })} `}
+            {`${t('network:block_user_confirm_message', { name: blockTarget?.fullName ?? t('network:this_user') })} `}
             <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
               {t('network:block_user_note')}
             </strong>

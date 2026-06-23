@@ -50,11 +50,11 @@ const ForumCategoryPage = () => {
 
   if (categoryId == null) {
     return (
-      <Page title="Không tìm thấy" meta={<meta name="description" content="Danh mục không hợp lệ" />}>
+      <Page title={t('common:not_found')} meta={<meta name="description" content={t('forum:invalid_category')} />}>
         <Container sx={{ py: 4 }}>
-          <Typography color="text.secondary">Danh mục không hợp lệ.</Typography>
+          <Typography color="text.secondary">{t('forum:invalid_category')}</Typography>
           <Button sx={{ mt: 2 }} onClick={() => navigate('/forum')} variant="contained">
-            Về diễn đàn
+            {t('forum:back_to_forum')}
           </Button>
         </Container>
       </Page>
@@ -64,7 +64,7 @@ const ForumCategoryPage = () => {
   return (
     <Page
       title={pageTitle}
-      meta={<meta name="description" content={`Chủ đề trong ${activeCategory?.name ?? 'danh mục'}`} />}
+      meta={<meta name="description" content={t('forum:topics_in_category', { name: activeCategory?.name ?? t('forum:category') })} />}
     >
       <Container
         maxWidth={false}
@@ -140,7 +140,7 @@ const ForumCategoryPage = () => {
                         wordBreak: 'break-word',
                       }}
                     >
-                      {(activeCategory?.name ?? 'Danh mục').toUpperCase()}
+                      {(activeCategory?.name ?? t('forum:category')).toUpperCase()}
                     </Typography>
                     <Box
                       sx={{

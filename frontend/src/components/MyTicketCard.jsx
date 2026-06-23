@@ -81,7 +81,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
           </Typography>
 
           <Typography variant="h4" fontWeight={700}>
-            {ticket.eventTitle ?? `Sự kiện #${ticket.eventId}`}
+            {ticket.eventTitle ?? t('event:event_id_fallback', { id: ticket.eventId })}
           </Typography>
 
           <Typography variant="body2" color="text.secondary">
@@ -143,7 +143,7 @@ const MyTicketCard = ({ ticket, onCancelled, highlighted = false }) => {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 1 }}>
             <Typography variant="h5" fontWeight={700} color="primary.main" textAlign="center" sx={{ mb: 3 }}>
-              {ticket.eventTitle ?? `Sự kiện #${ticket.eventId}`}
+              {ticket.eventTitle ?? t('event:event_id_fallback', { id: ticket.eventId })}
             </Typography>
 
             {/* QR generated client-side (self-hosted) — the code never leaves

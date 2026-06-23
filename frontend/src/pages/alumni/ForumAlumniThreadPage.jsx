@@ -240,7 +240,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
             }}
           >
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              {t('forum:reply')} {parentPost.authorName ?? `bài viết #${parentPost.id}`}
+              {t('forum:reply')} {parentPost.authorName ?? t('forum:post_id_fallback', { id: parentPost.id })}
             </Typography>
             <Typography
               variant="body2"
@@ -797,7 +797,7 @@ const ForumAlumniThreadPage = () => {
   return (
     <Page
       title={`${thread.title}`}
-      meta={<meta name="description" content="Chi tiết chủ đề Hướng nghiệp" />}
+      meta={<meta name="description" content={t('forum:career_topic_meta')} />}
     >
       <Container
         maxWidth={false}
@@ -1181,7 +1181,7 @@ const ForumAlumniThreadPage = () => {
                           }}
                         >
                           <Typography variant="caption" color="text.secondary">
-                            {t('forum:replying_to')} {replyTo.authorName || `bài viết #${replyTo.postId}`}
+                            {t('forum:replying_to')} {replyTo.authorName || t('forum:post_id_fallback', { id: replyTo.postId })}
                           </Typography>
                           <Button size="small" variant="text" onClick={handleCancelReply}>
                             {t('common:cancel')}

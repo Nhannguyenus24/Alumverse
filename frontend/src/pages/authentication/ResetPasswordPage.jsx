@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'react-router';
@@ -6,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Typography, Button } from '@mui/material';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { changePasswordSchema } from '../../utils/regexUtils';
+import { getChangePasswordSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 
@@ -16,6 +17,8 @@ const ResetPasswordPage = () => {
   const toOrgPath = useOrgPath();
   const { enqueueSnackbar } = useSnackbar();
   const { resetPassword, isSubmitting: loading, setError } = useAuth();
+
+  const changePasswordSchema = useMemo(() => getChangePasswordSchema(t), [t]);
 
   const {
     register,

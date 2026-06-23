@@ -1,4 +1,5 @@
 import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 
 export default function DonationCloseDialog({
   open,
@@ -7,6 +8,8 @@ export default function DonationCloseDialog({
   onConfirm,
   isSubmitting = false,
 }) {
+  const { t } = useTranslation('donation');
+
   return (
     <Dialog
       open={open}
@@ -16,16 +19,16 @@ export default function DonationCloseDialog({
       fullWidth
     >
       <DialogTitle sx={{ color: "text.primary", fontWeight: 700 }}>
-        Xác nhận đóng quỹ sớm
+        {t('donation:close_fund_dialog_title')}
       </DialogTitle>
 
       <DialogContent>
         <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>
-          Bạn có chắc muốn đóng sớm quỹ{" "}
+          {t('donation:close_fund_dialog_message')}{" "}
           <Box component="span" sx={{ color: "primary.main", fontWeight: 700 }}>
             {campaign?.name}
           </Box>{" "}
-          không?
+          {t('donation:close_fund_dialog_question')}
         </Typography>
       </DialogContent>
 
@@ -37,7 +40,7 @@ export default function DonationCloseDialog({
           disabled={isSubmitting}
           sx={{ textTransform: "none", fontWeight: 600 }}
         >
-          Hủy
+          {t('donation:close_fund_cancel')}
         </Button>
 
         <Button
@@ -47,7 +50,7 @@ export default function DonationCloseDialog({
           disabled={isSubmitting}
           sx={{ textTransform: "none", fontWeight: 700, color: "common.white" }}
         >
-          {isSubmitting ? "Đang đóng..." : "Xác nhận đóng"}
+          {isSubmitting ? t('donation:close_fund_closing') : t('donation:close_fund_confirm')}
         </Button>
       </DialogActions>
     </Dialog>

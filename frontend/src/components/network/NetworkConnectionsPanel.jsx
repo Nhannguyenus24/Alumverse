@@ -1,9 +1,11 @@
 import { Divider, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 import NetworkConnectionsSection from './NetworkConnectionsSection';
 import NetworkBlockedMembersSection from './NetworkBlockedMembersSection';
 
 const NetworkConnectionsPanel = ({ variant = 'page', enableBlock = true }) => {
+  const { t } = useTranslation('network');
   const showBlockedSection = variant === 'embedded';
 
   return (
@@ -16,10 +18,10 @@ const NetworkConnectionsPanel = ({ variant = 'page', enableBlock = true }) => {
             color="primary.main"
             sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
           >
-            KẾT NỐI HIỆN TẠI
+            {t('connections_heading')}
           </Typography>
           <Typography color="text.secondary">
-            Xem và quản lý các kết nối hiện tại của bạn.
+            {t('connections_subheading')}
           </Typography>
         </Stack>
       ) : null}

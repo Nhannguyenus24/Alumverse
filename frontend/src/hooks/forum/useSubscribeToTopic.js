@@ -26,7 +26,7 @@ export const useSubscribeToTopic = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể cập nhật theo dõi"
+      ? error.response?.data?.message ?? error.message ?? "Failed to update subscription"
       : null;
 
   return { toggleSubscription, isPending, isError, errorMessage };

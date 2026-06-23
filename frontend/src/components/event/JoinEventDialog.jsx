@@ -16,6 +16,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const JoinEventDialog = ({
   open,
@@ -25,6 +26,7 @@ const JoinEventDialog = ({
   questions = [],
   loading = false,
 }) => {
+  const { t } = useTranslation(['event', 'common']);
   const [answers, setAnswers] = useState({});
   const [errors, setErrors] = useState({});
 
@@ -62,7 +64,7 @@ const JoinEventDialog = ({
       const empty = val == null
         || (typeof val === 'string' && !val.trim())
         || (Array.isArray(val) && val.length === 0);
-      if (empty) next[q.id] = 'Vui lòng trả lời câu hỏi này';
+      if (empty) next[q.id] = t('event:answer_required');
     });
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -77,17 +79,17 @@ const JoinEventDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle fontWeight={700}>Xác nhận tham gia</DialogTitle>
+      <DialogTitle fontWeight={700}>{t('event:confirm_join_title')}</DialogTitle>
 
       <DialogContent>
         {!hasQuestions ? (
           <Typography>
-            Bạn có chắc chắn muốn tham gia sự kiện <strong>{eventTitle}</strong>?
+            {t('event:confirm_join_message', { title: eventTitle })}
           </Typography>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Typography>
-              Vui lòng cung cấp một số thông tin trước khi tham gia sự kiện.
+              {t('event:join_info_required')}
             </Typography>
 
             {questions.map((question) => (
@@ -156,10 +158,10 @@ const JoinEventDialog = ({
 
       <DialogActions>
         <Button variant="outlined" color="secondary" onClick={onClose} disabled={loading}>
-          Đóng
+          {t('common:close')}
         </Button>
         <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {loading ? <CircularProgress size={22} color="inherit" /> : 'Xác nhận tham gia'}
+          {loading ? <CircularProgress size={22} color="inherit" /> : t('event:confirm_join_button')}
         </Button>
       </DialogActions>
     </Dialog>

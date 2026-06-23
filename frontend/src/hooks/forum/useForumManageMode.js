@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const sectionsToManageTopics = (sections) =>
   sections.map((s) => ({
@@ -12,6 +13,7 @@ const sectionsToManageTopics = (sections) =>
   }));
 
 export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, showInfo }) => {
+  const { t } = useTranslation('forum');
   const [isManageMode, setIsManageMode] = useState(false);
   const [manageTopics, setManageTopics] = useState(() => sectionsToManageTopics([]));
   const [newMainTopic, setNewMainTopic] = useState('');
@@ -29,7 +31,7 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
   const handleAddMainTopic = () => {
     const trimmed = newMainTopic.trim();
     if (!trimmed) {
-      showWarning('Vui lòng nhập tên chủ đề chính.');
+      showWarning(t('forum:manage_topic_name_required'));
       return;
     }
     setManageTopics((prev) => [
@@ -37,13 +39,13 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
       { id: `topic-${Date.now()}`, title: trimmed.toUpperCase(), boards: [] },
     ]);
     setNewMainTopic('');
-    showSuccess('Đã thêm chủ đề chính.');
+    showSuccess(t('forum:manage_topic_added'));
   };
 
   const handleAddSubTopic = (topicId) => {
     const value = newSubTopics[topicId]?.trim() ?? '';
     if (!value) {
-      showWarning('Vui lòng nhập tên chủ đề con.');
+      showWarning(t('forum:manage_subtopic_name_required'));
       return;
     }
     setManageTopics((prev) =>
@@ -57,12 +59,12 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
       )
     );
     setNewSubTopics((prev) => ({ ...prev, [topicId]: '' }));
-    showSuccess('Đã thêm chủ đề con.');
+    showSuccess(t('forum:manage_subtopic_added'));
   };
 
   const handleDeleteTopic = (topicId) => {
     setManageTopics((prev) => prev.filter((t) => t.id !== topicId));
-    showInfo('Đã xóa chủ đề.');
+    showInfo(t('forum:manage_topic_deleted'));
   };
 
   const handleDeleteBoard = (topicId, boardId) => {
@@ -71,12 +73,12 @@ export const useForumManageMode = ({ visibleSections, showSuccess, showWarning, 
         t.id === topicId ? { ...t, boards: t.boards.filter((b) => b.id !== boardId) } : t
       )
     );
-    showInfo('Đã xóa chủ đề con.');
+    showInfo(t('forum:manage_subtopic_deleted'));
   };
 
   const handleSaveTopics = () => {
     handleCloseManageMode();
-    showSuccess('Đã lưu thay đổi chủ đề.');
+    showSuccess(t('forum:manage_topic_saved'));
   };
 
   return {

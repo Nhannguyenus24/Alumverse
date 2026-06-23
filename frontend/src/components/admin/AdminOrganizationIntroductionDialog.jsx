@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Button,
   Dialog,
@@ -25,6 +26,7 @@ const AdminOrganizationIntroductionDialog = ({
   introduction,
   onConfirm,
 }) => {
+  const { t } = useTranslation(["admin", "common"]);
   const [formData, setFormData] = useState({
     content: "",
     vision: "",
@@ -91,11 +93,10 @@ const AdminOrganizationIntroductionDialog = ({
           variant="h5"
           sx={{ fontWeight: 800, color: "primary.main" }}
         >
-          Cập nhật thông tin giới thiệu
+          {t("admin:org_intro_dialog_title")}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Các thông tin này sẽ được hiển thị công khai trên trang chủ của tổ
-          chức.
+          {t("admin:org_intro_dialog_subtitle")}
         </Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: 1 }}>
@@ -103,7 +104,7 @@ const AdminOrganizationIntroductionDialog = ({
           {/* General Introduction Section */}
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-              Giới thiệu chung (Rich Text)
+              {t("admin:org_intro_section_general")}
             </Typography>
             <Box
               sx={{
@@ -125,14 +126,14 @@ const AdminOrganizationIntroductionDialog = ({
                 onChange={(val) =>
                   setFormData((prev) => ({ ...prev, content: val }))
                 }
-                placeholder="Mô tả tóm tắt về lịch sử, quy mô, thành tựu của tổ chức..."
+                placeholder={t("admin:org_intro_content_placeholder")}
               />
             </Box>
           </Box>
 
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
-              Ảnh bìa tổ chức
+              {t("admin:org_intro_section_banner")}
             </Typography>
             {formData.bannerUrl && (
               <Box
@@ -156,7 +157,7 @@ const AdminOrganizationIntroductionDialog = ({
               startIcon={<CloudUploadIcon />}
               sx={{ textTransform: 'none', mb: 1 }}
             >
-              Tải ảnh bìa lên
+              {t("admin:org_intro_upload_banner")}
               <input
                 type="file"
                 hidden
@@ -171,13 +172,13 @@ const AdminOrganizationIntroductionDialog = ({
               />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Ảnh bìa sẽ được gửi dưới dạng Base64
+              {t("admin:org_intro_banner_base64_hint")}
             </Typography>
           </Box>
 
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
-              Bộ sưu tập ảnh (Gallery)
+              {t("admin:org_intro_section_gallery")}
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
               {formData.images.split(",").filter(Boolean).map((img, idx) => (
@@ -208,7 +209,7 @@ const AdminOrganizationIntroductionDialog = ({
               startIcon={<CloudUploadIcon />}
               sx={{ textTransform: 'none' }}
             >
-              Thêm ảnh vào bộ sưu tập
+              {t("admin:org_intro_add_to_gallery")}
               <input
                 type="file"
                 hidden
@@ -225,13 +226,13 @@ const AdminOrganizationIntroductionDialog = ({
               />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-              Bạn có thể chọn nhiều ảnh cùng lúc
+              {t("admin:org_intro_gallery_multi_hint")}
             </Typography>
           </Box>
 
           <Divider>
             <Typography variant="caption" color="text.disabled" fontWeight={700}>
-              TẦM NHÌN - SỨ MẠNG - GIÁ TRỊ CỐT LÕI
+              {t("admin:org_intro_vmv_divider")}
             </Typography>
           </Divider>
 
@@ -239,37 +240,37 @@ const AdminOrganizationIntroductionDialog = ({
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Tầm nhìn"
+                label={t("admin:org_intro_vision")}
                 name="vision"
                 value={formData.vision}
                 onChange={handleChange}
                 multiline
                 rows={4}
-                placeholder="Định hướng dài hạn..."
+                placeholder={t("admin:org_intro_vision_placeholder")}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Sứ mạng"
+                label={t("admin:org_intro_mission")}
                 name="mission"
                 value={formData.mission}
                 onChange={handleChange}
                 multiline
                 rows={4}
-                placeholder="Mục đích cốt lõi..."
+                placeholder={t("admin:org_intro_mission_placeholder")}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
                 fullWidth
-                label="Giá trị cốt lõi"
+                label={t("admin:org_intro_core_values")}
                 name="coreValues"
                 value={formData.coreValues}
                 onChange={handleChange}
                 multiline
                 rows={4}
-                placeholder="Triết lý hoạt động..."
+                placeholder={t("admin:org_intro_core_values_placeholder")}
               />
             </Grid>
           </Grid>
@@ -277,10 +278,10 @@ const AdminOrganizationIntroductionDialog = ({
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2, bgcolor: "action.hover" }}>
         <Button onClick={onClose} variant="outlined" color="secondary">
-          Hủy
+          {t("common:cancel")}
         </Button>
         <Button variant="contained" onClick={handleSubmit}>
-          Cập nhật nội dung
+          {t("admin:org_intro_update_btn")}
         </Button>
       </DialogActions>
     </Dialog>

@@ -20,7 +20,7 @@ export const useUpdateSessionStatus = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể cập nhật trạng thái'
+        'Failed to update status'
       : null;
 
   return {

@@ -19,7 +19,7 @@ export const useUpdateForumTopic = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể cập nhật chủ đề"
+      ? error.response?.data?.message ?? error.message ?? "Failed to update topic"
       : null;
 
   return { updateTopic: mutateAsync, isPending, isError, errorMessage };

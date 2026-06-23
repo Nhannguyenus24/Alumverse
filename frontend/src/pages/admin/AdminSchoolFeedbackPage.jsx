@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
 import {
@@ -24,11 +25,12 @@ import { adminOrganizationApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminSchoolFeedbackPage = () => {
+  const { t } = useTranslation('admin');
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Phản hồi', active: true }]);
+    setBreadcrumbs?.([{ label: t('nav_feedbacks'), active: true }]);
   }, [setBreadcrumbs]);
   const [loading, setLoading] = useState(true);
   const [feedbacks, setFeedbacks] = useState([]);
@@ -54,7 +56,7 @@ const AdminSchoolFeedbackPage = () => {
       }
     } catch (error) {
       enqueueSnackbar(
-        error?.response?.data?.message || 'Lỗi tải phản hồi',
+        error?.response?.data?.message || t('feedback_load_error'),
         { variant: 'error' },
       );
     } finally {
@@ -75,10 +77,10 @@ const AdminSchoolFeedbackPage = () => {
       if (selectedFeedback?.id === id) {
         setSelectedFeedback((prev) => ({ ...prev, isRead: true }));
       }
-      enqueueSnackbar('Đã đánh dấu là đã đọc', { variant: 'success' });
+      enqueueSnackbar(t('feedback_marked_read'), { variant: 'success' });
     } catch (error) {
       enqueueSnackbar(
-        error?.response?.data?.message || 'Lỗi cập nhật phản hồi',
+        error?.response?.data?.message || t('feedback_update_error'),
         { variant: 'error' },
       );
     }
@@ -93,7 +95,7 @@ const AdminSchoolFeedbackPage = () => {
     { id: 'id', label: 'ID', width: 60 },
     { 
       id: 'fullName', 
-      label: 'Người gửi',
+      label: t('feedback_col_sender'),
       render: (val, row) => (
         <Box>
           <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 700 }}>{val}</Typography>
@@ -101,10 +103,10 @@ const AdminSchoolFeedbackPage = () => {
         </Box>
       )
     },
-    { id: 'subject', label: 'Tiêu đề', render: (val, row) => <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 600 }}>{val}</Typography> },
+    { id: 'subject', label: t('col_title'), render: (val, row) => <Typography variant="body2" sx={{ fontWeight: row.isRead ? 400 : 600 }}>{val}</Typography> },
     { 
       id: 'isRead', 
-      label: 'Trạng thái', 
+      label: t('col_status'),
       render: (val) => (
         <AdminStatusChip
           status={val ? 'READ' : 'NEW'}
@@ -112,20 +114,20 @@ const AdminSchoolFeedbackPage = () => {
         />
       )
     },
-    { id: 'createdAt', label: 'Ngày gửi', render: (val) => formatDateTime(val) },
+    { id: 'createdAt', label: t('feedback_col_sent_date'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
       label: '',
       align: 'right',
       render: (_, row) => (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
-          <Tooltip title="Xem chi tiết">
+          <Tooltip title={t('tooltip_view_detail')}>
             <IconButton size="small" onClick={() => handleViewDetails(row)}>
               <VisibilityOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
           {!row.isRead && (
-            <Tooltip title="Đánh dấu đã đọc">
+            <Tooltip title={t('feedback_mark_as_read')}>
               <IconButton
                 size="small"
                 color="success"
@@ -151,10 +153,10 @@ const AdminSchoolFeedbackPage = () => {
     <Box>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-          Phản hồi từ người dùng
+          {t('feedback_page_title')}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-          Quản lý và phản hồi các ý kiến đóng góp từ sinh viên và cựu sinh viên.
+          {t('feedback_page_subtitle')}
         </Typography>
       </Box>
 
@@ -170,24 +172,24 @@ const AdminSchoolFeedbackPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng phản hồi"
+          label={t('feedback_total')}
           value={stats.total}
           icon={<FeedbackOutlinedIcon />}
         />
         <AdminDashboardMetricTile
-          label="Phản hồi mới"
+          label={t('feedback_new')}
           value={stats.new}
           icon={<MarkEmailUnreadOutlinedIcon />}
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label="Đã xử lý"
+          label={t('feedback_processed')}
           value={stats.read}
           icon={<MarkEmailReadIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Gửi gần nhất"
+          label={t('feedback_latest_sent')}
           value={stats.lastFeedback}
           icon={<HistoryOutlinedIcon />}
           valueColor="warning.main"

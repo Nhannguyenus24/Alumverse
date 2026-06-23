@@ -58,6 +58,7 @@ import { useSnackbar } from 'notistack';
 import AdminManualMemberDialog from './AdminManualMemberDialog';
 import { fileToBase64 } from '../../utils/imageUtils';
 import { createBrandColor, DEFAULT_BRAND_COLORS, normalizeHexColor } from '../../theme/palette';
+import { useTranslation } from 'react-i18next';
 
 const formatOrgDate = (value) => {
   if (!value) {
@@ -117,6 +118,7 @@ const AdminOrganizationMasterDetail = ({
 }) => {
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation(['admin', 'common']);
   const [orgSearch, setOrgSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [activeTab, setActiveTab] = useState(0);
@@ -235,16 +237,16 @@ const AdminOrganizationMasterDetail = ({
 
     try {
       await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
-      enqueueSnackbar('Đã cập nhật nhân sự', { variant: 'success' });
+      enqueueSnackbar(t('admin:update_personnel_success'), { variant: 'success' });
       onRefreshIntroduction?.();
     } catch (_) {
-      enqueueSnackbar('Không thể cập nhật nhân sự', { variant: 'error' });
+      enqueueSnackbar(t('admin:update_personnel_error'), { variant: 'error' });
     }
   };
 
   const handleDeletePersonnel = async (type, index) => {
     if (!selectedOrg || !selectedIntroduction) return;
-    if (!window.confirm('Xóa nhân sự này khỏi danh sách?')) return;
+    if (!window.confirm(t('admin:confirm_delete_personnel'))) return;
 
     const currentList = [...(selectedIntroduction[type] || [])].filter((_, i) => i !== index);
 
@@ -263,10 +265,10 @@ const AdminOrganizationMasterDetail = ({
 
     try {
       await adminOrganizationApi.upsertIntroduction(selectedOrg.id, payload);
-      enqueueSnackbar('Đã xóa nhân sự', { variant: 'success' });
+      enqueueSnackbar(t('admin:org_personnel_deleted'), { variant: 'success' });
       onRefreshIntroduction?.();
     } catch (_) {
-      enqueueSnackbar('Không thể xóa nhân sự', { variant: 'error' });
+      enqueueSnackbar(t('admin:org_personnel_delete_failed'), { variant: 'error' });
     }
   };
 
@@ -344,12 +346,12 @@ const AdminOrganizationMasterDetail = ({
         <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Stack spacing={2}>
             <Typography variant="h5" sx={{ color: 'primary.main' }}>
-              Tổ chức ({filteredOrganizations.length})
+              {t('admin:org_list_title', { count: filteredOrganizations.length })}
             </Typography>
             <SearchBar
               value={orgSearch}
               onChange={setOrgSearch}
-              placeholder="Tìm theo tên..."
+              placeholder={t('admin:org_search_placeholder')}
               size="small"
               fullWidth
             />
@@ -360,9 +362,9 @@ const AdminOrganizationMasterDetail = ({
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <MenuItem value="ALL">Tất cả trạng thái</MenuItem>
-              <MenuItem value="ACTIVE">Đang hoạt động</MenuItem>
-              <MenuItem value="INACTIVE">Tạm ngưng</MenuItem>
+              <MenuItem value="ALL">{t('admin:filter_status_all')}</MenuItem>
+              <MenuItem value="ACTIVE">{t('admin:filter_status_active')}</MenuItem>
+              <MenuItem value="INACTIVE">{t('admin:filter_status_inactive')}</MenuItem>
             </TextField>
           </Stack>
         </Box>
@@ -437,7 +439,7 @@ const AdminOrganizationMasterDetail = ({
           <Box sx={{ minHeight: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4 }}>
             <BusinessOutlinedIcon sx={{ fontSize: 80, color: 'text.disabled', opacity: 0.5, mb: 2 }} />
             <Typography variant="h6" color="text.secondary" fontWeight={700}>
-              Chọn một tổ chức để xem chi tiết
+              {t('admin:org_select_prompt')}
             </Typography>
           </Box>
         ) : (
@@ -470,7 +472,7 @@ const AdminOrganizationMasterDetail = ({
                       startIcon={<EditOutlinedIcon />}
                       onClick={() => onEditOrganization(selectedOrg)}
                     >
-                      Sửa thông tin
+                      {t('admin:org_edit_info_btn')}
                     </Button>
                     <IconButton 
                       size="small" 
@@ -502,22 +504,22 @@ const AdminOrganizationMasterDetail = ({
                     },
                   }}
                 >
-                  <Tab icon={<InfoOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Tổng quan" />
-                  <Tab icon={<AutoStoriesOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Giới thiệu" />
-                  <Tab icon={<SchoolOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Đào tạo" />
-                  <Tab icon={<SettingsOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Cấu hình" />
-                  <Tab icon={<PeopleOutlineIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Nhân sự" />
+                  <Tab icon={<InfoOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={t('admin:org_tab_overview')} />
+                  <Tab icon={<AutoStoriesOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={t('admin:org_tab_introduction')} />
+                  <Tab icon={<SchoolOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={t('admin:org_tab_training')} />
+                  <Tab icon={<SettingsOutlinedIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={t('admin:org_tab_config')} />
+                  <Tab icon={<PeopleOutlineIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={t('admin:org_tab_personnel')} />
                 </Tabs>
               </Box>
 
               <Box sx={{ flex: 1, p: 3, overflowY: 'auto' }}>
                 {activeTab === 0 && (
                   <Stack spacing={3}>
-                    <DetailSection title="Thông tin cơ bản">
+                    <DetailSection title={t('admin:org_section_basic_info')}>
                       <Grid container spacing={2}>
-                        <DetailItem label="ID Hệ thống" value={selectedOrg.id} />
+                        <DetailItem label={t('admin:org_field_system_id')} value={selectedOrg.id} />
                         <DetailItem label="Slug / Alias" value={selectedOrg.slug} />
-                        <DetailItem label="Ngày tạo" value={formatOrgDate(selectedOrg.createdAt)} />
+                        <DetailItem label={t('admin:org_field_created_at')} value={formatOrgDate(selectedOrg.createdAt)} />
                         <DetailItem label="Logo URL" value={selectedOrg.logoUrl || 'N/A'} isFullWidth />
                       </Grid>
                     </DetailSection>
@@ -534,10 +536,10 @@ const AdminOrganizationMasterDetail = ({
                         onClick={() => onEditIntroduction(selectedOrg)}
                         sx={{ textTransform: 'none' }}
                       >
-                        Chỉnh sửa giới thiệu
+                        {t('admin:org_edit_intro')}
                       </Button>
                     </Box>
-                    <DetailSection title="Nội dung giới thiệu">
+                    <DetailSection title={t('admin:org_intro_content')}>
                       {selectedIntroduction?.bannerUrl && (
                         <Box
                           component="img"
@@ -563,7 +565,7 @@ const AdminOrganizationMasterDetail = ({
                           '& img': { maxWidth: '100%', height: 'auto', borderRadius: 1 },
                           '& p': { mb: 1.5 }
                         }}
-                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedIntroduction?.content || 'Chưa có mô tả chi tiết.') }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(selectedIntroduction?.content || t('admin:org_no_description')) }}
                       />
                     </DetailSection>
                     <Stack spacing={2}>
@@ -571,7 +573,7 @@ const AdminOrganizationMasterDetail = ({
                         <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.success.main, 0.02), border: `1px solid ${alpha(theme.palette.success.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'success.main', width: 32, height: 32 }}><VisibilityRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main' }}>Tầm nhìn</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main' }}>{t('admin:org_vision')}</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.vision || '—'}</Typography>
                         </Card>
@@ -580,7 +582,7 @@ const AdminOrganizationMasterDetail = ({
                         <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.primary.main, 0.02), border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'primary.main', width: 32, height: 32 }}><RocketLaunchRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>Sứ mạng</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.dark' }}>{t('admin:org_mission')}</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.mission || '—'}</Typography>
                         </Card>
@@ -589,7 +591,7 @@ const AdminOrganizationMasterDetail = ({
                         <Card variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: alpha(theme.palette.error.main, 0.02), border: `1px solid ${alpha(theme.palette.error.main, 0.1)}` }}>
                           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
                             <Avatar sx={{ bgcolor: 'error.main', width: 32, height: 32 }}><FavoriteRoundedIcon sx={{ fontSize: 18 }} /></Avatar>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.dark' }}>Giá trị cốt lõi</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.dark' }}>{t('admin:org_core_values')}</Typography>
                           </Stack>
                           <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500, lineHeight: 1.6 }}>{selectedIntroduction?.coreValues || '—'}</Typography>
                         </Card>
@@ -598,7 +600,7 @@ const AdminOrganizationMasterDetail = ({
 
                     {/* Leaders Section */}
                     {selectedIntroduction?.leaders?.length > 0 && (
-                      <DetailSection title="Ban lãnh đạo">
+                      <DetailSection title={t('admin:org_leadership')}>
                         {selectedIntroduction.leadersContent && (
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
                             {selectedIntroduction.leadersContent}
@@ -622,7 +624,7 @@ const AdminOrganizationMasterDetail = ({
 
                     {/* Team Members Section */}
                     {selectedIntroduction?.teamMembers?.length > 0 && (
-                      <DetailSection title="Đội ngũ tiêu biểu">
+                      <DetailSection title={t('admin:org_featured_team')}>
                         {selectedIntroduction.teamMembersContent && (
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontStyle: 'italic' }}>
                             {selectedIntroduction.teamMembersContent}
@@ -648,10 +650,10 @@ const AdminOrganizationMasterDetail = ({
 
                 {activeTab === 2 && (
                   <Stack spacing={3}>
-                    <DetailSection title="Chương trình đào tạo">
+                    <DetailSection title={t('admin:org_training_programs')}>
                                               <Grid container spacing={2}>
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chương trình</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>{t('admin:org_programs')}</Typography>
                             <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
                               {programList.map((p) => (
                                 <Paper key={p} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -664,8 +666,8 @@ const AdminOrganizationMasterDetail = ({
                               direction={{ xs: 'column', sm: 'row' }}
                               spacing={1}
                             >
-                              <TextField size="small" placeholder="Thêm chương trình" value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
-                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>Thêm</Button>
+                              <TextField size="small" placeholder={t('admin:org_add_program')} value={newProgram} onChange={(e) => setNewProgram(e.target.value)} />
+                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newProgram.trim()) { setProgramList(pl => [...pl, newProgram.trim()]); setNewProgram(''); } }}>{t('admin:add')}</Button>
                               <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
                                 try {
                                   const remote = await adminOrganizationApi.getPrograms(selectedOrg.id);
@@ -674,17 +676,17 @@ const AdminOrganizationMasterDetail = ({
                                   const toRemove = remoteList.filter(p => !programList.includes(p));
                                   await Promise.all(toAdd.map(v => adminOrganizationApi.addProgram(selectedOrg.id, v)));
                                   await Promise.all(toRemove.map(v => adminOrganizationApi.removeProgram(selectedOrg.id, v)));
-                                  enqueueSnackbar('Đã lưu danh sách chương trình', { variant: 'success' });
+                                  enqueueSnackbar(t('admin:org_programs_saved'), { variant: 'success' });
                                   onRefresh?.();
                                 } catch (_) {
-                                  enqueueSnackbar('Lưu chương trình thất bại', { variant: 'error' });
+                                  enqueueSnackbar(t('admin:org_programs_save_failed'), { variant: 'error' });
                                 }
-                              }}>Lưu</Button>
+                              }}>{t('admin:save')}</Button>
                             </Stack>
                           </Grid>
 
                           <Grid item xs={12} sm={6}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Chuyên ngành</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>{t('admin:org_majors')}</Typography>
                             <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
                               {majorList.map((m) => (
                                 <Paper key={m} variant="outlined" sx={{ px: 1, py: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -697,8 +699,8 @@ const AdminOrganizationMasterDetail = ({
                               direction={{ xs: 'column', sm: 'row' }}
                               spacing={1}
                             >
-                              <TextField size="small" placeholder="Thêm chuyên ngành" value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
-                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>Thêm</Button>
+                              <TextField size="small" placeholder={t('admin:org_add_major')} value={newMajor} onChange={(e) => setNewMajor(e.target.value)} />
+                              <Button startIcon={<AddIcon />} variant="outlined" size="small" onClick={() => { if (newMajor.trim()) { setMajorList(ml => [...ml, newMajor.trim()]); setNewMajor(''); } }}>{t('admin:add')}</Button>
                               <Button startIcon={<SaveOutlinedIcon />} variant="contained" size="small" onClick={async () => {
                                 try {
                                   const remote = await adminOrganizationApi.getMajors(selectedOrg.id);
@@ -707,12 +709,12 @@ const AdminOrganizationMasterDetail = ({
                                   const toRemove = remoteList.filter(p => !majorList.includes(p));
                                   await Promise.all(toAdd.map(v => adminOrganizationApi.addMajor(selectedOrg.id, v)));
                                   await Promise.all(toRemove.map(v => adminOrganizationApi.removeMajor(selectedOrg.id, v)));
-                                  enqueueSnackbar('Đã lưu danh sách chuyên ngành', { variant: 'success' });
+                                  enqueueSnackbar(t('admin:org_majors_saved'), { variant: 'success' });
                                   onRefresh?.();
                                 } catch (_) {
-                                  enqueueSnackbar('Lưu chuyên ngành thất bại', { variant: 'error' });
+                                  enqueueSnackbar(t('admin:org_majors_save_failed'), { variant: 'error' });
                                 }
-                              }}>Lưu</Button>
+                              }}>{t('admin:save')}</Button>
                             </Stack>
                           </Grid>
                         </Grid>
@@ -731,7 +733,7 @@ const AdminOrganizationMasterDetail = ({
                     >
                       <Typography variant="caption" color="info.main" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 600 }}>
                         <InfoOutlinedIcon sx={{ fontSize: 14 }} />
-                        Lưu ý: Các thay đổi chương trình & chuyên ngành lưu khi bạn nhấn nút "Lưu".
+                        {t('admin:org_training_save_note')}
                       </Typography>
                     </Box>
                   </Stack>
@@ -739,35 +741,35 @@ const AdminOrganizationMasterDetail = ({
 
                 {activeTab === 3 && (
                   <Stack spacing={3}>
-                    <DetailSection title="Cấu hình tính năng">
+                    <DetailSection title={t('admin:org_feature_config')}>
                       <List sx={{ p: 0 }}>
                         {(() => {
                           const config = selectedOrg.featuresConfig
                             ? (typeof selectedOrg.featuresConfig === 'string' ? JSON.parse(selectedOrg.featuresConfig) : selectedOrg.featuresConfig)
                             : { mentorship: true, job: true, fund: true, events: true, forum: true };
-                          
+
                           const featureLabels = {
-                            mentorship: 'Tính năng Cố vấn (Mentorship)',
-                            job: 'Tính năng Việc làm (Jobs)',
-                            fund: 'Tính năng Gây quỹ (Fundraising)',
-                            events: 'Tính năng Sự kiện (Events)',
-                            forum: 'Tính năng Diễn đàn (Forum)',
+                            mentorship: t('admin:org_feat_mentorship'),
+                            job: t('admin:org_feat_jobs'),
+                            fund: t('admin:org_feat_fundraising'),
+                            events: t('admin:org_feat_events'),
+                            forum: t('admin:org_feat_forum'),
                           };
 
                           const handleToggle = async (key) => {
                             try {
                               await adminOrganizationApi.toggleFeature(selectedOrg.id, key);
-                              enqueueSnackbar(`Đã cập nhật tính năng "${featureLabels[key]}"`, { variant: 'success' });
+                              enqueueSnackbar(t('admin:org_feature_updated', { name: featureLabels[key] }), { variant: 'success' });
                               onRefresh?.();
                             } catch (_) {
-                              enqueueSnackbar('Không thể cập nhật tính năng', { variant: 'error' });
+                              enqueueSnackbar(t('admin:org_feature_update_failed'), { variant: 'error' });
                             }
                           };
 
                           return Object.keys(featureLabels).map((key) => (
-                            <Box key={key} sx={{ 
-                              display: 'flex', 
-                              alignItems: 'center', 
+                            <Box key={key} sx={{
+                              display: 'flex',
+                              alignItems: 'center',
                               justifyContent: 'space-between',
                               py: 1.5,
                               px: 1,
@@ -779,7 +781,7 @@ const AdminOrganizationMasterDetail = ({
                                   {featureLabels[key]}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  Bật hoặc tắt hiển thị {featureLabels[key].toLowerCase()} cho tổ chức này.
+                                  {t('admin:org_feature_toggle_desc', { feature: featureLabels[key].toLowerCase() })}
                                 </Typography>
                               </Box>
                               <Switch
@@ -793,15 +795,15 @@ const AdminOrganizationMasterDetail = ({
                      </DetailSection>
 
                       {/* Brand / theme editor */}
-                      <DetailSection title="Cấu hình giao diện">
+                      <DetailSection title={t('admin:org_ui_config')}>
                         <Box>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
-                            Màu sắc
+                            {t('admin:org_colors')}
                           </Typography>
 
                           <Stack spacing={1.5}>
                             <ColorBlock
-                              label="Màu chính"
+                              label={t('admin:org_color_primary')}
                               value={brandState.themeColors.primary}
                               fallback={DEFAULT_BRAND_COLORS.primary}
                               onChange={(v) =>
@@ -813,7 +815,7 @@ const AdminOrganizationMasterDetail = ({
                             />
 
                             <ColorBlock
-                              label="Màu phụ"
+                              label={t('admin:org_color_secondary')}
                               value={brandState.themeColors.secondary}
                               fallback={DEFAULT_BRAND_COLORS.secondary}
                               onChange={(v) =>
@@ -825,7 +827,7 @@ const AdminOrganizationMasterDetail = ({
                             />
 
                             <ColorBlock
-                              label="Màu accent"
+                              label={t('admin:org_color_accent')}
                               value={brandState.themeColors.accent}
                               fallback={DEFAULT_BRAND_COLORS.accent}
                               onChange={(v) =>
@@ -840,7 +842,7 @@ const AdminOrganizationMasterDetail = ({
 
                         <Box sx={{ mt: 3 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5 }}>
-                            Hình ảnh
+                            {t('admin:org_images')}
                           </Typography>
 
                           <Box
@@ -911,14 +913,14 @@ const AdminOrganizationMasterDetail = ({
                                   const newCfg = { ...cfg, brand_config: brand };
                                   await adminOrganizationApi.updateFeaturesConfig(selectedOrg.id, newCfg);
                                   onPromoteOrganization?.(selectedOrg.id);
-                                  enqueueSnackbar('Đã lưu cấu hình giao diện', { variant: 'success' });
+                                  enqueueSnackbar(t('admin:org_ui_saved'), { variant: 'success' });
                                   onRefresh?.();
                                 } catch (_) {
-                                  enqueueSnackbar('Lưu thất bại', { variant: 'error' });
+                                  enqueueSnackbar(t('admin:save_failed'), { variant: 'error' });
                                 }
                               }}
                           >
-                            Lưu giao diện
+                            {t('admin:org_save_ui')}
                           </Button>
                         </Box>
                       </DetailSection>
@@ -929,33 +931,33 @@ const AdminOrganizationMasterDetail = ({
                   <Stack spacing={3}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="overline" sx={{ color: 'text.disabled', fontWeight: 800 }}>
-                        Quản lý nhân sự (Thêm thủ công)
+                        {t('admin:org_manage_personnel')}
                       </Typography>
                     </Box>
 
                     {/* Section: Leaders */}
                     <Box>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                        <Typography variant="subtitle1" fontWeight={800}>Ban lãnh đạo</Typography>
+                        <Typography variant="subtitle1" fontWeight={800}>{t('admin:org_leaders')}</Typography>
                         <Button
                           size="small"
                           startIcon={<AddIcon />}
                           onClick={() => handleOpenPersonnelDialog('leaders')}
                         >
-                          Thêm lãnh đạo
+                          {t('admin:org_add_leader')}
                         </Button>
                       </Stack>
                       {!selectedIntroduction?.leaders?.length ? (
-                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic', mb: 2 }}>Chưa có thông tin ban lãnh đạo.</Typography>
+                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic', mb: 2 }}>{t('admin:org_no_leaders')}</Typography>
                       ) : (
                         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2, mb: 3 }}>
                           <Table size="small">
                             <TableHead>
                               <TableRow sx={{ bgcolor: 'action.hover' }}>
-                                <TableCell sx={{ fontWeight: 700 }}>Họ tên</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Chức vụ</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:full_name')}</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:position')}</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>{t('admin:actions')}</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -990,26 +992,26 @@ const AdminOrganizationMasterDetail = ({
                     {/* Section: Team Members */}
                     <Box>
                       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                        <Typography variant="subtitle1" fontWeight={800}>Đội ngũ nhân sự tiêu biểu</Typography>
+                        <Typography variant="subtitle1" fontWeight={800}>{t('admin:org_featured_staff')}</Typography>
                         <Button
                           size="small"
                           startIcon={<AddIcon />}
                           onClick={() => handleOpenPersonnelDialog('teamMembers')}
                         >
-                          Thêm thành viên
+                          {t('admin:org_add_member')}
                         </Button>
                       </Stack>
                       {!selectedIntroduction?.teamMembers?.length ? (
-                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>Chưa có thông tin đội ngũ nhân sự.</Typography>
+                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>{t('admin:org_no_staff')}</Typography>
                       ) : (
                         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
                           <Table size="small">
                             <TableHead>
                               <TableRow sx={{ bgcolor: 'action.hover' }}>
-                                <TableCell sx={{ fontWeight: 700 }}>Họ tên</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Chức vụ</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:full_name')}</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>{t('admin:position')}</TableCell>
                                 <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700 }}>Thao tác</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>{t('admin:actions')}</TableCell>
                               </TableRow>
                             </TableHead>
                             <TableBody>
@@ -1047,7 +1049,7 @@ const AdminOrganizationMasterDetail = ({
                 onClose={handleClosePersonnelDialog}
                 member={personnelDialog.member}
                 onConfirm={handleUpdatePersonnel}
-                title={personnelDialog.type === 'leaders' ? "Thông tin Lãnh đạo" : "Thông tin Nhân sự"}
+                title={personnelDialog.type === 'leaders' ? t('admin:org_leader_info') : t('admin:org_staff_info')}
               />
             </Box>
           </Fade>
@@ -1101,6 +1103,7 @@ const getContrastRatio = (colorA, colorB) => {
 const formatContrast = (value) => `${value.toFixed(2)}:1`;
 
 const ColorBlock = ({ label, value, fallback, onChange }) => {
+  const { t } = useTranslation(['admin']);
   const normalizedValue = normalizeHexColor(value, fallback);
   const color = createBrandColor(normalizedValue, fallback);
   const textOnWhiteContrast = getContrastRatio(color.main, '#FFFFFF');
@@ -1209,14 +1212,14 @@ const ColorBlock = ({ label, value, fallback, onChange }) => {
               }}
             >
               <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                Màu này có thể bị mờ khi dùng làm chữ trên nền trắng
+                {t('admin:org_color_low_contrast')}
                 {' '}
-                ({formatContrast(textOnWhiteContrast)}, nên đạt từ 4.5:1).
+                {t('admin:org_color_contrast_note', { ratio: formatContrast(textOnWhiteContrast) })}
               </Typography>
             </Alert>
           ) : (
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              Độ rõ ổn khi dùng màu này làm chữ trên nền trắng.
+              {t('admin:org_color_good_contrast')}
             </Typography>
           )}
         </Box>
@@ -1257,36 +1260,39 @@ const ImagePreviewBox = ({ label, src, sx }) => (
   </Box>
 );
 
-const HeroBannerPreview = ({ src, sx }) => (
-  <Box
-    sx={{
-      width: '100%',
-      minHeight: { xs: 180, md: 0 },
-      border: '1px solid',
-      borderColor: 'divider',
-      borderRadius: 1.5,
-      overflow: 'hidden',
-      bgcolor: 'background.default',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...sx,
-    }}
-  >
-    {src ? (
-      <Box
-        component="img"
-        src={src}
-        alt="Hero Banner"
-        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
-      />
-    ) : (
-      <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700 }}>
-        Khu vực preview Hero Banner
-      </Typography>
-    )}
-  </Box>
-);
+const HeroBannerPreview = ({ src, sx }) => {
+  const { t } = useTranslation(['admin']);
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        minHeight: { xs: 180, md: 0 },
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        overflow: 'hidden',
+        bgcolor: 'background.default',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...sx,
+      }}
+    >
+      {src ? (
+        <Box
+          component="img"
+          src={src}
+          alt="Hero Banner"
+          sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : (
+        <Typography variant="caption" color="text.disabled" sx={{ fontWeight: 700 }}>
+          {t('admin:org_hero_preview')}
+        </Typography>
+      )}
+    </Box>
+  );
+};
 
 const UploadImageButton = ({ label, onUpload, sx }) => (
   <Button

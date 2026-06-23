@@ -4,7 +4,7 @@ import apiClient from "../../utils/axios";
 
 const reactToForumPost = async ({ postId, memberId }) => {
   if (!postId || !memberId) {
-    throw new Error("Thiếu thông tin bài viết hoặc người dùng");
+    throw new Error("Missing post or user information");
   }
 
   const res = await apiClient.post("/forum/post/react", {
@@ -47,7 +47,7 @@ export const useReactToForumPost = (postId, memberId) => {
     isError && error
       ? error.response?.data?.message ??
         error.message ??
-        "Không thể cập nhật cảm xúc"
+        "Failed to update reaction"
       : null;
 
   return {

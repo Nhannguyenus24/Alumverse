@@ -20,7 +20,7 @@ export const useUpdateAvailability = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể cập nhật slot'
+        'Failed to update availability'
       : null;
 
   return {

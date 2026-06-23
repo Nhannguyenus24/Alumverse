@@ -47,11 +47,7 @@ const MentorshipSlotPicker = ({
 }) => {
   const { t, i18n } = useTranslation('mentorship');
 
-  const defaultTimezoneLabel =
-    i18n.language === 'vi'
-      ? '(GMT+07:00) Giờ Đông Dương - TP Hồ Chí Minh'
-      : '(GMT+07:00) Indochina Time - Ho Chi Minh City';
-  const resolvedTimezoneLabel = timezoneLabel ?? defaultTimezoneLabel;
+  const resolvedTimezoneLabel = timezoneLabel ?? t('timezone_vietnam');
 
   const today = useMemo(() => dayjs().startOf('day'), []);
   const initialAnchor = useMemo(() => {

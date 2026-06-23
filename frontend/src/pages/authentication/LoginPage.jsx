@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { GoogleReCaptchaCheckbox, useGoogleReCaptcha } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +10,7 @@ import GoogleIcon from '@mui/icons-material/Google';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { loginSchema } from '../../utils/regexUtils';
+import { getLoginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
@@ -28,6 +28,8 @@ const LoginPage = () => {
   const { reset } = useGoogleReCaptcha();
 
   const redirectTo = location.state?.from?.pathname || '/';
+
+  const loginSchema = useMemo(() => getLoginSchema(t), [t]);
 
   const {
     register,

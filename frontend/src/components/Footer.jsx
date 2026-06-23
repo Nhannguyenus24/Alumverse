@@ -119,7 +119,7 @@ const Footer = () => {
               Email: info@fit.hcmus.edu.vn
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-              SĐT: (028) 6288 4499
+              {t('footer:phone_label')}: (028) 6288 4499
             </Typography>
             <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
               {t('footer:admissions_label')}: 093 773 4004

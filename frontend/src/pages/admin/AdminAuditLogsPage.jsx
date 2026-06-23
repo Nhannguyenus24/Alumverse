@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -43,11 +44,12 @@ const DEFAULT_ACTIONS = ['CREATE', 'UPDATE', 'DELETE', 'BAN', 'UNBAN', 'APPROVE'
 
 
 const AdminAuditLogsPage = () => {
+  const { t } = useTranslation('admin');
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Nhật ký hệ thống', active: true }]);
+    setBreadcrumbs?.([{ label: t('nav_audit_logs'), active: true }]);
   }, [setBreadcrumbs]);
   const { loading, auditLogs } = useAdminAuditLogsData();
 
@@ -70,12 +72,12 @@ const AdminAuditLogsPage = () => {
     const list = auditLogs.filter((log) => {
       if (entityFilter.length > 0 && !entityFilter.includes(String(log.entityType || ''))) return false;
       
-      const t = new Date(log.timestamp).getTime();
-      if (!Number.isNaN(t)) {
-        if (rollingCutoffMs != null && t < rollingCutoffMs) return false;
+      const ts = new Date(log.timestamp).getTime();
+      if (!Number.isNaN(ts)) {
+        if (rollingCutoffMs != null && ts < rollingCutoffMs) return false;
         if (rollingCutoffMs == null && dateFrom) {
           const from = new Date(`${dateFrom}T00:00:00`).getTime();
-          if (t < from) return false;
+          if (ts < from) return false;
         }
       }
 
@@ -91,7 +93,7 @@ const AdminAuditLogsPage = () => {
 
   const handleExportCsv = () => {
     if (filteredLogs.length === 0) {
-      enqueueSnackbar('Không có dữ liệu để xuất.', { variant: 'warning' });
+      enqueueSnackbar(t('audit_no_data_export'), { variant: 'warning' });
       return;
     }
     const escape = (v) => `"${String(v ?? '').replaceAll('"', '""')}"`;
@@ -113,14 +115,14 @@ const AdminAuditLogsPage = () => {
     link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-    enqueueSnackbar('Đã xuất file CSV.', { variant: 'success' });
+    enqueueSnackbar(t('audit_export_success'), { variant: 'success' });
   };
 
   const columns = [
-    { id: 'timestamp', label: 'Thời gian', render: (val) => formatDateTimeWithSeconds(val) },
-    { 
-      id: 'studentId', 
-      label: 'Người thực hiện', 
+    { id: 'timestamp', label: t('audit_col_time'), render: (val) => formatDateTimeWithSeconds(val) },
+    {
+      id: 'studentId',
+      label: t('audit_col_actor'),
       render: (val, row) => (
         <Box>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>{val || '-'}</Typography>
@@ -128,26 +130,26 @@ const AdminAuditLogsPage = () => {
         </Box>
       )
     },
-    { 
-      id: 'action', 
-      label: 'Hành động', 
+    {
+      id: 'action',
+      label: t('audit_col_action'),
       render: (val) => (
         <Typography variant="caption" sx={{ fontWeight: 700, px: 1, py: 0.5, bgcolor: 'action.hover', borderRadius: 1 }}>
           {String(val || '-').toUpperCase()}
         </Typography>
       )
     },
-    { id: 'entityType', label: 'Đối tượng' },
-    { id: 'entityId', label: 'ID Đối tượng' },
-    { 
-      id: 'status', 
-      label: 'Kết quả', 
-      render: (val) => <AdminStatusChip status={val} category="audit" /> 
+    { id: 'entityType', label: t('audit_col_entity') },
+    { id: 'entityId', label: t('audit_col_entity_id') },
+    {
+      id: 'status',
+      label: t('audit_col_result'),
+      render: (val) => <AdminStatusChip status={val} category="audit" />
     },
-    { 
-      id: 'description', 
-      label: 'Mô tả', 
-      render: (val) => <Typography variant="body2" noWrap sx={{ maxWidth: 240 }}>{truncateText(val, 60)}</Typography> 
+    {
+      id: 'description',
+      label: t('audit_col_desc'),
+      render: (val) => <Typography variant="body2" noWrap sx={{ maxWidth: 240 }}>{truncateText(val, 60)}</Typography>
     }
   ];
 
@@ -155,7 +157,7 @@ const AdminAuditLogsPage = () => {
     <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Thông tin yêu cầu</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{t('audit_request_info')}</Typography>
           <Stack spacing={0.5}>
             <Typography variant="caption"><strong>IP:</strong> {log.ipAddress || '-'}</Typography>
             <Typography variant="caption"><strong>Path:</strong> {log.requestPath || '-'}</Typography>
@@ -165,7 +167,7 @@ const AdminAuditLogsPage = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>Giá trị cũ</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_old_value')}</Typography>
             <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
               {stringifyJson(log.oldValue)}
             </Box>
@@ -173,7 +175,7 @@ const AdminAuditLogsPage = () => {
         </Grid>
         <Grid item xs={12} md={4}>
           <Paper variant="outlined" sx={{ p: 1.5, height: '100%' }}>
-            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>Giá trị mới</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block' }}>{t('audit_new_value')}</Typography>
             <Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: 11, color: 'text.secondary' }}>
               {stringifyJson(log.newValue)}
             </Box>
@@ -186,13 +188,13 @@ const AdminAuditLogsPage = () => {
   const Filters = (
     <Stack direction="row" spacing={1}>
       <FormControl size="small" sx={{ minWidth: 160 }}>
-        <InputLabel>Đối tượng</InputLabel>
+        <InputLabel>{t('audit_entity_filter')}</InputLabel>
         <Select
           multiple
           value={entityFilter}
           onChange={(e) => { setEntityFilter(e.target.value); setPage(0); }}
-          input={<OutlinedInput label="Đối tượng" />}
-          renderValue={(selected) => selected.length ? `${selected.length} đã chọn` : 'Tất cả'}
+          input={<OutlinedInput label={t('audit_entity_filter')} />}
+          renderValue={(selected) => selected.length ? t('audit_selected_count', { count: selected.length }) : t('filter_all')}
         >
           {entityOptions.map((e) => (
             <MenuItem key={e} value={e}>
@@ -205,7 +207,7 @@ const AdminAuditLogsPage = () => {
       <TextField
         size="small"
         type="date"
-        label="Từ ngày"
+        label={t('admin:from_date')}
         value={dateFrom}
         onChange={(e) => { setRollingCutoffMs(null); setDateFrom(e.target.value); setPage(0); }}
         InputLabelProps={{ shrink: true }}
@@ -226,10 +228,10 @@ const AdminAuditLogsPage = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Nhật ký hệ thống
+            {t('admin:audit_logs_heading')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Giám sát các hoạt động của người dùng, thay đổi dữ liệu và cảnh báo an ninh.
+            {t('admin:audit_logs_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -237,7 +239,7 @@ const AdminAuditLogsPage = () => {
           startIcon={<FileDownloadOutlinedIcon />}
           onClick={handleExportCsv}
         >
-          Xuất dữ liệu
+          {t('admin:export_data')}
         </Button>
       </Box>
 
@@ -253,24 +255,24 @@ const AdminAuditLogsPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng nhật ký"
+          label={t('admin:audit_total')}
           value={stats.totalLogs}
           icon={<HistoryIcon />}
         />
         <AdminDashboardMetricTile
-          label="Hoạt động 24h"
+          label={t('admin:audit_24h')}
           value={stats.last24h}
           icon={<HistoryIcon />}
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label="Người dùng hoạt động"
+          label={t('admin:audit_active_users')}
           value={stats.distinctUsers}
           icon={<SecurityIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Lỗi hệ thống"
+          label={t('admin:audit_system_errors')}
           value={stats.failedLogs}
           icon={<SecurityIcon />}
           valueColor="error.main"

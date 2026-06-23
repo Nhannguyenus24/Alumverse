@@ -83,7 +83,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
   });
 
   const groupBlockedBannerMessage = hasBlockedMembersInGroup
-    ? buildGroupBlockedMembersBannerMessage(blockedMembersInGroup, isGroupOwner)
+    ? buildGroupBlockedMembersBannerMessage(blockedMembersInGroup, isGroupOwner, t)
     : null;
 
   // --- WebSocket ---
@@ -238,7 +238,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
           {onBack ? (
             <IconButton
               size="small"
-              aria-label="Quay lại danh sách chat"
+              aria-label={t('network:back_to_chat_list')}
               onClick={onBack}
               sx={{ flexShrink: 0 }}
             >
@@ -257,7 +257,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             </Typography>
             {activeChat?.type === 'GROUP' && (
               <Typography variant="caption" color="text.secondary" lineHeight={1.15} noWrap>
-                Nhóm chat
+                {t('network:group_chat_label')}
               </Typography>
             )}
           </Box>
@@ -265,7 +265,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         {isPrivateChat && !blockedByPeer ? (
           <IconButtonMenu
             menuId="network-chat-private-menu"
-            buttonAriaLabel="Tùy chọn cuộc trò chuyện"
+            buttonAriaLabel={t('network:chat_options_aria')}
           >
             {({ close }) => (
               blockedByMe ? (
@@ -279,7 +279,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <LockOpenOutlinedIcon fontSize="small" color="success" />
                   </ListItemIcon>
-                  <ListItemText primary="Bỏ chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+                  <ListItemText primary={t('network:unblock_user')} primaryTypographyProps={{ variant: 'body2' }} />
                 </MenuItem>
               ) : (
                 <MenuItem
@@ -292,7 +292,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
                   <ListItemIcon sx={{ minWidth: 36 }}>
                     <BlockOutlinedIcon fontSize="small" color="primary" />
                   </ListItemIcon>
-                  <ListItemText primary="Chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+                  <ListItemText primary={t('network:block_user')} primaryTypographyProps={{ variant: 'body2' }} />
                 </MenuItem>
               )
             )}
@@ -300,7 +300,7 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         ) : isPrivateChat ? null : (
           <IconButton
             size="small"
-            aria-label="Xem thành viên nhóm"
+            aria-label={t('network:view_group_members')}
             disabled={activeChat?.type !== 'GROUP'}
             onClick={() => setMembersDrawerOpen(true)}
           >
@@ -328,17 +328,17 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
               disabled={isBlockActionPending}
               sx={{ fontWeight: 700, textTransform: 'none' }}
             >
-              Bỏ chặn
+              {t('network:unblock')}
             </Button>
           }
         >
-          Bạn đã chặn {activeChat?.name}. Bạn không thể gửi tin nhắn cho họ.
+          {t('network:you_blocked_user', { name: activeChat?.name })}
         </Alert>
       ) : null}
 
       {isPrivateChat && blockedByPeer ? (
         <Alert severity="info" sx={{ borderRadius: 0 }}>
-          Bạn không thể nhắn tin cho {activeChat?.name}.
+          {t('network:cannot_message_user', { name: activeChat?.name })}
         </Alert>
       ) : null}
 
@@ -520,9 +520,9 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
         <Tooltip
           title={
             blockedByMe
-              ? 'Bạn đã chặn người dùng này. Bỏ chặn để gửi tin nhắn.'
+              ? t('network:blocked_placeholder')
               : blockedByPeer
-                ? 'Bạn không thể nhắn tin cho người này.'
+                ? t('network:cannot_message_placeholder')
                 : ''
           }
           placement="top"
@@ -535,10 +535,10 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
             inputRef={draftInputRef}
             placeholder={
               isMessagingBlocked
-                ? 'Không thể gửi tin nhắn...'
+                ? t('network:cannot_send_placeholder')
                 : isOpen
-                  ? 'Nhập tin nhắn...'
-                  : 'Đang kết nối...'
+                  ? t('network:message_input_placeholder')
+                  : t('network:connecting_placeholder')
             }
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
@@ -594,18 +594,19 @@ const NetworkChatPanel = ({ activeChat, onLeaveGroup, onBack }) => {
 
       <ConfirmDialog
         open={blockConfirmOpen}
-        title="Chặn người dùng"
+        title={t('network:block_dialog_title')}
         message={(
           <>
-            {`Bạn có chắc muốn chặn ${activeChat?.name ?? 'người dùng này'}? `}
+            {t('network:block_dialog_message', { name: activeChat?.name ?? t('network:this_user') })}
+            {' '}
             <strong style={{ color: 'rgba(0, 0, 0, 0.87)' }}>
-              Lưu ý: việc chặn chỉ áp dụng trong Kết nối và Nhắn tin.
+              {t('network:block_note')}
             </strong>
-            {' Bạn sẽ không thể gửi tin nhắn cho họ.'}
+            {' '}{t('network:block_result_note')}
           </>
         )}
-        confirmText="Chặn"
-        cancelText="Hủy"
+        confirmText={t('network:block')}
+        cancelText={t('network:cancel')}
         confirmColor="primary"
         loading={isBlockActionPending}
         onConfirm={() => blockUser()}

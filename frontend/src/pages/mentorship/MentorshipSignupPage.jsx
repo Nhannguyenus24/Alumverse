@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveOutlinedIcon from '@mui/icons-material/SaveOutlined';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import MentorSignupTabProfile from '../../components/mentorship/signup/MentorSignupTabProfile';
@@ -30,12 +31,6 @@ const STATUS_PENDING = 'PENDING';
 const STATUS_APPROVED = 'APPROVED';
 const STATUS_REJECTED = 'REJECTED';
 const STATUS_NEED_UPDATE = 'NEED_UPDATE';
-
-const TABS = [
-  { key: 'profile', label: 'Thông tin Mentor' },
-  { key: 'content', label: 'Nội dung chia sẻ' },
-  { key: 'terms', label: 'Điều khoản' },
-];
 
 const initialValues = {
   // Tab 1
@@ -73,10 +68,17 @@ const validateTerms = (v) => Boolean(v.termsAccepted);
 
 const MentorshipSignupPage = () => {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('mentorship');
   const orgMemberQuery = useMyOrganizationMember();
   const submitMutation = useCreateMentorSignup();
   const draftMutation = useSaveMentorDraft();
   const existingProfileQuery = useMyMentorProfile();
+
+  const TABS = [
+    { key: 'profile', label: t('mentor_signup_tab_profile') },
+    { key: 'content', label: t('mentor_signup_tab_content') },
+    { key: 'terms', label: t('mentor_signup_tab_terms') },
+  ];
 
   const draftValues = useMemo(() => {
     const profile = existingProfileQuery.data;
@@ -198,7 +200,7 @@ const MentorshipSignupPage = () => {
 
   if (orgMemberQuery.isFetching) {
     return (
-      <Page title="Đăng ký làm cố vấn">
+      <Page title={t('mentor_signup_page_title')}>
         <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
           <CircularProgress />
         </Container>
@@ -211,7 +213,7 @@ const MentorshipSignupPage = () => {
 
   if (!isVerified) {
     return (
-      <Page title="Đăng ký làm cố vấn">
+      <Page title={t('mentor_signup_page_title')}>
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -219,15 +221,14 @@ const MentorshipSignupPage = () => {
             sx={{ mb: 2, textTransform: 'none' }}
             color="inherit"
           >
-            Về trang Cố vấn
+            {t('mentor_signup_go_back')}
           </Button>
           <Alert severity="warning" sx={{ mb: 2 }}>
             <Typography fontWeight={700} mb={0.5}>
-              Bạn chưa đủ điều kiện đăng ký làm cố vấn
+              {t('mentor_signup_not_eligible_title')}
             </Typography>
             <Typography variant="body2">
-              Tài khoản của bạn cần đạt mức xác minh cấp {MIN_VERIFICATION_LEVEL}. Hiện tại bạn đang ở
-              cấp {verificationLevel}. Vui lòng hoàn tất quy trình xác minh tài khoản trước.
+              {t('mentor_signup_not_eligible_desc', { required: MIN_VERIFICATION_LEVEL, current: verificationLevel })}
             </Typography>
           </Alert>
         </Container>
@@ -241,7 +242,7 @@ const MentorshipSignupPage = () => {
   if (existingStatus === STATUS_PENDING || existingStatus === STATUS_APPROVED) {
     const isApproved = existingStatus === STATUS_APPROVED;
     return (
-      <Page title="Đăng ký làm cố vấn">
+      <Page title={t('mentor_signup_page_title')}>
         <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -249,18 +250,18 @@ const MentorshipSignupPage = () => {
             sx={{ mb: 2, textTransform: 'none' }}
             color="inherit"
           >
-            Về trang Cố vấn
+            {t('mentor_signup_go_back')}
           </Button>
           <Alert severity={isApproved ? 'success' : 'info'} sx={{ mb: 2 }}>
             <Typography fontWeight={700} mb={0.5}>
               {isApproved
-                ? 'Bạn đã là cố vấn được duyệt'
-                : 'Hồ sơ cố vấn của bạn đang chờ duyệt'}
+                ? t('mentor_signup_approved_title')
+                : t('mentor_signup_pending_title')}
             </Typography>
             <Typography variant="body2">
               {isApproved
-                ? 'Quản lý hồ sơ và lịch hẹn tại trang Cố vấn cá nhân.'
-                : 'Vui lòng chờ quản trị viên xem xét hồ sơ. Bạn sẽ được thông báo khi có kết quả.'}
+                ? t('mentor_signup_approved_desc')
+                : t('mentor_signup_pending_desc')}
             </Typography>
           </Alert>
         </Container>
@@ -271,7 +272,7 @@ const MentorshipSignupPage = () => {
   // ===== Form =====
 
   return (
-    <Page title="Đăng ký làm cố vấn">
+    <Page title={t('mentor_signup_page_title')}>
       <Container maxWidth="md" sx={{ py: { xs: 3, md: 5 } }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -279,19 +280,19 @@ const MentorshipSignupPage = () => {
           sx={{ mb: 2, textTransform: 'none' }}
           color="inherit"
         >
-          Về trang Cố vấn
+          {t('mentor_signup_go_back')}
         </Button>
 
         <Typography variant="h2" fontWeight={800} color="primary.main" mb={1}>
-          ĐĂNG KÝ LÀM CỐ VẤN
+          {t('mentor_signup_heading')}
         </Typography>
         <Typography color="text.secondary" mb={3}>
-          Hoàn tất 3 mục dưới đây để tạo hồ sơ cố vấn của bạn.
+          {t('mentor_signup_subtitle')}
         </Typography>
 
         {existingStatus === STATUS_DRAFT && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            Đã tải bản nháp trước đó. Bạn có thể chỉnh sửa và lưu nháp tiếp hoặc gửi đăng ký.
+            {t('mentor_signup_draft_loaded')}
           </Alert>
         )}
 
@@ -302,29 +303,29 @@ const MentorshipSignupPage = () => {
           >
             <Typography fontWeight={700} mb={0.5}>
               {existingStatus === STATUS_REJECTED
-                ? 'Hồ sơ Mentor của bạn đã bị từ chối'
-                : 'Quản trị viên yêu cầu bạn cập nhật hồ sơ'}
+                ? t('mentor_signup_rejected_title')
+                : t('mentor_signup_need_update_title')}
             </Typography>
             {existingProfileQuery.data?.reviewNote && (
               <Typography variant="body2" sx={{ mt: 0.5 }}>
-                <strong>Lý do:</strong> {existingProfileQuery.data.reviewNote}
+                <strong>{t('mentor_signup_review_note_label')}</strong> {existingProfileQuery.data.reviewNote}
               </Typography>
             )}
             <Typography variant="body2" sx={{ mt: 1 }}>
-              Bạn có thể chỉnh sửa hồ sơ và gửi lại để được xét duyệt.
+              {t('mentor_signup_resubmit_hint')}
             </Typography>
           </Alert>
         )}
 
         {success && (
           <Alert severity="success" sx={{ mb: 2 }}>
-            Đã tạo hồ sơ cố vấn thành công! Đang chuyển sang trang cá nhân...
+            {t('mentor_signup_success')}
           </Alert>
         )}
 
         {draftSaved && !success && (
           <Alert severity="success" sx={{ mb: 2 }}>
-            Đã lưu nháp hồ sơ.
+            {t('mentor_signup_draft_saved')}
           </Alert>
         )}
 
@@ -347,14 +348,14 @@ const MentorshipSignupPage = () => {
             variant="fullWidth"
             sx={{ borderBottom: 1, borderColor: 'divider' }}
           >
-            {TABS.map((t) => (
+            {TABS.map((tab) => (
               <Tab
-                key={t.key}
-                value={t.key}
+                key={tab.key}
+                value={tab.key}
                 label={
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <span>{t.label}</span>
-                    {tabValid[t.key] && (
+                    <span>{tab.label}</span>
+                    {tabValid[tab.key] && (
                       <Box
                         component="span"
                         sx={{
@@ -387,7 +388,7 @@ const MentorshipSignupPage = () => {
 
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1.5} mt={3}>
           <Button variant="outlined" color="inherit" onClick={() => navigate('/development/mentorship')}>
-            Hủy
+            {t('mentor_signup_cancel')}
           </Button>
           <Button
             variant="outlined"
@@ -395,14 +396,14 @@ const MentorshipSignupPage = () => {
             disabled={draftMutation.isPending || submitMutation.isPending}
             onClick={handleSaveDraft}
           >
-            {draftMutation.isPending ? 'Đang lưu...' : 'Lưu nháp'}
+            {draftMutation.isPending ? t('mentor_signup_saving') : t('mentor_signup_save_draft')}
           </Button>
           <Button
             variant="contained"
             disabled={!allValid || submitMutation.isPending || draftMutation.isPending}
             onClick={handleSubmit}
           >
-            {submitMutation.isPending ? 'Đang gửi...' : 'Hoàn thành'}
+            {submitMutation.isPending ? t('mentor_signup_sending') : t('mentor_signup_complete')}
           </Button>
         </Stack>
       </Container>

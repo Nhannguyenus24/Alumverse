@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -31,17 +32,18 @@ import { eventApi } from '../../utils/api';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
-const statusChip = (status) => {
-  const key = String(status || '').toUpperCase();
-  if (key === 'ISSUED') return { color: 'info', label: 'Đã cấp vé' };
-  if (key === 'USED' || key === 'CHECKED_IN') return { color: 'success', label: 'Đã check-in' };
-  if (key === 'CANCELLED') return { color: 'error', label: 'Đã huỷ' };
-  return { color: 'default', label: status || '-' };
-};
-
 const AdminEventOrganizePage = () => {
+  const { t } = useTranslation(['admin', 'event']);
   const { eventId } = useParams();
   const orgNavigate = useOrgNavigate();
+
+  const statusChip = (status) => {
+    const key = String(status || '').toUpperCase();
+    if (key === 'ISSUED') return { color: 'info', label: t('event:status_issued') };
+    if (key === 'USED' || key === 'CHECKED_IN') return { color: 'success', label: t('event:status_used') };
+    if (key === 'CANCELLED') return { color: 'error', label: t('event:status_cancelled') };
+    return { color: 'default', label: status || '-' };
+  };
 
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 400);
@@ -79,29 +81,29 @@ const AdminEventOrganizePage = () => {
     try {
       const ticket = await eventApi.getTicketByCode(code);
       if (Number(ticket.eventId) !== numericEventId) {
-        setCheckResult({ type: 'error', message: 'Vé không thuộc sự kiện này.' });
+        setCheckResult({ type: 'error', message: t('admin:event_ticket_wrong_event') });
         return;
       }
       if (['USED', 'CHECKED_IN'].includes(String(ticket.status).toUpperCase())) {
-        setCheckResult({ type: 'warning', message: 'Vé đã được check-in trước đó.' });
+        setCheckResult({ type: 'warning', message: t('admin:event_ticket_already_checked') });
         return;
       }
       if (String(ticket.status).toUpperCase() === 'CANCELLED') {
-        setCheckResult({ type: 'error', message: 'Vé đã bị huỷ.' });
+        setCheckResult({ type: 'error', message: t('admin:event_ticket_cancelled_msg') });
         return;
       }
       await checkInMutation.mutateAsync(code);
-      setCheckResult({ type: 'success', message: `Check-in thành công: ${code}` });
+      setCheckResult({ type: 'success', message: t('admin:event_checkin_success', { code }) });
       setTicketCode('');
       refetch();
     } catch (err) {
-      const msg = err?.response?.data?.message || 'Không tìm thấy vé hoặc check-in thất bại.';
+      const msg = err?.response?.data?.message || t('admin:event_ticket_not_found');
       setCheckResult({ type: 'error', message: msg });
     }
   };
 
   return (
-    <Page title="Tổ chức sự kiện">
+    <Page title={t('admin:organize_event_title')}>
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Stack spacing={3}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -110,7 +112,7 @@ const AdminEventOrganizePage = () => {
             </IconButton>
             <Box>
               <Typography variant="h4" fontWeight={800} color="primary.main">
-                Tổ chức sự kiện
+                {t('admin:organize_event_title')}
               </Typography>
               {eventTitle && (
                 <Typography variant="body2" color="text.secondary">{eventTitle}</Typography>
@@ -120,12 +122,12 @@ const AdminEventOrganizePage = () => {
 
           <Paper variant="outlined" sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-              Check-in tham dự
+              {t('admin:event_checkin_title')}
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <TextField
                 fullWidth
-                label="Mã vé"
+                label={t('admin:event_ticket_code')}
                 value={ticketCode}
                 onChange={(e) => setTicketCode(e.target.value.toUpperCase())}
                 onKeyDown={(e) => e.key === 'Enter' && handleCheckIn()}
@@ -153,11 +155,11 @@ const AdminEventOrganizePage = () => {
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Typography variant="h6" fontWeight={700}>
-              Danh sách người tham gia ({total})
+              {t('admin:event_participants_list', { count: total })}
             </Typography>
           </Box>
 
-          <SearchBar value={search} onChange={setSearch} placeholder="Tìm theo tên, email, mã vé..." />
+          <SearchBar value={search} onChange={setSearch} placeholder={t('admin:event_search_placeholder')} />
 
           <Paper variant="outlined">
             {isPending ? (
@@ -169,19 +171,19 @@ const AdminEventOrganizePage = () => {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Mã vé</TableCell>
-                      <TableCell>Khách / Thành viên</TableCell>
+                      <TableCell>{t('admin:event_col_ticket_code')}</TableCell>
+                      <TableCell>{t('admin:event_col_guest')}</TableCell>
                       <TableCell>Email</TableCell>
-                      <TableCell>Trạng thái</TableCell>
-                      <TableCell>Đăng ký lúc</TableCell>
-                      <TableCell align="right">Chi tiết</TableCell>
+                      <TableCell>{t('admin:col_status')}</TableCell>
+                      <TableCell>{t('admin:event_col_registered_at')}</TableCell>
+                      <TableCell align="right">{t('admin:event_col_detail')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {participants.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} align="center">
-                          <Typography color="text.secondary" sx={{ py: 2 }}>Không có người tham gia.</Typography>
+                          <Typography color="text.secondary" sx={{ py: 2 }}>{t('admin:event_no_attendees')}</Typography>
                         </TableCell>
                       </TableRow>
                     ) : participants.map((ticket) => {
@@ -199,7 +201,7 @@ const AdminEventOrganizePage = () => {
                           <TableCell align="right">
                             {answers?.length > 0 ? (
                               <Button size="small" onClick={() => setExpandedId(expandedId === ticket.id ? null : ticket.id)}>
-                                {expandedId === ticket.id ? 'Ẩn' : 'Câu trả lời'}
+                                {expandedId === ticket.id ? t('admin:hide') : t('admin:answers')}
                               </Button>
                             ) : '-'}
                           </TableCell>
@@ -215,7 +217,7 @@ const AdminEventOrganizePage = () => {
                     <Collapse key={`answers-${ticket.id}`} in={expandedId === ticket.id}>
                       <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
                         <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                          Câu trả lời — {ticket.ticketCode}
+                          {t('admin:ticket_answers', { code: ticket.ticketCode })}
                         </Typography>
                         {answers.map((a, idx) => (
                           <Typography key={idx} variant="body2" sx={{ mb: 0.5 }}>

@@ -18,7 +18,7 @@ export const useCreateNews = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create news post"
       : null;
 
   return { createNews: mutateAsync, isPending, isError, errorMessage };

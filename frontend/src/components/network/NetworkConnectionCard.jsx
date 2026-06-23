@@ -113,7 +113,7 @@ const NetworkConnectionCard = ({
           {enableBlock ? (
             <IconButtonMenu
               menuId={`network-connection-card-menu-${connection.peerMemberId}`}
-              buttonAriaLabel="Tùy chọn kết nối"
+              buttonAriaLabel={t('network:connection_options_aria')}
             >
               {({ close }) => (
                 <MenuItem
@@ -128,7 +128,7 @@ const NetworkConnectionCard = ({
                     <BlockOutlinedIcon fontSize="small" color="primary" />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Chặn người dùng"
+                    primary={t('network:block_user')}
                     primaryTypographyProps={{ variant: 'body2' }}
                   />
                 </MenuItem>

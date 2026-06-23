@@ -40,7 +40,7 @@ export const useSaveMenteeProfile = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể lưu hồ sơ Mentee'
+        'Failed to save mentee profile'
       : null;
 
   return {

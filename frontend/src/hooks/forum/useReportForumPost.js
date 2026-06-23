@@ -21,7 +21,7 @@ export const useReportForumPost = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể báo cáo bài viết.'
+        'Failed to report post'
       : null;
 
   return {

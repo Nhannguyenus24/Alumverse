@@ -3,6 +3,7 @@ import { TextField, InputAdornment, Box, IconButton } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { useTranslation } from 'react-i18next';
 
 const Input = ({
   label = 'Input',
@@ -14,6 +15,7 @@ const Input = ({
   InputProps,
   ...rest
 }) => {
+  const { t } = useTranslation('common');
   const [showPassword, setShowPassword] = useState(false);
   const errorMessage = error ? (helperText ?? 'Alert message') : helperText;
 
@@ -41,7 +43,7 @@ const Input = ({
         ) : null}
         {isPassword ? (
           <IconButton
-            aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+            aria-label={showPassword ? t('hide_password') : t('show_password')}
             onClick={() => setShowPassword((v) => !v)}
             onMouseDown={(e) => e.preventDefault()}
             edge="end"

@@ -100,8 +100,8 @@ const ForumBoardRow = ({ board, onClick }) => {
           <Divider sx={{ mb: 1.25 }} />
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <StatCell label="Chủ đề" value={board?.topicCount ?? '-'} />
-              <StatCell label="Thành viên" value={board?.participantCount ?? '-'} />
+              <StatCell label={t('forum:stat_topics')} value={board?.topicCount ?? '-'} />
+              <StatCell label={t('forum:stat_members')} value={board?.participantCount ?? '-'} />
             </Box>
           </Box>
           <Box sx={{ mt: 1.25, display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>

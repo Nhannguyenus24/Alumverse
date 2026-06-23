@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router';
 import { useSnackbar } from 'notistack';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -34,6 +35,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 
 const AdminVerificationsPage = () => {
+  const { t } = useTranslation('admin');
   const theme = useTheme();
   const { enqueueSnackbar } = useSnackbar();
   const { setBreadcrumbs } = useOutletContext();
@@ -63,7 +65,7 @@ const AdminVerificationsPage = () => {
   const [submitting, setSubLoading] = useState(false);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Xác thực người dùng', active: true }]);
+    setBreadcrumbs?.([{ label: t('nav_verifications'), active: true }]);
   }, [setBreadcrumbs]);
 
   const fetchRequests = async () => {
@@ -74,7 +76,7 @@ const AdminVerificationsPage = () => {
       setRequests(data.items || []);
       setTotalCount(data.totalElements || 0);
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Lỗi khi tải danh sách yêu cầu.', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('verif_error_load'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -97,12 +99,12 @@ const AdminVerificationsPage = () => {
       // Send uppercase status to match backend @Pattern validation
       const finalStatus = status.toUpperCase();
       await reviewVerificationRequest(request.id, finalStatus, note);
-      enqueueSnackbar(`Đã ${finalStatus === 'APPROVED' ? 'duyệt' : 'từ chối'} yêu cầu thành công.`, { variant: 'success' });
+      enqueueSnackbar(finalStatus === 'APPROVED' ? t('verif_approved_success') : t('verif_rejected_success'), { variant: 'success' });
       setReviewDialogOpen(false);
       void fetchRequests();
     } catch (error) {
       console.error('Review submission error:', error);
-      enqueueSnackbar(error?.response?.data?.message || 'Lỗi khi xử lý yêu cầu.', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('verif_error_review'), { variant: 'error' });
     } finally {
       setSubLoading(false);
     }
@@ -111,7 +113,7 @@ const AdminVerificationsPage = () => {
   const columns = useMemo(() => [
     {
       id: 'user',
-      label: 'Người dùng',
+      label: t('verif_col_user'),
       render: (_, r) => (
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Avatar 
@@ -133,7 +135,7 @@ const AdminVerificationsPage = () => {
     },
     {
       id: 'documentType',
-      label: 'Loại minh chứng',
+      label: t('verif_col_doc_type'),
       render: (val) => (
         <Stack direction="row" spacing={1} alignItems="center">
           <DescriptionOutlinedIcon fontSize="small" color="action" />
@@ -143,27 +145,27 @@ const AdminVerificationsPage = () => {
     },
     {
       id: 'documentUrl',
-      label: 'Minh chứng',
+      label: t('verif_col_document'),
       render: (val) => (
-        <Link 
-          href={val} 
-          target="_blank" 
-          rel="noopener" 
+        <Link
+          href={val}
+          target="_blank"
+          rel="noopener"
           sx={{ fontSize: 13, fontWeight: 600 }}
           onClick={(e) => e.stopPropagation()}
         >
-          Xem tài liệu
+          {t('verif_view_document')}
         </Link>
       )
     },
     {
       id: 'status',
-      label: 'Trạng thái',
+      label: t('col_status'),
       render: (val) => (
         <AdminStatusChip status={val} category="account" />
       )
     },
-    { id: 'createdAt', label: 'Ngày gửi', render: (val) => formatDateTime(val) },
+    { id: 'createdAt', label: t('verif_col_submitted_at'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
       label: '',
@@ -172,14 +174,14 @@ const AdminVerificationsPage = () => {
         const isPending = r.status?.toLowerCase() === 'pending';
         return (
           <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-            <Tooltip title="Xem chi tiết">
+            <Tooltip title={t('tooltip_view_detail')}>
               <IconButton size="small" color="primary" onClick={(e) => { e.stopPropagation(); handleReview(r); }}>
                 <VisibilityOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             
             {isPending && (
-              <Tooltip title="Duyệt nhanh">
+              <Tooltip title={t('verif_quick_approve')}>
                 <IconButton 
                   size="small" 
                   color="success" 
@@ -202,10 +204,10 @@ const AdminVerificationsPage = () => {
     <Box>
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-          Xác thực minh chứng
+          {t('verif_page_title')}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-          Xem và phê duyệt các yêu cầu xác thực tài khoản từ người dùng.
+          {t('verif_page_subtitle')}
         </Typography>
       </Box>
 
@@ -219,19 +221,19 @@ const AdminVerificationsPage = () => {
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
         onSearchChange={setSearchTerm} 
         searchValue={searchTerm}
-        searchPlaceholder="Tìm theo tên, email..."
+        searchPlaceholder={t('verif_search_placeholder')}
         onRowClick={handleReview}
         filters={
           <TextField
             select
             size="small"
-            label="Bộ lọc"
+            label={t('verif_filter_label')}
             value={pendingOnly ? 'pending' : 'all'}
             onChange={(e) => { setPendingOnly(e.target.value === 'pending'); setPage(0); }}
             sx={{ minWidth: 160 }}
           >
-            <MenuItem value="pending">Chờ xử lý</MenuItem>
-            <MenuItem value="all">Tất cả</MenuItem>
+            <MenuItem value="pending">{t('verif_filter_pending')}</MenuItem>
+            <MenuItem value="all">{t('filter_all')}</MenuItem>
           </TextField>
         }
         loading={loading}
@@ -239,13 +241,13 @@ const AdminVerificationsPage = () => {
 
       {/* Review Dialog */}
       <Dialog open={reviewDialogOpen} onClose={() => !submitting && setReviewDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>Xử lý yêu cầu xác thực</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('verif_dialog_title')}</DialogTitle>
         <DialogContent dividers>
           {selectedRequest && (
             <Stack spacing={2.5} sx={{ py: 1 }}>
               <Box>
                 <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                  NGƯỜI GỬI
+                  {t('verif_dialog_sender')}
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 700 }}>
                   {selectedRequest.fullName || selectedRequest.studentId} ({selectedRequest.email})
@@ -254,23 +256,23 @@ const AdminVerificationsPage = () => {
 
               <Box>
                 <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                  TÀI LIỆU MINH CHỨNG
+                  {t('verif_dialog_document')}
                 </Typography>
-                <Button 
-                  variant="outlined" 
-                  href={selectedRequest.documentUrl} 
-                  target="_blank" 
+                <Button
+                  variant="outlined"
+                  href={selectedRequest.documentUrl}
+                  target="_blank"
                   startIcon={<DescriptionOutlinedIcon />}
                   sx={{ borderRadius: 2, textTransform: 'none' }}
                 >
-                  Mở tài liệu trong tab mới
+                  {t('verif_open_document')}
                 </Button>
               </Box>
 
               {selectedRequest.aiSummary && (
                 <Box sx={{ p: 2, bgcolor: alpha(theme.palette.info.main, 0.08), borderRadius: 2, border: `1px dashed ${theme.palette.info.main}` }}>
                   <Typography variant="caption" sx={{ color: 'info.main', fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Iconify icon="fluent:bot-24-filled" /> TÓM TẮT TỪ AI
+                    <Iconify icon="fluent:bot-24-filled" /> {t('verif_ai_summary')}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'text.primary', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
                     {selectedRequest.aiSummary}
@@ -280,13 +282,13 @@ const AdminVerificationsPage = () => {
 
               <Box>
                 <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                  GHI CHÚ CỦA QUẢN TRỊ VIÊN
+                  {t('verif_admin_note_label')}
                 </Typography>
                 <TextField
                   fullWidth
                   multiline
                   rows={3}
-                  placeholder="Nhập lý do từ chối hoặc lời nhắn (tùy chọn)..."
+                  placeholder={t('verif_admin_note_placeholder')}
                   value={adminNote}
                   onChange={(e) => setAdminNote(e.target.value)}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
@@ -302,7 +304,7 @@ const AdminVerificationsPage = () => {
             color="inherit"
             sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
           >
-            Đóng
+            {t('verif_btn_close')}
           </Button>
           {selectedRequest?.status === 'PENDING' && (
             <>
@@ -314,17 +316,17 @@ const AdminVerificationsPage = () => {
                 onClick={() => submitReview(selectedRequest, 'REJECTED', adminNote)}
                 sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
               >
-                Từ chối
+                {t('verif_btn_reject')}
               </Button>
-              <Button 
-                variant="contained" 
-                color="success" 
-                disabled={submitting} 
+              <Button
+                variant="contained"
+                color="success"
+                disabled={submitting}
                 startIcon={<CheckCircleOutlineIcon />}
                 onClick={() => submitReview(selectedRequest, 'APPROVED', adminNote)}
                 sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
               >
-                Phê duyệt
+                {t('verif_btn_approve')}
               </Button>
             </>
           )}

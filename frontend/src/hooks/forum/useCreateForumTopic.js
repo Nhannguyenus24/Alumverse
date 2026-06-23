@@ -18,7 +18,7 @@ export const useCreateForumTopic = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tạo chủ đề"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create topic"
       : null;
 
   return { createTopic: mutateAsync, isPending, isError, errorMessage };

@@ -20,7 +20,7 @@ export const useCancelMenteeSession = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể hủy lịch hẹn'
+        'Failed to cancel session'
       : null;
 
   return {

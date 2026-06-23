@@ -19,6 +19,7 @@ import {
   Tooltip,
   Collapse,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import SearchBar from '../SearchBar';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -36,16 +37,19 @@ const AdminDataTable = ({
   onSearchChange,
   onSearchKeyDown,
   searchValue,
-  searchPlaceholder = 'Tìm kiếm...',
+  searchPlaceholder,
   actions,
   filters,
   onExport,
   addButton,
-  emptyMessage = 'Không tìm thấy dữ liệu phù hợp.',
+  emptyMessage,
   onRowClick,
   renderExpandableRow,
 }) => {
+  const { t } = useTranslation(['common', 'admin']);
   const theme = useTheme();
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('common:search_placeholder');
+  const resolvedEmptyMessage = emptyMessage ?? t('common:no_data_found');
   const [expandedRow, setExpandedRow] = useState(null);
   const tableHeadBg = theme.palette.mode === 'dark'
     ? alpha(theme.palette.primary.main, 0.22)
@@ -85,7 +89,7 @@ const AdminDataTable = ({
               value={searchValue}
               onChange={onSearchChange}
               onKeyDown={onSearchKeyDown}
-              placeholder={searchPlaceholder}
+              placeholder={resolvedSearchPlaceholder}
               sx={{
                 maxWidth: { md: 400 },
               }}
@@ -98,7 +102,7 @@ const AdminDataTable = ({
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
             {filters}
             {onExport && (
-              <Tooltip title="Xuất dữ liệu">
+              <Tooltip title={t('admin:export_data')}>
                 <IconButton
                   size="small"
                   onClick={onExport}
@@ -162,7 +166,7 @@ const AdminDataTable = ({
               <TableRow>
                 <TableCell colSpan={columns.length + (renderExpandableRow ? 1 : 0)} sx={{ py: 10, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                    {emptyMessage}
+                    {resolvedEmptyMessage}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -226,7 +230,7 @@ const AdminDataTable = ({
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={onRowsPerPageChange}
         rowsPerPageOptions={[10, 25, 50]}
-        labelRowsPerPage="Số dòng mỗi trang:"
+        labelRowsPerPage={t('common:rows_per_page')}
         sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
       />
     </Paper>
