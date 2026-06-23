@@ -22,18 +22,19 @@ export default function ServerErrorPage() {
 				/>
 			}
 		>
-			<Container maxWidth="md">
-				<Box
-					sx={{
-						display: 'flex',
-						flexDirection: 'column',
-						alignItems: 'center',
-						justifyContent: 'center',
-						minHeight: '100vh',
-						textAlign: 'center',
-						py: 5,
-					}}
-				>
+			<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+				<Container maxWidth="md">
+					<Box
+						sx={{
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
+							minHeight: '100vh',
+							textAlign: 'center',
+							py: 5,
+						}}
+					>
 					<ErrorOutlineIcon
 						sx={{
 							fontSize: 120,
@@ -111,8 +112,9 @@ export default function ServerErrorPage() {
 							{t('not_found_go_home')}
 						</Button>
 					</Box>
-				</Box>
-			</Container>
+					</Box>
+				</Container>
+			</Box>
 		</Page>
 	);
 }

@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { GoogleLogin } from '@react-oauth/google';
-import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@mui/material';
+import { Box, Typography, Button, FormControlLabel, Checkbox, Divider, useTheme } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
@@ -17,6 +17,7 @@ import useOrganizationStore from '../../stores/organizationStore';
 
 const LoginPage = () => {
   const { t } = useTranslation(['auth', 'common']);
+  const theme = useTheme();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { slug } = useParams();
@@ -28,6 +29,13 @@ const LoginPage = () => {
   const { reset } = useGoogleReCaptcha();
 
   const redirectTo = location.state?.from?.pathname || '/';
+  const thirdPartyControlSx = theme.palette.mode === 'dark'
+    ? {
+        filter: 'invert(0.9) hue-rotate(180deg)',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }
+    : undefined;
 
   const loginSchema = useMemo(() => getLoginSchema(t), [t]);
 
@@ -188,11 +196,13 @@ const LoginPage = () => {
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={thirdPartyControlSx}>
           <GoogleReCaptchaCheckbox
             onChange={handleRecaptchaChange}
             onExpired={handleRecaptchaExpired}
             onError={handleRecaptchaError}
           />
+          </Box>
           {errors.recaptchaToken && (
             <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
               {errors.recaptchaToken.message}
@@ -221,7 +231,12 @@ const LoginPage = () => {
         </Box>
 
         {googleClientId ? (
-          <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
+          <Box sx={{
+            width: '100%',
+            ...thirdPartyControlSx,
+            '& > div': { width: '100% !important' },
+            '& iframe': { width: '100% !important' },
+          }}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}

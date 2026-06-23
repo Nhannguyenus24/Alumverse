@@ -40,6 +40,16 @@ const AdminLoginPage = () => {
   const { reset } = useGoogleReCaptcha();
 
   const redirectTo = location.state?.from?.pathname || '/admin';
+  const logoSrc = theme.palette.mode === 'dark'
+    ? '/alumverse_logo/Logo_White_Full.svg'
+    : '/alumverse_logo/Logo_Main_Full.svg';
+  const recaptchaSx = theme.palette.mode === 'dark'
+    ? {
+        filter: 'invert(0.9) hue-rotate(180deg)',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }
+    : undefined;
 
   const loginSchema = useMemo(() => getLoginSchema(t), [t]);
 
@@ -155,9 +165,9 @@ const AdminLoginPage = () => {
             >
               <Box
                 component="img"
-                src="/alumverse_logo/Logo_Main_Full.svg"
+                src={logoSrc}
                 alt="ALUMVERSE HCMUS"
-                sx={{ height: { xs: 40, sm: 50, md: 60 }, width: 'auto' }}
+                sx={{ height: 40, width: 'auto' }}
               />
             </Box>
           </Box>
@@ -247,11 +257,13 @@ const AdminLoginPage = () => {
                 </Box>
 
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={recaptchaSx}>
                   <GoogleReCaptchaCheckbox
                     onChange={handleRecaptchaChange}
                     onExpired={handleRecaptchaExpired}
                     onError={handleRecaptchaError}
                   />
+                  </Box>
                   {errors.recaptchaToken && (
                     <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
                       {errors.recaptchaToken.message}
