@@ -28,7 +28,7 @@ const AVATAR_SX = {
   justifyContent: "center",
 };
 
-const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
+const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textColor }) => {
   const { t } = useTranslation(['profile', 'common', 'event', 'article', 'nav']);
   const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -100,6 +100,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
             fontWeight={600}
             sx={{
               color: contrastMode ? "primary.contrastText" : "text.primary",
+              ...(textColor ? { color: textColor } : {}),
               lineHeight: 1.25,
             }}
           >
@@ -109,6 +110,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
             variant="caption"
             sx={{
               color: contrastMode ? "primary.contrastText" : "primary.main",
+              ...(textColor ? { color: textColor } : {}),
               lineHeight: 1.25,
             }}
           >

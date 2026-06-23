@@ -16,18 +16,19 @@ const UnauthorizedPage = () => {
         />
       }
     >
-      <Container maxWidth="md">
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            gap: 2,
-            textAlign: 'center',
-          }}
-        >
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Container maxWidth="md">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100vh',
+              gap: 2,
+              textAlign: 'center',
+            }}
+          >
           <Typography variant="h1" sx={{ fontSize: '8rem', fontWeight: 700 }}>
             403
           </Typography>
@@ -38,8 +39,9 @@ const UnauthorizedPage = () => {
           <Button component={Link} to="/" variant="contained" sx={{ mt: 2 }}>
             {t('not_found_go_home')}
           </Button>
-        </Box>
-      </Container>
+          </Box>
+        </Container>
+      </Box>
     </Page>
   );
 };

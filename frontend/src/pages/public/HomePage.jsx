@@ -20,7 +20,6 @@ import { usePublishedAchievements } from "../../hooks/articles/usePublishedAchie
 import { eventApi } from "../../utils/api";
 import useOrganizationStore from "../../stores/organizationStore";
 import Logo from "../../components/Logo";
-import FitBot from "../../components/FitBot";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { keyframes } from "@emotion/react";
 import apiClient from "../../utils/axios";
@@ -610,7 +609,6 @@ const HomePage = () => {
         </Container>
       </Box>
       </Container>
-      <FitBot />
     </Page>
   );
 };

@@ -11,6 +11,7 @@ import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
+import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import { useTranslation } from 'react-i18next';
 import Iconify from './Iconify';
 import Notification from './Notification';
@@ -21,6 +22,7 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';
+import useThemeModeStore from '../stores/themeModeStore';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -77,6 +79,8 @@ const Header = () => {
   const location = useLocation();
   const { slug: routeSlug } = useParams();
   const { isAuthenticated, user, verificationLevel } = useAuth();
+  const themeMode = useThemeModeStore((state) => state.mode);
+  const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
   const [isScrolled, setIsScrolled] = useState(false);
   const [hoveredNav, setHoveredNav] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -85,17 +89,20 @@ const Header = () => {
 
   const HEADER_DESKTOP_BREAKPOINT = 1280;
   const isDesktop = useMediaQuery(theme.breakpoints.up(HEADER_DESKTOP_BREAKPOINT));
-  const { isAdmin, isGuestVerificationLevel, isTransparent } = useMemo(() => {
-    const np = getNormalizedPathname(location.pathname, routeSlug);
+  const normalizedPath = useMemo(
+    () => getNormalizedPathname(location.pathname, routeSlug),
+    [location.pathname, routeSlug]
+  );
+  const { isAdmin, isGuestVerificationLevel, isTransparent, isOrgRegistrationPage } = useMemo(() => {
     const admin = user?.role === 'ADMIN';
-    const home = np === '/';
+    const home = normalizedPath === '/';
     return {
       isAdmin: admin,
       isGuestVerificationLevel: isAuthenticated && verificationLevel === 0,
       isTransparent: home && !isScrolled,
-      isOrgRegistrationPage: np === '/organization-registration',
+      isOrgRegistrationPage: normalizedPath === '/organization-registration',
     };
-  }, [location.pathname, routeSlug, user?.role, isAuthenticated, verificationLevel, isScrolled]);
+  }, [normalizedPath, user?.role, isAuthenticated, verificationLevel, isScrolled]);
 
   const rafRef = useRef(null);
   useEffect(() => {
@@ -137,11 +144,39 @@ const Header = () => {
   const navButtonSx = useMemo(() => ({
     color: headerTextColor, fontWeight: 600, fontSize: '0.9375rem',
     textTransform: 'none', px: 1.5, transition: 'all 0.3s ease',
+    position: 'relative',
+    borderRadius: 1,
     '&:hover': {
       backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)'
         : (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover'),
     },
   }), [headerTextColor, isTransparent, isAdmin]);
+
+  const getNavActive = useCallback((item) => {
+    if (item.href === '/') {
+      return normalizedPath === '/';
+    }
+
+    const paths = [item.href, ...(item.children || []).map((child) => child.href)];
+    return paths.some((path) => normalizedPath === path || normalizedPath.startsWith(`${path}/`));
+  }, [normalizedPath]);
+
+  const getNavActiveSx = useCallback((active) => {
+    if (!active) return {};
+
+    const activeColor = isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main');
+    return {
+      color: activeColor,
+      fontWeight: 800,
+    };
+  }, [isAdmin, isTransparent]);
+
+  const shouldUseDarkAdminLogo = isAdmin
+    && !isTransparent
+    && theme.palette.primary.contrastText !== '#fff'
+    && theme.palette.primary.contrastText !== '#FFFFFF';
+  const logoSrc = (isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC;
+  const logoSx = shouldUseDarkAdminLogo ? { filter: 'brightness(0)' } : undefined;
 
   const appBarMinHeight = { xs: 56, md: 64 };
 
@@ -163,9 +198,10 @@ const Header = () => {
             <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
               <Logo
                 variant="image"
-                src={(isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC}
+                src={logoSrc}
                 alt="AlumVerse"
                 size="medium"
+                sx={logoSx}
               />
             </Link>
           </Box>
@@ -175,11 +211,12 @@ const Header = () => {
                        display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
               {navItems.map((item) => {
                 const isLocked = item.requiresAuth && !isAuthenticated;
+                const isActive = getNavActive(item);
                 const buttonContent = (
                   <Button
                     component={isLocked ? 'button' : Link}
                     to={isLocked ? undefined : toOrgPath(item.href)}
-                    sx={navButtonSx}
+                    sx={{ ...navButtonSx, ...getNavActiveSx(isActive) }}
                     disabled={isLocked}
                   >
                     {item.label}
@@ -249,20 +286,50 @@ const Header = () => {
                 );
               })}
             </Box>
-          )
+          )}
 
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
             {isDesktop ? (
               <>
-                <LanguageSwitcher contrastMode={isTransparent || isAdmin} />
+                <Tooltip
+                  title={themeMode === 'dark'
+                    ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
+                    : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
+                  arrow
+                >
+                  <IconButton
+                    size="small"
+                    aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
+                    onClick={toggleThemeMode}
+                    sx={{
+                      color: isTransparent ? '#FFFFFF' : (isAdmin ? 'primary.contrastText' : 'primary.main'),
+                      mr: 0.25,
+                      '&:hover': {
+                        bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : 'action.hover',
+                      },
+                    }}
+                  >
+                    <Brightness6RoundedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <LanguageSwitcher
+                  contrastMode={isTransparent || isAdmin}
+                  color={headerTextColor}
+                  buttonSx={{
+                    '&:hover': {
+                      bgcolor: isTransparent ? 'rgba(255,255,255,0.12)' : (isAdmin ? 'rgba(255,255,255,0.08)' : 'action.hover'),
+                    },
+                  }}
+                />
 
                 {isAuthenticated ? (
                   <>
                     <Notification headerTextColor={headerTextColor} />
                     <MessagesNavDropdown headerTextColor={headerTextColor} />
                     <AccountMenu
-                      displayName={displayName} displayRole={displayRole}
-                      avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin} />
+                    displayName={displayName} displayRole={displayRole}
+                    avatarUrl={user?.avatarUrl} contrastMode={isTransparent || isAdmin}
+                    textColor={headerTextColor} />
                   </>
                 ) : (
                   <>
@@ -406,7 +473,24 @@ const Header = () => {
           <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
             {t('nav:language')}
           </Typography>
-          <LanguageSwitcher />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip
+              title={themeMode === 'dark'
+                ? t('nav:switch_to_light_mode', { defaultValue: 'Chuyển sang giao diện sáng' })
+                : t('nav:switch_to_dark_mode', { defaultValue: 'Chuyển sang giao diện tối' })}
+              arrow
+            >
+              <IconButton
+                size="small"
+                aria-label={t('nav:toggle_theme_aria_label', { defaultValue: 'Đổi chế độ sáng tối' })}
+                onClick={toggleThemeMode}
+                sx={{ color: 'primary.main' }}
+              >
+                <Brightness6RoundedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <LanguageSwitcher />
+          </Box>
         </Box>
 
         <Divider />
