@@ -34,7 +34,35 @@
     "required": "Required",
     "optional": "Optional",
     "required_field": "Required",
-    "add": "Add"
+    "add": "Add",
+    "just_now": "Just now",
+    "minutes_ago": "{n} minutes ago",
+    "hours_ago": "{n} hours ago",
+    "days_ago": "{n} days ago",
+    "months_ago": "{n} months ago",
+    "years_ago": "{n} years ago",
+    "connection_timeout": "Connection timeout. Please check your network.",
+    "server_unreachable": "Cannot connect to server.",
+    "feature_coming_soon": "Feature coming soon"
+  },
+  "validation": {
+    "required": "This field is required",
+    "field_required": "{field} is required",
+    "email_empty": "Email is required",
+    "email_invalid": "Invalid email",
+    "password_empty": "Password is required",
+    "password_min_length": "Password must be at least 8 characters",
+    "password_uppercase": "At least 1 uppercase letter required",
+    "password_lowercase": "At least 1 lowercase letter required",
+    "password_digit": "At least 1 digit required",
+    "password_special": "At least 1 special character required (@$!%*?&)",
+    "confirm_password_empty": "Please re-enter your password",
+    "password_mismatch": "Passwords do not match",
+    "student_id_empty": "Student ID is required",
+    "phone_empty": "Phone number is required",
+    "phone_digits_only": "Phone number must contain digits only",
+    "phone_length": "Phone number must be exactly 10 digits",
+    "phone_invalid": "Invalid phone number"
   },
   "auth": {
     "login": "Login",
@@ -95,7 +123,11 @@
     "pass_rule_upper": "At least 1 uppercase letter (A-Z)",
     "pass_rule_lower": "At least 1 lowercase letter (a-z)",
     "pass_rule_digit": "At least 1 digit (0-9)",
-    "pass_rule_special": "At least 1 special character (@$!%*?&)"
+    "pass_rule_special": "At least 1 special character (@$!%*?&)",
+    "select_org_first": "Please select an organization before logging in",
+    "select_org_before_register": "Please select an organization before registering",
+    "login_required_change_password": "Please log in to change your password",
+    "invalid_account": "Invalid account"
   },
   "nav": {
     "home": "Home",
@@ -106,6 +138,7 @@
     "forum": "Forum",
     "donation": "Donations",
     "chat": "Messages",
+    "messages": "Messages",
     "profile": "Profile",
     "settings": "Settings"
   },
@@ -130,6 +163,13 @@
     "no_saved": "No saved articles yet",
     "no_saved_desc": "Tap the save icon on an article to find it here later.",
     "article_id": "Article #{id}"
+  },
+  "fitbot": {
+    "greeting": "Hello! 👋 I'm HCMUS's virtual assistant. I can help you learn more about the university, training programs, and other useful information. Do you have any questions for me?",
+    "no_answer": "Sorry, I don't have an answer for that question. Try asking in a different way.",
+    "server_error": "Sorry, an error occurred while connecting to the server. Please try again later.",
+    "clear_conversation": "Clear conversation",
+    "input_hint": "Send a message..."
   },
   "event": {
     "title": "Events",
@@ -191,7 +231,14 @@
     "answer_required": "Please answer: {question}",
     "confirm_join": "Confirm registration",
     "required": "Required",
-    "answer_hint": "Enter your answer..."
+    "answer_hint": "Enter your answer...",
+    "ticket_status_registered": "Registered",
+    "ticket_status_attended": "Attended",
+    "ticket_status_cancelled": "Cancelled",
+    "ticket_status_pending": "Pending",
+    "ticket_status_rejected": "Rejected",
+    "ticket_not_found": "No registration ticket found to cancel.",
+    "question_fallback": "Question"
   },
   "mentorship": {
     "title": "Mentorship",
@@ -719,5 +766,8 @@
     "explore_forum_desc": "Discuss, ask questions and share with the community.",
     "explore_donation_title": "Donations & Funds",
     "explore_donation_desc": "Support fundraising campaigns and community activities."
+  },
+  "user": {
+    "upload_image_failed": "Failed to upload image"
   }
 }

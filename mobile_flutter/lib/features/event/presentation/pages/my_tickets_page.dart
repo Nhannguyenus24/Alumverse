@@ -164,7 +164,7 @@ class TicketStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        ticket.statusLabel,
+        ticket.statusKey.tr(),
         style: TextStyle(
             color: color, fontSize: 12, fontWeight: FontWeight.w700),
       ),

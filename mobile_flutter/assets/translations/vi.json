@@ -34,7 +34,35 @@
     "required": "Bắt buộc",
     "optional": "Tùy chọn",
     "required_field": "Bắt buộc",
-    "add": "Thêm"
+    "add": "Thêm",
+    "just_now": "Vừa xong",
+    "minutes_ago": "{n} phút trước",
+    "hours_ago": "{n} giờ trước",
+    "days_ago": "{n} ngày trước",
+    "months_ago": "{n} tháng trước",
+    "years_ago": "{n} năm trước",
+    "connection_timeout": "Connection timeout. Vui lòng kiểm tra mạng.",
+    "server_unreachable": "Không kết nối được đến server.",
+    "feature_coming_soon": "Tính năng đang được phát triển"
+  },
+  "validation": {
+    "required": "Trường này không được để trống",
+    "field_required": "{field} không được để trống",
+    "email_empty": "Email không được để trống",
+    "email_invalid": "Email không hợp lệ",
+    "password_empty": "Mật khẩu không được để trống",
+    "password_min_length": "Mật khẩu tối thiểu 8 ký tự",
+    "password_uppercase": "Cần ít nhất 1 chữ viết hoa",
+    "password_lowercase": "Cần ít nhất 1 chữ viết thường",
+    "password_digit": "Cần ít nhất 1 chữ số",
+    "password_special": "Cần ít nhất 1 ký tự đặc biệt (@$!%*?&)",
+    "confirm_password_empty": "Vui lòng nhập lại mật khẩu",
+    "password_mismatch": "Mật khẩu không khớp",
+    "student_id_empty": "MSSV không được để trống",
+    "phone_empty": "Số điện thoại không được để trống",
+    "phone_digits_only": "Số điện thoại chỉ gồm chữ số",
+    "phone_length": "Số điện thoại phải có đúng 10 chữ số",
+    "phone_invalid": "Số điện thoại không hợp lệ"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -95,7 +123,11 @@
     "pass_rule_upper": "Ít nhất 1 chữ viết hoa (A-Z)",
     "pass_rule_lower": "Ít nhất 1 chữ viết thường (a-z)",
     "pass_rule_digit": "Ít nhất 1 chữ số (0-9)",
-    "pass_rule_special": "Ít nhất 1 ký tự đặc biệt (@$!%*?&)"
+    "pass_rule_special": "Ít nhất 1 ký tự đặc biệt (@$!%*?&)",
+    "select_org_first": "Vui lòng chọn tổ chức trước khi đăng nhập",
+    "select_org_before_register": "Vui lòng chọn tổ chức trước khi đăng ký",
+    "login_required_change_password": "Vui lòng đăng nhập để đổi mật khẩu",
+    "invalid_account": "Tài khoản không hợp lệ"
   },
   "nav": {
     "home": "Trang chủ",
@@ -106,6 +138,7 @@
     "forum": "Diễn đàn",
     "donation": "Quyên góp",
     "chat": "Tin nhắn",
+    "messages": "Tin nhắn",
     "profile": "Hồ sơ",
     "settings": "Cài đặt"
   },
@@ -130,6 +163,13 @@
     "no_saved": "Chưa có bài viết đã lưu",
     "no_saved_desc": "Nhấn biểu tượng quan tâm trên một bài viết để xem lại ở đây.",
     "article_id": "Bài viết #{id}"
+  },
+  "fitbot": {
+    "greeting": "Xin chào! 👋 Tôi là trợ lý ảo của HCMUS. Tôi có thể giúp bạn tìm hiểu thêm về trường, các chương trình đào tạo, và nhiều thông tin hữu ích khác. Có câu hỏi gì cho tôi không?",
+    "no_answer": "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này. Bạn thử hỏi cách khác nhé.",
+    "server_error": "Xin lỗi, có lỗi xảy ra khi kết nối với máy chủ. Vui lòng thử lại sau.",
+    "clear_conversation": "Xóa hội thoại",
+    "input_hint": "Gửi tin nhắn..."
   },
   "event": {
     "title": "Sự kiện",
@@ -191,7 +231,14 @@
     "answer_required": "Vui lòng trả lời: {question}",
     "confirm_join": "Xác nhận tham gia",
     "required": "Bắt buộc",
-    "answer_hint": "Nhập câu trả lời..."
+    "answer_hint": "Nhập câu trả lời...",
+    "ticket_status_registered": "Đã đăng ký",
+    "ticket_status_attended": "Đã tham dự",
+    "ticket_status_cancelled": "Đã hủy",
+    "ticket_status_pending": "Chờ duyệt",
+    "ticket_status_rejected": "Bị từ chối",
+    "ticket_not_found": "Không tìm thấy vé đăng ký để hủy.",
+    "question_fallback": "Câu hỏi"
   },
   "mentorship": {
     "title": "Cố vấn",
@@ -719,5 +766,8 @@
     "explore_forum_desc": "Thảo luận, đặt câu hỏi và chia sẻ cùng cộng đồng.",
     "explore_donation_title": "Đóng góp & Quỹ",
     "explore_donation_desc": "Ủng hộ các chiến dịch gây quỹ và hoạt động cộng đồng."
+  },
+  "user": {
+    "upload_image_failed": "Tải ảnh thất bại"
   }
 }

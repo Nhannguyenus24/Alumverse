@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/errors/api_exception.dart';
@@ -43,11 +44,11 @@ class AppToast {
   /// message (the error interceptor wraps it as [ApiException] inside a
   /// [DioException]) instead of dumping the raw exception toString().
   static void fromError(BuildContext context, Object error,
-      {String fallback = 'Đã có lỗi xảy ra'}) {
+      {String? fallback}) {
     _show(context, _messageOf(error, fallback), ToastType.error);
   }
 
-  static String _messageOf(Object error, String fallback) {
+  static String _messageOf(Object error, String? fallback) {
     if (error is DioException) {
       final inner = error.error;
       if (inner is ApiException && inner.message.isNotEmpty) {
@@ -62,7 +63,7 @@ class AppToast {
       // Avoid surfacing ugly "DioException [bad response]: null" strings.
       if (!s.startsWith('DioException')) return s;
     }
-    return fallback;
+    return fallback ?? 'common.error'.tr();
   }
 
   static void _show(BuildContext context, String message, ToastType type) {

@@ -118,7 +118,7 @@ class _Body extends ConsumerWidget {
   }
 
   Widget _answerTile(Map<String, dynamic> a) {
-    final label = (a['label'] ?? a['question'] ?? 'Câu hỏi').toString();
+    final label = (a['label'] ?? a['question'] ?? 'event.question_fallback'.tr()).toString();
     final value = a['value'];
     final text = value is List ? value.join(', ') : (value?.toString() ?? '');
     return Padding(

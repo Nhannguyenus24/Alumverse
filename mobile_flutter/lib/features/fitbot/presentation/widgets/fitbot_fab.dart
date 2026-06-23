@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -56,7 +57,7 @@ class _FitBotFabState extends State<FitBotFab>
                   onPressed: _toggle,
                   backgroundColor: Colors.white,
                   foregroundColor: AppColors.primary,
-                  tooltip: 'Đóng',
+                  tooltip: 'common.close'.tr(),
                   child: const Icon(Icons.close),
                 )
               : GestureDetector(
