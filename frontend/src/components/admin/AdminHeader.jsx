@@ -12,7 +12,6 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  Button,
   Breadcrumbs,
   Link as MuiLink,
   alpha,
@@ -29,6 +28,7 @@ import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlin
 import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import useThemeModeStore from '../../stores/themeModeStore';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const ADMIN_HEADER_HEIGHT = 88;
 
@@ -225,32 +225,37 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
             </IconButton>
           </Tooltip>
 
-          <Button
+          <LanguageSwitcher
+            color="primary.main"
+            buttonSx={{
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+            }}
+          />
+
+          <IconButton
             onClick={handleOpenUserMenu}
             sx={{
-              textTransform: 'none',
               color: 'inherit',
-              borderRadius: 2.5,
-              p: 0.5,
-              pl: 1.5,
-              '&:hover': { bgcolor: 'action.hover' },
+              width: 48,
+              height: 48,
+              p: 0,
+              borderRadius: '50%',
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) },
             }}
           >
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar
-                sx={{
-                  width: 40,
-                  height: 40,
-                  bgcolor: 'primary.main',
-                  fontSize: 15,
-                  fontWeight: 800,
-                  boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
-                }}
-              >
-                {(user?.fullName || user?.studentId || 'A')[0].toUpperCase()}
-              </Avatar>
-            </Stack>
-          </Button>
+            <Avatar
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: 'primary.main',
+                fontSize: 15,
+                fontWeight: 800,
+                boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
+              }}
+            >
+              {(user?.fullName || user?.studentId || 'A')[0].toUpperCase()}
+            </Avatar>
+          </IconButton>
 
           <Menu
             anchorEl={anchorEl}

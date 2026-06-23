@@ -80,7 +80,7 @@ export default function MaintenancePage() {
                 mb: 3,
               }}
             >
-              <BuildIcon sx={{ fontSize: 80, color: 'white' }} />
+              <BuildIcon sx={{ fontSize: 80, color: 'primary.contrastText' }} />
             </Box>
 
             <Typography
@@ -133,6 +133,7 @@ export default function MaintenancePage() {
                     display: 'flex',
                     alignItems: 'center',
                     textAlign: 'left',
+                    bgcolor: 'background.paper',
                   }}
                 >
                   <Box sx={{ mr: 2, display: 'flex' }}>{update.icon}</Box>

@@ -146,7 +146,7 @@ const SuggestionBubble = styled(Paper)(({ theme }) => ({
   right: -10,
   padding: theme.spacing(1.5, 2.5),
   backgroundColor: theme.palette.primary.main,
-  color: '#fff',
+  color: theme.palette.primary.contrastText,
   borderRadius: theme.spacing(2),
   cursor: 'pointer',
   minWidth: 280,
@@ -172,6 +172,7 @@ const ChatWindow = styled(Paper)(({ theme }) => ({
   flexDirection: 'column',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
   zIndex: 998,
+  backgroundColor: theme.palette.background.paper,
   [theme.breakpoints.down('sm')]: {
     width: 'calc(100% - 20px)',
     height: 'calc(100vh - 100px)',
@@ -180,7 +181,7 @@ const ChatWindow = styled(Paper)(({ theme }) => ({
 
 const ChatHeader = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.primary.main,
-  color: '#fff',
+  color: theme.palette.primary.contrastText,
   padding: theme.spacing(2),
   borderRadius: `${theme.spacing(2)} ${theme.spacing(2)} 0 0`,
   display: 'flex',
@@ -195,12 +196,16 @@ const MessageContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: theme.spacing(1.5),
-  backgroundColor: '#f5f5f5',
+  backgroundColor: theme.palette.mode === 'dark'
+    ? theme.palette.background.default
+    : theme.palette.grey[200],
   '&::-webkit-scrollbar': {
     width: '6px',
   },
   '&::-webkit-scrollbar-track': {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: theme.palette.mode === 'dark'
+      ? theme.palette.grey[800]
+      : theme.palette.grey[300],
   },
   '&::-webkit-scrollbar-thumb': {
     backgroundColor: theme.palette.primary.main,
@@ -222,8 +227,10 @@ const MessageBubble = styled(Box, {
   maxWidth: '80%',
   padding: theme.spacing(1.2, 1.6),
   borderRadius: theme.spacing(2),
-  backgroundColor: isBot ? '#e3f2fd' : theme.palette.primary.main,
-  color: isBot ? '#000' : '#fff',
+  backgroundColor: isBot
+    ? (theme.palette.mode === 'dark' ? theme.palette.grey[800] : theme.palette.primary.lighter)
+    : theme.palette.primary.main,
+  color: isBot ? theme.palette.text.primary : theme.palette.primary.contrastText,
   wordWrap: 'break-word',
   fontSize: '0.95rem',
   lineHeight: 1.4,
@@ -235,8 +242,8 @@ const MessageBubble = styled(Box, {
 
 const InputContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
-  borderTop: '1px solid #e0e0e0',
-  backgroundColor: '#fff',
+  borderTop: `1px solid ${theme.palette.divider}`,
+  backgroundColor: theme.palette.background.paper,
   borderRadius: `0 0 ${theme.spacing(2)} ${theme.spacing(2)}`,
   display: 'flex',
   gap: theme.spacing(1),
@@ -632,7 +639,7 @@ export default function FitBot() {
               size="small"
               onClick={handleClose}
               sx={{
-                color: '#fff',
+                color: 'primary.contrastText',
                 minWidth: 'auto',
                 padding: '4px',
               }}

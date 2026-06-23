@@ -1,3 +1,4 @@
+import { Suspense, lazy } from 'react';
 import { Box } from '@mui/material';
 import { useLocation, useParams } from 'react-router';
 
@@ -5,6 +6,7 @@ import ChatFloatingButton from './ChatFloatingButton';
 import { getNormalizedPathname } from '../utils/pathUtils';
 
 const HIDDEN_PATHS = ['/chat'];
+const FitBot = lazy(() => import('./FitBot'));
 
 export default function FloatingChatActions() {
   const location = useLocation();
@@ -15,18 +17,21 @@ export default function FloatingChatActions() {
     return null;
   }
 
-  const isHomePage = normalizedPath === '/';
-
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        bottom: 20,
-        right: isHomePage ? 90 : 20,
-        zIndex: 999,
-      }}
-    >
-      <ChatFloatingButton />
-    </Box>
+    <>
+      <Box
+        sx={{
+          position: 'fixed',
+          bottom: 20,
+          right: 90,
+          zIndex: 999,
+        }}
+      >
+        <ChatFloatingButton />
+      </Box>
+      <Suspense fallback={null}>
+        <FitBot />
+      </Suspense>
+    </>
   );
 }

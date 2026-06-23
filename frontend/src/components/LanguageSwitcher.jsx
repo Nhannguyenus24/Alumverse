@@ -8,7 +8,7 @@ const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
 ];
 
-const LanguageSwitcher = ({ contrastMode = false }) => {
+const LanguageSwitcher = ({ contrastMode = false, color, buttonSx }) => {
   const { i18n } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -29,14 +29,23 @@ const LanguageSwitcher = ({ contrastMode = false }) => {
           onClick={handleOpen}
           size="small"
           sx={{
-            color: contrastMode ? 'primary.contrastText' : 'text.primary',
+            color: color || (contrastMode ? 'primary.contrastText' : 'text.primary'),
             fontSize: '1.25rem',
             width: 36,
             height: 36,
+            p: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: 1,
+            verticalAlign: 'middle',
+            ...buttonSx,
           }}
           aria-label="change language"
         >
-          <span style={{ lineHeight: 1 }}>{current.flag}</span>
+          <span style={{ lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', transform: 'translateY(-1px)' }}>
+            {current.flag}
+          </span>
         </IconButton>
       </Tooltip>
 
@@ -47,7 +56,18 @@ const LanguageSwitcher = ({ contrastMode = false }) => {
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         slotProps={{
-          paper: { sx: { mt: 1, minWidth: 150, borderRadius: 2 } },
+          paper: {
+            sx: {
+              mt: 1,
+              minWidth: 158,
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              boxShadow: 3,
+              px: 0.5,
+              py: 0.5,
+            },
+          },
         }}
       >
         {LANGUAGES.map((lang) => (
@@ -55,10 +75,24 @@ const LanguageSwitcher = ({ contrastMode = false }) => {
             key={lang.code}
             selected={lang.code === i18n.language}
             onClick={() => handleSelect(lang.code)}
-            sx={{ gap: 1.25 }}
+            sx={{
+              gap: 1,
+              borderRadius: 1,
+              mx: 0,
+              my: 0.25,
+              px: 1.5,
+              py: 1,
+              minHeight: 36,
+              '&.Mui-selected': {
+                bgcolor: 'action.selected',
+                '&:hover': { bgcolor: 'action.hover' },
+              },
+            }}
           >
-            <span style={{ fontSize: '1.1rem' }}>{lang.flag}</span>
-            <Typography variant="body2">{lang.label}</Typography>
+            <span style={{ fontSize: '1.1rem', lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>
+              {lang.flag}
+            </span>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>{lang.label}</Typography>
           </MenuItem>
         ))}
       </Menu>

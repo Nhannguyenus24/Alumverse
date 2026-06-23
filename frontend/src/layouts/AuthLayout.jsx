@@ -1,10 +1,14 @@
 import { Outlet } from 'react-router';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import Logo from '../components/Logo';
 import { useOrgNavigate } from '../hooks/useOrgNavigate';
 
 const AuthLayout = () => {
   const navigate = useOrgNavigate();
+  const theme = useTheme();
+  const logoSrc = theme.palette.mode === 'dark'
+    ? '/alumverse_logo/Logo_White_Full.svg'
+    : '/alumverse_logo/Logo_Main_Full.svg';
 
   return (
     <Box
@@ -43,9 +47,9 @@ const AuthLayout = () => {
         >
           <Logo
             variant="image"
-            src="/alumverse_logo/Logo_Main_Full.svg"
+            src={logoSrc}
             alt="ALUMVERSE HCMUS"
-            size="large"
+            size="medium"
           />
         </Box>
 
