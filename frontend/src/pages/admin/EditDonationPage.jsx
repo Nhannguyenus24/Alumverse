@@ -4,19 +4,15 @@ import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   Button,
   Card,
   CircularProgress,
   Container,
-  FormControl,
-  FormHelperText,
   Grid,
-  InputLabel,
   LinearProgress,
-  MenuItem,
-  Select,
   Stack,
   TextField,
   Typography,
@@ -27,11 +23,13 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { useParams } from "react-router";
 import Page from "../../components/Page";
 import WYSIWYG from "../../components/WYSIWYG";
+import FundReceivingInfoSelect from "../../components/FundReceivingInfoSelect";
 import { fundApi } from "../../utils/api";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
-import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
+import FundLogoPreview from "../../components/FundLogoPreview";
+import { useUploadImage, validateImageFile, IMAGE_ACCEPT, FUND_CONTENT_EDITOR_HEIGHT } from "../../utils/imageUtils";
 
 const isEmptyHtml = (html) => {
   if (!html || typeof html !== "string") return true;
@@ -52,31 +50,31 @@ const getFundPhase = (startDate, endDate, now) => {
   return "invalid";
 };
 
-const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEndDate, originalTargetAmount }) =>
+const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEndDate, originalTargetAmount, t }) =>
   z
     .object({
-      name: z.string().trim().min(1, "Vui lòng nhập tên quỹ"),
-      managerName: z.string().trim().min(1, "Vui lòng nhập tên người quản lí"),
+      name: z.string().trim().min(1, t('admin:edit_fund_name_required')),
+      managerName: z.string().trim().min(1, t('admin:edit_fund_manager_required')),
       descriptionShort: z
         .string()
         .trim()
-        .min(1, "Vui lòng nhập mô tả ngắn")
-        .max(100, "Mô tả ngắn tối đa 100 ký tự"),
+        .min(1, t('admin:edit_fund_short_desc_required'))
+        .max(100, t('admin:edit_fund_short_desc_max')),
       descriptionFull: z
         .string()
-        .refine((value) => !isEmptyHtml(value), "Vui lòng nhập mô tả đầy đủ"),
-      targetAmount: z.coerce.number({ message: "Mục tiêu quỹ phải là số" }).positive("Mục tiêu quỹ phải lớn hơn 0"),
-      fundReceivingInfoId: z.coerce.number().int().positive("Vui lòng chọn tài khoản nhận quỹ"),
+        .refine((value) => !isEmptyHtml(value), t('admin:edit_fund_desc_required')),
+      targetAmount: z.coerce.number({ message: t('admin:edit_fund_target_not_number') }).positive(t('admin:edit_fund_target_positive')),
+      fundReceivingInfoId: z.coerce.number().int().positive(t('admin:edit_fund_account_required')),
       startDate: z
         .custom((value) => value === null || dayjs.isDayjs(value), {
-          message: "Vui lòng chọn thời gian bắt đầu",
+          message: t('admin:edit_fund_start_required'),
         })
-        .refine((value) => value !== null, "Vui lòng chọn thời gian bắt đầu"),
+        .refine((value) => value !== null, t('admin:edit_fund_start_required')),
       endDate: z
         .custom((value) => value === null || dayjs.isDayjs(value), {
-          message: "Vui lòng chọn thời gian kết thúc",
+          message: t('admin:edit_fund_end_required'),
         })
-        .refine((value) => value !== null, "Vui lòng chọn thời gian kết thúc"),
+        .refine((value) => value !== null, t('admin:edit_fund_end_required')),
     })
     .superRefine((data, ctx) => {
       const start = data.startDate;
@@ -87,7 +85,7 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["endDate"],
-          message: "Thời gian kết thúc phải sau thời gian bắt đầu",
+          message: t('admin:edit_fund_end_before_start'),
         });
       }
 
@@ -95,7 +93,7 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["startDate"],
-          message: "Thời gian bắt đầu phải từ thời điểm hiện tại + 10 phút",
+          message: t('admin:edit_fund_start_too_soon'),
         });
       }
 
@@ -104,21 +102,21 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["startDate"],
-            message: "Quỹ đang diễn ra, không thể sửa thời gian bắt đầu",
+            message: t('admin:edit_fund_active_start_locked'),
           });
         }
         if (end.isBefore(minAllowedTime)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["endDate"],
-            message: "Khi quỹ đang diễn ra, thời gian kết thúc mới phải từ hiện tại + 10 phút",
+            message: t('admin:edit_fund_active_end_too_soon'),
           });
         }
         if (data.targetAmount !== originalTargetAmount) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["targetAmount"],
-            message: "Quỹ đang diễn ra, không thể sửa mục tiêu quỹ",
+            message: t('admin:edit_fund_active_target_locked'),
           });
         }
       }
@@ -130,12 +128,13 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["endDate"],
-          message: "Quỹ đã kết thúc, không thể chỉnh sửa",
+          message: t('admin:edit_fund_closed_locked'),
         });
       }
     });
 
 export default function EditDonationPage() {
+  const { t } = useTranslation(['admin', 'donation']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { id } = useParams();
@@ -169,8 +168,9 @@ export default function EditDonationPage() {
         originalStartDate: donationDetail.startDate,
         originalEndDate: donationDetail.endDate,
         originalTargetAmount: donationDetail.targetAmount,
+        t,
       }),
-    [donationDetail.endDate, donationDetail.startDate, donationDetail.targetAmount, minAllowedTime, phase]
+    [donationDetail.endDate, donationDetail.startDate, donationDetail.targetAmount, minAllowedTime, phase, t]
   );
 
   const {
@@ -260,7 +260,7 @@ export default function EditDonationPage() {
         if (!mounted) {
           return;
         }
-        enqueueSnackbar(error?.response?.data?.message || "Không tải được chi tiết quỹ quyên góp", {
+        enqueueSnackbar(error?.response?.data?.message || t('donation:error_load_fund_detail'), {
           variant: "error",
         });
       } finally {
@@ -288,17 +288,15 @@ export default function EditDonationPage() {
   const disableFundReceivingInfo = phase !== "before_start";
 
   const noteMessage = {
-    before_start:
-      "Quỹ chưa bắt đầu: có thể sửa field bất kỳ",
-    active:
-      "Quỹ đang diễn ra: chỉ có thể sửa end date (>= hiện tại + 10 phút). Không thể sửa target amount, start date và tài khoản ngân hàng nhận quỹ.",
-    ended: "Quỹ đã kết thúc: không thể chỉnh sửa.",
-    invalid: "Khoảng thời gian quỹ chưa hợp lệ.",
+    before_start: t('admin:edit_fund_note_before_start'),
+    active: t('admin:edit_fund_note_active'),
+    ended: t('admin:edit_fund_note_ended'),
+    invalid: t('admin:edit_fund_note_invalid'),
   }[phase];
 
   const onSubmit = async (values) => {
     if (disableAllFields) {
-      enqueueSnackbar("Quỹ đã kết thúc, không thể chỉnh sửa.", { variant: "warning" });
+      enqueueSnackbar(t('admin:edit_fund_note_ended'), { variant: "warning" });
       return;
     }
 
@@ -320,10 +318,10 @@ export default function EditDonationPage() {
       };
 
       await fundApi.updateFund(id, payload);
-      enqueueSnackbar("Cập nhật quỹ thành công.", { variant: "success" });
+      enqueueSnackbar(t('admin:edit_fund_success'), { variant: "success" });
       navigate(`/donations/${id}`);
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || "Cập nhật quỹ thất bại", {
+      enqueueSnackbar(error?.response?.data?.message || t('admin:edit_fund_error'), {
         variant: "error",
       });
     }
@@ -332,20 +330,20 @@ export default function EditDonationPage() {
   const isBusy = isSubmitting || isUploadingLogo;
 
   return (
-    <Page title="Chỉnh sửa quỹ quyên góp" meta={<meta name="description" content="Chỉnh sửa quỹ quyên góp" />}>
+    <Page title={t('admin:edit_fund_page_title')} meta={<meta name="description" content={t('admin:edit_fund_page_title')} />}>
       <Box sx={{ py: 5, backgroundColor: "#f3f5f9", minHeight: "100vh" }}>
         <Container maxWidth={false} sx={{ maxWidth: 1160 }}>
             <Breadcrumb
               items={[
-                { label: "Quyên góp", path: "/donations" },
+                { label: t('donation:title'), path: "/donations" },
                 { label: donationDetail.name || `Donation ${id}`, path: `/donations/${id}` },
-                { label: "Chỉnh sửa quỹ" },
+                { label: t('admin:edit_fund_breadcrumb') },
               ]}
               fontSize="0.9rem"
             />
 
           <Typography variant="h1" sx={{ mb: 2.5, fontWeight: 800, color: "#123661" }}>
-            CHỈNH SỬA QUỸ
+            {t('admin:edit_fund_heading')}
           </Typography>
           <Box
             sx={{
@@ -358,7 +356,7 @@ export default function EditDonationPage() {
             }}
           >
             <Typography sx={{ color: "#0f4fb8", fontWeight: 900, fontSize: "0.95rem", letterSpacing: 0.3 }}>
-              Note
+              {t('admin:edit_fund_note_label')}
             </Typography>
             <Typography sx={{ mt: 0.3, color: "#214c90", fontWeight: 600, lineHeight: 1.6 }}>{noteMessage}</Typography>
           </Box>
@@ -371,12 +369,12 @@ export default function EditDonationPage() {
                   <Box component="form" onSubmit={handleSubmit(onSubmit)}>
                     <Grid container spacing={2}>
                       <Grid size={12}>
-                        <TextField fullWidth label="Tên quỹ" InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields} error={!!errors.name} helperText={errors.name?.message} />
+                        <TextField fullWidth label={t('donation:fund_name')} InputLabelProps={{ shrink: true }} {...register("name")} disabled={disableAllFields} error={!!errors.name} helperText={errors.name?.message} />
                       </Grid>
                       <Grid size={12}>
                         <TextField
                           fullWidth
-                          label="Tên người quản lí"
+                          label={t('donation:manager_label')}
                           InputLabelProps={{ shrink: true }}
                           {...register("managerName")}
                           disabled={disableAllFields}
@@ -389,28 +387,13 @@ export default function EditDonationPage() {
                           variant="body2"
                           sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
                         >
-                          Logo quỹ (tuỳ chọn)
+                          {t('admin:edit_fund_logo_label')}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                          Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.
+                          {t('admin:edit_fund_logo_hint')}
                         </Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          {logoPreview && (
-                            <Box
-                              component="img"
-                              src={logoPreview}
-                              alt="Logo preview"
-                              sx={{
-                                width: 72,
-                                height: 72,
-                                borderRadius: 2,
-                                objectFit: "cover",
-                                border: "1px solid",
-                                borderColor: "divider",
-                                flexShrink: 0,
-                              }}
-                            />
-                          )}
+                        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 1.5, width: "100%" }}>
+                          {logoPreview && <FundLogoPreview src={logoPreview} />}
                           <Stack direction="row" spacing={1} alignItems="center">
                             <input
                               ref={logoInputRef}
@@ -427,7 +410,7 @@ export default function EditDonationPage() {
                               disabled={disableAllFields}
                               sx={{ textTransform: "none" }}
                             >
-                              {logoPreview ? "Đổi ảnh logo" : "Chọn ảnh logo"}
+                              {logoPreview ? t('admin:edit_fund_logo_change') : t('admin:edit_fund_logo_select')}
                             </Button>
                           </Stack>
                         </Box>
@@ -437,7 +420,7 @@ export default function EditDonationPage() {
                           fullWidth
                           multiline
                           minRows={2}
-                          label="Mô tả ngắn (tối đa 100 ký tự)"
+                          label={t('admin:edit_fund_desc_short_label')}
                           InputLabelProps={{ shrink: true }}
                           inputProps={{ maxLength: 100 }}
                           {...register("descriptionShort")}
@@ -451,7 +434,7 @@ export default function EditDonationPage() {
                           variant="body2"
                           sx={{ mb: 1, fontWeight: 600, color: "text.secondary" }}
                         >
-                          Mô tả đầy đủ
+                          {t('admin:edit_fund_desc_full_label')}
                         </Typography>
                         <Controller
                           name="descriptionFull"
@@ -460,8 +443,8 @@ export default function EditDonationPage() {
                             <WYSIWYG
                               value={field.value}
                               onChange={field.onChange}
-                              placeholder="Nhập mô tả chi tiết về quỹ quyên góp..."
-                              height={320}
+                              placeholder={t('admin:edit_fund_desc_full_placeholder')}
+                              height={FUND_CONTENT_EDITOR_HEIGHT}
                               readOnly={disableAllFields}
                             />
                           )}
@@ -483,7 +466,7 @@ export default function EditDonationPage() {
                           render={({ field }) => (
                             <MoneyField
                               fullWidth
-                              label="Mục tiêu quỹ (VND)"
+                              label={t('donation:goal_vnd')}
                               value={field.value}
                               onChange={field.onChange}
                               onBlur={field.onBlur}
@@ -495,29 +478,21 @@ export default function EditDonationPage() {
                         />
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
-                        <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
-                          <InputLabel id="fund-receiving-info-label">Tài khoản nhận quỹ</InputLabel>
-                          <Controller
-                            name="fundReceivingInfoId"
-                            control={control}
-                            render={({ field }) => (
-                              <Select
-                                {...field}
-                                labelId="fund-receiving-info-label"
-                                label="Tài khoản nhận quỹ"
-                                disabled={disableFundReceivingInfo}
-                                MenuProps={{ disableScrollLock: true }}
-                              >
-                                {receivingOptions.map((option) => (
-                                  <MenuItem key={option.id} value={option.id}>
-                                    {`${option.bankName} - ${option.accountName} - ${option.accountNumber}`}
-                                  </MenuItem>
-                                ))}
-                              </Select>
-                            )}
-                          />
-                          <FormHelperText>{errors.fundReceivingInfoId?.message}</FormHelperText>
-                        </FormControl>
+                        <Controller
+                          name="fundReceivingInfoId"
+                          control={control}
+                          render={({ field }) => (
+                            <FundReceivingInfoSelect
+                              value={field.value}
+                              onChange={field.onChange}
+                              options={receivingOptions}
+                              disabled={disableFundReceivingInfo}
+                              error={!!errors.fundReceivingInfoId}
+                              helperText={errors.fundReceivingInfoId?.message}
+                              labelId="fund-receiving-info-label"
+                            />
+                          )}
+                        />
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
                         <Controller
@@ -525,7 +500,7 @@ export default function EditDonationPage() {
                           control={control}
                           render={({ field }) => (
                             <DateTimePicker
-                              label="Thời gian bắt đầu"
+                              label={t('donation:start_date_label')}
                               value={field.value}
                               onChange={field.onChange}
                               views={["year", "month", "day", "hours", "minutes", "seconds"]}
@@ -547,7 +522,7 @@ export default function EditDonationPage() {
                           control={control}
                           render={({ field }) => (
                             <DateTimePicker
-                              label="Thời gian kết thúc"
+                              label={t('donation:end_date_label')}
                               value={field.value}
                               onChange={field.onChange}
                               views={["year", "month", "day", "hours", "minutes", "seconds"]}
@@ -567,7 +542,7 @@ export default function EditDonationPage() {
 
                     <Stack direction="row" justifyContent="flex-end" spacing={1.2} sx={{ mt: 2.5 }}>
                       <Button variant="outlined" onClick={() => navigate(-1)} sx={{ textTransform: "none", px: 2.6 }}>
-                        Hủy
+                        {t('admin:edit_fund_btn_cancel')}
                       </Button>
                       <Button
                         type="submit"
@@ -576,7 +551,7 @@ export default function EditDonationPage() {
                         startIcon={isUploadingLogo ? <CircularProgress size={16} color="inherit" /> : null}
                         sx={{ textTransform: "none", px: 2.6 }}
                       >
-                        {isUploadingLogo ? "Đang tải ảnh..." : isBusy ? "Đang lưu..." : "Lưu thay đổi"}
+                        {isUploadingLogo ? t('admin:edit_fund_btn_uploading') : isBusy ? t('admin:edit_fund_btn_saving') : t('admin:edit_fund_btn_save')}
                       </Button>
                     </Stack>
                   </Box>

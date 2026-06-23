@@ -1,26 +1,28 @@
 import React from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { useTranslation } from 'react-i18next';
 
-const FIELD_LABELS = {
-  faculty: 'Khoa',
-  major: 'Chuyên ngành',
-  program: 'Chương trình',
-  graduatedYear: 'Năm tốt nghiệp',
-  degree: 'Bằng',
-  period: 'Giai đoạn',
-  company: 'Công ty',
-  position: 'Chức vụ',
-  from: 'Bắt đầu',
-  to: 'Kết thúc',
-  year: 'Năm',
-  link: 'Đường dẫn',
-  description: 'Mô tả',
-  technologies: 'Công nghệ',
-  issuer: 'Đơn vị cấp',
+const FIELD_KEY_MAP = {
+  faculty: 'field_faculty',
+  major: 'field_major',
+  program: 'field_program',
+  graduatedYear: 'field_graduated_year',
+  degree: 'field_degree',
+  period: 'field_period',
+  company: 'field_company',
+  position: 'field_position',
+  from: 'field_from',
+  to: 'field_to',
+  year: 'field_year',
+  link: 'field_link',
+  description: 'field_description',
+  technologies: 'field_technologies',
+  issuer: 'field_issuer',
 };
 
 const ExtendedProfileInfoCard = ({ item, icon: Icon }) => {
+  const { t } = useTranslation(['profile']);
   // Lọc bỏ các giá trị null, undefined hoặc chuỗi rỗng trước khi render
   const validEntries = Object.entries(item || {}).filter(
     ([_, v]) => v != null && String(v).trim() !== ''
@@ -99,7 +101,7 @@ const ExtendedProfileInfoCard = ({ item, icon: Icon }) => {
   fontWeight={600}
   sx={{ textTransform: "uppercase", flexShrink: 0, minWidth: { xs: 100, md: 120 } }}
 >
-  {FIELD_LABELS[k] ?? k}
+  {FIELD_KEY_MAP[k] ? t(`profile:${FIELD_KEY_MAP[k]}`) : k}
 </Typography>
             <Typography
   variant="body2"

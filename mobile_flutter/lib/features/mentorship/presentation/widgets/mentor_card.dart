@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -72,9 +73,12 @@ class MentorCard extends StatelessWidget {
                   style: const TextStyle(
                       fontWeight: FontWeight.bold, color: AppColors.primary)),
               const SizedBox(width: 4),
-              Text('(${mentor.totalSessions} buổi)',
-                  style: const TextStyle(
-                      color: AppColors.textSecondary, fontSize: 13)),
+              Text(
+                'mentorship.sessions_count'.tr(
+                    namedArgs: {'count': mentor.totalSessions.toString()}),
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 13),
+              ),
             ],
           ),
           if (tags.isNotEmpty) ...[
@@ -105,7 +109,7 @@ class MentorCard extends StatelessWidget {
                 flex: 3,
                 child: OutlinedButton(
                   onPressed: onViewProfile,
-                  child: const Text('Xem Profile'),
+                  child: Text('mentorship.view_profile'.tr()),
                 ),
               ),
               const SizedBox(width: 8),
@@ -113,7 +117,7 @@ class MentorCard extends StatelessWidget {
                 flex: 2,
                 child: ElevatedButton(
                   onPressed: onBook,
-                  child: const Text('Đặt lịch'),
+                  child: Text('mentorship.book_session'.tr()),
                 ),
               ),
             ],

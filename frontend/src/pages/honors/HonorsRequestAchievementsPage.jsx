@@ -8,6 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import WYSIWYG from '../../components/WYSIWYG';
@@ -15,6 +16,7 @@ import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const RequestAchievementsPage = () => {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('honors');
 
   const [image, setImage] = useState(null);
   const [title, setTitle] = useState('');
@@ -38,8 +40,8 @@ const RequestAchievementsPage = () => {
 
   return (
     <Page
-      title="Đơn xét thành tựu"
-      meta={<meta name="description" content="Đơn xét thành tựu - AlumVerse" />}
+      title={t('request_page_title')}
+      meta={<meta name="description" content={t('request_meta_desc')} />}
     >
       {/* PAGE BACKGROUND */}
       <Box sx={{ minHeight: '100vh' }}>
@@ -76,14 +78,12 @@ const RequestAchievementsPage = () => {
                 color="primary.main"
                 sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
             >
-                ĐƠN XÉT THÀNH TỰU
+                {t('request_heading')}
             </Typography>
 
             {/* DESCRIPTION */}
             <Typography color="text.secondary" sx={{ mb: 3 }}>
-              Đơn này dành cho những cựu sinh viên có nhu cầu được xét duyệt thành
-              tựu và vinh danh. Nếu đơn được duyệt, cựu sinh viên sẽ được thông
-              báo về bài đăng của mình.
+              {t('request_description')}
             </Typography>
 
             {/* POST SECTION */}
@@ -95,7 +95,7 @@ const RequestAchievementsPage = () => {
                 variant="standard"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Title"
+                placeholder={t('request_title_placeholder')}
                 InputProps={{
                   disableUnderline: true,
                   sx: {
@@ -113,7 +113,7 @@ const RequestAchievementsPage = () => {
                 <WYSIWYG
                   value={content}
                   onChange={setContent}
-                  placeholder="Write something"
+                  placeholder={t('request_content_placeholder')}
                   height={400}
                 />
               </Box>
@@ -124,14 +124,14 @@ const RequestAchievementsPage = () => {
                 variant="outlined"
                 value={proofLink}
                 onChange={(e) => setProofLink(e.target.value)}
-                placeholder="Link minh chứng"
-                
+                placeholder={t('request_proof_link_placeholder')}
+
               />
 
               {/* IMAGE UPLOAD */}
               <Box>
                 <Button variant="outlined" component="label">
-                  Tải ảnh lên
+                  {t('request_upload_image')}
                   <input type="file" hidden accept="image/*" onChange={handleImageChange} />
                 </Button>
                 {image && (
@@ -155,7 +155,7 @@ const RequestAchievementsPage = () => {
                   color="inherit"
                   onClick={handleCancel}
                 >
-                  Huỷ
+                  {t('request_cancel')}
                 </Button>
 
                 <Button
@@ -163,7 +163,7 @@ const RequestAchievementsPage = () => {
                   color="primary"
                   onClick={handleSubmit}
                 >
-                  Gửi
+                  {t('request_submit')}
                 </Button>
               </Box>
 

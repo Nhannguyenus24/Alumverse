@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Avatar,
   Box,
@@ -16,12 +17,6 @@ import dayjs from 'dayjs';
 
 const JOIN_EARLY_MINUTES = 15;
 
-const SESSION_TYPE_LABEL = {
-  CAREER: 'Định hướng nghề nghiệp',
-  ACADEMIC: 'Học tập / Học bổng',
-  SOFT_SKILLS: 'Kỹ năng mềm',
-};
-
 const STATUS_COLOR = {
   PENDING: 'warning',
   CONFIRMED: 'info',
@@ -34,20 +29,6 @@ const STATUS_COLOR = {
   RESCHEDULE_PROPOSED: 'warning',
   REJECTED: 'error',
   REPORTED: 'warning',
-};
-
-const STATUS_LABEL = {
-  PENDING: 'Chờ xác nhận',
-  CONFIRMED: 'Đã xác nhận',
-  IN_PROGRESS: 'Đang diễn ra',
-  COMPLETED: 'Đã hoàn thành',
-  EXPIRED: 'Không diễn ra',
-  CANCELLED: 'Đã hủy',
-  CANCELLED_BY_MENTEE: 'Đã hủy',
-  CANCELLED_BY_MENTOR: 'Cố vấn đã hủy',
-  RESCHEDULE_PROPOSED: 'Đề nghị dời lịch',
-  REJECTED: 'Bị từ chối',
-  REPORTED: 'Đang xử lý',
 };
 
 const formatRange = (start, end) => {
@@ -73,6 +54,34 @@ const MentorshipBookingItem = ({
   onSetMeetingLink,
   mentorHasDefaultLink = false,
 }) => {
+  const { t } = useTranslation(['mentorship']);
+
+  const getStatusLabel = (status) => {
+    const map = {
+      PENDING: t('mentorship:status_pending'),
+      CONFIRMED: t('mentorship:status_confirmed'),
+      IN_PROGRESS: t('mentorship:status_in_progress'),
+      COMPLETED: t('mentorship:status_completed'),
+      EXPIRED: t('mentorship:status_expired'),
+      CANCELLED: t('mentorship:status_cancelled'),
+      CANCELLED_BY_MENTEE: t('mentorship:status_cancelled'),
+      CANCELLED_BY_MENTOR: t('mentorship:status_cancelled_by_mentor'),
+      RESCHEDULE_PROPOSED: t('mentorship:status_reschedule_proposed'),
+      REJECTED: t('mentorship:status_rejected'),
+      REPORTED: t('mentorship:status_reported'),
+    };
+    return map[status] ?? status;
+  };
+
+  const getSessionTypeLabel = (sessionType) => {
+    const map = {
+      CAREER: t('mentorship:session_type_label_career'),
+      ACADEMIC: t('mentorship:session_type_label_academic'),
+      SOFT_SKILLS: t('mentorship:session_type_label_soft_skills'),
+    };
+    return map[sessionType] ?? sessionType;
+  };
+
   const range = formatRange(session.startTime, session.endTime);
   const proposedRange = formatRange(session.proposedStartTime, session.proposedEndTime);
   const terminalStatuses = ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR', 'COMPLETED', 'EXPIRED', 'REJECTED'];
@@ -123,18 +132,18 @@ const MentorshipBookingItem = ({
             <Chip
               size="small"
               color={STATUS_COLOR[session.status] ?? 'default'}
-              label={STATUS_LABEL[session.status] ?? session.status}
+              label={getStatusLabel(session.status)}
             />
             {session.sessionType && (
               <Chip
                 size="small"
                 variant="outlined"
-                label={SESSION_TYPE_LABEL[session.sessionType] ?? session.sessionType}
+                label={getSessionTypeLabel(session.sessionType)}
               />
             )}
           </Stack>
           <Typography variant="caption" color="text.secondary">
-            Đặt lúc {dayjs(session.createdAt).format('DD/MM/YYYY HH:mm')}
+            {t('mentorship:booked_at')} {dayjs(session.createdAt).format('DD/MM/YYYY HH:mm')}
           </Typography>
         </Stack>
 
@@ -150,7 +159,7 @@ const MentorshipBookingItem = ({
         {session.introduction && (
           <Box>
             <Typography variant="caption" color="text.secondary" display="block">
-              Giới thiệu
+              {t('mentorship:introduction_label')}
             </Typography>
             <Typography variant="body2">{session.introduction}</Typography>
           </Box>
@@ -159,7 +168,7 @@ const MentorshipBookingItem = ({
         {session.description && (
           <Box>
             <Typography variant="caption" color="text.secondary" display="block">
-              Mục đích
+              {t('mentorship:purpose_label')}
             </Typography>
             <Typography variant="body2">{session.description}</Typography>
           </Box>
@@ -168,7 +177,7 @@ const MentorshipBookingItem = ({
         {session.cancelReason && ['CANCELLED', 'CANCELLED_BY_MENTEE', 'CANCELLED_BY_MENTOR'].includes(session.status) && (
           <Box>
             <Typography variant="caption" color="text.secondary" display="block">
-              Lý do hủy
+              {t('mentorship:cancel_reason_label')}
             </Typography>
             <Typography variant="body2" color="error.main">{session.cancelReason}</Typography>
           </Box>
@@ -177,7 +186,7 @@ const MentorshipBookingItem = ({
         {isRescheduleProposed && (
           <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'warning.lighter', border: '1px dashed', borderColor: 'warning.main' }}>
             <Typography variant="caption" color="text.secondary" display="block">
-              {view === 'mentee' ? 'Cố vấn đề xuất dời sang' : 'Bạn đã đề xuất dời sang'}
+              {view === 'mentee' ? t('mentorship:advisor_proposed_reschedule') : t('mentorship:you_proposed_reschedule')}
             </Typography>
             {proposedRange && (
               <Typography variant="body2" fontWeight={600} color="warning.dark">
@@ -203,7 +212,7 @@ const MentorshipBookingItem = ({
               rel="noopener noreferrer"
               sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
-              CV đính kèm
+              {t('mentorship:cv_attached')}
             </Typography>
           </Stack>
         )}
@@ -219,7 +228,7 @@ const MentorshipBookingItem = ({
               rel="noopener noreferrer"
               sx={{ color: 'primary.main', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
             >
-              Link cuộc họp
+              {t('mentorship:meeting_link')}
             </Typography>
           </Stack>
         )}
@@ -239,7 +248,7 @@ const MentorshipBookingItem = ({
           >
             <WarningAmberOutlinedIcon fontSize="small" color="warning" />
             <Typography variant="body2" color="warning.dark">
-              Buổi này chưa có link tham gia — hãy thêm link họp trước khi buổi bắt đầu.
+              {t('mentorship:missing_meeting_link_warning')}
             </Typography>
           </Stack>
         )}
@@ -255,7 +264,7 @@ const MentorshipBookingItem = ({
                 disabled={joinPending}
                 onClick={() => onJoin(session)}
               >
-                Tham gia
+                {t('mentorship:join')}
               </Button>
             )}
             {canSetMeetingLink && (
@@ -266,7 +275,7 @@ const MentorshipBookingItem = ({
                 startIcon={<LinkOutlinedIcon />}
                 onClick={() => onSetMeetingLink(session)}
               >
-                {session.meetingLink ? 'Sửa link họp' : 'Thêm link họp'}
+                {session.meetingLink ? t('mentorship:edit_meeting_link') : t('mentorship:add_meeting_link')}
               </Button>
             )}
             {canRespondReschedule && (
@@ -278,7 +287,7 @@ const MentorshipBookingItem = ({
                   disabled={rescheduleResponsePending}
                   onClick={() => onRescheduleResponse(session, true)}
                 >
-                  Đồng ý dời lịch
+                  {t('mentorship:accept_reschedule')}
                 </Button>
                 <Button
                   size="small"
@@ -287,23 +296,23 @@ const MentorshipBookingItem = ({
                   disabled={rescheduleResponsePending}
                   onClick={() => onRescheduleResponse(session, false)}
                 >
-                  Từ chối
+                  {t('mentorship:reject_reschedule')}
                 </Button>
               </>
             )}
             {canReschedule && (
               <Button size="small" variant="outlined" onClick={() => onReschedule(session)}>
-                Đề xuất đổi lịch
+                {t('mentorship:propose_reschedule')}
               </Button>
             )}
             {canPostpone && (
               <Button size="small" variant="outlined" onClick={() => onPostpone(session)}>
-                Đề nghị dời lịch
+                {t('mentorship:propose_postpone')}
               </Button>
             )}
             {canFeedback && (
               <Button size="small" variant="contained" onClick={() => onFeedback(session)}>
-                Đánh giá buổi cố vấn
+                {t('mentorship:give_feedback')}
               </Button>
             )}
             {canReport && (
@@ -313,7 +322,7 @@ const MentorshipBookingItem = ({
                 color="warning"
                 onClick={() => onReport(session)}
               >
-                Báo cáo sự cố
+                {t('mentorship:report_incident')}
               </Button>
             )}
             {canCancel && (
@@ -324,7 +333,7 @@ const MentorshipBookingItem = ({
                 disabled={cancelDisabled}
                 onClick={() => onCancel(session)}
               >
-                Hủy lịch
+                {t('mentorship:cancel_appointment')}
               </Button>
             )}
           </Stack>

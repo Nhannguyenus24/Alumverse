@@ -1,4 +1,5 @@
 import { useState, useTransition } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router';
 import {
   AppBar,
@@ -11,28 +12,34 @@ import {
   Menu,
   MenuItem,
   ListItemIcon,
-  Button,
   Breadcrumbs,
   Link as MuiLink,
   alpha,
   useTheme,
   Select,
   FormControl,
+  Tooltip,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import HomeOutlinedIcon from '@mui/icons-material/HomeOutlined';
 import BusinessCenterOutlinedIcon from '@mui/icons-material/BusinessCenterOutlined';
+import Brightness6RoundedIcon from '@mui/icons-material/Brightness6Rounded';
 import { useAdminSystemContext } from '../../stores/AdminStore';
+import useThemeModeStore from '../../stores/themeModeStore';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const ADMIN_HEADER_HEIGHT = 88;
 
 const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrumbs }) => {
   const theme = useTheme();
+  const { t } = useTranslation(['admin', 'auth']);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const [, startTransition] = useTransition();
+  const themeMode = useThemeModeStore((state) => state.mode);
+  const toggleThemeMode = useThemeModeStore((state) => state.toggleMode);
 
   const { organizations, activeOrgId, setActiveOrgId } = useAdminSystemContext();
 
@@ -103,7 +110,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               sx={{ display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 500 }}
             >
               <HomeOutlinedIcon sx={{ mr: 0.5, fontSize: 18 }} />
-              Quản trị
+              {t('admin:breadcrumb_admin')}
             </MuiLink>
             
             {breadcrumbs && (
@@ -147,7 +154,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                 onChange={(e) => startTransition(() => setActiveOrgId(e.target.value))}
                 disableUnderline
                 id="admin-org-selector"
-                inputProps={{ 'aria-label': 'Chọn tổ chức' }}
+                inputProps={{ 'aria-label': t('admin:select_organization_aria') }}
                 sx={{
                   fontSize: 13,
                   fontWeight: 700,
@@ -203,33 +210,52 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
         )}
 
         {/* Right Side: Profile Dropdown Only */}
-        <Stack direction="row" alignItems="center">
-          <Button
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Tooltip title={themeMode === 'dark' ? t('admin:switch_to_light_mode') : t('admin:switch_to_dark_mode')} arrow>
+            <IconButton
+              aria-label={t('admin:toggle_theme_aria_label')}
+              onClick={toggleThemeMode}
+              sx={{
+                color: 'primary.main',
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+              }}
+            >
+              <Brightness6RoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <LanguageSwitcher
+            color="primary.main"
+            buttonSx={{
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.14) },
+            }}
+          />
+
+          <IconButton
             onClick={handleOpenUserMenu}
             sx={{
-              textTransform: 'none',
               color: 'inherit',
-              borderRadius: 2.5,
-              p: 0.5,
-              pl: 1.5,
-              '&:hover': { bgcolor: 'action.hover' },
+              width: 48,
+              height: 48,
+              p: 0,
+              borderRadius: '50%',
+              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) },
             }}
           >
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar
-                sx={{
-                  width: 40,
-                  height: 40,
-                  bgcolor: 'primary.main',
-                  fontSize: 15,
-                  fontWeight: 800,
-                  boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
-                }}
-              >
-                {(user?.fullName || user?.studentId || 'A')[0].toUpperCase()}
-              </Avatar>
-            </Stack>
-          </Button>
+            <Avatar
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: 'primary.main',
+                fontSize: 15,
+                fontWeight: 800,
+                boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 0 4px ${alpha(theme.palette.primary.main, 0.1)}`,
+              }}
+            >
+              {(user?.fullName || user?.studentId || 'A')[0].toUpperCase()}
+            </Avatar>
+          </IconButton>
 
           <Menu
             anchorEl={anchorEl}
@@ -261,7 +287,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
                 {user?.fullName || user?.studentId}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {user?.role} · Quản trị viên
+                {user?.role} · {t('admin:administrator_role_caption')}
               </Typography>
             </Box>
             <Box sx={{ bgcolor: 'divider', height: 1, my: 0.5 }} />
@@ -269,7 +295,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
               <ListItemIcon>
                 <LogoutOutlinedIcon fontSize="small" color="error" />
               </ListItemIcon>
-              <Typography variant="body2" fontWeight={700}>Đăng xuất</Typography>
+              <Typography variant="body2" fontWeight={700}>{t('auth:logout')}</Typography>
             </MenuItem>
           </Menu>
         </Stack>

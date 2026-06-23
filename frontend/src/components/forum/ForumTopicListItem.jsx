@@ -1,8 +1,10 @@
 import { Box, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import { formatRelativeTimeVi } from '../../utils/dateFormatter';
+import { useTranslation } from 'react-i18next';
 
 const ForumTopicListItem = ({ topic, onClick }) => {
+  const { t } = useTranslation(['forum']);
   return (
     <Box
       onClick={() => onClick(topic)}
@@ -43,7 +45,7 @@ const ForumTopicListItem = ({ topic, onClick }) => {
             {topic.title}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Được tạo lúc · {formatRelativeTimeVi(topic.createdAt)}
+            {t('forum:created_at_label')} · {formatRelativeTimeVi(topic.createdAt)}
           </Typography>
         </Box>
       </Box>
@@ -60,7 +62,7 @@ const ForumTopicListItem = ({ topic, onClick }) => {
       >
         <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            Lượt xem
+            {t('forum:views')}
           </Typography>
           <Typography variant="body2" fontWeight={800}>
             {topic.viewCount ?? 0}
@@ -68,7 +70,7 @@ const ForumTopicListItem = ({ topic, onClick }) => {
         </Box>
         <Box sx={{ textAlign: 'center', minWidth: { xs: 56, sm: 72 } }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            Thảo luận
+            {t('forum:discussions')}
           </Typography>
           <Typography variant="body2" fontWeight={800}>
             {topic.postCount ?? 0}
@@ -100,7 +102,7 @@ const ForumTopicListItem = ({ topic, onClick }) => {
           </Box>
           <Box sx={{ textAlign: 'left' }}>
             <Typography variant="body2" fontWeight={600}>
-              Thành viên #{topic.createdByMemberId ?? '—'}
+              {t('forum:member_prefix')}{topic.createdByMemberId ?? '—'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {formatRelativeTimeVi(topic.updatedAt)}

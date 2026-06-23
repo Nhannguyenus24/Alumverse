@@ -96,6 +96,11 @@ public enum ErrorCode {
     INVALID_TOPIC_ID("ID chủ đề không hợp lệ", 400),
     FORUM_TOPIC_LOCKED("Chủ đề đã bị khóa", 400),
 
+    // Education change request module
+    EDUCATION_REQUEST_NOT_FOUND("Không tìm thấy yêu cầu thay đổi học vấn", 404),
+    EDUCATION_REQUEST_ALREADY_PENDING("Đã có yêu cầu thay đổi học vấn đang chờ duyệt", 409),
+    EDUCATION_REQUEST_FORBIDDEN("Bạn không có quyền thực hiện thao tác này với yêu cầu học vấn", 403),
+
     // Fund module
     FUND_NOT_FOUND("Không tìm thấy quỹ", 404),
     ORGANIZATION_NOT_FOUND("Không tìm thấy organization", 404),

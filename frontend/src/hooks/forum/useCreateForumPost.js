@@ -21,7 +21,7 @@ export const useCreateForumPost = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể đăng bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to create post"
       : null;
 
   return { createPost: mutateAsync, isPending, isError, errorMessage };

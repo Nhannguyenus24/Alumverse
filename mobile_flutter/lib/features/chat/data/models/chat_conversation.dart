@@ -57,7 +57,7 @@ class ChatConversation {
       type: 'GROUP',
       name: (json['title'] as String?)?.trim().isNotEmpty == true
           ? json['title'] as String
-          : 'Nhóm chat',
+          : 'Group chat',
       memberCount: (json['memberCount'] as num?)?.toInt(),
       preview: json['lastMessagePreview'] as String?,
       lastMessageAt: json['lastMessageAt'] as String?,
@@ -68,7 +68,7 @@ class ChatConversation {
     return ChatConversation(
       id: (json['id'] as num).toInt(),
       type: 'PRIVATE',
-      name: json['peerFullName'] as String? ?? 'Người dùng',
+      name: json['peerFullName'] as String? ?? 'User',
       avatarUrl: json['peerAvatarUrl'] as String?,
       peerMemberId: (json['peerMemberId'] as num?)?.toInt(),
       preview: json['lastMessagePreview'] as String?,

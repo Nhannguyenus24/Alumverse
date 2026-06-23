@@ -4,19 +4,15 @@ import dayjs from "dayjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import {
   alpha,
   Box,
   Button,
   CircularProgress,
   Container,
-  FormControl,
-  FormHelperText,
   Grid,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   TextField,
   Typography,
@@ -31,10 +27,12 @@ import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import MoneyField from "../../components/MoneyField";
 import WYSIWYG from "../../components/WYSIWYG";
+import FundReceivingInfoSelect from "../../components/FundReceivingInfoSelect";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { useCreateFund } from "../../hooks/news/useCreateFund";
 import { useFundReceivingInfos } from "../../hooks/news/useFundReceivingInfos";
-import { useUploadImage, validateImageFile, IMAGE_ACCEPT } from "../../utils/imageUtils";
+import FundLogoPreview from "../../components/FundLogoPreview";
+import { useUploadImage, validateImageFile, IMAGE_ACCEPT, FUND_CONTENT_EDITOR_HEIGHT } from "../../utils/imageUtils";
 import useOrganizationStore from "../../stores/organizationStore";
 
 const isEmptyHtml = (html) => {
@@ -43,50 +41,50 @@ const isEmptyHtml = (html) => {
   return stripped.length === 0;
 };
 
-const buildSchema = (minStartTime) =>
+const buildSchema = (minStartTime, msgs) =>
   z
     .object({
-      fundName: z.string().trim().min(1, "Vui lòng nhập tên quỹ quyên góp"),
-      organizer: z.string().trim().min(1, "Vui lòng nhập người tổ chức"),
+      fundName: z.string().trim().min(1, msgs.fundName),
+      organizer: z.string().trim().min(1, msgs.organizer),
       fundReceivingInfoId: z.coerce
         .number()
         .int()
-        .positive("Vui lòng chọn tài khoản nhận quỹ"),
+        .positive(msgs.receivingInfo),
       targetAmount: z.coerce
-        .number({ message: "Mục tiêu quyên góp phải là số" })
-        .positive("Mục tiêu quyên góp phải lớn hơn 0"),
+        .number({ message: msgs.targetNumber })
+        .positive(msgs.targetPositive),
       descriptionShort: z
         .string()
         .trim()
-        .min(1, "Vui lòng nhập mô tả ngắn")
-        .max(120, "Mô tả ngắn tối đa 120 ký tự"),
+        .min(1, msgs.descShort)
+        .max(120, msgs.descShortMax),
       descriptionFull: z
         .string()
-        .refine((v) => !isEmptyHtml(v), "Vui lòng nhập mô tả đầy đủ"),
+        .refine((v) => !isEmptyHtml(v), msgs.descFull),
       startDate: z
         .custom((v) => v === null || dayjs.isDayjs(v), {
-          message: "Vui lòng chọn thời gian bắt đầu",
+          message: msgs.startDate,
         })
-        .refine((v) => v !== null, "Vui lòng chọn thời gian bắt đầu"),
+        .refine((v) => v !== null, msgs.startDate),
       endDate: z
         .custom((v) => v === null || dayjs.isDayjs(v), {
-          message: "Vui lòng chọn thời gian kết thúc",
+          message: msgs.endDate,
         })
-        .refine((v) => v !== null, "Vui lòng chọn thời gian kết thúc"),
+        .refine((v) => v !== null, msgs.endDate),
     })
     .superRefine(({ startDate, endDate }, ctx) => {
       if (!dayjs.isDayjs(startDate) || !dayjs.isDayjs(endDate)) return;
       if (startDate.isBefore(minStartTime)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Thời gian bắt đầu phải từ hiện tại + 1 giờ",
+          message: msgs.startDateMin,
           path: ["startDate"],
         });
       }
       if (endDate.isBefore(startDate.add(1, "hour"))) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 giờ",
+          message: msgs.endDateMin,
           path: ["endDate"],
         });
       }
@@ -106,6 +104,7 @@ const defaultValues = {
 export default function PostArticleDonationPage() {
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation("donation");
   const { createFund, isPending } = useCreateFund();
   const { uploadFile: uploadLogo, isPending: isUploadingLogo } = useUploadImage();
 
@@ -145,7 +144,26 @@ export default function PostArticleDonationPage() {
   };
 
   const minStartTime = useMemo(() => dayjs().add(1, "hour"), []);
-  const schema = useMemo(() => buildSchema(minStartTime), [minStartTime]);
+
+  const validationMsgs = useMemo(() => ({
+    fundName:      t("validation_fund_name"),
+    organizer:     t("validation_organizer"),
+    receivingInfo: t("validation_receiving_info"),
+    targetNumber:  t("validation_target_number"),
+    targetPositive:t("validation_target_positive"),
+    descShort:     t("validation_desc_short"),
+    descShortMax:  t("validation_desc_short_max"),
+    descFull:      t("validation_desc_full"),
+    startDate:     t("validation_start_date"),
+    endDate:       t("validation_end_date"),
+    startDateMin:  t("validation_start_date_min"),
+    endDateMin:    t("validation_end_date_min"),
+  }), [t]);
+
+  const schema = useMemo(
+    () => buildSchema(minStartTime, validationMsgs),
+    [minStartTime, validationMsgs],
+  );
 
   const {
     register,
@@ -160,7 +178,7 @@ export default function PostArticleDonationPage() {
 
   const onSubmit = async (values) => {
     if (!organizationId) {
-      enqueueSnackbar("Không tìm thấy tổ chức để tạo quỹ", { variant: "error" });
+      enqueueSnackbar(t("error_no_org"), { variant: "error" });
       return;
     }
 
@@ -181,11 +199,11 @@ export default function PostArticleDonationPage() {
       };
 
       const result = await createFund(payload);
-      enqueueSnackbar("Tạo quỹ quyên góp thành công.", { variant: "success" });
+      enqueueSnackbar(t("create_success"), { variant: "success" });
       navigate(result?.id ? `/donations/${result.id}` : "/donations");
     } catch (error) {
       enqueueSnackbar(
-        error?.response?.data?.message || "Tạo quỹ thất bại",
+        error?.response?.data?.message || t("create_failed"),
         { variant: "error" }
       );
     }
@@ -195,8 +213,8 @@ export default function PostArticleDonationPage() {
 
   return (
     <Page
-      title="Tạo quỹ quyên góp"
-      meta={<meta name="description" content="Tạo quỹ quyên góp" />}
+      title={t("create_page_title")}
+      meta={<meta name="description" content={t("create_page_meta")} />}
     >
       <Box
         sx={{
@@ -215,8 +233,8 @@ export default function PostArticleDonationPage() {
           >
             <Breadcrumb
               items={[
-                { label: "Quyên góp", path: "/donations" },
-                { label: "Tạo quỹ" },
+                { label: t("breadcrumb_list"), path: "/donations" },
+                { label: t("breadcrumb_create") },
               ]}
               fontSize="0.9rem"
             />
@@ -227,7 +245,7 @@ export default function PostArticleDonationPage() {
               color="primary.main"
               sx={{ fontSize: { xs: "1.8rem", md: "2.3rem" }, mb: 2.5 }}
             >
-              TẠO QUỸ QUYÊN GÓP
+              {t("create_heading")}
             </Typography>
 
             <Paper
@@ -248,8 +266,8 @@ export default function PostArticleDonationPage() {
                     <Grid size={12}>
                       <TextField
                         fullWidth
-                        label="Tên quỹ quyên góp"
-                        placeholder="Nhập tên quỹ quyên góp"
+                        label={t("field_fund_name_label")}
+                        placeholder={t("field_fund_name_placeholder")}
                         {...register("fundName")}
                         error={!!errors.fundName}
                         helperText={errors.fundName?.message}
@@ -260,8 +278,8 @@ export default function PostArticleDonationPage() {
                     <Grid size={12}>
                       <TextField
                         fullWidth
-                        label="Người tổ chức"
-                        placeholder="Nhập tên người tổ chức"
+                        label={t("field_organizer_label")}
+                        placeholder={t("field_organizer_placeholder")}
                         {...register("organizer")}
                         error={!!errors.organizer}
                         helperText={errors.organizer?.message}
@@ -274,28 +292,13 @@ export default function PostArticleDonationPage() {
                         variant="body2"
                         sx={{ mb: 1.2, fontWeight: 600, color: "text.secondary" }}
                       >
-                        Logo quỹ (tuỳ chọn)
+                        {t("field_logo_label")}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-                        Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.
+                        {t("field_logo_hint")}
                       </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        {logoPreview && (
-                          <Box
-                            component="img"
-                            src={logoPreview}
-                            alt="Logo preview"
-                            sx={{
-                              width: 72,
-                              height: 72,
-                              borderRadius: 2,
-                              objectFit: "cover",
-                              border: "1px solid",
-                              borderColor: "divider",
-                              flexShrink: 0,
-                            }}
-                          />
-                        )}
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 1.5, width: "100%" }}>
+                        {logoPreview && <FundLogoPreview src={logoPreview} />}
                         <Stack direction="row" spacing={1} alignItems="center">
                           <input
                             ref={logoInputRef}
@@ -310,17 +313,17 @@ export default function PostArticleDonationPage() {
                             onClick={() => logoInputRef.current?.click()}
                             sx={{ textTransform: "none" }}
                           >
-                            {logoPreview ? "Đổi ảnh logo" : "Chọn ảnh logo"}
+                            {logoPreview ? t("field_logo_change") : t("field_logo_choose")}
                           </Button>
                           {logoPreview && (
                             <Button
                               variant="text"
                               size="small"
-                              color="error"
+                              color="primary"
                               onClick={handleLogoRemove}
                               sx={{ textTransform: "none" }}
                             >
-                              Xoá
+                              {t("field_logo_remove")}
                             </Button>
                           )}
                         </Stack>
@@ -329,29 +332,20 @@ export default function PostArticleDonationPage() {
 
                     {/* Tài khoản nhận */}
                     <Grid size={12}>
-                      <FormControl fullWidth error={!!errors.fundReceivingInfoId}>
-                        <InputLabel id="receiving-label">Tài khoản nhận quỹ</InputLabel>
-                        <Controller
-                          name="fundReceivingInfoId"
-                          control={control}
-                          render={({ field }) => (
-                            <Select
-                              {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              labelId="receiving-label"
-                              label="Tài khoản nhận quỹ"
-                              MenuProps={{ disableScrollLock: true }}
-                            >
-                              {receivingInfos.map((info) => (
-                                <MenuItem key={info.id} value={info.id}>
-                                  {`${info.bankName} - ${info.accountName} - ${info.accountNumber}`}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          )}
-                        />
-                        <FormHelperText>{errors.fundReceivingInfoId?.message}</FormHelperText>
-                      </FormControl>
+                      <Controller
+                        name="fundReceivingInfoId"
+                        control={control}
+                        render={({ field }) => (
+                          <FundReceivingInfoSelect
+                            value={field.value}
+                            onChange={field.onChange}
+                            options={receivingInfos}
+                            error={!!errors.fundReceivingInfoId}
+                            helperText={errors.fundReceivingInfoId?.message}
+                            labelId="receiving-label"
+                          />
+                        )}
+                      />
                     </Grid>
 
                     {/* Số tiền mục tiêu */}
@@ -362,8 +356,8 @@ export default function PostArticleDonationPage() {
                         render={({ field }) => (
                           <MoneyField
                             fullWidth
-                            label="Số tiền mục tiêu để quyên góp (VNĐ)"
-                            placeholder="Nhập số tiền mục tiêu"
+                            label={t("field_target_label")}
+                            placeholder={t("field_target_placeholder")}
                             value={field.value}
                             onChange={field.onChange}
                             onBlur={field.onBlur}
@@ -381,7 +375,7 @@ export default function PostArticleDonationPage() {
                         control={control}
                         render={({ field }) => (
                           <DateTimePicker
-                            label="Thời gian bắt đầu"
+                            label={t("field_start_date_label")}
                             value={field.value}
                             onChange={field.onChange}
                             views={["year", "month", "day", "hours", "minutes", "seconds"]}
@@ -403,7 +397,7 @@ export default function PostArticleDonationPage() {
                         control={control}
                         render={({ field }) => (
                           <DateTimePicker
-                            label="Thời gian kết thúc"
+                            label={t("field_end_date_label")}
                             value={field.value}
                             onChange={field.onChange}
                             views={["year", "month", "day", "hours", "minutes", "seconds"]}
@@ -423,8 +417,8 @@ export default function PostArticleDonationPage() {
                     <Grid size={12}>
                       <TextField
                         fullWidth
-                        label="Mô tả ngắn (tối đa 120 ký tự)"
-                        placeholder="Nhập mô tả ngắn"
+                        label={t("field_desc_short_label")}
+                        placeholder={t("field_desc_short_placeholder")}
                         inputProps={{ maxLength: 120 }}
                         {...register("descriptionShort")}
                         error={!!errors.descriptionShort}
@@ -438,7 +432,7 @@ export default function PostArticleDonationPage() {
                         variant="body2"
                         sx={{ mb: 1, fontWeight: 600, color: "text.secondary" }}
                       >
-                        Mô tả đầy đủ
+                        {t("field_desc_full_label")}
                       </Typography>
                       <Controller
                         name="descriptionFull"
@@ -447,8 +441,8 @@ export default function PostArticleDonationPage() {
                           <WYSIWYG
                             value={field.value}
                             onChange={field.onChange}
-                            placeholder="Nhập mô tả chi tiết về quỹ quyên góp..."
-                            height={320}
+                            placeholder={t("field_desc_full_placeholder")}
+                            height={FUND_CONTENT_EDITOR_HEIGHT}
                           />
                         )}
                       />
@@ -473,7 +467,7 @@ export default function PostArticleDonationPage() {
                       disabled={isBusy}
                       sx={{ textTransform: "none", px: 3 }}
                     >
-                      Huỷ
+                      {t("btn_cancel")}
                     </Button>
                     <Button
                       type="submit"
@@ -483,10 +477,10 @@ export default function PostArticleDonationPage() {
                       sx={{ textTransform: "none", px: 3 }}
                     >
                       {isUploadingLogo
-                        ? "Đang tải ảnh..."
+                        ? t("btn_uploading")
                         : isBusy
-                        ? "Đang đăng..."
-                        : "Đăng quyên góp"}
+                        ? t("btn_submitting")
+                        : t("btn_submit")}
                     </Button>
                   </Stack>
                 </Box>

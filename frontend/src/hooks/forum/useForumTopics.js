@@ -30,7 +30,7 @@ export const useForumTopics = (categoryId, keyword = '', page = 0, size = 10) =>
   const topics = data ?? [];
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách chủ đề"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load topics"
       : null;
 
   return { topics, isPending, isError, errorMessage };

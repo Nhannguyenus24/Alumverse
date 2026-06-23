@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -35,7 +36,11 @@ class GroupMembersPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(groupTitle != null ? 'Thành viên — $groupTitle' : 'Thành viên nhóm'),
+        title: Text(
+          groupTitle != null
+              ? 'chat.group_members_title'.tr(namedArgs: {'name': groupTitle!})
+              : 'chat.members'.tr(),
+        ),
       ),
       body: membersAsync.when(
         loading: () => const LoadingView(),
@@ -83,7 +88,7 @@ class GroupMembersPage extends ConsumerWidget {
                     onPressed: () => _showAddMembersSheet(
                         context, ref, members, members.length),
                     icon: const Icon(Icons.person_add_outlined),
-                    label: const Text('Thêm thành viên'),
+                    label: Text('chat.add_members'.tr()),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),
                     ),
@@ -98,8 +103,10 @@ class GroupMembersPage extends ConsumerWidget {
                     onPressed: () => _confirmLeave(context, ref),
                     icon: const Icon(Icons.exit_to_app_outlined,
                         color: AppColors.error),
-                    label: const Text('Rời nhóm',
-                        style: TextStyle(color: AppColors.error)),
+                    label: Text(
+                      'chat.leave_group'.tr(),
+                      style: const TextStyle(color: AppColors.error),
+                    ),
                     style: OutlinedButton.styleFrom(
                       minimumSize: const Size.fromHeight(44),
                       side: const BorderSide(color: AppColors.error),
@@ -123,16 +130,21 @@ class GroupMembersPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Xóa thành viên'),
-        content: Text('Xóa ${member.fullName} khỏi nhóm?'),
+        title: Text('chat.remove_member'.tr()),
+        content: Text(
+          'chat.remove_member_confirm'.tr(namedArgs: {'name': member.fullName}),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text('common.cancel'.tr()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xóa', style: TextStyle(color: AppColors.error)),
+            child: Text(
+              'common.delete'.tr(),
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -143,7 +155,10 @@ class GroupMembersPage extends ConsumerWidget {
           .read(chatGroupMembersProvider(groupId).notifier)
           .removeMember(member.memberId);
       if (context.mounted) {
-        AppToast.success(context, 'Đã xóa ${member.fullName}');
+        AppToast.success(
+          context,
+          'chat.removed_member'.tr(namedArgs: {'name': member.fullName}),
+        );
       }
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
@@ -154,18 +169,19 @@ class GroupMembersPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Rời nhóm'),
-        content: const Text(
-            'Bạn có chắc muốn rời khỏi nhóm này? Bạn sẽ không thể xem tin nhắn sau khi rời.'),
+        title: Text('chat.leave_group'.tr()),
+        content: Text('chat.leave_group_confirm'.tr()),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: Text('common.cancel'.tr()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Rời nhóm',
-                style: TextStyle(color: AppColors.error)),
+            child: Text(
+              'chat.leave_group'.tr(),
+              style: const TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -210,7 +226,10 @@ class GroupMembersPage extends ConsumerWidget {
           .read(chatGroupMembersProvider(groupId).notifier)
           .addMembers(added);
       if (context.mounted) {
-        AppToast.success(context, 'Đã thêm ${added.length} thành viên');
+        AppToast.success(
+          context,
+          'chat.added_members'.tr(namedArgs: {'count': added.length.toString()}),
+        );
       }
     } catch (e) {
       if (context.mounted) AppToast.fromError(context, e);
@@ -254,12 +273,14 @@ class _MemberTile extends StatelessWidget {
             : null,
       ),
       title: Text(
-        isSelf ? '${member.fullName} (Bạn)' : member.fullName,
+        isSelf
+            ? '${member.fullName} (${'chat.you_label'.tr()})'
+            : member.fullName,
       ),
       subtitle: member.isOwner
-          ? const Text(
-              'Nhóm trưởng',
-              style: TextStyle(
+          ? Text(
+              'chat.group_owner'.tr(),
+              style: const TextStyle(
                   fontSize: 12,
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600),
@@ -331,7 +352,10 @@ class _AddMembersSheetState extends ConsumerState<_AddMembersSheet> {
       setState(() => _selected.remove(conn.peerMemberId));
     } else {
       if (_selected.length >= widget.maxSelect) {
-        AppToast.info(context, 'Không thể thêm quá ${widget.maxSelect} người');
+        AppToast.info(
+          context,
+          'chat.max_add_toast'.tr(namedArgs: {'max': widget.maxSelect.toString()}),
+        );
         return;
       }
       setState(() => _selected.add(conn.peerMemberId));
@@ -351,7 +375,10 @@ class _AddMembersSheetState extends ConsumerState<_AddMembersSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Thêm thành viên (${_selected.length}/${widget.maxSelect})',
+                    'chat.add_members_title'.tr(namedArgs: {
+                      'count': _selected.length.toString(),
+                      'max': widget.maxSelect.toString(),
+                    }),
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
@@ -359,7 +386,7 @@ class _AddMembersSheetState extends ConsumerState<_AddMembersSheet> {
                   onPressed: _selected.isNotEmpty
                       ? () => Navigator.pop(context, _selected.toList())
                       : null,
-                  child: const Text('Thêm'),
+                  child: Text('chat.add'.tr()),
                 ),
               ],
             ),
@@ -371,7 +398,7 @@ class _AddMembersSheetState extends ConsumerState<_AddMembersSheet> {
               textInputAction: TextInputAction.search,
               onSubmitted: _search,
               decoration: InputDecoration(
-                hintText: 'Tìm kết nối…',
+                hintText: 'chat.search_connections'.tr(),
                 prefixIcon: const Icon(Icons.search),
                 isDense: true,
                 filled: true,
@@ -387,10 +414,11 @@ class _AddMembersSheetState extends ConsumerState<_AddMembersSheet> {
             child: _isSearching
                 ? const Center(child: CircularProgressIndicator())
                 : _results.isEmpty
-                    ? const Center(
-                        child: Text('Không tìm thấy kết nối nào để thêm',
-                            style:
-                                TextStyle(color: AppColors.textSecondary)),
+                    ? Center(
+                        child: Text(
+                          'chat.no_connections_to_add'.tr(),
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        ),
                       )
                     : ListView.builder(
                         itemCount: _results.length,

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import AdminEventQuestionSection from './AdminEventQuestionSection';
 import {
@@ -38,6 +39,7 @@ const fromLocalInput = (value) => {
 };
 
 const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
+  const { t } = useTranslation(['admin', 'common']);
   const { enqueueSnackbar } = useSnackbar();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
@@ -72,15 +74,15 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
 
   const validate = () => {
     const next = {};
-    if (!form.title.trim()) next.title = 'Title is required';
-    else if (form.title.trim().length < 3) next.title = 'Title must be at least 3 characters';
-    if (!form.startTime) next.startTime = 'Start time is required';
-    if (!form.endTime) next.endTime = 'End time is required';
+    if (!form.title.trim()) next.title = t('admin:error_title_required');
+    else if (form.title.trim().length < 3) next.title = t('admin:error_title_min_length');
+    if (!form.startTime) next.startTime = t('admin:error_start_time_required');
+    if (!form.endTime) next.endTime = t('admin:error_end_time_required');
     if (form.startTime && form.endTime && form.startTime >= form.endTime) {
-      next.endTime = 'End time must be after start time';
+      next.endTime = t('admin:error_end_time_after_start');
     }
     if (form.maxCapacity !== '' && (Number.isNaN(Number(form.maxCapacity)) || Number(form.maxCapacity) < 1)) {
-      next.maxCapacity = 'Capacity must be a positive number';
+      next.maxCapacity = t('admin:error_capacity_positive');
     }
     setErrors(next);
     const keys = Object.keys(next);
@@ -114,11 +116,11 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        {event ? `Edit event #${event.id}` : 'Create event'}
+        {event ? t('admin:edit_event_title', { id: event.id }) : t('admin:create_event_title')}
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
         <TextField
-          label="Title"
+          label={t('admin:event_field_title')}
           value={form.title}
           onChange={handleChange('title')}
           error={!!errors.title}
@@ -128,7 +130,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Description"
+          label={t('admin:event_field_description')}
           value={form.description}
           onChange={handleChange('description')}
           fullWidth
@@ -137,14 +139,14 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Banner URL"
+          label={t('admin:event_field_banner_url')}
           value={form.bannerUrl}
           onChange={handleChange('bannerUrl')}
           fullWidth
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Location"
+          label={t('admin:event_field_location')}
           value={form.location}
           onChange={handleChange('location')}
           fullWidth
@@ -152,7 +154,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
         />
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <TextField
-            label="Start time"
+            label={t('admin:event_field_start_time')}
             type="datetime-local"
             value={form.startTime}
             onChange={handleChange('startTime')}
@@ -163,7 +165,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
             slotProps={{ inputLabel: inputLabelSlotProps }}
           />
           <TextField
-            label="End time"
+            label={t('admin:event_field_end_time')}
             type="datetime-local"
             value={form.endTime}
             onChange={handleChange('endTime')}
@@ -176,7 +178,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
         </Box>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <TextField
-            label="Registration starts"
+            label={t('admin:event_field_registration_starts')}
             type="datetime-local"
             value={form.registrationStartAt}
             onChange={handleChange('registrationStartAt')}
@@ -184,7 +186,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
             slotProps={{ inputLabel: inputLabelSlotProps }}
           />
           <TextField
-            label="Registration ends"
+            label={t('admin:event_field_registration_ends')}
             type="datetime-local"
             value={form.registrationEndAt}
             onChange={handleChange('registrationEndAt')}
@@ -193,7 +195,7 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
           />
         </Box>
         <TextField
-          label="Max capacity"
+          label={t('admin:event_field_max_capacity')}
           type="number"
           value={form.maxCapacity}
           onChange={handleChange('maxCapacity')}
@@ -210,14 +212,14 @@ const AdminEventFormDialog = ({ open, event, onClose, onSubmit }) => {
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none' }}>Cancel</Button>
+        <Button onClick={onClose} sx={{ textTransform: 'none' }}>{t('common:cancel')}</Button>
         <Button
           variant="contained"
           onClick={handleSubmit}
           disabled={submitting}
           sx={{ textTransform: 'none', fontWeight: 700 }}
         >
-          Save
+          {t('common:save')}
         </Button>
       </DialogActions>
     </Dialog>

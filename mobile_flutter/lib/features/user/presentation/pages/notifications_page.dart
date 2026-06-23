@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -59,15 +59,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xoá tất cả thông báo'),
-        content: const Text('Bạn có chắc muốn xoá toàn bộ thông báo?'),
+        title: Text('notification.delete_all_title'.tr()),
+        content: Text('notification.delete_all_confirm'.tr()),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Hủy')),
+              child: Text('common.cancel'.tr())),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Xoá tất cả')),
+              child: Text('notification.delete_all_btn'.tr())),
         ],
       ),
     );
@@ -84,7 +84,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thông báo'),
+        title: Text('common.notifications'.tr()),
         actions: [
           PopupMenuButton<String>(
             onSelected: (v) {
@@ -92,10 +92,13 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               if (v == 'read_all') _markAllRead(items);
               if (v == 'delete_all') _deleteAll();
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
-                  value: 'read_all', child: Text('Đánh dấu tất cả đã đọc')),
-              PopupMenuItem(value: 'delete_all', child: Text('Xoá tất cả')),
+                  value: 'read_all',
+                  child: Text('notification.mark_all_read'.tr())),
+              PopupMenuItem(
+                  value: 'delete_all',
+                  child: Text('notification.delete_all_btn'.tr())),
             ],
           ),
         ],
@@ -105,7 +108,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           children: List.generate(6, (_) => const SkeletonTile()),
         ),
         error: (_, __) => ErrorView(
-          message: 'Không tải được thông báo',
+          message: 'notification.load_failed'.tr(),
           onRetry: () => ref.invalidate(notificationsProvider),
         ),
         data: (all) {
@@ -120,13 +123,14 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 child: Row(
                   children: [
                     _FilterChip(
-                      label: 'Tất cả',
+                      label: 'common.all'.tr(),
                       selected: !_unreadOnly,
                       onTap: () => setState(() => _unreadOnly = false),
                     ),
                     const SizedBox(width: 8),
                     _FilterChip(
-                      label: 'Chưa đọc ($unreadCount)',
+                      label: 'notification.unread_count'.tr(
+                          namedArgs: {'count': unreadCount.toString()}),
                       selected: _unreadOnly,
                       onTap: () => setState(() => _unreadOnly = true),
                     ),
@@ -268,10 +272,10 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const EmptyView(
+    return EmptyView(
       icon: Icons.notifications_none_rounded,
-      title: 'Bạn đã xem hết thông báo',
-      message: 'Thông báo mới về sự kiện, diễn đàn sẽ xuất hiện ở đây.',
+      title: 'notification.empty_title'.tr(),
+      message: 'notification.empty_message'.tr(),
     );
   }
 }

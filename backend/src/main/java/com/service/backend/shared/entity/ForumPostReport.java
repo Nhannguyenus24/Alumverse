@@ -32,8 +32,6 @@ public class ForumPostReport {
 
     private String reason;
 
-    private String description;
-
     private Status status;
 
     @Column("reviewed_by_user_id")

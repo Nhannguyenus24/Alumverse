@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -63,7 +64,11 @@ class _EventRegisterSheetState extends State<EventRegisterSheet> {
     if (!formOk || choiceError != null) {
       if (choiceError != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Vui lòng trả lời: $choiceError')),
+          SnackBar(
+            content: Text(
+              'event.answer_required'.tr(namedArgs: {'question': choiceError}),
+            ),
+          ),
         );
       }
       return;
@@ -110,8 +115,8 @@ class _EventRegisterSheetState extends State<EventRegisterSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Đăng ký tham gia',
-                      style: TextStyle(
+                  Text('event.register_sheet_title'.tr(),
+                      style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 2),
                   Text(widget.eventTitle,
@@ -151,8 +156,8 @@ class _EventRegisterSheetState extends State<EventRegisterSheet> {
                       padding:
                           const EdgeInsets.symmetric(vertical: AppSpacing.md),
                     ),
-                    child: const Text('Xác nhận tham gia',
-                        style: TextStyle(fontSize: 16)),
+                    child: Text('event.confirm_join'.tr(),
+                        style: const TextStyle(fontSize: 16)),
                   ),
                 ),
               ),
@@ -198,12 +203,12 @@ class _QuestionField extends StatelessWidget {
             initialValue: value as String?,
             validator: question.required
                 ? (v) => (v == null || v.trim().isEmpty)
-                    ? 'Bắt buộc'
+                    ? 'event.required'.tr()
                     : null
                 : null,
-            decoration: const InputDecoration(
-              hintText: 'Nhập câu trả lời...',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: 'event.answer_hint'.tr(),
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
             onChanged: onChanged,

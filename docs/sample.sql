@@ -895,7 +895,7 @@ INSERT INTO "funds" ("organization_id", "manager_name", "name", "logo_url", "fun
 INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amount", "address", "phone", "email", "message", "status", "created_at") VALUES
 (1, 2, 'John Doe', 5000.00, 'District 1, Ho Chi Minh City', '0911111111', 'john.doe@hcmus.edu.vn', 'Supporting our students', 'SUCCESS', NOW() - INTERVAL '30 days'),
 (1, 6, 'Phạm Văn C', 3500.00, 'Binh Thanh, Ho Chi Minh City', '0922222222', 'pham.van.c@hcmus.edu.vn', 'Happy to help talented students', 'SUCCESS', NOW() - INTERVAL '25 days'),
-(1, NULL, 'Anonymous Donor', 10000.00, 'District 3, Ho Chi Minh City', '0933333333', 'anonymous@example.com', 'Belief in future generation', 'SUCCESS', NOW() - INTERVAL '20 days'),
+(1, NULL, '(Nhà hảo tâm)', 10000.00, 'District 3, Ho Chi Minh City', '0933333333', 'anonymous@example.com', 'Belief in future generation', 'SUCCESS', NOW() - INTERVAL '20 days'),
 (2, 3, 'Jane Smith', 2000.00, 'Thu Duc, Ho Chi Minh City', '0944444444', 'jane.smith@hcmus.edu.vn', 'Upgrading our research capabilities', 'SUCCESS', NOW() - INTERVAL '15 days'),
 (2, 8, 'Lê Văn E', 15000.00, 'Go Vap, Ho Chi Minh City', '0955555555', 'le.van.e@hcmus.edu.vn', 'Investing in research excellence', 'SUCCESS', NOW() - INTERVAL '10 days'),
 (3, 7, 'Hoàng Thị D', 8000.00, 'District 7, Ho Chi Minh City', '0966666666', 'hoang.thi.d@hcmus.edu.vn', 'Supporting mentorship initiatives', 'SUCCESS', NOW() - INTERVAL '8 days'),
@@ -905,7 +905,7 @@ INSERT INTO "fund_donations" ("fund_id", "donor_member_id", "donor_name", "amoun
 (6, 2, 'John Doe', 1000000, 'District 5, HCM', '0901234567', 'john.doe@example.com', 'Chúc các em học tốt!', 'SUCCESS', NOW() - INTERVAL '10 days'),
 (6, 3, 'Jane Smith', 500000, 'District 1, HCM', '0911223344', 'jane.smith@example.com', 'Hy vọng giúp ích được phần nào.', 'SUCCESS', NOW() - INTERVAL '5 days'),
 (7, 5, 'Trần Thị B', 2000000, 'Thu Duc, HCM', '0933445566', 'tranthib@example.com', 'Ủng hộ phòng Lab phát triển.', 'SUCCESS', NOW() - INTERVAL '2 days'),
-(6, NULL, 'Mạnh thường quân', 10000000, NULL, NULL, NULL, 'Gửi tặng các em sinh viên.', 'SUCCESS', NOW() - INTERVAL '1 day');
+(6, NULL, '(Nhà hảo tâm)', 10000000, NULL, NULL, NULL, 'Gửi tặng các em sinh viên.', 'SUCCESS', NOW() - INTERVAL '1 day');
 
 -- ============= NOTIFICATIONS DATA =============
 INSERT INTO "notifications" ("member_id", "title", "message", "is_read", "link", "created_at") VALUES
@@ -1046,10 +1046,10 @@ INSERT INTO "forum_posts" ("topic_id", "author_member_id", "content", "answer_to
 (8, 7, 'Leadership is about empowering your team. Trust your people and give them autonomy to make decisions.', NULL, 'VERIFIED', false, NOW() - INTERVAL '9 days', NOW() - INTERVAL '9 days');
 
 -- ============= FORUM POST REPORTS DATA =============
-INSERT INTO "forum_post_reports" ("post_id", "reporter_member_id", "reason", "description", "status", "reviewed_by_user_id", "review_note", "created_at", "updated_at") VALUES
-(8, 4, 'SPAM', 'Post repeats promotional content and is not relevant to the discussion.', 'APPROVED', 1, 'Hidden post and warned author', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
-(14, 9, 'OFF_TOPIC', 'Content is not related to the current thread purpose.', 'PENDING', NULL, NULL, NOW() - INTERVAL '8 hours', NOW() - INTERVAL '8 hours'),
-(15, 10, 'ABUSIVE_LANGUAGE', 'Potentially aggressive wording found in the comment.', 'REJECTED', 1, 'No violation after review', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
+INSERT INTO "forum_post_reports" ("post_id", "reporter_member_id", "reason", "status", "reviewed_by_user_id", "review_note", "created_at", "updated_at") VALUES
+(8, 4, 'SPAM', 'APPROVED', 1, 'Hidden post and warned author', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day'),
+(14, 9, 'OFF_TOPIC', 'PENDING', NULL, NULL, NOW() - INTERVAL '8 hours', NOW() - INTERVAL '8 hours'),
+(15, 10, 'ABUSIVE_LANGUAGE', 'REJECTED', 1, 'No violation after review', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
 
 -- ============= ADMIN AUDIT LOGS DATA =============
 INSERT INTO "admin_audit_logs" ("admin_user_id", "target_user_id", "action", "resource_type", "resource_id", "before_data", "after_data", "metadata", "created_at") VALUES

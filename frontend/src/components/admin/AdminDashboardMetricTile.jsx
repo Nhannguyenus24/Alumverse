@@ -1,8 +1,11 @@
 import React from 'react';
-import { Box, Paper, Typography, useTheme } from '@mui/material';
+import { alpha, Box, Paper, Typography, useTheme } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const AdminDashboardMetricTile = ({ label, value, caption, icon, trend, sx }) => {
   const theme = useTheme();
+  const { t } = useTranslation('admin');
+  const trendColor = trend > 0 ? theme.palette.success.main : theme.palette.error.main;
 
   return (
     <Paper
@@ -45,15 +48,15 @@ const AdminDashboardMetricTile = ({ label, value, caption, icon, trend, sx }) =>
                   px: 1, 
                   py: 0.25, 
                   borderRadius: 1, 
-                  bgcolor: trend > 0 ? 'success.lighter' : 'error.lighter',
-                  color: trend > 0 ? 'success.main' : 'error.main',
+                  bgcolor: alpha(trendColor, theme.palette.mode === 'dark' ? 0.16 : 0.1),
+                  color: trendColor,
                 }}
               >
                 {trend > 0 ? `+${trend}%` : `${trend}%`}
               </Typography>
             )}
             <Typography variant="caption" color="text.disabled" fontWeight={500}>
-              {caption || 'so với tháng trước'}
+              {caption || t('compared_to_last_month')}
             </Typography>
           </Box>
         )}

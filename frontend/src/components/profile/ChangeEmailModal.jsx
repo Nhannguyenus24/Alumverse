@@ -11,9 +11,11 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
+import { useTranslation, Trans } from 'react-i18next';
 import apiClient from '../../utils/axios';
 
 const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged }) => {
+  const { t } = useTranslation(['profile', 'common']);
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -37,9 +39,9 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
     try {
       await apiClient.post(`/auth/change-email/${userId}/request-otp-old`);
       setStep(2);
-      setSuccess(`Mã OTP đã được gửi đến email ${currentEmail}`);
+      setSuccess(t('profile:otp_sent_old', { email: currentEmail }));
     } catch (err) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi gửi OTP');
+      setError(err.response?.data?.message || t('profile:otp_send_error'));
     } finally {
       setLoading(false);
     }
@@ -54,7 +56,7 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
       setStep(3);
       setOtp('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Mã OTP không hợp lệ');
+      setError(err.response?.data?.message || t('profile:otp_invalid'));
     } finally {
       setLoading(false);
     }
@@ -67,9 +69,9 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
     try {
       await apiClient.post(`/auth/change-email/${userId}/request-otp-new`, { email: newEmail });
       setStep(4);
-      setSuccess(`Mã OTP đã được gửi đến email mới ${newEmail}`);
+      setSuccess(t('profile:otp_sent_new', { email: newEmail }));
     } catch (err) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra khi gửi OTP đến email mới');
+      setError(err.response?.data?.message || t('profile:otp_send_new_error'));
     } finally {
       setLoading(false);
     }
@@ -81,7 +83,7 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
     setSuccess(null);
     try {
       await apiClient.post(`/auth/change-email/${userId}/verify-otp-new`, { email: newEmail, otp });
-      setSuccess('Đổi email thành công!');
+      setSuccess(t('profile:change_email_success'));
       if (onEmailChanged) {
         onEmailChanged(newEmail);
       }
@@ -89,7 +91,7 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
         handleClose();
       }, 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Mã OTP không hợp lệ');
+      setError(err.response?.data?.message || t('profile:otp_invalid'));
     } finally {
       setLoading(false);
     }
@@ -97,7 +99,7 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
 
   return (
     <Dialog open={open} onClose={!loading ? handleClose : undefined} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 'bold' }}>Đổi địa chỉ Email</DialogTitle>
+      <DialogTitle sx={{ fontWeight: 'bold' }}>{t('profile:change_email')}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -105,18 +107,18 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
 
           {step === 1 && (
             <Typography>
-              Để tiếp tục, hệ thống cần gửi một mã OTP đến email hiện tại của bạn <b>{currentEmail}</b> để xác thực.
+              <Trans i18nKey="profile:change_email_step1_desc" values={{ email: currentEmail }} components={[<b key="0" />]}/>
             </Typography>
           )}
 
           {step === 2 && (
             <>
               <Typography sx={{ mb: 2 }}>
-                Vui lòng nhập mã OTP gồm 6 chữ số vừa được gửi đến <b>{currentEmail}</b>.
+                <Trans i18nKey="profile:change_email_step2_desc" values={{ email: currentEmail }} components={[<b key="0" />]}/>
               </Typography>
               <TextField
                 fullWidth
-                label="Mã OTP"
+                label={t('profile:otp_code')}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 disabled={loading}
@@ -127,11 +129,11 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
           {step === 3 && (
             <>
               <Typography sx={{ mb: 2 }}>
-                Xác thực thành công. Vui lòng nhập địa chỉ email mới.
+                {t('profile:change_email_step3_desc')}
               </Typography>
               <TextField
                 fullWidth
-                label="Email mới"
+                label={t('profile:new_email')}
                 type="email"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
@@ -143,11 +145,11 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
           {step === 4 && (
             <>
               <Typography sx={{ mb: 2 }}>
-                Vui lòng nhập mã OTP gồm 6 chữ số vừa được gửi đến <b>{newEmail}</b>.
+                <Trans i18nKey="profile:change_email_step4_desc" values={{ email: newEmail }} components={[<b key="0" />]}/>
               </Typography>
               <TextField
                 fullWidth
-                label="Mã OTP"
+                label={t('profile:otp_code')}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 disabled={loading}
@@ -158,26 +160,26 @@ const ChangeEmailModal = ({ open, onClose, userId, currentEmail, onEmailChanged 
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 3 }}>
         <Button onClick={handleClose} disabled={loading} color="inherit">
-          Hủy
+          {t('common:cancel')}
         </Button>
         {step === 1 && (
           <Button onClick={requestOldOtp} disabled={loading} variant="contained">
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Gửi mã OTP'}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('profile:send_otp')}
           </Button>
         )}
         {step === 2 && (
           <Button onClick={verifyOldOtp} disabled={loading || otp.length !== 6} variant="contained">
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Xác nhận'}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('common:confirm')}
           </Button>
         )}
         {step === 3 && (
           <Button onClick={requestNewOtp} disabled={loading || !newEmail} variant="contained">
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Gửi mã OTP'}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('profile:send_otp')}
           </Button>
         )}
         {step === 4 && (
           <Button onClick={verifyNewOtp} disabled={loading || otp.length !== 6} variant="contained">
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Hoàn tất'}
+            {loading ? <CircularProgress size={24} color="inherit" /> : t('profile:finish')}
           </Button>
         )}
       </DialogActions>

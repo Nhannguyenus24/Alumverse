@@ -15,7 +15,7 @@ export const useFundReceivingInfos = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách tài khoản nhận"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load fund accounts"
       : null;
 
   return { infos: data ?? [], isPending, isError, errorMessage };

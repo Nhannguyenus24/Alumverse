@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Card, LinearProgress, Pagination, Stack, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import { fundApi } from "../../utils/api";
 import DonationListItemCard from "./DonationListItemCard";
 import DonationListFilters from "./DonationListFilters";
 
 export default function FundraisingListSection({ fundId }) {
+  const { t } = useTranslation('donation');
   const [items, setItems] = useState([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -42,7 +44,7 @@ export default function FundraisingListSection({ fundId }) {
         if (ignore) return;
         setItems([]);
         setTotalPage(1);
-        setErrorMessage(error?.response?.data?.message ?? "Không thể tải danh sách lượt quyên góp.");
+        setErrorMessage(error?.response?.data?.message ?? t('donation:error_load_donations'));
       } finally {
         if (!ignore) {
           setIsLoading(false);
@@ -70,7 +72,7 @@ export default function FundraisingListSection({ fundId }) {
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={2} sx={{ mb: 2.5 }}>
         <Typography variant="h5" sx={{ fontWeight: 800, color: "#0f2f5f", fontSize: { xs: "1.35rem", md: "1.6rem" } }}>
-          Danh sách
+          {t('donation:list_title')}
         </Typography>
       </Stack>
 
@@ -96,7 +98,7 @@ export default function FundraisingListSection({ fundId }) {
       <Stack spacing={1.5} sx={{ minHeight: { xs: 430, md: 470 } }}>
         {isLoading ? <LinearProgress sx={{ height: 8, borderRadius: 999 }} /> : null}
 
-        {!isLoading && items.length === 0 ? <Typography sx={{ color: "#617491", fontWeight: 600 }}> Không tìm thấy.</Typography> : null}
+        {!isLoading && items.length === 0 ? <Typography sx={{ color: "#617491", fontWeight: 600 }}>{t('donation:no_donations_found')}</Typography> : null}
 
         {items.map((item) => (
           <DonationListItemCard key={item.id} item={item} />

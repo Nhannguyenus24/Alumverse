@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { Box, Button, CircularProgress, Container, Divider, Typography } from "@mui/material";
 import DOMPurify from "dompurify";
 import dayjs from "dayjs";
+import { useTranslation } from "react-i18next";
 import Page from "../../components/Page";
 import Breadcrumb from "../../components/Breadcrumb";
 import Scrollbar from "../../components/Scrollbar";
@@ -37,6 +38,7 @@ const descriptionContentSx = {
 };
 
 export default function DonationArticlePage() {
+  const { t } = useTranslation('donation');
   const { id } = useParams();
   const navigate = useOrgNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -58,7 +60,7 @@ export default function DonationArticlePage() {
       } catch (error) {
         if (ignore) return;
         setFundDetail(null);
-        setErrorMessage(error?.response?.data?.message ?? "Không thể tải chi tiết quỹ.");
+        setErrorMessage(error?.response?.data?.message ?? t('error_load_fund_detail'));
       }
     };
 
@@ -80,10 +82,10 @@ export default function DonationArticlePage() {
   const isClosed = isEnded;
 
   const articleImg = fundDetail?.logoUrl || ARTICLE_IMG_FALLBACK;
-  const pageTitle = fundDetail?.name || "Chi tiết quỹ";
+  const pageTitle = fundDetail?.name || t('fund_detail');
 
   return (
-    <Page title={pageTitle} meta={<meta name="description" content="Chi tiết quỹ quyên góp cộng đồng cựu sinh viên." />}>
+    <Page title={pageTitle} meta={<meta name="description" content={t('meta_description')} />}>
       <Container maxWidth={false} disableGutters sx={{ display: "flex", flexDirection: "column" }}>
         <Box
           sx={{
@@ -113,7 +115,7 @@ export default function DonationArticlePage() {
               px: { xs: 4, md: 6 },
             }}
           >
-            <Breadcrumb items={[{ label: "QUYÊN GÓP", path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
+            <Breadcrumb items={[{ label: t('title').toUpperCase(), path: "/donations" }, { label: pageTitle }]} fontSize="0.8rem" />
 
             {errorMessage && (
               <Box sx={{ p: 3, borderRadius: 2, border: "1px solid #f2b8b5", backgroundColor: "#fff4f2" }}>
@@ -165,7 +167,7 @@ export default function DonationArticlePage() {
                           }),
                         }}
                       >
-                        {isClosed ? "Đã kết thúc" : "Quyên góp"}
+                        {isClosed ? t('article_fund_closed') : t('donate_btn')}
                       </Button>
                     </Box>
                   )}
@@ -174,7 +176,7 @@ export default function DonationArticlePage() {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, my: 3 }}>
                   <Divider sx={{ flex: 1 }} />
                   <Typography variant="h1" component="h2" fontWeight={700} color="primary.main" sx={{ whiteSpace: "nowrap", fontSize: { xs: "1.8rem", md: "2.1rem" } }}>
-                    Bài viết
+                    {t('article_section_title')}
                   </Typography>
                   <Divider sx={{ flex: 1 }} />
                 </Box>

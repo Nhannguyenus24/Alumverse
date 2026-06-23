@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,13 +35,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           .read(authStateProvider.notifier)
           .forgotPassword(_emailCtl.text.trim());
       if (!mounted) return;
-      AppToast.success(context, 'Đã gửi mã đến email của bạn.');
+      AppToast.success(context, 'auth.code_sent'.tr());
       context.pop();
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Gửi mã thất bại';
+          : 'auth.send_code_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -51,7 +52,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quên mật khẩu'),
+        title: Text('auth.forgot_password_title'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -67,7 +68,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 const Center(child: AlumverseLogo(size: 80)),
                 const SizedBox(height: 48),
                 Text(
-                  'Quên mật khẩu',
+                  'auth.forgot_password_title'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
@@ -75,8 +76,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Mã phục hồi tài khoản sẽ được gửi qua email đăng ký.',
+                Text(
+                  'auth.forgot_password_desc'.tr(),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
@@ -84,10 +85,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   controller: _emailCtl,
                   validator: Validators.email,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    hintText: 'email@example.com',
-                    prefixIcon: Icon(Icons.email_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'auth.email'.tr(),
+                    hintText: 'auth.email_placeholder'.tr(),
+                    prefixIcon: const Icon(Icons.email_outlined),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -105,7 +106,8 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Gửi mã', style: TextStyle(fontSize: 16)),
+                      : Text('auth.send_code'.tr(),
+                          style: const TextStyle(fontSize: 16)),
                 ),
               ],
             ),

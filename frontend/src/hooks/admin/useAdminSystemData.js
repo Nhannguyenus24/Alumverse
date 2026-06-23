@@ -20,7 +20,37 @@ const fetchSafe = async (request, fallbackValue) => {
   }
 };
 
-const useAdminSystemData = () => {
+const DEFAULT_ADMIN_ORGANIZATION_SLUG = 'cs-hcmus';
+
+const pickPreferredOrganizationId = (organizations, preferred) => {
+  if (!organizations.length) {
+    return null;
+  }
+
+  const preferredSlugs = [
+    preferred?.slug,
+    preferred?.defaultSlug ?? DEFAULT_ADMIN_ORGANIZATION_SLUG,
+  ].filter(Boolean);
+
+  for (const preferredSlug of preferredSlugs) {
+    const matchBySlug = organizations.find((org) => org.slug === preferredSlug);
+    if (matchBySlug) {
+      return matchBySlug.id;
+    }
+  }
+
+  const preferredId = preferred?.id ?? preferred?.organizationId ?? null;
+  if (preferredId != null) {
+    const matchById = organizations.find((org) => String(org.id) === String(preferredId));
+    if (matchById) {
+      return matchById.id;
+    }
+  }
+
+  return organizations[0].id;
+};
+
+const useAdminSystemData = (preferredOrganization = {}) => {
   const [loading, setLoading] = useState(true);
   const [activeOrgId, setActiveOrgId] = useState(null);
 
@@ -59,10 +89,10 @@ const useAdminSystemData = () => {
   // Set initial activeOrgId to first org once organizations are loaded (only if not already chosen)
   useEffect(() => {
     if (!activeOrgId && state.organizations.length > 0) {
-      setActiveOrgId(state.organizations[0].id);
+      setActiveOrgId(pickPreferredOrganizationId(state.organizations, preferredOrganization));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.organizations]);
+  }, [state.organizations, preferredOrganization?.id, preferredOrganization?.organizationId, preferredOrganization?.slug]);
 
   const activeOrganization = useMemo(() => {
     return state.organizations.find((o) => o.id === activeOrgId) || null;

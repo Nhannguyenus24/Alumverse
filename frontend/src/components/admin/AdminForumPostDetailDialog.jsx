@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import { useTranslation } from 'react-i18next';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -47,6 +48,8 @@ const AdminForumPostDetailDialog = ({
   onBan,
   onUnban,
 }) => {
+  const { t } = useTranslation(['forum', 'admin', 'common']);
+
   if (!post) {
     return null;
   }
@@ -55,32 +58,32 @@ const AdminForumPostDetailDialog = ({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
-      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>Chi tiết bài viết</DialogTitle>
+      <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>{t('forum:post_detail_title')}</DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             ID: {post.id}
           </Typography>
           <Chip label={statusLabel} color={statusColor} size="small" variant="outlined" />
-          <Chip label={`${post.flagsCount ?? 0} báo cáo`} size="small" variant="outlined" />
+          <Chip label={t('forum:flags_count', { count: post.flagsCount ?? 0 })} size="small" variant="outlined" />
           {isBanned && (
-            <Chip label="Đã chặn" color="error" size="small" variant="filled" />
+            <Chip label={t('admin:banned')} color="error" size="small" variant="filled" />
           )}
           {post.isLike && (
-            <Chip label="Đã thích" color="info" size="small" variant="outlined" />
+            <Chip label={t('forum:liked')} color="info" size="small" variant="outlined" />
           )}
         </Box>
 
-        <InfoRow label="Chủ đề">{post.topicTitle || '-'}</InfoRow>
-        <InfoRow label="Tác giả">{post.authorName || '-'}</InfoRow>
+        <InfoRow label={t('forum:topic')}>{post.topicTitle || '-'}</InfoRow>
+        <InfoRow label={t('common:author')}>{post.authorName || '-'}</InfoRow>
 
         {post.answerToPostId && (
-          <InfoRow label="Trả lời cho bài viết">#{post.answerToPostId}</InfoRow>
+          <InfoRow label={t('forum:reply_to_post')}>#{post.answerToPostId}</InfoRow>
         )}
 
         <Box>
           <Typography variant="caption" color="text.secondary">
-            Nội dung
+            {t('common:content')}
           </Typography>
           {post.content ? (
             <Box
@@ -100,9 +103,9 @@ const AdminForumPostDetailDialog = ({
         <Divider />
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-          <InfoRow label="Ngày tạo">{formatDate(post.postedAt || post.createdAt)}</InfoRow>
+          <InfoRow label={t('common:created_at')}>{formatDate(post.postedAt || post.createdAt)}</InfoRow>
           {post.updatedAt && (
-            <InfoRow label="Cập nhật">{formatDate(post.updatedAt)}</InfoRow>
+            <InfoRow label={t('common:updated_at')}>{formatDate(post.updatedAt)}</InfoRow>
           )}
         </Box>
       </DialogContent>
@@ -116,7 +119,7 @@ const AdminForumPostDetailDialog = ({
               startIcon={<CheckCircleOutlineIcon />}
               sx={{ textTransform: 'none', fontWeight: 700, mr: 'auto' }}
             >
-              Bỏ chặn
+              {t('admin:unban')}
             </Button>
           ) : (
             <Button
@@ -126,12 +129,12 @@ const AdminForumPostDetailDialog = ({
               startIcon={<BlockOutlinedIcon />}
               sx={{ textTransform: 'none', fontWeight: 700, mr: 'auto' }}
             >
-              Chặn
+              {t('admin:ban')}
             </Button>
           )
         )}
         <Button onClick={onClose} variant="contained" color="secondary" sx={{ textTransform: 'none', fontWeight: 700 }}>
-          Đóng
+          {t('common:close')}
         </Button>
       </DialogActions>
     </Dialog>

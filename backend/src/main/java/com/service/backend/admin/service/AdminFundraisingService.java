@@ -3,6 +3,8 @@ package com.service.backend.admin.service;
 import com.service.backend.admin.dto.FundraisingStatisticsDTO;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.fundraising.dao.FundR2dbcRepository;
+import com.service.backend.fundraising.dto.FundDonationListItemResponse;
+import com.service.backend.fundraising.mapper.FundDonationMapper;
 import com.service.backend.shared.entity.Funds;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -68,6 +70,14 @@ public class AdminFundraisingService {
                 .build()))
                 .doOnSuccess(r -> log.info("getFundraisingStatistics completed"))
                 .doOnError(e -> log.error("Error fetching fundraising statistics", e));
+    }
+
+    public Mono<List<FundDonationListItemResponse>> getAllDonationsByFund(long fundId) {
+        return fundDonationsRepository.findAllByFundId(fundId)
+                .map(FundDonationMapper::toListItemResponse)
+                .collectList()
+                .doOnSuccess(r -> log.info("getAllDonationsByFund completed: fundId={}, count={}", fundId, r.size()))
+                .doOnError(e -> log.error("Error fetching all donations for fund: {}", fundId, e));
     }
 
     private FundraisingStatisticsDTO.FundSummary toFundSummary(Funds fund) {

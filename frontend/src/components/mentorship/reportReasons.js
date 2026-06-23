@@ -1,11 +1,11 @@
-const REPORT_REASONS = [
-  { value: 'NO_SHOW', label: 'Đối phương không tham gia / vắng mặt', statuses: ['EXPIRED', 'COMPLETED'] },
-  { value: 'LATE_OR_LEFT_EARLY', label: 'Đến trễ nhiều / rời buổi sớm', statuses: ['COMPLETED'] },
-  { value: 'INAPPROPRIATE_BEHAVIOR', label: 'Hành vi, ngôn từ không phù hợp / quấy rối', statuses: ['COMPLETED'] },
-  { value: 'OFF_TOPIC_UNPROFESSIONAL', label: 'Sai nội dung mentoring / thiếu chuyên nghiệp', statuses: ['COMPLETED'] },
-  { value: 'TECHNICAL_ISSUE', label: 'Sự cố kỹ thuật (link lỗi, không vào được)', statuses: ['COMPLETED', 'EXPIRED'] },
-  { value: 'OTHER', label: 'Khác (tự nhập mô tả)', statuses: ['COMPLETED', 'EXPIRED'] },
+export const getReportReasons = (t) => [
+  { value: 'NO_SHOW', label: t('report_reason_no_show'), statuses: ['EXPIRED', 'COMPLETED'] },
+  { value: 'LATE_OR_LEFT_EARLY', label: t('report_reason_late_or_left_early'), statuses: ['COMPLETED'] },
+  { value: 'INAPPROPRIATE_BEHAVIOR', label: t('report_reason_inappropriate_behavior'), statuses: ['COMPLETED'] },
+  { value: 'OFF_TOPIC_UNPROFESSIONAL', label: t('report_reason_off_topic'), statuses: ['COMPLETED'] },
+  { value: 'TECHNICAL_ISSUE', label: t('report_reason_technical_issue'), statuses: ['COMPLETED', 'EXPIRED'] },
+  { value: 'OTHER', label: t('report_reason_other'), statuses: ['COMPLETED', 'EXPIRED'] },
 ];
 
-export const reasonsForStatus = (status) =>
-  REPORT_REASONS.filter((r) => r.statuses.includes(status));
+export const reasonsForStatus = (status, t) =>
+  getReportReasons(t).filter((r) => r.statuses.includes(status));

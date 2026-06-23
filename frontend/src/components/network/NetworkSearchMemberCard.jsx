@@ -1,5 +1,6 @@
 import { Avatar, Box, Button, Card, Chip, CircularProgress, ListItemIcon, ListItemText, MenuItem, Stack, Typography } from '@mui/material';
 import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import { useTranslation } from 'react-i18next';
 
 import IconButtonMenu from '../IconButtonMenu';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
@@ -21,8 +22,9 @@ const NetworkSearchMemberCard = ({
   isDemo = false,
   isMessageLoading = false,
   isBlockLoading = false,
-  messageButtonLabel = 'Nhắn tin',
+  messageButtonLabel,
 }) => {
+  const { t } = useTranslation('network');
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
@@ -54,7 +56,7 @@ const NetworkSearchMemberCard = ({
         <Box sx={{ position: 'absolute', top: 8, right: 8 }} onClick={stopActionPropagation}>
           <IconButtonMenu
             menuId={`network-member-card-menu-${fullName}`}
-            buttonAriaLabel="Tùy chọn thành viên"
+            buttonAriaLabel={t('member_options_aria')}
           >
             {({ close }) => (
               <MenuItem
@@ -68,7 +70,7 @@ const NetworkSearchMemberCard = ({
                 <ListItemIcon sx={{ minWidth: 36 }}>
                   <BlockOutlinedIcon fontSize="small" color="primary" />
                 </ListItemIcon>
-                <ListItemText primary="Chặn người dùng" primaryTypographyProps={{ variant: 'body2' }} />
+                <ListItemText primary={t('block_user_menu_label')} primaryTypographyProps={{ variant: 'body2' }} />
               </MenuItem>
             )}
           </IconButtonMenu>
@@ -124,7 +126,7 @@ const NetworkSearchMemberCard = ({
         {isMessageLoading ? (
           <CircularProgress size={22} color="inherit" />
         ) : (
-          messageButtonLabel
+          messageButtonLabel ?? t('message')
         )}
       </Button>
     </Card>

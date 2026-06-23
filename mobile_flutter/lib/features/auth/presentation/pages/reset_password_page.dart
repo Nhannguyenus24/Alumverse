@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -44,13 +45,13 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             newPassword: _newPassCtl.text,
           );
       if (!mounted) return;
-      AppToast.success(context, 'Đổi mật khẩu thành công.');
+      AppToast.success(context, 'auth.change_password_success'.tr());
       context.go(RouteNames.home);
     } catch (e) {
       if (!mounted) return;
       final message = e is Exception
           ? e.toString().replaceFirst('Exception: ', '')
-          : 'Đổi mật khẩu thất bại';
+          : 'auth.change_password_failed'.tr();
       AppToast.error(context, message);
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -61,7 +62,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Đổi mật khẩu'),
+        title: Text('auth.change_password'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Theme.of(context).primaryColor,
@@ -77,7 +78,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 const Center(child: AlumverseLogo(size: 60)),
                 const SizedBox(height: 32),
                 Text(
-                  'Đổi mật khẩu',
+                  'auth.change_password'.tr(),
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
@@ -88,15 +89,17 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 BlurValidatedField(
                   controller: _oldPassCtl,
                   obscureText: _obscureOld,
-                  validator: (v) => Validators.required(v, field: 'Mật khẩu hiện tại'),
+                  validator: (v) => Validators.required(
+                      v, field: 'auth.current_password'.tr()),
                   decoration: InputDecoration(
-                    labelText: 'Mật khẩu hiện tại',
+                    labelText: 'auth.current_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureOld ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () => setState(() => _obscureOld = !_obscureOld),
+                      onPressed: () =>
+                          setState(() => _obscureOld = !_obscureOld),
                     ),
                   ),
                 ),
@@ -106,13 +109,14 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                   obscureText: _obscureNew,
                   validator: Validators.password,
                   decoration: InputDecoration(
-                    labelText: 'Mật khẩu mới',
+                    labelText: 'auth.new_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureNew ? Icons.visibility_off : Icons.visibility,
                       ),
-                      onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                      onPressed: () =>
+                          setState(() => _obscureNew = !_obscureNew),
                     ),
                   ),
                 ),
@@ -120,13 +124,16 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 BlurValidatedField(
                   controller: _confirmNewPassCtl,
                   obscureText: _obscureConfirm,
-                  validator: (v) => Validators.confirmPassword(v, _newPassCtl.text),
+                  validator: (v) =>
+                      Validators.confirmPassword(v, _newPassCtl.text),
                   decoration: InputDecoration(
-                    labelText: 'Nhập lại mật khẩu mới',
+                    labelText: 'auth.repeat_new_password'.tr(),
                     prefixIcon: const Icon(Icons.lock_clock_outlined),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                        _obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
                       ),
                       onPressed: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
@@ -135,7 +142,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Nếu bạn không muốn đổi mật khẩu, bỏ qua trang này.',
+                  'auth.skip_change_password'.tr(),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -154,16 +161,16 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Đổi mật khẩu',
-                          style: TextStyle(fontSize: 16)),
+                      : Text('auth.change_password'.tr(),
+                          style: const TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(height: 16),
                 Center(
                   child: TextButton(
                     onPressed: () => context.go(RouteNames.home),
-                    child: const Text(
-                      'Quay lại trang chủ',
-                      style: TextStyle(fontWeight: FontWeight.w600),
+                    child: Text(
+                      'auth.go_home'.tr(),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),

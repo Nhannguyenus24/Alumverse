@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet, useParams, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Box, useTheme, alpha } from '@mui/material';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminHeader from '../components/admin/AdminHeader';
@@ -7,6 +8,7 @@ import useAdminSystemData from '../hooks/admin/useAdminSystemData';
 import useAdminUsersLocal from '../hooks/admin/useAdminUsersLocal';
 import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
+import useOrganizationStore from '../stores/organizationStore';
 import { useAuth } from '../hooks/useAuth';
 import Page from '../components/Page';
 
@@ -15,6 +17,7 @@ const SIDEBAR_WIDTH = 280;
 const SIDEBAR_COLLAPSED_WIDTH = 88;
 
 const AdminLayoutShell = () => {
+  const { t } = useTranslation('admin');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState(null);
@@ -29,8 +32,8 @@ const AdminLayoutShell = () => {
 
   return (
     <Page
-      title="Quản trị hệ thống"
-      meta={<meta name="description" content="Khu vực quản trị HCMUS Alumni" />}
+      title={t('settings')}
+      meta={<meta name="description" content="HCMUS Alumni Admin" />}
       sx={{
         display: 'flex',
         minHeight: '100vh',
@@ -100,7 +103,11 @@ const AdminLayoutShell = () => {
 
 const AdminLayout = () => {
   const location = useLocation();
-  const system = useAdminSystemData();
+  const { slug } = useParams();
+  const system = useAdminSystemData({
+    slug,
+  });
+  const setOrganization = useOrganizationStore((state) => state.setOrganization);
   const isUsersPage = location.pathname.includes('/users');
   const users = useAdminUsersLocal(system.stableOrgId, isUsersPage);
 
@@ -108,6 +115,12 @@ const AdminLayout = () => {
   // unnecessarily when switching org while on Events / Users / etc.
   const isForumPage = location.pathname.includes('/forum');
   const forum = useAdminForumData(system.stableOrgId, isForumPage);
+
+  useEffect(() => {
+    if (system.activeOrganization) {
+      setOrganization(system.activeOrganization);
+    }
+  }, [setOrganization, system.activeOrganization]);
 
   return (
     <AdminProvider system={system} users={users} forum={forum}>

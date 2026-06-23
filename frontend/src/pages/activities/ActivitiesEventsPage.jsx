@@ -3,7 +3,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
-import { ACTIVITIES_SIDEBAR } from '../../constants/activitiesNav';
+import { getActivitiesSidebar } from '../../constants/activitiesNav';
+import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 
@@ -21,53 +22,54 @@ import { useAuth } from '../../hooks/useAuth';
 import { eventApi } from '../../utils/api';
 
 
-const FILTERS = [
+const getEventFilters = (t) => [
   {
     type: 'dropdown',
     key: 'type',
-    label: 'Chủ đề',
+    label: t('event:filter_topic'),
     multiple: true,
     options: [
-      'Học thuật',
-      'Sinh viên',
-      'Sự kiện trường',
-      'Cộng đồng',
-      'Thông báo',
+      t('event:opt_academic'),
+      t('event:opt_student'),
+      t('event:opt_school_event'),
+      t('event:opt_community'),
+      t('event:opt_announcement'),
     ],
   },
   {
     type: 'dropdown',
     key: 'format',
-    label: 'Hình thức',
+    label: t('event:filter_format'),
     multiple: true,
     options: ['Online', 'Offline'],
   },
   {
     type: 'date',
     key: 'date',
-    label: 'Ngày',
+    label: t('event:filter_date'),
   },
   {
     type: 'dropdown',
     key: 'status',
-    label: 'Trạng thái',
+    label: t('event:filter_status'),
     multiple: true,
     options: [
-      'Sắp diễn ra',
-      'Đang diễn ra',
-      'Đã kết thúc'
+      t('event:upcoming'),
+      t('event:ongoing'),
+      t('event:ended'),
     ],
   },
   {
     type: 'topics',
     key: 'topics',
-    label: 'Chủ đề',
-    options: ['Thịnh hành', 'Mới nhất', 'Quan tâm'],
+    label: t('event:filter_topic'),
+    options: [t('event:opt_trending'), t('event:opt_newest'), t('event:opt_interested')],
   },
 ];
 
 
 const ActivitiesPage = () => {
+  const { t } = useTranslation(['nav', 'event']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
@@ -104,9 +106,9 @@ const ActivitiesPage = () => {
     try {
       await eventApi.deleteEvent(deleteTarget.id);
       queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
-      enqueueSnackbar('Đã xoá sự kiện.', { variant: 'success' });
+      enqueueSnackbar(t('event:delete_event_success'), { variant: 'success' });
     } catch (err) {
-      enqueueSnackbar(err?.response?.data?.message || 'Xoá thất bại.', { variant: 'error' });
+      enqueueSnackbar(err?.response?.data?.message || t('event:delete_event_failed'), { variant: 'error' });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -114,7 +116,7 @@ const ActivitiesPage = () => {
   };
 
   return (
-    <Page title="Sự kiện">
+    <Page title={t('event:title')}>
       <Container
         maxWidth={false}
         disableGutters
@@ -124,7 +126,7 @@ const ActivitiesPage = () => {
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             {/* SIDEBAR */}
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
-              <Sidebar items={ACTIVITIES_SIDEBAR} />
+              <Sidebar items={getActivitiesSidebar(t)} />
               <ForumSponsoredCard
                 title="Sponsored"
                 imageSrc="/forum/metro_station.png"
@@ -146,7 +148,7 @@ const ActivitiesPage = () => {
                     color="primary.main"
                     sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' } }}
                     >
-                    SỰ KIỆN
+                    {t('event:events').toUpperCase()}
                   </Typography>
                   {isAdmin && (
                     <Button
@@ -154,14 +156,14 @@ const ActivitiesPage = () => {
                       color="primary"
                       onClick={() => navigate('/admin/events')}
                     >
-                      Quản lý sự kiện
+                      {t('event:manage_events')}
                     </Button>
                   )}
                 </Box>
 
                 {/* FILTERS */}
                 <DynamicFilterBar
-                  config={FILTERS}
+                  config={getEventFilters(t)}
                   value={filters}
                   onChange={setFilters}
                 />
@@ -191,7 +193,7 @@ const ActivitiesPage = () => {
               {upcomingCards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Sắp diễn ra
+                    {t('event:upcoming')}
                   </Typography>
 
                   <Box
@@ -223,7 +225,7 @@ const ActivitiesPage = () => {
               {pastCards.length > 0 && (
                 <Box>
                   <Typography variant="h4" fontWeight={700} mb={3}>
-                    Đã diễn ra
+                    {t('event:ended')}
                   </Typography>
 
                   <Box
@@ -257,8 +259,8 @@ const ActivitiesPage = () => {
 
       <AdminConfirmDeleteDialog
         open={!!deleteTarget}
-        title="Xoá sự kiện"
-        description={`Bạn có chắc muốn xoá "${deleteTarget?.title}"? Hành động này không thể hoàn tác.`}
+        title={t('event:delete_event')}
+        description={t('event:confirm_delete_desc', { title: deleteTarget?.title })}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         loading={deleting}

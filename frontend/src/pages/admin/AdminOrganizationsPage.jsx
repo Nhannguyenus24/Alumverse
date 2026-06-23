@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import { Box, Button, Grid, Paper, Stack, Typography, Skeleton } from '@mui/material';
 import { useOutletContext } from 'react-router';
@@ -12,21 +13,66 @@ import AdminOrganizationEditDialog from '../../components/admin/AdminOrganizatio
 import AdminOrganizationIntroductionDialog from '../../components/admin/AdminOrganizationIntroductionDialog';
 import { adminOrganizationApi, organizationApi } from '../../utils/api';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import { useAdminSystemContext } from '../../stores/AdminStore';
+
+const ORG_LOCAL_TOUCH_KEY = 'admin-organizations-local-touch';
+
+const readLocalTouchMap = () => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    return JSON.parse(window.sessionStorage.getItem(ORG_LOCAL_TOUCH_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
+};
+
+const writeLocalTouchMap = (value) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.sessionStorage.setItem(ORG_LOCAL_TOUCH_KEY, JSON.stringify(value));
+};
+
 const withDefaults = (organization) => ({
   ...organization,
   status: String(organization?.status || 'ACTIVE').toUpperCase(),
 });
 
+const getOrganizationSortTime = (organization) => {
+  const value = organization?._localTouchedAt || organization?.updatedAt || organization?.updated_at || organization?.createdAt || organization?.created_at;
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+};
+
+const sortOrganizationsByRecent = (organizations) => (
+  [...organizations].sort((a, b) => {
+    const recentDiff = getOrganizationSortTime(b) - getOrganizationSortTime(a);
+    if (recentDiff !== 0) {
+      return recentDiff;
+    }
+
+    return Number(a.id || 0) - Number(b.id || 0);
+  })
+);
+
 const AdminOrganizationsPage = () => {
+  const { t } = useTranslation('admin');
   const { enqueueSnackbar } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(null);
    const [introduction, setIntroduction] = useState(null);
   const { setBreadcrumbs } = useOutletContext();
+  const { activeOrgId } = useAdminSystemContext();
+  const previousActiveOrgIdRef = useRef(null);
+  const localTouchRef = useRef(readLocalTouchMap());
   
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Tổ chức', active: true }]);
+    setBreadcrumbs?.([{ label: t('nav_organizations'), active: true }]);
   }, [setBreadcrumbs]);
   
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -37,10 +83,16 @@ const AdminOrganizationsPage = () => {
     setLoading(true);
     try {
       const rows = await adminOrganizationApi.getOrganizations({ page: 0, size: 100 });
-      setOrganizations(Array.isArray(rows) ? rows.map(withDefaults) : []);
+      const touchMap = localTouchRef.current;
+      setOrganizations(Array.isArray(rows)
+        ? sortOrganizationsByRecent(rows.map((row) => withDefaults({
+          ...row,
+          _localTouchedAt: touchMap[String(row.id)] || null,
+        })))
+        : []);
     } catch (error) {
       setOrganizations([]);
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể tải danh sách tổ chức', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_load_error'), { variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -51,10 +103,27 @@ const AdminOrganizationsPage = () => {
   useEffect(() => {
     if (organizations.length === 0) return;
     setSelectedOrganizationId((prev) => {
-      if (prev == null || !organizations.some((o) => o.id === prev)) return organizations[0].id;
+      if (prev == null || !organizations.some((o) => o.id === prev)) {
+        const activeOrg = organizations.find((o) => String(o.id) === String(activeOrgId));
+        return activeOrg?.id ?? organizations[0].id;
+      }
       return prev;
     });
-  }, [organizations]);
+  }, [organizations, activeOrgId]);
+
+  useEffect(() => {
+    if (!activeOrgId || organizations.length === 0) return;
+    const activeOrgChanged = String(previousActiveOrgIdRef.current) !== String(activeOrgId);
+    previousActiveOrgIdRef.current = activeOrgId;
+    if (!activeOrgChanged) return;
+
+    const activeOrg = organizations.find((o) => String(o.id) === String(activeOrgId));
+    if (activeOrg) {
+      setSelectedOrganizationId((prev) => (
+        String(prev) === String(activeOrg.id) ? prev : activeOrg.id
+      ));
+    }
+  }, [activeOrgId, organizations]);
 
   const loadIntroduction = useCallback(async () => {
     if (!selectedOrganizationId) { setIntroduction(null); return; }
@@ -95,22 +164,36 @@ const AdminOrganizationsPage = () => {
 
     try {
       const updated = await adminOrganizationApi.updateOrganization(targetId, cleanPayload);
-      setOrganizations((prev) => prev.map((item) => (item.id === targetId ? withDefaults(updated || { ...item, ...cleanPayload }) : item)));
+      const touchedAt = new Date().toISOString();
+      localTouchRef.current = {
+        ...localTouchRef.current,
+        [String(targetId)]: touchedAt,
+      };
+      writeLocalTouchMap(localTouchRef.current);
+
+      setOrganizations((prev) => {
+        const current = prev.find((item) => item.id === targetId);
+        const updatedItem = withDefaults({
+          ...(updated || { ...current, ...cleanPayload }),
+          _localTouchedAt: touchedAt,
+        });
+        return sortOrganizationsByRecent([updatedItem, ...prev.filter((item) => item.id !== targetId)]);
+      });
       setEditDialogOpen(false);
-      enqueueSnackbar('Đã cập nhật thông tin tổ chức', { variant: 'success' });
+      enqueueSnackbar(t('org_update_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật tổ chức', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_update_error'), { variant: 'error' });
     }
   }, [editTarget, enqueueSnackbar]);
 
   const handleDeleteOrganization = useCallback(async (orgId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa tổ chức này?')) return;
+    if (!window.confirm(t('org_delete_confirm'))) return;
     try {
       await adminOrganizationApi.deleteOrganization(orgId);
       setOrganizations((prev) => prev.filter((item) => item.id !== orgId));
-      enqueueSnackbar('Đã xóa tổ chức thành công', { variant: 'success' });
+      enqueueSnackbar(t('org_delete_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể xóa tổ chức', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_delete_error'), { variant: 'error' });
     }
   }, [enqueueSnackbar]);
 
@@ -120,11 +203,29 @@ const AdminOrganizationsPage = () => {
       const updated = await adminOrganizationApi.upsertIntroduction(selectedOrganizationId, payload);
       setIntroduction(updated || { ...introduction, ...payload });
       setIntroDialogOpen(false);
-      enqueueSnackbar('Đã cập nhật giới thiệu tổ chức', { variant: 'success' });
+      enqueueSnackbar(t('org_intro_update_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể cập nhật giới thiệu', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_intro_update_error'), { variant: 'error' });
     }
   }, [selectedOrganizationId, introduction, enqueueSnackbar]);
+
+  const handlePromoteOrganization = useCallback((orgId) => {
+    const touchedAt = new Date().toISOString();
+    localTouchRef.current = {
+      ...localTouchRef.current,
+      [String(orgId)]: touchedAt,
+    };
+    writeLocalTouchMap(localTouchRef.current);
+
+    setOrganizations((prev) => {
+      const target = prev.find((item) => item.id === orgId);
+      if (!target) return prev;
+      return sortOrganizationsByRecent([
+        { ...target, _localTouchedAt: touchedAt },
+        ...prev.filter((item) => item.id !== orgId),
+      ]);
+    });
+  }, []);
 
   const stats = useMemo(() => {
     const total = organizations.length;
@@ -136,11 +237,23 @@ const AdminOrganizationsPage = () => {
   const handleCreateOrganization = useCallback(async (payload) => {
     try {
       const created = await adminOrganizationApi.createOrganization(payload);
-      setOrganizations(prev => [withDefaults(created), ...prev]);
+      const touchedAt = new Date().toISOString();
+      if (created?.id) {
+        localTouchRef.current = {
+          ...localTouchRef.current,
+          [String(created.id)]: touchedAt,
+        };
+        writeLocalTouchMap(localTouchRef.current);
+      }
+
+      setOrganizations(prev => sortOrganizationsByRecent([
+        withDefaults({ ...created, _localTouchedAt: touchedAt }),
+        ...prev,
+      ]));
       setEditDialogOpen(false);
-      enqueueSnackbar('Đã tạo tổ chức mới thành công', { variant: 'success' });
+      enqueueSnackbar(t('org_create_success'), { variant: 'success' });
     } catch (error) {
-      enqueueSnackbar(error?.response?.data?.message || 'Không thể tạo tổ chức mới', { variant: 'error' });
+      enqueueSnackbar(error?.response?.data?.message || t('org_create_error'), { variant: 'error' });
     }
   }, [enqueueSnackbar]);
 
@@ -163,10 +276,10 @@ const AdminOrganizationsPage = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Quản lý tổ chức
+            {t('org_page_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Cấu hình thông tin, giới thiệu và nhân sự cho các đơn vị trường học/tổ chức.
+            {t('org_page_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -175,7 +288,7 @@ const AdminOrganizationsPage = () => {
           onClick={() => { setEditTarget(null); setEditDialogOpen(true); }}
           sx={{ borderRadius: 1, fontWeight: 700, textTransform: 'none' }}
         >
-          Thêm tổ chức
+          {t('org_add_btn')}
         </Button>
       </Box>
 
@@ -191,18 +304,18 @@ const AdminOrganizationsPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng tổ chức"
+          label={t('metric_total_orgs')}
           value={stats.total}
           icon={<BusinessIcon />}
         />
         <AdminDashboardMetricTile
-          label="Đang hoạt động"
+          label={t('metric_active_orgs')}
           value={stats.active}
           icon={<CheckCircleIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Tạm ngưng"
+          label={t('org_metric_suspended')}
           value={stats.inactive}
           icon={<ErrorIcon />}
           valueColor="error.main"
@@ -221,6 +334,7 @@ const AdminOrganizationsPage = () => {
         onUpdateOrganization={(org) => handleUpdateOrganization(org.id, org)}
         onDeleteOrganization={handleDeleteOrganization}
         onRefresh={loadOrganizations}
+        onPromoteOrganization={handlePromoteOrganization}
       />
 
       <AdminOrganizationEditDialog

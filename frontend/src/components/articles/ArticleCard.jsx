@@ -3,8 +3,10 @@ import { useState } from 'react';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { useTranslation } from 'react-i18next';
 
 const ArticleCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
+  const { t } = useTranslation('article');
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -105,7 +107,7 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
                 onEdit?.();
               }}
             >
-              Sửa
+              {t('edit_article')}
             </Button>
 
             {/* DELETE BUTTON */}
@@ -123,7 +125,7 @@ const ArticleCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
                 onDelete?.();
               }}
             >
-              Xoá
+              {t('delete_article')}
             </Button>
           </Stack>
         )}

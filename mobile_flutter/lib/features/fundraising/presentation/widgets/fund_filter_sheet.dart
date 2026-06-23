@@ -1,7 +1,7 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../providers/fundraising_provider.dart';
@@ -108,23 +108,25 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
             children: [
               Row(
                 children: [
-                  const Text('Bộ lọc',
-                      style: TextStyle(
+                  Text('donation.filter_title'.tr(),
+                      style: const TextStyle(
                           fontSize: 18, fontWeight: FontWeight.w700)),
                   const Spacer(),
-                  TextButton(onPressed: _reset, child: const Text('Đặt lại')),
+                  TextButton(
+                      onPressed: _reset,
+                      child: Text('donation.filter_reset'.tr())),
                 ],
               ),
               const SizedBox(height: 8),
 
               // Start date range
-              const _Label('Thời gian bắt đầu'),
+              _Label('donation.filter_start_time'.tr()),
               const SizedBox(height: 6),
               Row(
                 children: [
                   Expanded(
                     child: _DateField(
-                      label: 'Từ ngày',
+                      label: 'donation.filter_date_from'.tr(),
                       value: _dateFrom != null ? df.format(_dateFrom!) : null,
                       onTap: () => _pickDate(from: true),
                       onClear: _dateFrom != null
@@ -135,7 +137,7 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _DateField(
-                      label: 'Đến ngày',
+                      label: 'donation.filter_date_to'.tr(),
                       value: _dateTo != null ? df.format(_dateTo!) : null,
                       onTap: () => _pickDate(from: false),
                       onClear: _dateTo != null
@@ -148,7 +150,7 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
               const SizedBox(height: 16),
 
               // Amount range
-              const _Label('Mức quyên góp (VND)'),
+              _Label('donation.filter_amount_range'.tr()),
               const SizedBox(height: 6),
               Row(
                 children: [
@@ -159,9 +161,9 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly
                       ],
-                      decoration: const InputDecoration(
-                        labelText: 'Tối thiểu',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'donation.filter_amount_min'.tr(),
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                     ),
@@ -174,9 +176,9 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly
                       ],
-                      decoration: const InputDecoration(
-                        labelText: 'Tối đa',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'donation.filter_amount_max'.tr(),
+                        border: const OutlineInputBorder(),
                         isDense: true,
                       ),
                     ),
@@ -192,9 +194,9 @@ class _FundFilterSheetState extends ConsumerState<FundFilterSheet> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text('Áp dụng',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  child: Text('donation.filter_apply'.tr(),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w700)),
                 ),
               ),
             ],

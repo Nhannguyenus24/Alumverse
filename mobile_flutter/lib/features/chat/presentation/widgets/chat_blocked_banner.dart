@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -22,9 +23,9 @@ class ChatBlockedBanner extends StatelessWidget {
     required VoidCallback onUnblock,
   }) {
     return ChatBlockedBanner._(
-      text: 'Bạn đã chặn $peerName.',
+      text: 'chat.blocked_by_me'.tr(namedArgs: {'name': peerName}),
       color: AppColors.warning,
-      actionLabel: 'Bỏ chặn',
+      actionLabel: 'network.unblock'.tr(),
       onAction: onUnblock,
     );
   }
@@ -32,7 +33,7 @@ class ChatBlockedBanner extends StatelessWidget {
   /// Private: the peer blocked the current user.
   factory ChatBlockedBanner.blockedByPeer({required String peerName}) {
     return ChatBlockedBanner._(
-      text: 'Bạn không thể nhắn tin cho $peerName.',
+      text: 'chat.blocked_by_peer'.tr(namedArgs: {'name': peerName}),
       color: AppColors.error,
     );
   }
@@ -41,7 +42,7 @@ class ChatBlockedBanner extends StatelessWidget {
   factory ChatBlockedBanner.group(GroupBlockedContext context) {
     final names = context.blockedMembers.map((m) => m.fullName).join(', ');
     return ChatBlockedBanner._(
-      text: 'Có thành viên bị bạn chặn trong nhóm: $names.',
+      text: 'chat.group_blocked'.tr(namedArgs: {'names': names}),
       color: AppColors.warning,
     );
   }

@@ -70,7 +70,7 @@ export const useCreateMentorSignup = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể tạo hồ sơ cố vấn'
+        'Failed to create mentor profile'
       : null;
 
   return {

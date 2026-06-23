@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router';
 import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -41,6 +42,7 @@ import { toPlainText } from '../../utils/stringUtils';
 import ReportPostDialog from '../../components/forum/ReportPostDialog';
 
 const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
+  const { t } = useTranslation(['forum', 'common']);
   const { showError, showSuccess } = useNotification();
   const reactErrShownRef = useRef(false);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
@@ -56,7 +58,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
   useEffect(() => {
     if (reactIsError) {
       if (!reactErrShownRef.current) {
-        showError(reactErrorMessage ?? 'Không thể cập nhật cảm xúc.');
+        showError(reactErrorMessage ?? t('forum:error_update_reaction'));
         reactErrShownRef.current = true;
       }
     } else {
@@ -159,7 +161,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
             >
-              <Tooltip title={!memberId ? "Phải đăng nhập mới có thể bình luận" : ""} placement="left" arrow>
+              <Tooltip title={!memberId ? t('forum:login_required_to_comment') : ""} placement="left" arrow>
                 <span>
                   <MenuItem
                     disabled={!memberId}
@@ -169,7 +171,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                     }}
                   >
                     <ReplyOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                    Trả lời
+                    {t('forum:reply')}
                   </MenuItem>
                 </span>
               </Tooltip>
@@ -181,7 +183,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                   }}
                 >
                   <EditOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                  Sửa
+                  {t('common:edit')}
                 </MenuItem>
               )}
               {canDelete && (
@@ -194,7 +196,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                   sx={{ color: 'error.main' }}
                 >
                   <DeleteOutlineOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                  Xóa
+                  {t('common:delete')}
                 </MenuItem>
               )}
               {!isOwn && (
@@ -206,7 +208,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                   sx={{ color: 'warning.main' }}
                 >
                   <FlagOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                  Báo cáo
+                  {t('common:report')}
                 </MenuItem>
               )}
             </Menu>
@@ -238,7 +240,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
             }}
           >
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-              Trả lời {parentPost.authorName ?? `bài viết #${parentPost.id}`}
+              {t('forum:reply')} {parentPost.authorName ?? t('forum:post_id_fallback', { id: parentPost.id })}
             </Typography>
             <Typography
               variant="body2"
@@ -304,7 +306,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               onClick={() => {
                 const url = window.location.href;
                 navigator.clipboard.writeText(url).then(() => {
-                  showSuccess('Đã sao chép liên kết');
+                  showSuccess(t('common:copied'));
                 });
               }}
               sx={{ minWidth: 0, p: 0, color: 'text.secondary', textTransform: 'none' }}
@@ -312,7 +314,7 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <ReplyOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Typography variant="caption" color="text.secondary">
-                  Chia sẻ
+                  {t('common:share')}
                 </Typography>
               </Box>
             </Button>
@@ -325,13 +327,13 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
 };
 
 const FALLBACK_THREAD = {
-  title: 'Chủ đề',
   authorName: '—',
   role: 'Alumni',
   createdAt: '—',
 };
 
 const ForumAlumniThreadPage = () => {
+  const { t } = useTranslation(['forum', 'common']);
   const location = useLocation();
   const navigate = useOrgNavigate();
   const { threadId, pageId } = useParams();
@@ -343,6 +345,7 @@ const ForumAlumniThreadPage = () => {
   const { isAuthenticated, user } = useAuth();
   const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
+  const isGuest = !isAuthenticated || user?.role === 'GUEST';
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const editorRef = useRef(null);
@@ -429,16 +432,16 @@ const ForumAlumniThreadPage = () => {
     const topicTitleFromState = location.state?.topicTitle;
     const titleFromLegacy =
       typeof topicTitleFromState === 'string' && topicTitleFromState.trim() ? topicTitleFromState.trim() : null;
-    const title = threadTitleOverride || titleFromSummary || titleFromLegacy || FALLBACK_THREAD.title;
+    const title = threadTitleOverride || titleFromSummary || titleFromLegacy || t('forum:topic_count_label');
 
     const firstPost = posts?.[0] ?? null;
 
     const authorFromPost = firstPost?.authorMemberId
-      ? (String(firstPost.authorMemberId) === String(user?.id) ? 'Tôi' : `Thành viên #${firstPost.authorMemberId}`)
+      ? (String(firstPost.authorMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${firstPost.authorMemberId}`)
       : null;
     const authorFromTopic =
       topicSummary?.createdByMemberId != null
-        ? (String(topicSummary.createdByMemberId) === String(user?.id) ? 'Tôi' : `Thành viên #${topicSummary.createdByMemberId}`)
+        ? (String(topicSummary.createdByMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${topicSummary.createdByMemberId}`)
         : null;
 
     const createdFromPost = firstPost?.createdAt ? formatDateTime(firstPost.createdAt, '—') : null;
@@ -450,7 +453,7 @@ const ForumAlumniThreadPage = () => {
       role: 'Alumni',
       createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
     };
-  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride, user?.id]);
+  }, [location.state?.topicTitle, location.state?.topicSummary, posts, threadTitleOverride, user?.id, t]);
 
   const replies = useMemo(
     () =>
@@ -460,13 +463,13 @@ const ForumAlumniThreadPage = () => {
           id: post.id,
           answerToPostId: post.answerToPostId ?? null,
           authorMemberId: post.authorMemberId ?? null,
-          authorName: isOwn ? 'Tôi' : `Thành viên #${post.authorMemberId ?? '—'}`,
+          authorName: isOwn ? t('forum:me') : `${t('forum:member_prefix')}${post.authorMemberId ?? '—'}`,
           role: 'Alumni',
           createdAt: formatDateTime(post.createdAt, '—'),
           content: post.content ?? '',
         };
       }),
-    [posts, user?.id]
+    [posts, user?.id, t]
   );
 
   const replyMap = useMemo(() => {
@@ -507,13 +510,13 @@ const ForumAlumniThreadPage = () => {
         }
         setIsConfirmDeleteOpen(false);
         setPostToDelete(null);
-        showSuccess('Xóa bài viết thành công.');
+        showSuccess(t('forum:success_delete_post'));
       } catch (_) {
         const message =
           err?.response?.data?.message ??
           deleteErrorMessage ??
           err?.message ??
-          'Không thể xóa bài viết.';
+          t('forum:error_delete_post');
         showError(message);
       }
     };
@@ -536,20 +539,19 @@ const ForumAlumniThreadPage = () => {
     setPostToReport(null);
   }, [reportPending]);
 
-  const handleConfirmReport = async ({ reason, description }) => {
+  const handleConfirmReport = async ({ reason }) => {
     if (!postToReport?.id || !user?.id) return;
     try {
       await reportPost({
         id: postToReport.id,
         reporterMemberId: user.id,
         reason,
-        description,
       });
-      showSuccess('Gửi báo cáo thành công.');
+      showSuccess(t('forum:success_report'));
       setIsReportOpen(false);
       setPostToReport(null);
     } catch (_) {
-      showError(err?.response?.data?.message ?? err?.message ?? 'Không thể gửi báo cáo.');
+      showError(err?.response?.data?.message ?? err?.message ?? t('forum:error_report'));
     }
   };
 
@@ -576,13 +578,13 @@ const ForumAlumniThreadPage = () => {
         });
         setIsEditPostOpen(false);
         setEditingPost(null);
-        showSuccess('Cập nhật bài viết thành công.');
+        showSuccess(t('forum:success_update_post'));
       } catch (_) {
         const message =
           err?.response?.data?.message ??
           updatePostErrorMessage ??
           err?.message ??
-          'Không thể cập nhật bài viết.';
+          t('forum:error_update_post');
         showError(message);
       }
     };
@@ -591,7 +593,7 @@ const ForumAlumniThreadPage = () => {
     if (!topicId) return;
     try {
       await deleteTopic(topicId);
-      showSuccess('Xóa chủ đề thành công.');
+      showSuccess(t('forum:success_delete_topic'));
       if (selectedFilterIdFromState?.startsWith?.('category-')) {
         navigate('/forum', { state: { selectedFilterId: selectedFilterIdFromState } });
         return;
@@ -606,7 +608,7 @@ const ForumAlumniThreadPage = () => {
         err?.response?.data?.message ??
         deleteTopicErrorMessage ??
         err?.message ??
-        'Không thể xóa chủ đề.';
+        t('forum:error_delete_topic');
       showError(message);
     }
   }, [deleteTopic, deleteTopicErrorMessage, navigate, selectedFilterIdFromState, showError, showSuccess, topicId]);
@@ -627,7 +629,7 @@ const ForumAlumniThreadPage = () => {
     const trimmedTitle = (editTopicTitle ?? '').trim();
     const parsedCategoryId = parseInt(editCategoryId, 10);
     if (!topicId || !trimmedTitle || Number.isNaN(parsedCategoryId) || parsedCategoryId <= 0) {
-      showWarning('Vui lòng nhập tiêu đề và chọn chủ đề phụ hợp lệ.');
+      showWarning(t('forum:validate_title_and_subcategory'));
       return;
     }
 
@@ -641,37 +643,37 @@ const ForumAlumniThreadPage = () => {
       });
       setThreadTitleOverride(updatedTopic?.title ?? trimmedTitle);
       setIsEditTopicOpen(false);
-      showSuccess('Cập nhật chủ đề thành công.');
+      showSuccess(t('forum:success_update_topic'));
     } catch (_) {
       const message =
         err?.response?.data?.message ??
         updateTopicErrorMessage ??
         err?.message ??
-        'Không thể cập nhật chủ đề.';
+        t('forum:error_update_topic');
       showError(message);
     }
   }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
 
   const handleToggleSubscription = async () => {
     if (!topicId || !memberId) {
-      showWarning('Vui lòng đăng nhập để thực hiện chức năng này.');
+      showWarning(t('forum:login_required_for_action'));
       return;
     }
     try {
       await toggleSubscription({ topicId, memberId });
-      showSuccess(isSubscribed ? 'Đã hủy theo dõi chủ đề.' : 'Đã theo dõi chủ đề.');
+      showSuccess(isSubscribed ? t('forum:success_unsubscribed') : t('forum:success_subscribed'));
     } catch (_) {
-      showError('Không thể thực hiện yêu cầu.');
+      showError(t('forum:error_toggle_subscription'));
     }
   };
 
   const filters = useMemo(() => {
     const parentCategories = (categories ?? []).filter((c) => c.parentId == null);
     return [
-      { id: 'all', label: 'Tất cả' },
+      { id: 'all', label: t('common:all') },
       ...parentCategories.map((c) => ({ id: `parent-${c.id}`, label: c.name })),
     ];
-  }, [categories]);
+  }, [categories, t]);
 
   const handleSubmit = async () => {
     const plainContent = stripHtml(editorValue ?? '');
@@ -688,13 +690,13 @@ const ForumAlumniThreadPage = () => {
       if (replyTo?.postId) {
         await answerToPost({ postId: replyTo.postId, payload });
         setReplyTo(null);
-        showSuccess('Trả lời thành công.');
+        showSuccess(t('forum:success_reply'));
       } else {
         await createPost(payload);
-        showSuccess('Đăng bài viết thành công.');
+        showSuccess(t('forum:success_create_post'));
       }
       setEditorValue('');
-      
+
       // Jump to the last page to see the new post
       if (pageInfo) {
         const newTotal = pageInfo.totalItem + 1;
@@ -707,7 +709,7 @@ const ForumAlumniThreadPage = () => {
       const message =
         err?.response?.data?.message ??
         err?.message ??
-        (replyTo?.postId ? 'Không thể gửi trả lời.' : 'Không thể đăng bài viết.');
+        (replyTo?.postId ? t('forum:error_send_reply') : t('forum:error_create_post'));
       showError(message);
     }
   };
@@ -715,7 +717,7 @@ const ForumAlumniThreadPage = () => {
   useEffect(() => {
     if (postsError) {
       if (!hasShownPostsErrorRef.current) {
-        showError('Không thể tải bài viết.');
+        showError(t('forum:error_load_posts'));
         hasShownPostsErrorRef.current = true;
       }
       return;
@@ -726,7 +728,7 @@ const ForumAlumniThreadPage = () => {
   useEffect(() => {
     if (openingPostErrorFromState) {
       if (!hasShownOpeningErrorRef.current) {
-        showWarning(`Nội dung mở đầu chưa đăng được: ${openingPostErrorFromState}`);
+        showWarning(`${t('forum:opening_post_error_prefix')} ${openingPostErrorFromState}`);
         hasShownOpeningErrorRef.current = true;
       }
       return;
@@ -795,7 +797,7 @@ const ForumAlumniThreadPage = () => {
   return (
     <Page
       title={`${thread.title}`}
-      meta={<meta name="description" content="Chi tiết chủ đề Hướng nghiệp" />}
+      meta={<meta name="description" content={t('forum:career_topic_meta')} />}
     >
       <Container
         maxWidth={false}
@@ -821,7 +823,7 @@ const ForumAlumniThreadPage = () => {
                 onChange={handleFilterChange}
               />
               <ForumSponsoredCard
-                title="Sponsored"
+                title={t('forum:sponsored')}
                 imageSrc="/forum/metro_station.png"
                 imageAlt="HCMC Metro Opening"
                 caption="HCMC Metro Opening"
@@ -900,7 +902,7 @@ const ForumAlumniThreadPage = () => {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
+                        {isSubscribed ? t('forum:subscribed') : t('forum:subscribe')}
                       </Button>
                       <Button
                         fullWidth
@@ -916,9 +918,9 @@ const ForumAlumniThreadPage = () => {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        Sửa
+                        {t('common:edit')}
                       </Button>
-                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                      <Tooltip title={!isAuthenticated ? t('forum:login_required_to_comment') : ""} arrow>
                         <span>
                           <Button
                             fullWidth
@@ -931,10 +933,10 @@ const ForumAlumniThreadPage = () => {
                               const input = editorRef.current?.querySelector?.('textarea');
                               input?.focus?.();
                             }}
-                            disabled={!isAuthenticated}
+                            disabled={isGuest}
                             sx={{ whiteSpace: 'nowrap' }}
                           >
-                            Trả lời
+                            {t('forum:reply')}
                           </Button>
                         </span>
                       </Tooltip>
@@ -948,7 +950,7 @@ const ForumAlumniThreadPage = () => {
                         disabled={deleteTopicPending}
                         sx={{ whiteSpace: 'nowrap' }}
                       >
-                        {deleteTopicPending ? 'Đang xóa...' : 'Xóa'}
+                        {deleteTopicPending ? t('forum:deleting') : t('common:delete')}
                       </Button>
                       <Button
                         fullWidth
@@ -962,7 +964,7 @@ const ForumAlumniThreadPage = () => {
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        Khóa
+                        {t('forum:lock')}
                       </Button>
                     </Box>
                   ) : (
@@ -982,9 +984,9 @@ const ForumAlumniThreadPage = () => {
                         onClick={handleToggleSubscription}
                         disabled={subStatusPending || subTogglePending}
                       >
-                        {isSubscribed ? 'Đang theo dõi' : 'Theo dõi'}
+                        {isSubscribed ? t('forum:subscribed') : t('forum:subscribe')}
                       </Button>
-                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                      <Tooltip title={!isAuthenticated ? t('forum:login_required_to_comment') : ""} arrow>
                         <span>
                           <Button
                             variant="contained"
@@ -996,9 +998,9 @@ const ForumAlumniThreadPage = () => {
                               const input = editorRef.current?.querySelector?.('textarea');
                               input?.focus?.();
                             }}
-                            disabled={!isAuthenticated}
+                            disabled={isGuest}
                           >
-                            Trả lời
+                            {t('forum:reply')}
                           </Button>
                         </span>
                       </Tooltip>
@@ -1031,7 +1033,7 @@ const ForumAlumniThreadPage = () => {
                   <Box>
                     {postsPending && !location.state?.topicSummary ? (
                       <Typography variant="body2" color="text.secondary">
-                        Đang tải thông tin chủ đề...
+                        {t('forum:loading_topic_info')}
                       </Typography>
                     ) : (
                       <>
@@ -1051,11 +1053,11 @@ const ForumAlumniThreadPage = () => {
               <Box>
                 {postsPending ? (
                   <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
-                    <Typography color="text.secondary">Đang tải bài viết...</Typography>
+                    <Typography color="text.secondary">{t('forum:loading_posts')}</Typography>
                   </Box>
                 ) : postsError ? (
                   <Box sx={{ px: { xs: 1.5, sm: 2, md: 3 }, py: 3 }}>
-                    <Typography color="text.secondary">Không thể tải bài viết.</Typography>
+                    <Typography color="text.secondary">{t('forum:error_loading_posts')}</Typography>
                   </Box>
                 ) : (
                   replies.map((reply) => (
@@ -1064,6 +1066,7 @@ const ForumAlumniThreadPage = () => {
                       reply={reply}
                       isAdmin={isAdmin}
                       memberId={memberId}
+                      isGuest={isGuest}
                       onReply={handleReply}
                       onDelete={handleDeletePost}
                       onEdit={handleEditPost}
@@ -1144,7 +1147,7 @@ const ForumAlumniThreadPage = () => {
                     </Box>
                     <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
                       <Typography variant="body2" fontWeight={600}>
-                        Tôi
+                        {t('forum:me')}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {(user?.role ?? 'Student').toString().toLowerCase()}
@@ -1178,10 +1181,10 @@ const ForumAlumniThreadPage = () => {
                           }}
                         >
                           <Typography variant="caption" color="text.secondary">
-                            Đang trả lời {replyTo.authorName || `bài viết #${replyTo.postId}`}
+                            {t('forum:replying_to')} {replyTo.authorName || t('forum:post_id_fallback', { id: replyTo.postId })}
                           </Typography>
                           <Button size="small" variant="text" onClick={handleCancelReply}>
-                            Huỷ
+                            {t('common:cancel')}
                           </Button>
                         </Box>
                         <Typography
@@ -1198,17 +1201,17 @@ const ForumAlumniThreadPage = () => {
                         </Typography>
                       </Box>
                     ) : null}
-                    <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow placement="top">
+                    <Tooltip title={!isAuthenticated ? t('forum:login_required_to_comment') : ""} arrow placement="top">
                       <Box>
                         <WYSIWYG
                           value={editorValue}
                           onChange={setEditorValue}
-                          readOnly={!isAuthenticated}
+                          readOnly={isGuest}
                         />
                       </Box>
                     </Tooltip>
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
-                      <Tooltip title={!isAuthenticated ? "Phải đăng nhập mới có thể bình luận" : ""} arrow>
+                      <Tooltip title={!isAuthenticated ? t('forum:login_required_to_comment') : ""} arrow>
                         <span>
                           <Button
                             variant="contained"
@@ -1218,11 +1221,11 @@ const ForumAlumniThreadPage = () => {
                               createPending ||
                               answerPending ||
                               !topicId ||
-                              !user?.id ||
+                              isGuest ||
                               !stripHtml(editorValue ?? '')
                             }
                           >
-                            {createPending || answerPending ? 'Đang đăng...' : 'Đăng'}
+                            {createPending || answerPending ? t('forum:posting') : t('forum:post_action')}
                           </Button>
                         </span>
                       </Tooltip>
@@ -1236,12 +1239,12 @@ const ForumAlumniThreadPage = () => {
         </Container>
       </Container>
       <Dialog open={isEditTopicOpen} onClose={handleCloseEditTopic} fullWidth maxWidth="sm">
-        <DialogTitle>Chỉnh sửa chủ đề</DialogTitle>
+        <DialogTitle>{t('forum:edit_topic_dialog_title')}</DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1.5 }}>
           <TextField
             variant="standard"
             size="small"
-            label="Tiêu đề"
+            label={t('forum:title_field_label')}
             value={editTopicTitle}
             onChange={(e) => setEditTopicTitle(e.target.value)}
             fullWidth
@@ -1251,7 +1254,7 @@ const ForumAlumniThreadPage = () => {
             select
             variant="standard"
             size="small"
-            label="Chủ đề phụ"
+            label={t('forum:subcategory_field_label')}
             value={editCategoryId}
             onChange={(e) => setEditCategoryId(e.target.value)}
             fullWidth
@@ -1266,10 +1269,10 @@ const ForumAlumniThreadPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseEditTopic} disabled={updateTopicPending}>
-            Hủy
+            {t('common:cancel')}
           </Button>
           <Button onClick={handleSaveEditTopic} variant="contained" disabled={updateTopicPending}>
-            {updateTopicPending ? 'Đang lưu...' : 'Lưu'}
+            {updateTopicPending ? t('forum:saving') : t('common:save')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1284,10 +1287,10 @@ const ForumAlumniThreadPage = () => {
       />
       <ConfirmDialog
         open={isConfirmDeleteOpen}
-        title="Xác nhận xóa bài viết"
-        message="Bạn có chắc chắn muốn xóa bài viết này không? Hành động này không thể hoàn tác."
-        confirmText="Xóa"
-        cancelText="Hủy"
+        title={t('forum:confirm_delete_post_title')}
+        message={t('forum:confirm_delete_post_message')}
+        confirmText={t('common:delete')}
+        cancelText={t('common:cancel')}
         confirmColor="error"
         loading={deletePending}
         onConfirm={handleConfirmDeletePost}

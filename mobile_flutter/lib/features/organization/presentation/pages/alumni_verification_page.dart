@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/errors/api_exception.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -24,7 +24,7 @@ class AlumniVerificationPage extends ConsumerWidget {
     final async = ref.watch(pendingPeerVerificationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Xác minh cựu sinh viên')),
+      appBar: AppBar(title: Text('organization.verify_alumni'.tr())),
       body: async.when(
         loading: () => ListView(
           children: List.generate(4, (_) => const SkeletonTile()),
@@ -34,27 +34,23 @@ class AlumniVerificationPage extends ConsumerWidget {
           // that's expected, not a load failure. Show a friendly explanation.
           final status = _statusOf(err);
           if (status == 403 || status == 404) {
-            return const EmptyView(
+            return EmptyView(
               icon: Icons.verified_user_outlined,
-              title: 'Bạn chưa phải người xác thực tin cậy',
-              message:
-                  'Chỉ thành viên được tổ chức đánh dấu là người xác thực tin '
-                  'cậy mới có thể xác minh danh tính của người khác.',
+              title: 'organization.not_trusted_verifier'.tr(),
+              message: 'organization.not_trusted_verifier_desc'.tr(),
             );
           }
           return ErrorView(
-            message: 'Không tải được yêu cầu xác minh',
+            message: 'organization.verification_requests_load_failed'.tr(),
             onRetry: () => ref.invalidate(pendingPeerVerificationsProvider),
           );
         },
         data: (items) {
           if (items.isEmpty) {
-            return const EmptyView(
+            return EmptyView(
               icon: Icons.verified_user_outlined,
-              title: 'Không có yêu cầu nào',
-              message:
-                  'Khi có người nhờ bạn xác minh danh tính cựu sinh viên, yêu '
-                  'cầu sẽ xuất hiện ở đây.',
+              title: 'organization.no_verification_requests'.tr(),
+              message: 'organization.no_verification_requests_desc'.tr(),
             );
           }
           return RefreshIndicator(
@@ -101,18 +97,19 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xác minh danh tính'),
+        title: Text('organization.verify_identity'.tr()),
         content: Text(
-          'Bạn xác nhận quen biết và bảo lãnh cho "${widget.item.requesterName}" '
-          'là cựu sinh viên/sinh viên của tổ chức?',
+          'organization.verify_identity_confirm'.tr(
+            namedArgs: {'name': widget.item.requesterName},
+          ),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Hủy')),
+              child: Text('common.cancel'.tr())),
           ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Xác minh')),
+              child: Text('organization.verify_action'.tr())),
         ],
       ),
     );
@@ -124,9 +121,9 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
           .read(organizationRepositoryProvider)
           .acceptPeerVerification(widget.item.requestId);
       ref.invalidate(pendingPeerVerificationsProvider);
-      if (mounted) AppToast.success(context, 'Đã xác minh thành công.');
+      if (mounted) AppToast.success(context, 'organization.verify_success'.tr());
     } catch (e) {
-      if (mounted) AppToast.error(context, 'Xác minh thất bại.');
+      if (mounted) AppToast.error(context, 'organization.verify_failed'.tr());
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -162,8 +159,8 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                     style: const TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 15)),
                 const SizedBox(height: 2),
-                const Text('Yêu cầu bạn xác minh danh tính',
-                    style: TextStyle(
+                Text('organization.verification_request_from'.tr(),
+                    style: const TextStyle(
                         fontSize: 12.5, color: AppColors.textSecondary)),
                 if (time.isNotEmpty)
                   Padding(
@@ -188,7 +185,7 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 8),
                   ),
-                  child: const Text('Xác minh'),
+                  child: Text('organization.verify_action'.tr()),
                 ),
         ],
       ),

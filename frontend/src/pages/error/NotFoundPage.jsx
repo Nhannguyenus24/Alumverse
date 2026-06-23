@@ -1,34 +1,36 @@
 import { Box, Button, Container, Typography } from '@mui/material';
-
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 export default function NotFoundPage() {
   const navigate = useOrgNavigate();
+  const { t } = useTranslation('common');
 
   return (
     <Page
-      title="404 Not Found"
+      title={t('not_found_title')}
       meta={
         <meta
           name="description"
-          content="Trang không tồn tại - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+          content={t('not_found_meta_desc')}
         />
       }
     >
-      <Container maxWidth="md">
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            textAlign: 'center',
-            py: 5,
-          }}
-        >
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+        <Container maxWidth="md">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: '100vh',
+              textAlign: 'center',
+              py: 5,
+            }}
+          >
           <SearchOffIcon
             sx={{
               fontSize: 120,
@@ -57,7 +59,7 @@ export default function NotFoundPage() {
               color: 'text.primary',
             }}
           >
-            Page Not Found
+            {t('not_found_heading')}
           </Typography>
 
           <Typography
@@ -68,9 +70,7 @@ export default function NotFoundPage() {
               maxWidth: 500,
             }}
           >
-            Sorry, we couldn't find the page you're looking for. The page might
-            have been removed, had its name changed, or is temporarily
-            unavailable.
+            {t('not_found_desc')}
           </Typography>
 
           <Box
@@ -92,7 +92,7 @@ export default function NotFoundPage() {
                 fontSize: '1rem',
               }}
             >
-              Go to Home
+              {t('not_found_go_home')}
             </Button>
             <Button
               variant="outlined"
@@ -105,11 +105,12 @@ export default function NotFoundPage() {
                 fontSize: '1rem',
               }}
             >
-              Go Back
+              {t('not_found_go_back')}
             </Button>
           </Box>
-        </Box>
-      </Container>
+          </Box>
+        </Container>
+      </Box>
     </Page>
   );
 }

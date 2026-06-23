@@ -15,6 +15,7 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumberOutlined";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import AdminPanelSettingsOutlinedIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../hooks/useAuth";
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 
@@ -27,7 +28,8 @@ const AVATAR_SX = {
   justifyContent: "center",
 };
 
-const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
+const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode, textColor }) => {
+  const { t } = useTranslation(['profile', 'common', 'event', 'article', 'nav']);
   const navigate = useOrgNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
@@ -98,6 +100,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
             fontWeight={600}
             sx={{
               color: contrastMode ? "primary.contrastText" : "text.primary",
+              ...(textColor ? { color: textColor } : {}),
               lineHeight: 1.25,
             }}
           >
@@ -107,6 +110,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
             variant="caption"
             sx={{
               color: contrastMode ? "primary.contrastText" : "primary.main",
+              ...(textColor ? { color: textColor } : {}),
               lineHeight: 1.25,
             }}
           >
@@ -195,7 +199,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           }}
         >
           <PersonIcon fontSize="small" />
-          <Typography variant="body2">Hồ sơ của tôi</Typography>
+          <Typography variant="body2">{t('profile:my_profile')}</Typography>
         </MenuItem>
 
         <MenuItem
@@ -204,7 +208,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           onClick={handleClose}
         >
           <ConfirmationNumberOutlinedIcon fontSize="small" />
-          <Typography variant="body2">Vé của tôi</Typography>
+          <Typography variant="body2">{t('event:my_tickets')}</Typography>
         </MenuItem>
 
         <MenuItem
@@ -213,7 +217,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           onClick={handleClose}
         >
           <FavoriteBorderIcon fontSize="small" />
-          <Typography variant="body2">Bài viết đã lưu</Typography>
+          <Typography variant="body2">{t('article:saved_articles')}</Typography>
         </MenuItem>
 
         {isAdmin && (
@@ -223,7 +227,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
             onClick={handleClose}
           >
             <AdminPanelSettingsOutlinedIcon fontSize="small" />
-            <Typography variant="body2">Trang quản trị</Typography>
+            <Typography variant="body2">{t('nav:admin')}</Typography>
           </MenuItem>
         )}
 
@@ -238,7 +242,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           }}
         >
           <SettingsIcon fontSize="small" />
-          <Typography variant="body2">Cài đặt</Typography>
+          <Typography variant="body2">{t('common:settings')}</Typography>
         </MenuItem>
         {isGuestVerificationLevel && (
           <MenuItem
@@ -253,7 +257,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
             }}
           >
             <VerifiedUserIcon fontSize="small" />
-            <Typography variant="body2">Xác thực tài khoản</Typography>
+            <Typography variant="body2">{t('profile:verify_account')}</Typography>
           </MenuItem>
         )}
 
@@ -266,7 +270,7 @@ const AccountMenu = ({ displayName, displayRole, avatarUrl, contrastMode }) => {
           }}
         >
           <LogoutRoundedIcon fontSize="small" />
-          <Typography variant="body2">Đăng xuất</Typography>
+          <Typography variant="body2">{t('common:logout')}</Typography>
         </MenuItem>
       </Menu>
     </>

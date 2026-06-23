@@ -45,7 +45,7 @@ export function useNetworkConnections({
     query.isError && query.error
       ? query.error.response?.data?.message ??
         query.error.message ??
-        'Không thể tải danh sách kết nối.'
+        'Failed to load connections'
       : null;
 
   return {

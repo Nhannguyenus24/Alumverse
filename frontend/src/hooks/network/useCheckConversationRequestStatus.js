@@ -11,7 +11,7 @@ export function useCheckConversationRequestStatus() {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể kiểm tra trạng thái kết nối.'
+        'Failed to check connection status'
       : null;
 
   return {

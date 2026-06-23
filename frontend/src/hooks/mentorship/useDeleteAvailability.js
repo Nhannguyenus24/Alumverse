@@ -20,7 +20,7 @@ export const useDeleteAvailability = () => {
     mutation.isError && mutation.error
       ? mutation.error.response?.data?.message ??
         mutation.error.message ??
-        'Không thể xóa lịch'
+        'Failed to delete availability'
       : null;
 
   return {

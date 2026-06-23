@@ -20,20 +20,10 @@ import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { useTranslation } from 'react-i18next';
 
 const RANGE_TYPE_CURRENT = 'CURRENT';
 const RANGE_TYPE_DATES = 'DATES';
-
-const MAX_UNITS = [
-  { value: 'days', label: 'ngày' },
-  { value: 'weeks', label: 'tuần' },
-  { value: 'months', label: 'tháng' },
-];
-
-const MIN_UNITS = [
-  { value: 'hours', label: 'giờ' },
-  { value: 'days', label: 'ngày' },
-];
 
 const parseInitial = (raw) => {
   if (!raw) return null;
@@ -50,6 +40,7 @@ const MentorshipBookingWindowCard = ({
   onSave,
   saving = false,
 }) => {
+  const { t } = useTranslation('mentorship');
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   const initial = parseInitial(initialSettings);
@@ -103,6 +94,17 @@ const MentorshipBookingWindowCard = ({
     if (onSave) onSave(JSON.stringify(payload));
   };
 
+  const MAX_UNITS = [
+    { value: 'days', label: t('booking_window_unit_days') },
+    { value: 'weeks', label: t('booking_window_unit_weeks') },
+    { value: 'months', label: t('booking_window_unit_months') },
+  ];
+
+  const MIN_UNITS = [
+    { value: 'hours', label: t('booking_window_unit_hours') },
+    { value: 'days', label: t('booking_window_unit_days') },
+  ];
+
   return (
     <Card sx={{ border: '1px solid', borderColor: 'divider' }} elevation={0}>
       <Box
@@ -118,13 +120,13 @@ const MentorshipBookingWindowCard = ({
         <SwapHorizIcon color="action" fontSize="small" />
         <Box sx={{ flex: 1 }}>
           <Typography fontWeight={700} variant="subtitle1">
-            Phạm vi thời gian đặt lịch
+            {t('booking_window_title')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Giới hạn phạm vi thời gian có thể đặt cuộc hẹn
+            {t('booking_window_desc')}
           </Typography>
         </Box>
-        <IconButton size="small" aria-label={expanded ? 'Thu gọn' : 'Mở rộng'}>
+        <IconButton size="small" aria-label={expanded ? t('booking_window_collapse') : t('booking_window_expand')}>
           {expanded ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
         </IconButton>
       </Box>
@@ -138,16 +140,16 @@ const MentorshipBookingWindowCard = ({
                 <FormControlLabel
                   value={RANGE_TYPE_CURRENT}
                   control={<Radio />}
-                  label={<Typography variant="body2">Hiện có</Typography>}
+                  label={<Typography variant="body2">{t('booking_window_range_current')}</Typography>}
                 />
                 <FormControlLabel
                   value={RANGE_TYPE_DATES}
                   control={<Radio />}
                   label={
                     <Box>
-                      <Typography variant="body2">Ngày bắt đầu và ngày kết thúc</Typography>
+                      <Typography variant="body2">{t('booking_window_range_dates')}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Giới hạn phạm vi ngày cho tất cả cuộc hẹn
+                        {t('booking_window_range_dates_desc')}
                       </Typography>
                     </Box>
                   }
@@ -157,14 +159,14 @@ const MentorshipBookingWindowCard = ({
               {rangeType === RANGE_TYPE_DATES && (
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
                   <DatePicker
-                    label="Bắt đầu"
+                    label={t('booking_window_start_date')}
                     value={startDate}
                     onChange={setStartDate}
                     minDate={dayjs()}
                     slotProps={{ textField: { size: 'small', fullWidth: true } }}
                   />
                   <DatePicker
-                    label="Kết thúc"
+                    label={t('booking_window_end_date')}
                     value={endDate}
                     onChange={setEndDate}
                     minDate={startDate ?? dayjs()}
@@ -176,7 +178,7 @@ const MentorshipBookingWindowCard = ({
               {/* MAX LEAD TIME */}
               <Box>
                 <Typography variant="body2" mb={0.5}>
-                  Thời gian tối đa có thể đặt trước cuộc hẹn
+                  {t('booking_window_max_lead')}
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Checkbox
@@ -213,7 +215,7 @@ const MentorshipBookingWindowCard = ({
               {/* MIN LEAD TIME */}
               <Box>
                 <Typography variant="body2" mb={0.5}>
-                  Thời gian tối thiểu có thể đặt trước cuộc hẹn
+                  {t('booking_window_min_lead')}
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <Checkbox
@@ -248,7 +250,7 @@ const MentorshipBookingWindowCard = ({
               </Box>
 
               <Button variant="contained" fullWidth onClick={handleSave} disabled={saving}>
-                {saving ? 'Đang lưu...' : 'Lưu phạm vi'}
+                {saving ? t('booking_window_saving') : t('booking_window_save')}
               </Button>
             </Stack>
           </LocalizationProvider>

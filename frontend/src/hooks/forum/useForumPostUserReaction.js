@@ -41,7 +41,7 @@ export const useForumPostUserReaction = (postId, memberId) => {
     isError && error
       ? error.response?.data?.message ??
         error.message ??
-        "Không thể tải trạng thái cảm xúc"
+        "Failed to load reaction status"
       : null;
 
   return { reaction: data, hasReaction, isPending, isError, errorMessage };

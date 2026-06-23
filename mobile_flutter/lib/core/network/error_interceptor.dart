@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 import '../errors/api_exception.dart';
 
@@ -15,9 +16,9 @@ class ErrorInterceptor extends Interceptor {
       message = data['error'] as String;
     } else if (err.type == DioExceptionType.connectionTimeout ||
         err.type == DioExceptionType.receiveTimeout) {
-      message = 'Connection timeout. Vui lòng kiểm tra mạng.';
+      message = 'common.connection_timeout'.tr();
     } else if (err.type == DioExceptionType.connectionError) {
-      message = 'Không kết nối được đến server.';
+      message = 'common.server_unreachable'.tr();
     }
 
     final apiError = ApiException(

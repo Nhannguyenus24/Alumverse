@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Box,
@@ -23,6 +24,7 @@ import { useNotification } from '../../hooks/useNotification';
 
 
 const ForumAlumniCreateTopicPage = () => {
+  const { t } = useTranslation(['forum', 'common']);
   const navigate = useOrgNavigate();
   const { user } = useAuth();
   const { organization } = useOrganization();
@@ -45,23 +47,23 @@ const ForumAlumniCreateTopicPage = () => {
   useEffect(() => {
     if (categoriesIsError) {
       if (!categoriesErrorShownRef.current) {
-        showError('Không tải được danh sách chủ đề phụ.');
+        showError(t('forum:error_load_sub_topics'));
         categoriesErrorShownRef.current = true;
       }
       return;
     }
     categoriesErrorShownRef.current = false;
-  }, [categoriesIsError, showError]);
+  }, [categoriesIsError, showError, t]);
 
   const filters = useMemo(() => {
     if (!categories?.length) {
-      return [{ id: 'all', label: 'Tất cả' }];
+      return [{ id: 'all', label: t('common:all') }];
     }
     return [
-      { id: 'all', label: 'Tất cả' },
+      { id: 'all', label: t('common:all') },
       ...categories.map((c) => ({ id: `category-${c.id}`, label: c.name })),
     ];
-  }, [categories]);
+  }, [categories, t]);
 
   const parentSubjectOptions = useMemo(
     () =>
@@ -126,19 +128,19 @@ const ForumAlumniCreateTopicPage = () => {
     const plainOpeningContent = (content ?? '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
     const categoryId = parseInt(selectedSubSubject, 10);
     if (!trimmedTitle) {
-      showWarning('Vui lòng nhập tiêu đề chủ đề.');
+      showWarning(t('forum:warn_enter_title'));
       return;
     }
     if (!user?.id) {
-      showError('Không xác định được người tạo chủ đề.');
+      showError(t('forum:error_unknown_author'));
       return;
     }
     if (Number.isNaN(categoryId) || categoryId <= 0) {
-      showWarning('Vui lòng chọn chủ đề phụ hợp lệ.');
+      showWarning(t('forum:warn_select_valid_sub_topic'));
       return;
     }
     if (!organizationId) {
-      showWarning('Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.');
+      showWarning(t('forum:warn_unknown_org'));
       return;
     }
 
@@ -155,7 +157,7 @@ const ForumAlumniCreateTopicPage = () => {
     try {
       createdTopic = await createTopic(payload);
       if (!createdTopic?.id) {
-        showError('Tạo chủ đề thất bại.');
+        showError(t('forum:error_create_topic_failed'));
         return;
       }
       if (plainOpeningContent) {
@@ -170,12 +172,12 @@ const ForumAlumniCreateTopicPage = () => {
           openingPostError =
             postErr?.response?.data?.message ??
             postErr?.message ??
-            'Không thể đăng nội dung mở đầu.';
+            t('forum:opening_post_error_prefix');
         }
       }
-      showSuccess('Tạo chủ đề thành công.');
+      showSuccess(t('forum:success_create_topic'));
       if (openingPostError) {
-        showWarning(`Chủ đề đã tạo nhưng nội dung mở đầu lỗi: ${openingPostError}`);
+        showWarning(`${t('forum:opening_post_error_prefix')} ${openingPostError}`);
       }
       navigate(`/forum/alumni/career/${createdTopic.id}`, {
         state: {
@@ -196,7 +198,7 @@ const ForumAlumniCreateTopicPage = () => {
       const message =
         backendMessage === 'Validation failed' && firstValidationError
           ? firstValidationError
-          : backendMessage ?? topicErr?.message ?? 'Tạo chủ đề thất bại.';
+          : backendMessage ?? topicErr?.message ?? t('forum:error_create_topic_failed');
       showError(message);
     } finally {
       setIsSubmitting(false);
@@ -205,16 +207,13 @@ const ForumAlumniCreateTopicPage = () => {
 
   return (
     <Page
-      title="Tạo chủ đề - Cựu sinh viên"
-      meta={<meta name="description" content="Tạo chủ đề mới - Diễn đàn Cựu sinh viên" />}
+      title={t('forum:page_title_create_topic')}
+      meta={<meta name="description" content={t('forum:page_meta_create_topic')} />}
     >
       <Container
         maxWidth={false}
         disableGutters
-        sx={{
-          pb: { xs: 4, md: 6 },
-          overflowX: 'hidden',
-        }}
+        sx={{ pb: { xs: 4, md: 6 }, overflowX: 'hidden' }}
       >
         <Container maxWidth="xl" sx={{ pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 } }}>
           <Box
@@ -247,7 +246,7 @@ const ForumAlumniCreateTopicPage = () => {
                 color="primary.main"
                 sx={{ mb: 2.5, fontSize: { xs: '1.6rem', md: '1.9rem' }, letterSpacing: 1 }}
               >
-                TẠO CHỦ ĐỀ MỚI
+                {t('forum:create_topic_title')}
               </Typography>
 
               {/* Subject selectors */}
@@ -262,29 +261,21 @@ const ForumAlumniCreateTopicPage = () => {
                 <TextField
                   select
                   fullWidth
-                  label="Chủ đề chính"
+                  label={t('forum:parent_topic_label')}
                   value={resolvedParentSubject}
                   onChange={(e) => setParentSubject(e.target.value)}
                   size="small"
                   disabled={categoriesPending || categoriesIsError || !parentSubjectOptions.length}
                 >
                   {categoriesPending ? (
-                    <MenuItem value="" disabled>
-                      Đang tải chủ đề chính...
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:loading_parent_topics')}</MenuItem>
                   ) : categoriesIsError ? (
-                    <MenuItem value="" disabled>
-                      Không tải được chủ đề chính
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:error_loading_parent_topics')}</MenuItem>
                   ) : !parentSubjectOptions.length ? (
-                    <MenuItem value="" disabled>
-                      Không có chủ đề chính
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:no_parent_topics')}</MenuItem>
                   ) : (
                     parentSubjectOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                     ))
                   )}
                 </TextField>
@@ -292,46 +283,30 @@ const ForumAlumniCreateTopicPage = () => {
                 <TextField
                   select
                   fullWidth
-                  label="Chủ đề phụ"
+                  label={t('forum:sub_topic_label')}
                   value={selectedSubSubject}
                   onChange={(e) => setSubSubject(e.target.value)}
                   size="small"
                   disabled={categoriesPending || categoriesIsError || !subSubjectOptions.length}
                 >
                   {categoriesPending ? (
-                    <MenuItem value="" disabled>
-                      Đang tải chủ đề phụ...
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:loading_sub_topics')}</MenuItem>
                   ) : categoriesIsError ? (
-                    <MenuItem value="" disabled>
-                      Không tải được chủ đề phụ
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:error_loading_sub_topics')}</MenuItem>
                   ) : !resolvedParentSubject ? (
-                    <MenuItem value="" disabled>
-                      Vui lòng chọn chủ đề chính
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:select_parent_topic_first')}</MenuItem>
                   ) : !subSubjectOptions.length ? (
-                    <MenuItem value="" disabled>
-                      Không có chủ đề phụ
-                    </MenuItem>
+                    <MenuItem value="" disabled>{t('forum:no_sub_topics')}</MenuItem>
                   ) : (
                     subSubjectOptions.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                     ))
                   )}
                 </TextField>
               </Box>
 
               {/* Editor card */}
-              <Box
-                sx={{
-                  border: 1,
-                  borderColor: 'divider',
-                  backgroundColor: '#fff',
-                }}
-              >
+              <Box sx={{ border: 1, borderColor: 'divider', backgroundColor: '#fff' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -339,16 +314,8 @@ const ForumAlumniCreateTopicPage = () => {
                     alignItems: { xs: 'center', md: 'stretch' },
                   }}
                 >
-
                   {/* Title + editor */}
-                  <Box
-                    sx={{
-                      flex: 1,
-                      minWidth: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                    }}
-                  >
+                  <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                     <Box
                       sx={{
                         px: { xs: 2, md: 2.5 },
@@ -361,10 +328,10 @@ const ForumAlumniCreateTopicPage = () => {
                         fullWidth
                         variant="outlined"
                         size="small"
-                        label="Tiêu đề chủ đề"
+                        label={t('forum:topic_title_label')}
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Tiêu đề chủ đề"
+                        placeholder={t('forum:topic_title_label')}
                         sx={{
                           '& .MuiInputBase-input': {
                             fontSize: { xs: '1.05rem', md: '1.1rem' },
@@ -378,7 +345,7 @@ const ForumAlumniCreateTopicPage = () => {
                       <WYSIWYG
                         value={content}
                         onChange={setContent}
-                        placeholder="Nội dung mở đầu"
+                        placeholder={t('forum:topic_content_placeholder')}
                         height={320}
                       />
                     </Box>
@@ -406,7 +373,7 @@ const ForumAlumniCreateTopicPage = () => {
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
-                    Hủy
+                    {t('forum:cancel')}
                   </Button>
                   <Button
                     variant="contained"
@@ -422,7 +389,7 @@ const ForumAlumniCreateTopicPage = () => {
                     fullWidth={false}
                     sx={{ width: { xs: '100%', sm: 'auto' } }}
                   >
-                    {isSubmitting || createTopicPending ? 'Đang tạo...' : 'Tạo chủ đề'}
+                    {isSubmitting || createTopicPending ? t('forum:creating_topic') : t('forum:create_topic_btn')}
                   </Button>
                 </Box>
               </Box>

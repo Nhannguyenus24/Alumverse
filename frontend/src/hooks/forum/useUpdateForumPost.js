@@ -18,7 +18,7 @@ export const useUpdateForumPost = () => {
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể cập nhật bài viết"
+      ? error.response?.data?.message ?? error.message ?? "Failed to update post"
       : null;
 
   return { updatePost: mutateAsync, isPending, isError, errorMessage };

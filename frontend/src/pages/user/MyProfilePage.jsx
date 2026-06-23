@@ -52,7 +52,8 @@ import PersonalInfoRow from '../../components/profile/PersonalInfoRow';
 import ProfileSectionTitle from '../../components/profile/ProfileSectionTitle';
 import ExtendedProfileInfoCard from '../../components/profile/ExtendedProfileInfoCard'
 
-import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
+import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import { useTranslation } from 'react-i18next';
 import { formatDate } from '../../utils/dateFormatter';
 import { formatRating } from '../../utils/numberFormatter';
 
@@ -61,22 +62,22 @@ const DEFAULT_COVER =
 const ITEMS_PER_PAGE = 3;
 const PUBLIC_FEEDBACKS_PER_PAGE = 5;
 
-const CATEGORY_LABEL = {
-  CAREER: 'Định hướng nghề nghiệp',
-  ACADEMIC: 'Học tập / Học bổng',
-  SOFT_SKILLS: 'Kỹ năng mềm',
-  GENERAL: 'Chung',
-};
+const getCategoryLabel = (t) => ({
+  CAREER: t('profile:category_career'),
+  ACADEMIC: t('profile:category_academic'),
+  SOFT_SKILLS: t('profile:category_soft_skills'),
+  GENERAL: t('profile:category_general'),
+});
 
-const SECTION_LABELS = {
-  educations: 'Học vấn',
-  experiences: 'Kinh nghiệm làm việc',
-  projects: 'Dự án tiêu biểu',
-  awards: 'Giải thưởng',
-  skills: 'Kỹ năng & chứng chỉ',
-};
+const getSectionLabels = (t) => ({
+  educations: t('profile:section_label_educations'),
+  experiences: t('profile:section_label_experiences'),
+  projects: t('profile:section_label_projects'),
+  awards: t('profile:section_label_awards'),
+  skills: t('profile:section_label_skills'),
+});
 
-const ProfileItem = ({ label, value, icon: Icon }) => (
+const ProfileItem = ({ label, value, icon: Icon, notUpdatedLabel = 'Not updated' }) => (
   <Box
     sx={{
       display: 'flex',
@@ -115,7 +116,7 @@ const ProfileItem = ({ label, value, icon: Icon }) => (
         {label}
       </Typography>
       <Typography variant="body1" fontWeight={600} color="text.primary" sx={{ mt: 0.5, wordBreak: 'break-word' }}>
-        {value?.trim?.() || value || 'Chưa cập nhật'}
+        {value?.trim?.() || value || notUpdatedLabel}
       </Typography>
     </Box>
   </Box>
@@ -129,7 +130,7 @@ const SECTION_ICONS = {
   skills: PsychologyIcon,
 };
 
-const ExtendedProfileSections = ({ raw }) => {
+const ExtendedProfileSections = ({ raw, t }) => {
   if (!raw) return null;
   let parsed;
   try {
@@ -139,6 +140,7 @@ const ExtendedProfileSections = ({ raw }) => {
   }
   if (!parsed || typeof parsed !== 'object') return null;
 
+  const sectionLabels = getSectionLabels(t);
   const sections = ['educations', 'experiences', 'projects', 'awards', 'skills']
     .map((key) => ({ key, items: Array.isArray(parsed[key]) ? parsed[key] : [] }))
     .filter((s) => s.items.length > 0);
@@ -153,7 +155,7 @@ const ExtendedProfileSections = ({ raw }) => {
         return (
           <Box key={key}>
             <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-              <Icon /> {SECTION_LABELS[key]}
+              <Icon /> {sectionLabels[key]}
             </Typography>
             <Grid container spacing={3}>
               {items.map((item, idx) => (
@@ -169,69 +171,72 @@ const ExtendedProfileSections = ({ raw }) => {
   );
 };
 
-const ExpertiseSection = ({ expertise }) => (
-  <Box>
-    <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-      <WorkspacePremiumIcon /> Nội dung có thể chia sẻ
-    </Typography>
-    {expertise.length === 0 ? (
-      <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>Chưa có nội dung nào.</Typography>
-    ) : (
-      <Grid container spacing={2.5}>
-        {expertise.map((item) => (
-          <Grid item xs={12} md={6} key={item.id ?? item.topic}>
-            <Box
-              sx={{
-                p: 3,
-                bgcolor: 'background.paper',
-                borderRadius: 3,
-                border: '1px solid',
-                borderColor: 'divider',
-                boxShadow: '0 2px 12px 0 rgba(0,0,0,0.03)',
-                height: '100%',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px 0 rgba(0,0,0,0.08)',
-                  borderColor: 'primary.light',
-                }
-              }}
-            >
-              <Stack spacing={1.5}>
-                <Typography variant="h6" fontWeight={700} color="text.primary">
-                  {item.topic}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {item.category && (
-                    <Box sx={{ px: 1.5, py: 0.5, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1), color: 'primary.main', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}>
-                      {CATEGORY_LABEL[item.category] ?? item.category}
-                    </Box>
-                  )}
-                  {item.tag && (
-                    <Box sx={{ px: 1.5, py: 0.5, bgcolor: 'action.hover', color: 'text.secondary', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}>
-                      #{item.tag}
-                    </Box>
-                  )}
-                </Box>
-
-                {item.description && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ whiteSpace: 'pre-line', mt: 1, lineHeight: 1.6 }}
-                  >
-                    {item.description}
+const ExpertiseSection = ({ expertise, t }) => {
+  const categoryLabel = getCategoryLabel(t);
+  return (
+    <Box>
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
+        <WorkspacePremiumIcon /> {t('profile:expertise_shareable')}
+      </Typography>
+      {expertise.length === 0 ? (
+        <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('profile:no_expertise')}</Typography>
+      ) : (
+        <Grid container spacing={2.5}>
+          {expertise.map((item) => (
+            <Grid item xs={12} md={6} key={item.id ?? item.topic}>
+              <Box
+                sx={{
+                  p: 3,
+                  bgcolor: 'background.paper',
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  boxShadow: '0 2px 12px 0 rgba(0,0,0,0.03)',
+                  height: '100%',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px 0 rgba(0,0,0,0.08)',
+                    borderColor: 'primary.light',
+                  }
+                }}
+              >
+                <Stack spacing={1.5}>
+                  <Typography variant="h6" fontWeight={700} color="text.primary">
+                    {item.topic}
                   </Typography>
-                )}
-              </Stack>
-            </Box>
-          </Grid>
-        ))}
-      </Grid>
-    )}
-  </Box>
-);
+
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {item.category && (
+                      <Box sx={{ px: 1.5, py: 0.5, bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1), color: 'primary.main', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}>
+                        {categoryLabel[item.category] ?? item.category}
+                      </Box>
+                    )}
+                    {item.tag && (
+                      <Box sx={{ px: 1.5, py: 0.5, bgcolor: 'action.hover', color: 'text.secondary', borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700 }}>
+                        #{item.tag}
+                      </Box>
+                    )}
+                  </Box>
+
+                  {item.description && (
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ whiteSpace: 'pre-line', mt: 1, lineHeight: 1.6 }}
+                    >
+                      {item.description}
+                    </Typography>
+                  )}
+                </Stack>
+              </Box>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+    </Box>
+  );
+};
 
 const ReviewsSection = ({
   feedbacks,
@@ -239,6 +244,7 @@ const ReviewsSection = ({
   page,
   totalPages,
   onPageChange,
+  t,
 }) => (
   <Box>
     <Box
@@ -252,19 +258,19 @@ const ReviewsSection = ({
       }}
     >
       <Typography variant="h5" fontWeight={800} color="primary.main" display="flex" alignItems="center" gap={1}>
-        <StarIcon sx={{ color: 'warning.main' }} /> Đánh giá
+        <StarIcon sx={{ color: 'warning.main' }} /> {t('profile:reviews_section')}
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'background.paper', px: 2, py: 1, borderRadius: 2, boxShadow: '0 2px 8px 0 rgba(0,0,0,0.05)' }}>
         <StarIcon sx={{ color: 'warning.main', fontSize: 24 }} />
         <Typography variant="h6" fontWeight={800} color="text.primary">
           {formatRating(ratingAvg)}
         </Typography>
-        <Typography color="text.secondary" fontWeight={500}>({feedbacks.length} đánh giá)</Typography>
+        <Typography color="text.secondary" fontWeight={500}>{t('profile:reviews_count', { count: feedbacks.length })}</Typography>
       </Box>
     </Box>
 
     {feedbacks.length === 0 ? (
-      <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>Chưa có đánh giá nào.</Typography>
+      <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>{t('profile:no_reviews')}</Typography>
     ) : (
       <>
         <Stack spacing={3}>
@@ -283,7 +289,7 @@ const ReviewsSection = ({
         {totalPages > 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 4 }}>
             <Button variant="outlined" disabled={page <= 1} onClick={() => onPageChange(page - 1)} sx={{ borderRadius: 2 }}>
-              Trước
+              {t('profile:prev_page')}
             </Button>
             <Typography sx={{ display: 'flex', alignItems: 'center', px: 2, fontWeight: 600 }}>
               {page} / {totalPages}
@@ -294,7 +300,7 @@ const ReviewsSection = ({
               onClick={() => onPageChange(page + 1)}
               sx={{ borderRadius: 2 }}
             >
-              Sau
+              {t('profile:next_page')}
             </Button>
           </Box>
         )}
@@ -304,6 +310,7 @@ const ReviewsSection = ({
 );
 
 const OwnProfile = ({ navigate, isMentorshipPath }) => {
+  const { t } = useTranslation(['mentorship', 'profile']);
   const authUser = useAuthStore((state) => state.user);
   
   const profileQuery = useMyProfile();
@@ -332,23 +339,22 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const extendedProfile = mentor?.extendedProfile || profile?.extendedProfile;
 
   const user = {
-    name: profile?.fullName ?? 'Tài khoản của tôi',
-    role: [currentJobTitle, currentCompany].filter(Boolean).join(' @ ') || 'Thành viên',
+    name: profile?.fullName ?? t('profile:my_account'),
+    role: [currentJobTitle, currentCompany].filter(Boolean).join(' @ ') || t('profile:member_role_default'),
     avatar: profile?.avatarUrl ?? '',
     cover: coverUrl,
   };
 
   const tabs = isMentorshipPath
-    ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : []))
+    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : []))
     : [];
 
   const renderPersonalSection = () => {
-    // Cấu hình mảng dữ liệu cho Thông tin cơ bản
     const personalFields = [
-      { icon: PersonIcon, label: 'Họ và tên', value: profile?.fullName },
-      { icon: EmailIcon, label: 'Email', value: profile?.email },
-      { icon: WorkIcon, label: 'Công việc hiện tại', value: currentJobTitle },
-      { icon: BusinessIcon, label: 'Công ty', value: currentCompany },
+      { icon: PersonIcon, label: t('profile:full_name'), value: profile?.fullName },
+      { icon: EmailIcon, label: t('profile:email'), value: profile?.email },
+      { icon: WorkIcon, label: t('profile:current_job'), value: currentJobTitle },
+      { icon: BusinessIcon, label: t('profile:company'), value: currentCompany },
     ];
 
     const hasBio = !!bio?.trim();
@@ -356,21 +362,19 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
     return (
       <Box>
         <Grid container spacing={4}>
-          {/* Giới thiệu */}
           <Grid size={{ xs: 12 }} sx={{ pb: 2 }}>
-            <ProfileSectionTitle icon={PersonIcon}>Giới thiệu</ProfileSectionTitle>
-            <Typography 
-              color={hasBio ? 'text.secondary' : 'text.disabled'} 
+            <ProfileSectionTitle icon={PersonIcon}>{t('profile:intro_section')}</ProfileSectionTitle>
+            <Typography
+              color={hasBio ? 'text.secondary' : 'text.disabled'}
               sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: hasBio ? 'normal' : 'italic' }}
             >
-              {bio?.trim() || 'Bạn chưa cập nhật phần giới thiệu.'}
+              {bio?.trim() || t('profile:no_bio')}
             </Typography>
           </Grid>
 
-          {/* Thông tin cơ bản */}
           <Grid size={{ xs: 12, lg: 4 }}>
             <Box sx={{ height: '100%' }}>
-              <ProfileSectionTitle icon={BusinessIcon}>Thông tin cơ bản</ProfileSectionTitle>
+              <ProfileSectionTitle icon={BusinessIcon}>{t('profile:basic_info')}</ProfileSectionTitle>
               <Box>
                 {personalFields.map((field, index) => (
                   <PersonalInfoRow key={index} icon={field.icon} label={field.label} value={field.value} />
@@ -379,7 +383,6 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
             </Box>
           </Grid>
 
-          {/* Thông tin học thuật */}
           <Grid size={{ xs: 12, lg: 8 }}>
             <AcademicInfoSection academicProfile={orgMember} />
           </Grid>
@@ -395,18 +398,18 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
           <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2 }}>
             <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
               <Typography fontWeight={700} mb={0.5}>
-                Bạn chưa tham gia chương trình cố vấn
+                {t('profile:no_mentorship_joined')}
               </Typography>
               <Typography variant="body2">
-                Tạo hồ sơ để tìm cố vấn phù hợp, hoặc đăng ký trở thành cố vấn để chia sẻ kinh nghiệm với cộng đồng.
+                {t('profile:no_mentorship_desc')}
               </Typography>
             </Alert>
             <Stack direction="row" spacing={2} flexWrap="wrap">
               <Button variant="contained" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/development/mentorship/mentee-signup')}>
-                Tìm cố vấn cho tôi
+                {t('profile:find_mentor_btn')}
               </Button>
               <Button variant="outlined" size="large" sx={{ borderRadius: 2 }} onClick={() => navigate('/development/mentorship/signup')}>
-                Trở thành cố vấn
+                {t('profile:become_mentor_btn')}
               </Button>
             </Stack>
           </Box>
@@ -417,13 +420,13 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
     if (access.hasMentorProfile) {
       const stats = [
-        { value: expertise.length, label: 'lĩnh vực chia sẻ' },
-        { value: mentor?.totalSessions ?? 0, label: 'buổi đã hoàn thành' },
-        { value: formatRating(mentor?.ratingAvg), label: 'đánh giá trung bình' },
-        { value: feedbacks.length, label: 'phản hồi' },
+        { value: expertise.length, label: t('profile:stats_expertise') },
+        { value: mentor?.totalSessions ?? 0, label: t('profile:stats_sessions') },
+        { value: formatRating(mentor?.ratingAvg), label: t('profile:stats_rating') },
+        { value: feedbacks.length, label: t('profile:stats_feedbacks') },
       ];
       const tags = expertise.map((e) => e.tag || e.topic).filter(Boolean);
-      
+
       const totalPages = Math.max(1, Math.ceil(feedbacks.length / ITEMS_PER_PAGE));
       const paginatedReviews = feedbacks.slice((feedbackPage - 1) * ITEMS_PER_PAGE, feedbackPage * ITEMS_PER_PAGE);
 
@@ -431,23 +434,22 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         <Stack spacing={5} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
           {!isMentorshipPath && (
             <Typography variant="h4" fontWeight={800} color="primary.main" textAlign="center" mb={1}>
-              HỒ SƠ CỐ VẤN CỦA TÔI
+              {t('profile:mentor_profile_heading')}
             </Typography>
           )}
           {mentor.status !== 'APPROVED' && isMentorshipPath && (
             <Alert severity="warning" sx={{ borderRadius: 2 }}>
-              Hồ sơ cố vấn của bạn đang chờ khoa duyệt. Trong thời gian này bạn chưa xuất hiện trong
-              danh sách tìm cố vấn.
+              {t('profile:mentor_pending_warning')}
             </Alert>
           )}
           <StatsBanner items={stats} />
-          
-          <ExpertiseSection expertise={expertise} />
-          
+
+          <ExpertiseSection expertise={expertise} t={t} />
+
           {tags.length > 0 && (
             <Box>
               <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-                <VerifiedIcon /> Kỹ năng
+                <VerifiedIcon /> {t('profile:skills_section')}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {tags.map((tag, idx) => (
@@ -462,6 +464,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
             page={feedbackPage}
             totalPages={totalPages}
             onPageChange={setFeedbackPage}
+            t={t}
           />
         </Stack>
       );
@@ -473,17 +476,17 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
         <Stack spacing={5} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
           {!isMentorshipPath && (
             <Typography variant="h4" fontWeight={800} color="primary.main" textAlign="center" mb={1}>
-              HỒ SƠ MENTEE CỦA TÔI
+              {t('profile:mentee_profile_heading')}
             </Typography>
           )}
           <Box>
             <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
-              <PersonIcon /> Mục tiêu của tôi
+              <PersonIcon /> {t('profile:mentee_goal_section')}
             </Typography>
             <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)', border: '1px solid', borderColor: 'divider' }}>
               <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                 <Typography color={mentee?.mentoringGoal?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentee?.mentoringGoal?.trim() ? 'normal' : 'italic' }}>
-                  {mentee?.mentoringGoal?.trim() || 'Bạn chưa chia sẻ mục tiêu mong muốn được hỗ trợ.'}
+                  {mentee?.mentoringGoal?.trim() || t('profile:no_mentee_goal')}
                 </Typography>
               </CardContent>
             </Card>
@@ -491,7 +494,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
           {interestTags.length > 0 && (
             <Box>
               <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-                <VerifiedIcon /> Lĩnh vực quan tâm
+                <VerifiedIcon /> {t('profile:interest_section')}
               </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                 {interestTags.map((tag, idx) => (
@@ -506,7 +509,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   };
 
   return (
-    <Page title="Trang cá nhân">
+    <Page title={t('profile:page_title_profile')}>
       <ProfileLayout
         user={user}
         cover={user.cover}
@@ -520,11 +523,11 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
               {renderMentorshipSection()}
               <Box sx={{ pt: 6, borderTop: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h4" fontWeight={800} color="primary.main" mb={5} textAlign="center" textTransform="uppercase">
-                  Thông tin chung
+                  {t('profile:general_info')}
                 </Typography>
                 {renderPersonalSection()}
                 <Box mt={6}>
-                  <ExtendedProfileSections raw={extendedProfile} />
+                  <ExtendedProfileSections raw={extendedProfile} t={t} />
                 </Box>
               </Box>
             </>
@@ -532,7 +535,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
             <>
               {renderPersonalSection()}
               <Box mt={2}>
-                <ExtendedProfileSections raw={extendedProfile} />
+                <ExtendedProfileSections raw={extendedProfile} t={t} />
               </Box>
               <UserHighlights userId={profile?.userId || authUser?.id} navigate={navigate} />
               {renderMentorshipSection()}
@@ -546,6 +549,7 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
 
 
 const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
+  const { t } = useTranslation(['mentorship', 'profile']);
   const access = useMentorshipAccessState();
   const [feedbackPage, setFeedbackPage] = useState(0);
 
@@ -591,21 +595,21 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
   if (profileQuery.isError || !mentor) {
     return (
-      <Alert severity="error">Không tải được hồ sơ cố vấn. Vui lòng thử lại.</Alert>
+      <Alert severity="error">{t('profile:error_load_mentor')}</Alert>
     );
   }
 
   const user = {
     name: mentor.fullName ?? `Mentor #${mentor.memberId}`,
-    role: [mentor.currentJobTitle, mentor.currentCompany].filter(Boolean).join(' @ ') || 'Cố vấn',
+    role: [mentor.currentJobTitle, mentor.currentCompany].filter(Boolean).join(' @ ') || t('profile:mentor_role_default'),
     avatar: mentor.avatarUrl ?? '',
     cover: DEFAULT_COVER,
   };
 
   const stats = [
-    { value: expertise.length || (mentor.expertiseTopics?.length ?? 0), label: 'lĩnh vực chia sẻ' },
-    { value: mentor.totalSessions ?? 0, label: 'buổi đã hoàn thành' },
-    { value: formatRating(mentor.ratingAvg), label: 'đánh giá trung bình' },
+    { value: expertise.length || (mentor.expertiseTopics?.length ?? 0), label: t('profile:stats_expertise') },
+    { value: mentor.totalSessions ?? 0, label: t('profile:stats_sessions') },
+    { value: formatRating(mentor.ratingAvg), label: t('profile:stats_rating') },
   ];
 
   const tags =
@@ -626,13 +630,12 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
       <Stack spacing={5}>
         {access.needsOrgVerification && (
           <Alert severity="info" sx={{ borderRadius: 2 }}>
-            Bạn đang xem hồ sơ ở chế độ xem trước. Xác minh học vấn tại khoa để đặt lịch và xem đánh
-            giá đầy đủ.
+            {t('profile:preview_mode_warning')}
           </Alert>
         )}
 
         <Typography variant="h3" fontWeight={800} color="primary.main" textAlign="center">
-          HỒ SƠ CỐ VẤN
+          {t('profile:mentor_public_heading')}
         </Typography>
 
         <StatsBanner items={stats} />
@@ -640,25 +643,25 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 
       <Box sx={{ mt: 5 }}>
         <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-          <PersonIcon /> Giới thiệu
+          <PersonIcon /> {t('profile:intro_section')}
         </Typography>
         <Card sx={{ borderRadius: 3, boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)', border: '1px solid', borderColor: 'divider' }}>
           <CardContent sx={{ p: { xs: 3, md: 4 } }}>
             <Typography color={mentor.bio?.trim() ? 'text.secondary' : 'text.disabled'} sx={{ whiteSpace: 'pre-line', fontSize: '1.05rem', lineHeight: 1.7, fontStyle: mentor.bio?.trim() ? 'normal' : 'italic' }}>
-              {mentor.bio?.trim() || 'Chưa có phần giới thiệu.'}
+              {mentor.bio?.trim() || t('profile:no_intro')}
             </Typography>
           </CardContent>
         </Card>
       </Box>
 
       <Box sx={{ mt: 5 }}>
-        <ExpertiseSection expertise={expertise} />
+        <ExpertiseSection expertise={expertise} t={t} />
       </Box>
 
       {tags.length > 0 && (
         <Box sx={{ mt: 5 }}>
           <Typography variant="h5" fontWeight={800} color="primary.main" mb={3} display="flex" alignItems="center" gap={1}>
-            <VerifiedIcon /> Kỹ năng
+            <VerifiedIcon /> {t('profile:skills_section')}
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {tags.map((tag, idx) => (
@@ -676,6 +679,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
             page={(feedbackPageData?.currentPage ?? 0) + 1}
             totalPages={feedbackPageData?.totalPage ?? 1}
             onPageChange={(p) => setFeedbackPage(p - 1)}
+            t={t}
           />
         </Box>
       )}
@@ -684,6 +688,7 @@ const PublicMentorProfile = ({ mentorMemberId, navigate }) => {
 };
 
 const UnifiedProfilePage = () => {
+  const { t } = useTranslation('mentorship');
   const navigate = useOrgNavigate();
   const location = useLocation();
   const { mentorId, id } = useParams();

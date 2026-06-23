@@ -19,6 +19,7 @@ import {
   Tooltip,
   Collapse,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import SearchBar from '../SearchBar';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -36,17 +37,26 @@ const AdminDataTable = ({
   onSearchChange,
   onSearchKeyDown,
   searchValue,
-  searchPlaceholder = 'Tìm kiếm...',
+  searchPlaceholder,
   actions,
   filters,
   onExport,
   addButton,
-  emptyMessage = 'Không tìm thấy dữ liệu phù hợp.',
+  emptyMessage,
   onRowClick,
   renderExpandableRow,
 }) => {
+  const { t } = useTranslation(['common', 'admin']);
   const theme = useTheme();
+  const resolvedSearchPlaceholder = searchPlaceholder ?? t('common:search_placeholder');
+  const resolvedEmptyMessage = emptyMessage ?? t('common:no_data_found');
   const [expandedRow, setExpandedRow] = useState(null);
+  const tableHeadBg = theme.palette.mode === 'dark'
+    ? alpha(theme.palette.primary.main, 0.22)
+    : theme.palette.primary.main;
+  const tableHeadColor = theme.palette.mode === 'dark'
+    ? theme.palette.text.primary
+    : theme.palette.primary.contrastText;
 
   const handleRowExpand = (id, e) => {
     e.stopPropagation();
@@ -79,7 +89,7 @@ const AdminDataTable = ({
               value={searchValue}
               onChange={onSearchChange}
               onKeyDown={onSearchKeyDown}
-              placeholder={searchPlaceholder}
+              placeholder={resolvedSearchPlaceholder}
               sx={{
                 maxWidth: { md: 400 },
               }}
@@ -92,7 +102,7 @@ const AdminDataTable = ({
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
             {filters}
             {onExport && (
-              <Tooltip title="Xuất dữ liệu">
+              <Tooltip title={t('admin:export_data')}>
                 <IconButton
                   size="small"
                   onClick={onExport}
@@ -127,11 +137,8 @@ const AdminDataTable = ({
                 <TableCell
                   sx={{
                     width: 48,
-                    bgcolor: (t) =>
-                      t.palette.mode === 'light'
-                        ? 'primary.main'
-                        : 'primary.dark',
-                    color: 'primary.contrastText',
+                    bgcolor: tableHeadBg,
+                    color: tableHeadColor,
                   }}
                 />
               )}
@@ -140,9 +147,9 @@ const AdminDataTable = ({
                   key={column.id}
                   align={column.align || 'left'}
                   sx={{
-                    bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark',
+                    bgcolor: tableHeadBg,
                     fontWeight: 700,
-                    color: 'primary.contrastText',
+                    color: tableHeadColor,
                     fontSize: 13,
                     py: 2,
                     textTransform: 'uppercase',
@@ -159,7 +166,7 @@ const AdminDataTable = ({
               <TableRow>
                 <TableCell colSpan={columns.length + (renderExpandableRow ? 1 : 0)} sx={{ py: 10, textAlign: 'center' }}>
                   <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic' }}>
-                    {emptyMessage}
+                    {resolvedEmptyMessage}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -176,7 +183,7 @@ const AdminDataTable = ({
                       sx={{ 
                         cursor: onRowClick ? 'pointer' : 'default',
                         borderBottom: isExpanded ? 'none' : undefined,
-                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.02) }
+                        '&:hover': { bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.02) }
                       }}
                     >
                       {renderExpandableRow && (
@@ -223,7 +230,7 @@ const AdminDataTable = ({
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={onRowsPerPageChange}
         rowsPerPageOptions={[10, 25, 50]}
-        labelRowsPerPage="Số dòng mỗi trang:"
+        labelRowsPerPage={t('common:rows_per_page')}
         sx={{ borderTop: `1px solid ${theme.palette.divider}` }}
       />
     </Paper>

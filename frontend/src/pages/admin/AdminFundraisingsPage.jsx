@@ -32,10 +32,12 @@ import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import GroupIcon from "@mui/icons-material/Group";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import { useTranslation } from "react-i18next";
 import { useAdminSystemContext } from "../../stores/AdminStore";
 import { fundApi } from "../../utils/api";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import SearchIcon from "@mui/icons-material/Search";
+import FileDownloadOutlinedIcon from "@mui/icons-material/FileDownloadOutlined";
 
 import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
@@ -44,30 +46,32 @@ import useAdminFundraisingsData from "../../hooks/admin/useAdminFundraisingsData
 import { formatDateTime } from "../../utils/dateFormatter";
 import { formatCurrencyVnd } from "../../utils/numberFormatter";
 import { useDebounce } from "../../hooks/useDebounce";
+import { exportToCSV } from "../../utils/exportUtils";
 
-// Trạng thái quỹ được suy ra hoàn toàn từ thời gian bắt đầu/kết thúc.
-const getFundPhase = (timeStarted, timeEnded) => {
-  const now = Date.now();
-  const start = timeStarted ? new Date(timeStarted).getTime() : null;
-  const end = timeEnded ? new Date(timeEnded).getTime() : null;
-  if (start && now < start) return { status: "UPCOMING", label: "Sắp diễn ra" };
-  if (end && now > end) return { status: "ENDED", label: "Đã kết thúc" };
-  return { status: "ACTIVE", label: "Đang chạy" };
-};
-
-const isFundActive = (fund) => getFundPhase(fund.timeStarted, fund.timeEnded).status === "ACTIVE";
+const isFundActive = (fund, getFundPhase) => getFundPhase(fund.timeStarted, fund.timeEnded).status === "ACTIVE";
 
 const AdminFundraisingsPage = () => {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation("admin");
   const { setBreadcrumbs } = useOutletContext();
   const { stableOrgId, activeOrganization } = useAdminSystemContext();
+
+  // Trạng thái quỹ được suy ra hoàn toàn từ thời gian bắt đầu/kết thúc.
+  const getFundPhase = (timeStarted, timeEnded) => {
+    const now = Date.now();
+    const start = timeStarted ? new Date(timeStarted).getTime() : null;
+    const end = timeEnded ? new Date(timeEnded).getTime() : null;
+    if (start && now < start) return { status: "UPCOMING", label: t('fund_phase_upcoming') };
+    if (end && now > end) return { status: "ENDED", label: t('fund_phase_ended') };
+    return { status: "ACTIVE", label: t('fund_phase_active') };
+  };
 
   const getOrgSlug = () => activeOrganization?.slug || "hcmus";
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: "Quản lý gây quỹ", active: true }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs?.([{ label: t('fund_management_breadcrumb'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   const {
     fundraisings,
@@ -104,6 +108,7 @@ const AdminFundraisingsPage = () => {
   const [donationsSearchKeyword, setDonationsSearchKeyword] = useState("");
   const [keywordInput, setKeywordInput] = useState("");
   const [donationsSearchBy, setDonationsSearchBy] = useState("name");
+  const [isExporting, setIsExporting] = useState(false);
 
   const loadCampaignDonations = async (fundId, pageNum = 1, keyword = "", searchByField = "name") => {
     setDonationsLoading(true);
@@ -120,10 +125,42 @@ const AdminFundraisingsPage = () => {
       setDonationsList(res?.items ?? []);
       setDonationsTotalPages(res?.totalPage ?? 1);
     } catch {
-      enqueueSnackbar("Không thể tải danh sách lượt quyên góp.", { variant: "error" });
+      enqueueSnackbar(t('fund_donations_load_error'), { variant: "error" });
       setDonationsList([]);
     } finally {
       setDonationsLoading(false);
+    }
+  };
+
+  const handleExportDonationsCsv = async () => {
+    const fundId = donationsTarget?.id;
+    if (!fundId) return;
+
+    setIsExporting(true);
+    try {
+      const donations = await fundApi.getAllFundDonationsForExport(fundId);
+      if (!donations.length) {
+        enqueueSnackbar(t('fund_export_empty'), { variant: "warning" });
+        return;
+      }
+
+      const exportData = donations.map((item) => ({
+        [t('fund_donor_name')]: item.donorName,
+        [t('fund_donor_phone')]: item.phone || "",
+        Email: item.email || "",
+        [t('fund_donor_address')]: item.address || "",
+        [t('fund_donor_amount')]: formatCurrencyVnd(item.amount),
+        [t('fund_donor_message')]: item.message || "",
+        [t('fund_donor_time')]: formatDateTime(item.createdAt),
+        [t('fund_donor_status')]: item.status || "",
+      }));
+
+      exportToCSV(exportData, `donations_${fundId}_${Date.now()}.csv`);
+      enqueueSnackbar(t('fund_export_success'), { variant: "success" });
+    } catch {
+      enqueueSnackbar(t('fund_export_failed'), { variant: "error" });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -139,7 +176,7 @@ const AdminFundraisingsPage = () => {
       (acc, f) => acc + (f.raisedAmount || 0),
       0,
     ),
-    activeCampaigns: fundraisings.filter(isFundActive).length,
+    activeCampaigns: fundraisings.filter((f) => isFundActive(f, getFundPhase)).length,
     totalDonors: fundraisings.reduce((acc, f) => acc + (f.donorCount || 0), 0),
     avgCompletion: fundraisings.length
       ? (
@@ -157,17 +194,17 @@ const AdminFundraisingsPage = () => {
     { id: "id", label: "ID" },
     {
       id: "title",
-      label: "Chiến dịch",
+      label: t('fund_col_title'),
       render: (val) => (
         <Typography variant="body2" sx={{ fontWeight: 600 }}>
           {val}
         </Typography>
       ),
     },
-    { id: "ownerName", label: "Người tạo", render: (val) => val || "-" },
+    { id: "ownerName", label: t('fund_col_owner'), render: (val) => val || "-" },
     {
       id: "status",
-      label: "Trạng thái",
+      label: t('fund_col_status'),
       render: (_, fund) => {
         const phase = getFundPhase(fund.timeStarted, fund.timeEnded);
         return (
@@ -181,28 +218,28 @@ const AdminFundraisingsPage = () => {
     },
     {
       id: "targetAmount",
-      label: "Mục tiêu",
+      label: t('fund_col_target'),
       align: "right",
       render: (val) => formatCurrencyVnd(val),
     },
     {
       id: "raisedAmount",
-      label: "Đã quyên góp",
+      label: t('fund_col_raised'),
       align: "right",
       render: (val) => (
         <Typography
           variant="body2"
-          color="success.main"
+          color="primary.main"
           sx={{ fontWeight: 700 }}
         >
           {formatCurrencyVnd(val)}
         </Typography>
       ),
     },
-    { id: "donorCount", label: "Lượt ủng hộ", align: "right" },
+    { id: "donorCount", label: t('fund_col_donors'), align: "right" },
     {
       id: "updatedAt",
-      label: "Cập nhật",
+      label: t('fund_col_updated_at'),
       render: (val) => formatDateTime(val),
     },
     {
@@ -216,7 +253,7 @@ const AdminFundraisingsPage = () => {
           justifyContent="flex-end"
           onClick={(ev) => ev.stopPropagation()}
         >
-          <Tooltip title="Chi tiết">
+          <Tooltip title={t('fund_action_detail')}>
             <IconButton
               size="small"
               onClick={() => {
@@ -226,7 +263,7 @@ const AdminFundraisingsPage = () => {
               <LaunchOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Lượt quyên góp">
+          <Tooltip title={t('fund_action_donations')}>
             <IconButton
               size="small"
               color="primary"
@@ -242,7 +279,7 @@ const AdminFundraisingsPage = () => {
               <VolunteerActivismIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t('fund_action_edit')}>
             <IconButton
               size="small"
               onClick={() => {
@@ -253,7 +290,7 @@ const AdminFundraisingsPage = () => {
             </IconButton>
           </Tooltip>
           {getFundPhase(fund.timeStarted, fund.timeEnded).status !== "ENDED" && (
-            <Tooltip title="Đóng quỹ">
+            <Tooltip title={t('fund_action_close')}>
               <IconButton
                 size="small"
                 sx={{
@@ -285,15 +322,14 @@ const AdminFundraisingsPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Quản lý quyên góp
+            {t('fund_page_title')}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Giám sát các chiến dịch thiện nguyện, học bổng và quỹ phát triển
-            sinh viên.
+            {t('fund_page_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -301,7 +337,7 @@ const AdminFundraisingsPage = () => {
           startIcon={<AddOutlinedIcon />}
           onClick={() => navigate(`/${getOrgSlug()}/post/donation`)}
         >
-          Mở quỹ quyên góp
+          {t('fund_btn_create')}
         </Button>
       </Box>
 
@@ -317,24 +353,24 @@ const AdminFundraisingsPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng tiền quyên góp"
+          label={t('fund_stat_total_raised')}
           value={formatCurrencyVnd(stats.totalRaised)}
           icon={<AccountBalanceWalletIcon />}
-          valueColor="success.main"
+          valueColor="primary.main"
         />
         <AdminDashboardMetricTile
-          label="Chiến dịch đang chạy"
+          label={t('fund_stat_active')}
           value={stats.activeCampaigns}
           icon={<TrendingUpIcon />}
           valueColor="primary.main"
         />
         <AdminDashboardMetricTile
-          label="Tổng lượt ủng hộ"
+          label={t('fund_stat_total_donors')}
           value={stats.totalDonors}
           icon={<GroupIcon />}
         />
         <AdminDashboardMetricTile
-          label="Tỷ lệ hoàn thành"
+          label={t('fund_stat_completion')}
           value={`${stats.avgCompletion}%`}
           icon={<VolunteerActivismIcon />}
           valueColor="warning.main"
@@ -354,7 +390,7 @@ const AdminFundraisingsPage = () => {
         }}
         onSearchChange={setSearchTerm}
         searchValue={searchTerm}
-        searchPlaceholder="Tìm theo tên quỹ..."
+        searchPlaceholder={t('fund_search_placeholder')}
         onRowClick={(f) => setDetailItem(f)}
       />
 
@@ -365,7 +401,7 @@ const AdminFundraisingsPage = () => {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle sx={{ fontWeight: 800 }}>Chi tiết chiến dịch</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800 }}>{t('fund_detail_title')}</DialogTitle>
         {detailItem && (
           <DialogContent>
             <Stack spacing={2} sx={{ mt: 1 }}>
@@ -382,7 +418,7 @@ const AdminFundraisingsPage = () => {
                   color="text.secondary"
                   sx={{ display: "block" }}
                 >
-                  Người phụ trách
+                  {t('fund_detail_owner')}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   {detailItem.ownerName || "-"}
@@ -395,7 +431,7 @@ const AdminFundraisingsPage = () => {
                     color="text.secondary"
                     sx={{ display: "block" }}
                   >
-                    Mục tiêu
+                    {t('fund_col_target')}
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     {formatCurrencyVnd(detailItem.targetAmount)}
@@ -407,11 +443,11 @@ const AdminFundraisingsPage = () => {
                     color="text.secondary"
                     sx={{ display: "block" }}
                   >
-                    Đã đạt được
+                    {t('fund_detail_raised')}
                   </Typography>
                   <Typography
                     variant="body2"
-                    color="success.main"
+                    color="primary.main"
                     sx={{ fontWeight: 700 }}
                   >
                     {formatCurrencyVnd(detailItem.raisedAmount)}
@@ -424,7 +460,7 @@ const AdminFundraisingsPage = () => {
                   color="text.secondary"
                   sx={{ display: "block" }}
                 >
-                  Tiến độ
+                  {t('fund_detail_progress')}
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box
@@ -440,7 +476,7 @@ const AdminFundraisingsPage = () => {
                       sx={{
                         width: `${Math.min(100, (detailItem.raisedAmount / detailItem.targetAmount) * 100)}%`,
                         height: "100%",
-                        bgcolor: "success.main",
+                        bgcolor: "primary.main",
                       }}
                     />
                   </Box>
@@ -459,7 +495,7 @@ const AdminFundraisingsPage = () => {
                   color="text.secondary"
                   sx={{ display: "block" }}
                 >
-                  Cập nhật lần cuối
+                  {t('fund_detail_last_updated')}
                 </Typography>
                 <Typography variant="body2">
                   {formatDateTime(detailItem.updatedAt)}
@@ -474,7 +510,7 @@ const AdminFundraisingsPage = () => {
             onClick={() => setDetailItem(null)}
             sx={{ textTransform: "none", fontWeight: 700 }}
           >
-            Đóng
+            {t('fund_btn_close')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -493,14 +529,14 @@ const AdminFundraisingsPage = () => {
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>Xác nhận đóng quỹ sớm</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>{t('fund_close_dialog_title')}</DialogTitle>
         <DialogContent sx={{ pt: "8px !important" }}>
           <Typography sx={{ color: "text.secondary", lineHeight: 1.7 }}>
-            Bạn có chắc muốn đóng sớm quỹ{" "}
+            {t('fund_close_dialog_body_prefix')}{" "}
             <Box component="span" sx={{ color: "primary.main", fontWeight: 700 }}>
               {closeTarget?.title}
             </Box>{" "}
-            không?
+            {t('fund_close_dialog_body_suffix')}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
@@ -514,7 +550,7 @@ const AdminFundraisingsPage = () => {
               fontWeight: 700,
             }}
           >
-            Hủy
+            {t('fund_btn_cancel')}
           </Button>
           <Button
             onClick={async () => {
@@ -522,9 +558,9 @@ const AdminFundraisingsPage = () => {
               setIsClosing(true);
               try {
                 await closeFundById(closeTarget.id);
-                enqueueSnackbar("Đóng quỹ thành công.", { variant: "success" });
+                enqueueSnackbar(t('fund_close_success'), { variant: "success" });
               } catch (err) {
-                const errorMsg = err?.response?.data?.message || "Đóng quỹ thất bại.";
+                const errorMsg = err?.response?.data?.message || t('fund_close_failed');
                 enqueueSnackbar(errorMsg, { variant: "error" });
               } finally {
                 setIsClosing(false);
@@ -540,7 +576,7 @@ const AdminFundraisingsPage = () => {
               fontWeight: 700,
             }}
           >
-            Đóng quỹ
+            {t('fund_btn_close_fund')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -565,7 +601,7 @@ const AdminFundraisingsPage = () => {
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
           <Typography variant="h5" sx={{ fontWeight: 800, color: "text.primary" }}>
-            Danh sách lượt quyên góp
+            {t('fund_donations_dialog_title')}
           </Typography>
           <IconButton onClick={() => setDonationsDialogOpen(false)}>
             <CloseOutlinedIcon />
@@ -573,7 +609,7 @@ const AdminFundraisingsPage = () => {
         </Box>
 
         <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.secondary", mb: 3 }}>
-          Chiến dịch: <span style={{ color: "#1976d2" }}>{donationsTarget?.title || ""}</span>
+          {t('fund_donations_dialog_fund_label')}: <Box component="span" sx={{ color: "primary.main", fontWeight: 600 }}>{donationsTarget?.title || ""}</Box>
         </Typography>
 
         <DialogContent dividers sx={{ px: 0, py: 3, borderTop: "1px solid #e0e0e0", borderBottom: "1px solid #e0e0e0" }}>
@@ -581,8 +617,8 @@ const AdminFundraisingsPage = () => {
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }} alignItems="center">
             <TextField
               size="small"
-              label="Từ khóa tìm kiếm"
-              placeholder="Nhập tên, số điện thoại..."
+              label={t('fund_search_keyword_label')}
+              placeholder={t('fund_search_keyword_placeholder')}
               value={keywordInput}
               onChange={(e) => setKeywordInput(e.target.value)}
               onKeyDown={(e) => {
@@ -599,13 +635,13 @@ const AdminFundraisingsPage = () => {
             <TextField
               select
               size="small"
-              label="Tìm kiếm theo"
+              label={t('fund_search_by_label')}
               value={donationsSearchBy}
               onChange={(e) => setDonationsSearchBy(e.target.value)}
               sx={{ minWidth: 160 }}
             >
-              <MenuItem value="name">Tên người ủng hộ</MenuItem>
-              <MenuItem value="phone">Số điện thoại</MenuItem>
+              <MenuItem value="name">{t('fund_search_by_name')}</MenuItem>
+              <MenuItem value="phone">{t('fund_search_by_phone')}</MenuItem>
               <MenuItem value="email">Email</MenuItem>
             </TextField>
             <Button
@@ -616,21 +652,30 @@ const AdminFundraisingsPage = () => {
               }}
               sx={{ borderRadius: 2, fontWeight: 700, px: 3, py: 1, textTransform: "none" }}
             >
-              Tìm kiếm
+              {t('fund_btn_search')}
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<FileDownloadOutlinedIcon />}
+              onClick={handleExportDonationsCsv}
+              disabled={isExporting}
+              sx={{ borderRadius: 2, fontWeight: 700, px: 3, py: 1, textTransform: "none", flexShrink: 0 }}
+            >
+              {isExporting ? t('fund_btn_exporting') : t('fund_btn_export_csv')}
             </Button>
           </Stack>
 
           {donationsLoading ? (
             <Box sx={{ py: 6, display: "flex", justifyContent: "center" }}>
               <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 500 }}>
-                Đang tải danh sách lượt quyên góp...
+                {t('fund_donations_loading')}
               </Typography>
             </Box>
           ) : donationsList.length === 0 ? (
             <Box sx={{ py: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
               <VolunteerActivismIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
               <Typography variant="body1" sx={{ color: "text.secondary", fontWeight: 600 }}>
-                Chưa có lượt quyên góp nào phù hợp.
+                {t('fund_donations_empty')}
               </Typography>
             </Box>
           ) : (
@@ -639,25 +684,25 @@ const AdminFundraisingsPage = () => {
                 <Table>
                   <TableHead sx={{ backgroundColor: "grey.50" }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Nhà hảo tâm</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Số điện thoại</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Địa chỉ</TableCell>
-                      <TableCell sx={{ fontWeight: 700, textAlign: "right" }}>Số tiền ủng hộ</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Lời nhắn</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Thời gian</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_donor')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_phone')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_email')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_address')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700, textAlign: "right" }}>{t('fund_col_amount')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_message')}</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }}>{t('fund_col_time')}</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {donationsList.map((item) => (
                       <TableRow key={item.id} hover>
                         <TableCell sx={{ fontWeight: 600, color: "text.primary" }}>
-                          {item.donorName || "Nhà hảo tâm"}
+                          {item.donorName}
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>{item.phone || "--"}</TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>{item.email || "--"}</TableCell>
                         <TableCell sx={{ color: "text.secondary" }}>{item.address || "--"}</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "success.main", textAlign: "right" }}>
+                        <TableCell sx={{ fontWeight: 700, color: "primary.main", textAlign: "right" }}>
                           {formatCurrencyVnd(item.amount)}
                         </TableCell>
                         <TableCell sx={{ color: "text.secondary", fontStyle: item.message ? "normal" : "italic", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={item.message}>
@@ -692,7 +737,7 @@ const AdminFundraisingsPage = () => {
             onClick={() => setDonationsDialogOpen(false)}
             sx={{ px: 4, py: 1, borderRadius: 2, textTransform: "none", fontWeight: 700 }}
           >
-            Đóng
+            {t('fund_btn_close')}
           </Button>
         </DialogActions>
       </Dialog>

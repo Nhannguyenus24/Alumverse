@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
-  Autocomplete, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem, 
-  FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack, 
+  Autocomplete, Alert, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem,
+  FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack,
   InputAdornment, IconButton, List, ListItem, ListItemText, CircularProgress,
 } from '@mui/material';
 import Avatar from '@mui/material/Avatar';
@@ -25,10 +25,13 @@ import PeopleIcon from '@mui/icons-material/People';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import DialogActions from '@mui/material/DialogActions';
 import Slider from '@mui/material/Slider';
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import NetworkConnectionsPanel from '../../components/network/NetworkConnectionsPanel';
 import Sidebar from '../../components/Sidebar';
 import { userSettingsApi } from '../../utils/api';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import SendIcon from '@mui/icons-material/Send';
 import useAuthStore from '../../stores/authStore';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrganization } from '../../hooks/useOrganization';
@@ -74,6 +77,7 @@ const normalizeAcademicList = (value) => {
 const normalizeIntegerList = (value) => normalizeAcademicList(value).map((item) => Number(item)).filter((item) => Number.isInteger(item));
 
 export default function SettingPage() {
+  const { t } = useTranslation('settings');
   const { showSuccess, showError, showWarning } = useNotification();
   const { organization } = useOrganization();
   const organizationId = useMemo(() => Number(organization?.id) || null, [organization?.id]);
@@ -91,17 +95,22 @@ export default function SettingPage() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
+  const [pendingEduRequest, setPendingEduRequest] = useState(null);
+  const [isEduEditMode, setIsEduEditMode] = useState(false);
+  const [originalEducations, setOriginalEducations] = useState(null);
+  const [submitEduPending, setSubmitEduPending] = useState(false);
+
   const menuItems = useMemo(() => {
     const items = [
-      { id: 'personal', label: 'Cá nhân', icon: <PersonIcon /> },
-      { id: 'account', label: 'Tài khoản', icon: <SecurityIcon /> },
-      { id: 'notification', label: 'Thông báo', icon: <NotificationsIcon /> },
-      { id: 'connections', label: 'Kết nối', icon: <PeopleIcon /> },
-      { id: 'advisor', label: 'Thông tin cố vấn', icon: <VerifiedUserIcon /> },
+      { id: 'personal', label: t('tab_personal'), icon: <PersonIcon /> },
+      { id: 'account', label: t('tab_account'), icon: <SecurityIcon /> },
+      { id: 'notification', label: t('tab_notification'), icon: <NotificationsIcon /> },
+      { id: 'connections', label: t('tab_connections'), icon: <PeopleIcon /> },
+      { id: 'advisor', label: t('tab_advisor'), icon: <VerifiedUserIcon /> },
     ];
-    if (isTrustedVerifier) items.push({ id: 'verification', label: 'Xác thực đồng nghiệp', icon: <GroupAddIcon /> });
+    if (isTrustedVerifier) items.push({ id: 'verification', label: t('tab_verification'), icon: <GroupAddIcon /> });
     return items;
-  }, [isTrustedVerifier]);
+  }, [isTrustedVerifier, t]);
 
   const [formData, setFormData] = useState({
     fullName: '', gender: '', birthDate: '', phone: '', studentId: '', email: '',
@@ -134,26 +143,26 @@ export default function SettingPage() {
     }
   };
 
-  // Nút navigate qua Organization Registration
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  // Edit avatar
   const avatarCrop = useAvatarCrop();
-  // Tạo state edit mode
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
-  
+
   const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [profile, member, settings, history] = await Promise.all([
+        const [profile, member, settings, history, pendingEdu] = await Promise.all([
           userSettingsApi.getProfile(),
           organizationId ? userSettingsApi.getOrganizationMember(organizationId) : Promise.resolve(null),
           userSettingsApi.getNotificationSettings(),
           userSettingsApi.getLoginHistory({ page: 0, limit: 10 }),
+          organizationId ? userSettingsApi.getPendingEducationRequest(organizationId).catch(() => null) : Promise.resolve(null),
         ]);
+
+        setPendingEduRequest(pendingEdu ?? null);
 
         setIsTrustedVerifier(member?.isTrustedVerifier ?? false);
 
@@ -205,7 +214,7 @@ export default function SettingPage() {
         setLoginHistory(Array.isArray(history) ? history : []);
       } catch (error) {
         console.error('Failed to load setting data', error);
-        showError(getErrorMessage(error, 'Không tải được dữ liệu cài đặt.'));
+        showError(getErrorMessage(error, t('error_load_settings')));
       }
     };
 
@@ -260,7 +269,7 @@ export default function SettingPage() {
 
   const handleSaveProfile = async () => {
     if (!organizationId) {
-      showWarning('Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.');
+      showWarning(t('warn_no_org'));
       return;
     }
 
@@ -269,65 +278,109 @@ export default function SettingPage() {
         organizationId,
         phone: formData.phone || null,
         gender: formData.gender || null,
+      };
+
+      await userSettingsApi.updateProfile(payload);
+      showSuccess(t('success_save_profile'));
+
+      setOriginalFormData(null);
+      setIsEditMode(false);
+    } catch (error) {
+      console.error('Failed to update profile', error);
+      showError(getErrorMessage(error, t('error_save_profile')));
+    }
+  };
+
+  const handleSubmitEduRequest = async () => {
+    if (!organizationId) {
+      showWarning(t('org_not_found'));
+      return;
+    }
+    setSubmitEduPending(true);
+    try {
+      const result = await userSettingsApi.submitEducationRequest({
+        organizationId,
         program: formData.educations.map((e) => e.program || ''),
         startedYear: formData.educations.map((e) => e.startedYear || ''),
-        graduatedYear: formData.educations.map((e) => Number(e.graduatedYear) || 0),
+        graduatedYear: formData.educations.map((e) => e.graduatedYear || ''),
         graduationStatus: formData.educations.map((e) => e.graduationStatus || ''),
         major: formData.educations.map((e) => e.major || ''),
         faculty: formData.educations.map((e) => e.faculty || ''),
         department: formData.educations.map((e) => e.department || ''),
-      };
-
-      await userSettingsApi.updateProfile(payload);
-      showSuccess('Cập nhật thông tin cá nhân thành công.');
-      
-      setOriginalFormData(null);
-      setIsEditMode(false);
-
+      });
+      setPendingEduRequest(result);
+      setIsEduEditMode(false);
+      setOriginalEducations(null);
+      showSuccess(t('edu_request_sent'));
     } catch (error) {
-      console.error('Failed to update profile', error);
-      showError(getErrorMessage(error, 'Cập nhật thông tin cá nhân thất bại.'));
+      showError(getErrorMessage(error, t('edu_request_failed')));
+    } finally {
+      setSubmitEduPending(false);
     }
   };
+
+  const handleCancelEduRequest = async () => {
+    if (!pendingEduRequest?.id || !organizationId) return;
+    try {
+      await userSettingsApi.cancelEducationRequest(pendingEduRequest.id, organizationId);
+      setPendingEduRequest(null);
+      showSuccess(t('edu_request_cancelled'));
+    } catch (error) {
+      showError(getErrorMessage(error, t('cancel_request_failed')));
+    }
+  };
+
+  const handleStartEduEdit = useCallback(() => {
+    setOriginalEducations(structuredClone(formData.educations));
+    setIsEduEditMode(true);
+  }, [formData.educations]);
+
+  const handleCancelEduEdit = useCallback(() => {
+    if (originalEducations) {
+      setFormData((prev) => ({ ...prev, educations: originalEducations }));
+    }
+    setIsEduEditMode(false);
+    setOriginalEducations(null);
+  }, [originalEducations]);
 
   const handleSaveNotificationSettings = async () => {
     try {
       await userSettingsApi.updateNotificationSettings(notificationSettings);
-      showSuccess('Cập nhật cài đặt thông báo thành công.');
+      showSuccess(t('success_save_notif'));
     } catch (error) {
       console.error('Failed to update notification settings', error);
-      showError(getErrorMessage(error, 'Cập nhật cài đặt thông báo thất bại.'));
+      showError(getErrorMessage(error, t('error_save_notif')));
     }
   };
 
   const handleChangePassword = async () => {
     if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      showWarning('Vui lòng nhập đầy đủ các trường mật khẩu.');
+      showWarning(t('warn_fill_password'));
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showWarning('Mật khẩu mới và xác nhận mật khẩu không khớp.');
+      showWarning(t('warn_password_mismatch'));
       return;
     }
 
     try {
       await userSettingsApi.changePassword({ oldPassword: passwordForm.oldPassword, newPassword: passwordForm.newPassword });
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      showSuccess('Đổi mật khẩu thành công.');
+      showSuccess(t('success_change_password'));
     } catch (error) {
       console.error('Failed to change password', error);
-      showError(getErrorMessage(error, 'Đổi mật khẩu thất bại.'));
+      showError(getErrorMessage(error, t('error_change_password')));
     }
   };
 
   const handleAcceptVerification = async (requestId) => {
     try {
       await userSettingsApi.acceptPeerVerification(requestId);
-      showSuccess('Xác thực đồng nghiệp thành công.');
+      showSuccess(t('success_accept_verification'));
       setPendingRequests((prev) => prev.filter((r) => r.requestId !== requestId));
     } catch (error) {
       console.error('Failed to accept verification', error);
-      showError(getErrorMessage(error, 'Xác thực đồng nghiệp thất bại.'));
+      showError(getErrorMessage(error, t('error_accept_verification')));
     }
   };
 
@@ -374,79 +427,109 @@ export default function SettingPage() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, }}>
           {!isEditMode && (
             <Button variant="contained" color="secondary" startIcon={<EditIcon />}
-              onClick={() => { setOriginalFormData(structuredClone(formData)); setIsEditMode(true) }}  
+              onClick={() => { setOriginalFormData(structuredClone(formData)); setIsEditMode(true) }}
             >
-              Sửa thông tin
+              {t('edit_info')}
             </Button>
           )}
           {user?.role === 'GUEST' && (
             <Button variant="contained" color="warning" startIcon={<ShieldOutlinedIcon />}
                     onClick={() => navigate('/cs-hcmus/organization-registration')}
             >
-              Xác thực tài khoản
+              {t('verify_account')}
             </Button>
           )}
         </Box>
       </Box>
 
-      {/* Thông tin cơ bản */}
+      {/* Basic Info */}
       <Box>
-        <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>Thông tin cơ bản</Typography>
+        <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>{t('basic_info')}</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-          <TextField fullWidth label="Họ và tên" name="fullName" value={formData.fullName} InputProps={{ readOnly: !isEditMode }} />
+          <TextField fullWidth label={t('label_fullname')} name="fullName" value={formData.fullName} InputProps={{ readOnly: !isEditMode }} />
           <FormControl fullWidth>
-            <InputLabel>Giới tính</InputLabel>
-            <Select name="gender" value={formData.gender} label="Giới tính" onChange={handleFormChange} disabled={!isEditMode}>
-              <MenuItem value="male">Nam</MenuItem>
-              <MenuItem value="female">Nữ</MenuItem>
-              <MenuItem value="other">Khác</MenuItem>
+            <InputLabel>{t('label_gender')}</InputLabel>
+            <Select name="gender" value={formData.gender} label={t('label_gender')} onChange={handleFormChange} disabled={!isEditMode}>
+              <MenuItem value="male">{t('gender_male')}</MenuItem>
+              <MenuItem value="female">{t('gender_female')}</MenuItem>
+              <MenuItem value="other">{t('gender_other')}</MenuItem>
             </Select>
           </FormControl>
-          <TextField fullWidth label="Ngày sinh" name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} />
-          <TextField fullWidth label="Số điện thoại" name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
-          <TextField fullWidth label="Mã số sinh viên" name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
-          <TextField fullWidth label="Email" name="email" type="email" value={formData.email} InputProps={{ readOnly: !isEditMode }} />
+          <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} />
+          <TextField fullWidth label={t('label_phone')} name="phone" value={formData.phone} InputProps={{ readOnly: !isEditMode }} onChange={handleFormChange} />
+          <TextField fullWidth label={t('label_student_id')} name="studentId" value={formData.studentId} InputProps={{ readOnly: true }} />
+          <TextField fullWidth label={t('label_email')} name="email" type="email" value={formData.email} InputProps={{ readOnly: !isEditMode }} />
         </Box>
       </Box>
 
-      {/* Thông tin học vấn */}
+      {/* Education Info */}
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h4" fontWeight="bold">Thông tin học vấn</Typography>
+          <Typography variant="h4" fontWeight="bold">{t('education_info')}</Typography>
           {isEditMode && (
-            <Button startIcon={<AddIcon />} variant="outlined" onClick={addEducation}>Thêm học vấn</Button>
+            <Button startIcon={<AddIcon />} variant="outlined" onClick={addEducation}>{t('add_education')}</Button>
           )}
         </Box>
+
+        {pendingEduRequest && (
+          <Alert
+            severity="info"
+            sx={{ mb: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={handleCancelEduRequest}>
+                {t('cancel_request')}
+              </Button>
+            }
+          >
+            {t('edu_request_pending_note')}
+          </Alert>
+        )}
+
         <Stack spacing={3}>
           {formData.educations.map((edu, index) => (
             <Card key={index} variant="outlined" sx={{ p: 3, position: 'relative', bgcolor: 'grey.50' }}>
-              {isEditMode && formData.educations.length > 1 && (
+              {isEduEditMode && formData.educations.length > 1 && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h5">Học vấn</Typography>
+                  <Typography variant="h5">{t('education_label')}</Typography>
                   <IconButton size="small" color="error" onClick={() => removeEducation(index)} sx={{ '&:hover': { bgcolor: 'error.lighter' } }}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Box>
               )}
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                <TextField fullWidth label="Khoa" value={edu.faculty} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
-                <TextField fullWidth label="Bộ môn" value={edu.department} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
-                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label="Chương trình đào tạo" />} />
-                <TextField fullWidth label="Khoá" value={edu.startedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
-                <TextField fullWidth label="Năm tốt nghiệp" value={edu.graduatedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
-                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label="Chuyên ngành" />} />
-                <Autocomplete freeSolo options={['Đã tốt nghiệp', 'Đang học']} value={edu.graduationStatus} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label="Trạng thái tốt nghiệp" />} />
+                <TextField fullWidth label={t('label_faculty')} value={edu.faculty} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'faculty', e.target.value)} />
+                <TextField fullWidth label={t('label_department')} value={edu.department} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'department', e.target.value)} />
+                <Autocomplete freeSolo options={organizationProgramOptions} value={edu.program} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'program', value)} onChange={(_e, value) => handleEducationChange(index, 'program', value || '')} renderInput={(params) => <TextField {...params} label={t('label_program')} />} />
+                <TextField fullWidth label={t('label_cohort')} value={edu.startedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'startedYear', e.target.value)} />
+                <TextField fullWidth label={t('label_grad_year')} value={edu.graduatedYear} disabled={!isEditMode} onChange={(e) => handleEducationChange(index, 'graduatedYear', e.target.value)} />
+                <Autocomplete freeSolo options={organizationMajorOptions} value={edu.major} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'major', value)} onChange={(_e, value) => handleEducationChange(index, 'major', value || '')} renderInput={(params) => <TextField {...params} label={t('label_major')} />} />
+                <Autocomplete freeSolo options={[t('grad_status_graduated'), t('grad_status_studying')]} value={edu.graduationStatus} disabled={!isEditMode} onInputChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value)} onChange={(_e, value) => handleEducationChange(index, 'graduationStatus', value || '')} renderInput={(params) => <TextField {...params} label={t('label_grad_status')} />} />
               </Box>
             </Card>
           ))}
         </Stack>
+
+        {isEduEditMode && (
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 2 }}>
+            <Button variant="outlined" color="inherit" onClick={handleCancelEduEdit}>{t('cancel')}</Button>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<SendIcon />}
+              onClick={handleSubmitEduRequest}
+              disabled={submitEduPending}
+            >
+              {submitEduPending ? t('submitting') : t('submit_request')}
+            </Button>
+          </Box>
+        )}
       </Box>
 
-      {/* Actions */}
+      {/* Actions — chỉ lưu thông tin cơ bản */}
       {isEditMode && (
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button variant="outlined" color="inherit" sx={{ px: 4 }} onClick={handleCancelEdit}>Huỷ</Button>
-          <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>Lưu thay đổi</Button>
+          <Button variant="outlined" color="inherit" sx={{ px: 4 }} onClick={handleCancelEdit}>{t('cancel')}</Button>
+          <Button variant="contained" color="primary" onClick={handleSaveProfile} sx={{ px: 4 }}>{t('save_changes')}</Button>
        </Box>
       )}
     </Box>
@@ -456,13 +539,13 @@ export default function SettingPage() {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Email Section */}
       <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>Địa chỉ Email</Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>{t('email_section')}</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, border: 1, borderColor: 'divider', borderRadius: 1, p: 2 }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="body1" fontWeight={600}>{formData.email || 'Chưa cập nhật'}</Typography>
-            <Typography variant="caption" color="text.secondary">Email này được sử dụng để đăng nhập và nhận thông báo.</Typography>
+            <Typography variant="body1" fontWeight={600}>{formData.email || t('email_not_set')}</Typography>
+            <Typography variant="caption" color="text.secondary">{t('email_login_desc')}</Typography>
           </Box>
-          <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setIsChangeEmailModalOpen(true)}>Đổi Email</Button>
+          <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setIsChangeEmailModalOpen(true)}>{t('change_email')}</Button>
         </Box>
       </Box>
 
@@ -470,15 +553,15 @@ export default function SettingPage() {
 
       {/* Change Password Section */}
       <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>Đặt lại mật khẩu</Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>{t('password_section')}</Typography>
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
-          <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label="Mật khẩu hiện tại" type={showOldPassword ? 'text' : 'password'} placeholder="Nhập mật khẩu hiện tại" slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showOldPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowOldPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showOldPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
-          <TextField fullWidth name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} label="Mật khẩu mới" type={showNewPassword ? 'text' : 'password'} placeholder="Nhập mật khẩu mới" slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showNewPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowNewPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showNewPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
-          <TextField fullWidth name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} label="Xác nhận mật khẩu" type={showConfirmPassword ? 'text' : 'password'} placeholder="Xác nhận mật khẩu" slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} onClick={() => setShowConfirmPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showConfirmPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
+          <TextField fullWidth name="oldPassword" value={passwordForm.oldPassword} onChange={handlePasswordChange} label={t('label_old_password')} type={showOldPassword ? 'text' : 'password'} placeholder={t('placeholder_old_password')} slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showOldPassword ? t('hide_password') : t('show_password')} onClick={() => setShowOldPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showOldPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
+          <TextField fullWidth name="newPassword" value={passwordForm.newPassword} onChange={handlePasswordChange} label={t('label_new_password')} type={showNewPassword ? 'text' : 'password'} placeholder={t('placeholder_new_password')} slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showNewPassword ? t('hide_password') : t('show_password')} onClick={() => setShowNewPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showNewPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
+          <TextField fullWidth name="confirmPassword" value={passwordForm.confirmPassword} onChange={handlePasswordChange} label={t('label_confirm_password')} type={showConfirmPassword ? 'text' : 'password'} placeholder={t('placeholder_confirm_password')} slotProps={{ input: { endAdornment: (<InputAdornment position="end"><IconButton aria-label={showConfirmPassword ? t('hide_password') : t('show_password')} onClick={() => setShowConfirmPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">{showConfirmPassword ? <VisibilityOff /> : <Visibility />}</IconButton></InputAdornment>) } }} />
         </Box>
         <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button variant="contained" color="primary" onClick={handleChangePassword}>Cập nhật mật khẩu</Button>
-          <Button variant="outlined" color="secondary">Huỷ</Button>
+          <Button variant="contained" color="primary" onClick={handleChangePassword}>{t('update_password')}</Button>
+          <Button variant="outlined" color="secondary">{t('cancel')}</Button>
         </Box>
       </Box>
 
@@ -486,18 +569,18 @@ export default function SettingPage() {
 
       {/* Logged In Devices Section */}
       <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>Thiết bị đã đăng nhập</Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>{t('devices_section')}</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {loginHistory.length === 0 && <Typography variant="body2" color="text.secondary">Chưa có dữ liệu đăng nhập gần đây.</Typography>}
+          {loginHistory.length === 0 && <Typography variant="body2" color="text.secondary">{t('no_login_history')}</Typography>}
           {loginHistory.map((entry, index) => (
             <Box key={entry?.id ?? `${entry?.loginAt ?? 'history'}-${index}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: 1, borderColor: 'divider', borderRadius: 1, px: 2, py: 1.5 }}>
               <Box>
                 <Typography variant="h5">{parseUserAgent(entry?.userAgent)}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Lần cuối: {formatDateTime(entry?.loginAt, 'Không rõ thời gian')} | IP: {entry?.loginIp || 'N/A'} | Phương thức: {entry?.loginMethod || 'N/A'}
+                  {t('last_login')}: {formatDateTime(entry?.loginAt, t('unknown_time'))} | {t('login_ip')}: {entry?.loginIp || 'N/A'} | {t('login_method')}: {entry?.loginMethod || 'N/A'}
                 </Typography>
               </Box>
-              <Button variant="outlined" color="inherit" size="small" disabled>Theo dõi</Button>
+              <Button variant="outlined" color="inherit" size="small" disabled>{t('monitor')}</Button>
             </Box>
           ))}
         </Box>
@@ -507,47 +590,46 @@ export default function SettingPage() {
 
   const renderNotificationSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* Forum Notifications */}
       <Box>
-        <Typography variant="h4" sx={{ mb: 2 }}>Thông báo theo backend</Typography>
+        <Typography variant="h4" sx={{ mb: 2 }}>{t('notif_section')}</Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          <FormControlLabel control={<Switch name="forumReplyEnabled" checked={notificationSettings.forumReplyEnabled} onChange={handleNotificationChange} />} label="Có trả lời cho bài viết của bạn" />
-          <FormControlLabel control={<Switch name="eventReminderEnabled" checked={notificationSettings.eventReminderEnabled} onChange={handleNotificationChange} />} label="Nhắc nhở sự kiện sắp tới" />
-          <FormControlLabel control={<Switch name="newsEnabled" checked={notificationSettings.newsEnabled} onChange={handleNotificationChange} />} label="Tin tức mới" />
-          <FormControlLabel control={<Switch name="emailEnabled" checked={notificationSettings.emailEnabled} onChange={handleNotificationChange} />} label="Cho phep thong bao qua email" />
-          <FormControlLabel control={<Switch name="pushEnabled" checked={notificationSettings.pushEnabled} onChange={handleNotificationChange} />} label="Cho phep thong bao day" />
+          <FormControlLabel control={<Switch name="forumReplyEnabled" checked={notificationSettings.forumReplyEnabled} onChange={handleNotificationChange} />} label={t('notif_forum_reply')} />
+          <FormControlLabel control={<Switch name="eventReminderEnabled" checked={notificationSettings.eventReminderEnabled} onChange={handleNotificationChange} />} label={t('notif_event_reminder')} />
+          <FormControlLabel control={<Switch name="newsEnabled" checked={notificationSettings.newsEnabled} onChange={handleNotificationChange} />} label={t('notif_news')} />
+          <FormControlLabel control={<Switch name="emailEnabled" checked={notificationSettings.emailEnabled} onChange={handleNotificationChange} />} label={t('notif_email')} />
+          <FormControlLabel control={<Switch name="pushEnabled" checked={notificationSettings.pushEnabled} onChange={handleNotificationChange} />} label={t('notif_push')} />
         </Box>
       </Box>
 
       <Box sx={{ mt: 2, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-        <Button variant="contained" color="primary" onClick={handleSaveNotificationSettings}>Lưu thay đổi</Button>
-        <Button variant="outlined" color="secondary">Huỷ</Button>
+        <Button variant="contained" color="primary" onClick={handleSaveNotificationSettings}>{t('save_changes')}</Button>
+        <Button variant="outlined" color="secondary">{t('cancel')}</Button>
       </Box>
     </Box>
   );
 
   const renderAdvisorSettings = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h4">Thông tin cố vấn học tập</Typography>
-      <Typography variant="body1" color="textSecondary">Chưa có cố vấn được gán. Vui lòng liên hệ với bộ phận quản lý sinh viên để được gán cố vấn.</Typography>
+      <Typography variant="h4">{t('advisor_section')}</Typography>
+      <Typography variant="body1" color="textSecondary">{t('advisor_no_advisor')}</Typography>
       <Paper sx={{ p: 3, bgcolor: 'primary.light' }}>
-        <Typography variant="h5" sx={{ color: 'primary.main' }}>Thông tin liên hệ</Typography>
+        <Typography variant="h5" sx={{ color: 'primary.main' }}>{t('advisor_contact_title')}</Typography>
         <Typography variant="body1" color="secondary.dark" display="block" sx={{ mt: 2 }}>Email: admin@hcmus.edu.vn</Typography>
-        <Typography variant="body1" color="secondary.dark" display="block">Điện thoại: 028 3821 4444</Typography>
+        <Typography variant="body1" color="secondary.dark" display="block">{t('advisor_contact_phone')}</Typography>
       </Paper>
     </Box>
   );
 
   const renderVerificationManagement = () => (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <Typography variant="h4">Quản lý xác thực đồng nghiệp</Typography>
-      <Typography variant="body1" color="textSecondary">Đây là danh sách các yêu cầu xác thực đồng nghiệp đang chờ bạn xử lý.</Typography>
+      <Typography variant="h4">{t('verification_section')}</Typography>
+      <Typography variant="body1" color="textSecondary">{t('verification_desc')}</Typography>
 
       {loadingRequests ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>
       ) : pendingRequests.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }}>
-          <Typography color="textSecondary">Không có yêu cầu xác thực nào đang chờ.</Typography>
+          <Typography color="textSecondary">{t('no_pending_verifications')}</Typography>
         </Paper>
       ) : (
         <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
@@ -556,10 +638,10 @@ export default function SettingPage() {
               <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                 <Stack spacing={0.5}>
                   <Typography variant="h5" fontWeight="bold">{request.requesterName}</Typography>
-                  <Typography variant="body2" color="textSecondary">ID người dùng: {request.requesterUserId}</Typography>
-                  <Typography variant="caption" color="textSecondary">Ngày gửi: {formatDateTime(request.createdAt)}</Typography>
+                  <Typography variant="body2" color="textSecondary">{t('verif_user_id')}: {request.requesterUserId}</Typography>
+                  <Typography variant="caption" color="textSecondary">{t('verif_sent_date')}: {formatDateTime(request.createdAt)}</Typography>
                 </Stack>
-                <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleAcceptVerification(request.requestId)}>Xác nhận</Button>
+                <Button variant="contained" color="success" startIcon={<CheckCircleIcon />} onClick={() => handleAcceptVerification(request.requestId)}>{t('confirm_verification')}</Button>
               </Stack>
             </Paper>
           ))}
@@ -583,7 +665,7 @@ export default function SettingPage() {
       default: return null;
     }
   };
-  
+
   const handleCancelEdit = useCallback(() => {
     if (originalFormData) {
       setFormData(originalFormData);
@@ -592,7 +674,7 @@ export default function SettingPage() {
   }, [originalFormData]);
 
   return (
-      <Page title="Cài đặt người dùng" meta={<meta name="description" content="Cài đặt người dùng - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM" />}>
+      <Page title={t('page_title')} meta={<meta name="description" content={t('page_title')} />}>
         <Container maxWidth="xl" sx={{ minHeight: 'calc(100vh - 60px)', display: 'flex', alignItems: 'stretch', pt: { xs: 2, sm: 3, md: 4 }, px: { xs: 2, sm: 3, lg: 6 }, pb: { xs: 2, sm: 3, lg: 6 } }}>
           <Box sx={{ display: 'flex', width: '100%', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 } }}>
             <Stack spacing={2} sx={{ width: { xs: '100%', md: 260 } }}>
@@ -602,10 +684,9 @@ export default function SettingPage() {
             {/* Right Content Area */}
             <Stack spacing={2} sx={{ flex: 1, minWidth: 0, px: { xs: 1.5, sm: 2, md: 2.75 } }}>
               <Stack gap={2}>
-                <Typography variant="h1" fontWeight={800} color="primary.main">CÀI ĐẶT NGƯỜI DÙNG</Typography>
+                <Typography variant="h1" fontWeight={800} color="primary.main">{t('page_heading')}</Typography>
               </Stack>
               <Card sx={{ p: 4, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', border: 1, borderColor: 'divider', borderRadius: 1, backgroundColor: 'white' }}>
-                {/* Tab Content */}
                 {renderContent()}
               </Card>
             </Stack>

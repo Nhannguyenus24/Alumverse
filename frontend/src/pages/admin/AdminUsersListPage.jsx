@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useOutletContext } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -41,6 +42,7 @@ import { formatDateTime } from '../../utils/dateFormatter';
 
 const AdminUsersListPage = () => {
   const theme = useTheme();
+  const { t } = useTranslation(['admin', 'common']);
   const navigate = useNavigate();
   const {
     users,
@@ -69,8 +71,8 @@ const AdminUsersListPage = () => {
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Người dùng', active: true }]);
-  }, [setBreadcrumbs]);
+    setBreadcrumbs?.([{ label: t('admin:breadcrumb_users'), active: true }]);
+  }, [setBreadcrumbs, t]);
 
   useEffect(() => {
     setSearch(debouncedSearch);
@@ -79,12 +81,12 @@ const AdminUsersListPage = () => {
   const handleExport = () => {
     const exportData = sortedUsers.map(u => ({
       ID: u.id,
-      'Họ tên': u.fullName || u.studentId,
+      [t('admin:export_col_fullname')]: u.fullName || u.studentId,
       Email: u.email,
-      'Vai trò': u.role,
-      'Trạng thái': formatAccountStatusLabel(u.status),
-      'Tổ chức': u.organizationName || '-',
-      'Ngày tham gia': formatDateTime(u.createdAt)
+      [t('admin:export_col_role')]: u.role,
+      [t('admin:export_col_status')]: formatAccountStatusLabel(u.status),
+      [t('admin:export_col_organization')]: u.organizationName || '-',
+      [t('admin:export_col_joined_at')]: formatDateTime(u.createdAt)
     }));
     exportToCSV(exportData, `users_export_${new Date().getTime()}.csv`);
   };
@@ -116,7 +118,7 @@ const AdminUsersListPage = () => {
   const columns = useMemo(() => [
     {
       id: 'user',
-      label: 'Người dùng',
+      label: t('admin:col_user'),
       render: (_, u) => (
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Avatar
@@ -136,10 +138,10 @@ const AdminUsersListPage = () => {
         </Stack>
       )
     },
-    { id: 'role', label: 'Vai trò' },
+    { id: 'role', label: t('admin:col_role') },
     {
       id: 'status',
-      label: 'Trạng thái',
+      label: t('admin:col_status'),
       render: (status, u) => (
         <AdminStatusChip
           status={status}
@@ -153,20 +155,20 @@ const AdminUsersListPage = () => {
         />
       )
     },
-    { id: 'organizationName', label: 'Tổ chức' },
-    { id: 'createdAt', label: 'Ngày tham gia', render: (val) => formatDateTime(val) },
+    { id: 'organizationName', label: t('admin:col_organization') },
+    { id: 'createdAt', label: t('admin:col_joined_at'), render: (val) => formatDateTime(val) },
     {
       id: 'actions',
       label: '',
       align: 'right',
       render: (_, u) => (
         <Stack direction="row" spacing={0.5} justifyContent="flex-end" onClick={(e) => e.stopPropagation()}>
-          <Tooltip title="Xem chi tiết">
+          <Tooltip title={t('admin:tooltip_view_detail')}>
             <IconButton size="small" onClick={() => navigate(`/admin/users/${u.id}`)}>
               <VisibilityOutlinedIcon fontSize="small" sx={{ color: 'primary.main' }} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t('admin:tooltip_edit')}>
             <IconButton
               size="small"
               onClick={() => {
@@ -180,20 +182,20 @@ const AdminUsersListPage = () => {
           </Tooltip>
 
           {u.status === 'BANNED' ? (
-            <Tooltip title="Bỏ chặn">
+            <Tooltip title={t('admin:tooltip_unban')}>
               <IconButton size="small" color="success" onClick={() => unbanUser(u.id)}>
                 <LockOpenOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           ) : (
-            <Tooltip title="Chặn">
+            <Tooltip title={t('admin:tooltip_ban')}>
               <IconButton size="small" color="warning" onClick={() => setBanTarget(u)}>
                 <BlockOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
 
-          <Tooltip title="Xóa">
+          <Tooltip title={t('admin:tooltip_delete')}>
             <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
@@ -201,30 +203,30 @@ const AdminUsersListPage = () => {
         </Stack>
       )
     }
-  ], [theme, navigate, unbanUser, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen]);
+  ], [theme, navigate, unbanUser, setBanTarget, setDeleteTarget, setUserStatusMenu, setUserFormMode, setEditingUser, setUserFormOpen, t]);
 
   const Filters = (
     <Stack direction="row" spacing={1}>
       <TextField
         select
         size="small"
-        label="Vai trò"
+        label={t('admin:filter_role')}
         value={roleFilter}
         onChange={(e) => { setRoleFilter(e.target.value); setPage(0); }}
         sx={{ minWidth: 120 }}
       >
-        <MenuItem value="ALL">Tất cả</MenuItem>
+        <MenuItem value="ALL">{t('admin:filter_all')}</MenuItem>
         {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
       </TextField>
       <TextField
         select
         size="small"
-        label="Trạng thái"
+        label={t('admin:filter_status')}
         value={statusFilter}
         onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
         sx={{ minWidth: 140 }}
       >
-        <MenuItem value="ALL">Tất cả</MenuItem>
+        <MenuItem value="ALL">{t('admin:filter_all')}</MenuItem>
         {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{formatAccountStatusLabel(s)}</MenuItem>)}
       </TextField>
     </Stack>
@@ -252,14 +254,14 @@ const AdminUsersListPage = () => {
       >
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Quản lý người dùng
+            {t('admin:page_users_title')}
           </Typography>
           <Typography
             variant="body2"
             color="text.secondary"
             sx={{ mt: 0.5, fontWeight: 500 }}
           >
-            Tìm kiếm, phân quyền và giám sát trạng thái tài khoản toàn hệ thống.
+            {t('admin:page_users_subtitle')}
           </Typography>
         </Box>
       </Box>
@@ -276,24 +278,24 @@ const AdminUsersListPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng người dùng"
+          label={t('admin:metric_total_users')}
           value={stats.total}
           icon={<PeopleAltOutlinedIcon />}
         />
         <AdminDashboardMetricTile
-          label="Tham gia hôm nay"
+          label={t('admin:metric_joined_today')}
           value={stats.newToday}
           icon={<PersonAddOutlinedIcon />}
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label="Tài khoản hoạt động"
+          label={t('admin:metric_active_accounts')}
           value={stats.active}
           icon={<VerifiedUserOutlinedIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Tài khoản bị chặn"
+          label={t('admin:metric_banned_accounts')}
           value={stats.banned}
           icon={<GppBadOutlinedIcon />}
           valueColor="error.main"
@@ -310,7 +312,7 @@ const AdminUsersListPage = () => {
         onRowsPerPageChange={(e) => { setRowsPerPage(Number(e.target.value)); setPage(0); }}
         onSearchChange={(val) => { setSearchTerm(val); setPage(0); }}
         searchValue={searchTerm}
-        searchPlaceholder="Tìm theo tên, email, mssv..."
+        searchPlaceholder={t('admin:search_users_placeholder')}
         filters={Filters}
         onExport={handleExport}
         addButton={
@@ -321,7 +323,7 @@ const AdminUsersListPage = () => {
             onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
             sx={{ fontWeight: 700, textTransform: 'none', ml: 1 }}
           >
-            Thêm
+            {t('admin:add_user')}
           </Button>
         }
         onRowClick={(u) => navigate(`/admin/users/${u.id}`)}
@@ -374,8 +376,8 @@ const AdminUsersListPage = () => {
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Xóa người dùng"
-        description={deleteTarget ? `Bạn có chắc chắn muốn xóa tạm thời người dùng ${deleteTarget.fullName || deleteTarget.email} (#${deleteTarget.id})?` : ''}
+        title={t('admin:delete_user_title')}
+        description={deleteTarget ? t('admin:delete_user_description', { name: deleteTarget.fullName || deleteTarget.email, id: deleteTarget.id }) : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={async () => {
           if (deleteTarget) await deleteUser(deleteTarget.id);

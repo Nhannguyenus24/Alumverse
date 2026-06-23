@@ -1,7 +1,9 @@
 import React from 'react';
 import { Box, Stack, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const InfoRow = ({ icon: Icon, label, value }) => {
+  const { t } = useTranslation(['profile']);
   return (
     <Box
       sx={{
@@ -56,7 +58,7 @@ const InfoRow = ({ icon: Icon, label, value }) => {
         fontWeight={500}
         sx={{ ml: 3.5 }}
       >
-        {value || 'Chưa cập nhật'}
+        {value || t('profile:not_updated')}
       </Typography>
     </Box>
   );

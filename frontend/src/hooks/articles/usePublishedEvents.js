@@ -22,7 +22,7 @@ export const usePublishedEvents = (scope = "upcoming", page = 0, limit = 10) => 
 
   const errorMessage =
     isError && error
-      ? error.response?.data?.message ?? error.message ?? "Không thể tải danh sách sự kiện"
+      ? error.response?.data?.message ?? error.message ?? "Failed to load events"
       : null;
 
   return {

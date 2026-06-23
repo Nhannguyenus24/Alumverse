@@ -14,7 +14,6 @@ public class ReviewForumReportRequest {
     @NotBlank(message = "Decision is required")
     private String decision;
 
-    @NotBlank(message = "Action is required")
     private String action;
 
     private String reviewNote;

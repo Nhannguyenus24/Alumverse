@@ -984,6 +984,11 @@ export const fundApi = {
 		return unwrap(response);
 	},
 
+	async getAllFundDonationsForExport(fundId) {
+		const response = await apiClient.get(`/admin/fundraising/funds/${fundId}/donations/all`);
+		return unwrap(response) ?? [];
+	},
+
 	async createFundDonation(payload) {
 		const response = await apiClient.post('/fund-donations', payload);
 		return unwrap(response);
@@ -1112,6 +1117,33 @@ export const userSettingsApi = {
 
 	async acceptPeerVerification(requestId) {
 		const response = await apiClient.patch(`/users/me/peer-verifications/${requestId}/accept`);
+		return unwrap(response);
+	},
+
+	async submitEducationRequest(payload) {
+		const response = await apiClient.post('/education-requests', payload);
+		return unwrap(response);
+	},
+
+	async getPendingEducationRequest(organizationId) {
+		const response = await apiClient.get('/education-requests/pending', { params: { organizationId } });
+		return unwrap(response);
+	},
+
+	async cancelEducationRequest(requestId, organizationId) {
+		const response = await apiClient.delete(`/education-requests/${requestId}`, { params: { organizationId } });
+		return unwrap(response);
+	},
+};
+
+export const adminEducationApi = {
+	async getRequests(params) {
+		const response = await apiClient.get('/admin/education-requests', { params });
+		return unwrap(response);
+	},
+
+	async reviewRequest(requestId, payload) {
+		const response = await apiClient.put(`/admin/education-requests/${requestId}`, payload);
 		return unwrap(response);
 	},
 };

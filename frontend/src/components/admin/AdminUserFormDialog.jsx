@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -37,6 +38,7 @@ const resolvedFullNameForEdit = (u) => {
 };
 
 const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organizationOptions = [] }) => {
+  const { t } = useTranslation(['admin', 'common', 'profile']);
   const { enqueueSnackbar } = useSnackbar();
   const firstOrganizationId = useMemo(
     () => (organizationOptions.length > 0 ? Number(organizationOptions[0].id) : ''),
@@ -80,19 +82,19 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   const validate = () => {
     const next = {};
     if (!form.email.trim()) {
-      next.email = 'Vui lòng nhập email';
+      next.email = t('admin:error_email_required');
     }
     if (!form.studentId.trim()) {
-      next.studentId = 'Vui lòng nhập MSSV';
+      next.studentId = t('admin:error_student_id_required');
     }
     if (!form.fullName.trim()) {
-      next.fullName = 'Vui lòng nhập họ tên';
+      next.fullName = t('admin:error_full_name_required');
     }
     if (mode === 'create' && form.password && form.password.length < 8) {
-      next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
+      next.password = t('admin:error_password_min_length');
     }
     if (mode === 'edit' && form.password && form.password.length < 8) {
-      next.password = 'Mật khẩu phải có ít nhất 8 ký tự';
+      next.password = t('admin:error_password_min_length');
     }
     setErrors(next);
     const keys = Object.keys(next);
@@ -107,7 +109,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       return;
     }
     if (!form.organizationId) {
-      enqueueSnackbar('Vui lòng chọn tổ chức', { variant: 'error' });
+      enqueueSnackbar(t('admin:error_org_required'), { variant: 'error' });
       return;
     }
     const org = organizationOptions.find((o) => Number(o.id) === Number(form.organizationId));
@@ -137,7 +139,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        {mode === 'create' ? 'Tạo người dùng' : 'Sửa người dùng'}
+        {mode === 'create' ? t('admin:create_user') : t('admin:edit_user')}
       </DialogTitle>
       <DialogContent
         sx={{
@@ -159,7 +161,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Tên đăng nhập"
+          label={t('admin:student_id_label')}
           value={form.studentId}
           onChange={handleChange('studentId')}
           error={!!errors.studentId}
@@ -168,7 +170,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label="Họ tên"
+          label={t('profile:full_name', 'Họ tên')}
           value={form.fullName}
           onChange={handleChange('fullName')}
           error={!!errors.fullName}
@@ -177,7 +179,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           slotProps={{ inputLabel: inputLabelSlotProps }}
         />
         <TextField
-          label={mode === 'edit' ? 'Mật khẩu mới (tùy chọn)' : 'Mật khẩu (mặc định: Alumni2026@)'}
+          label={mode === 'edit' ? t('admin:password_new_optional') : t('admin:password_default_hint')}
           type={showPassword ? 'text' : 'password'}
           value={form.password}
           onChange={handleChange('password')}
@@ -186,8 +188,8 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             errors.password
               ? undefined
               : mode === 'edit'
-                ? 'Để trống nếu không muốn đổi mật khẩu'
-                : 'Để trống để dùng mật khẩu mặc định Alumni2026@'
+                ? t('admin:password_keep_hint')
+                : t('admin:password_default_keep_hint')
           }
           fullWidth
           autoComplete="new-password"
@@ -197,7 +199,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton
-                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    aria-label={showPassword ? t('admin:hide_password') : t('admin:show_password')}
                     onClick={() => setShowPassword((v) => !v)}
                     onMouseDown={(e) => e.preventDefault()}
                     edge="end"
@@ -211,7 +213,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         />
         <TextField
           select
-          label="Tổ chức"
+          label={t('admin:organization_label')}
           value={form.organizationId}
           onChange={handleChange('organizationId')}
           fullWidth
@@ -226,7 +228,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <TextField
             select
-            label="Vai trò"
+            label={t('admin:role_label')}
             value={form.role}
             onChange={handleChange('role')}
             fullWidth
@@ -240,7 +242,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           </TextField>
           <TextField
             select
-            label="Trạng thái"
+            label={t('admin:status_label')}
             value={form.status}
             onChange={handleChange('status')}
             fullWidth
@@ -261,10 +263,10 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button variant="outlined" color="secondary"onClick={onClose} sx={{ textTransform: 'none' }}>
-          Hủy
+          {t('common:cancel')}
         </Button>
         <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
-          {mode === 'create' ? 'Tạo người dùng' : 'Lưu thông tin'}
+          {mode === 'create' ? t('admin:create_user') : t('admin:save_user_info')}
         </Button>
       </DialogActions>
     </Dialog>

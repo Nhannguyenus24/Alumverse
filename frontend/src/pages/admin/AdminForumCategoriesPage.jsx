@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSnackbar } from 'notistack';
 import {
   Box,
@@ -59,6 +60,7 @@ const buildTree = (flatList) => {
 
 const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, activeOrganization }) => {
   const theme = useTheme();
+  const { t } = useTranslation(['admin']);
   const hasChildren = node.children && node.children.length > 0;
   const open = expanded[node.id];
 
@@ -87,12 +89,12 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
           }
           secondary={
             <Typography variant="caption" color="text.secondary">
-              {node.description || 'Không có mô tả'}
+              {node.description || t('admin:no_description')}
             </Typography>
           }
         />
         <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()}>
-          <Tooltip title="Xem trên trang diễn đàn">
+          <Tooltip title={t('admin:view_on_forum')}>
             <IconButton
               size="small"
               onClick={() => {
@@ -105,12 +107,12 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
               <LaunchOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t('admin:edit')}>
             <IconButton size="small" onClick={() => onEdit(node)}>
               <EditOutlinedIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Xóa">
+          <Tooltip title={t('admin:delete')}>
             <IconButton size="small" color="error" onClick={() => onDelete(node)}>
               <DeleteOutlineIcon fontSize="small" />
             </IconButton>
@@ -141,6 +143,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
 
 const AdminForumCategoriesPage = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const { t } = useTranslation(['admin']);
   const { stableOrgId, activeOrganization } = useAdminSystemContext();
   const {
     categories,
@@ -153,7 +156,7 @@ const AdminForumCategoriesPage = () => {
   const { setBreadcrumbs } = useOutletContext();
 
   useEffect(() => {
-    setBreadcrumbs?.([{ label: 'Danh mục', active: true }]);
+    setBreadcrumbs?.([{ label: t('admin:forum_cat_breadcrumb'), active: true }]);
   }, [setBreadcrumbs]);
 
   const tree = useMemo(() => buildTree(categories), [categories]);
@@ -192,7 +195,7 @@ const AdminForumCategoriesPage = () => {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      enqueueSnackbar('Vui lòng nhập tên danh mục.', { variant: 'warning' });
+      enqueueSnackbar(t('admin:forum_cat_name_required'), { variant: 'warning' });
       return;
     }
     if (modal.mode === 'create') {
@@ -202,7 +205,7 @@ const AdminForumCategoriesPage = () => {
         form.description,
         form.parentId === '' ? null : Number(form.parentId),
       );
-      enqueueSnackbar(ok ? 'Đã tạo danh mục.' : 'Lỗi tạo danh mục.', { variant: ok ? 'success' : 'error' });
+      enqueueSnackbar(ok ? t('admin:forum_cat_created') : t('admin:forum_cat_create_failed'), { variant: ok ? 'success' : 'error' });
     } else {
       const ok = await updateCategory?.(
         modal.node.id,
@@ -210,7 +213,7 @@ const AdminForumCategoriesPage = () => {
         form.description,
         form.parentId === '' ? null : Number(form.parentId),
       );
-      enqueueSnackbar(ok ? 'Đã cập nhật danh mục.' : 'Lỗi cập nhật.', { variant: ok ? 'success' : 'error' });
+      enqueueSnackbar(ok ? t('admin:forum_cat_updated') : t('admin:forum_cat_update_failed'), { variant: ok ? 'success' : 'error' });
     }
     setModal({ open: false, mode: 'create', node: null });
   };
@@ -218,7 +221,7 @@ const AdminForumCategoriesPage = () => {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const ok = await deleteCategory?.(deleteTarget.id);
-    enqueueSnackbar(ok ? 'Đã xóa danh mục.' : 'Lỗi xóa.', { variant: ok ? 'success' : 'error' });
+    enqueueSnackbar(ok ? t('admin:forum_cat_deleted') : t('admin:forum_cat_delete_failed'), { variant: ok ? 'success' : 'error' });
     setDeleteTarget(null);
   };
 
@@ -234,10 +237,10 @@ const AdminForumCategoriesPage = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
-            Danh mục diễn đàn
+            {t('admin:forum_cat_heading')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
-            Cấu trúc phân cấp diễn đàn, quản lý các chuyên mục chính và chuyên mục con.
+            {t('admin:forum_cat_subtitle')}
           </Typography>
         </Box>
         <Button
@@ -245,7 +248,7 @@ const AdminForumCategoriesPage = () => {
           startIcon={<AddOutlinedIcon />}
           onClick={openCreateRoot}
         >
-          Thêm danh mục
+          {t('admin:forum_cat_add')}
         </Button>
       </Box>
 
@@ -261,24 +264,24 @@ const AdminForumCategoriesPage = () => {
         }}
       >
         <AdminDashboardMetricTile
-          label="Tổng danh mục"
+          label={t('admin:forum_cat_total')}
           value={stats.total}
           icon={<CategoryOutlinedIcon />}
         />
         <AdminDashboardMetricTile
-          label="Danh mục chính"
+          label={t('admin:forum_cat_main')}
           value={stats.roots}
           icon={<AccountTreeOutlinedIcon />}
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label="Danh mục con"
+          label={t('admin:forum_cat_sub')}
           value={stats.sub}
           icon={<SubtitlesOutlinedIcon />}
           valueColor="success.main"
         />
         <AdminDashboardMetricTile
-          label="Cập nhật gần nhất"
+          label={t('admin:forum_cat_last_updated')}
           value={stats.lastUpdate}
           icon={<HistoryOutlinedIcon />}
           valueColor="warning.main"
@@ -288,10 +291,10 @@ const AdminForumCategoriesPage = () => {
       <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
         <Box sx={{ display: 'flex', bgcolor: (t) => t.palette.mode === 'light' ? 'primary.main' : 'primary.dark', px: 2, py: 2 }}>
           <Typography sx={{ flex: 1, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, pl: 6 }}>
-            Tên danh mục & Mô tả
+            {t('admin:forum_cat_name_col')}
           </Typography>
           <Typography sx={{ width: 120, fontWeight: 700, color: 'primary.contrastText', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5, textAlign: 'right', pr: 1 }}>
-            Thao tác
+            {t('admin:actions')}
           </Typography>
         </Box>
         {categoriesLoading ? (
@@ -305,7 +308,7 @@ const AdminForumCategoriesPage = () => {
             {tree.length === 0 ? (
               <Box sx={{ p: 4, textAlign: 'center' }}>
                 <Typography variant="body2" color="text.secondary">
-                  Chưa có danh mục nào. Hãy tạo danh mục đầu tiên.
+                  {t('admin:forum_cat_empty')}
                 </Typography>
               </Box>
             ) : (
@@ -328,11 +331,11 @@ const AdminForumCategoriesPage = () => {
       {/* Create / Edit Dialog */}
       <Dialog open={modal.open} onClose={() => setModal(m => ({ ...m, open: false }))} fullWidth maxWidth="sm">
         <DialogTitle sx={{ fontWeight: 700 }}>
-          {modal.mode === 'create' ? 'Tạo danh mục mới' : 'Chỉnh sửa danh mục'}
+          {modal.mode === 'create' ? t('admin:forum_cat_create_title') : t('admin:forum_cat_edit_title')}
         </DialogTitle>
         <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible', }} >
           <TextField
-            label="Tên danh mục"
+            label={t('admin:forum_cat_name_field')}
             required
             fullWidth
             value={form.name}
@@ -340,7 +343,7 @@ const AdminForumCategoriesPage = () => {
             slotProps={{ inputLabel: { shrink: true } }}
           />
           <TextField
-            label="Mô tả"
+            label={t('admin:forum_cat_description_field')}
             fullWidth
             multiline
             minRows={2}
@@ -350,13 +353,13 @@ const AdminForumCategoriesPage = () => {
           />
           <TextField
             select
-            label="Danh mục cha"
+            label={t('admin:forum_cat_parent_field')}
             fullWidth
             value={form.parentId}
             onChange={(e) => setForm(f => ({ ...f, parentId: e.target.value }))}
             slotProps={{ inputLabel: { shrink: true } }}
           >
-            <MenuItem value="">Không có (Danh mục gốc)</MenuItem>
+            <MenuItem value="">{t('admin:forum_cat_no_parent')}</MenuItem>
             {(categories ?? [])
               .filter(cat => !modal.node || cat.id !== modal.node.id)
               .map(cat => (
@@ -368,18 +371,18 @@ const AdminForumCategoriesPage = () => {
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button variant="outlined" color="secondary" onClick={() => setModal(m => ({ ...m, open: false }))}>
-            Hủy
+            {t('admin:cancel')}
           </Button>
           <Button variant="contained" onClick={handleSave}>
-            Lưu
+            {t('admin:save')}
           </Button>
         </DialogActions>
       </Dialog>
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Xóa danh mục"
-        description={deleteTarget ? `Xóa danh mục "${deleteTarget.name}" (ID: ${deleteTarget.id})? Hành động này không thể hoàn tác.` : ''}
+        title={t('admin:forum_cat_delete_title')}
+        description={deleteTarget ? t('admin:forum_cat_delete_confirm', { name: deleteTarget.name, id: deleteTarget.id }) : ''}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />

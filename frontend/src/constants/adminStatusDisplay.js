@@ -64,6 +64,22 @@ const formatFeedbackStatusLabel = (status) => {
   return map[key] || formatTitleCase(status);
 };
 
+const formatFundraisingStatusLabel = (status) => {
+  const key = String(status || '').toUpperCase();
+  const map = {
+    UPCOMING: 'Upcoming',
+    ACTIVE: 'Active',
+    ENDED: 'Ended',
+  };
+  return map[key] || formatTitleCase(status);
+};
+
+const FUNDRAISING_STATUS_COLORS = {
+  UPCOMING: 'info',
+  ACTIVE: 'primary',
+  ENDED: 'default',
+};
+
 const STATUS_COLORS = {
   PENDING: 'info',
 
@@ -116,12 +132,18 @@ export const resolveAdminStatusChip = (status, category) => {
       label = formatFeedbackStatusLabel(status);
       break;
 
+    case 'fundraising':
+      label = formatFundraisingStatusLabel(status);
+      break;
+
     default:
       label = formatTitleCase(status);
   }
 
   return {
     label,
-    color: STATUS_COLORS[key] || 'default',
+    color: category === 'fundraising'
+      ? (FUNDRAISING_STATUS_COLORS[key] || 'default')
+      : (STATUS_COLORS[key] || 'default'),
   };
 };

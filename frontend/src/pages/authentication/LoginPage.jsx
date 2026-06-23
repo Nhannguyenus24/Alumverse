@@ -1,20 +1,23 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { GoogleReCaptchaCheckbox, useGoogleReCaptcha } from '@google-recaptcha/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { GoogleLogin } from '@react-oauth/google';
-import { Box, Typography, Button, FormControlLabel, Checkbox, Divider } from '@mui/material';
+import { Box, Typography, Button, FormControlLabel, Checkbox, Divider, useTheme } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
+import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
 import Input from '../../components/Input';
-import { loginSchema } from '../../utils/regexUtils';
+import { getLoginSchema } from '../../utils/regexUtils';
 import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import useOrganizationStore from '../../stores/organizationStore';
 
 const LoginPage = () => {
+  const { t } = useTranslation(['auth', 'common']);
+  const theme = useTheme();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
   const { slug } = useParams();
@@ -26,6 +29,15 @@ const LoginPage = () => {
   const { reset } = useGoogleReCaptcha();
 
   const redirectTo = location.state?.from?.pathname || '/';
+  const thirdPartyControlSx = theme.palette.mode === 'dark'
+    ? {
+        filter: 'invert(0.9) hue-rotate(180deg)',
+        borderRadius: 1,
+        overflow: 'hidden',
+      }
+    : undefined;
+
+  const loginSchema = useMemo(() => getLoginSchema(t), [t]);
 
   const {
     register,
@@ -62,7 +74,7 @@ const LoginPage = () => {
       recaptchaToken: data.recaptchaToken
     });
     if (result?.ok) {
-      enqueueSnackbar('Đăng nhập thành công.', { variant: 'success' });
+      enqueueSnackbar(t('auth:login_success'), { variant: 'success' });
 
       if (result?.data?.verificationLevel === 0) {
         navigate(`/${slug}/organization-registration`, {
@@ -82,10 +94,10 @@ const LoginPage = () => {
       if (result?.error && result.error.includes('Account is not verified')) {
         const fp = await forgotPassword({ email: data.email });
         if (!fp?.ok) {
-          enqueueSnackbar(fp?.error ?? 'Gửi mã xác thực thất bại.', { variant: 'error' });
+          enqueueSnackbar(fp?.error ?? t('auth:login_unverified_code_failed'), { variant: 'error' });
           return;
         }
-        enqueueSnackbar('Mã xác thực đã được gửi đến email của bạn.', { variant: 'success' });
+        enqueueSnackbar(t('auth:login_unverified_code_sent'), { variant: 'success' });
         navigate('/auth/signup-code', { state: { email: data.email } });
       } else if (result?.error) {
         enqueueSnackbar(result.error, { variant: 'error' });
@@ -96,14 +108,14 @@ const LoginPage = () => {
   const handleGoogleSuccess = async (credentialResponse) => {
     const idToken = credentialResponse?.credential;
     if (!idToken) {
-      enqueueSnackbar('Không thể lấy Google token.', { variant: 'error' });
+      enqueueSnackbar(t('auth:login_google_token_error'), { variant: 'error' });
       return;
     }
 
     setError(null);
     const result = await loginWithGoogle(idToken, getValues('rememberMe'));
     if (result?.ok) {
-      enqueueSnackbar('Đăng nhập Google thành công.', { variant: 'success' });
+      enqueueSnackbar(t('auth:login_google_success'), { variant: 'success' });
 
       if (result?.data?.verificationLevel === 0) {
         navigate(`/${slug}/organization-registration`, {
@@ -117,17 +129,17 @@ const LoginPage = () => {
       return;
     }
 
-    enqueueSnackbar(result?.error ?? 'Đăng nhập Google thất bại.', { variant: 'error' });
+    enqueueSnackbar(result?.error ?? t('auth:login_google_failed'), { variant: 'error' });
   };
 
   const handleGoogleError = () => {
-    enqueueSnackbar('Đăng nhập Google thất bại.', { variant: 'error' });
+    enqueueSnackbar(t('auth:login_google_failed'), { variant: 'error' });
   };
 
   return (
     <Page
-      title="Đăng nhập"
-      meta={<meta name="description" content="Đăng nhập vào hệ thống" />}
+      title={t('auth:login_heading')}
+      meta={<meta name="description" content={t('auth:login_heading')} />}
     >
       <Box
         component="form"
@@ -147,7 +159,7 @@ const LoginPage = () => {
           textAlign="center"
           sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}
         >
-          Đăng nhập
+          {t('auth:login_heading')}
         </Typography>
 
         <Input
@@ -159,7 +171,7 @@ const LoginPage = () => {
           {...register('email')}
         />
         <Input
-          label="Mật khẩu"
+          label={t('auth:password_label')}
           placeholder="••••••••"
           type="password"
           error={!!errors.password}
@@ -170,7 +182,7 @@ const LoginPage = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
           <FormControlLabel
             control={<Checkbox size="small" color="primary" {...register('rememberMe')} />}
-            label={<Typography variant="body2">Ghi nhớ đăng nhập</Typography>}
+            label={<Typography variant="body2">{t('auth:remember_me')}</Typography>}
           />
           <Typography
             component={Link}
@@ -179,16 +191,18 @@ const LoginPage = () => {
             color="primary.main"
             sx={{ textDecoration: 'none', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}
           >
-            Quên mật khẩu?
+            {t('auth:forgot_password_link')}
           </Typography>
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={thirdPartyControlSx}>
           <GoogleReCaptchaCheckbox
             onChange={handleRecaptchaChange}
             onExpired={handleRecaptchaExpired}
             onError={handleRecaptchaError}
           />
+          </Box>
           {errors.recaptchaToken && (
             <Typography variant="caption" color="error" align="center" sx={{ width: '100%' }}>
               {errors.recaptchaToken.message}
@@ -205,19 +219,24 @@ const LoginPage = () => {
           disabled={loading}
           sx={{ mt: 1 }}
         >
-          {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+          {loading ? t('auth:processing') : t('auth:login_heading')}
         </Button>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
           <Divider sx={{ flex: 1 }} />
           <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            hoặc tiếp tục với
+            {t('auth:or_continue_with')}
           </Typography>
           <Divider sx={{ flex: 1 }} />
         </Box>
 
         {googleClientId ? (
-          <Box sx={{ width: '100%', '& > div': { width: '100% !important' }, '& iframe': { width: '100% !important' } }}>
+          <Box sx={{
+            width: '100%',
+            ...thirdPartyControlSx,
+            '& > div': { width: '100% !important' },
+            '& iframe': { width: '100% !important' },
+          }}>
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
@@ -238,12 +257,12 @@ const LoginPage = () => {
             disabled
             sx={{ textTransform: 'none', borderColor: 'divider' }}
           >
-            Google chưa được cấu hình
+            {t('auth:login_google_not_configured')}
           </Button>
         )}
 
         <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ mt: 1 }}>
-          Bạn chưa có tài khoản?{' '}
+          {t('auth:no_account_prompt')}{' '}
           <Typography
             component={Link}
             to={toOrgPath('/auth/register')}
@@ -252,7 +271,7 @@ const LoginPage = () => {
             fontWeight={600}
             sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
           >
-            Đăng ký ngay!
+            {t('auth:register_now')}
           </Typography>
         </Typography>
       </Box>

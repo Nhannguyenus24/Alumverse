@@ -9,6 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import { useTranslation } from 'react-i18next';
 import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
 import ChatAvatar from '../ChatAvatar';
@@ -27,6 +28,7 @@ const NetworkChatSidebar = ({
   isPending = false,
   isFetching = false,
 }) => {
+  const { t } = useTranslation('network');
   const { enqueueSnackbar } = useSnackbar();
 
   const handleSearchKeyDown = (event) => {
@@ -40,7 +42,7 @@ const NetworkChatSidebar = ({
       onCreateGroupChat();
       return;
     }
-    enqueueSnackbar('Tạo nhóm chat đang được phát triển.', { variant: 'info' });
+    enqueueSnackbar(t('create_group_chat_wip'), { variant: 'info' });
   };
 
   return (
@@ -92,12 +94,12 @@ const NetworkChatSidebar = ({
             fontSize: { xs: '1.45rem', md: '1.6rem' },
           }}
         >
-          Tin nhắn
+          {t('chat_sidebar_title')}
         </Typography>
-        <Tooltip title="Tạo nhóm chat" placement="bottom">
+        <Tooltip title={t('create_group_chat_tooltip')} placement="bottom">
           <IconButton
             size="small"
-            aria-label="Tạo nhóm chat"
+            aria-label={t('create_group_chat_aria')}
             onClick={handleCreateGroupChat}
             sx={{ flexShrink: 0 }}
           >
@@ -111,7 +113,7 @@ const NetworkChatSidebar = ({
           value={searchValue}
           onChange={onSearchChange}
           onKeyDown={handleSearchKeyDown}
-          placeholder="Tìm đoạn chat"
+          placeholder={t('chat_search_placeholder')}
         />
       </Box>
 
@@ -123,7 +125,7 @@ const NetworkChatSidebar = ({
         ) : chats.length === 0 ? (
           <Box sx={{ px: 2, py: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Không có cuộc trò chuyện nào.
+              {t('chat_no_conversations')}
             </Typography>
           </Box>
         ) : (

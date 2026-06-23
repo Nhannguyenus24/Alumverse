@@ -1,4 +1,5 @@
 import 'package:cookie_jar/cookie_jar.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -8,13 +9,20 @@ import 'core/network/dio_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   final cookieJar = await _createCookieJar();
 
   runApp(
-    ProviderScope(
-      overrides: [cookieJarProvider.overrideWithValue(cookieJar)],
-      child: const App(),
+    EasyLocalization(
+      supportedLocales: const [Locale('vi'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('vi'),
+      startLocale: const Locale('vi'),
+      child: ProviderScope(
+        overrides: [cookieJarProvider.overrideWithValue(cookieJar)],
+        child: const App(),
+      ),
     ),
   );
 }

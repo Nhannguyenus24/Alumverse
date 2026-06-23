@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,
@@ -25,6 +26,7 @@ const startOfDayIso = (dateStr) => (dateStr ? `${dateStr}T00:00:00` : '');
 const endOfDayIso = (dateStr) => (dateStr ? `${dateStr}T23:59:59` : '');
 
 const MentorshipMentorListSection = () => {
+  const { t } = useTranslation(['mentorship']);
   const navigate = useOrgNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,34 +54,34 @@ const MentorshipMentorListSection = () => {
       {
         type: 'dropdown',
         key: 'categories',
-        label: 'Lĩnh vực',
+        label: t('mentorship:filter_field'),
         multiple: true,
         options: categoryOptions,
       },
       {
         type: 'dropdown',
         key: 'topics',
-        label: 'Chủ đề',
+        label: t('mentorship:filter_topic'),
         multiple: true,
         options: topicOptions,
       },
       {
         type: 'date',
         key: 'availableOn',
-        label: 'Ngày rảnh',
+        label: t('mentorship:filter_available_date'),
       },
       {
         type: 'topics',
         key: 'status',
-        options: ['Thịnh hành'],
+        options: [t('mentorship:filter_trending')],
       },
     ],
-    [categoryOptions, topicOptions],
+    [categoryOptions, topicOptions, t],
   );
 
   const categoryFilter = useMemo(() => (filters.categories ?? [])[0] ?? '', [filters.categories]);
   const expertiseFilter = useMemo(() => (filters.topics ?? [])[0] ?? '', [filters.topics]);
-  const hasAvailability = (filters.status ?? []).includes('Thịnh hành');
+  const hasAvailability = (filters.status ?? []).includes(t('mentorship:filter_trending'));
   const availableFrom = startOfDayIso(filters.availableOn);
   const availableTo = endOfDayIso(filters.availableOn);
 
@@ -103,14 +105,14 @@ const MentorshipMentorListSection = () => {
 
   const handleBook = (mentorMemberId) => {
     if (!access.canUseMentorship) {
-      enqueueSnackbar('Bạn cần xác minh thông tin học vấn tại khoa để đặt lịch.', {
+      enqueueSnackbar(t('mentorship:snack_need_verification_to_book'), {
         variant: 'warning',
       });
       navigate('/settings/account');
       return;
     }
     if (!access.hasJoinedMentorship) {
-      enqueueSnackbar('Bạn cần đăng ký trở thành mentee hoặc cố vấn trước khi đặt lịch.', {
+      enqueueSnackbar(t('mentorship:snack_need_join_to_book'), {
         variant: 'warning',
       });
       navigate('/development/mentorship/mentee-signup');
@@ -120,22 +122,22 @@ const MentorshipMentorListSection = () => {
   };
 
   const bookDisabledReason = !access.canUseMentorship
-    ? 'Cần xác minh học vấn để đặt lịch'
+    ? t('mentorship:need_academic_verification_to_book')
     : !access.hasJoinedMentorship
-      ? 'Cần đăng ký mentee/cố vấn để đặt lịch'
+      ? t('mentorship:need_mentee_signup_to_book')
       : undefined;
 
   return (
     <Stack spacing={3}>
       {access.needsOrgVerification && (
         <Alert severity="info">
-          Bạn đang xem ở chế độ xem trước. Hoàn tất xác minh học vấn tại khoa để đặt lịch với cố vấn.
+          {t('mentorship:preview_mode_alert')}
         </Alert>
       )}
 
       <Box>
         <Typography variant="h4" fontWeight={700} mb={2}>
-          Tìm kiếm cố vấn
+          {t('mentorship:find_mentor_title')}
         </Typography>
         <SearchBar
           value={searchQuery}
@@ -143,7 +145,7 @@ const MentorshipMentorListSection = () => {
             setSearchQuery(v);
             setPage(0);
           }}
-          placeholder="Tìm theo tên, chức danh, công ty hoặc giới thiệu..."
+          placeholder={t('mentorship:search_mentor_placeholder')}
         />
       </Box>
 
@@ -161,12 +163,12 @@ const MentorshipMentorListSection = () => {
           <CircularProgress />
         </Box>
       ) : browseQuery.isError ? (
-        <Alert severity="error">Không tải được danh sách cố vấn. Vui lòng thử lại.</Alert>
+        <Alert severity="error">{t('mentorship:load_mentors_error')}</Alert>
       ) : mentors.length === 0 ? (
         <Alert severity="info">
           {searchQuery.trim()
-            ? `Không tìm thấy cố vấn nào khớp "${searchQuery}".`
-            : 'Chưa có cố vấn nào trong hệ thống.'}
+            ? t('mentorship:no_mentor_search_result', { query: searchQuery })
+            : t('mentorship:no_mentor_in_system')}
         </Alert>
       ) : (
         <Box
@@ -186,7 +188,7 @@ const MentorshipMentorListSection = () => {
                 role={
                   [mentor.currentJobTitle, mentor.currentCompany]
                     .filter(Boolean)
-                    .join(' @ ') || 'Cố vấn'
+                    .join(' @ ') || t('mentorship:default_advisor_role')
                 }
                 rating={formatRating(mentor.ratingAvg)}
                 reviews={mentor.totalSessions ?? 0}
@@ -194,7 +196,7 @@ const MentorshipMentorListSection = () => {
                 onViewProfile={() => handleViewProfile(mentor.memberId)}
                 onBook={() => handleBook(mentor.memberId)}
                 canBook={access.canUseMentorship && access.hasJoinedMentorship && !isOwnCard}
-                bookDisabledReason={isOwnCard ? 'Đây là hồ sơ của bạn' : bookDisabledReason}
+                bookDisabledReason={isOwnCard ? t('mentorship:this_is_your_profile') : bookDisabledReason}
               />
             );
           })}
@@ -208,7 +210,7 @@ const MentorshipMentorListSection = () => {
             disabled={!paginated.hasPrevious}
             onClick={() => setPage((p) => Math.max(0, p - 1))}
           >
-            Trước
+            {t('mentorship:pagination_previous')}
           </Button>
           <Typography sx={{ display: 'flex', alignItems: 'center', px: 2 }}>
             {paginated.currentPage + 1} / {paginated.totalPage}
@@ -218,7 +220,7 @@ const MentorshipMentorListSection = () => {
             disabled={!paginated.hasNext}
             onClick={() => setPage((p) => p + 1)}
           >
-            Sau
+            {t('mentorship:pagination_next')}
           </Button>
         </Box>
       )}

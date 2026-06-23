@@ -1,5 +1,6 @@
 import { Avatar, Box, Button, Card, Stack, Tooltip, Typography } from "@mui/material";
 import StarIcon from "@mui/icons-material/Star";
+import { useTranslation } from "react-i18next";
 import MentorshipTag from "./MentorshipTag";
 
 const MentorshipCard = ({
@@ -14,15 +15,15 @@ const MentorshipCard = ({
   canBook = true,
   bookDisabledReason,
 }) => {
+  const { t } = useTranslation('mentorship');
   const bookButton = (
     <Button
       variant="contained"
       fullWidth
       disabled={!canBook}
       onClick={canBook ? onBook : undefined}
-      sx={{ whiteSpace: 'nowrap' }}
     >
-      Đặt lịch
+      {t('book_slot')}
     </Button>
   );
 
@@ -83,9 +84,9 @@ const MentorshipCard = ({
           variant="outlined"
           fullWidth
           onClick={onViewProfile}
-          sx={{ flex: 1, whiteSpace: 'nowrap' }}
+          sx={{ flex: 1 }}
         >
-          Xem Profile
+          {t('profile')}
         </Button>
         {!canBook && bookDisabledReason ? (
           <Tooltip title={bookDisabledReason}>

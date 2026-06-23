@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import Cropper from "react-easy-crop";
+import { useTranslation } from "react-i18next";
 
 export default function AvatarUploadDialog({
   open,
@@ -24,9 +25,10 @@ export default function AvatarUploadDialog({
   onFileChange,
   onSave,
 }) {
+  const { t } = useTranslation(['profile', 'common']);
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Cập nhật ảnh đại diện</DialogTitle>
+      <DialogTitle>{t('profile:update_avatar')}</DialogTitle>
 
       <DialogContent>
         <Button
@@ -35,7 +37,7 @@ export default function AvatarUploadDialog({
           fullWidth
           startIcon={<CameraAltIcon />}
         >
-          Chọn ảnh
+          {t('profile:select_image')}
 
           <input
             hidden
@@ -78,9 +80,9 @@ export default function AvatarUploadDialog({
             />
 
             <DialogActions>
-              <Button onClick={onClose}>Huỷ</Button>
+              <Button onClick={onClose}>{t('common:cancel')}</Button>
               <Button variant="contained" onClick={onSave}>
-                Lưu ảnh
+                {t('profile:save_image')}
               </Button>
             </DialogActions>
           </>

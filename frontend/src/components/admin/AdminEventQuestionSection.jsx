@@ -7,16 +7,17 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import { useTranslation } from 'react-i18next';
 import {
   useEventQuestions,
   mapQuestionToApi,
 } from '../../hooks/events/useEventQuestions';
 import { eventApi } from '../../utils/api';
 
-const QUESTION_TYPES = [
-  { value: 'shortText', label: 'Văn bản ngắn' },
-  { value: 'singleChoice', label: 'Chọn một' },
-  { value: 'multiChoice', label: 'Chọn nhiều' },
+const getQuestionTypes = (t) => [
+  { value: 'shortText', label: t('event:question_type_short_text') },
+  { value: 'singleChoice', label: t('event:question_type_single_choice') },
+  { value: 'multiChoice', label: t('event:question_type_multi_choice') },
 ];
 
 const emptyDraft = () => ({
@@ -29,9 +30,11 @@ const emptyDraft = () => ({
 });
 
 const AdminEventQuestionSection = ({ eventId }) => {
+  const { t } = useTranslation(['event', 'common']);
   const { data: savedQuestions = [], refetch, isPending } = useEventQuestions(eventId, Boolean(eventId));
   const [drafts, setDrafts] = useState([]);
   const [saving, setSaving] = useState(false);
+  const QUESTION_TYPES = getQuestionTypes(t);
 
   useEffect(() => {
     if (!eventId) {
@@ -86,7 +89,7 @@ const AdminEventQuestionSection = ({ eventId }) => {
   if (!eventId) {
     return (
       <Typography variant="body2" color="text.secondary">
-        Lưu sự kiện trước, sau đó thêm câu hỏi đăng ký.
+        {t('event:save_event_before_adding_questions')}
       </Typography>
     );
   }
@@ -94,13 +97,13 @@ const AdminEventQuestionSection = ({ eventId }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="subtitle1" fontWeight={700}>Câu hỏi đăng ký</Typography>
+        <Typography variant="subtitle1" fontWeight={700}>{t('event:registration_questions')}</Typography>
         <Button size="small" startIcon={<AddIcon />} onClick={() => setDrafts((p) => [...p, emptyDraft()])}>
-          Thêm câu hỏi
+          {t('event:add_question')}
         </Button>
       </Box>
 
-      {isPending && <Typography variant="body2" color="text.secondary">Đang tải...</Typography>}
+      {isPending && <Typography variant="body2" color="text.secondary">{t('common:loading')}</Typography>}
 
       {drafts.map((draft, index) => (
         <Box key={draft.localId} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
@@ -121,9 +124,9 @@ const AdminEventQuestionSection = ({ eventId }) => {
           </Box>
 
           <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-            <InputLabel>Loại câu hỏi</InputLabel>
+            <InputLabel>{t('event:question_type')}</InputLabel>
             <Select
-              label="Loại câu hỏi"
+              label={t('event:question_type')}
               value={draft.type}
               onChange={(e) => updateDraft(draft.localId, { type: e.target.value })}
             >
@@ -136,7 +139,7 @@ const AdminEventQuestionSection = ({ eventId }) => {
           <TextField
             fullWidth
             size="small"
-            label="Nội dung câu hỏi"
+            label={t('event:question_content')}
             value={draft.label}
             onChange={(e) => updateDraft(draft.localId, { label: e.target.value })}
             sx={{ mb: 1 }}
@@ -149,12 +152,12 @@ const AdminEventQuestionSection = ({ eventId }) => {
                 onChange={(e) => updateDraft(draft.localId, { required: e.target.checked })}
               />
             }
-            label="Bắt buộc"
+            label={t('common:required')}
           />
 
           {(draft.type === 'singleChoice' || draft.type === 'multiChoice') && (
             <Box sx={{ mt: 1 }}>
-              <Typography variant="caption" color="text.secondary">Tùy chọn</Typography>
+              <Typography variant="caption" color="text.secondary">{t('event:options')}</Typography>
               {(draft.options || []).map((opt, optIdx) => (
                 <Box key={optIdx} sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
                   <TextField
@@ -182,7 +185,7 @@ const AdminEventQuestionSection = ({ eventId }) => {
                 sx={{ mt: 0.5 }}
                 onClick={() => updateDraft(draft.localId, { options: [...(draft.options || []), ''] })}
               >
-                Thêm tùy chọn
+                {t('event:add_option')}
               </Button>
             </Box>
           )}
@@ -193,7 +196,7 @@ const AdminEventQuestionSection = ({ eventId }) => {
         <>
           <Divider />
           <Button variant="contained" onClick={handleSaveAll} disabled={saving}>
-            {saving ? 'Đang lưu...' : 'Lưu câu hỏi'}
+            {saving ? t('common:saving') : t('event:save_questions')}
           </Button>
         </>
       )}

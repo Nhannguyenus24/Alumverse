@@ -65,7 +65,7 @@ const useOrganizationStore = create((set) => ({
         set({
           organization: null,
           loading: false,
-          error: 'Tổ chức không tồn tại hoặc dữ liệu không hợp lệ',
+          error: 'Organization not found or invalid data',
           statusCode: 404,
         });
         return;

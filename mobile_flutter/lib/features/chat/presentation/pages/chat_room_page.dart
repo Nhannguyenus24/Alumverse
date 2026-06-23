@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,7 +32,7 @@ class ChatRoomArgs {
   const ChatRoomArgs({
     required this.groupId,
     this.type = 'PRIVATE',
-    this.title = 'Tin nhắn',
+    this.title = '',
     this.peerMemberId,
     this.blockedByMe = false,
     this.blockedByPeer = false,
@@ -79,7 +80,12 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
       await ref.read(networkRepositoryProvider).unblock(peerId);
       if (mounted) setState(() => _blockedByMe = false);
       ref.invalidate(chatListProvider);
-      if (mounted) AppToast.success(context, 'Đã bỏ chặn ${widget.args.title}');
+      if (mounted) {
+        AppToast.success(
+          context,
+          'chat.unblocked'.tr(namedArgs: {'name': widget.args.title}),
+        );
+      }
     } catch (e) {
       if (mounted) AppToast.fromError(context, e);
     }
@@ -100,12 +106,12 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(args.title),
+        title: Text(args.title.isNotEmpty ? args.title : 'chat.title'.tr()),
         actions: [
           if (args.type == 'GROUP')
             IconButton(
               icon: const Icon(Icons.group_outlined),
-              tooltip: 'Thành viên nhóm',
+              tooltip: 'chat.members'.tr(),
               onPressed: () => context.push(
                 '${RouteNames.chat}/${args.groupId}/members',
                 extra: args.title,
@@ -126,10 +132,10 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
               ),
               data: (messages) {
                 if (messages.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
-                      'Chưa có tin nhắn',
-                      style: TextStyle(color: AppColors.textSecondary),
+                      'chat.no_messages'.tr(),
+                      style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   );
                 }

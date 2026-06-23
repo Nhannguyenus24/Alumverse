@@ -8,8 +8,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 
 const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
+  const { t } = useTranslation(['forum', 'common']);
   const [reason, setReason] = useState('');
   const [description, setDescription] = useState('');
 
@@ -22,22 +24,21 @@ const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
 
   const handleConfirm = () => {
     if (!reason.trim()) return;
-    onConfirm({ reason: reason.trim(), description: description.trim() });
+    onConfirm({ reason: reason.trim() });
     setReason('');
-    setDescription('');
   };
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
-        Báo cáo bài viết
+        {t('forum:report_post_dialog_title')}
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
         <Typography variant="body2" color="text.secondary">
-          Vui lòng cung cấp lý do để quản trị viên xem xét.
+          {t('forum:report_post_instruction')}
         </Typography>
         <TextField
-          label="Lý do"
+          label={t('forum:report_reason_label')}
           fullWidth
           required
           size="small"
@@ -46,7 +47,7 @@ const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
           disabled={isPending}
         />
         <TextField
-          label="Chi tiết (tuỳ chọn)"
+          label={t('forum:report_detail_label')}
           fullWidth
           multiline
           rows={3}
@@ -58,7 +59,7 @@ const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
         <Button onClick={handleClose} disabled={isPending}>
-          Huỷ
+          {t('common:cancel')}
         </Button>
         <Button
           onClick={handleConfirm}
@@ -66,7 +67,7 @@ const ReportPostDialog = ({ open, onClose, onConfirm, isPending }) => {
           color="error"
           disabled={!reason.trim() || isPending}
         >
-          Báo cáo
+          {t('common:report')}
         </Button>
       </DialogActions>
     </Dialog>

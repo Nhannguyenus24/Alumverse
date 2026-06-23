@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,
@@ -17,15 +18,15 @@ import { fileToBase64 } from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
-const CHANNEL_LABELS = {
-  news: 'Tin tức',
-  alumni: 'Cựu sinh viên',
-  achievement: 'Thành tựu',
-  job: 'Cơ hội việc làm',
-  learning: 'Cơ hội học tập',
-  event: 'Sự kiện',
-  donation: 'Quyên góp',
-};
+const getChannelLabels = (t) => ({
+  news: t('admin:channel_news'),
+  alumni: t('admin:channel_alumni'),
+  achievement: t('admin:channel_achievement'),
+  job: t('admin:channel_job'),
+  learning: t('admin:channel_learning'),
+  event: t('admin:channel_event'),
+  donation: t('admin:channel_donation'),
+});
 
 const articleContent = (a) =>
   a?.content ?? a?.description ?? a?.descriptionFull ?? '';
@@ -34,6 +35,8 @@ const articleThumbnail = (a) =>
   a?.thumbnailUrl ?? a?.imageUrl ?? a?.bannerUrl ?? a?.logoUrl ?? null;
 
 const AdminEditArticlePage = () => {
+  const { t } = useTranslation('admin');
+  const CHANNEL_LABELS = getChannelLabels(t);
   const { channel, id } = useParams();
   const navigate = useOrgNavigate();
   const { showSuccess, showError } = useNotification();
@@ -64,7 +67,7 @@ const AdminEditArticlePage = () => {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim() || content === '<p><br></p>') {
-      showError('Vui lòng nhập tiêu đề và nội dung');
+      showError(t('admin:edit_article_missing_fields'));
       return;
     }
 
@@ -78,10 +81,10 @@ const AdminEditArticlePage = () => {
         topic: topic || null,
       };
       await updateArticle(id, payload);
-      showSuccess('Cập nhật bài viết thành công!');
+      showSuccess(t('admin:edit_article_success'));
       navigate(`/admin/article`);
     } catch (err) {
-      showError(err?.response?.data?.message ?? 'Cập nhật thất bại');
+      showError(err?.response?.data?.message ?? t('admin:edit_article_failed'));
     }
   };
 
@@ -96,7 +99,7 @@ const AdminEditArticlePage = () => {
   if (!article) {
     return (
       <Stack alignItems="center" spacing={2} sx={{ py: 8 }}>
-        <Typography color="text.secondary">Không tìm thấy bài viết.</Typography>
+        <Typography color="text.secondary">{t('admin:article_not_found')}</Typography>
         <Button variant="outlined" onClick={() => navigate('/admin/article')}>
           Back to article list
         </Button>
@@ -105,7 +108,7 @@ const AdminEditArticlePage = () => {
   }
 
   return (
-    <Page title="Sửa bài viết (Admin)">
+    <Page title={t('admin:edit_article_page_title')}>
       <Box sx={{ minHeight: '100vh' }}>
         <CoverUpload value={coverPreview} onChange={handleCoverUpload} />
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
@@ -129,7 +132,7 @@ const AdminEditArticlePage = () => {
               color="primary.main"
               sx={{ fontSize: { xs: '1.8rem', md: '2.3rem' }, textAlign: 'center', mb: 3 }}
             >
-              SỬA BÀI VIẾT
+              {t('admin:edit_article_heading')}
             </Typography>
 
             <PostArticleForm
@@ -150,7 +153,7 @@ const AdminEditArticlePage = () => {
                 onClick={() => navigate('/admin/article')}
                 sx={{ px: 4 }}
               >
-                Huỷ
+                {t('admin:cancel')}
               </Button>
               <Button
                 variant="contained"
@@ -159,7 +162,7 @@ const AdminEditArticlePage = () => {
                 disabled={isSaving}
                 sx={{ px: 4 }}
               >
-                {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                {isSaving ? t('admin:saving') : t('admin:save_changes')}
               </Button>
             </Box>
           </Box>

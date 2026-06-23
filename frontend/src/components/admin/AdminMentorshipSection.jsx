@@ -1,4 +1,5 @@
 import { Stack } from '@mui/material';
+import { useTranslation } from 'react-i18next';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import VerifiedUserOutlinedIcon from '@mui/icons-material/VerifiedUserOutlined';
 import PendingActionsOutlinedIcon from '@mui/icons-material/PendingActionsOutlined';
@@ -15,38 +16,39 @@ const metricRowSx = {
 };
 
 const AdminMentorshipSection = () => {
+  const { t } = useTranslation(['admin', 'mentorship']);
   const { stats } = useAdminMentorshipStats();
 
   const sessionStatusData = [
-    { name: 'Chờ xác nhận', count: Number(stats.pendingSessions) },
-    { name: 'Đã xác nhận', count: Number(stats.confirmedSessions) },
-    { name: 'Hoàn thành', count: Number(stats.completedSessions) },
-    { name: 'Đã hủy', count: Number(stats.cancelledSessions) },
-    { name: 'Từ chối', count: Number(stats.rejectedSessions) },
+    { name: t('mentorship:session_status_pending'), count: Number(stats.pendingSessions) },
+    { name: t('mentorship:session_status_confirmed'), count: Number(stats.confirmedSessions) },
+    { name: t('mentorship:session_status_completed'), count: Number(stats.completedSessions) },
+    { name: t('mentorship:session_status_cancelled'), count: Number(stats.cancelledSessions) },
+    { name: t('mentorship:session_status_rejected'), count: Number(stats.rejectedSessions) },
   ];
 
   return (
     <AdminSectionPanel
-      title="Mentorship"
-      subtitle="Trạng thái mentor, phiên tư vấn và phản hồi từ mentee."
+      title={t('admin:nav_mentorship')}
+      subtitle={t('admin:mentorship_section_subtitle')}
     >
       <Stack spacing={3}>
         <Stack spacing={2}>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Tổng cố vấn" value={Number(stats.totalMentors).toLocaleString()} icon={<SchoolOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Cố vấn đã duyệt" value={Number(stats.approvedMentors).toLocaleString()} icon={<VerifiedUserOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Cố vấn chờ duyệt" value={Number(stats.pendingMentors).toLocaleString()} icon={<PendingActionsOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_mentors')} value={Number(stats.totalMentors).toLocaleString()} icon={<SchoolOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_approved_mentors')} value={Number(stats.approvedMentors).toLocaleString()} icon={<VerifiedUserOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_pending_mentors')} value={Number(stats.pendingMentors).toLocaleString()} icon={<PendingActionsOutlinedIcon />} />
           </Stack>
           <Stack direction="row" flexWrap="wrap" spacing={2} useFlexGap sx={metricRowSx}>
-            <AdminDashboardMetricTile label="Tổng số phiên" value={Number(stats.totalSessions).toLocaleString()} icon={<EventNoteOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Phiên hoàn thành" value={Number(stats.completedSessions).toLocaleString()} icon={<TaskAltOutlinedIcon />} />
-            <AdminDashboardMetricTile label="Phản hồi" value={Number(stats.totalFeedbacks).toLocaleString()} icon={<RateReviewOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_total_sessions')} value={Number(stats.totalSessions).toLocaleString()} icon={<EventNoteOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_completed_sessions')} value={Number(stats.completedSessions).toLocaleString()} icon={<TaskAltOutlinedIcon />} />
+            <AdminDashboardMetricTile label={t('admin:metric_feedbacks')} value={Number(stats.totalFeedbacks).toLocaleString()} icon={<RateReviewOutlinedIcon />} />
           </Stack>
         </Stack>
 
         <Chart
           type="bar"
-          title="Phiên mentorship theo trạng thái"
+          title={t('admin:chart_sessions_by_status_title')}
           data={sessionStatusData}
           dataKey="count"
           xAxisKey="name"

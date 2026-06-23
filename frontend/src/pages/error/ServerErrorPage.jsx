@@ -1,11 +1,12 @@
 import { Box, Button, Container, Typography } from '@mui/material';
-
+import { useTranslation } from 'react-i18next';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import Page from '../../components/Page';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 export default function ServerErrorPage() {
 	const navigate = useOrgNavigate();
+	const { t } = useTranslation('common');
 
 	const handleRefresh = () => {
 		window.location.reload();
@@ -13,26 +14,27 @@ export default function ServerErrorPage() {
 
 	return (
 		<Page
-			title="500 Internal Server Error"
+			title={t('server_error_title')}
 			meta={
 				<meta
 					name="description"
-					content="Lỗi máy chủ - AlumVerse, Trường Đại học Khoa học Tự nhiên, ĐHQG-HCM"
+					content={t('server_error_meta_desc')}
 				/>
 			}
 		>
-			<Container maxWidth="md">
-				<Box
-					sx={{
-						display: 'flex',
-						flexDirection: 'column',
-						alignItems: 'center',
-						justifyContent: 'center',
-						minHeight: '100vh',
-						textAlign: 'center',
-						py: 5,
-					}}
-				>
+			<Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+				<Container maxWidth="md">
+					<Box
+						sx={{
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							justifyContent: 'center',
+							minHeight: '100vh',
+							textAlign: 'center',
+							py: 5,
+						}}
+					>
 					<ErrorOutlineIcon
 						sx={{
 							fontSize: 120,
@@ -61,7 +63,7 @@ export default function ServerErrorPage() {
 							color: 'text.primary',
 						}}
 					>
-						Internal Server Error
+						{t('server_error_heading')}
 					</Typography>
 
 					<Typography
@@ -72,8 +74,7 @@ export default function ServerErrorPage() {
 							maxWidth: 500,
 						}}
 					>
-						Oops! Something went wrong on our end. We're working to fix the
-						issue. Please try refreshing the page or come back later.
+						{t('server_error_desc')}
 					</Typography>
 
 					<Box
@@ -95,7 +96,7 @@ export default function ServerErrorPage() {
 								fontSize: '1rem',
 							}}
 						>
-							Refresh Page
+							{t('server_error_refresh')}
 						</Button>
 						<Button
 							variant="outlined"
@@ -108,11 +109,12 @@ export default function ServerErrorPage() {
 								fontSize: '1rem',
 							}}
 						>
-							Go to Home
+							{t('not_found_go_home')}
 						</Button>
 					</Box>
-				</Box>
-			</Container>
+					</Box>
+				</Container>
+			</Box>
 		</Page>
 	);
 }

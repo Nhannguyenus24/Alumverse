@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +28,7 @@ class CommunitySection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SectionTitle('Cộng đồng cựu sinh viên'),
+            SectionTitle('home.community_title'.tr()),
             SizedBox(
               height: 168,
               child: ListView.separated(

@@ -50,20 +50,21 @@ import { useMentorshipAccessState } from '../../hooks/mentorship/useMentorshipAc
 import { useUploadImage } from '../../utils/imageUtils';
 import { userSettingsApi } from '../../utils/api';
 import { validateVietnamPhone } from '../../utils/regexUtils';
-import { MENTOR_PROFILE_TABS, MENTEE_PROFILE_TABS } from '../../constants/mentorshipNav';
+import { getMentorProfileTabs, getMenteeProfileTabs } from '../../constants/mentorshipNav';
+import { useTranslation } from 'react-i18next';
 
 const DEFAULT_COVER =
   'https://ethnasia.com/cdn/shop/articles/sean-o-KMn4VEeEPR8-unsplash_edited.jpg?v=1621585619';
 
-const TOP_TABS = [{ label: 'Trang cá nhân', path: '/profile' }];
+// TOP_TABS is computed inside component using t() — see getTopTabs()
 
 const STATUS_APPROVED = 'APPROVED';
 
-const EXPERTISE_CATEGORIES = [
-  { value: 'CAREER', label: 'Định hướng nghề nghiệp' },
-  { value: 'ACADEMIC', label: 'Học tập / Học bổng' },
-  { value: 'SOFT_SKILLS', label: 'Kỹ năng mềm' },
-  { value: 'GENERAL', label: 'Chung' },
+const getExpertiseCategories = (t) => [
+  { value: 'CAREER', label: t('profile:expertise_cat_career') },
+  { value: 'ACADEMIC', label: t('profile:expertise_cat_academic') },
+  { value: 'SOFT_SKILLS', label: t('profile:expertise_cat_soft_skills') },
+  { value: 'GENERAL', label: t('profile:expertise_cat_general') },
 ];
 
 const SectionTitle = ({ children, hint }) => (
@@ -91,7 +92,7 @@ const parseExtended = (raw) => {
 const emptyExperience = () => ({ company: '', title: '', from: '', to: '', description: '' });
 const emptyEducation = () => ({ school: '', degree: '', from: '', to: '' });
 
-const ProfileItem = ({ label, value }) => (
+const ProfileItem = ({ label, value, notUpdatedLabel = '—' }) => (
   <Box
     sx={{
       p: 2,
@@ -105,12 +106,14 @@ const ProfileItem = ({ label, value }) => (
       {label}
     </Typography>
     <Typography fontWeight={600}>
-      {value?.trim?.() || value || 'Chưa cập nhật'}
+      {value?.trim?.() || value || notUpdatedLabel}
     </Typography>
   </Box>
 );
 
 const UnifiedProfileEditPage = () => {
+  const { t } = useTranslation(['mentorship', 'profile']);
+  const TOP_TABS = [{ label: t('mentorship:profile'), path: '/profile' }];
   const navigate = useOrgNavigate();
   const location = useLocation();
   const isMentorshipPath = location.pathname.includes('/mentorship');
@@ -297,7 +300,7 @@ const UnifiedProfileEditPage = () => {
 
   if (profileQuery.isLoading || orgMemberQuery.isLoading) {
     return (
-      <Page title="Chỉnh sửa hồ sơ">
+      <Page title={t('profile:page_title_edit')}>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
@@ -313,9 +316,11 @@ const UnifiedProfileEditPage = () => {
   const saving = savingBase || savingMentor;
   const errorMessage = mentorError || baseError;
 
+  const EXPERTISE_CATEGORIES = getExpertiseCategories(t);
+
   const user = {
-    name: profile?.fullName ?? 'Tài khoản của tôi',
-    role: [currentJobTitle, currentCompany].filter(Boolean).join(' @ ') || 'Thành viên',
+    name: profile?.fullName ?? t('profile:my_account'),
+    role: [currentJobTitle, currentCompany].filter(Boolean).join(' @ ') || t('profile:member_role_default'),
     avatar: profile?.avatarUrl ?? '',
     cover: coverPreview,
   };
@@ -362,22 +367,14 @@ const UnifiedProfileEditPage = () => {
   );
 
   const tabs = isMentorshipPath
-    ? (access.hasMentorProfile ? MENTOR_PROFILE_TABS : (access.hasMenteeProfile ? MENTEE_PROFILE_TABS : TOP_TABS))
+    ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : TOP_TABS))
     : TOP_TABS;
 
   const renderPersonalSection = () => (
     <Stack spacing={3}>
-      <Typography
-        variant="h5"
-        fontWeight={800}
-        color="primary.main"
-        mb={2}
-        display="flex"
-        alignItems="center"
-        gap={1}
-      >
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} display="flex" alignItems="center" gap={1}>
         <PersonIcon />
-        Giới thiệu
+        {t('profile:intro_section')}
       </Typography>
 
       <TextField
@@ -386,54 +383,36 @@ const UnifiedProfileEditPage = () => {
         minRows={6}
         value={bio}
         onChange={(e) => setBio(e.target.value.slice(0, 500))}
-        placeholder="Giới thiệu về bản thân..."
+        placeholder={t('profile:bio_placeholder')}
         inputProps={{ maxLength: 500 }}
         helperText={`${bio.length}/500`}
         FormHelperTextProps={{ sx: { textAlign: 'right', mr: 0 } }}
       />
-      <Typography
-          variant="h5"
-          fontWeight={800}
-          color="primary.main"
-          mb={2}
-          mt={4}
-          display="flex"
-          alignItems="center"
-          gap={1}
-        >
-          <EmailIcon />
-          Email
-        </Typography>
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+        <EmailIcon />
+        {t('profile:email')}
+      </Typography>
 
-        <TextField
-          fullWidth
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+      <TextField
+        fullWidth
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
 
-        <Typography
-          variant="h5"
-          fontWeight={800}
-          color="primary.main"
-          mb={2}
-          mt={4}
-          display="flex"
-          alignItems="center"
-          gap={1}
-        >
-          <PhoneIcon />
-          Số điện thoại
-        </Typography>
+      <Typography variant="h5" fontWeight={800} color="primary.main" mb={2} mt={4} display="flex" alignItems="center" gap={1}>
+        <PhoneIcon />
+        {t('profile:phone')}
+      </Typography>
 
-        <TextField
-          fullWidth
-          value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-          placeholder="Ví dụ: 0901234567"
-          inputProps={{ inputMode: 'numeric', maxLength: 10 }}
-          error={Boolean(phoneError)}
-          helperText={phoneError || ''}
-        />
+      <TextField
+        fullWidth
+        value={phone}
+        onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+        placeholder={t('profile:phone_placeholder')}
+        inputProps={{ inputMode: 'numeric', maxLength: 10 }}
+        error={Boolean(phoneError)}
+        helperText={phoneError || ''}
+      />
     </Stack>
   );
 
@@ -444,15 +423,15 @@ const UnifiedProfileEditPage = () => {
           <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2 }}>
             <Alert severity="warning" sx={{ mb: 2 }}>
               <Typography fontWeight={700} mb={0.5}>
-                Chỉ mentor đã được duyệt mới có thể chỉnh sửa hồ sơ
+                {t('profile:mentor_only_edit_warning')}
               </Typography>
             </Alert>
             <Stack direction="row" spacing={1.5}>
               <Button variant="outlined" onClick={() => navigate('/development/mentorship/profile')}>
-                Về trang cá nhân
+                {t('profile:back_to_profile_btn')}
               </Button>
               <Button variant="contained" onClick={() => navigate('/development/mentorship/signup')}>
-                Mở lại luồng đăng ký
+                {t('profile:reopen_signup_btn')}
               </Button>
             </Stack>
           </Box>
@@ -461,36 +440,34 @@ const UnifiedProfileEditPage = () => {
       return null;
     }
 
-
     return (
       <Stack spacing={4} sx={{ pt: isMentorshipPath ? 0 : 4, borderTop: isMentorshipPath ? 'none' : '1px solid', borderColor: 'divider' }}>
         {!isMentorshipPath && (
           <Typography variant="h3" fontWeight={800} color="primary.main">
-            CHỈNH SỬA HỒ SƠ CỐ VẤN
+            {t('profile:edit_mentor_heading')}
           </Typography>
         )}
-        
+
         {mentor.status !== STATUS_APPROVED && isMentorshipPath && (
           <Alert severity="warning">
-            Hồ sơ cố vấn của bạn đang chờ duyệt.
+            {t('profile:mentor_pending_edit_warning')}
           </Alert>
         )}
 
-        {/* ===== SECTION 1: PUBLIC PROFILE ===== */}
-        <SectionTitle hint="Thông tin mentee nhìn thấy">
-          Hồ sơ công khai
+        <SectionTitle hint={t('profile:section_public_profile_hint')}>
+          {t('profile:section_public_profile')}
         </SectionTitle>
         <Stack spacing={2}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
             <TextField
-              label="Chức danh"
+              label={t('profile:label_title')}
               value={currentJobTitle}
               onChange={(e) => setCurrentJobTitle(e.target.value)}
               fullWidth
               size="small"
             />
             <TextField
-              label="Công ty"
+              label={t('profile:label_company')}
               value={currentCompany}
               onChange={(e) => setCurrentCompany(e.target.value)}
               fullWidth
@@ -499,21 +476,20 @@ const UnifiedProfileEditPage = () => {
           </Stack>
         </Stack>
 
-        {/* ===== SECTION 2: EXPERIENCE & EDUCATION ===== */}
-        <SectionTitle hint="Phần này hiển thị công khai trên trang profile">
-          Kinh nghiệm & Học vấn
+        <SectionTitle hint={t('profile:section_exp_edu_hint')}>
+          {t('profile:section_exp_edu')}
         </SectionTitle>
         <Stack spacing={2}>
           <Box>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography fontWeight={700}>Kinh nghiệm làm việc</Typography>
+              <Typography fontWeight={700}>{t('profile:exp_section')}</Typography>
               <Button size="small" startIcon={<AddIcon />} onClick={addExperienceRow}>
-                Thêm
+                {t('profile:add_btn')}
               </Button>
             </Stack>
             {experiences.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
-                Chưa có kinh nghiệm nào.
+                {t('profile:no_experiences')}
               </Typography>
             ) : (
               <Stack spacing={1.5}>
@@ -524,14 +500,14 @@ const UnifiedProfileEditPage = () => {
                   >
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={1}>
                       <TextField
-                        label="Chức danh"
+                        label={t('profile:label_title')}
                         value={exp.title ?? ''}
                         onChange={(e) => updateExperienceRow(idx, 'title', e.target.value)}
                         size="small"
                         fullWidth
                       />
                       <TextField
-                        label="Công ty"
+                        label={t('profile:label_company')}
                         value={exp.company ?? ''}
                         onChange={(e) => updateExperienceRow(idx, 'company', e.target.value)}
                         size="small"
@@ -540,7 +516,7 @@ const UnifiedProfileEditPage = () => {
                     </Stack>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={1}>
                       <TextField
-                        label="Từ"
+                        label={t('profile:label_from')}
                         value={exp.from ?? ''}
                         onChange={(e) => updateExperienceRow(idx, 'from', e.target.value)}
                         size="small"
@@ -548,23 +524,19 @@ const UnifiedProfileEditPage = () => {
                         placeholder="2022"
                       />
                       <TextField
-                        label="Đến"
+                        label={t('profile:label_to')}
                         value={exp.to ?? ''}
                         onChange={(e) => updateExperienceRow(idx, 'to', e.target.value)}
                         size="small"
                         fullWidth
-                        placeholder="Hiện tại"
+                        placeholder={t('profile:placeholder_current')}
                       />
-                      <IconButton
-                        color="error"
-                        onClick={() => removeExperienceRow(idx)}
-                        aria-label="remove experience"
-                      >
+                      <IconButton color="error" onClick={() => removeExperienceRow(idx)} aria-label="remove experience">
                         <DeleteOutlineIcon />
                       </IconButton>
                     </Stack>
                     <TextField
-                      label="Mô tả"
+                      label={t('profile:label_description')}
                       value={exp.description ?? ''}
                       onChange={(e) => updateExperienceRow(idx, 'description', e.target.value)}
                       size="small"
@@ -580,14 +552,14 @@ const UnifiedProfileEditPage = () => {
 
           <Box>
             <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-              <Typography fontWeight={700}>Học vấn</Typography>
+              <Typography fontWeight={700}>{t('profile:edu_section')}</Typography>
               <Button size="small" startIcon={<AddIcon />} onClick={addEducationRow}>
-                Thêm
+                {t('profile:add_btn')}
               </Button>
             </Stack>
             {educations.length === 0 ? (
               <Typography variant="body2" color="text.secondary">
-                Chưa có học vấn nào.
+                {t('profile:no_educations')}
               </Typography>
             ) : (
               <Stack spacing={1.5}>
@@ -598,14 +570,14 @@ const UnifiedProfileEditPage = () => {
                   >
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={1}>
                       <TextField
-                        label="Trường"
+                        label={t('profile:label_school')}
                         value={edu.school ?? ''}
                         onChange={(e) => updateEducationRow(idx, 'school', e.target.value)}
                         size="small"
                         fullWidth
                       />
                       <TextField
-                        label="Bằng cấp / chuyên ngành"
+                        label={t('profile:label_degree')}
                         value={edu.degree ?? ''}
                         onChange={(e) => updateEducationRow(idx, 'degree', e.target.value)}
                         size="small"
@@ -614,7 +586,7 @@ const UnifiedProfileEditPage = () => {
                     </Stack>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems="center">
                       <TextField
-                        label="Từ"
+                        label={t('profile:label_from')}
                         value={edu.from ?? ''}
                         onChange={(e) => updateEducationRow(idx, 'from', e.target.value)}
                         size="small"
@@ -622,18 +594,14 @@ const UnifiedProfileEditPage = () => {
                         placeholder="2018"
                       />
                       <TextField
-                        label="Đến"
+                        label={t('profile:label_to')}
                         value={edu.to ?? ''}
                         onChange={(e) => updateEducationRow(idx, 'to', e.target.value)}
                         size="small"
                         fullWidth
                         placeholder="2022"
                       />
-                      <IconButton
-                        color="error"
-                        onClick={() => removeEducationRow(idx)}
-                        aria-label="remove education"
-                      >
+                      <IconButton color="error" onClick={() => removeEducationRow(idx)} aria-label="remove education">
                         <DeleteOutlineIcon />
                       </IconButton>
                     </Stack>
@@ -644,9 +612,8 @@ const UnifiedProfileEditPage = () => {
           </Box>
         </Stack>
 
-        {/* ===== SECTION 3: EXPERTISE (CRUD) ===== */}
-        <SectionTitle hint="Mentee dùng các chủ đề này để tìm mentor phù hợp">
-          Nội dung chia sẻ
+        <SectionTitle hint={t('profile:section_expertise_hint')}>
+          {t('profile:section_expertise')}
         </SectionTitle>
         {(addExpertise.errorMessage || updateExpertise.errorMessage || deleteExpertise.errorMessage) && (
           <Alert severity="error">
@@ -658,74 +625,51 @@ const UnifiedProfileEditPage = () => {
             const isEditing = editingExpertiseId === item.id;
             if (isEditing) {
               return (
-                <Box
-                  key={item.id}
-                  sx={{ p: 2, border: '1px solid', borderColor: 'primary.main', borderRadius: 1 }}
-                >
+                <Box key={item.id} sx={{ p: 2, border: '1px solid', borderColor: 'primary.main', borderRadius: 1 }}>
                   <Stack spacing={1.2}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                       <TextField
-                        label="Chủ đề"
+                        label={t('profile:expertise_topic')}
                         value={draftExpertise.topic}
-                        onChange={(e) =>
-                          setDraftExpertise((d) => ({ ...d, topic: e.target.value }))
-                        }
+                        onChange={(e) => setDraftExpertise((d) => ({ ...d, topic: e.target.value }))}
                         size="small"
                         fullWidth
                       />
                       <TextField
-                        label="Lĩnh vực"
+                        label={t('profile:expertise_category')}
                         value={draftExpertise.category}
-                        onChange={(e) =>
-                          setDraftExpertise((d) => ({ ...d, category: e.target.value }))
-                        }
+                        onChange={(e) => setDraftExpertise((d) => ({ ...d, category: e.target.value }))}
                         select
                         size="small"
                         fullWidth
                       >
                         {EXPERTISE_CATEGORIES.map((c) => (
-                          <MenuItem key={c.value} value={c.value}>
-                            {c.label}
-                          </MenuItem>
+                          <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
                         ))}
                       </TextField>
                     </Stack>
                     <TextField
-                      label="Mô tả"
+                      label={t('profile:label_description')}
                       value={draftExpertise.description}
-                      onChange={(e) =>
-                        setDraftExpertise((d) => ({ ...d, description: e.target.value }))
-                      }
+                      onChange={(e) => setDraftExpertise((d) => ({ ...d, description: e.target.value }))}
                       size="small"
                       fullWidth
                       multiline
                       minRows={2}
                     />
                     <TextField
-                      label="Tag (tuỳ chọn)"
+                      label={t('profile:expertise_tag')}
                       value={draftExpertise.tag}
-                      onChange={(e) =>
-                        setDraftExpertise((d) => ({ ...d, tag: e.target.value }))
-                      }
+                      onChange={(e) => setDraftExpertise((d) => ({ ...d, tag: e.target.value }))}
                       size="small"
                       fullWidth
                     />
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <Button
-                        size="small"
-                        startIcon={<CloseIcon />}
-                        onClick={cancelEditExpertise}
-                      >
-                        Huỷ
+                      <Button size="small" startIcon={<CloseIcon />} onClick={cancelEditExpertise}>
+                        {t('profile:cancel_btn')}
                       </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        startIcon={<CheckIcon />}
-                        disabled={updateExpertise.isPending || !draftExpertise.topic.trim()}
-                        onClick={saveExpertiseEdit}
-                      >
-                        Lưu
+                      <Button size="small" variant="contained" startIcon={<CheckIcon />} disabled={updateExpertise.isPending || !draftExpertise.topic.trim()} onClick={saveExpertiseEdit}>
+                        {t('profile:save_expertise_btn')}
                       </Button>
                     </Stack>
                   </Stack>
@@ -733,46 +677,27 @@ const UnifiedProfileEditPage = () => {
               );
             }
             return (
-              <Box
-                key={item.id}
-                sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
-              >
+              <Box key={item.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
                       <Typography fontWeight={700}>{item.topic}</Typography>
                       <Chip
-                        label={
-                          EXPERTISE_CATEGORIES.find((c) => c.value === item.category)?.label ??
-                          item.category ??
-                          'Chung'
-                        }
+                        label={EXPERTISE_CATEGORIES.find((c) => c.value === item.category)?.label ?? item.category ?? t('profile:expertise_cat_general')}
                         size="small"
                         color="primary"
                         variant="outlined"
                       />
                     </Stack>
                     {item.description && (
-                      <Typography variant="body2" color="text.secondary">
-                        {item.description}
-                      </Typography>
+                      <Typography variant="body2" color="text.secondary">{item.description}</Typography>
                     )}
                   </Box>
                   <Stack direction="row" spacing={0.5}>
-                    <IconButton
-                      size="small"
-                      onClick={() => startEditExpertise(item)}
-                      aria-label="edit expertise"
-                    >
+                    <IconButton size="small" onClick={() => startEditExpertise(item)} aria-label="edit expertise">
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      disabled={deleteExpertise.isPending}
-                      onClick={() => deleteExpertise.submit(item.id)}
-                      aria-label="delete expertise"
-                    >
+                    <IconButton size="small" color="error" disabled={deleteExpertise.isPending} onClick={() => deleteExpertise.submit(item.id)} aria-label="delete expertise">
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
                   </Stack>
@@ -782,66 +707,44 @@ const UnifiedProfileEditPage = () => {
           })}
 
           {editingExpertiseId === null && (
-            <Box
-              sx={{
-                p: 2,
-                border: '1px dashed',
-                borderColor: 'divider',
-                borderRadius: 1,
-                bgcolor: 'background.default',
-              }}
-            >
+            <Box sx={{ p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 1, bgcolor: 'background.default' }}>
               <Typography fontWeight={700} mb={1}>
-                Thêm nội dung mới
+                {t('profile:add_expertise_heading')}
               </Typography>
               <Stack spacing={1.2}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                   <TextField
-                    label="Chủ đề"
+                    label={t('profile:expertise_topic')}
                     value={draftExpertise.topic}
-                    onChange={(e) =>
-                      setDraftExpertise((d) => ({ ...d, topic: e.target.value }))
-                    }
+                    onChange={(e) => setDraftExpertise((d) => ({ ...d, topic: e.target.value }))}
                     size="small"
                     fullWidth
                   />
                   <TextField
-                    label="Lĩnh vực"
+                    label={t('profile:expertise_category')}
                     value={draftExpertise.category}
-                    onChange={(e) =>
-                      setDraftExpertise((d) => ({ ...d, category: e.target.value }))
-                    }
+                    onChange={(e) => setDraftExpertise((d) => ({ ...d, category: e.target.value }))}
                     select
                     size="small"
                     fullWidth
                   >
                     {EXPERTISE_CATEGORIES.map((c) => (
-                      <MenuItem key={c.value} value={c.value}>
-                        {c.label}
-                      </MenuItem>
+                      <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
                     ))}
                   </TextField>
                 </Stack>
                 <TextField
-                  label="Mô tả"
+                  label={t('profile:label_description')}
                   value={draftExpertise.description}
-                  onChange={(e) =>
-                    setDraftExpertise((d) => ({ ...d, description: e.target.value }))
-                  }
+                  onChange={(e) => setDraftExpertise((d) => ({ ...d, description: e.target.value }))}
                   size="small"
                   fullWidth
                   multiline
                   minRows={2}
                 />
                 <Stack direction="row" spacing={1} justifyContent="flex-end">
-                  <Button
-                    size="small"
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    disabled={addExpertise.isPending || !draftExpertise.topic.trim()}
-                    onClick={addExpertiseNew}
-                  >
-                    Thêm
+                  <Button size="small" variant="contained" startIcon={<AddIcon />} disabled={addExpertise.isPending || !draftExpertise.topic.trim()} onClick={addExpertiseNew}>
+                    {t('profile:add_btn')}
                   </Button>
                 </Stack>
               </Stack>
@@ -849,19 +752,18 @@ const UnifiedProfileEditPage = () => {
           )}
         </Stack>
 
-        {/* ===== SECTION 4: PRIVATE INFO ===== */}
-        <SectionTitle hint="Chỉ bạn nhìn thấy. Mentee chỉ thấy sau khi đặt lịch thành công.">
-          Thông tin riêng tư
+        <SectionTitle hint={t('profile:section_private_hint')}>
+          {t('profile:section_private')}
         </SectionTitle>
         <Stack spacing={2}>
           <TextField
-            label="Link cuộc họp mặc định"
+            label={t('profile:meeting_link_label')}
             value={defaultMeetingLink}
             onChange={(e) => setDefaultMeetingLink(e.target.value)}
             size="small"
             fullWidth
-            placeholder="VD: https://meet.google.com/abc-defg-hij"
-            helperText="Mentee chỉ thấy link sau khi bạn duyệt yêu cầu đặt lịch."
+            placeholder={t('profile:meeting_link_placeholder')}
+            helperText={t('profile:meeting_link_hint')}
           />
         </Stack>
       </Stack>
@@ -869,7 +771,7 @@ const UnifiedProfileEditPage = () => {
   };
 
   return (
-    <Page title="Chỉnh sửa trang cá nhân">
+    <Page title={t('profile:page_title_edit')}>
       <ProfileLayout
         user={user}
         cover={coverPreview}
@@ -880,15 +782,11 @@ const UnifiedProfileEditPage = () => {
         avatarSlot={avatarEditor}
       >
         <Stack spacing={4}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            flexWrap="wrap"
-            gap={2}
-          >
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
             <Typography variant="h2" fontWeight={800} color="primary.main">
-              CHỈNH SỬA TRANG CÁ NHÂN {isMentorshipPath ? (access.hasMentorProfile ? 'CỐ VẤN' : '') : ''}
+              {isMentorshipPath
+                ? (access.hasMentorProfile ? t('profile:edit_mentor_heading') : t('profile:edit_page_heading'))
+                : t('profile:edit_page_heading')}
             </Typography>
 
             <Stack direction="row" spacing={1.5}>
@@ -898,22 +796,18 @@ const UnifiedProfileEditPage = () => {
                 onClick={() => navigate(isMentorshipPath ? '/development/mentorship/profile' : '/profile')}
                 disabled={saving}
               >
-                Huỷ
+                {t('profile:cancel_btn')}
               </Button>
 
-              <Button
-                variant="contained"
-                onClick={handleSave}
-                disabled={saving || uploadingCover}
-              >
-                {saving || uploadingCover ? 'Đang lưu...' : 'Lưu thay đổi'}
+              <Button variant="contained" onClick={handleSave} disabled={saving || uploadingCover}>
+                {saving || uploadingCover ? t('profile:saving_btn') : t('profile:save_btn')}
               </Button>
             </Stack>
           </Box>
 
           {success && (
             <Alert severity="success">
-              Đã lưu hồ sơ. Đang chuyển về trang cá nhân...
+              {t('profile:success_save')}
             </Alert>
           )}
 
@@ -926,7 +820,7 @@ const UnifiedProfileEditPage = () => {
               {renderMentorshipSection()}
               <Box sx={{ pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h3" fontWeight={800} color="primary.main" mb={4}>
-                  THÔNG TIN CHUNG
+                  {t('profile:edit_general_heading')}
                 </Typography>
                 {renderPersonalSection()}
               </Box>
