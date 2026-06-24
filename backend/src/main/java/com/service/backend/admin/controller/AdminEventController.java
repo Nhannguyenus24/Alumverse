@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
 
 @Tag(name = "Admin > Events", description = "API endpoints for managing events by administrators")
@@ -47,7 +48,10 @@ public class AdminEventController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.getAllEvents(organizationId, page, size)
+        Integer orgIdInt = organizationId != null ? organizationId.intValue() : null;
+        return SecurityUtils.resolveOrganizationId(orgIdInt)
+                .flatMap(resolvedOrgId -> adminEventService.getAllEvents(resolvedOrgId.longValue(), page, size))
+                .switchIfEmpty(adminEventService.getAllEvents(null, page, size))
                 .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved all events", paginated)));
     }
 
@@ -61,7 +65,10 @@ public class AdminEventController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.searchAllEvents(organizationId, keyword, page, size)
+        Integer orgIdInt = organizationId != null ? organizationId.intValue() : null;
+        return SecurityUtils.resolveOrganizationId(orgIdInt)
+                .flatMap(resolvedOrgId -> adminEventService.searchAllEvents(resolvedOrgId.longValue(), keyword, page, size))
+                .switchIfEmpty(adminEventService.searchAllEvents(null, keyword, page, size))
                 .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Search results retrieved", paginated)));
     }
 
@@ -75,7 +82,10 @@ public class AdminEventController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminEventService.getEventsByPublishStatus(organizationId, isPublished, page, size)
+        Integer orgIdInt = organizationId != null ? organizationId.intValue() : null;
+        return SecurityUtils.resolveOrganizationId(orgIdInt)
+                .flatMap(resolvedOrgId -> adminEventService.getEventsByPublishStatus(resolvedOrgId.longValue(), isPublished, page, size))
+                .switchIfEmpty(adminEventService.getEventsByPublishStatus(null, isPublished, page, size))
                 .map(paginated -> ResponseEntity.ok(new ApiResponse<>("Retrieved events by publish status", paginated)));
     }
 

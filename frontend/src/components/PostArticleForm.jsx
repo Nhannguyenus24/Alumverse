@@ -86,15 +86,12 @@ const PostArticleForm = ({
   handleEventInputChange,
   registrationQuestions = [], // event
   setRegistrationQuestions,   // event
+  hideLocalQuestions = false,
 }) => {
   const { t } = useTranslation(['article', 'event', 'donation']);
   const { infos: fundReceivingInfos } = useFundReceivingInfos();
 
   const topicsByChannel = useMemo(() => getTopicsByChannel(t), [t]);
-  const eventTypeOptions = useMemo(() => [
-    { value: 'online', label: t('event:format_online') },
-    { value: 'offline', label: t('event:format_offline') },
-  ], [t]);
 
   const fundReceivingOptions = useMemo(
     () => fundReceivingInfos.map((i) => ({
@@ -199,44 +196,29 @@ const PostArticleForm = ({
             {t('event:section_title')}
           </Typography>
 
-          {/* Tên sự kiện */}
           <Box sx={{ mb: 3 }}>
-            <Input
-              label={t('event:event_name')}
-              placeholder={t('event:event_name_placeholder')}
-              name="eventName"
-              value={eventData.eventName}
-              onChange={handleEventInputChange}
-            />
+            <Input label={t('event:location')} placeholder={t('event:location_placeholder')} name="location" value={eventData.location} onChange={handleEventInputChange} />
           </Box>
 
-          {/* Người tổ chức + Địa điểm */}
           <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}>
-              <Input label={t('event:organizer_label')} name="organizer" value={eventData.organizer} onChange={handleEventInputChange} />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Input label={t('event:location')} placeholder={t('event:location_placeholder')} name="location" value={eventData.location} onChange={handleEventInputChange} />
-            </Box>
-          </Box>
-
-          {/* Hình thức - Người tham gia - Hạn đóng đơn (Flex 3) */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexDirection: { xs: 'column', sm: 'row' } }}>
-            <Box sx={{ flex: 1 }}>
-              <Dropdown
-                label={t('event:format')}
-                options={eventTypeOptions}
-                value={eventData.type}
-                onChange={(e) => handleEventInputChange({ target: { name: 'type', value: e.target.value } })}
-              />
-            </Box>
             <Box sx={{ flex: 1 }}>
               <Input label={t('event:max_participants')} type="number" name="maxParticipants" value={eventData.maxParticipants} onChange={handleEventInputChange} />
             </Box>
             <Box sx={{ flex: 1 }}>
               <TextField
                 fullWidth
-                label={t('event:end_date')}
+                label={t('event:registration_start')}
+                type="date"
+                name="registrationStartAt"
+                InputLabelProps={{ shrink: true }}
+                value={eventData.registrationStartAt}
+                onChange={handleEventInputChange}
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth
+                label={t('event:registration_end')}
                 type="date"
                 name="deadline"
                 InputLabelProps={{ shrink: true }}
@@ -246,7 +228,6 @@ const PostArticleForm = ({
             </Box>
           </Box>
 
-          {/* Ngày bắt đầu + Ngày kết thúc */}
           <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
             <Box sx={{ flex: 1 }}>
               <TextField fullWidth label={t('event:start_date')} type="date" name="startDate" InputLabelProps={{ shrink: true }} value={eventData.startDate} onChange={handleEventInputChange} />
@@ -257,6 +238,7 @@ const PostArticleForm = ({
           </Box>
         </Box>
 
+        {!hideLocalQuestions && (
         <Box sx={{ backgroundColor: "#fff8e1", borderRadius: 2, p: { xs: 2, sm: 3, md: 4 }, my: 2 }}>
           <Typography variant="h6" fontWeight={700} color="primary.main" sx={{ mb: 3 }}>
             {t('event:questions_section_title')}
@@ -328,6 +310,7 @@ const PostArticleForm = ({
             </Button>
           </Stack>
         </Box>
+        )}
       </Box>
       )}
 

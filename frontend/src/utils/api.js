@@ -228,6 +228,10 @@ const adminUserApi = {
 		return apiClient.post(`${BASE_ADMIN_USERS}/organization-member`, payload);
 	},
 
+	bulkImportMembers(payload) {
+		return apiClient.post(`${BASE_ADMIN_USERS}/organization-members/bulk`, payload);
+	},
+
 	getUserActivity(userId) {
 		return apiClient.get(`${BASE_ADMIN_USERS}/${userId}/activity`);
 	},
@@ -242,6 +246,7 @@ export const {
 	getVerificationRequests,
 	reviewVerificationRequest,
 	addOrganizationMember,
+	bulkImportMembers,
 	getUserActivity,
 } = adminUserApi;
 
@@ -670,6 +675,11 @@ export const eventApi = {
 
 	async getEventStatisticsById(eventId) {
 		const response = await apiClient.get(`/events/${eventId}/statistics`);
+		return unwrap(response);
+	},
+
+	async getInterestsByEvent(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/interests`, { params });
 		return unwrap(response);
 	},
 };

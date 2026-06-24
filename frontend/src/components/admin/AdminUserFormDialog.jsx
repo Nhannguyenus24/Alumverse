@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   IconButton,
   InputAdornment,
   MenuItem,
@@ -18,6 +19,13 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { USER_ROLES, USER_STATUSES } from '../../constants/adminDefaultUsers';
 
+const GRADUATION_STATUSES = ['STUDYING', 'GRADUATED', 'DROPPED'];
+const VERIFICATION_LEVELS = [
+  { value: 0, label: 'Chưa xác thực' },
+  { value: 1, label: 'Đã yêu cầu' },
+  { value: 2, label: 'Đã xác thực' },
+];
+
 const defaultEmptyForm = {
   email: '',
   studentId: '',
@@ -26,9 +34,13 @@ const defaultEmptyForm = {
   role: 'ALUMNI',
   status: 'ACTIVE',
   organizationId: '',
+  verificationLevel: 0,
+  program: '',
+  major: '',
+  graduatedYear: '',
+  graduationStatus: '',
 };
 
-/** API list often omits fullName; keep edit form aligned with table column fallback. */
 const resolvedFullNameForEdit = (u) => {
   if (!u) return '';
   const found = [u.fullName, u.studentId, u.email]
@@ -49,9 +61,7 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (!open) return;
     const timer = setTimeout(() => {
       setShowPassword(false);
       if (mode === 'edit' && user) {
@@ -63,6 +73,11 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           role: user.role || 'STUDENT',
           status: user.status || 'ACTIVE',
           organizationId: user.organizationId ?? firstOrganizationId,
+          verificationLevel: user.verificationLevel ?? 0,
+          program: Array.isArray(user.program) ? user.program[0] ?? '' : user.program || '',
+          major: Array.isArray(user.major) ? user.major[0] ?? '' : user.major || '',
+          graduatedYear: Array.isArray(user.graduatedYear) ? user.graduatedYear[0] ?? '' : user.graduatedYear || '',
+          graduationStatus: Array.isArray(user.graduationStatus) ? user.graduationStatus[0] ?? '' : user.graduationStatus || '',
         });
       } else {
         setForm({ ...defaultEmptyForm, role: 'ALUMNI', organizationId: firstOrganizationId });
@@ -74,40 +89,25 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
 
   const handleChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
   const validate = () => {
     const next = {};
-    if (!form.email.trim()) {
-      next.email = t('admin:error_email_required');
-    }
-    if (!form.studentId.trim()) {
-      next.studentId = t('admin:error_student_id_required');
-    }
-    if (!form.fullName.trim()) {
-      next.fullName = t('admin:error_full_name_required');
-    }
-    if (mode === 'create' && form.password && form.password.length < 8) {
-      next.password = t('admin:error_password_min_length');
-    }
-    if (mode === 'edit' && form.password && form.password.length < 8) {
-      next.password = t('admin:error_password_min_length');
+    if (!form.email.trim()) next.email = t('admin:error_email_required');
+    if (!form.fullName.trim()) next.fullName = t('admin:error_full_name_required');
+    if (form.password && form.password.length < 8) next.password = t('admin:error_password_min_length');
+    if (form.graduatedYear && !/^\d{4}$/.test(String(form.graduatedYear).trim())) {
+      next.graduatedYear = 'Năm tốt nghiệp phải là 4 chữ số (vd: 2024)';
     }
     setErrors(next);
     const keys = Object.keys(next);
-    if (keys.length > 0) {
-      enqueueSnackbar(next[keys[0]], { variant: 'error' });
-    }
+    if (keys.length > 0) enqueueSnackbar(next[keys[0]], { variant: 'error' });
     return keys.length === 0;
   };
 
   const handleSubmit = async () => {
-    if (!validate()) {
-      return;
-    }
+    if (!validate()) return;
     if (!form.organizationId) {
       enqueueSnackbar(t('admin:error_org_required'), { variant: 'error' });
       return;
@@ -121,35 +121,35 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
       status: form.status,
       organizationId: Number(form.organizationId),
       organizationName: org?.name ?? '',
+      verificationLevel: Number(form.verificationLevel),
+      program: form.program.trim() ? [form.program.trim()] : undefined,
+      major: form.major.trim() ? [form.major.trim()] : undefined,
+      graduatedYear: form.graduatedYear ? [Number(form.graduatedYear)] : undefined,
+      graduationStatus: form.graduationStatus ? [form.graduationStatus] : undefined,
     };
-    if (form.password) {
-      payload.password = form.password;
-    }
+    if (form.password) payload.password = form.password;
     try {
       await Promise.resolve(onSubmit(payload));
       onClose();
     } catch {
-      // Parent / hook shows errors; keep dialog open
+      // Parent shows errors; keep dialog open
     }
   };
 
-  // Keeps OutlinedInput `notched` in sync with the label inside Dialog (MUI v7).
-  const inputLabelSlotProps = { shrink: true };
+  const slotProps = { inputLabel: { shrink: true } };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="body">
       <DialogTitle sx={{ color: 'primary.main', fontWeight: 700 }}>
         {mode === 'create' ? t('admin:create_user') : t('admin:edit_user')}
       </DialogTitle>
-      <DialogContent
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          pt: 1,
-          overflow: 'visible',
-        }}
-      >
+      <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1, overflow: 'visible' }}>
+
+        {/* ── Thông tin tài khoản ── */}
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+          Thông tin tài khoản
+        </Typography>
+
         <TextField
           label="Email"
           type="email"
@@ -158,52 +158,41 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           error={!!errors.email}
           fullWidth
           required
-          slotProps={{ inputLabel: inputLabelSlotProps }}
+          slotProps={slotProps}
         />
-        <TextField
-          label={t('admin:student_id_label')}
-          value={form.studentId}
-          onChange={handleChange('studentId')}
-          error={!!errors.studentId}
-          fullWidth
-          required
-          slotProps={{ inputLabel: inputLabelSlotProps }}
-        />
-        <TextField
-          label={t('profile:full_name', 'Họ tên')}
-          value={form.fullName}
-          onChange={handleChange('fullName')}
-          error={!!errors.fullName}
-          fullWidth
-          required
-          slotProps={{ inputLabel: inputLabelSlotProps }}
-        />
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            label={t('admin:student_id_label')}
+            value={form.studentId}
+            onChange={handleChange('studentId')}
+            fullWidth
+            slotProps={slotProps}
+          />
+          <TextField
+            label={t('profile:full_name', 'Họ tên')}
+            value={form.fullName}
+            onChange={handleChange('fullName')}
+            error={!!errors.fullName}
+            fullWidth
+            required
+            slotProps={slotProps}
+          />
+        </Box>
         <TextField
           label={mode === 'edit' ? t('admin:password_new_optional') : t('admin:password_default_hint')}
           type={showPassword ? 'text' : 'password'}
           value={form.password}
           onChange={handleChange('password')}
           error={!!errors.password}
-          helperText={
-            errors.password
-              ? undefined
-              : mode === 'edit'
-                ? t('admin:password_keep_hint')
-                : t('admin:password_default_keep_hint')
-          }
+          helperText={errors.password ?? (mode === 'edit' ? t('admin:password_keep_hint') : t('admin:password_default_keep_hint'))}
           fullWidth
           autoComplete="new-password"
           slotProps={{
-            inputLabel: inputLabelSlotProps,
+            inputLabel: { shrink: true },
             input: {
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton
-                    aria-label={showPassword ? t('admin:hide_password') : t('admin:show_password')}
-                    onClick={() => setShowPassword((v) => !v)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    edge="end"
-                  >
+                  <IconButton onClick={() => setShowPassword((v) => !v)} onMouseDown={(e) => e.preventDefault()} edge="end">
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -217,28 +206,22 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
           value={form.organizationId}
           onChange={handleChange('organizationId')}
           fullWidth
-          slotProps={{ inputLabel: inputLabelSlotProps }}
+          slotProps={slotProps}
         >
           {organizationOptions.map((org) => (
-            <MenuItem key={org.id} value={org.id}>
-              {org.name}
-            </MenuItem>
+            <MenuItem key={org.id} value={org.id}>{org.name}</MenuItem>
           ))}
         </TextField>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2 }}>
           <TextField
             select
             label={t('admin:role_label')}
             value={form.role}
             onChange={handleChange('role')}
             fullWidth
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            slotProps={slotProps}
           >
-            {USER_ROLES.map((role) => (
-              <MenuItem key={role} value={role}>
-                {role}
-              </MenuItem>
-            ))}
+            {USER_ROLES.map((r) => <MenuItem key={r} value={r}>{r}</MenuItem>)}
           </TextField>
           <TextField
             select
@@ -246,23 +229,80 @@ const AdminUserFormDialog = ({ open, mode, user, onClose, onSubmit, organization
             value={form.status}
             onChange={handleChange('status')}
             fullWidth
-            slotProps={{ inputLabel: inputLabelSlotProps }}
+            slotProps={slotProps}
           >
-            {USER_STATUSES.map((status) => (
-              <MenuItem key={status} value={status}>
-                {status}
+            {USER_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+          </TextField>
+        </Box>
+
+        <Divider />
+
+        {/* ── Học vấn ── */}
+        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+          Học vấn & xác thực
+        </Typography>
+
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            label="Chương trình đào tạo"
+            value={form.program}
+            onChange={handleChange('program')}
+            fullWidth
+            placeholder="vd: Chính quy"
+            slotProps={slotProps}
+          />
+          <TextField
+            label="Ngành học"
+            value={form.major}
+            onChange={handleChange('major')}
+            fullWidth
+            placeholder="vd: Công nghệ thông tin"
+            slotProps={slotProps}
+          />
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            label="Năm tốt nghiệp"
+            value={form.graduatedYear}
+            onChange={handleChange('graduatedYear')}
+            error={!!errors.graduatedYear}
+            helperText={errors.graduatedYear}
+            fullWidth
+            placeholder="vd: 2024"
+            slotProps={slotProps}
+          />
+          <TextField
+            select
+            label="Tình trạng tốt nghiệp"
+            value={form.graduationStatus}
+            onChange={handleChange('graduationStatus')}
+            fullWidth
+            slotProps={slotProps}
+          >
+            <MenuItem value="">— Không chọn —</MenuItem>
+            {GRADUATION_STATUSES.map((s) => (
+              <MenuItem key={s} value={s}>
+                {s === 'STUDYING' ? 'Đang học' : s === 'GRADUATED' ? 'Đã tốt nghiệp' : 'Bỏ học'}
               </MenuItem>
             ))}
           </TextField>
         </Box>
-        {mode === 'create' ? (
-          <Typography variant="caption" color="text.secondary">
-            Password is stored locally for this demo only. Connect API later for real auth.
-          </Typography>
-        ) : null}
+        <TextField
+          select
+          label="Cấp độ xác thực"
+          value={form.verificationLevel}
+          onChange={handleChange('verificationLevel')}
+          fullWidth
+          slotProps={slotProps}
+        >
+          {VERIFICATION_LEVELS.map(({ value, label }) => (
+            <MenuItem key={value} value={value}>{value} — {label}</MenuItem>
+          ))}
+        </TextField>
+
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button variant="outlined" color="secondary"onClick={onClose} sx={{ textTransform: 'none' }}>
+        <Button variant="outlined" color="secondary" onClick={onClose} sx={{ textTransform: 'none' }}>
           {t('common:cancel')}
         </Button>
         <Button variant="contained" onClick={handleSubmit} sx={{ textTransform: 'none', fontWeight: 700 }}>
