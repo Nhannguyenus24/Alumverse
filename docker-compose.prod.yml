@@ -1,32 +1,8 @@
+# docker-compose.deploy.yml
+# Dùng khi database đã được deploy ở nơi khác (external DB)
+# Chỉ deploy: backend + nginx
+
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: db
-    restart: unless-stopped
-
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-
-    # Không expose port ra ngoài, chỉ cho backend nội bộ
-    expose:
-      - "5432"
-
-    volumes:
-      - db_data:/var/lib/postgresql/data
-      - ./docs/postgre.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./docs/sample.sql:/docker-entrypoint-initdb.d/02-sample.sql
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-    networks:
-      - internal
-
   backend:
     build:
       context: ./backend
@@ -37,23 +13,8 @@ services:
     expose:
       - "8080"
 
-    environment:
-      SPRING_PROFILES_ACTIVE: prod
-      SPRING_R2DBC_URL: r2dbc:postgresql://db:5432/${DB_NAME}
-      SPRING_R2DBC_USERNAME: ${DB_USER}
-      SPRING_R2DBC_PASSWORD: ${DB_PASSWORD}
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      MAIL_USERNAME: ${MAIL_USERNAME}
-      MAIL_PASSWORD: ${MAIL_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-
-    depends_on:
-      db:
-        condition: service_healthy
-
     networks:
-      - internal
-      - external
+      - app_net
 
     # Giới hạn RAM để tránh OOM trên server nhỏ
     mem_limit: 768m
@@ -78,16 +39,12 @@ services:
       - backend
 
     networks:
-      - external
+      - app_net
 
 networks:
-  internal:
-    driver: bridge
-    internal: true   # DB hoàn toàn cô lập, không ra internet
-  external:
+  app_net:
     driver: bridge
 
 volumes:
-  db_data:
   certbot_www:
   certbot_conf:
