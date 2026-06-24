@@ -68,10 +68,11 @@ const forceLogout = () => {
   const pathParts = window.location.pathname.split('/').filter(Boolean);
   const slug = pathParts.length > 0 ? pathParts[0] : 'alumni';
   
-  const loginPath = `/${slug}/auth/login`;
+  const currentPath = `${window.location.pathname}${window.location.search}`;
+  const loginPath = `/${slug}/auth/login?reason=login_required&from=${encodeURIComponent(currentPath)}`;
   
   // Don't redirect if we are already on a login page to avoid loops
-  if (window.location.pathname !== loginPath && !window.location.pathname.includes('/auth/login')) {
+  if (!window.location.pathname.includes('/auth/login')) {
     console.warn('Session expired or invalid. Redirecting to login...');
     window.location.href = loginPath;
   }
