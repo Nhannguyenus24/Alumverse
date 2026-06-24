@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -36,7 +37,9 @@ public class AdminDashboardController {
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return dashboardService.getActivities(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> dashboardService.getActivities(resolvedOrgId, page, size))
+                .switchIfEmpty(dashboardService.getActivities(null, page, size))
                 .map(res -> ResponseEntity.ok(new ApiResponse<>("Activities fetched", res)));
     }
 }

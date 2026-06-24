@@ -594,7 +594,7 @@ export const router = createBrowserRouter([
       {
         path: "admin",
         element: (
-          <ProtectedRoute allowedRoles={["ADMIN"]}>
+          <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
             <AdminLayout />
           </ProtectedRoute>
         ),
@@ -606,7 +606,7 @@ export const router = createBrowserRouter([
           {
             path: "users",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminUsersListPage />
               </ProtectedRoute>
             ),
@@ -614,7 +614,7 @@ export const router = createBrowserRouter([
           {
             path: "users/:userId",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminUserDetailPage />
               </ProtectedRoute>
             ),
@@ -622,7 +622,7 @@ export const router = createBrowserRouter([
           {
             path: "forum/posts",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
                 <AdminForumPostsPage />
               </ProtectedRoute>
             ),
@@ -630,7 +630,7 @@ export const router = createBrowserRouter([
           {
             path: "forum/topics",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminForumTopicsPage />
               </ProtectedRoute>
             ),
@@ -638,7 +638,7 @@ export const router = createBrowserRouter([
           {
             path: "forum/categories",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminForumCategoriesPage />
               </ProtectedRoute>
             ),
@@ -646,7 +646,7 @@ export const router = createBrowserRouter([
           {
             path: "forum/reports",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
                 <AdminForumReportsPage />
               </ProtectedRoute>
             ),
@@ -662,7 +662,7 @@ export const router = createBrowserRouter([
           {
             path: "events",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminEventsPage />
               </ProtectedRoute>
             ),
@@ -670,7 +670,7 @@ export const router = createBrowserRouter([
           {
             path: "events/:eventId/organize",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminEventOrganizePage />
               </ProtectedRoute>
             ),
@@ -678,7 +678,7 @@ export const router = createBrowserRouter([
           {
             path: "feedbacks",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminSchoolFeedbackPage />
               </ProtectedRoute>
             ),
@@ -686,7 +686,7 @@ export const router = createBrowserRouter([
           {
             path: "verifications",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminVerificationsPage />
               </ProtectedRoute>
             ),
@@ -694,7 +694,7 @@ export const router = createBrowserRouter([
           {
             path: "mentorship",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminMentorshipPage />
               </ProtectedRoute>
             ),
@@ -702,7 +702,7 @@ export const router = createBrowserRouter([
           {
             path: "fundraising",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminFundraisingsPage />
               </ProtectedRoute>
             ),
@@ -710,7 +710,7 @@ export const router = createBrowserRouter([
           {
             path: "fundraising/bank-accounts",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminFundReceivingInfosPage />
               </ProtectedRoute>
             ),
@@ -718,7 +718,7 @@ export const router = createBrowserRouter([
           {
             path: "article",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
                 <AdminArticlesPage />
               </ProtectedRoute>
             ),
@@ -726,7 +726,7 @@ export const router = createBrowserRouter([
           {
             path: "article/:channel/:id/edit",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF", "MODERATOR"]}>
                 <AdminEditArticlePage />
               </ProtectedRoute>
             ),
@@ -734,7 +734,7 @@ export const router = createBrowserRouter([
           {
             path: "education-requests",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminEducationRequestsPage />
               </ProtectedRoute>
             ),
@@ -742,7 +742,7 @@ export const router = createBrowserRouter([
           {
             path: "audit-logs",
             element: (
-              <ProtectedRoute allowedRoles={["ADMIN"]}>
+              <ProtectedRoute allowedRoles={["ADMIN", "STAFF"]}>
                 <AdminAuditLogsPage />
               </ProtectedRoute>
             ),
