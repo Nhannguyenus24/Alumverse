@@ -36,7 +36,7 @@ public class AuditService {
                     size
             )
              .doOnSuccess(r -> logger.info("getLoginHistories (org={}) result: {}", organizationId, JsonUtils.toJson(r)))
-             .doOnError(e -> logger.error("Error fetching login histories for org {}", organizationId, e));
+             .doOnError(e -> logger.error("Error fetching login histories for org {}", organizationId, e.getMessage()));
         }
         return PaginationHelper.paginate(
                 auditRepository.findAllWithUserInfo(size, offset).collectList(),
@@ -45,7 +45,7 @@ public class AuditService {
                 size
         )
          .doOnSuccess(r -> logger.info("getLoginHistories result: {}", JsonUtils.toJson(r)))
-         .doOnError(e -> logger.error("Error fetching login histories", e));
+         .doOnError(e -> logger.error("Error fetching login histories", e.getMessage()));
     }
 
     public Mono<PaginatedResponse<LoginHistoryResponse>> getLoginHistoriesByUser(Integer userId, int page, int size) {
@@ -57,7 +57,7 @@ public class AuditService {
                 size
         )
          .doOnSuccess(r -> logger.info("getLoginHistoriesByUser result: {}", JsonUtils.toJson(r)))
-         .doOnError(e -> logger.error("Error fetching login histories for user {}", userId, e));
+         .doOnError(e -> logger.error("Error fetching login histories for user {}", userId, e.getMessage()));
     }
 
     public Mono<Map<String, Object>> getLoginStats() {
@@ -77,13 +77,13 @@ public class AuditService {
             return stats;
         })
         .doOnSuccess(r -> logger.info("getLoginStats result: {}", JsonUtils.toJson(r)))
-        .doOnError(e -> logger.error("Error fetching login stats", e));
+        .doOnError(e -> logger.error("Error fetching login stats", e.getMessage()));
     }
 
     public Mono<List<SuspiciousLoginInfo>> getSuspiciousLogins() {
         return auditRepository.findSuspiciousLogins()
                 .collectList()
                 .doOnSuccess(r -> logger.info("getSuspiciousLogins result: {}", JsonUtils.toJson(r)))
-                .doOnError(e -> logger.error("Error fetching suspicious logins", e));
+                .doOnError(e -> logger.error("Error fetching suspicious logins", e.getMessage()));
     }
 }
