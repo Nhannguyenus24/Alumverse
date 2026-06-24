@@ -9,6 +9,7 @@ import com.service.backend.shared.entity.Event;
 import com.service.backend.fundraising.dto.FundListItemResponse;
 import com.service.backend.shared.dto.ApiResponse;
 import com.service.backend.shared.dto.PaginatedResponse;
+import com.service.backend.shared.utils.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Min;
@@ -45,7 +46,9 @@ public class AdminArticleController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllNews(organizationId, keyword, page, limit)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminArticleService.getAllNews(resolvedOrgId, keyword, page, limit))
+                .switchIfEmpty(adminArticleService.getAllNews(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("News retrieved successfully", response)));
     }
 
@@ -56,7 +59,9 @@ public class AdminArticleController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllAlumniPosts(organizationId, keyword, page, limit)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminArticleService.getAllAlumniPosts(resolvedOrgId, keyword, page, limit))
+                .switchIfEmpty(adminArticleService.getAllAlumniPosts(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Alumni posts retrieved successfully", response)));
     }
 
@@ -67,7 +72,9 @@ public class AdminArticleController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllAchievements(organizationId, keyword, page, limit)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminArticleService.getAllAchievements(resolvedOrgId, keyword, page, limit))
+                .switchIfEmpty(adminArticleService.getAllAchievements(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Achievements retrieved successfully", response)));
     }
 
@@ -78,7 +85,9 @@ public class AdminArticleController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllJobs(organizationId, keyword, page, limit)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminArticleService.getAllJobs(resolvedOrgId, keyword, page, limit))
+                .switchIfEmpty(adminArticleService.getAllJobs(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Jobs retrieved successfully", response)));
     }
 
@@ -89,7 +98,9 @@ public class AdminArticleController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllLearningResources(organizationId, keyword, page, limit)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminArticleService.getAllLearningResources(resolvedOrgId, keyword, page, limit))
+                .switchIfEmpty(adminArticleService.getAllLearningResources(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Learning resources retrieved successfully", response)));
     }
 
@@ -99,7 +110,10 @@ public class AdminArticleController {
             @RequestParam(required = false) Long organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminEventService.getAllEvents(organizationId, page, limit)
+        Integer orgIdInt = organizationId != null ? organizationId.intValue() : null;
+        return SecurityUtils.resolveOrganizationId(orgIdInt)
+                .flatMap(resolvedOrgId -> adminEventService.getAllEvents(resolvedOrgId.longValue(), page, limit))
+                .switchIfEmpty(adminEventService.getAllEvents(null, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Events retrieved successfully", response)));
     }
 
@@ -110,7 +124,9 @@ public class AdminArticleController {
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int limit) {
-        return adminArticleService.getAllFunds(organizationId, keyword, page, limit)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminArticleService.getAllFunds(resolvedOrgId, keyword, page, limit))
+                .switchIfEmpty(adminArticleService.getAllFunds(null, keyword, page, limit))
                 .map(response -> ResponseEntity.ok(new ApiResponse<>("Funds retrieved successfully", response)));
     }
 

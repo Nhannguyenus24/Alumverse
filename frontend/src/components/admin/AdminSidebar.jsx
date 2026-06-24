@@ -38,6 +38,7 @@ const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 88;
 const ADMIN_HEADER_HEIGHT = 88;
 
+// roles: omit = visible to all; array = visible only to listed roles
 const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_overview'),
@@ -48,36 +49,37 @@ const NAV_GROUPS = (adminBase, t) => [
   {
     title: t('admin:nav_group_entity_management'),
     items: [
-      { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: t('admin:nav_users'), role: 'ADMIN' },
-      { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: t('admin:nav_organizations'), role: 'ADMIN' },
-      { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: t('admin:nav_verifications'), role: 'ADMIN' },
-      { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: t('admin:nav_mentorship'), role: 'ADMIN' },
+      { to: `${adminBase}/users`, icon: <GroupsOutlinedIcon />, label: t('admin:nav_users') },
+      { to: `${adminBase}/organizations`, icon: <BusinessOutlinedIcon />, label: t('admin:nav_organizations'), roles: ['ADMIN'] },
+      { to: `${adminBase}/verifications`, icon: <VerifiedUserOutlinedIcon />, label: t('admin:nav_verifications') },
+      { to: `${adminBase}/mentorship`, icon: <SchoolOutlinedIcon />, label: t('admin:nav_mentorship') },
     ],
   },
   {
     title: t('admin:nav_group_forum'),
     items: [
       { to: `${adminBase}/forum/posts`, icon: <ForumOutlinedIcon />, label: t('admin:nav_forum_posts') },
-      { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: t('admin:nav_forum_topics'), role: 'ADMIN' },
-      { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: t('admin:nav_forum_categories'), role: 'ADMIN' },
-      { to: `${adminBase}/forum/reports`, icon: <FlagOutlinedIcon />, label: t('admin:nav_forum_reports'), role: 'ADMIN' },
+      { to: `${adminBase}/forum/topics`, icon: <TopicOutlinedIcon />, label: t('admin:nav_forum_topics') },
+      { to: `${adminBase}/forum/categories`, icon: <AccountTreeOutlinedIcon />, label: t('admin:nav_forum_categories') },
+      { to: `${adminBase}/forum/reports`, icon: <FlagOutlinedIcon />, label: t('admin:nav_forum_reports') },
     ],
   },
-    {
+  {
     title: t('admin:nav_group_content_community'),
     items: [
-      { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: t('admin:nav_article'), role: 'ADMIN' },
-      { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: t('admin:nav_events'), role: 'ADMIN' },
-      { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: t('admin:nav_fundraising'), role: 'ADMIN' },
-      { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: t('admin:nav_bank_accounts'), role: 'ADMIN' },
+      { to: `${adminBase}/article`, icon: <ArticleOutlinedIcon />, label: t('admin:nav_article') },
+      { to: `${adminBase}/events`, icon: <EventNoteOutlinedIcon />, label: t('admin:nav_events') },
+      { to: `${adminBase}/fundraising`, end: true, icon: <VolunteerActivismOutlinedIcon />, label: t('admin:nav_fundraising') },
+      { to: `${adminBase}/fundraising/bank-accounts`, icon: <AccountBalanceOutlinedIcon />, label: t('admin:nav_bank_accounts') },
     ],
   },
   {
     title: t('admin:nav_group_system'),
     items: [
-      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: t('admin:nav_feedbacks'), role: 'ADMIN' },
-      { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: t('admin:nav_audit_logs'), role: 'ADMIN' },
-      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_bot_config'), role: 'ADMIN' },
+      { to: `${adminBase}/feedbacks`, icon: <FeedbackOutlinedIcon />, label: t('admin:nav_feedbacks') },
+      { to: `${adminBase}/education-requests`, icon: <HistoryEduOutlinedIcon />, label: t('admin:nav_education_requests') },
+      { to: `${adminBase}/audit-logs`, icon: <GavelOutlinedIcon />, label: t('admin:nav_audit_logs') },
+      { to: `${adminBase}/bot-config`, icon: <SmartToyOutlinedIcon />, label: t('admin:nav_bot_config'), roles: ['ADMIN'] },
     ],
   },
 ];
@@ -144,7 +146,7 @@ const AdminSidebar = ({ open, onClose, variant = 'permanent', adminBase, userRol
       {/* Nav Items */}
       <Box sx={{ flex: 1, overflowY: 'auto', py: 2, px: 1.5 }}>
         {groups.map((group, idx) => {
-          const filteredItems = group.items.filter(item => !item.role || item.role === userRole);
+          const filteredItems = group.items.filter(item => !item.roles || item.roles.includes(userRole));
           if (filteredItems.length === 0) return null;
 
           return (

@@ -18,6 +18,7 @@ function decodeJwtPayload(token) {
       studentId: parsed.studentId,
       avatarUrl: parsed.avatar ?? parsed.avatarUrl,
       role: parsed.role,
+      organizationId: parsed.organizationId != null ? Number(parsed.organizationId) : undefined,
       exp: parsed.exp,
     };
   } catch {
@@ -40,6 +41,7 @@ export function userFromAccessToken(token) {
     studentId: payload.studentId,
     avatarUrl: payload.avatarUrl,
     role: payload.role,
+    organizationId: payload.organizationId,
   };
 }
 

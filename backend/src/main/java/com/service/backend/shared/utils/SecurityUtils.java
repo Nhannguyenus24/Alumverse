@@ -53,4 +53,19 @@ public final class SecurityUtils {
                 .map(currentRole -> currentRole.equalsIgnoreCase(role))
                 .onErrorReturn(false);
     }
+
+    /**
+     * Resolves the effective organizationId for the current user.
+     * STAFF: always returns their own organizationId from the JWT (ignores requestedOrgId).
+     * ADMIN: returns Mono.just(requestedOrgId) if non-null, else Mono.empty() (meaning "all orgs").
+     */
+    public static Mono<Integer> resolveOrganizationId(Integer requestedOrgId) {
+        return getCurrentUserRole()
+                .flatMap(role -> {
+                    if ("STAFF".equals(role)) {
+                        return getCurrentOrganizationId();
+                    }
+                    return requestedOrgId != null ? Mono.just(requestedOrgId) : Mono.empty();
+                });
+    }
 }
