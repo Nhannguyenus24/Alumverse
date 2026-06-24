@@ -67,7 +67,9 @@ public class AdminUserController {
             @RequestParam(required = false) String role,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) Integer organizationId) {
-        return adminUserService.getAllUsers(page, size, search, role, status, organizationId)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminUserService.getAllUsers(page, size, search, role, status, resolvedOrgId))
+                .switchIfEmpty(adminUserService.getAllUsers(page, size, search, role, status, null))
                 .map(pagedResponse -> ResponseEntity.ok(
                         new ApiResponse<>("Users fetched successfully", pagedResponse)));
     }
@@ -182,10 +184,13 @@ public class AdminUserController {
             @RequestParam(defaultValue = "false") boolean pendingOnly,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
-        Mono<PaginatedResponse<VerificationRequestResponse>> source = pendingOnly
-                ? adminUserService.getPendingVerificationRequests(organizationId, keyword, page, size)
-                : adminUserService.getAllVerificationRequests(organizationId, keyword, page, size);
-        return source
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> pendingOnly
+                        ? adminUserService.getPendingVerificationRequests(resolvedOrgId, keyword, page, size)
+                        : adminUserService.getAllVerificationRequests(resolvedOrgId, keyword, page, size))
+                .switchIfEmpty(Mono.defer(() -> pendingOnly
+                        ? adminUserService.getPendingVerificationRequests(null, keyword, page, size)
+                        : adminUserService.getAllVerificationRequests(null, keyword, page, size)))
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Verification requests fetched successfully", data)));
     }
@@ -336,7 +341,9 @@ public class AdminUserController {
             @RequestParam(required = false) String action,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return adminUserService.getAdminActionLogs(organizationId, adminUserId, targetUserId, action, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminUserService.getAdminActionLogs(resolvedOrgId, adminUserId, targetUserId, action, page, size))
+                .switchIfEmpty(adminUserService.getAdminActionLogs(null, adminUserId, targetUserId, action, page, size))
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Admin action logs fetched successfully", data)));
     }
