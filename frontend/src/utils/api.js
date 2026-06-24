@@ -677,6 +677,11 @@ export const eventApi = {
 		const response = await apiClient.get(`/events/${eventId}/statistics`);
 		return unwrap(response);
 	},
+
+	async getInterestsByEvent(eventId, params = {}) {
+		const response = await apiClient.get(`/events/${eventId}/interests`, { params });
+		return unwrap(response);
+	},
 };
 
 export const adminEventApi = {
