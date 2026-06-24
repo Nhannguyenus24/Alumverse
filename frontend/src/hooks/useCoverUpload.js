@@ -27,7 +27,7 @@ const useCoverUpload = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { coverFile, coverPreview, handleCoverUpload };
+  return { coverFile, coverPreview, handleCoverUpload, setCoverPreview };
 };
 
 export default useCoverUpload;

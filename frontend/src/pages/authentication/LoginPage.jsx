@@ -84,6 +84,16 @@ const LoginPage = () => {
         return;
       }
 
+      if (result?.data?.user?.role === 'STAFF') {
+        navigate(`/${slug}/admin`, { replace: true });
+        return;
+      }
+
+      if (result?.data?.user?.role === 'ADMIN') {
+        navigate(`/admin`, { replace: true });
+        return;
+      }
+
       navigate(redirectTo, { replace: true });
     } else {
       if (reset) {
@@ -122,6 +132,11 @@ const LoginPage = () => {
           replace: true,
           state: { redirectTo },
         });
+        return;
+      }
+
+      if (result?.data?.user?.role === 'STAFF') {
+        navigate(`/${slug}/admin`, { replace: true });
         return;
       }
 

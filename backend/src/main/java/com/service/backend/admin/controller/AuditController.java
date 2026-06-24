@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -40,7 +41,9 @@ public class AuditController {
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) int size) {
-        return auditService.getLoginHistories(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> auditService.getLoginHistories(resolvedOrgId, page, size))
+                .switchIfEmpty(auditService.getLoginHistories(null, page, size))
                 .map(data -> ResponseEntity.ok(
                         new ApiResponse<>("Login histories fetched successfully", data)));
     }
