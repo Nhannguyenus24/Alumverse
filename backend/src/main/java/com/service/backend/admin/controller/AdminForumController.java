@@ -68,7 +68,9 @@ public class AdminForumController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminForumService.getNewForumPostsYesterdayWithPagination(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getNewForumPostsYesterdayWithPagination(resolvedOrgId, page, size))
+                .switchIfEmpty(adminForumService.getNewForumPostsYesterdayWithPagination(null, page, size))
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved paginated new forum posts created yesterday", paginatedResponse)));
     }
 
@@ -100,7 +102,9 @@ public class AdminForumController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminForumService.getHiddenPostsWithPagination(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getHiddenPostsWithPagination(resolvedOrgId, page, size))
+                .switchIfEmpty(adminForumService.getHiddenPostsWithPagination(null, page, size))
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved hidden forum posts", paginatedResponse)));
     }
 
@@ -111,7 +115,9 @@ public class AdminForumController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminForumService.getBannedPostsWithPagination(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getBannedPostsWithPagination(resolvedOrgId, page, size))
+                .switchIfEmpty(adminForumService.getBannedPostsWithPagination(null, page, size))
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved banned forum posts", paginatedResponse)));
     }
 
@@ -123,7 +129,9 @@ public class AdminForumController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "20")
             @RequestParam(defaultValue = "20") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminForumService.getAllPostsWithPagination(organizationId, keyword, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getAllPostsWithPagination(resolvedOrgId, keyword, page, size))
+                .switchIfEmpty(adminForumService.getAllPostsWithPagination(null, keyword, page, size))
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum posts", paginatedResponse)));
     }
 
@@ -132,7 +140,9 @@ public class AdminForumController {
             @RequestParam(required = false) Integer organizationId,
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminForumService.getPendingReports(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getPendingReports(resolvedOrgId, page, size))
+                .switchIfEmpty(adminForumService.getPendingReports(null, page, size))
                 .map(data -> ResponseEntity.ok(new ApiResponse<>("Retrieved pending reports", data)));
     }
 
@@ -169,8 +179,8 @@ public class AdminForumController {
     public Mono<ResponseEntity<ApiResponse<List<ForumCategoryDTO>>>> adminGetAllCategories(
             @Parameter(example = "1")
             @RequestParam @Min(value = 1, message = "Organization ID must be greater than 0") Integer organizationId) {
-        return adminForumService.getAllCategoriesByOrganization(organizationId)
-                .collectList()
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getAllCategoriesByOrganization(resolvedOrgId).collectList())
                 .map(categories -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum categories", categories)));
     }
 
@@ -191,7 +201,8 @@ public class AdminForumController {
             @RequestParam(required = false) String description,
             @Parameter(example = "1")
             @RequestParam(required = false) Integer parentId) {
-        return adminForumService.createCategory(organizationId, name, description, parentId)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.createCategory(resolvedOrgId, name, description, parentId))
                 .map(category -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum category created successfully", category)));
     }
 
@@ -226,7 +237,9 @@ public class AdminForumController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminForumService.getAllTopicsByOrganization(organizationId, keyword, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.getAllTopicsByOrganization(resolvedOrgId, keyword, page, size))
+                .switchIfEmpty(adminForumService.getAllTopicsByOrganization(null, keyword, page, size))
                 .map(paginatedResponse -> ResponseEntity.ok(new ApiResponse<>("Retrieved forum topics", paginatedResponse)));
     }
 
@@ -247,7 +260,8 @@ public class AdminForumController {
             @RequestParam @NotBlank(message = "Topic title is required") String title,
             @Parameter(example = "1")
             @RequestParam @Min(value = 1, message = "Member ID must be greater than 0") Integer createdByMemberId) {
-        return adminForumService.createTopic(organizationId, categoryId, title, createdByMemberId)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminForumService.createTopic(resolvedOrgId, categoryId, title, createdByMemberId))
                 .map(topic -> ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Forum topic created successfully", topic)));
     }
 

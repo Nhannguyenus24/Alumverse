@@ -214,11 +214,12 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
     Mono<Boolean> existsOrganizationMemberByUserId(@Param("userId") Integer userId);
 
     @Modifying
-    @Query("INSERT INTO organization_members (organization_id, user_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    @Query("INSERT INTO organization_members (organization_id, user_id, student_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
+           "VALUES (:organizationId, :userId, :studentId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> createOrganizationMember(
            @Param("organizationId") Integer organizationId,
            @Param("userId") Integer userId,
+           @Param("studentId") String studentId,
            @Param("graduatedYear") String graduatedYear,
            @Param("graduationStatus") String graduationStatus,
            @Param("program") String program,
@@ -227,13 +228,15 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            @Param("status") String status);
 
     @Modifying
-    @Query("UPDATE organization_members SET organization_id = :organizationId, graduated_year = CAST(:graduatedYear AS jsonb), " +
+    @Query("UPDATE organization_members SET organization_id = :organizationId, student_id = COALESCE(:studentId, student_id), " +
+           "graduated_year = CAST(:graduatedYear AS jsonb), " +
            "graduation_status = CAST(:graduationStatus AS jsonb), program = CAST(:program AS jsonb), major = CAST(:major AS jsonb), " +
            "verification_level = :verificationLevel, is_trusted_verifier = false, \"status\" = :status, updated_at = CURRENT_TIMESTAMP " +
            "WHERE user_id = :userId")
     Mono<Integer> updateOrganizationMemberByUserId(
            @Param("organizationId") Integer organizationId,
            @Param("userId") Integer userId,
+           @Param("studentId") String studentId,
            @Param("graduatedYear") String graduatedYear,
            @Param("graduationStatus") String graduationStatus,
            @Param("program") String program,

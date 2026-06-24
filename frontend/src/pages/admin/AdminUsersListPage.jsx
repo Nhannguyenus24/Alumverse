@@ -18,6 +18,7 @@ import {
 import { useDebounce } from '../../hooks/useDebounce';
 import { exportToCSV } from '../../utils/exportUtils';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
@@ -30,6 +31,7 @@ import GppBadOutlinedIcon from '@mui/icons-material/GppBadOutlined';
 
 import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import AdminUserFormDialog from '../../components/admin/AdminUserFormDialog';
+import AdminBulkImportDialog from '../../components/admin/AdminBulkImportDialog';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminBanUserDialog from '../../components/admin/AdminBanUserDialog';
 import AdminDataTable from '../../components/admin/AdminDataTable';
@@ -58,6 +60,7 @@ const AdminUsersListPage = () => {
     rowsPerPage,
     setRowsPerPage,
     createUser,
+    bulkImportUsers,
     updateUser,
     updateUserStatus,
     deleteUser,
@@ -97,6 +100,7 @@ const AdminUsersListPage = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [userStatusMenu, setUserStatusMenu] = useState(null);
   const [banTarget, setBanTarget] = useState(null);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [organizationOptions, setOrganizationOptions] = useState([]);
 
   useEffect(() => {
@@ -316,15 +320,26 @@ const AdminUsersListPage = () => {
         filters={Filters}
         onExport={handleExport}
         addButton={
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddOutlinedIcon />}
-            onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
-            sx={{ fontWeight: 700, textTransform: 'none', ml: 1 }}
-          >
-            {t('admin:add_user')}
-          </Button>
+          <Stack direction="row" spacing={1} sx={{ ml: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FileUploadOutlinedIcon />}
+              onClick={() => setBulkImportOpen(true)}
+              sx={{ fontWeight: 700, textTransform: 'none' }}
+            >
+              Nhập Excel
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AddOutlinedIcon />}
+              onClick={() => { setUserFormMode('create'); setEditingUser(null); setUserFormOpen(true); }}
+              sx={{ fontWeight: 700, textTransform: 'none' }}
+            >
+              {t('admin:add_user')}
+            </Button>
+          </Stack>
         }
         onRowClick={(u) => navigate(`/admin/users/${u.id}`)}
       />
@@ -352,6 +367,13 @@ const AdminUsersListPage = () => {
       </Menu>
 
       {/* Dialogs */}
+      <AdminBulkImportDialog
+        open={bulkImportOpen}
+        onClose={() => setBulkImportOpen(false)}
+        organizationOptions={organizationOptions}
+        onBulkImport={bulkImportUsers}
+      />
+
       <AdminUserFormDialog
         open={userFormOpen}
         mode={userFormMode}

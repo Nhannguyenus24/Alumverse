@@ -38,7 +38,8 @@ public class AdminEducationController {
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "10") @Min(1) int size) {
-        return adminEducationService.getRequests(organizationId, status, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminEducationService.getRequests(resolvedOrgId, status, page, size))
                 .map(data -> ResponseEntity.ok(new ApiResponse<>("Education requests fetched successfully", data)));
     }
 

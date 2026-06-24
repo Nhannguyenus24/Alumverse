@@ -8,11 +8,6 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   IconButton,
   MenuItem,
   Stack,
@@ -20,13 +15,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
+import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import GroupOutlinedIcon from "@mui/icons-material/GroupOutlined";
-import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import EventNoteOutlinedIcon from "@mui/icons-material/EventNoteOutlined";
 import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
 import TodayOutlinedIcon from "@mui/icons-material/TodayOutlined";
@@ -39,15 +31,12 @@ import ConfirmationNumberOutlinedIcon from "@mui/icons-material/ConfirmationNumb
 import HowToRegOutlinedIcon from "@mui/icons-material/HowToRegOutlined";
 import EventBusyOutlinedIcon from "@mui/icons-material/EventBusyOutlined";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
-import AdminEventFormDialog from "../../components/admin/AdminEventFormDialog";
-import AdminEventTicketsDialog from "../../components/admin/AdminEventTicketsDialog";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import {
   ADMIN_EVENT_SORT_OPTIONS,
   ADMIN_EVENT_STATUS_OPTIONS,
 } from "../../constants/adminDefaultEvents";
 import {
-  ADMIN_FILTER_BAR_SX,
   ADMIN_STATUS_CHIP_SX,
 } from "../../constants/adminUiShared";
 import useAdminEvents from "../../hooks/admin/useAdminEvents";
@@ -56,7 +45,7 @@ import { formatDateTime } from "../../utils/dateFormatter";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 
 const AdminEventsPage = () => {
-  const { t } = useTranslation(["admin", "common"]);
+  const { t } = useTranslation(["admin", "common", "event"]);
   const { enqueueSnackbar } = useSnackbar();
 
   const publishStatusChip = (isPublished) =>
@@ -85,7 +74,6 @@ const AdminEventsPage = () => {
     publishEvent,
     unpublishEvent,
     deleteEvent,
-    updateEvent,
   } = useAdminEvents(stableOrgId || 'ALL');
   const { setBreadcrumbs } = useOutletContext();
 
@@ -98,12 +86,9 @@ const AdminEventsPage = () => {
 
   useEffect(() => {
     setBreadcrumbs?.([{ label: t('admin:events'), active: true }]);
-  }, [setBreadcrumbs]);
+  }, [setBreadcrumbs, t]);
 
-  const [detailItem, setDetailItem] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [editTarget, setEditTarget] = useState(null);
-  const [participantsTarget, setParticipantsTarget] = useState(null);
 
   const orgNameById = useMemo(() => {
     const map = new Map();
@@ -132,15 +117,6 @@ const AdminEventsPage = () => {
       variant: ok ? "success" : "error",
     });
     setDeleteTarget(null);
-  };
-
-  const handleEditSubmit = async (payload) => {
-    if (!editTarget) return false;
-    const ok = await updateEvent(editTarget.id, payload);
-    enqueueSnackbar(ok ? t("admin:event_updated") : t("admin:event_update_failed"), {
-      variant: ok ? "success" : "error",
-    });
-    return ok;
   };
 
   const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
@@ -234,6 +210,14 @@ const AdminEventsPage = () => {
             {t("admin:manage_events_desc")}
           </Typography>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => orgNavigate("/post/event")}
+          sx={{ textTransform: "none", fontWeight: 700 }}
+        >
+          {t("event:create_event")}
+        </Button>
       </Box>
 
       {statistics ? (
@@ -345,42 +329,6 @@ const AdminEventsPage = () => {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Tooltip title={t("common:view_more")}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => setDetailItem(event)}
-                    >
-                      <VisibilityOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t("common:edit")}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => setEditTarget(event)}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t("admin:tooltip_organize_event")}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => orgNavigate(`/admin/events/${event.id}/organize`)}
-                    >
-                      <EventAvailableOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t("admin:tooltip_tickets_interests")}>
-                    <IconButton
-                      size="small"
-                      color="primary"
-                      onClick={() => setParticipantsTarget(event)}
-                    >
-                      <GroupOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
                   {event.isPublished ? (
                     <Tooltip title={t("admin:tooltip_unpublish")}>
                       <IconButton
@@ -430,7 +378,7 @@ const AdminEventsPage = () => {
         }}
         searchValue={searchTerm}
         searchPlaceholder={t("admin:search_event_placeholder")}
-        onRowClick={(event) => setDetailItem(event)}
+        onRowClick={(event) => orgNavigate(`/admin/events/${event.id}`)}
         filters={
           <Stack direction="row" spacing={1}>
             <TextField
@@ -477,114 +425,6 @@ const AdminEventsPage = () => {
             </TextField>
           </Stack>
         }
-      />
-
-      <Dialog
-        open={Boolean(detailItem)}
-        onClose={() => setDetailItem(null)}
-        fullWidth
-        maxWidth="sm"
-      >
-        <DialogTitle sx={{ color: "primary.main", fontWeight: 800 }}>
-          {t("admin:event_detail_title")}
-        </DialogTitle>
-        {detailItem ? (
-          <DialogContent
-            sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}
-          >
-            <Typography variant="body2">
-              <strong>ID:</strong> {detailItem.id}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:col_title")}:</strong> {detailItem.title}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:col_organization")}:</strong>{" "}
-              {orgLabel(detailItem.organizationId)}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:event_detail_creator")}:</strong>{" "}
-              {detailItem.creatorMemberId ?? "-"}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:col_status")}:</strong>{" "}
-              {detailItem.isPublished ? t("admin:published_chip") : t("admin:draft_chip")}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:event_field_location")}:</strong> {detailItem.location || "-"}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:event_detail_start")}:</strong> {formatDateTime(detailItem.startTime)}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:event_detail_end")}:</strong> {formatDateTime(detailItem.endTime)}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:event_detail_registration_time")}:</strong>{" "}
-              {formatDateTime(detailItem.registrationStartAt)} -{" "}
-              {formatDateTime(detailItem.registrationEndAt)}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:col_capacity")}:</strong> {detailItem.maxCapacity ?? "-"}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:col_interested")}:</strong> {detailItem.interestedCount ?? 0}
-            </Typography>
-            <Typography variant="body2">
-              <strong>{t("admin:col_created_at")}:</strong>{" "}
-              {formatDateTime(detailItem.createdAt)}
-            </Typography>
-            {detailItem.description ? (
-              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                <strong>{t("admin:event_detail_description")}:</strong> {detailItem.description}
-              </Typography>
-            ) : null}
-          </DialogContent>
-        ) : null}
-        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
-          <Button
-            variant="outlined"
-            startIcon={<GroupOutlinedIcon />}
-            onClick={() => {
-              setParticipantsTarget(detailItem);
-              setDetailItem(null);
-            }}
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            {t("admin:btn_tickets_interests")}
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<EditOutlinedIcon />}
-            onClick={() => {
-              setEditTarget(detailItem);
-              setDetailItem(null);
-            }}
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            {t("common:edit")}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => setDetailItem(null)}
-            sx={{ textTransform: "none", fontWeight: 700 }}
-          >
-            {t("common:close")}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <AdminEventFormDialog
-        open={Boolean(editTarget)}
-        event={editTarget}
-        onClose={() => setEditTarget(null)}
-        onSubmit={handleEditSubmit}
-      />
-
-      <AdminEventTicketsDialog
-        open={Boolean(participantsTarget)}
-        event={participantsTarget}
-        onClose={() => setParticipantsTarget(null)}
       />
 
       <AdminConfirmDeleteDialog

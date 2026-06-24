@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.service.backend.shared.utils.SecurityUtils;
 import reactor.core.publisher.Mono;
 
 @Tag(name = "Admin > Mentorship", description = "API endpoints for managing mentorship programs by administrators")
@@ -47,7 +48,9 @@ public class AdminMentorshipController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getAllSessions(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.getAllSessions(resolvedOrgId, page, size))
+                .switchIfEmpty(adminMentorshipService.getAllSessions(null, page, size))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentorship sessions", p)));
     }
 
@@ -61,7 +64,9 @@ public class AdminMentorshipController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getSessionsByStatus(organizationId, status, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.getSessionsByStatus(resolvedOrgId, status, page, size))
+                .switchIfEmpty(adminMentorshipService.getSessionsByStatus(null, status, page, size))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved sessions by status", p)));
     }
 
@@ -99,7 +104,9 @@ public class AdminMentorshipController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getAllMentorProfiles(organizationId, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.getAllMentorProfiles(resolvedOrgId, page, size))
+                .switchIfEmpty(adminMentorshipService.getAllMentorProfiles(null, page, size))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved all mentor profiles", p)));
     }
 
@@ -113,7 +120,9 @@ public class AdminMentorshipController {
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "Page must be at least 0") int page,
             @Parameter(example = "10")
             @RequestParam(defaultValue = "10") @Min(value = 1, message = "Size must be at least 1") int size) {
-        return adminMentorshipService.getMentorProfilesByStatus(organizationId, status, page, size)
+        return SecurityUtils.resolveOrganizationId(organizationId)
+                .flatMap(resolvedOrgId -> adminMentorshipService.getMentorProfilesByStatus(resolvedOrgId, status, page, size))
+                .switchIfEmpty(adminMentorshipService.getMentorProfilesByStatus(null, status, page, size))
                 .map(p -> ResponseEntity.ok(new ApiResponse<>("Retrieved mentor profiles by status", p)));
     }
 
