@@ -65,7 +65,7 @@ public class LearningResourceService {
         return learningResourceRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.LEARNING_RESOURCE_NOT_FOUND, "Learning resource not found with id: " + id)))
                 .flatMap(existing -> learningResourceRepository.deleteById(id)
-                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
 

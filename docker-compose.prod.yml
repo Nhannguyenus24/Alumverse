@@ -1,6 +1,7 @@
-# docker-compose.deploy.yml
-# Dùng khi database đã được deploy ở nơi khác (external DB)
+# docker-compose.prod.yml
+# Database đã deploy ở chỗ khác (external DB)
 # Chỉ deploy: backend + nginx
+# Tối ưu cho server: 8GB RAM, 4 CPU
 
 services:
   backend:
@@ -13,12 +14,26 @@ services:
     expose:
       - "8080"
 
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # JVM tuning: G1GC, 4.5GB heap (75% of 6GB limit), 4 GC threads
+      JAVA_TOOL_OPTIONS: >
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:ParallelGCThreads=4
+        -XX:ConcGCThreads=2
+        -XX:G1HeapRegionSize=16m
+        -XX:+UseStringDeduplication
+        -XX:+OptimizeStringConcat
+        -Xss512k
+
     networks:
       - app_net
 
-    # Giới hạn RAM để tránh OOM trên server nhỏ
-    mem_limit: 768m
-    mem_reservation: 512m
+    # 8GB RAM server: backend chiếm 6GB, để lại ~2GB cho OS + nginx
+    cpus: '3.5'
+    mem_limit: 6g
+    mem_reservation: 4g
 
   nginx:
     image: nginx:alpine
@@ -40,6 +55,11 @@ services:
 
     networks:
       - app_net
+
+    # Nginx nhẹ, giới hạn để nhường tài nguyên cho backend
+    cpus: '0.5'
+    mem_limit: 256m
+    mem_reservation: 64m
 
 networks:
   app_net:

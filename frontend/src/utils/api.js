@@ -684,7 +684,7 @@ export const eventApi = {
 	},
 };
 
-export const adminEventApi = {
+const adminEventApi = {
 	getAllEvents(page = 0, size = 10, organizationId = null, config = {}) {
 		const params = { page, size };
 		if (organizationId) params.organizationId = organizationId;
@@ -796,24 +796,7 @@ export const adminEventApi = {
 	},
 };
 
-export const {
-	getAllEvents,
-	searchAllEvents,
-	getEventsByPublishStatus,
-	updateEvent,
-	deleteEvent,
-	publishEvent,
-	unpublishEvent,
-	getTicketsByEvent,
-	getTicketsByEventAndStatus,
-	cancelTicket,
-	approveTicket,
-	rejectTicket,
-	approveAllPending,
-	sendIssuedTicketEmails,
-	getInterestsByEvent,
-	getEventStatistics,
-} = adminEventApi;
+
 
 const adminForumApi = {
 	getForumStatistics() {

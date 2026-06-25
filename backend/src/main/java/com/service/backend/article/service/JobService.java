@@ -77,7 +77,7 @@ public class JobService {
         return jobRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.JOB_NOT_FOUND, "Job not found with id: " + id)))
                 .flatMap(existing -> jobRepository.deleteById(id)
-                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
 

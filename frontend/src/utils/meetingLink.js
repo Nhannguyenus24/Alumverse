@@ -3,7 +3,7 @@
 // sessions, and we advise (non-blocking) against links that look password-gated.
 
 /** Allowed base domains for meeting links. Keep in sync with the backend. */
-export const ALLOWED_MEETING_DOMAINS = [
+const ALLOWED_MEETING_DOMAINS = [
   'meet.google.com',
   'zoom.us',
   'zoom.com',
@@ -16,7 +16,7 @@ export const ALLOWED_MEETING_DOMAINS = [
   'gotomeeting.com',
 ];
 
-export const ALLOWED_MEETING_PLATFORMS_LABEL =
+const ALLOWED_MEETING_PLATFORMS_LABEL =
   'Google Meet, Zoom, Microsoft Teams, Jitsi Meet, Whereby, Webex, GoToMeeting';
 
 const extractHost = (rawUrl) => {
@@ -31,7 +31,7 @@ const extractHost = (rawUrl) => {
 };
 
 /** @returns {boolean} true if the link points to a whitelisted provider. */
-export const isAllowedMeetingLink = (rawUrl) => {
+const isAllowedMeetingLink = (rawUrl) => {
   const host = extractHost(rawUrl);
   if (!host) return false;
   return ALLOWED_MEETING_DOMAINS.some(

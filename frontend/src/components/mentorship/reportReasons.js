@@ -1,4 +1,4 @@
-export const getReportReasons = (t) => [
+const getReportReasons = (t) => [
   { value: 'NO_SHOW', label: t('report_reason_no_show'), statuses: ['EXPIRED', 'COMPLETED'] },
   { value: 'LATE_OR_LEFT_EARLY', label: t('report_reason_late_or_left_early'), statuses: ['COMPLETED'] },
   { value: 'INAPPROPRIATE_BEHAVIOR', label: t('report_reason_inappropriate_behavior'), statuses: ['COMPLETED'] },

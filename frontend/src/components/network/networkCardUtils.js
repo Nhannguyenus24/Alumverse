@@ -2,7 +2,7 @@ export const networkCardClickableSx = {
   cursor: 'pointer',
 };
 
-export function formatAcademicValue(value, fallback) {
+function formatAcademicValue(value, fallback) {
   if (Array.isArray(value)) {
     const items = value.filter(Boolean);
     return items.length > 0 ? items.join(' · ') : fallback;

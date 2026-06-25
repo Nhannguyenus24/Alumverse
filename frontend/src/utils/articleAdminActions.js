@@ -1,4 +1,4 @@
-export const ARTICLE_DELETE_ENDPOINTS = {
+const ARTICLE_DELETE_ENDPOINTS = {
   news: "/articles/news",
   alumni: "/articles/alumni-posts",
   achievement: "/articles/achievements",
@@ -11,7 +11,7 @@ export const getArticleAdminEditPath = (article) => {
   return `/admin/article/${article.channel}/${article.id}/edit`;
 };
 
-export const getArticleDeleteEndpoint = (article) => {
+const getArticleDeleteEndpoint = (article) => {
   const base = ARTICLE_DELETE_ENDPOINTS[article?.channel];
   if (!base || !article?.id) return null;
   return `${base}/${article.id}`;

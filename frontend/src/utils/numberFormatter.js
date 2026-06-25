@@ -92,7 +92,7 @@ const readGroup = (num, isLeading) => {
  * @param {number|string} value
  * @returns {string}
  */
-export function readVietnameseNumber(value) {
+function readVietnameseNumber(value) {
   const parsed = toNumber(value);
   if (parsed === null) return '';
   let num = Math.floor(Math.abs(parsed));

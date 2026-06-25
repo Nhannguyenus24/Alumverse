@@ -1,4 +1,4 @@
-export const formatBankLabel = (bank) => {
+const formatBankLabel = (bank) => {
   const shortName = bank?.short_name || bank?.shortName;
   const code = bank?.code;
   const name = bank?.name;
