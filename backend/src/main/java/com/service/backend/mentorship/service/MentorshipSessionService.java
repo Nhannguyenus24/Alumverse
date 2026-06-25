@@ -1,6 +1,5 @@
 package com.service.backend.mentorship.service;
 
-import com.service.backend.mentorship.dao.MentorAvailabilityR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorProfileR2dbcRepository;
 import com.service.backend.mentorship.dao.MentorshipSessionR2dbcRepository;
 import com.service.backend.mentorship.dao.SessionWindowProjection;
@@ -25,7 +24,6 @@ import java.time.LocalDateTime;
 public class MentorshipSessionService {
 
     private final MentorshipSessionR2dbcRepository sessionRepository;
-    private final MentorAvailabilityR2dbcRepository availabilityRepository;
     private final MentorProfileR2dbcRepository profileRepository;
     private final NotificationService notificationService;
 

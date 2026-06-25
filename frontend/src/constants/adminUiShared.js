@@ -1,4 +1,4 @@
-export const ADMIN_FILTER_BAR_SX = {
+const ADMIN_FILTER_BAR_SX = {
   display: 'flex',
   flexDirection: { xs: 'column', md: 'row' },
   flexWrap: 'wrap',

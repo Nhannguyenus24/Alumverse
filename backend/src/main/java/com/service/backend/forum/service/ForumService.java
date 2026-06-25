@@ -349,7 +349,7 @@ public class ForumService {
                             if (Boolean.TRUE.equals(alreadyLiked)) {
                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                                 request.getPostId(), request.getMemberId())
-                                        .then(Mono.<ForumPostReaction>empty());
+                                        .then(Mono.empty());
                             }
                             log.info("Creating new like for post ID: {}, member: {}",
                                     request.getPostId(), request.getMemberId());

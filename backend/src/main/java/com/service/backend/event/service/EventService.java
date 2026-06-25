@@ -22,11 +22,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -307,7 +303,7 @@ public class EventService {
                         } else if (question.getType() == QuestionType.MULTI_CHOICE) {
                             List<String> selected = toStringList(value);
                             if (selected.isEmpty() || question.getOptions() == null
-                                    || !question.getOptions().containsAll(selected)) {
+                                    || !new HashSet<>(question.getOptions()).containsAll(selected)) {
                                 return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_ANSWER_INVALID,
                                         "Invalid options for: " + question.getLabel()));
                             }
@@ -341,7 +337,6 @@ public class EventService {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> toStringList(Object value) {
         if (value instanceof List<?> list) {
             List<String> result = new ArrayList<>();
@@ -397,7 +392,7 @@ public class EventService {
                         }));
     }
 
-    public Mono<Integer> bulkApproveTickets(Long eventId, BulkApproveRequest request) {
+    public Mono<Integer> bulkApproveTickets(BulkApproveRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
                 Flux.fromIterable(request.getTicketIds())
                         .flatMap(ticketId -> eventRepository.approveTicket(ticketId, adminId)
@@ -514,17 +509,6 @@ public class EventService {
                 });
     }
 
-    public Mono<EventTicket> checkInTicketForEvent(Long eventId, String ticketCode) {
-        return eventRepository.findTicketByCode(ticketCode)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
-                .flatMap(ticket -> {
-                    if (!eventId.equals(ticket.getEventId())) {
-                        return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
-                    }
-                    return checkInTicket(ticketCode);
-                });
-    }
-
     // ─── Step 7: Expire tickets after event ───────────────────────────────────
 
     public Mono<Integer> expireTickets(Long eventId) {
@@ -563,14 +547,6 @@ public class EventService {
         return status != null
                 ? eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit)
                 : eventRepository.findTicketsByEvent(eventId, page, limit);
-    }
-
-    public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int limit) {
-        return getTicketsByEvent(eventId, null, null, page, limit);
-    }
-
-    public Mono<PaginatedResponse<EventTicket>> getTicketsByEventAndStatus(Long eventId, String status, int page, int limit) {
-        return getTicketsByEvent(eventId, status, null, page, limit);
     }
 
     public Mono<PaginatedResponse<EventTicket>> getMyTickets(int page, int limit) {

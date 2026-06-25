@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import apiClient from "./axios";
 
-export const IMAGE_MAX_SIZE_BYTES = 8 * 1024 * 1024;
+const IMAGE_MAX_SIZE_BYTES = 8 * 1024 * 1024;
 
 export const MAX_JSON_PAYLOAD_BYTES = 19 * 1024 * 1024;
 

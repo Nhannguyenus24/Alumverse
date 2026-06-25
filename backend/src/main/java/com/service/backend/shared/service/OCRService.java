@@ -64,17 +64,11 @@ public class OCRService {
 
             String extension = getFileExtension(file.getName()).toLowerCase();
 
-            switch (extension) {
-                case "txt":
-                    return readTextFile(file);
-                case "png":
-                case "jpeg":
-                case "jpg":
-                case "pdf":
-                    return performOcr(file);
-                default:
-                    throw new IllegalArgumentException("Unsupported file format: " + extension);
-            }
+                    return switch (extension) {
+                        case "txt" -> readTextFile(file);
+                        case "png", "jpeg", "jpg", "pdf" -> performOcr(file);
+                        default -> throw new IllegalArgumentException("Unsupported file format: " + extension);
+                    };
         }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
           .map(rawText -> {
               try {

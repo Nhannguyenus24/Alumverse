@@ -77,7 +77,7 @@ public class AchievementService {
         return achievementRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.ACHIEVEMENT_NOT_FOUND, "Achievement not found with id: " + id)))
                 .flatMap(existing -> achievementRepository.deleteById(id)
-                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
 
