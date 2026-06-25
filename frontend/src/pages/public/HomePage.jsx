@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router";
 import {
   Box,
   Container,
@@ -9,28 +8,123 @@ import {
   Avatar,
   Button,
   Card,
-  CardContent,
-  CardMedia,
   useTheme,
   useMediaQuery,
-  
 } from "@mui/material";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import Page from "../../components/Page";
 import { usePublishedAchievements } from "../../hooks/articles/usePublishedAchievements";
-import { eventApi } from "../../utils/api";
-import useOrganizationStore from "../../stores/organizationStore";
+import { usePublishedNews } from "../../hooks/news/usePublishedNews";
+import { normalizeNews } from "../../hooks/articles/normalizeArticle";
+import { toCardShape } from "../../hooks/articles/toCardShape";
 import Logo from "../../components/Logo";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { keyframes } from "@emotion/react";
+import { alpha } from "@mui/material/styles";
 import apiClient from "../../utils/axios";
+import ArticleCard from "../../components/articles/ArticleCard";
 
-const HERO_BG = "/home_page/home_page.png";
 const HERO_LOGO = "/alumverse_logo/Logo_White.svg";
+
+const HERO_SLIDES = [
+  { src: "/home_page/home_page.png", position: "center" },
+  { src: "https://images2.thanhnien.vn/528068263637045248/2025/4/22/khtn-2-ha-17453026107771619419934.jpg", position: "center" },
+  { src: "https://scontent.fsgn2-11.fna.fbcdn.net/v/t39.30808-6/487507539_1058186603009135_6357086051884551363_n.jpg?stp=dst-jpg_tt6&cstp=mx2048x762&ctp=s2048x762&_nc_cat=105&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=1UfRFlHN83YQ7kNvwHoyTg7&_nc_oc=Adq2m8o6dhuwrU2R37Mj8a5lfyrHHmP-nE9JlnW_66LLICPiqUGvetgmPfKF_pCRr2c_k6irHvVvsJNfTAYZzqHH&_nc_zt=23&_nc_ht=scontent.fsgn2-11.fna&_nc_gid=NNV0IKQtDLWn3nHG6SGg_Q&_nc_ss=7b2a8&oh=00_Af_ZItqt5a1YFlMpNMswiFZ3Be75VlzAD_YOleqnctF_Rg&oe=6A41F916", position: "center" },
+  { src: "https://thongtintuyensinh.net/wp-content/uploads/2020/06/dai_hoc_khoa_hoc_tu_nhien_tp_hcm1.jpg", position: "center" },
+  { src: "https://jobtest.vn/hrblog/wp-content/uploads/2022/08/hoc-phi-dai-hoc-khoa-hoc-tu-nhien-1.jpg", position: "center" },
+];
 
 const scrollAnimation = keyframes`
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 `;
+
+const heroSlideAnimation = keyframes`
+  0% { opacity: 0; transform: scale(1); }
+  8% { opacity: 1; }
+  28% { opacity: 1; }
+  40% { opacity: 0; transform: scale(1.075); }
+  100% { opacity: 0; transform: scale(1.075); }
+`;
+
+const floatIconAnimation = keyframes`
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+`;
+
+const alumniFlipIn = keyframes`
+  0% { opacity: 0; transform: perspective(900px) rotateY(38deg) translateY(14px); }
+  100% { opacity: 1; transform: perspective(900px) rotateY(0) translateY(0); }
+`;
+
+const sectionRevealAnimation = keyframes`
+  0% { opacity: 0; transform: translateY(26px); }
+  100% { opacity: 1; transform: translateY(0); }
+`;
+
+const mainSectionTitleSx = {
+  mb: { xs: 3.5, md: 5 },
+  fontSize: { xs: "1.75rem", sm: "2.05rem", md: "2.5rem" },
+  lineHeight: 1.15,
+  fontWeight: 800,
+};
+
+const marqueeTitleSx = {
+  mb: { xs: 2.5, md: 3.5 },
+  fontSize: { xs: "1.35rem", sm: "1.55rem", md: "1.9rem" },
+  fontWeight: 800,
+};
+
+const RevealBox = ({ children, delay = 0, revealAnimation = sectionRevealAnimation, sx, ...props }) => {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return undefined;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <Box
+      ref={ref}
+      {...props}
+      sx={{
+        opacity: 0,
+        ...(visible && {
+          animation: `${revealAnimation} 0.62s ease both`,
+          animationDelay: `${delay}ms`,
+        }),
+        ...sx,
+      }}
+    >
+      {children}
+    </Box>
+  );
+};
+
+const buildPagedAlumni = (items) => {
+  if (!items.length) return [];
+  const pages = [];
+  for (let i = 0; i < items.length; i += 4) {
+    const group = items.slice(i, i + 4);
+    if (group.length < 4 && items.length > group.length) {
+      group.push(...items.slice(0, 4 - group.length));
+    }
+    pages.push(group);
+  }
+  return pages;
+};
 
 const getExploreItems = (t) => [
   {
@@ -74,26 +168,11 @@ const PARTNER_LOGOS = [
 
 const HomePage = () => {
   const { t } = useTranslation(['home', 'common']);
-  const { slug } = useParams();
-  const { achievements } = usePublishedAchievements(0, 5);
-  const [events, setEvents] = useState([]);
+  const { achievements } = usePublishedAchievements(0, 12);
+  const { news: rawNews } = usePublishedNews(0, 6);
+  const [alumniPage, setAlumniPage] = useState(0);
   const [organizations, setOrganizations] = useState([]);
   const navigate = useOrgNavigate();
-
-  const organizationId = useOrganizationStore((state) => state.organization?.id);
-
-  useEffect(() => {
-    if (!organizationId) return;
-    const fetchEvents = async () => {
-      try {
-        const data = await eventApi.getUpcomingEvents({ organizationId, limit: 6 });
-        setEvents(data?.items || []);
-      } catch (error) {
-        console.error("Failed to fetch events:", error);
-      }
-    };
-    fetchEvents();
-  }, [organizationId]);
 
   useEffect(() => {
     const fetchOrgs = async () => {
@@ -109,9 +188,28 @@ const HomePage = () => {
     fetchOrgs();
   }, []);
 
+  useEffect(() => {
+    if (achievements.length <= 4) return undefined;
+    const timer = window.setInterval(() => {
+      setAlumniPage((current) => (current + 1) % Math.ceil(achievements.length / 4));
+    }, 3600);
+    return () => window.clearInterval(timer);
+  }, [achievements.length]);
+
   const exploreItems = getExploreItems(t);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
+  const newsCards = rawNews.map(normalizeNews).filter(Boolean).map(toCardShape).filter(Boolean);
+  const alumniGroups = useMemo(() => {
+    return buildPagedAlumni(achievements);
+  }, [achievements]);
+  const visibleAlumni = alumniGroups[alumniPage] ?? alumniGroups[0] ?? [];
+  const repeatedPartners = [...PARTNER_LOGOS, ...PARTNER_LOGOS];
+  const softSectionBg = theme.palette.mode === "dark"
+    ? "background.paper"
+    : alpha(theme.palette.primary.main, 0.035);
+  const plainSectionBg = "background.default";
+  const featuredAlumniBg = "primary.main";
 
   return (
     <Page
@@ -130,26 +228,45 @@ const HomePage = () => {
           position: "relative",
           height: { xs: "100svh", md: "100vh" },
           minHeight: { xs: 480, md: "100vh" },
-          backgroundImage: `url(${HERO_BG})`,
+          backgroundImage: `url(${HERO_SLIDES[0].src})`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: HERO_SLIDES[0].position,
           backgroundRepeat: "no-repeat",
           display: "flex",
           alignItems: "center",
           color: "#fff",
+          overflow: "hidden",
           "&::before": {
             content: '""',
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            zIndex: 0,
+            background: theme.palette.mode === "dark"
+              ? "linear-gradient(90deg, rgba(0,0,0,0.84) 0%, rgba(0,0,0,0.64) 45%, rgba(0,0,0,0.48) 100%)"
+              : "linear-gradient(90deg, rgba(0,0,0,0.76) 0%, rgba(0,0,0,0.54) 45%, rgba(0,0,0,0.38) 100%)",
+            zIndex: 1,
           },
         }}
       >
+        {HERO_SLIDES.map((slide, index) => (
+          <Box
+            key={slide.src}
+            sx={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url(${slide.src})`,
+              backgroundSize: "cover",
+              backgroundPosition: slide.position,
+              opacity: index === 0 ? 1 : 0,
+              animation: `${heroSlideAnimation} ${HERO_SLIDES.length * 9}s ease-in-out infinite`,
+              animationDelay: `${index * 9}s`,
+              transformOrigin: "center",
+            }}
+          />
+        ))}
         <Container
           sx={{
             position: "relative",
-            zIndex: 1,
+            zIndex: 2,
             py: { xs: 4, sm: 5, md: 6 },
             px: { xs: 2, sm: 3 },
           }}
@@ -198,6 +315,7 @@ const HomePage = () => {
                     px: { xs: 2.5, md: 3 },
                     "&:hover": {
                       borderColor: "#fff",
+                      color: "#fff",
                       backgroundColor: "rgba(255,255,255,0.1)",
                     },
                   }}
@@ -217,6 +335,8 @@ const HomePage = () => {
                     width: "100%",
                     height: "auto",
                     cursor: "default",
+                    filter: "drop-shadow(0 24px 48px rgba(0,0,0,0.35))",
+                    animation: `${floatIconAnimation} 5s ease-in-out infinite`,
                   }}
                 />
               </Box>
@@ -226,14 +346,13 @@ const HomePage = () => {
       </Box>
 
       {/* Khám phá */}
-      <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
+      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: softSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="h1"
-            fontWeight={700}
             color="primary.main"
             textAlign="center"
-            sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
+            sx={mainSectionTitleSx}
           >
             {t("home:section_explore")}
           </Typography>
@@ -244,11 +363,12 @@ const HomePage = () => {
             spacing={{ xs: 2, sm: 3 }}
             sx={{ alignItems: "stretch" }}
           >
-            {exploreItems.map((item) => {
+            {exploreItems.map((item, index) => {
               const { iconSrc, title, description, path } = item;
               return (
-                <Box
+                <RevealBox
                   key={item.iconSrc}
+                  delay={index * 90}
                   sx={{
                     flex: "1 1 100%",
                     minWidth: 0,
@@ -261,9 +381,9 @@ const HomePage = () => {
                   elevation={0}
                   sx={{
                     border: 1,
-                    borderColor: "grey.300",
+                    borderColor: "divider",
                     borderRadius: 2,
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                    boxShadow: "0 1px 3px rgba(15, 23, 42, 0.08)",
                     textAlign: "center",
                     py: { xs: 2.5, md: 3 },
                     px: { xs: 2, md: 2.5 },
@@ -272,8 +392,28 @@ const HomePage = () => {
                     alignItems: "center",
                     height: "100%",
                     cursor: "pointer",
+                    position: "relative",
+                    overflow: "hidden",
+                    backgroundColor: "background.paper",
+                    transition: "transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease",
+                    "&::before": {
+                      content: '""',
+                      position: "absolute",
+                      inset: 0,
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main}1A, transparent 58%)`,
+                      opacity: 0,
+                      transition: "opacity 0.28s ease",
+                    },
                     "&:hover": {
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      transform: "translateY(-10px)",
+                      borderColor: "primary.main",
+                      boxShadow: "0 18px 36px rgba(15, 23, 42, 0.16)",
+                    },
+                    "&:hover::before": {
+                      opacity: 1,
+                    },
+                    "&:hover .explore-icon": {
+                      transform: "scale(1.14) rotate(-4deg)",
                     },
                   }}
                 >
@@ -287,16 +427,33 @@ const HomePage = () => {
                       flexShrink: 0,
                     }}
                   >
-                    <Box
-                      component="img"
-                      src={iconSrc}
-                      alt=""
-                      sx={{
-                        width: { xs: 40, md: 48 },
-                        height: { xs: 40, md: 48 },
-                        objectFit: "contain",
-                      }}
-                    />
+                    {theme.palette.mode === "dark" ? (
+                      <Box
+                        className="explore-icon"
+                        aria-hidden
+                        sx={{
+                          width: { xs: 40, md: 48 },
+                          height: { xs: 40, md: 48 },
+                          bgcolor: "primary.light",
+                          mask: `url(${iconSrc}) center / contain no-repeat`,
+                          WebkitMask: `url(${iconSrc}) center / contain no-repeat`,
+                          transition: "transform 0.28s ease",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        className="explore-icon"
+                        component="img"
+                        src={iconSrc}
+                        alt=""
+                        sx={{
+                          width: { xs: 40, md: 48 },
+                          height: { xs: 40, md: 48 },
+                          objectFit: "contain",
+                          transition: "transform 0.28s ease",
+                        }}
+                      />
+                    )}
                   </Box>
                   <Typography
                     variant="subtitle1"
@@ -320,7 +477,7 @@ const HomePage = () => {
                     {description}
                   </Typography>
                 </Card>
-                </Box>
+                </RevealBox>
               );
             })}
           </Stack>
@@ -328,16 +485,23 @@ const HomePage = () => {
       </Box>
 
       {/* Tin tức */}
-      <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
+      <Box sx={{ py: { xs: 7, sm: 9, md: 12 }, backgroundColor: plainSectionBg }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="h1"
-            fontWeight={700}
             color="primary.main"
             textAlign="center"
-            sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
+            sx={mainSectionTitleSx}
           >
             {t("home:section_news")}
+          </Typography>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            textAlign="center"
+            sx={{ maxWidth: 720, mx: "auto", mb: { xs: 3, md: 5 }, lineHeight: 1.7 }}
+          >
+            {t("home:section_news_desc")}
           </Typography>
           <Stack
             direction="row"
@@ -345,155 +509,215 @@ const HomePage = () => {
             useFlexGap
             spacing={{ xs: 2, sm: 3 }}
           >
-            {events.map((event) => (
-              <Box
-                key={event.id}
+            {newsCards.map((article, index) => (
+                <RevealBox
+                  key={article.id}
+                  delay={index * 90}
+                  revealAnimation={alumniFlipIn}
+                onClick={() => navigate(`/article/news/${article.id}`)}
                 sx={{
                   flex: "1 1 100%",
                   minWidth: 0,
                   "@media (min-width:600px)": { flex: "1 1 calc(50% - 12px)" },
                   "@media (min-width:900px)": { flex: "1 1 calc(33.333% - 16px)" },
+                  cursor: "pointer",
                 }}
               >
-              <Card
-                component={Link}
-                to={`/${slug}/article/event/${event.id}`}
-                sx={{
-                  textDecoration: "none",
-                  color: "inherit",
-                  borderRadius: 2,
-                  overflow: "hidden",
-                  transition: "box-shadow 0.2s",
-                  "&:hover": { boxShadow: 4 },
-                }}
-              >
-                <CardMedia
-                  component="div"
-                  image={event.bannerUrl}
-                  sx={{
-                    height: { xs: 140, sm: 160, md: 180 },
-                    backgroundColor: "grey.200",
-                    backgroundSize: "cover",
-                  }}
-                />
-                <CardContent sx={{ py: { xs: 1.5, md: 2 }, px: { xs: 1.5, md: 2 } }}>
-                  <Typography
-                    variant="subtitle1"
-                    fontWeight={600}
-                    noWrap
-                    sx={{ mb: 0.5, fontSize: { xs: "0.9375rem", md: "1rem" } }}
-                  >
-                    {event.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.8125rem", md: "0.875rem" } }}>
-                    {new Date(event.startTime).toLocaleDateString("vi-VN")}
-                  </Typography>
-                </CardContent>
-              </Card>
-              </Box>
+                <ArticleCard article={article} />
+              </RevealBox>
             ))}
           </Stack>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: { xs: 3, md: 5 } }}>
+            <Button
+              variant="contained"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => navigate("/activities/news")}
+              sx={{ px: 3, py: 1.1, fontWeight: 800 }}
+            >
+              {t("home:news_all_cta")}
+            </Button>
+          </Box>
         </Container>
       </Box>
 
       {/* Cựu sinh viên tiêu biểu */}
-      <Box sx={{ py: { xs: 4, sm: 6, md: 8 }, backgroundColor: "#fff" }}>
+      <Box sx={{ py: { xs: 8, sm: 10, md: 13 }, backgroundColor: featuredAlumniBg }}>
+        <Container sx={{ px: { xs: 2, sm: 3 } }}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={{ xs: 3, md: 6 }}
+            alignItems={{ xs: "stretch", md: "center" }}
+          >
+            <Box sx={{ flex: { md: "0 0 34%" }, textAlign: { xs: "center", md: "left" } }}>
+              <Typography
+                variant="h1"
+                sx={{
+                  ...mainSectionTitleSx,
+                  mb: 2,
+                  color: "accent.main",
+                  textAlign: { xs: "center", md: "left" },
+                }}
+              >
+                {t("home:section_featured_alumni")}
+              </Typography>
+              <Typography variant="body1" sx={{ color: alpha(theme.palette.primary.contrastText, 0.88), lineHeight: 1.8, mb: 3 }}>
+                {t("home:section_featured_alumni_desc")}
+              </Typography>
+              <Button
+                variant="contained"
+                color="accent"
+                endIcon={<ArrowForwardIcon />}
+                onClick={() => navigate("/honors/achievements")}
+                sx={{
+                  px: 2.5,
+                  fontWeight: 700,
+                }}
+              >
+                {t("home:featured_alumni_cta")}
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                flex: 1,
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
+                gap: { xs: 2, md: 3 },
+              }}
+            >
+              {visibleAlumni.map((item, index) => (
+                <RevealBox key={`${alumniPage}-${item.id}`} delay={index * 110} revealAnimation={alumniFlipIn} sx={{ minWidth: 0 }}>
+                <Card
+                  elevation={0}
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    textAlign: "left",
+                    p: { xs: 2, md: 2.5 },
+                    minHeight: 150,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    backgroundColor: "background.paper",
+                    boxShadow: "0 12px 26px rgba(15, 23, 42, 0.08)",
+                    transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                    "&:hover": {
+                      transform: "translateY(-6px)",
+                      boxShadow: "0 20px 42px rgba(15, 23, 42, 0.14)",
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={item.memberAvatar}
+                    sx={{
+                      width: { xs: 62, md: 76 },
+                      height: { xs: 62, md: 76 },
+                      flexShrink: 0,
+                      bgcolor: "primary.main",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {item.memberName?.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      sx={{
+                        mb: 0.5,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {item.memberName || "Alumnus"}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      {item.memberJobTitle}{item.memberCompany ? `, ${item.memberCompany}` : ""}
+                    </Typography>
+                  </Box>
+                </Card>
+                </RevealBox>
+              ))}
+            </Box>
+          </Stack>
+        </Container>
+      </Box>
+
+      {/* Đối tác */}
+      <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: softSectionBg, overflow: "hidden" }}>
         <Container sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
-            variant="h1"
-            fontWeight={700}
-            color="primary.main"
+            variant="h5"
             textAlign="center"
-            sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" } }}
+            color="primary.main"
+            sx={marqueeTitleSx}
           >
-            {t("home:section_featured_alumni")}
+            {t("common:partners_count")}
           </Typography>
-          <Stack
-            direction="row"
-            flexWrap="nowrap"
-            useFlexGap
-            spacing={{ xs: 1.5, sm: 2, md: 4 }}
-            sx={{ overflow: "hidden" }}
-          >
-            {achievements.map((item) => (
-              <Box
-                key={item.id}
-                sx={{
-                  flex: "1 1 0",
-                  minWidth: { xs: 160, sm: 200, md: 0 },
-                }}
-              >
-              <Card
-                elevation={0}
-                sx={{
-                  border: 1,
-                  borderColor: "divider",
-                  borderRadius: 2,
-                  textAlign: "center",
-                  py: { xs: 2.5, md: 3 },
-                  px: { xs: 1.5, md: 2 },
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
-                <Avatar
-                  src={item.memberAvatar}
+          <Box sx={{ position: "relative", overflow: "hidden", py: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                width: "max-content",
+                gap: { xs: 4, md: 6 },
+                animation: `${scrollAnimation} ${PARTNER_LOGOS.length * 2.4}s linear infinite`,
+                animationDirection: "reverse",
+                "&:hover": {
+                  animationPlayState: "paused",
+                },
+              }}
+            >
+              {repeatedPartners.map(({ name, src }, index) => (
+                <Box
+                  key={`${name}-${index}`}
+                  component="img"
+                  src={src}
+                  alt={name}
                   sx={{
-                    width: { xs: 64, md: 80 },
-                    height: { xs: 64, md: 80 },
-                    mb: { xs: 1, md: 1.5 },
+                    width: { xs: 72, sm: 86, md: 104 },
+                    height: { xs: 36, sm: 42, md: 48 },
+                    objectFit: "contain",
+                    flexShrink: 0,
+                    filter: theme.palette.mode === "dark" ? "brightness(1.15)" : "none",
                   }}
-                >
-                  {item.memberName?.charAt(0)}
-                </Avatar>
-                <Typography
-                  variant="subtitle1"
-                  fontWeight={600}
-                  sx={{ 
-                    mb: 0.25, 
-                    fontSize: { xs: "0.9375rem", md: "1rem" },
-                    display: "-webkit-box",
-                    WebkitLineClamp: 1,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  }}
-                >
-                  {item.memberName || "Alumnus"}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ 
-                    fontSize: { xs: "0.75rem", md: "0.8125rem" },
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    minHeight: "2.5em",
-                  }}
-                >
-                  {item.memberJobTitle}{item.memberCompany ? `, ${item.memberCompany}` : ""}
-                </Typography>
-              </Card>
-              </Box>
-            ))}
-          </Stack>
+                />
+              ))}
+            </Box>
+          </Box>
         </Container>
       </Box>
 
       {/* Các tổ chức trên hệ thống */}
       {organizations.length > 0 && (
-        <Box sx={{ py: { xs: 4, sm: 5, md: 6 }, backgroundColor: "#f9fafb", overflow: "hidden" }}>
+        <Box sx={{ py: { xs: 8, sm: 10, md: 12 }, backgroundColor: plainSectionBg, overflow: "hidden" }}>
           <Container sx={{ px: { xs: 2, sm: 3 } }}>
             <Typography
               variant="h5"
               textAlign="center"
-              color="text.primary"
-              sx={{ mb: { xs: 3, md: 4 }, fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" }, fontWeight: 700 }}
+              color="accent.main"
+              sx={marqueeTitleSx}
             >
               {t("home:section_other_orgs")}
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              textAlign="center"
+              sx={{ maxWidth: 680, mx: "auto", mb: { xs: 3, md: 4 }, lineHeight: 1.8, fontSize: { xs: "0.95rem", md: "1rem" } }}
+            >
+              {t("home:section_other_orgs_desc")}
             </Typography>
             <Box sx={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
               <Box
@@ -525,6 +749,7 @@ const HomePage = () => {
                       borderRadius: 2,
                       border: "1px solid",
                       borderColor: "divider",
+                      backgroundColor: "background.paper",
                       transition: "transform 0.2s, box-shadow 0.2s",
                       "&:hover": {
                         transform: "translateY(-4px)",
@@ -568,46 +793,6 @@ const HomePage = () => {
           </Container>
         </Box>
       )}
-
-      {/* Đối tác */}
-      <Box sx={{ py: { xs: 4, sm: 5, md: 6 }, backgroundColor: "#fff" }}>
-        <Container sx={{ px: { xs: 2, sm: 3 } }}>
-          <Typography
-            variant="h5"
-            textAlign="center"
-            color="text.primary"
-            sx={{ mb: { xs: 2, md: 3 }, fontSize: { xs: "1.125rem", sm: "1.25rem", md: "1.5rem" } }}
-          >
-            {t("common:partners_count")}
-          </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: { xs: "wrap", md: "nowrap" },
-              justifyContent: { xs: "center", md: "space-evenly" },
-              alignItems: "center",
-              gap: { xs: 2, sm: 2.5, md: 3 },
-              py: 2,
-              px: 0,
-            }}
-          >
-            {PARTNER_LOGOS.map(({ name, src }) => (
-              <Box
-                key={name}
-                component="img"
-                src={src}
-                alt={name}
-                sx={{
-                  width: { xs: 56, sm: 64, md: 72 },
-                  height: { xs: 28, sm: 32, md: 36 },
-                  objectFit: "contain",
-                  flexShrink: 0,
-                }}
-              />
-            ))}
-          </Box>
-        </Container>
-      </Box>
       </Container>
     </Page>
   );
