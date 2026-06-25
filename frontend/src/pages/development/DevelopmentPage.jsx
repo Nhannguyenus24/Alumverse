@@ -23,6 +23,7 @@ import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { usePublishedLearning } from '../../hooks/articles/usePublishedLearning';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
+import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 
 const getSidebar = (t) => [
   { id: '/development', label: t('dev:title'), icon: <TrendingUpIcon /> },
@@ -171,7 +172,8 @@ const DevelopmentPage = () => {
   };
 
   const handleEdit = (article) => {
-    navigate(`/article/${article.channel}/${article.id}/edit`);
+    const editPath = getArticleAdminEditPath(article);
+    if (editPath) navigate(editPath);
   };
 
   const handleDelete = (article) => setDeleteTarget(article);
@@ -180,11 +182,7 @@ const DevelopmentPage = () => {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      const endpoint =
-        deleteTarget.channel === 'job'
-          ? '/admin/articles/jobs'
-          : '/admin/articles/learning-resources';
-      await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      await deleteArticleByChannel(apiClient, deleteTarget);
       queryClient.invalidateQueries({ queryKey: ['publishedJobs'] });
       queryClient.invalidateQueries({ queryKey: ['publishedLearning'] });
       enqueueSnackbar(t('common:success'), { variant: 'success' });
@@ -232,6 +230,7 @@ const DevelopmentPage = () => {
                       <Button
                         variant="outlined"
                         color="primary"
+                        startIcon={<SchoolIcon />}
                         onClick={() => navigate('/admin/mentorship')}
                       >
                         {t('dev:manage_mentorship')}
@@ -239,6 +238,7 @@ const DevelopmentPage = () => {
                       <Button
                         variant="outlined"
                         color="primary"
+                        startIcon={<WorkIcon />}
                         onClick={() => navigate('/admin/article')}
                       >
                         {t('dev:manage_opportunities')}

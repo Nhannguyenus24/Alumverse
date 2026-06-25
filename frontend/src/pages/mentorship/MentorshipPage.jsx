@@ -173,7 +173,7 @@ const GuestLandingContent = () => {
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <MentorshipHubActions />
           {isAdmin && (
-            <Button color="secondary" variant="outlined" onClick={() => navigate('/admin/mentorship')}>
+            <Button color="secondary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
               {t('mentorship:manage_mentors')}
             </Button>
           )}
@@ -218,7 +218,7 @@ const HubContent = () => {
           <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
             <MentorshipHubActions />
             {isAdmin && (
-              <Button color="secondary" variant="outlined" onClick={() => navigate('/admin/mentorship')}>
+              <Button color="secondary" variant="outlined" startIcon={<GroupsOutlinedIcon />} onClick={() => navigate('/admin/mentorship')}>
                 {t('mentorship:manage_mentors')}
               </Button>
             )}

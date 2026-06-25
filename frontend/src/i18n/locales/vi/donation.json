@@ -86,7 +86,7 @@
   "field_organizer_label": "Người tổ chức",
   "field_organizer_placeholder": "Nhập tên người tổ chức",
   "field_logo_label": "Logo quỹ (tuỳ chọn)",
-  "field_logo_hint": "Hỗ trợ JPG, JPEG, PNG — tối đa 2MB.",
+  "field_logo_hint": "Hỗ trợ JPG, JPEG, PNG — tối đa 8MB.",
   "field_logo_change": "Đổi ảnh logo",
   "field_logo_choose": "Chọn ảnh logo",
   "field_logo_remove": "Xoá",

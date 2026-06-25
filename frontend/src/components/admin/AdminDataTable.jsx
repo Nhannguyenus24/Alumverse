@@ -45,6 +45,7 @@ const AdminDataTable = ({
   emptyMessage,
   onRowClick,
   renderExpandableRow,
+  getRowId,
 }) => {
   const { t } = useTranslation(['common', 'admin']);
   const theme = useTheme();
@@ -172,7 +173,7 @@ const AdminDataTable = ({
               </TableRow>
             ) : (
               rows.map((row, idx) => {
-                const rowId = row.id || idx;
+                const rowId = getRowId ? getRowId(row, idx) : (row.id ?? idx);
                 const isExpanded = expandedRow === rowId;
                 
                 return (

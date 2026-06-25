@@ -116,7 +116,7 @@
   "days_ago": "{{count}} ngày trước",
   "no_file_selected": "Không có file được chọn.",
   "image_type_error": "Chỉ hỗ trợ file JPG, JPEG hoặc PNG.",
-  "image_size_error": "Ảnh vượt quá 2MB. Vui lòng chọn file nhỏ hơn.",
+  "image_size_error": "Ảnh vượt quá 8MB. Vui lòng chọn file nhỏ hơn.",
   "file_read_error": "Không thể đọc file",
   "image_upload_error": "Không thể tải ảnh lên",
   "not_updated": "Chưa cập nhật",

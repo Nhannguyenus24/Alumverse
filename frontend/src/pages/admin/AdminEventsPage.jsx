@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { useSnackbar } from "notistack";
 import { useDebounce } from "../../hooks/useDebounce";
-import { useOrgNavigate } from "../../hooks/useOrgNavigate";
+import { useOrgNavigate, useOrgPath } from "../../hooks/useOrgNavigate";
 import {
   Box,
   Button,
@@ -16,6 +16,8 @@ import {
   Typography,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import LaunchOutlinedIcon from "@mui/icons-material/LaunchOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
@@ -53,6 +55,7 @@ const AdminEventsPage = () => {
       ? { color: "success", label: t("admin:published_chip") }
       : { color: "default", label: t("admin:draft_chip") };
   const orgNavigate = useOrgNavigate();
+  const toOrgPath = useOrgPath();
   const { stableOrgId } = useAdminSystemContext();
   const {
     events,
@@ -119,7 +122,26 @@ const AdminEventsPage = () => {
     setDeleteTarget(null);
   };
 
+  const openInNewTab = (path) => {
+    window.open(toOrgPath(path), "_blank", "noopener,noreferrer");
+  };
+  const openEventManage = (event) => openInNewTab(`/admin/events/${event.id}`);
+  const openEventEdit = (event) => openInNewTab(`/post/event/${event.id}`);
+
   const orgLabel = (id) => orgNameById.get(id) ?? `#${id ?? "-"}`;
+  const eventStatusLabel = (value) => {
+    if (value === "ALL") return t("admin:event_status_all");
+    if (value === "PUBLISHED") return t("admin:event_status_published");
+    if (value === "DRAFT") return t("admin:event_status_draft");
+    return value;
+  };
+  const eventSortLabel = (value) => {
+    if (value === "createdAt") return t("admin:event_sort_created_at");
+    if (value === "startTime") return t("admin:event_sort_start_time");
+    if (value === "title") return t("admin:event_sort_title");
+    if (value === "interestedCount") return t("admin:event_sort_interested_count");
+    return value;
+  };
   const eventMetricRows = statistics
     ? [
         [
@@ -329,6 +351,24 @@ const AdminEventsPage = () => {
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <Tooltip title="Chi tiết">
+                    <IconButton
+                      size="small"
+                      sx={{ color: "primary.main" }}
+                      onClick={() => openEventManage(event)}
+                    >
+                      <LaunchOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Chỉnh sửa">
+                    <IconButton
+                      size="small"
+                      sx={{ color: "secondary.main" }}
+                      onClick={() => openEventEdit(event)}
+                    >
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                   {event.isPublished ? (
                     <Tooltip title={t("admin:tooltip_unpublish")}>
                       <IconButton
@@ -378,7 +418,7 @@ const AdminEventsPage = () => {
         }}
         searchValue={searchTerm}
         searchPlaceholder={t("admin:search_event_placeholder")}
-        onRowClick={(event) => orgNavigate(`/admin/events/${event.id}`)}
+        onRowClick={openEventManage}
         filters={
           <Stack direction="row" spacing={1}>
             <TextField
@@ -394,7 +434,7 @@ const AdminEventsPage = () => {
             >
               {ADMIN_EVENT_STATUS_OPTIONS.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {eventStatusLabel(opt.value)}
                 </MenuItem>
               ))}
             </TextField>
@@ -408,7 +448,7 @@ const AdminEventsPage = () => {
             >
               {ADMIN_EVENT_SORT_OPTIONS.map((opt) => (
                 <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {eventSortLabel(opt.value)}
                 </MenuItem>
               ))}
             </TextField>

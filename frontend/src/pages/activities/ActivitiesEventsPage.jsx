@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Container, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Pagination, Stack, Typography } from '@mui/material';
 import { useSnackbar } from 'notistack';
 
 import { getActivitiesSidebar } from '../../constants/activitiesNav';
@@ -20,6 +20,7 @@ import { usePublishedEvents } from '../../hooks/articles/usePublishedEvents';
 import { toEventCardShape } from '../../hooks/articles/toEventCardShape';
 import { useAuth } from '../../hooks/useAuth';
 import { eventApi } from '../../utils/api';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
 
 
 const getEventFilters = (t) => [
@@ -74,8 +75,10 @@ const ActivitiesPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
 
-  const { events: upcomingEvents } = usePublishedEvents('upcoming', 0, 9);
-  const { events: pastEvents } = usePublishedEvents('past', 0, 6);
+  const [upcomingPage, setUpcomingPage] = useState(0);
+  const [pastPage, setPastPage] = useState(0);
+  const { events: upcomingEvents, pageInfo: upcomingPageInfo } = usePublishedEvents('upcoming', upcomingPage, 7);
+  const { events: pastEvents, pageInfo: pastPageInfo } = usePublishedEvents('past', pastPage, 6);
 
   const [filters, setFilters] = useState({ all: true });
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -95,7 +98,7 @@ const ActivitiesPage = () => {
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const handleEdit = (event) => {
-    navigate(`/activities/events/${event.id}/edit`);
+    navigate(`/post/event/${event.id}`);
   };
 
   const handleDelete = (event) => setDeleteTarget(event);
@@ -104,7 +107,7 @@ const ActivitiesPage = () => {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      await eventApi.deleteEvent(deleteTarget.id);
+      await eventApi.deleteAdminEvent(deleteTarget.id);
       queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
       enqueueSnackbar(t('event:delete_event_success'), { variant: 'success' });
     } catch (err) {
@@ -154,6 +157,7 @@ const ActivitiesPage = () => {
                     <Button
                       variant="outlined"
                       color="primary"
+                      startIcon={<EventNoteOutlinedIcon />}
                       onClick={() => navigate('/admin/events')}
                     >
                       {t('event:manage_events')}
@@ -218,6 +222,16 @@ const ActivitiesPage = () => {
                       </Box>
                     ))}
                   </Box>
+                  {(upcomingPageInfo?.totalPage ?? 0) > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                      <Pagination
+                        color="primary"
+                        count={upcomingPageInfo.totalPage}
+                        page={upcomingPage + 1}
+                        onChange={(_, value) => setUpcomingPage(value - 1)}
+                      />
+                    </Box>
+                  )}
                 </Box>
               )}
 
@@ -250,6 +264,16 @@ const ActivitiesPage = () => {
                       </Box>
                     ))}
                   </Box>
+                  {(pastPageInfo?.totalPage ?? 0) > 1 && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                      <Pagination
+                        color="primary"
+                        count={pastPageInfo.totalPage}
+                        page={pastPage + 1}
+                        onChange={(_, value) => setPastPage(value - 1)}
+                      />
+                    </Box>
+                  )}
                 </Box>
               )}
             </Stack>

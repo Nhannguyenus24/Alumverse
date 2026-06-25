@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class NewsService {
@@ -42,6 +44,7 @@ public class NewsService {
                                         .topic(request.getTopic())
                                         .url(request.getUrl())
                                         .isHidden(true)
+                                        .publishedAt(LocalDateTime.now())
                                         .build();
 
                                 return newsRepository.save(news)
@@ -63,6 +66,7 @@ public class NewsService {
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
+                            if (existing.getPublishedAt() == null) existing.setPublishedAt(LocalDateTime.now());
                             return newsRepository.save(existing);
                         }))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))

@@ -1,14 +1,13 @@
 import React from 'react';
 import { Box, Button } from '@mui/material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
-import { useTranslation } from 'react-i18next';
 
-const CoverUpload = ({ value, onChange, accept = "image/*" }) => {
-  const { t } = useTranslation('profile');
+const CoverUpload = ({ value, onChange, accept = "image/*", heightSx }) => {
   return (
     <Box
       sx={{
-        height: { xs: 130, md: 180 },
+        height: heightSx ?? { xs: '42vh', md: '56vh' },
+        minHeight: { xs: 260, md: 420 },
         backgroundColor: 'primary.dark',
         backgroundImage: value ? `url(${value})` : 'none',
         backgroundSize: 'cover',
@@ -35,7 +34,7 @@ const CoverUpload = ({ value, onChange, accept = "image/*" }) => {
           right: 16,
         }}
       >
-        {value ? t('edit_cover_photo') : t('add_cover_photo')}
+        {value ? 'Edit main photo' : 'Add main photo'}
         <input
           hidden
           type="file"
