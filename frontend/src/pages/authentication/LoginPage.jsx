@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, useLocation, useParams } from 'react-router';
 import { useSnackbar } from 'notistack';
 import { GoogleLogin } from '@react-oauth/google';
-import { Box, Typography, Button, FormControlLabel, Checkbox, Divider, useTheme } from '@mui/material';
+import { Alert, Box, Typography, Button, FormControlLabel, Checkbox, Divider, useTheme } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useTranslation } from 'react-i18next';
 import Page from '../../components/Page';
@@ -28,7 +28,10 @@ const LoginPage = () => {
   const organizationId = useOrganizationStore((state) => state.organization?.id);
   const { reset } = useGoogleReCaptcha();
 
-  const redirectTo = location.state?.from?.pathname || '/';
+  const searchParams = new URLSearchParams(location.search);
+  const reason = searchParams.get('reason');
+  const redirectTo = searchParams.get('from') || location.state?.from?.pathname || '/';
+  const wasRedirectedForAuth = Boolean(location.state?.from) || reason === 'login_required';
   const thirdPartyControlSx = theme.palette.mode === 'dark'
     ? {
         filter: 'invert(0.9) hue-rotate(180deg)',
@@ -176,6 +179,12 @@ const LoginPage = () => {
         >
           {t('auth:login_heading')}
         </Typography>
+
+        {wasRedirectedForAuth && (
+          <Alert severity="info" sx={{ borderRadius: 1 }}>
+            {t('auth:login_required_redirect_message')}
+          </Alert>
+        )}
 
         <Input
           label="Email"

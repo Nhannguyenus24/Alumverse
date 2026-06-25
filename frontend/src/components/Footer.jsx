@@ -1,8 +1,7 @@
-import { Box, Container, Stack, Typography, IconButton } from '@mui/material';
+import { Box, Container, Stack, Typography, IconButton, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 import Logo from './Logo';
-
-const FOOTER_BG = '#0F213A';
 
 const SOCIAL_LINKS = [
   {
@@ -43,8 +42,8 @@ const SocialIcon = ({ href, label, children }) => (
     rel="noopener noreferrer"
     aria-label={label}
     sx={{
-      color: '#fff',
-      '&:hover': { color: 'grey.300', backgroundColor: 'rgba(255,255,255,0.08)' },
+      color: 'inherit',
+      '&:hover': { color: 'accent.main', backgroundColor: 'action.hover' },
       '& svg': { width: 24, height: 24 },
     }}
   >
@@ -56,13 +55,20 @@ const SocialIcon = ({ href, label, children }) => (
 
 const Footer = () => {
   const { t } = useTranslation(['footer']);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const mutedText = isDark ? 'text.secondary' : alpha(theme.palette.footer.contrastText, 0.9);
+  const strongText = isDark ? 'text.primary' : alpha(theme.palette.footer.contrastText, 0.95);
+
   return (
     <Box
       component="footer"
       sx={{
-        backgroundColor: FOOTER_BG,
-        color: '#fff',
-        py: { xs: 4, md: 5 },
+        backgroundColor: isDark ? 'background.paper' : 'footer.main',
+        color: isDark ? 'text.primary' : 'footer.contrastText',
+        borderTop: isDark ? '1px solid' : 'none',
+        borderColor: 'divider',
+        py: { xs: 6, sm: 7, md: 9 },
         mt: 'auto',
       }}
     >
@@ -92,10 +98,10 @@ const Footer = () => {
             <Typography variant="body1" fontWeight={700} sx={{ fontSize: '1.125rem' }}>
               © AlumVerse (2026)
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
+            <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.6 }}>
               {t('footer:tagline')}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', lineHeight: 1.6 }}>
+            <Typography variant="body2" sx={{ color: mutedText, lineHeight: 1.6 }}>
               {t('footer:institution')}
             </Typography>
           </Box>
@@ -109,19 +115,19 @@ const Footer = () => {
             >
               {t('footer:contact_heading')}
             </Typography>
-            <Typography variant="body2" fontWeight={600} sx={{ color: 'rgba(255,255,255,0.95)' }}>
+            <Typography variant="body2" fontWeight={600} sx={{ color: strongText }}>
               {t('footer:office_name')}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', mt: 0.5, lineHeight: 1.6 }}>
+            <Typography variant="body2" sx={{ color: mutedText, mt: 0.5, lineHeight: 1.6 }}>
               {t('footer:address')}
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)', mt: 1 }}>
+            <Typography variant="body2" sx={{ color: mutedText, mt: 1 }}>
               Email: info@fit.hcmus.edu.vn
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            <Typography variant="body2" sx={{ color: mutedText }}>
               {t('footer:phone_label')}: (028) 6288 4499
             </Typography>
-            <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.9)' }}>
+            <Typography variant="body2" sx={{ color: mutedText }}>
               {t('footer:admissions_label')}: 093 773 4004
             </Typography>
           </Box>

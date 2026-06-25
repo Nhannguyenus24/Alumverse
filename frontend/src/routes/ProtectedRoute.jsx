@@ -26,7 +26,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
 
   if (!isAuthenticated) {
     const loginPath = isAdminRoute ? "/admin/login" : buildPath("/auth/login");
-    return <Navigate to={loginPath} replace state={{ from: location }} />;
+    return <Navigate to={loginPath} replace state={{ from: { pathname: `${location.pathname}${location.search}` } }} />;
   }
 
   // STAFF cannot access the global /admin route (no slug); they belong to /:slug/admin only
