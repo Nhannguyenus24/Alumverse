@@ -168,8 +168,9 @@ public class AuthService {
                         return Mono.error(new ApplicationException(ErrorCode.INVALID_OLD_PASSWORD));
                     }
 
-                    String hashedPassword = passwordEncoder.encode(newPassword);
-                    return authRepository.updatePasswordById(userId, hashedPassword)
+                    return Mono.fromCallable(() -> passwordEncoder.encode(newPassword))
+                            .subscribeOn(Schedulers.boundedElastic())
+                            .flatMap(hashedPassword -> authRepository.updatePasswordById(userId, hashedPassword))
                             .doOnSuccess(v -> logger.info("changePassword: userId={} password changed", userId));
                 })
                 .doOnError(error -> logger.error("Password change error for user id: {}", error.getMessage()));

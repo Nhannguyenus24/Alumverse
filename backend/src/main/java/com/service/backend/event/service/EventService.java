@@ -36,6 +36,13 @@ public class EventService {
     private final OrganizationRepository organizationRepository;
     private final CacheUtils cacheUtils;
 
+    /**
+     * Concurrency bound for bulk email loops. flatMap defaults to 256 in-flight subscriptions,
+     * which can overwhelm the SMTP server and the shared boundedElastic pool when blasting many
+     * recipients. Bounding it keeps the same set of emails/result while using fewer resources.
+     */
+    private static final int BULK_EMAIL_CONCURRENCY = 8;
+
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
     public Mono<Event> createEvent(CreateEventRequest request) {
@@ -198,7 +205,7 @@ public class EventService {
                                             .flatMap(inv -> sendInvitationEmail(event, inv)
                                                     .then(notifyInvitation(event, inv)))
                                             .thenReturn(1);
-                                })
+                                }, BULK_EMAIL_CONCURRENCY)
                                 .reduce(0, Integer::sum)));
     }
 
@@ -429,7 +436,7 @@ public class EventService {
                                         return emailService.sendHtmlEmail(ticket.getGuestEmail(), request.getSubject(), "eventReminder", vars)
                                                 .thenReturn(1)
                                                 .onErrorReturn(0);
-                                    })
+                                    }, BULK_EMAIL_CONCURRENCY)
                                     .reduce(0, Integer::sum)
                                     .flatMap(count -> {
                                         EventEmailLog log = EventEmailLog.builder()
@@ -454,7 +461,7 @@ public class EventService {
                                 .filter(t -> t.getGuestEmail() != null && !t.getGuestEmail().isBlank())
                                 .flatMap(ticket -> sendTicketEmail(event, ticket)
                                         .thenReturn(1)
-                                        .onErrorReturn(0))
+                                        .onErrorReturn(0), BULK_EMAIL_CONCURRENCY)
                                 .reduce(0, Integer::sum)
                                 .flatMap(count -> {
                                     EventEmailLog log = EventEmailLog.builder()

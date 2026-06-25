@@ -127,8 +127,7 @@ public class FundService {
 
     public Flux<FundReceivingInfos> getActiveFundReceivingInfos() {
         return cacheUtils.getOrCompute("fund_receiving_infos", "active", Duration.ofDays(1), () ->
-                fundReceivingInfosRepository.findAll()
-                        .filter(FundReceivingInfos::isActive)
+                fundReceivingInfosRepository.findAllActive()
                         .collectList()
         ).flatMapMany(Flux::fromIterable);
     }

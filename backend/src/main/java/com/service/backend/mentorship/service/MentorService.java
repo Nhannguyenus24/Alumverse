@@ -24,9 +24,13 @@ import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -63,17 +67,27 @@ public class MentorService {
 
     private Mono<List<MentorshipSessionResponse>> enrichAll(List<MentorshipSession> sessions) {
         if (sessions.isEmpty()) return Mono.just(List.of());
-        return Flux.fromIterable(sessions)
-                .concatMap(s -> {
-                    if (s.getAvailabilityId() == null) {
-                        return Mono.just(MentorshipSessionResponse.from(s));
-                    }
-                    return availabilityRepository.findById(s.getAvailabilityId())
-                            .map(av -> MentorshipSessionResponse.from(s, av))
-                            .defaultIfEmpty(MentorshipSessionResponse.from(s));
-                })
-                .collectList()
-                .flatMap(this::attachUserDisplay);
+
+        // Batch-load all referenced availabilities in a single query instead of one findById per session.
+        Set<Integer> availabilityIds = sessions.stream()
+                .map(MentorshipSession::getAvailabilityId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Mono<Map<Integer, MentorAvailability>> availabilitiesMono = availabilityIds.isEmpty()
+                ? Mono.just(Map.of())
+                : availabilityRepository.findAllById(availabilityIds).collectMap(MentorAvailability::getId);
+
+        return availabilitiesMono.flatMap(availMap -> {
+            List<MentorshipSessionResponse> list = new ArrayList<>(sessions.size());
+            for (MentorshipSession s : sessions) {
+                MentorAvailability av = s.getAvailabilityId() != null ? availMap.get(s.getAvailabilityId()) : null;
+                list.add(av != null
+                        ? MentorshipSessionResponse.from(s, av)
+                        : MentorshipSessionResponse.from(s));
+            }
+            return attachUserDisplay(list);
+        });
     }
 
     private Mono<List<MentorshipSessionResponse>> attachUserDisplay(List<MentorshipSessionResponse> list) {

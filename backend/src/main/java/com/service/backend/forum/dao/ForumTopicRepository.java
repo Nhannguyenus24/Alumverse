@@ -1,5 +1,6 @@
 package com.service.backend.forum.dao;
 
+import com.service.backend.shared.dto.IdCountDTO;
 import com.service.backend.shared.entity.ForumTopic;
 import org.springframework.data.r2dbc.repository.Modifying;
 import org.springframework.data.r2dbc.repository.Query;
@@ -8,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Collection;
 
 @Repository
 public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Integer> {
@@ -78,6 +81,28 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
            "WHERE ft2.category_id = :categoryId AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
            ") participants")
     Mono<Long> countDistinctParticipantsByCategoryId(@Param("categoryId") Integer categoryId);
+
+    /**
+     * Batch variant of {@link #countByCategoryId} with no keyword: topic counts per category
+     * for a set of categories in a single query.
+     */
+    @Query("SELECT category_id as id, COUNT(*) as count FROM forum_topics " +
+           "WHERE category_id IN (:categoryIds) GROUP BY category_id")
+    Flux<IdCountDTO> countByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
+
+    /**
+     * Batch variant of {@link #countDistinctParticipantsByCategoryId}: distinct participant
+     * counts per category for a set of categories in a single query.
+     */
+    @Query("SELECT category_id as id, COUNT(DISTINCT member_id) as count FROM (" +
+           "SELECT ft.category_id AS category_id, ft.created_by_member_id AS member_id FROM forum_topics ft " +
+           "WHERE ft.category_id IN (:categoryIds) AND ft.created_by_member_id IS NOT NULL " +
+           "UNION " +
+           "SELECT ft2.category_id AS category_id, fp.author_member_id AS member_id FROM forum_posts fp " +
+           "JOIN forum_topics ft2 ON fp.topic_id = ft2.id " +
+           "WHERE ft2.category_id IN (:categoryIds) AND fp.is_banned = false AND fp.author_member_id IS NOT NULL" +
+           ") participants GROUP BY category_id")
+    Flux<IdCountDTO> countDistinctParticipantsByCategoryIds(@Param("categoryIds") Collection<Integer> categoryIds);
 
     /**
      * Count topics by organization id with keyword
