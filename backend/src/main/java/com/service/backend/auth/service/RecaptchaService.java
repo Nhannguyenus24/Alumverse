@@ -45,7 +45,7 @@ public class RecaptchaService {
                     return response.isSuccess();
                 })
                 .onErrorResume(e -> {
-                    logger.error("Error verifying reCAPTCHA", e);
+                    logger.error("Error verifying reCAPTCHA", e.getMessage());
                     return Mono.just(false);
                 });
     }
