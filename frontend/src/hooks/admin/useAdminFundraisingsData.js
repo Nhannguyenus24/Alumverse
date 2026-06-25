@@ -27,6 +27,23 @@ const extractPagedFunds = (payload) => {
   };
 };
 
+const timestampOf = (fund) => {
+  const raw = fund?.updatedAt || fund?.timeStarted || fund?.timeEnded;
+  if (!raw) return 0;
+  const timestamp = new Date(raw).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const sortFundsByTime = (items, order = 'DESC') => {
+  const dir = order === 'ASC' ? 1 : -1;
+  return [...items].sort((a, b) => {
+    const at = timestampOf(a);
+    const bt = timestampOf(b);
+    if (at !== bt) return (at - bt) * dir;
+    return ((Number(a?.id) || 0) - (Number(b?.id) || 0)) * dir;
+  });
+};
+
 const useAdminFundraisingsData = (organizationId) => {
   const [fundraisings, setFundraisings] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -34,6 +51,7 @@ const useAdminFundraisingsData = (organizationId) => {
   const [loadError, setLoadError] = useState(false);
   const [search, setSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrderState] = useState('DESC');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -77,7 +95,7 @@ const useAdminFundraisingsData = (organizationId) => {
       const payload = await fundApi.getFunds(params, config);
       if (!config.signal.aborted) {
         const { items, totalItem } = extractPagedFunds(payload);
-        setFundraisings(items.map(mapFundRow));
+        setFundraisings(sortFundsByTime(items.map(mapFundRow), sortOrder));
         setTotalCount(totalItem);
       }
     } catch (err) {
@@ -91,7 +109,7 @@ const useAdminFundraisingsData = (organizationId) => {
         setLoading(false);
       }
     }
-  }, [organizationId, page, rowsPerPage, searchQuery]);
+  }, [organizationId, page, rowsPerPage, searchQuery, sortOrder]);
 
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const reload = useCallback(() => setReloadTrigger((prev) => prev + 1), []);
@@ -117,6 +135,8 @@ const useAdminFundraisingsData = (organizationId) => {
     loadError,
     search,
     setSearch,
+    sortOrder,
+    setSortOrder: (order) => { setSortOrderState(order); setPage(0); },
     submitSearch,
     updateSearchQuery,
     page,

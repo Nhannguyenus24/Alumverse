@@ -192,6 +192,7 @@ const PostEventPage = () => {
         registrationQuestions={registrationQuestions}
         setRegistrationQuestions={setRegistrationQuestions}
         hideLocalQuestions={isEditMode}
+        mainImagePreview={coverPreview}
       />
       {isEditMode && eventId ? (
         <Box sx={{ mt: 3 }}>

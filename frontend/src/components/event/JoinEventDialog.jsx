@@ -88,9 +88,14 @@ const JoinEventDialog = ({
           </Typography>
         ) : (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Typography>
-              {t('event:join_info_required')}
-            </Typography>
+            <Box>
+              <Typography>
+                {t('event:join_info_required')}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+                {t('event:join_info_consent')}
+              </Typography>
+            </Box>
 
             {questions.map((question) => (
               <Box key={question.id}>

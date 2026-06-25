@@ -258,13 +258,13 @@ const AdminEventManagePage = () => {
         </Stack>
 
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          <Button variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => orgNavigate(`/post/event/${eventId}`)}>
+          <Button color="secondary" variant="outlined" startIcon={<EditOutlinedIcon />} onClick={() => orgNavigate(`/post/event/${eventId}`)}>
             {t('common:edit')}
           </Button>
-          <Button variant="outlined" startIcon={<OpenInNewIcon />} onClick={handlePreview}>
+          <Button color="primary" variant="contained" startIcon={<OpenInNewIcon />} onClick={handlePreview}>
             {t('event:preview_public')}
           </Button>
-          <Button variant="outlined" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`/admin/events/${eventId}/organize`)}>
+          <Button color="accent" variant="contained" startIcon={<HowToRegOutlinedIcon />} onClick={() => orgNavigate(`/admin/events/${eventId}/organize`)}>
             {t('event:check_in')}
           </Button>
           <Button

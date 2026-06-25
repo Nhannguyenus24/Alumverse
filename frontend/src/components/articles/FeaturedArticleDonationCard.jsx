@@ -6,7 +6,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
-import { truncateText } from "../../utils/text";
+import { normalizePreviewText, truncateText } from "../../utils/text";
 import { formatCurrency } from "../../utils/numberFormatter";
 import { formatDate } from "../../utils/dateFormatter";
 
@@ -125,7 +125,7 @@ const FeaturedArticleDonationCard = ({ campaign, article, onNavigate, onEdit, on
                 WebkitBoxOrient: "vertical",
               }}
             >
-              {data?.name || data?.title}
+              {normalizePreviewText(data?.name || data?.title)}
             </Typography>
 
             <ArrowForwardIcon

@@ -54,6 +54,7 @@ public class LearningResourceService {
                     existing.setType(LearningResourceType.valueOf(request.getType().toUpperCase()));
                     existing.setLinkUrl(request.getLinkUrl());
                     existing.setDescription(request.getDescription());
+                    if (existing.getCreatedAt() == null) existing.setCreatedAt(LocalDateTime.now());
                     return learningResourceRepository.save(existing);
                 })
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))

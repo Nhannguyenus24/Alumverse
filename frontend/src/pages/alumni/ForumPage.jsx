@@ -11,6 +11,7 @@ import ForumSection from '../../components/forum/ForumSection';
 import { useForumPageLogic } from '../../hooks/forum/useForumPageLogic';
 import { useForumManageMode } from '../../hooks/forum/useForumManageMode';
 import ForumManageView from '../../components/forum/ForumManageView';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 
 const ForumPage = () => {
   const { t } = useTranslation(['forum', 'common']);
@@ -122,6 +123,7 @@ const ForumPage = () => {
                     <Button
                       variant="outlined"
                       color="primary"
+                      startIcon={<TuneOutlinedIcon />}
                       sx={{ flexShrink: 0 }}
                       onClick={handleOpenManageMode}
                     >

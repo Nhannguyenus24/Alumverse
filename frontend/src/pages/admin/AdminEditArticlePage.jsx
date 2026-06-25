@@ -82,7 +82,7 @@ const AdminEditArticlePage = () => {
       };
       await updateArticle(id, payload);
       showSuccess(t('admin:edit_article_success'));
-      navigate(`/admin/article`);
+      navigate(`/article/${channel}/${id}`);
     } catch (err) {
       showError(err?.response?.data?.message ?? t('admin:edit_article_failed'));
     }
@@ -144,6 +144,7 @@ const AdminEditArticlePage = () => {
               setContent={setContent}
               topic={topic}
               setTopic={setTopic}
+              mainImagePreview={coverPreview}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>

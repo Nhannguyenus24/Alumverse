@@ -116,7 +116,7 @@
   "days_ago": "{{count}} day ago",
   "no_file_selected": "No file selected.",
   "image_type_error": "Only JPG, JPEG, or PNG files are supported.",
-  "image_size_error": "Image exceeds 2 MB. Please choose a smaller file.",
+  "image_size_error": "Image exceeds 8 MB. Please choose a smaller file.",
   "file_read_error": "Could not read the file",
   "image_upload_error": "Could not upload the image",
   "not_updated": "Not updated",

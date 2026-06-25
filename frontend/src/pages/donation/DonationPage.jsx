@@ -201,10 +201,10 @@ export default function DonationPage() {
 
                 {isAdmin && (
                   <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="flex-end" useFlexGap>
-                    <Button variant="contained" onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
+                    <Button variant="contained" startIcon={<AddCircleOutlineIcon />} onClick={() => navigate("/post/donation")} sx={{ textTransform: "none", fontWeight: 700 }}>
                       {t("donation:create_fund")}
                     </Button>
-                    <Button variant="outlined" color="primary" onClick={() => navigate("/admin/fundraising")} sx={{ textTransform: "none", fontWeight: 700 }}>
+                    <Button variant="outlined" color="primary" startIcon={<FormatListBulletedIcon />} onClick={() => navigate("/admin/fundraising")} sx={{ textTransform: "none", fontWeight: 700 }}>
                       {t("donation:manage_funds")}
                     </Button>
                   </Stack>
