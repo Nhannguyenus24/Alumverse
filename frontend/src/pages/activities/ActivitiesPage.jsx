@@ -25,6 +25,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { useSnackbar } from 'notistack';
 import apiClient from '../../utils/axios';
 import { eventApi } from '../../utils/api';
+import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined';
+import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
 
 
 const getActivitiesFilters = (t) => [
@@ -54,14 +57,6 @@ const getActivitiesFilters = (t) => [
   },
 ];
 
-const CHANNEL_TO_ENDPOINT = {
-  news: '/admin/articles/news',
-  alumni: '/admin/articles/alumni-posts',
-  achievement: '/admin/articles/achievements',
-  job: '/admin/articles/jobs',
-  learning: '/admin/articles/learning-resources',
-};
-
 const ActivitiesPage = () => {
   const { t } = useTranslation(['nav', 'article', 'event']);
   const navigate = useOrgNavigate();
@@ -90,7 +85,12 @@ const ActivitiesPage = () => {
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   const handleEdit = (article) => {
-    navigate(`/article/${article.channel}/${article.id}/edit`);
+    if (article?.channel === 'event') {
+      navigate(`/post/event/${article.id}`);
+      return;
+    }
+    const editPath = getArticleAdminEditPath(article);
+    if (editPath) navigate(editPath);
   };
 
   const handleDelete = (article) => setDeleteTarget(article);
@@ -100,11 +100,10 @@ const ActivitiesPage = () => {
     setDeleting(true);
     try {
       if (deleteTarget.channel === 'event') {
-        await eventApi.deleteEvent(deleteTarget.id);
+        await eventApi.deleteAdminEvent(deleteTarget.id);
         queryClient.invalidateQueries({ queryKey: ['publishedEvents'] });
       } else {
-        const endpoint = CHANNEL_TO_ENDPOINT[deleteTarget.channel];
-        if (endpoint) await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+        await deleteArticleByChannel(apiClient, deleteTarget);
         queryClient.invalidateQueries({ queryKey: ['publishedNews'] });
       }
       enqueueSnackbar(t('article:delete_success'), { variant: 'success' });
@@ -156,6 +155,7 @@ const ActivitiesPage = () => {
                       <Button
                         variant="outlined"
                         color="primary"
+                        startIcon={<EventNoteOutlinedIcon />}
                         onClick={() => navigate('/admin/events')}
                       >
                         {t('event:manage_events')}
@@ -163,6 +163,7 @@ const ActivitiesPage = () => {
                       <Button
                         variant="outlined"
                         color="primary"
+                        startIcon={<ArticleOutlinedIcon />}
                         onClick={() => navigate('/admin/article')}
                       >
                         {t('article:manage_news')}

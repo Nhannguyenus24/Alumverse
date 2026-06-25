@@ -25,7 +25,7 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [organizationFilter, setOrganizationFilter] = useState(initialOrgId);
-  const [sortBy, setSortBy] = useState('startTime');
+  const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
 
   const [paged, setPaged] = useState(fallbackPage);
@@ -118,12 +118,20 @@ const useAdminEvents = (initialOrgId = 'ALL') => {
     items.sort((a, b) => {
       const av = a?.[sortBy];
       const bv = b?.[sortBy];
-      if (av == null && bv == null) return 0;
+      if (av == null && bv == null) return (Number(b?.id) || 0) - (Number(a?.id) || 0);
       if (av == null) return 1;
       if (bv == null) return -1;
-      if (av < bv) return -1 * dir;
-      if (av > bv) return 1 * dir;
-      return 0;
+
+      const aTime = new Date(av).getTime();
+      const bTime = new Date(bv).getTime();
+      if (Number.isFinite(aTime) && Number.isFinite(bTime)) {
+        if (aTime !== bTime) return (aTime - bTime) * dir;
+      } else {
+        if (av < bv) return -1 * dir;
+        if (av > bv) return 1 * dir;
+      }
+
+      return ((Number(a?.id) || 0) - (Number(b?.id) || 0)) * dir;
     });
     return items;
   }, [paged, sortBy, sortOrder]);

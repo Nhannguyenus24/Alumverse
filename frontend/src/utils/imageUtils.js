@@ -1,7 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
 import apiClient from "./axios";
 
-const IMAGE_MAX_SIZE_BYTES = 2 * 1024 * 1024;
+export const IMAGE_MAX_SIZE_BYTES = 8 * 1024 * 1024;
+
+export const MAX_JSON_PAYLOAD_BYTES = 19 * 1024 * 1024;
 
 const ALLOWED_IMAGE_MIME_TYPES = ["image/jpeg", "image/png"];
 
@@ -48,7 +50,7 @@ export const validateImageFile = (file, t = null) => {
   if (file.size > IMAGE_MAX_SIZE_BYTES) {
     return {
       valid: false,
-      message: t ? t('common:image_size_error') : "Ảnh vượt quá 2MB. Vui lòng chọn file nhỏ hơn.",
+      message: t ? t('common:image_size_error') : "Ảnh vượt quá 8MB. Vui lòng chọn file nhỏ hơn.",
     };
   }
 
@@ -71,6 +73,9 @@ export const fileToBase64 = (file) =>
     reader.onerror = () => reject(reader.error ?? new Error("file_read_error"));
     reader.readAsDataURL(file);
   });
+
+export const getJsonPayloadByteSize = (payload) =>
+  new Blob([JSON.stringify(payload)]).size;
 
 /**
  * Upload an image as a Base64 string to the server.

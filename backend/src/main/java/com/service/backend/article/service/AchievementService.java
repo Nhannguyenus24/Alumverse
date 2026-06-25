@@ -19,6 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,7 +40,7 @@ public class AchievementService {
                                     .title(request.getTitle())
                                     .description(request.getDescription())
                                     .imageUrl(imageUrl.isEmpty() ? null : imageUrl)
-                                    .awardedDate(request.getAwardedDate())
+                                    .awardedDate(request.getAwardedDate() != null ? request.getAwardedDate() : LocalDate.now())
                                     .topic(request.getTopic())
                                     .status(request.getStatus())
                                     .build();
@@ -58,8 +60,12 @@ public class AchievementService {
                             existing.setTitle(request.getTitle());
                             existing.setDescription(request.getDescription());
                             existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
-                            existing.setAwardedDate(request.getAwardedDate());
-                            existing.setStatus(request.getStatus());
+                            if (request.getAwardedDate() != null) {
+                                existing.setAwardedDate(request.getAwardedDate());
+                            } else if (existing.getAwardedDate() == null) {
+                                existing.setAwardedDate(LocalDate.now());
+                            }
+                            if (request.getStatus() != null) existing.setStatus(request.getStatus());
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             return achievementRepository.save(existing);
                         }))

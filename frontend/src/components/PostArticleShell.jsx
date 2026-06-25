@@ -37,7 +37,7 @@ const PostArticleShell = ({
             sx={{
               width: { xs: '100%', md: '85%', lg: '75%' },
               mx: 'auto',
-              mt: -10,
+              mt: { xs: -12, md: -16 },
               mb: 6,
               backgroundColor: 'background.paper',
               borderRadius: 2,

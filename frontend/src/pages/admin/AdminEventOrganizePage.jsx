@@ -33,12 +33,13 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const AdminEventOrganizePage = () => {
-  const { t } = useTranslation(['admin', 'event']);
+  const { t } = useTranslation(['admin', 'event', 'common']);
   const { eventId } = useParams();
   const orgNavigate = useOrgNavigate();
 
   const statusChip = (status) => {
     const key = String(status || '').toUpperCase();
+    if (key === 'REGISTERED' || key === 'PENDING') return { color: 'default', label: t('event:ticket_status_registered') };
     if (key === 'ISSUED') return { color: 'info', label: t('event:status_issued') };
     if (key === 'USED' || key === 'CHECKED_IN') return { color: 'success', label: t('event:status_used') };
     if (key === 'CANCELLED') return { color: 'error', label: t('event:status_cancelled') };
@@ -134,6 +135,7 @@ const AdminEventOrganizePage = () => {
               />
               <Button
                 variant="contained"
+                color="accent"
                 onClick={handleCheckIn}
                 disabled={checkInMutation.isPending || !ticketCode.trim()}
                 sx={{ minWidth: 140 }}
@@ -237,6 +239,7 @@ const AdminEventOrganizePage = () => {
                   rowsPerPage={size}
                   onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
                   rowsPerPageOptions={[5, 10, 25]}
+                  labelRowsPerPage={t('common:rows_per_page')}
                 />
               </>
             )}

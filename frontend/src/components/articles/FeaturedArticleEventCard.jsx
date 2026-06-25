@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Button, Stack } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useSnackbar } from 'notistack';
 import { eventApi } from '../../utils/api';
 import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
+import { getEventRegisteredState } from '../../utils/eventRegistration';
 
-const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }) => {
+const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
   const [isInterested, setIsInterested] = useState(false);
@@ -26,7 +26,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }
       .then((res) => setIsInterested(res?.isInterested ?? false))
       .catch(() => {});
     eventApi.checkRegistered(article.id)
-      .then((res) => { if (res?.isRegistered) setIsJoined(true); })
+      .then((res) => setIsJoined(getEventRegisteredState(res)))
       .catch(() => {});
   }, [article?.id, isAdmin]);
 
@@ -181,19 +181,12 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit, onDelete }
               color="secondary"
               startIcon={<EditOutlinedIcon />}
               sx={{ textTransform: 'none', fontWeight: 600 }}
-              onClick={onEdit}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.();
+              }}
             >
               {t('common:edit')}
-            </Button>
-            <Button
-              fullWidth
-              variant="contained"
-              color="error"
-              startIcon={<DeleteOutlineOutlinedIcon />}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-              onClick={onDelete}
-            >
-              {t('common:delete')}
             </Button>
           </Stack>
         ) : (

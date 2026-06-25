@@ -125,6 +125,7 @@
   "confirm_join_title": "Confirm participation",
   "confirm_join_message": "Are you sure you want to join the event {{title}}?",
   "join_info_required": "Please provide some information before joining the event.",
+  "join_info_consent": "By answering these questions, you agree to provide information for the event manager to review your registration.",
   "confirm_join_button": "Confirm participation",
   "event_id_fallback": "Event #{{id}}",
   "registration_start": "Registration opens",

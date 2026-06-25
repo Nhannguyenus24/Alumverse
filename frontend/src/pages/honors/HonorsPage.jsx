@@ -23,6 +23,7 @@ import { usePublishedAchievements } from '../../hooks/articles/usePublishedAchie
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
+import { deleteArticleByChannel, getArticleAdminEditPath } from '../../utils/articleAdminActions';
 
 const getSidebar = (t) => [
   { id: '/honors', label: t('honors:sidebar_honors'), icon: <EmojiEventsIcon /> },
@@ -89,7 +90,8 @@ const HonorsPage = () => {
   };
 
   const handleEdit = (article) => {
-    navigate(`/article/${article.channel}/${article.id}/edit`);
+    const editPath = getArticleAdminEditPath(article);
+    if (editPath) navigate(editPath);
   };
 
   const handleDelete = (article) => setDeleteTarget(article);
@@ -98,11 +100,7 @@ const HonorsPage = () => {
     if (!deleteTarget || deleting) return;
     setDeleting(true);
     try {
-      const endpoint =
-        deleteTarget.channel === 'alumni'
-          ? '/admin/articles/alumni-posts'
-          : '/admin/articles/achievements';
-      await apiClient.delete(`${endpoint}/${deleteTarget.id}`);
+      await deleteArticleByChannel(apiClient, deleteTarget);
       queryClient.invalidateQueries({ queryKey: ['publishedAlumniPosts'] });
       queryClient.invalidateQueries({ queryKey: ['publishedAchievements'] });
       enqueueSnackbar(t('honors:delete_success'), { variant: 'success' });
@@ -162,6 +160,7 @@ const HonorsPage = () => {
                     <Button
                       variant="outlined"
                       color="primary"
+                      startIcon={<EmojiEventsIcon />}
                       onClick={() => navigate('/admin/article')}
                     >
                       {t('honors:manage_honors')}

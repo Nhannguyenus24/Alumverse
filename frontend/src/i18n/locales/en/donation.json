@@ -86,7 +86,7 @@
   "field_organizer_label": "Organizer",
   "field_organizer_placeholder": "Enter organizer name",
   "field_logo_label": "Fund logo (optional)",
-  "field_logo_hint": "Supports JPG, JPEG, PNG — max 2 MB.",
+  "field_logo_hint": "Supports JPG, JPEG, PNG — max 8 MB.",
   "field_logo_change": "Change logo",
   "field_logo_choose": "Choose logo",
   "field_logo_remove": "Remove",
