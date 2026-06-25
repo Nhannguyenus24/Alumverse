@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { IconButton, Popover } from '@mui/material';
+import { Suspense, lazy, useState } from 'react';
+import { Box, IconButton, Popover } from '@mui/material';
 import MoodIcon from '@mui/icons-material/Mood';
-import EmojiPicker from 'emoji-picker-react';
+
+const EmojiPicker = lazy(() => import('emoji-picker-react'));
 
 function ChatEmojiPickerButton({ disabled = false, onEmojiSelect }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -45,11 +46,13 @@ function ChatEmojiPickerButton({ disabled = false, onEmojiSelect }) {
           },
         }}
       >
-        <EmojiPicker
-          onEmojiClick={handleEmojiClick}
-          width={320}
-          height={400}
-        />
+        <Suspense fallback={<Box sx={{ width: 320, height: 400 }} />}>
+          <EmojiPicker
+            onEmojiClick={handleEmojiClick}
+            width={320}
+            height={400}
+          />
+        </Suspense>
       </Popover>
     </>
   );

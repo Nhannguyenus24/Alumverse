@@ -3,11 +3,12 @@ package com.service.backend.shared.service;
 import com.service.backend.shared.dto.BatchModerationResponse;
 import com.service.backend.shared.enums.ModerationTag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
+import reactor.core.scheduler.Scheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,12 +23,15 @@ public class AITagService {
     private static final int MAX_CHARS_PER_BATCH = 2000;
     private static final int MAX_ITEMS_PER_BATCH = 15;
     private final String availableTags;
+    private final Scheduler heavyTaskScheduler;
 
     @Value("${gemini.tagging.enabled:true}")
     private boolean taggingEnabled;
 
-    public AITagService(ModerationService moderationService) {
+    public AITagService(ModerationService moderationService,
+                        @Qualifier("heavyTaskScheduler") Scheduler heavyTaskScheduler) {
         this.moderationService = moderationService;
+        this.heavyTaskScheduler = heavyTaskScheduler;
         this.availableTags = ModerationTag.getAllTagsAsString();
     }
 
@@ -100,7 +104,7 @@ public class AITagService {
 
     private Mono<BatchModerationResponse> processBatch(List<String> batch, String tags) {
         return Mono.fromCallable(() -> moderationService.analyzeContents(batch, tags))
-                .subscribeOn(Schedulers.boundedElastic())
+                .subscribeOn(heavyTaskScheduler)
                 .onErrorResume(e -> {
                     log.error("AI Dynamic Batch Tagging failed. Items: {}. Error: {}", batch.size(), e.getMessage());
                     List<String> fallbackTags = batch.stream().map(s -> ModerationTag.NORMAL.name()).collect(Collectors.toList());

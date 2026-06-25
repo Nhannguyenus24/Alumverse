@@ -13,8 +13,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -41,10 +43,13 @@ public class OCRService {
 
     private final MeterRegistry meterRegistry;
     private final OcrCleanupService ocrCleanupService;
+    private final Scheduler heavyTaskScheduler;
 
-    public OCRService(MeterRegistry meterRegistry, OcrCleanupService ocrCleanupService) {
+    public OCRService(MeterRegistry meterRegistry, OcrCleanupService ocrCleanupService,
+                      @Qualifier("heavyTaskScheduler") Scheduler heavyTaskScheduler) {
         this.meterRegistry = meterRegistry;
         this.ocrCleanupService = ocrCleanupService;
+        this.heavyTaskScheduler = heavyTaskScheduler;
     }
 
     /**
@@ -69,7 +74,7 @@ public class OCRService {
                         case "png", "jpeg", "jpg", "pdf" -> performOcr(file);
                         default -> throw new IllegalArgumentException("Unsupported file format: " + extension);
                     };
-        }).subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic())
+        }).subscribeOn(heavyTaskScheduler)
           .map(rawText -> {
               try {
                   return ocrCleanupService.cleanOcrText(rawText);

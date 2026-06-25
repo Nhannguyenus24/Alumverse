@@ -1,8 +1,11 @@
 package com.service.backend.shared.utils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -25,6 +28,17 @@ public class JwtUtils {
     private final long refreshTokenExpirationMs;
     private final JWSSigner signer;
     private final JWSVerifier verifier;
+
+    /**
+     * Caches the result of the expensive parse + HMAC signature verification keyed by the raw
+     * token string. Expiration is still re-checked on every call (see {@link #validateToken}),
+     * so caching changes performance only, never the validation outcome. Entries expire well
+     * within the access-token lifetime to bound memory and limit any revocation window.
+     */
+    private final Cache<String, JWTClaimsSet> verifiedTokenCache = Caffeine.newBuilder()
+            .expireAfterWrite(Duration.ofMinutes(15))
+            .maximumSize(50_000)
+            .build();
 
     public JwtUtils(String jwtSecret, long accessTokenExpirationMs, long refreshTokenExpirationMs) {
         this.accessTokenExpirationMs = accessTokenExpirationMs;
@@ -69,6 +83,20 @@ public class JwtUtils {
     }
 
     public JWTClaimsSet validateToken(String token) {
+        // Parse + signature verification are deterministic for a given token, so cache them.
+        // Invalid/forged tokens throw from the loader and are not cached.
+        JWTClaimsSet claims = verifiedTokenCache.get(token, this::parseAndVerify);
+
+        // Expiration is re-evaluated on every call so behavior is identical to validating fresh.
+        Date expirationTime = claims.getExpirationTime();
+        if (expirationTime != null && expirationTime.before(new Date())) {
+            throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Token has expired");
+        }
+
+        return claims;
+    }
+
+    private JWTClaimsSet parseAndVerify(String token) {
         try {
             SignedJWT signedJWT = SignedJWT.parse(token);
 
@@ -76,13 +104,7 @@ public class JwtUtils {
                 throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Invalid token signature");
             }
 
-            JWTClaimsSet claims = signedJWT.getJWTClaimsSet();
-            Date expirationTime = claims.getExpirationTime();
-            if (expirationTime != null && expirationTime.before(new Date())) {
-                throw new ApplicationException(ErrorCode.INVALID_ACCESS_TOKEN, "Token has expired");
-            }
-
-            return claims;
+            return signedJWT.getJWTClaimsSet();
         } catch (ParseException | JOSEException e) {
             throw new ApplicationException(ErrorCode.ERROR_VALIDATE_JWT_TOKEN, "Error validating token");
         }

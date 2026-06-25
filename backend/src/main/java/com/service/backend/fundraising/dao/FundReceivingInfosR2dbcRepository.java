@@ -17,6 +17,14 @@ public interface FundReceivingInfosR2dbcRepository extends R2dbcRepository<FundR
             FROM fund_receiving_infos
             WHERE is_active = true
             ORDER BY id DESC
+            """)
+    Flux<FundReceivingInfos> findAllActive();
+
+    @Query("""
+            SELECT id, account_number, account_name, bank_name, is_active
+            FROM fund_receiving_infos
+            WHERE is_active = true
+            ORDER BY id DESC
             LIMIT :limit OFFSET :offset
             """)
     Flux<FundReceivingInfos> findActivePage(int limit, int offset);

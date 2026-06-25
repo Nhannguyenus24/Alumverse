@@ -1,5 +1,4 @@
 import { useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
 import {
   Alert,
   Box,
@@ -45,7 +44,8 @@ const TEMPLATE_EXAMPLE = [
   'Chính quy', 'Công nghệ thông tin', '2024', 'GRADUATED', '2', 'ACTIVE',
 ];
 
-const downloadTemplate = () => {
+const downloadTemplate = async () => {
+  const XLSX = await import('xlsx');
   const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS, TEMPLATE_EXAMPLE]);
   ws['!cols'] = TEMPLATE_HEADERS.map(() => ({ wch: 20 }));
   const wb = XLSX.utils.book_new();
@@ -115,8 +115,9 @@ const AdminBulkImportDialog = ({ open, onClose, organizationOptions = [], onBulk
     setParseError('');
 
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       try {
+        const XLSX = await import('xlsx');
         const wb = XLSX.read(ev.target.result, { type: 'array' });
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });

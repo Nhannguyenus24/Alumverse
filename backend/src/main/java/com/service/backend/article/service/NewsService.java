@@ -114,11 +114,7 @@ public class NewsService {
                         newsRepository.countPublishedByOrganizationId(orgId),
                         page, limit))
                 .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        newsRepository.findAll()
-                                .filter(n -> !n.getIsHidden())
-                                .skip(offset)
-                                .take(limit)
-                                .map(NewsResponse::from),
+                        newsRepository.findPublishedWithPagination(limit, offset).map(NewsResponse::from),
                         newsRepository.count(),
                         page, limit)));
     }

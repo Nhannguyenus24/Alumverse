@@ -453,22 +453,35 @@ public class AdminForumService {
                 .defaultIfEmpty(ForumStatisticsDTO.CategorySummary.builder().build());
 
         Mono<List<ForumStatisticsDTO.GhostTopicSummary>> ghostTopicsMono = forumTopicRepository.findGhostTopics()
-                .flatMap(topic -> {
-                    Mono<String> categoryNameMono = topic.getCategoryId() != null
-                            ? forumCategoryRepository.findById(topic.getCategoryId())
-                                    .map(ForumCategory::getName)
-                                    .defaultIfEmpty("Unknown")
-                            : Mono.just("Uncategorized");
-
-                    return categoryNameMono.map(catName -> ForumStatisticsDTO.GhostTopicSummary.builder()
-                            .topicId(topic.getId())
-                            .title(topic.getTitle())
-                            .categoryName(catName)
-                            .viewCount(topic.getViewCount())
-                            .createdAt(topic.getCreatedAt())
-                            .build());
-                })
                 .collectList()
+                .flatMap(topics -> {
+                    if (topics.isEmpty()) return Mono.just(Collections.<ForumStatisticsDTO.GhostTopicSummary>emptyList());
+
+                    Set<Integer> categoryIds = topics.stream()
+                            .map(ForumTopic::getCategoryId)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    Mono<Map<Integer, String>> categoryNamesMono = categoryIds.isEmpty()
+                            ? Mono.just(Map.of())
+                            : forumCategoryRepository.findAllById(categoryIds)
+                                    .collectMap(ForumCategory::getId, ForumCategory::getName);
+
+                    return categoryNamesMono.map(nameMap -> topics.stream()
+                            .map(topic -> {
+                                String catName = topic.getCategoryId() == null
+                                        ? "Uncategorized"
+                                        : nameMap.getOrDefault(topic.getCategoryId(), "Unknown");
+                                return ForumStatisticsDTO.GhostTopicSummary.builder()
+                                        .topicId(topic.getId())
+                                        .title(topic.getTitle())
+                                        .categoryName(catName)
+                                        .viewCount(topic.getViewCount())
+                                        .createdAt(topic.getCreatedAt())
+                                        .build();
+                            })
+                            .collect(Collectors.toList()));
+                })
                 .defaultIfEmpty(Collections.emptyList());
 
         return Mono.zip(baseMono, popularTopicMono, popularCategoryMono, ghostTopicsMono)
@@ -487,17 +500,38 @@ public class AdminForumService {
 
     public Mono<List<TopContributorDTO>> getTopContributors(int month, int year) {
         return forumPostRepository.findTopContributorMemberIds(month, year)
-                .flatMapSequential(memberId ->
-                    adminUserRepository.findById(memberId)
-                            .zipWith(forumPostRepository.countPostsByAuthorInMonth(memberId, month, year))
-                            .map(tuple -> TopContributorDTO.builder()
-                                    .memberId(memberId)
-                                    .email(tuple.getT1().getEmail())
-                                    .avatarUrl(tuple.getT1().getAvatarUrl())
-                                    .postCount(tuple.getT2())
-                                    .build())
-                )
                 .collectList()
+                .flatMap(memberIds -> {
+                    if (memberIds.isEmpty()) return Mono.just(Collections.<TopContributorDTO>emptyList());
+
+                    // Batch-load users and per-author counts instead of two queries per contributor.
+                    Mono<Map<Integer, com.service.backend.shared.entity.User>> usersMapMono =
+                            adminUserRepository.findAllById(memberIds)
+                                    .collectMap(com.service.backend.shared.entity.User::getId);
+                    Mono<Map<Integer, Long>> countsMapMono =
+                            forumPostRepository.countPostsByAuthorsInMonth(memberIds, month, year)
+                                    .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+                    return Mono.zip(usersMapMono, countsMapMono)
+                            .map(tuple -> {
+                                Map<Integer, com.service.backend.shared.entity.User> users = tuple.getT1();
+                                Map<Integer, Long> counts = tuple.getT2();
+                                List<TopContributorDTO> result = new ArrayList<>();
+                                for (Integer memberId : memberIds) {
+                                    com.service.backend.shared.entity.User user = users.get(memberId);
+                                    Long count = counts.get(memberId);
+                                    // Preserve original zipWith semantics: skip when user or count is absent.
+                                    if (user == null || count == null) continue;
+                                    result.add(TopContributorDTO.builder()
+                                            .memberId(memberId)
+                                            .email(user.getEmail())
+                                            .avatarUrl(user.getAvatarUrl())
+                                            .postCount(count)
+                                            .build());
+                                }
+                                return result;
+                            });
+                })
                 .defaultIfEmpty(Collections.emptyList())
                 .doOnSuccess(result -> log.info("getTopContributors result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching top contributors for {}/{}", month, year, error));
@@ -507,23 +541,37 @@ public class AdminForumService {
 
     public Mono<List<OrganizationEngagementDTO>> getOrganizationEngagement() {
         return adminOrganizationRepository.findAll()
-                .flatMap(org -> {
-                    Mono<Long> totalMembersMono = adminOrganizationRepository
-                            .countActiveMembersByOrganization(org.getId())
-                            .defaultIfEmpty(0L);
-                    Mono<Long> activeForumUsersMono = forumPostRepository
-                            .countActiveForumUsersByOrganization(org.getId())
-                            .defaultIfEmpty(0L);
-
-                    return Mono.zip(totalMembersMono, activeForumUsersMono)
-                            .map(tuple -> OrganizationEngagementDTO.builder()
-                                    .organizationId(org.getId())
-                                    .organizationName(org.getName())
-                                    .totalMembers(tuple.getT1())
-                                    .activeForumUsers(tuple.getT2())
-                                    .build());
-                })
                 .collectList()
+                .flatMap(orgs -> {
+                    if (orgs.isEmpty()) return Mono.just(Collections.<OrganizationEngagementDTO>emptyList());
+
+                    Set<Integer> orgIds = orgs.stream()
+                            .map(org -> org.getId())
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toSet());
+
+                    // Two batch queries instead of two count queries per organization.
+                    Mono<Map<Integer, Long>> totalMembersMapMono =
+                            adminOrganizationRepository.countActiveMembersByOrganizations(orgIds)
+                                    .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+                    Mono<Map<Integer, Long>> activeForumUsersMapMono =
+                            forumPostRepository.countActiveForumUsersByOrganizations(orgIds)
+                                    .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+                    return Mono.zip(totalMembersMapMono, activeForumUsersMapMono)
+                            .map(tuple -> {
+                                Map<Integer, Long> totalMembers = tuple.getT1();
+                                Map<Integer, Long> activeForumUsers = tuple.getT2();
+                                return orgs.stream()
+                                        .map(org -> OrganizationEngagementDTO.builder()
+                                                .organizationId(org.getId())
+                                                .organizationName(org.getName())
+                                                .totalMembers(totalMembers.getOrDefault(org.getId(), 0L))
+                                                .activeForumUsers(activeForumUsers.getOrDefault(org.getId(), 0L))
+                                                .build())
+                                        .collect(Collectors.toList());
+                            });
+                })
                 .defaultIfEmpty(Collections.emptyList())
                 .doOnSuccess(result -> log.info("getOrganizationEngagement result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error fetching organization engagement rates", error));

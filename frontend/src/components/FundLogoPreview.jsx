@@ -1,30 +1,36 @@
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useMemo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import ZoomInOutlinedIcon from '@mui/icons-material/ZoomInOutlined';
-import Lightbox from 'yet-another-react-lightbox';
-import Zoom from 'yet-another-react-lightbox/plugins/zoom';
-import 'yet-another-react-lightbox/styles.css';
 import { FUND_LOGO_PREVIEW_SX } from '../utils/imageUtils';
 import { useTranslation } from 'react-i18next';
+
+// Defer the lightbox bundle (+ its CSS) until the user first opens the zoom view.
+const FundLogoLightbox = lazy(() => import('./FundLogoLightbox'));
 
 const FundLogoPreview = ({ src, alt = 'Logo preview' }) => {
   const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
 
   const slides = useMemo(() => [{ src, alt }], [src, alt]);
+
+  const handleOpen = () => {
+    setHasOpened(true);
+    setOpen(true);
+  };
 
   if (!src) return null;
 
   return (
     <>
       <Box
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
         role="button"
         tabIndex={0}
         onKeyDown={(event) => {
           if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
-            setOpen(true);
+            handleOpen();
           }
         }}
         aria-label={t('fund_logo_view_zoom')}
@@ -66,19 +72,11 @@ const FundLogoPreview = ({ src, alt = 'Logo preview' }) => {
         </Box>
       </Box>
 
-      <Lightbox
-        open={open}
-        close={() => setOpen(false)}
-        slides={slides}
-        plugins={[Zoom]}
-        zoom={{ scrollToZoom: true }}
-        carousel={{ finite: true }}
-        render={{
-          buttonPrev: () => null,
-          buttonNext: () => null,
-        }}
-        controller={{ closeOnBackdropClick: true }}
-      />
+      {hasOpened && (
+        <Suspense fallback={null}>
+          <FundLogoLightbox open={open} onClose={() => setOpen(false)} slides={slides} />
+        </Suspense>
+      )}
     </>
   );
 };
