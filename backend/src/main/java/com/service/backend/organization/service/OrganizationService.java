@@ -51,7 +51,7 @@ public class OrganizationService {
                             ));
                         }));
         })
-                .doOnError(error -> logger.error("Failed to fetch organization with id: {}", id, error));
+                .doOnError(error -> logger.error("Failed to fetch organization with id: {}", id, error.getMessage()));
     }
 
     public Mono<Organization> getOrganizationBySlug(String slug) {
@@ -70,7 +70,7 @@ public class OrganizationService {
                             ));
                         }));
         })
-                .doOnError(error -> logger.error("Failed to fetch organization with slug: {}", slug, error));
+                .doOnError(error -> logger.error("Failed to fetch organization with slug: {}", slug, error.getMessage()));
     }
 
     public Flux<Organization> getAllOrganizations() {
@@ -82,7 +82,7 @@ public class OrganizationService {
                         .doOnSuccess(list -> logger.info("Successfully retrieved all organizations"));
         })
                 .flatMapMany(Flux::fromIterable)
-                .doOnError(error -> logger.error("Failed to fetch organizations", error));
+                .doOnError(error -> logger.error("Failed to fetch organizations", error.getMessage()));
     }
 
     public Mono<OrganizationIntroductionResponse> getIntroduction(Integer orgaId) {
@@ -99,7 +99,7 @@ public class OrganizationService {
                                 .build()))
                         .doOnSuccess(r -> logger.info("getIntroduction result: {}", JsonUtils.toJson(r)));
         })
-                .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error));
+                .doOnError(error -> logger.error("Failed to fetch introduction for organization id: {}", orgaId, error.getMessage()));
     }
 
     private OrganizationIntroductionResponse toResponse(OrganizationIntroduction intro) {
@@ -129,7 +129,7 @@ public class OrganizationService {
         try {
             return JsonUtils.fromJsonToList(json, String.class);
         } catch (Exception e) {
-            logger.error("Failed to parse string list: {}", json, e);
+            logger.error("Failed to parse string list: {}", json, e.getMessage());
             return List.of();
         }
     }
@@ -153,7 +153,7 @@ public class OrganizationService {
                         .map(s -> OrgIntroductionMemberResponse.builder().name(s).build())
                         .toList();
             } catch (Exception ex) {
-                logger.error("Failed to parse member list: {}", json, ex);
+                logger.error("Failed to parse member list: {}", json, ex.getMessage());
                 return List.of();
             }
         }
@@ -175,7 +175,7 @@ public class OrganizationService {
                     return schoolFeedbackRepository.save(feedback);
                 })
                 .doOnSuccess(feedback -> logger.info("createSchoolFeedback result: {}", JsonUtils.toJson(feedback)))
-                .doOnError(error -> logger.error("Failed to create school feedback for organization id: {}", organizationId, error));
+                .doOnError(error -> logger.error("Failed to create school feedback for organization id: {}", organizationId, error.getMessage()));
     }
 
     public Flux<TrustedVerifierResponse> getTrustedVerifiers(Integer organizationId) {
@@ -186,6 +186,6 @@ public class OrganizationService {
                         .doOnSuccess(list -> logger.info("Successfully fetched trusted verifiers for organization id: {}", organizationId));
         })
                 .flatMapMany(Flux::fromIterable)
-                .doOnError(error -> logger.error("Failed to fetch trusted verifiers for organization id: {}", organizationId, error));
+                .doOnError(error -> logger.error("Failed to fetch trusted verifiers for organization id: {}", organizationId, error.getMessage()));
     }
 }
