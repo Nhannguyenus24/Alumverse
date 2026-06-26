@@ -22,11 +22,13 @@ import { useAdminSystemContext, useAdminUsersContext, useAdminForumContext } fro
 import useAdminDashboardAggregates from '../../hooks/admin/useAdminDashboardAggregates';
 import useAdminDashboardData from '../../hooks/admin/useAdminDashboardData';
 import { useAuth } from '../../hooks/useAuth';
+import { useMyProfile } from '../../hooks/profile/useMyProfile';
 
 const AdminDashboardPage = () => {
   const theme = useTheme();
   const { t } = useTranslation(['admin']);
   const { user } = useAuth();
+  const { data: profile } = useMyProfile();
   const isAdmin = user?.role === 'ADMIN';
   const { loading: systemLoading, organizations } = useAdminSystemContext();
   const { loading: dashboardLoading, metrics, timeline, reload } = useAdminDashboardData();
@@ -35,7 +37,14 @@ const AdminDashboardPage = () => {
   const { allPosts, statistics } = useAdminForumContext();
   const aggregates = useAdminDashboardAggregates(allUsers, allPosts, organizations);
   const { setBreadcrumbs } = useOutletContext();
-  const displayName = user?.fullName || user?.name || user?.studentId || 'ADMIN';
+  const displayName =
+    profile?.fullName ||
+    profile?.name ||
+    user?.fullName ||
+    user?.name ||
+    profile?.studentId ||
+    user?.studentId ||
+    'ADMIN';
 
   const INTERVALS = useMemo(() => [
     { value: '0', label: t('admin:refresh_interval_none') },

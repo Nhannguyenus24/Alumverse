@@ -244,6 +244,7 @@ const AdminHeader = ({ onMenuOpen, isSidebarCollapsed, user, onLogout, breadcrum
             }}
           >
             <Avatar
+              src={user?.avatarUrl || undefined}
               sx={{
                 width: 40,
                 height: 40,

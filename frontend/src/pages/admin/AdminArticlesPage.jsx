@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import ArticleOutlinedIcon from '@mui/icons-material/ArticleOutlined';
@@ -23,12 +24,16 @@ import WorkOutlineOutlinedIcon from '@mui/icons-material/WorkOutlineOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import { useEffect, useState } from 'react';
 import { useOutletContext } from 'react-router';
+import { useSnackbar } from 'notistack';
 import { useDebounce } from '../../hooks/useDebounce';
 import AdminDataTable from '../../components/admin/AdminDataTable';
+import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import useAdminArticles from '../../hooks/admin/useAdminArticles';
 import { useAdminSystemContext } from '../../stores/AdminStore';
 import { useOrgNavigate, useOrgPath } from '../../hooks/useOrgNavigate';
 import { formatDateTime } from '../../utils/dateFormatter';
+import apiClient from '../../utils/axios';
+import { deleteArticleByChannel } from '../../utils/articleAdminActions';
 
 const CHANNEL_OPTIONS = [
   { value: 'all', label: 'Tất cả' },
@@ -65,6 +70,7 @@ const AdminArticlesPage = () => {
   const { setBreadcrumbs } = useOutletContext();
   const navigate = useOrgNavigate();
   const toOrgPath = useOrgPath();
+  const { enqueueSnackbar } = useSnackbar();
   const { stableOrgId } = useAdminSystemContext();
   const {
     channel, setChannel,
@@ -73,10 +79,13 @@ const AdminArticlesPage = () => {
     rowsPerPage, setRowsPerPage,
     search: backendSearch, setSearch: setBackendSearch,
     sortOrder, setSortOrder,
+    refresh,
   } = useAdminArticles('all', stableOrgId);
 
   const [searchTerm, setSearchTerm] = useState(backendSearch);
   const [createAnchorEl, setCreateAnchorEl] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const debouncedSearch = useDebounce(searchTerm, 500);
 
   useEffect(() => {
@@ -96,6 +105,24 @@ const AdminArticlesPage = () => {
 
   const openEdit = (a) => openInNewTab(`/admin/article/${channelOf(a, channel)}/${idOf(a)}/edit`);
   const openView = (a) => openInNewTab(`/article/${channelOf(a, channel)}/${idOf(a)}`);
+  const openDeleteDialog = (a) => setDeleteTarget({ ...a, channel: channelOf(a, channel) });
+  const closeDeleteDialog = () => {
+    if (!deleting) setDeleteTarget(null);
+  };
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
+    try {
+      await deleteArticleByChannel(apiClient, deleteTarget);
+      enqueueSnackbar('Đã xóa bài viết.', { variant: 'success' });
+      setDeleteTarget(null);
+      refresh();
+    } catch (error) {
+      enqueueSnackbar(error?.response?.data?.message || 'Không thể xóa bài viết.', { variant: 'error' });
+    } finally {
+      setDeleting(false);
+    }
+  };
   const handleCreateArticle = (itemChannel) => {
     setCreateAnchorEl(null);
     navigate(`/post/${itemChannel}`);
@@ -201,6 +228,11 @@ const AdminArticlesPage = () => {
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  <Tooltip title="Xóa">
+                    <IconButton size="small" sx={{ color: 'error.main' }} onClick={() => openDeleteDialog(a)}>
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               ),
             },
@@ -257,6 +289,17 @@ const AdminArticlesPage = () => {
           }
         />
       )}
+      <AdminConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Xóa bài viết"
+        description={`Bạn có chắc muốn xóa bài viết "${titleOf(deleteTarget ?? {})}"? Hành động này không thể hoàn tác.`}
+        onClose={closeDeleteDialog}
+        onConfirm={handleConfirmDelete}
+        loading={deleting}
+        confirmLabel="Xóa"
+        titleColor="error.main"
+        confirmColor="error"
+      />
     </Box>
   );
 };

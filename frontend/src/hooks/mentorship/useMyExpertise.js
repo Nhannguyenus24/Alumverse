@@ -6,8 +6,9 @@ const fetchMyExpertise = async () => {
   return res?.data?.data ?? [];
 };
 
-export const useMyExpertise = () =>
+export const useMyExpertise = ({ enabled = true } = {}) =>
   useQuery({
     queryKey: ['mentorship', 'mentor', 'me', 'expertise'],
     queryFn: fetchMyExpertise,
+    enabled,
   });

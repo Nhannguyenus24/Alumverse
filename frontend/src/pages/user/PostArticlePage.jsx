@@ -5,7 +5,7 @@ import PostArticleShell from '../../components/PostArticleShell';
 import useCoverUpload from '../../hooks/useCoverUpload';
 import { useCreateNews } from '../../hooks/news/useCreateNews';
 import {
-  fileToBase64,
+  fileToCroppedCoverBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
@@ -18,7 +18,14 @@ const PostArticlePage = () => {
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
   const { createNews, isPending } = useCreateNews();
-  const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
+  const {
+    coverFile,
+    coverPreview,
+    coverCroppedPreview,
+    coverPositionY,
+    handleCoverUpload,
+    setCoverPositionY,
+  } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -38,7 +45,7 @@ const PostArticlePage = () => {
       }
     }
     try {
-      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+      const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
       const payload = {
         title: title.trim(),
         content: content.trim(),
@@ -63,6 +70,8 @@ const PostArticlePage = () => {
       pageTitle={t('page_title_news')}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
+      coverPositionY={coverPositionY}
+      onCoverPositionYChange={setCoverPositionY}
       onCancel={() => navigate(-1)}
       onSubmit={handleSubmit}
       isPending={isPending}
@@ -78,7 +87,7 @@ const PostArticlePage = () => {
         setTopic={setTopic}
         url={url}
         setUrl={setUrl}
-        mainImagePreview={coverPreview}
+        mainImagePreview={coverCroppedPreview ?? coverPreview}
       />
     </PostArticleShell>
   );

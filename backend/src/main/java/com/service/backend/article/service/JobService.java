@@ -66,7 +66,6 @@ public class JobService {
                     existing.setHowToApply(request.getHowToApply());
                     existing.setDeadline(request.getDeadline());
                     existing.setIsReferral(request.getIsReferral() != null ? request.getIsReferral() : false);
-                    if (existing.getCreatedAt() == null) existing.setCreatedAt(LocalDateTime.now());
                     return jobRepository.save(existing);
                 })
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))

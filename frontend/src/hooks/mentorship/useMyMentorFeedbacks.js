@@ -6,9 +6,10 @@ const fetchMyFeedbacks = async ({ page, limit }) => {
   return res?.data?.data ?? null;
 };
 
-export const useMyMentorFeedbacks = (page = 0, limit = 10) =>
+export const useMyMentorFeedbacks = (page = 0, limit = 10, { enabled = true } = {}) =>
   useQuery({
     queryKey: ['mentorship', 'mentor', 'me', 'feedbacks', page, limit],
     queryFn: () => fetchMyFeedbacks({ page, limit }),
     keepPreviousData: true,
+    enabled,
   });
