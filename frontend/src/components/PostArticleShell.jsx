@@ -13,6 +13,8 @@ const PostArticleShell = ({
   pageDescription,
   coverPreview,
   onCoverChange,
+  coverPositionY,
+  onCoverPositionYChange,
   onCancel,
   onSubmit,
   isPending,
@@ -30,7 +32,12 @@ const PostArticleShell = ({
       meta={<meta name="description" content={pageDescription ?? `${pageTitle} - AlumVerse`} />}
     >
       <Box sx={{ minHeight: '100vh' }}>
-        <CoverUpload value={coverPreview} onChange={onCoverChange} />
+        <CoverUpload
+          value={coverPreview}
+          onChange={onCoverChange}
+          positionY={coverPositionY}
+          onPositionYChange={onCoverPositionYChange}
+        />
 
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
           <Box

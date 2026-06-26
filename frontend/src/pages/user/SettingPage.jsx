@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   Autocomplete, Alert, Box, Card, Container, Chip, TextField, Typography, Button, MenuItem,
   FormControlLabel, Switch, Divider, Paper, FormControl, InputLabel, Select, Stack,
@@ -39,6 +40,7 @@ import { formatDateTime } from '../../utils/dateFormatter';
 import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
 import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
+import { useUploadImage } from '../../utils/imageUtils';
 
 const parseOrganizationOptions = (value) => {
   if (!value) return [];
@@ -145,6 +147,9 @@ export default function SettingPage() {
 
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const setAuthUser = useAuthStore((state) => state.setUser);
+  const queryClient = useQueryClient();
+  const { uploadBase64 } = useUploadImage();
   const avatarCrop = useAvatarCrop();
   const [isEditMode, setIsEditMode] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
@@ -281,6 +286,20 @@ export default function SettingPage() {
       };
 
       await userSettingsApi.updateProfile(payload);
+
+      if (avatarCrop.avatarUrl && avatarCrop.avatarUrl.startsWith('data:')) {
+        const avatarImageUrl = await uploadBase64(avatarCrop.avatarUrl);
+        if (avatarImageUrl) {
+          await userSettingsApi.updateAvatar(avatarImageUrl);
+          setAuthUser({
+            ...useAuthStore.getState().user,
+            avatarUrl: avatarImageUrl,
+          });
+          queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
+          queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
+        }
+      }
+
       showSuccess(t('success_save_profile'));
 
       setOriginalFormData(null);

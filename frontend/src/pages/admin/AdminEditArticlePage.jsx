@@ -14,7 +14,12 @@ import PostArticleForm from '../../components/PostArticleForm';
 import CoverUpload from '../../components/CoverUpload';
 import { useArticleById } from '../../hooks/articles/useArticleById';
 import { useUpdateArticle } from '../../hooks/articles/useUpdateArticle';
-import { fileToBase64 } from '../../utils/imageUtils';
+import {
+  fileToCroppedCoverBase64,
+  getJsonPayloadByteSize,
+  MAX_JSON_PAYLOAD_BYTES,
+  validateImageFile,
+} from '../../utils/imageUtils';
 import { useNotification } from '../../hooks/useNotification';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
@@ -48,6 +53,8 @@ const AdminEditArticlePage = () => {
   const [topic, setTopic] = useState('');
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
+  const [coverCroppedPreview, setCoverCroppedPreview] = useState(null);
+  const [coverPositionY, setCoverPositionY] = useState(50);
 
   useEffect(() => {
     if (!article) return;
@@ -58,11 +65,34 @@ const AdminEditArticlePage = () => {
     setTopic(article.topic ?? article.type ?? '');
   }, [article]);
 
+  useEffect(() => {
+    if (!coverFile) {
+      setCoverCroppedPreview(null);
+      return undefined;
+    }
+
+    let isCancelled = false;
+    const timeout = window.setTimeout(async () => {
+      try {
+        const nextPreview = await fileToCroppedCoverBase64(coverFile, coverPositionY);
+        if (!isCancelled) setCoverCroppedPreview(nextPreview);
+      } catch {
+        if (!isCancelled) setCoverCroppedPreview(coverPreview);
+      }
+    }, 80);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [coverFile, coverPositionY, coverPreview]);
+
   const handleCoverUpload = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
+    setCoverPositionY(50);
   };
 
   const handleSubmit = async () => {
@@ -70,9 +100,16 @@ const AdminEditArticlePage = () => {
       showError(t('admin:edit_article_missing_fields'));
       return;
     }
+    if (coverFile) {
+      const imageValidation = validateImageFile(coverFile);
+      if (!imageValidation.valid) {
+        showError(imageValidation.message);
+        return;
+      }
+    }
 
     try {
-      const thumbnailBase64 = coverFile ? await fileToBase64(coverFile) : null;
+      const thumbnailBase64 = coverFile ? await fileToCroppedCoverBase64(coverFile, coverPositionY) : null;
       const payload = {
         title: title.trim(),
         content: content.trim(),
@@ -80,6 +117,10 @@ const AdminEditArticlePage = () => {
         thumbnailUrl: thumbnailBase64 ? null : articleThumbnail(article),
         topic: topic || null,
       };
+      if (getJsonPayloadByteSize(payload) > MAX_JSON_PAYLOAD_BYTES) {
+        showError('Bài viết quá lớn để cập nhật. Tổng dung lượng nội dung và ảnh chính cần dưới 19MB.');
+        return;
+      }
       await updateArticle(id, payload);
       showSuccess(t('admin:edit_article_success'));
       navigate(`/article/${channel}/${id}`);
@@ -110,7 +151,12 @@ const AdminEditArticlePage = () => {
   return (
     <Page title={t('admin:edit_article_page_title')}>
       <Box sx={{ minHeight: '100vh' }}>
-        <CoverUpload value={coverPreview} onChange={handleCoverUpload} />
+        <CoverUpload
+          value={coverPreview}
+          onChange={handleCoverUpload}
+          positionY={coverPositionY}
+          onPositionYChange={setCoverPositionY}
+        />
         <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 10 }}>
           <Box
             sx={{
@@ -144,7 +190,7 @@ const AdminEditArticlePage = () => {
               setContent={setContent}
               topic={topic}
               setTopic={setTopic}
-              mainImagePreview={coverPreview}
+              mainImagePreview={coverCroppedPreview ?? coverPreview}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, mt: 3 }}>
