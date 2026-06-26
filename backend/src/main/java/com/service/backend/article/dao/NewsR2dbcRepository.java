@@ -32,6 +32,9 @@ public interface NewsR2dbcRepository extends ReactiveCrudRepository<News, Intege
     @Query("SELECT COUNT(*) FROM news WHERE organization_id = :organizationId AND is_hidden = false")
     Mono<Long> countPublishedByOrganizationId(Integer organizationId);
 
+    @Query("SELECT * FROM news WHERE is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
+    Flux<News> findPublishedWithPagination(int limit, int offset);
+
     @Query("SELECT * FROM news WHERE organization_id = :organizationId AND (LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(content) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND is_hidden = false ORDER BY published_at DESC LIMIT :limit OFFSET :offset")
     Flux<News> searchNews(Integer organizationId, String keyword, int limit, int offset);
 

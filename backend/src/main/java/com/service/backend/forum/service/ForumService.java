@@ -30,6 +30,7 @@ import com.service.backend.forum.dto.ForumPostReportDTO;
 import com.service.backend.forum.dto.ForumTopicDTO;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.enums.Status;
+import com.service.backend.shared.dto.IdCountDTO;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.utils.PaginationHelper;
 import com.service.backend.forum.dto.UpdateForumCategoryRequest;
@@ -71,10 +72,10 @@ public class ForumService {
     // Category methods
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
         String cacheKey = "forum_categories_org_" + organizationId;
-        return cacheUtils.getOrCompute("forum_category_cache", cacheKey, Duration.ofDays(1), () -> 
+        return cacheUtils.getOrCompute("forum_category_cache", cacheKey, Duration.ofDays(1), () ->
                 forumCategoryRepository.findByOrganizationId(organizationId)
-                        .flatMap(this::convertToCategoryDTOWithStats)
                         .collectList()
+                        .flatMap(this::convertCategoriesWithStats)
                         .doOnSuccess(res -> log.info("Fetched {} forum categories for organization ID: {}", res.size(), organizationId))
         )
         .flatMapMany(Flux::fromIterable)
@@ -349,7 +350,7 @@ public class ForumService {
                             if (Boolean.TRUE.equals(alreadyLiked)) {
                                 return forumPostReactionRepository.deleteByPostIdAndMemberId(
                                                 request.getPostId(), request.getMemberId())
-                                        .then(Mono.<ForumPostReaction>empty());
+                                        .then(Mono.empty());
                             }
                             log.info("Creating new like for post ID: {}, member: {}",
                                     request.getPostId(), request.getMemberId());
@@ -437,6 +438,45 @@ public class ForumService {
                     base.setTopicCount(tuple.getT1());
                     base.setParticipantCount(tuple.getT2());
                     return base;
+                });
+    }
+
+    /**
+     * Batch equivalent of the former per-category stats enrichment: gathers the topic and
+     * participant counts for all sub-categories (parentId != null) in two queries instead of
+     * two queries per category. Root categories (parentId == null) keep null counts as before.
+     */
+    private Mono<List<ForumCategoryDTO>> convertCategoriesWithStats(List<ForumCategory> categories) {
+        if (categories.isEmpty()) return Mono.just(List.of());
+
+        Set<Integer> subCategoryIds = categories.stream()
+                .filter(c -> c.getParentId() != null)
+                .map(ForumCategory::getId)
+                .collect(Collectors.toSet());
+
+        if (subCategoryIds.isEmpty()) {
+            return Mono.just(categories.stream().map(this::convertToCategoryDTO).collect(Collectors.toList()));
+        }
+
+        Mono<Map<Integer, Long>> topicCountsMono = forumTopicRepository.countByCategoryIds(subCategoryIds)
+                .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+        Mono<Map<Integer, Long>> participantCountsMono = forumTopicRepository.countDistinctParticipantsByCategoryIds(subCategoryIds)
+                .collectMap(IdCountDTO::getId, IdCountDTO::getCount);
+
+        return Mono.zip(topicCountsMono, participantCountsMono)
+                .map(tuple -> {
+                    Map<Integer, Long> topicCounts = tuple.getT1();
+                    Map<Integer, Long> participantCounts = tuple.getT2();
+                    return categories.stream()
+                            .map(category -> {
+                                ForumCategoryDTO base = convertToCategoryDTO(category);
+                                if (category.getParentId() != null) {
+                                    base.setTopicCount(topicCounts.getOrDefault(category.getId(), 0L));
+                                    base.setParticipantCount(participantCounts.getOrDefault(category.getId(), 0L));
+                                }
+                                return base;
+                            })
+                            .collect(Collectors.toList());
                 });
     }
 

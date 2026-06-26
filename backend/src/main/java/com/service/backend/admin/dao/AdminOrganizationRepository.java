@@ -6,11 +6,14 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.service.backend.shared.dto.IdCountDTO;
 import com.service.backend.shared.entity.Organization;
 import com.service.backend.shared.enums.Status;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Collection;
 
 @Repository
 public interface AdminOrganizationRepository extends R2dbcRepository<Organization, Integer> {
@@ -68,5 +71,14 @@ public interface AdminOrganizationRepository extends R2dbcRepository<Organizatio
      */
     @Query("SELECT COUNT(*) FROM organization_members WHERE organization_id = :organizationId AND status = 'ACTIVE'")
     Mono<Long> countActiveMembersByOrganization(@Param("organizationId") Integer organizationId);
+
+    /**
+     * Batch variant of {@link #countActiveMembersByOrganization}: active member counts per
+     * organization for a set of organizations in a single query.
+     */
+    @Query("SELECT organization_id as id, COUNT(*) as count FROM organization_members " +
+           "WHERE organization_id IN (:organizationIds) AND status = 'ACTIVE' " +
+           "GROUP BY organization_id")
+    Flux<IdCountDTO> countActiveMembersByOrganizations(@Param("organizationIds") Collection<Integer> organizationIds);
 }
 

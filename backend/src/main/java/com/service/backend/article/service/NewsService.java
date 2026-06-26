@@ -77,7 +77,7 @@ public class NewsService {
         return newsRepository.findById(id)
                 .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.NEWS_NOT_FOUND, "News not found with id: " + id)))
                 .flatMap(existing -> newsRepository.deleteById(id)
-                        .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))
+                        .then(cacheUtils.clear("admin_content_statistics"))
                         .thenReturn(true));
     }
 
@@ -114,11 +114,7 @@ public class NewsService {
                         newsRepository.countPublishedByOrganizationId(orgId),
                         page, limit))
                 .switchIfEmpty(Mono.defer(() -> PaginationHelper.paginate(
-                        newsRepository.findAll()
-                                .filter(n -> !n.getIsHidden())
-                                .skip(offset)
-                                .take(limit)
-                                .map(NewsResponse::from),
+                        newsRepository.findPublishedWithPagination(limit, offset).map(NewsResponse::from),
                         newsRepository.count(),
                         page, limit)));
     }

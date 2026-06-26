@@ -31,12 +31,9 @@ public class LangChain4jConfig {
             Logger log = LoggerFactory.getLogger(LangChain4jConfig.class);
             log.warn("gemini.api.key is not set — using local fallback ModerationService. Set GEMINI_API_KEY to enable Gemini moderation.");
 
-            return new ModerationService() {
-                @Override
-                public BatchModerationResponse analyzeContents(List<String> contents, String tags) {
-                    List<String> result = contents.stream().map(c -> "NORMAL").collect(Collectors.toList());
-                    return BatchModerationResponse.builder().tags(result).build();
-                }
+            return (contents, tags) -> {
+                List<String> result = contents.stream().map(c -> "NORMAL").collect(Collectors.toList());
+                return BatchModerationResponse.builder().tags(result).build();
             };
         }
 
@@ -54,12 +51,7 @@ public class LangChain4jConfig {
     @Bean
     public com.service.backend.shared.service.OcrCleanupService ocrCleanupService() {
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
-            return new com.service.backend.shared.service.OcrCleanupService() {
-                @Override
-                public String cleanOcrText(String rawText) {
-                    return rawText;
-                }
-            };
+            return rawText -> rawText;
         }
 
         GoogleAiGeminiChatModel model = GoogleAiGeminiChatModel.builder()

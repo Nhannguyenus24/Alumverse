@@ -22,11 +22,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +35,13 @@ public class EventService {
     private final NotificationService notificationService;
     private final OrganizationRepository organizationRepository;
     private final CacheUtils cacheUtils;
+
+    /**
+     * Concurrency bound for bulk email loops. flatMap defaults to 256 in-flight subscriptions,
+     * which can overwhelm the SMTP server and the shared boundedElastic pool when blasting many
+     * recipients. Bounding it keeps the same set of emails/result while using fewer resources.
+     */
+    private static final int BULK_EMAIL_CONCURRENCY = 8;
 
     // ─── Event CRUD ───────────────────────────────────────────────────────────
 
@@ -202,7 +205,7 @@ public class EventService {
                                             .flatMap(inv -> sendInvitationEmail(event, inv)
                                                     .then(notifyInvitation(event, inv)))
                                             .thenReturn(1);
-                                })
+                                }, BULK_EMAIL_CONCURRENCY)
                                 .reduce(0, Integer::sum)));
     }
 
@@ -307,7 +310,7 @@ public class EventService {
                         } else if (question.getType() == QuestionType.MULTI_CHOICE) {
                             List<String> selected = toStringList(value);
                             if (selected.isEmpty() || question.getOptions() == null
-                                    || !question.getOptions().containsAll(selected)) {
+                                    || !new HashSet<>(question.getOptions()).containsAll(selected)) {
                                 return Mono.error(new ApplicationException(ErrorCode.EVENT_REGISTRATION_ANSWER_INVALID,
                                         "Invalid options for: " + question.getLabel()));
                             }
@@ -341,7 +344,6 @@ public class EventService {
         return true;
     }
 
-    @SuppressWarnings("unchecked")
     private List<String> toStringList(Object value) {
         if (value instanceof List<?> list) {
             List<String> result = new ArrayList<>();
@@ -397,7 +399,7 @@ public class EventService {
                         }));
     }
 
-    public Mono<Integer> bulkApproveTickets(Long eventId, BulkApproveRequest request) {
+    public Mono<Integer> bulkApproveTickets(BulkApproveRequest request) {
         return SecurityUtils.getCurrentUserId().flatMap(adminId ->
                 Flux.fromIterable(request.getTicketIds())
                         .flatMap(ticketId -> eventRepository.approveTicket(ticketId, adminId)
@@ -434,7 +436,7 @@ public class EventService {
                                         return emailService.sendHtmlEmail(ticket.getGuestEmail(), request.getSubject(), "eventReminder", vars)
                                                 .thenReturn(1)
                                                 .onErrorReturn(0);
-                                    })
+                                    }, BULK_EMAIL_CONCURRENCY)
                                     .reduce(0, Integer::sum)
                                     .flatMap(count -> {
                                         EventEmailLog log = EventEmailLog.builder()
@@ -459,7 +461,7 @@ public class EventService {
                                 .filter(t -> t.getGuestEmail() != null && !t.getGuestEmail().isBlank())
                                 .flatMap(ticket -> sendTicketEmail(event, ticket)
                                         .thenReturn(1)
-                                        .onErrorReturn(0))
+                                        .onErrorReturn(0), BULK_EMAIL_CONCURRENCY)
                                 .reduce(0, Integer::sum)
                                 .flatMap(count -> {
                                     EventEmailLog log = EventEmailLog.builder()
@@ -514,17 +516,6 @@ public class EventService {
                 });
     }
 
-    public Mono<EventTicket> checkInTicketForEvent(Long eventId, String ticketCode) {
-        return eventRepository.findTicketByCode(ticketCode)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.TICKET_NOT_FOUND, "Ticket not found")))
-                .flatMap(ticket -> {
-                    if (!eventId.equals(ticket.getEventId())) {
-                        return Mono.error(new ApplicationException(ErrorCode.TICKET_WRONG_EVENT, "Ticket does not belong to this event"));
-                    }
-                    return checkInTicket(ticketCode);
-                });
-    }
-
     // ─── Step 7: Expire tickets after event ───────────────────────────────────
 
     public Mono<Integer> expireTickets(Long eventId) {
@@ -563,14 +554,6 @@ public class EventService {
         return status != null
                 ? eventRepository.findTicketsByEventAndStatus(eventId, status, page, limit)
                 : eventRepository.findTicketsByEvent(eventId, page, limit);
-    }
-
-    public Mono<PaginatedResponse<EventTicket>> getTicketsByEvent(Long eventId, int page, int limit) {
-        return getTicketsByEvent(eventId, null, null, page, limit);
-    }
-
-    public Mono<PaginatedResponse<EventTicket>> getTicketsByEventAndStatus(Long eventId, String status, int page, int limit) {
-        return getTicketsByEvent(eventId, status, null, page, limit);
     }
 
     public Mono<PaginatedResponse<EventTicket>> getMyTickets(int page, int limit) {

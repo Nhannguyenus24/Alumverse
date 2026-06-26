@@ -217,7 +217,7 @@ public class EventController {
     public Mono<ResponseEntity<ApiResponse<Integer>>> bulkApproveTickets(
             @Parameter(example = "1") @PathVariable @Min(1) Long eventId,
             @Valid @RequestBody BulkApproveRequest request) {
-        return eventService.bulkApproveTickets(eventId, request)
+        return eventService.bulkApproveTickets(request)
                 .map(count -> ResponseEntity.ok(new ApiResponse<>("Approved " + count + " tickets", count)));
     }
 

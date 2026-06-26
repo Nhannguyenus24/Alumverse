@@ -5,6 +5,8 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
+import lombok.Getter;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -16,6 +18,7 @@ import java.time.Duration;
 
 @Component
 public class RateLimitingFilter implements WebFilter {
+    @Getter
     private enum RateLimitPlan {
         AUTH(5, Duration.ofMinutes(1)),      // Các API nhạy cảm: 5 requests / phút
         UPLOAD(5, Duration.ofMinutes(1)),   // Các API upload file: 5 requests / phút
@@ -28,7 +31,6 @@ public class RateLimitingFilter implements WebFilter {
             this.limit = Bandwidth.classic(capacity, refill);
         }
 
-        public Bandwidth getLimit() { return limit; }
     }
 
     // Cache lưu trữ Bucket theo key: "IP_ADDRESS:PLAN_NAME"
@@ -38,7 +40,7 @@ public class RateLimitingFilter implements WebFilter {
             .build();
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+    public @NonNull Mono<Void> filter(ServerWebExchange exchange, @NonNull WebFilterChain chain) {
         String path = exchange.getRequest().getPath().value();
         
         if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/actuator")) {
