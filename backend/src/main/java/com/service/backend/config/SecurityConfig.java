@@ -69,12 +69,6 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .pathMatchers(PUBLIC_URLS).permitAll()
                         .pathMatchers(publicEndpointConfig.getAnnotatedPublicUrlsArray()).permitAll()
-                        // Organization management is global-admin only; STAFF are scoped to their own org
-                        .pathMatchers("/api/admin/organizations/**").hasRole("ADMIN")
-                        // Creating admin accounts requires global ADMIN
-                        .pathMatchers(HttpMethod.POST, "/api/admin/users/admins").hasRole("ADMIN")
-                        // All other admin endpoints allow ADMIN or STAFF (org-scoping enforced in controllers)
-                        .pathMatchers("/api/admin/**").hasAnyRole("ADMIN", "STAFF")
                         .anyExchange().authenticated());
 
         return http.build();
