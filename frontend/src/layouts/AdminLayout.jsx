@@ -10,6 +10,7 @@ import useAdminForumData from '../hooks/admin/useAdminForumData';
 import { AdminProvider } from '../stores/AdminStore';
 import useOrganizationStore from '../stores/organizationStore';
 import { useAuth } from '../hooks/useAuth';
+import { useMyProfile } from '../hooks/profile/useMyProfile';
 import Page from '../components/Page';
 
 const HEADER_HEIGHT = 88;
@@ -29,6 +30,26 @@ const AdminLayoutShell = () => {
   const adminBase = slug ? `/${slug}/admin` : '/admin';
 
   const { user, logout } = useAuth();
+  const profileQuery = useMyProfile();
+  const profile = profileQuery.data;
+  const headerUser = useMemo(() => {
+    if (!user) return profile ?? null;
+    if (!profile) return user;
+
+    return {
+      ...user,
+      fullName: profile.fullName ?? profile.name ?? user.fullName,
+      studentId: profile.studentId ?? user.studentId,
+      email: profile.email ?? user.email,
+      avatarUrl:
+        profile.avatarUrl ??
+        profile.avatar_url ??
+        profile.avatar ??
+        profile.imageUrl ??
+        profile.image ??
+        user.avatarUrl,
+    };
+  }, [profile, user]);
 
   const currentSidebarWidth = isSidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
@@ -78,7 +99,7 @@ const AdminLayoutShell = () => {
         <AdminHeader
           onMenuOpen={() => setMobileOpen(true)}
           isSidebarCollapsed={isSidebarCollapsed}
-          user={user}
+          user={headerUser}
           onLogout={logout}
           breadcrumbs={breadcrumbs}
         />

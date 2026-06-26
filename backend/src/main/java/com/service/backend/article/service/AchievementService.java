@@ -60,11 +60,6 @@ public class AchievementService {
                             existing.setTitle(request.getTitle());
                             existing.setDescription(request.getDescription());
                             existing.setImageUrl(imageUrl.isEmpty() ? existing.getImageUrl() : imageUrl);
-                            if (request.getAwardedDate() != null) {
-                                existing.setAwardedDate(request.getAwardedDate());
-                            } else if (existing.getAwardedDate() == null) {
-                                existing.setAwardedDate(LocalDate.now());
-                            }
                             if (request.getStatus() != null) existing.setStatus(request.getStatus());
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             return achievementRepository.save(existing);

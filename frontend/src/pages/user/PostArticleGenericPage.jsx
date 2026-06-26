@@ -9,7 +9,7 @@ import { useCreateAchievement } from '../../hooks/news/useCreateAchievement';
 import { useCreateJob } from '../../hooks/news/useCreateJob';
 import { useCreateLearningResource } from '../../hooks/news/useCreateLearningResource';
 import {
-  fileToBase64,
+  fileToCroppedCoverBase64,
   getJsonPayloadByteSize,
   MAX_JSON_PAYLOAD_BYTES,
   validateImageFile,
@@ -147,7 +147,14 @@ const PostArticleGenericPage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('article');
   const { showSuccess, showError } = useNotification();
-  const { coverFile, coverPreview, handleCoverUpload } = useCoverUpload();
+  const {
+    coverFile,
+    coverPreview,
+    coverCroppedPreview,
+    coverPositionY,
+    handleCoverUpload,
+    setCoverPositionY,
+  } = useCoverUpload();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -184,7 +191,9 @@ const PostArticleGenericPage = () => {
       }
     }
     try {
-      const imageBase64 = config.useBase64 && coverFile ? await fileToBase64(coverFile) : undefined;
+      const imageBase64 = config.useBase64 && coverFile
+        ? await fileToCroppedCoverBase64(coverFile, coverPositionY)
+        : undefined;
       const payload = config.buildPayload({
         title: title.trim(),
         content: content.trim(),
@@ -214,6 +223,8 @@ const PostArticleGenericPage = () => {
       pageTitle={t(config.pageTitleKey)}
       coverPreview={coverPreview}
       onCoverChange={handleCoverUpload}
+      coverPositionY={coverPositionY}
+      onCoverPositionYChange={setCoverPositionY}
       onCancel={() => navigate(-1)}
       onSubmit={handleSubmit}
       isPending={isPending}
@@ -229,7 +240,7 @@ const PostArticleGenericPage = () => {
         setTopic={setTopic}
         url={url}
         setUrl={setUrl}
-        mainImagePreview={coverPreview}
+        mainImagePreview={coverCroppedPreview ?? coverPreview}
       />
     </PostArticleShell>
   );

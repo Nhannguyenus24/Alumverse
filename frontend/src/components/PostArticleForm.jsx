@@ -337,9 +337,10 @@ const PostArticleForm = ({
             src={mainImagePreview}
             alt={title || 'Main photo preview'}
             sx={{
-              width: { xs: '100%', md: '72%' },
-              aspectRatio: '16 / 10',
-              objectFit: 'cover',
+              width: 'auto',
+              maxWidth: { xs: '100%', md: '72%' },
+              height: 'auto',
+              objectFit: 'contain',
               borderRadius: 2,
               boxShadow: '0 2px 12px rgba(0,0,0,0.12)',
             }}

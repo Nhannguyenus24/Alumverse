@@ -2,10 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import apiClient from '../../utils/axios';
 import { saveMentorProfileDraft } from '../../utils/api';
 import { fileToBase64 } from '../../utils/imageUtils';
+import useAuthStore from '../../stores/authStore';
 
-const uploadImageIfPresent = async (file) => {
-  if (!file) return null;
-  const base64 = await fileToBase64(file);
+const uploadImageIfPresent = async (image) => {
+  if (!image) return null;
+  const base64 = typeof image === 'string' && image.startsWith('data:')
+    ? image
+    : await fileToBase64(image);
   const res = await apiClient.post('/images/upload', { base64String: base64 });
   return res?.data?.data ?? null;
 };
@@ -39,7 +42,15 @@ export const useSaveMentorDraft = () => {
 
   const mutation = useMutation({
     mutationFn: submitDraft,
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data?.avatarUrl) {
+        useAuthStore.getState().setUser({
+          ...useAuthStore.getState().user,
+          avatarUrl: data.avatarUrl,
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['user', 'me', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['publicProfile'] });
       queryClient.invalidateQueries({ queryKey: ['mentorship', 'mentor', 'me', 'profile'] });
     },
   });

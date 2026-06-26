@@ -317,9 +317,10 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const orgMemberQuery = useMyOrganizationMember();
 
   const mentorQuery = useMyMentorProfile();
-  const menteeQuery = useMyMenteeProfile();
-  const expertiseQuery = useMyExpertise();
-  const feedbacksQuery = useMyMentorFeedbacks(0, 50);
+  const access = useMentorshipAccessState();
+  const menteeQuery = useMyMenteeProfile({ enabled: access.canUseMentorship });
+  const expertiseQuery = useMyExpertise({ enabled: access.hasMentorProfile });
+  const feedbacksQuery = useMyMentorFeedbacks(0, 50, { enabled: access.hasMentorProfile });
 
   const [feedbackPage, setFeedbackPage] = useState(1);
 
@@ -330,13 +331,13 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const expertise = useMemo(() => expertiseQuery.data ?? [], [expertiseQuery.data]);
   const feedbacks = useMemo(() => feedbacksQuery.data?.items ?? [], [feedbacksQuery.data]);
 
-  const access = useMentorshipAccessState();
+  const shouldUseMentorDisplayData = isMentorshipPath || mentor?.status === 'APPROVED';
   // Derived user details
-  const coverUrl = mentor?.coverUrl || profile?.coverUrl || DEFAULT_COVER;
-  const currentJobTitle = mentor?.currentJobTitle || profile?.currentJobTitle;
-  const currentCompany = mentor?.currentCompany || profile?.currentCompany;
-  const bio = mentor?.bio || profile?.bio;
-  const extendedProfile = mentor?.extendedProfile || profile?.extendedProfile;
+  const coverUrl = (shouldUseMentorDisplayData ? mentor?.coverUrl : null) || profile?.coverUrl || DEFAULT_COVER;
+  const currentJobTitle = (shouldUseMentorDisplayData ? mentor?.currentJobTitle : null) || profile?.currentJobTitle;
+  const currentCompany = (shouldUseMentorDisplayData ? mentor?.currentCompany : null) || profile?.currentCompany;
+  const bio = (shouldUseMentorDisplayData ? mentor?.bio : null) || profile?.bio;
+  const extendedProfile = (shouldUseMentorDisplayData ? mentor?.extendedProfile : null) || profile?.extendedProfile;
 
   const user = {
     name: profile?.fullName ?? t('profile:my_account'),
@@ -348,6 +349,28 @@ const OwnProfile = ({ navigate, isMentorshipPath }) => {
   const tabs = isMentorshipPath
     ? (access.hasMentorProfile ? getMentorProfileTabs(t) : (access.hasMenteeProfile ? getMenteeProfileTabs(t) : []))
     : [];
+
+  if (profileQuery.isLoading || orgMemberQuery.isLoading || (isMentorshipPath && access.isLoading)) {
+    return (
+      <Page title={t('profile:page_title_profile')}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress />
+        </Box>
+      </Page>
+    );
+  }
+
+  if (profileQuery.isError || !profile) {
+    return (
+      <Page title={t('profile:page_title_profile')}>
+        <Box sx={{ maxWidth: 720, mx: 'auto', py: 6, px: 2 }}>
+          <Alert severity="error" sx={{ borderRadius: 2 }}>
+            {t('profile:error_load_profile', { defaultValue: 'Không thể tải thông tin hồ sơ. Vui lòng thử lại.' })}
+          </Alert>
+        </Box>
+      </Page>
+    );
+  }
 
   const renderPersonalSection = () => {
     const personalFields = [
