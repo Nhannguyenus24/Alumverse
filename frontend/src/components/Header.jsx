@@ -142,8 +142,8 @@ const Header = () => {
     : (isAdmin ? 'primary.contrastText' : 'text.primary');
 
   const navButtonSx = useMemo(() => ({
-    color: headerTextColor, fontWeight: 600, fontSize: '0.9375rem',
-    textTransform: 'none', px: 1.5, transition: 'all 0.3s ease',
+    color: headerTextColor, fontWeight: 600, fontSize: { xs: '0.875rem', xl: '0.9375rem' },
+    textTransform: 'none', px: { xs: 1, xl: 1.5 }, transition: 'all 0.3s ease',
     position: 'relative',
     borderRadius: 1,
     '&:hover': {
@@ -207,8 +207,10 @@ const Header = () => {
           </Box>
 
           {isDesktop && (
-            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                       display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
+            <Box sx={{ 
+              display: 'flex', alignItems: 'center', gap: { xs: 0.5, xl: 1 }, whiteSpace: 'nowrap', 
+              zIndex: 5, flex: 1, justifyContent: 'center' 
+            }}>
               {navItems.map((item) => {
                 const isLocked = item.requiresAuth && !isAuthenticated;
                 const isActive = getNavActive(item);

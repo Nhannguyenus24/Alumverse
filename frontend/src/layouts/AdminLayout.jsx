@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Outlet, useParams, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Box, useTheme, alpha } from '@mui/material';
@@ -22,6 +22,8 @@ const AdminLayoutShell = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState(null);
   const theme = useTheme();
+  
+  const outletContext = useMemo(() => ({ setBreadcrumbs }), []);
 
   const { slug } = useParams();
   const adminBase = slug ? `/${slug}/admin` : '/admin';
@@ -93,7 +95,7 @@ const AdminLayoutShell = () => {
           }}
         >
           <Box>
-            <Outlet context={{ setBreadcrumbs }} />
+            <Outlet context={outletContext} />
           </Box>
         </Box>
       </Box>
