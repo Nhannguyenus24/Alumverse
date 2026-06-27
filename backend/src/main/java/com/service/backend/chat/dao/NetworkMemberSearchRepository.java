@@ -23,7 +23,6 @@ public interface NetworkMemberSearchRepository
     String SEARCH_FROM_JOIN = """
             FROM organization_members om
             INNER JOIN users u ON u.id = om.user_id
-            LEFT JOIN global_profiles gp ON gp.user_id = u.id
             """;
 
     String SEARCH_WHERE = """
@@ -35,7 +34,7 @@ public interface NetworkMemberSearchRepository
                 WHERE (ub.blocker_member_id = :currentUserId AND ub.blocked_member_id = u.id)
                    OR (ub.blocker_member_id = u.id AND ub.blocked_member_id = :currentUserId)
               )
-              AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
+              AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName))
               AND (:program IS NULL OR EXISTS (
                     SELECT 1 FROM jsonb_array_elements_text(om.program) AS elem(val)
                     WHERE val ILIKE :program))
@@ -51,7 +50,7 @@ public interface NetworkMemberSearchRepository
             SELECT * FROM (
                 SELECT DISTINCT ON (om.user_id)
                        om.user_id AS user_id,
-                       gp.full_name AS full_name,
+                       u.full_name AS full_name,
                        CAST(om.program AS text) AS program,
                        CAST(om.major AS text) AS major,
                        u.avatar_url AS avatar_url

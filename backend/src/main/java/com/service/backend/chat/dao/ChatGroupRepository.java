@@ -37,7 +37,7 @@ public interface ChatGroupRepository extends ReactiveCrudRepository<ChatGroup, L
                 cg.created_at AS created_at,
                 cg.updated_at AS updated_at,
                 peer_cgm.member_id AS peer_member_id,
-                gp.full_name AS peer_full_name,
+                u.full_name AS peer_full_name,
                 u.avatar_url AS peer_avatar_url,
                 lm.content AS last_message_preview,
                 lm.created_at AS last_message_at,
@@ -54,7 +54,6 @@ public interface ChatGroupRepository extends ReactiveCrudRepository<ChatGroup, L
             LEFT JOIN chat_group_members peer_cgm
                 ON peer_cgm.group_id = cg.id AND peer_cgm.member_id <> :memberId
             LEFT JOIN users u ON u.id = peer_cgm.member_id
-            LEFT JOIN global_profiles gp ON gp.user_id = peer_cgm.member_id
             LEFT JOIN LATERAL (
                 SELECT content, created_at
                 FROM chat_messages
@@ -64,7 +63,7 @@ public interface ChatGroupRepository extends ReactiveCrudRepository<ChatGroup, L
             ) lm ON true
             WHERE my_cgm.member_id = :memberId
               AND cg.type = 'PRIVATE'
-              AND (:text IS NULL OR :text = '' OR LOWER(gp.full_name) LIKE '%' || LOWER(:text) || '%')
+              AND (:text IS NULL OR :text = '' OR LOWER(u.full_name) LIKE '%' || LOWER(:text) || '%')
             ORDER BY COALESCE(lm.created_at, cg.updated_at) DESC
             LIMIT :limit OFFSET :offset
             """)
@@ -76,7 +75,7 @@ public interface ChatGroupRepository extends ReactiveCrudRepository<ChatGroup, L
             JOIN chat_groups cg ON cg.id = my_cgm.group_id
             LEFT JOIN chat_group_members peer_cgm
                 ON peer_cgm.group_id = cg.id AND peer_cgm.member_id <> :memberId
-            LEFT JOIN global_profiles gp ON gp.user_id = peer_cgm.member_id
+            LEFT JOIN users gp ON gp.id = peer_cgm.member_id
             WHERE my_cgm.member_id = :memberId
               AND cg.type = 'PRIVATE'
               AND (:text IS NULL OR :text = '' OR LOWER(gp.full_name) LIKE '%' || LOWER(:text) || '%')

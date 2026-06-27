@@ -42,7 +42,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "LEFT JOIN mentor_expertise me ON mp.member_id = me.mentor_member_id " +
             "LEFT JOIN mentor_availabilities ma ON mp.member_id = ma.mentor_member_id " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
@@ -64,7 +64,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
             "LEFT JOIN mentor_expertise me ON mp.member_id = me.mentor_member_id " +
             "LEFT JOIN mentor_availabilities ma ON mp.member_id = ma.mentor_member_id " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
             "AND (:search IS NULL OR LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :search, '%')) " +
@@ -82,7 +82,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     @Query("SELECT DISTINCT mp.* FROM mentor_profiles mp " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
@@ -93,7 +93,7 @@ public interface MentorProfileR2dbcRepository extends ReactiveCrudRepository<Men
 
     @Query("SELECT COUNT(DISTINCT mp.member_id) FROM mentor_profiles mp " +
             "LEFT JOIN organization_members om ON mp.member_id = om.user_id " +
-            "LEFT JOIN global_profiles gp ON om.user_id = gp.user_id " +
+            "LEFT JOIN users gp ON gp.id = om.user_id " +
             "WHERE mp.status = 'APPROVED' " +
             "AND (LOWER(mp.current_job_title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
             "     OR LOWER(mp.current_company) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

@@ -121,11 +121,11 @@ public interface AuthRepository extends R2dbcRepository<User, Integer> {
     Flux<Integer> getOrganizationIdByUserId(@Param("userId") Integer userId);
 
     /**
-     * Create global profile for a newly registered user
+     * Set the display name for a newly registered user.
+     * (Profile fields now live on the users table.)
      */
     @Modifying
-    @Query("INSERT INTO global_profiles (user_id, full_name, updated_at) " +
-           "VALUES (:userId, :fullName, CURRENT_TIMESTAMP)")
+    @Query("UPDATE users SET full_name = :fullName, updated_at = CURRENT_TIMESTAMP WHERE id = :userId")
     Mono<Void> createGlobalProfile(@Param("userId") Integer userId, @Param("fullName") String fullName);
 
     /**

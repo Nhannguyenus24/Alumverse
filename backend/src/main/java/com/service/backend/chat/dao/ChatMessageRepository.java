@@ -31,11 +31,10 @@ public interface ChatMessageRepository extends ReactiveCrudRepository<ChatMessag
                    cm.created_at,
                    cm.edited_at,
                    cm.deleted_at,
-                   gp.full_name   AS sender_full_name,
+                   u.full_name    AS sender_full_name,
                    u.avatar_url   AS sender_avatar_url
             FROM chat_messages cm
             LEFT JOIN users u ON u.id = cm.sender_member_id
-            LEFT JOIN global_profiles gp ON gp.user_id = cm.sender_member_id
             WHERE cm.group_id = :groupId
             ORDER BY cm.created_at DESC
             LIMIT :limit OFFSET :offset
