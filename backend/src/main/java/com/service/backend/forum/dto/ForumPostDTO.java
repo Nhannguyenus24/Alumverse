@@ -15,6 +15,8 @@ public class ForumPostDTO {
     private Integer id;
     private Integer topicId;
     private Integer authorMemberId;
+    private String authorName;
+    private String authorAvatarUrl;
     private String topicTitle;
     private String categoryName;
     private Long flagsCount;

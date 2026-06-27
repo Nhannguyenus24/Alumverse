@@ -42,4 +42,10 @@ public interface ForumPostReportRepository extends R2dbcRepository<ForumPostRepo
            "WHERE ft.organization_id = :organizationId AND fpr.status = :status")
     Mono<Long> countByOrganizationAndStatus(@Param("organizationId") Integer organizationId,
                                              @Param("status") Status status);
+
+    /**
+     * Delete all reports for posts belonging to a topic (used when cascade-deleting a topic).
+     */
+    @Query("DELETE FROM forum_post_reports WHERE post_id IN (SELECT id FROM forum_posts WHERE topic_id = :topicId)")
+    Mono<Void> deleteByTopicId(@Param("topicId") Integer topicId);
 }
