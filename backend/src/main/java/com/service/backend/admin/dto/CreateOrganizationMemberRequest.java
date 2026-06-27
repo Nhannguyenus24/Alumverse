@@ -42,7 +42,10 @@ public class CreateOrganizationMemberRequest {
     @Builder.Default
     @Min(value = 0, message = "Verification level must be at least 0")
     private Integer verificationLevel = 0;
-    
+
+    @Builder.Default
+    private Boolean isTrustedVerifier = false;
+
     @Builder.Default
     private String status = "ACTIVE";
 }

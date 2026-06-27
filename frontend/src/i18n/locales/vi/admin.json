@@ -14,11 +14,17 @@
     "inactive": "Không hoạt động"
   },
   "role": {
-    "admin": "Quản trị viên",
-    "alumni": "Cựu sinh viên",
-    "student": "Sinh viên",
-    "lecturer": "Giảng viên"
+    "ADMIN": "Quản trị viên",
+    "USER": "Người dùng",
+    "STAFF": "Cán bộ"
   },
+  "verification_level": {
+    "0": "Chưa xác thực",
+    "1": "Đã yêu cầu",
+    "2": "Đã xác thực",
+    "3": "Học sinh"
+  },
+  "trusted_verifier_label": "Người xác minh tin cậy",
   "ban_user": "Chặn người dùng",
   "unban_user": "Bỏ chặn người dùng",
   "ban_reason": "Lý do chặn",

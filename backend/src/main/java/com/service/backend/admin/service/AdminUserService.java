@@ -111,8 +111,10 @@ public class AdminUserService {
                                                   String password,
                                                   List<Integer> graduatedYear, List<String> graduationStatus,
                                                   List<String> program, List<String> major,
-                                                  Integer verificationLevel, String status) {
+                                                  Integer verificationLevel, Boolean isTrustedVerifier,
+                                                  String status) {
         String upperStatus = status == null ? "ACTIVE" : status.toUpperCase();
+        boolean trustedVerifier = isTrustedVerifier != null && isTrustedVerifier;
         String graduatedYearJson = JsonUtils.toJson(graduatedYear);
         String graduationStatusJson = JsonUtils.toJson(graduationStatus);
         String programJson = JsonUtils.toJson(program);
@@ -153,12 +155,12 @@ public class AdminUserService {
                         if (exists) {
                             return Mono.error(new ApplicationException(ErrorCode.EMAIL_ALREADY_EXISTS));
                         }
-                        UserRole userRole = UserRole.ALUMNI;
+                        UserRole userRole = UserRole.USER;
                         if (StringUtils.hasText(role)) {
                             try {
                                 userRole = UserRole.valueOf(role.toUpperCase());
                             } catch (IllegalArgumentException e) {
-                                logger.warn("Invalid role provided for new user: {}, defaulting to ALUMNI", role);
+                                logger.warn("Invalid role provided for new user: {}, defaulting to USER", role);
                             }
                         }
                         String finalPassword = StringUtils.hasText(password) ? password : "Alumni2026@";
@@ -197,6 +199,7 @@ public class AdminUserService {
                         programJson,
                         majorJson,
                         verificationLevel,
+                        trustedVerifier,
                         upperStatus)
                     : adminUserRepository.createOrganizationMember(
                         organizationId,
@@ -207,6 +210,7 @@ public class AdminUserService {
                         programJson,
                         majorJson,
                         verificationLevel,
+                        trustedVerifier,
                         upperStatus))
                 .map(count -> count > 0)
                 .doOnSuccess(success -> logger.info("createOrganizationMember: userId={}, organizationId={}, success={}", actualUserId, organizationId, success))
@@ -258,6 +262,7 @@ public class AdminUserService {
                             programList,
                             majorList,
                             entry.getVerificationLevel() != null ? entry.getVerificationLevel() : 0,
+                            entry.getIsTrustedVerifier() != null ? entry.getIsTrustedVerifier() : false,
                             entry.getStatus())
                             .map(success -> BulkImportResult.RowResult.builder()
                                     .rowIndex(rowIndex)

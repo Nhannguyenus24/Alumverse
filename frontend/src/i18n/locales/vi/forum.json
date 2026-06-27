@@ -106,6 +106,7 @@
   "error_unknown_author": "Không xác định được người tạo chủ đề.",
   "warn_select_valid_sub_topic": "Vui lòng chọn chủ đề phụ hợp lệ.",
   "warn_unknown_org": "Không xác định được tổ chức hiện tại. Vui lòng thử tải lại trang.",
+  "warn_alumni_verification_required": "Bạn cần xác minh là cựu sinh viên (mức xác minh 2) để đăng bài trong diễn đàn cựu sinh viên.",
   "error_create_topic_failed": "Tạo chủ đề thất bại.",
   "success_create_topic": "Tạo chủ đề thành công.",
   "page_title_alumni_career": "Diễn đàn - Cựu sinh viên",

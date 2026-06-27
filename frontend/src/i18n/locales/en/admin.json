@@ -14,11 +14,17 @@
     "inactive": "Inactive"
   },
   "role": {
-    "admin": "Admin",
-    "alumni": "Alumni",
-    "student": "Student",
-    "lecturer": "Lecturer"
+    "ADMIN": "Admin",
+    "USER": "User",
+    "STAFF": "Staff"
   },
+  "verification_level": {
+    "0": "Unverified",
+    "1": "Requested",
+    "2": "Verified",
+    "3": "Student"
+  },
+  "trusted_verifier_label": "Trusted verifier",
   "ban_user": "Ban user",
   "unban_user": "Unban user",
   "ban_reason": "Ban reason",
