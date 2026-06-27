@@ -438,6 +438,7 @@ CREATE TABLE "forum_categories" (
   "organization_id" integer,
   "name" text,
   "description" text,
+  "status" text DEFAULT 'ACTIVE',  -- ACTIVE: visible publicly, INACTIVE: hidden, PENDING: awaiting admin approval
   "created_at" timestamp,
   "updated_at" timestamp
 );
@@ -447,9 +448,9 @@ CREATE TABLE "forum_topics" (
   "organization_id" integer,
   "title" text,
   "created_by_member_id" integer,
-  "category_id" integer, 
+  "category_id" integer,
   "view_count" integer DEFAULT 0,
-  "is_locked" boolean DEFAULT false,
+  "status" text DEFAULT 'ACTIVE',  -- PENDING: awaiting admin approval (user-created), ACTIVE: visible publicly, INACTIVE: hidden
   "created_at" timestamp,
   "updated_at" timestamp
 );

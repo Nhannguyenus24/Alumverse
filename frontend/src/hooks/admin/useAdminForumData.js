@@ -460,9 +460,9 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     }
   }, [loadBannedPosts, loadYesterdayPosts, loadReports, loadAllPosts]);
 
-  const handleUpdateTopicLock = useCallback(async (topicId, locked, adminUserId) => {
+  const handleUpdateTopicStatus = useCallback(async (topicId, status) => {
     try {
-      await api.updateTopicLock(topicId, { locked, adminUserId });
+      await api.updateTopicStatus(topicId, status);
       if (activeOrgId) {
         await loadTopics(activeOrgId);
       }
@@ -471,6 +471,31 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
       return false;
     }
   }, [activeOrgId, loadTopics]);
+
+  const handleUpdateCategoryStatus = useCallback(async (categoryId, status) => {
+    try {
+      await api.updateCategoryStatus(categoryId, status);
+      if (activeOrgId) {
+        await loadCategories(activeOrgId);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }, [activeOrgId, loadCategories]);
+
+  // Stable composite setters: reset the page when the keyword changes, without
+  // changing identity across renders (otherwise effects depending on them would
+  // re-run on every page change and snap the table back to the first page).
+  const setPostsSearchAndResetPage = useCallback((kw) => {
+    setPostsSearch(kw);
+    setPostsPage(0);
+  }, []);
+
+  const setTopicsSearchAndResetPage = useCallback((kw) => {
+    setTopicsSearch(kw);
+    setTopicsPage(0);
+  }, []);
 
   const updatePostStatus = useCallback(
     async (postId, status) => {
@@ -545,7 +570,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     posts,
     postsSearch,
     // setPostsSearch resets page to 0 to prevent stale-page bugs
-    setPostsSearch: (kw) => { setPostsSearch(kw); setPostsPage(0); },
+    setPostsSearch: setPostsSearchAndResetPage,
     statusFilter,
     setStatusFilter,
     organizationFilter,
@@ -562,7 +587,7 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     topics,
     topicsSearch,
     // setTopicsSearch resets page to 0 to prevent stale-page bugs
-    setTopicsSearch: (kw) => { setTopicsSearch(kw); setTopicsPage(0); },
+    setTopicsSearch: setTopicsSearchAndResetPage,
     topicsPage,
     setTopicsPage,
     topicsSize,
@@ -582,7 +607,8 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     deleteTopic: handleDeleteTopic,
     reviewReport: handleReviewReport,
     updatePostVisibility: handleUpdatePostVisibility,
-    updateTopicLock: handleUpdateTopicLock,
+    updateTopicStatus: handleUpdateTopicStatus,
+    updateCategoryStatus: handleUpdateCategoryStatus,
 
     // Reload
     reloadStatistics: loadStatistics,
@@ -591,12 +617,13 @@ const useAdminForumData = (activeOrgId, shouldFetch = true) => {
     contributorMonth, contributorYear, timelineYear,
     bannedPosts, bannedPage, yesterdayPosts, yesterdayPage, reports, reportsPage,
     allPosts, postsPage, postsSize, posts, postsSearch, statusFilter, organizationFilter,
+    setPostsSearchAndResetPage, setTopicsSearchAndResetPage,
     updatePostStatus, handleDeletePost,
     categories, categoriesLoading, activeOrgId, loadCategories,
     topics, topicsSearch, topicsPage, topicsSize, topicsLoading, loadTopics,
     handleBanPost, handleUnbanPost, handleCreateCategory, handleUpdateCategory, handleDeleteCategory,
     handleCreateTopic, handleUpdateTopic, handleDeleteTopic, handleReviewReport,
-    handleUpdatePostVisibility, handleUpdateTopicLock, loadStatistics
+    handleUpdatePostVisibility, handleUpdateTopicStatus, handleUpdateCategoryStatus, loadStatistics
   ]);
 };
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router';
-import { Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Button, Container, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem, Pagination, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import FavoriteIcon from '@mui/icons-material/Favorite';
@@ -28,6 +28,7 @@ import { useReactToForumPost } from '../../hooks/forum/useReactToForumPost';
 import { useDeleteForumPost } from '../../hooks/forum/useDeleteForumPost';
 import { useDeleteForumTopic } from '../../hooks/forum/useDeleteForumTopic';
 import { useUpdateForumTopic } from '../../hooks/forum/useUpdateForumTopic';
+import { useUpdateForumTopicStatus } from '../../hooks/forum/useUpdateForumTopicStatus';
 import { useSubscribeToTopic } from '../../hooks/forum/useSubscribeToTopic';
 import { useForumTopicSubscriptionStatus } from '../../hooks/forum/useForumTopicSubscriptionStatus';
 import { useReportForumPost } from '../../hooks/forum/useReportForumPost';
@@ -40,6 +41,11 @@ import WYSIWYG from '../../components/WYSIWYG';
 import { formatDateTime } from '../../utils/dateFormatter';
 import { toPlainText } from '../../utils/stringUtils';
 import ReportPostDialog from '../../components/forum/ReportPostDialog';
+
+const getAvatarInitial = (name) => {
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  return trimmed ? trimmed.charAt(0).toUpperCase() : '';
+};
 
 const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, isDeleting, onEdit, onReport }) => {
   const { t } = useTranslation(['forum', 'common']);
@@ -113,20 +119,18 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
           gap: 1,
         }}
       >
-        <Box
+        <Avatar
+          src={reply.authorAvatarUrl || undefined}
+          alt={reply.authorName}
           sx={{
             width: { xs: 48, sm: 64 },
             height: { xs: 48, sm: 64 },
-            borderRadius: '50%',
             bgcolor: 'primary.main',
             color: 'primary.contrastText',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
-          <PersonIcon sx={{ fontSize: 36 }} />
-        </Box>
+          {getAvatarInitial(reply.authorName) || <PersonIcon sx={{ fontSize: 36 }} />}
+        </Avatar>
         <Typography variant="body2" fontWeight={600}>
           {reply.authorName}
         </Typography>
@@ -350,8 +354,9 @@ const ForumAlumniThreadPage = () => {
   const { isAuthenticated, user, verificationLevel } = useAuth();
   const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
-  // Only org-verified alumni (verification level >= 2) may post in the alumni forum.
-  const isGuest = !isAuthenticated || (verificationLevel ?? 0) < 2;
+  // Admins may always participate; otherwise only org-verified alumni
+  // (verification level >= 2) may post in the alumni forum.
+  const isGuest = !isAuthenticated || (!isAdmin && (verificationLevel ?? 0) < 2);
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const editorRef = useRef(null);
@@ -365,6 +370,10 @@ const ForumAlumniThreadPage = () => {
   const [postToDelete, setPostToDelete] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [postToReport, setPostToReport] = useState(null);
+  const [topicStatus, setTopicStatus] = useState(() => {
+    const s = location.state?.topicSummary?.status;
+    return typeof s === 'string' && s.trim() ? s.trim().toUpperCase() : 'ACTIVE';
+  });
   const [currentPage, setCurrentPage] = useState(() => {
     const p = parseInt(pageId, 10);
     return !isNaN(p) && p > 0 ? p - 1 : 0;
@@ -403,6 +412,7 @@ const ForumAlumniThreadPage = () => {
     isPending: updateTopicPending,
     errorMessage: updateTopicErrorMessage,
   } = useUpdateForumTopic();
+  const { updateTopicStatus, isPending: topicStatusPending } = useUpdateForumTopicStatus();
   const { isSubscribed, isPending: subStatusPending } = useForumTopicSubscriptionStatus(topicId, memberId);
   const { toggleSubscription, isPending: subTogglePending } = useSubscribeToTopic();
   const { reportPost, isPending: reportPending } = useReportForumPost();
@@ -442,9 +452,12 @@ const ForumAlumniThreadPage = () => {
 
     const firstPost = posts?.[0] ?? null;
 
-    const authorFromPost = firstPost?.authorMemberId
-      ? (String(firstPost.authorMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${firstPost.authorMemberId}`)
-      : null;
+    const firstPostFullName =
+      typeof firstPost?.authorName === 'string' && firstPost.authorName.trim() ? firstPost.authorName.trim() : null;
+    const authorFromPost = firstPostFullName
+      ?? (firstPost?.authorMemberId
+        ? (String(firstPost.authorMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${firstPost.authorMemberId}`)
+        : null);
     const authorFromTopic =
       topicSummary?.createdByMemberId != null
         ? (String(topicSummary.createdByMemberId) === String(user?.id) ? t('forum:me') : `${t('forum:member_prefix')}${topicSummary.createdByMemberId}`)
@@ -456,6 +469,7 @@ const ForumAlumniThreadPage = () => {
     return {
       title,
       authorName: authorFromPost ?? authorFromTopic ?? FALLBACK_THREAD.authorName,
+      authorAvatarUrl: firstPost?.authorAvatarUrl ?? null,
       role: 'Alumni',
       createdAt: createdFromPost ?? createdFromTopic ?? FALLBACK_THREAD.createdAt,
     };
@@ -465,11 +479,13 @@ const ForumAlumniThreadPage = () => {
     () =>
       (posts ?? []).map((post) => {
         const isOwn = post.authorMemberId != null && String(post.authorMemberId) === String(user?.id);
+        const fullName = typeof post.authorName === 'string' ? post.authorName.trim() : '';
         return {
           id: post.id,
           answerToPostId: post.answerToPostId ?? null,
           authorMemberId: post.authorMemberId ?? null,
-          authorName: isOwn ? t('forum:me') : `${t('forum:member_prefix')}${post.authorMemberId ?? '—'}`,
+          authorName: fullName || (isOwn ? t('forum:me') : `${t('forum:member_prefix')}${post.authorMemberId ?? '—'}`),
+          authorAvatarUrl: post.authorAvatarUrl ?? null,
           role: 'Alumni',
           createdAt: formatDateTime(post.createdAt, '—'),
           content: post.content ?? '',
@@ -664,6 +680,20 @@ const ForumAlumniThreadPage = () => {
       showError(message);
     }
   }, [editCategoryId, editTopicTitle, showError, showSuccess, showWarning, topicId, updateTopic, updateTopicErrorMessage]);
+
+  const isTopicInactive = topicStatus === 'INACTIVE';
+
+  const handleToggleLock = async () => {
+    if (!topicId) return;
+    const next = isTopicInactive ? 'ACTIVE' : 'INACTIVE';
+    try {
+      await updateTopicStatus({ topicId, status: next });
+      setTopicStatus(next);
+      showSuccess(next === 'INACTIVE' ? t('forum:success_lock') : t('forum:success_unlock'));
+    } catch (_) {
+      showError(t('forum:error_toggle_lock'));
+    }
+  };
 
   const handleToggleSubscription = async () => {
     if (!topicId || !memberId) {
@@ -963,15 +993,17 @@ const ForumAlumniThreadPage = () => {
                         fullWidth
                         variant="contained"
                         size="small"
+                        onClick={handleToggleLock}
+                        disabled={topicStatusPending}
                         startIcon={<LockOutlinedIcon sx={{ fontSize: 18 }} />}
                         sx={{
-                          bgcolor: '#EAB308',
+                          bgcolor: isTopicInactive ? '#16A34A' : '#EAB308',
                           color: 'white',
-                          '&:hover': { bgcolor: '#CA8A04' },
+                          '&:hover': { bgcolor: isTopicInactive ? '#15803D' : '#CA8A04' },
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        {t('forum:lock')}
+                        {isTopicInactive ? t('forum:unlock') : t('forum:lock')}
                       </Button>
                     </Box>
                   ) : (
@@ -1018,21 +1050,19 @@ const ForumAlumniThreadPage = () => {
                     gap: 1.5,
                   }}
                 >
-                  <Box
+                  <Avatar
+                    src={thread.authorAvatarUrl || undefined}
+                    alt={thread.authorName}
                     sx={{
                       width: 48,
                       height: 48,
-                      borderRadius: '50%',
                       bgcolor: 'primary.main',
                       color: 'primary.contrastText',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
                       flexShrink: 0,
                     }}
                   >
-                    <PersonIcon sx={{ fontSize: 26 }} />
-                  </Box>
+                    {getAvatarInitial(thread.authorName) || <PersonIcon sx={{ fontSize: 26 }} />}
+                  </Avatar>
                   <Box>
                     {postsPending && !location.state?.topicSummary ? (
                       <Typography variant="body2" color="text.secondary">
