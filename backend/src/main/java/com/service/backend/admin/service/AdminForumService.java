@@ -1,5 +1,6 @@
 package com.service.backend.admin.service;
 
+import com.service.backend.shared.entity.*;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,11 +31,7 @@ import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
 import com.service.backend.forum.dao.ForumPostReactionRepository;
 import com.service.backend.forum.dto.ForumPostDTO;
 import com.service.backend.forum.dto.ForumPostReportDTO;
-import com.service.backend.shared.entity.ForumCategory;
-import com.service.backend.shared.entity.ForumPost;
-import com.service.backend.shared.entity.ForumPostReport;
 import com.service.backend.shared.enums.Status;
-import com.service.backend.shared.entity.ForumTopic;
 import com.service.backend.shared.enums.ErrorCode;
 import com.service.backend.shared.dto.PaginatedResponse;
 import com.service.backend.shared.exception.ApplicationException;
@@ -395,7 +392,7 @@ public class AdminForumService {
         return forumCategoryRepository.findById(categoryId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new ApplicationException(ErrorCode.FORUM_CATEGORY_NOT_FOUND))))
                 .flatMap(category -> cascadeDeleteCategory(categoryId))
-                .delayUntil(v -> cacheUtils.clear("forum_category_cache"))
+                .then(cacheUtils.clear("forum_category_cache"))
                 .doOnSuccess(v -> log.info("deleteCategory: categoryId={} deleted (cascade)", categoryId))
                 .doOnError(error -> log.error("Error deleting category ID: {}", categoryId, error));
     }
@@ -629,7 +626,7 @@ public class AdminForumService {
                     if (orgs.isEmpty()) return Mono.just(Collections.<OrganizationEngagementDTO>emptyList());
 
                     Set<Integer> orgIds = orgs.stream()
-                            .map(org -> org.getId())
+                            .map(Organization::getId)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toSet());
 

@@ -19,7 +19,6 @@ import com.service.backend.shared.utils.SecurityUtils;
 import com.service.backend.user.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
@@ -141,7 +140,7 @@ public class MentorService {
                                 Status current = existing.getStatus();
                                 if (Status.APPROVED.equals(current)
                                     || Status.PENDING.equals(current)) {
-                                return Mono.<MentorProfile>error(new ApplicationException(
+                                return Mono.error(new ApplicationException(
                                         ErrorCode.MENTOR_PROFILE_ALREADY_EXISTS,
                                         "Mentor profile already exists"));
                             }
@@ -245,7 +244,7 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
                             }
                             return expertiseRepository.deleteById(expertiseId).thenReturn(true);
                         }));
@@ -257,7 +256,7 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found with id: " + expertiseId)))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<MentorExpertise>error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.EXPERTISE_NOT_FOUND, "Expertise not found"));
                             }
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             if (request.getYearsExperience() != null) existing.setYearsExperience(request.getYearsExperience());
@@ -295,10 +294,10 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found")))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
                             }
                             if (Status.AVAILABLE != existing.getStatus()) {
-                                return Mono.<MentorAvailability>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể chỉnh sửa"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể chỉnh sửa"));
                             }
                             return validateSlot(memberId, request.getStartTime(), request.getEndTime(), availabilityId)
                                     .then(Mono.defer(() -> {
@@ -340,10 +339,10 @@ public class MentorService {
                         .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found with id: " + availabilityId)))
                         .flatMap(existing -> {
                             if (!memberId.equals(existing.getMentorMemberId())) {
-                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_FOUND, "Availability not found"));
                             }
                             if (Status.AVAILABLE != existing.getStatus()) {
-                                return Mono.<Boolean>error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
+                                return Mono.error(new ApplicationException(ErrorCode.AVAILABILITY_NOT_AVAILABLE, "Slot đã được đặt, không thể xoá"));
                             }
                             return availabilityRepository.deleteById(availabilityId).thenReturn(true);
                         })));
@@ -450,7 +449,7 @@ public class MentorService {
                                         return availabilityRepository.countOverlapping(
                                                         mentorMemberId, proposedStart, proposedEnd, avail.getId())
                                                 .flatMap(count -> count > 0
-                                                        ? Mono.<Integer>error(new ApplicationException(
+                                                        ? Mono.error(new ApplicationException(
                                                                 ErrorCode.AVAILABILITY_OVERLAP,
                                                                 "Giờ đề xuất trùng với một lịch trống khác của bạn"))
                                                         : sessionRepository.proposeReschedule(
