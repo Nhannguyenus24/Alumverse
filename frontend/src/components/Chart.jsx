@@ -10,6 +10,9 @@ import {
   PieChart,
   Pie,
   Cell,
+  FunnelChart,
+  Funnel,
+  LabelList,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -170,10 +173,41 @@ const Chart = ({
           </PieChart>
         );
 
+      case "funnel":
+        return (
+          <FunnelChart>
+            <Tooltip />
+            <Funnel
+              dataKey={dataKey}
+              data={chartData}
+              isAnimationActive
+            >
+              <LabelList
+                position="right"
+                fill={theme.palette.text.primary}
+                stroke="none"
+                dataKey={xAxisKey}
+              />
+              <LabelList
+                position="center"
+                fill="#fff"
+                stroke="none"
+                dataKey={dataKey}
+              />
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`funnel-cell-${index}`}
+                  fill={chartColors[index % chartColors.length]}
+                />
+              ))}
+            </Funnel>
+          </FunnelChart>
+        );
+
       default:
         return null;
     }
-  }, [type, chartData, dataKey, dataKeys, xAxisKey, showGrid, showLegend, strokeColor, chartColors]);
+  }, [type, chartData, dataKey, dataKeys, xAxisKey, showGrid, showLegend, strokeColor, chartColors, theme.palette.text.primary]);
 
   if (chartData.length === 0) {
     return (
