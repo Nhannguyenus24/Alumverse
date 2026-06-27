@@ -347,10 +347,11 @@ const ForumAlumniThreadPage = () => {
     return Number.isNaN(id) ? null : id;
   }, [threadId]);
 
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, verificationLevel } = useAuth();
   const { organization } = useOrganization();
   const isAdmin = user?.role === 'ADMIN';
-  const isGuest = !isAuthenticated || user?.role === 'GUEST';
+  // Only org-verified alumni (verification level >= 2) may post in the alumni forum.
+  const isGuest = !isAuthenticated || (verificationLevel ?? 0) < 2;
   const [editorValue, setEditorValue] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const editorRef = useRef(null);

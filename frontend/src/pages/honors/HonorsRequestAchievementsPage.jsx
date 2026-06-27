@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import {
+  Alert,
   Box,
   Button,
   Container,
@@ -12,11 +13,15 @@ import { useTranslation } from 'react-i18next';
 
 import Page from '../../components/Page';
 import WYSIWYG from '../../components/WYSIWYG';
+import { useAuth } from '../../hooks/useAuth';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 
 const RequestAchievementsPage = () => {
   const navigate = useOrgNavigate();
   const { t } = useTranslation('honors');
+  const { verificationLevel } = useAuth();
+  // Only org-verified alumni (verification level >= 2) may submit achievement requests.
+  const canRequest = (verificationLevel ?? 0) >= 2;
 
   const [image, setImage] = useState(null);
   const [title, setTitle] = useState('');
@@ -28,6 +33,7 @@ const RequestAchievementsPage = () => {
   };
 
   const handleSubmit = () => {
+    if (!canRequest) return;
     navigate('/honors');
   };
 
@@ -85,6 +91,12 @@ const RequestAchievementsPage = () => {
             <Typography color="text.secondary" sx={{ mb: 3 }}>
               {t('request_description')}
             </Typography>
+
+            {!canRequest && (
+              <Alert severity="warning" sx={{ mb: 3 }}>
+                {t('warn_alumni_verification_required')}
+              </Alert>
+            )}
 
             {/* POST SECTION */}
             <Stack spacing={2}>
@@ -162,6 +174,7 @@ const RequestAchievementsPage = () => {
                   variant="contained"
                   color="primary"
                   onClick={handleSubmit}
+                  disabled={!canRequest}
                 >
                   {t('request_submit')}
                 </Button>

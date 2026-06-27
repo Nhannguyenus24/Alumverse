@@ -215,7 +215,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
 
     @Modifying
     @Query("INSERT INTO organization_members (organization_id, user_id, student_id, graduated_year, graduation_status, program, major, verification_level, is_trusted_verifier, \"status\", created_at, updated_at) " +
-           "VALUES (:organizationId, :userId, :studentId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, false, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+           "VALUES (:organizationId, :userId, :studentId, CAST(:graduatedYear AS jsonb), CAST(:graduationStatus AS jsonb), CAST(:program AS jsonb), CAST(:major AS jsonb), :verificationLevel, :isTrustedVerifier, :status, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
     Mono<Integer> createOrganizationMember(
            @Param("organizationId") Integer organizationId,
            @Param("userId") Integer userId,
@@ -225,13 +225,14 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            @Param("program") String program,
            @Param("major") String major,
            @Param("verificationLevel") Integer verificationLevel,
+           @Param("isTrustedVerifier") Boolean isTrustedVerifier,
            @Param("status") String status);
 
     @Modifying
     @Query("UPDATE organization_members SET organization_id = :organizationId, student_id = COALESCE(:studentId, student_id), " +
            "graduated_year = CAST(:graduatedYear AS jsonb), " +
            "graduation_status = CAST(:graduationStatus AS jsonb), program = CAST(:program AS jsonb), major = CAST(:major AS jsonb), " +
-           "verification_level = :verificationLevel, is_trusted_verifier = false, \"status\" = :status, updated_at = CURRENT_TIMESTAMP " +
+           "verification_level = :verificationLevel, is_trusted_verifier = :isTrustedVerifier, \"status\" = :status, updated_at = CURRENT_TIMESTAMP " +
            "WHERE user_id = :userId")
     Mono<Integer> updateOrganizationMemberByUserId(
            @Param("organizationId") Integer organizationId,
@@ -242,6 +243,7 @@ public interface AdminUserRepository extends R2dbcRepository<User, Integer> {
            @Param("program") String program,
            @Param("major") String major,
            @Param("verificationLevel") Integer verificationLevel,
+           @Param("isTrustedVerifier") Boolean isTrustedVerifier,
            @Param("status") String status);
 
     @Query("SELECT ulh.id, ulh.user_id, ulh.login_at, ulh.login_method, ulh.login_ip, ulh.user_agent, " +

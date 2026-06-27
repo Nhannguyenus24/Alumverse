@@ -148,6 +148,7 @@ export default function SettingPage() {
 
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const verificationLevel = useAuthStore((state) => state.verificationLevel);
   const setAuthUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   const { uploadBase64 } = useUploadImage();
@@ -452,7 +453,7 @@ export default function SettingPage() {
               {t('edit_info')}
             </Button>
           )}
-          {user?.role === 'GUEST' && (
+          {(verificationLevel ?? 0) === 0 && (
             <Button variant="contained" color="warning" startIcon={<ShieldOutlinedIcon />}
                     onClick={() => navigate('/cs-hcmus/organization-registration')}
             >

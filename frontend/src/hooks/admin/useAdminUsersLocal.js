@@ -86,6 +86,8 @@ const useAdminUsersLocal = (stableOrgId, shouldFetch = true) => {
         role: payload.role,
         status: payload.status,
         organizationId: Number(payload.organizationId),
+        verificationLevel: Number(payload.verificationLevel ?? 0),
+        isTrustedVerifier: Boolean(payload.isTrustedVerifier),
         password: payload.password,
       });
       enqueueSnackbar('User account created and added to organization.', { variant: 'success' });

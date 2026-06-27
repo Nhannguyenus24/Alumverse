@@ -233,6 +233,7 @@ public class AdminUserController {
                         request.getProgram(),
                         request.getMajor(),
                         request.getVerificationLevel(),
+                        request.getIsTrustedVerifier(),
                         request.getStatus())
                 .flatMap(success -> {
                     if (success) {

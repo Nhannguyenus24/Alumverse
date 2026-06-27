@@ -38,5 +38,6 @@
   "request_proof_link_placeholder": "Proof link",
   "request_upload_image": "Upload image",
   "request_cancel": "Cancel",
-  "request_submit": "Submit"
+  "request_submit": "Submit",
+  "warn_alumni_verification_required": "You must verify your alumni status (verification level 2) to submit an achievement request."
 }
