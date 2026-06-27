@@ -10,6 +10,7 @@ import CreateGroupChatDialog from '../../components/CreateGroupChatDialog';
 import { useGroupChatList } from '../../hooks/chat/useGroupChatList';
 import { usePrivateChatList } from '../../hooks/chat/usePrivateChatList';
 import { invalidateChatListQueries } from '../../hooks/chat/invalidateChatQueries';
+import { HEADER_HEIGHT } from '../../constants/layout';
 
 function normalizeGroupChat(item) {
   return {
@@ -158,7 +159,10 @@ const ChatPage = () => {
     <Page title="Chat">
       <Box
         sx={{
-          height: { xs: 'calc(100dvh - 56px)', md: 'calc(100dvh - 64px)' },
+          height: {
+            xs: `calc(100dvh - ${HEADER_HEIGHT.xs}px)`,
+            md: `calc(100dvh - ${HEADER_HEIGHT.md}px)`,
+          },
           minHeight: 0,
           width: '100%',
           position: 'relative',

@@ -28,6 +28,7 @@ export function useChatWebSocket({ token, onEvent }) {
   const reconnectTimerRef = useRef(null);
   const reconnectAttemptRef = useRef(0);
   const outboxRef = useRef([]);
+  const intentionalCloseRef = useRef(false);
 
   const wsUrl = useMemo(() => {
     if (!token) return null;
@@ -37,13 +38,19 @@ export function useChatWebSocket({ token, onEvent }) {
   }, [token]);
 
   const cleanup = useCallback(() => {
+    intentionalCloseRef.current = true;
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
     const ws = wsRef.current;
     wsRef.current = null;
-    if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+    if (
+      ws &&
+      (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)
+    ) {
+      ws.close();
+    }
   }, []);
 
   const flushOutbox = useCallback(() => {
@@ -73,6 +80,7 @@ export function useChatWebSocket({ token, onEvent }) {
 
   const connect = useCallback(() => {
     if (!wsUrl) return;
+    intentionalCloseRef.current = false;
     const existing = wsRef.current;
     if (
       existing &&
@@ -107,7 +115,7 @@ export function useChatWebSocket({ token, onEvent }) {
 
     ws.onclose = () => {
       setStatus("closed");
-      // schedule reconnect while token still exists
+      if (intentionalCloseRef.current) return;
       if (!wsUrl) return;
       const attempt = Math.min(reconnectAttemptRef.current + 1, 6);
       reconnectAttemptRef.current = attempt;

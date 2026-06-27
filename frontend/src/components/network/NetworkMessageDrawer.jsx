@@ -67,7 +67,16 @@ function NetworkMessageBubble({ message, isOwn }) {
   );
 }
 
-const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
+const NetworkMessageDrawer = ({
+  open,
+  onClose,
+  peer,
+  connectionStatus,
+  variant = 'default',
+  contextTitle,
+  contextSubtitle,
+  contextNote,
+}) => {
   const { t } = useTranslation(['network']);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -164,25 +173,39 @@ const NetworkMessageDrawer = ({ open, onClose, peer, connectionStatus }) => {
           <ChatAvatar avatarUrl={peer?.avatarUrl} name={peer?.fullName} size={48} />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
-              {peer?.fullName ?? t('network:member_fallback_name')}
+              {variant === 'connect' && contextTitle
+                ? contextTitle
+                : (peer?.fullName ?? t('network:member_fallback_name'))}
             </Typography>
-            {academicRows.map((row, index) => (
-              <Typography
-                key={`${row.program}-${row.major}-${index}`}
-                variant="caption"
-                color="text.secondary"
-                noWrap
-                sx={{ display: 'block' }}
-              >
-                {[row.program, row.major].filter(Boolean).join(' · ')}
+            {variant === 'connect' && contextSubtitle ? (
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                {contextSubtitle}
               </Typography>
-            ))}
+            ) : (
+              academicRows.map((row, index) => (
+                <Typography
+                  key={`${row.program}-${row.major}-${index}`}
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ display: 'block' }}
+                >
+                  {[row.program, row.major].filter(Boolean).join(' · ')}
+                </Typography>
+              ))
+            )}
           </Box>
         </Stack>
         <IconButton size="small" onClick={onClose} aria-label={t('network:close_aria')}>
           <CloseIcon />
         </IconButton>
       </Box>
+
+      {variant === 'connect' && contextNote ? (
+        <Alert severity="info" sx={{ mx: 2, mt: 1.5, borderRadius: 1.5 }}>
+          {contextNote}
+        </Alert>
+      ) : null}
 
       {drawerState.banner ? (
         <Alert severity={drawerState.banner.severity} sx={{ mx: 2, mt: 1.5, borderRadius: 1.5 }}>

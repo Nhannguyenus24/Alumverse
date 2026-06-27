@@ -358,7 +358,10 @@ CREATE TABLE "funds" (
   "time_started" timestamp,
   "donor_count" integer DEFAULT 0, -- so luong donate, phuc vu frontend
   "topic" text,
-  "time_ended" timestamp
+  "time_ended" timestamp,
+  "manager_email" text NOT NULL,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "fund_receiving_infos" (
