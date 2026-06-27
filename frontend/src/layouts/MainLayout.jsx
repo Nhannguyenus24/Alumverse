@@ -1,10 +1,11 @@
 import { useMemo } from "react";
 import { Outlet, useLocation, useMatches, useParams } from "react-router";
-import { Box, Toolbar } from "@mui/material";
+import { Box } from "@mui/material";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import FloatingChatActions from "../components/FloatingChatActions";
 import { getNormalizedPathname } from "../utils/pathUtils";
+import { HEADER_HEIGHT } from "../constants/layout";
 
 const MainLayout = () => {
   const location = useLocation();
@@ -20,7 +21,10 @@ const MainLayout = () => {
   const headerElement = useMemo(() => <Header />, []);
   const footerElement = useMemo(() => <Footer />, []);
   const floatingChatActionsElement = useMemo(() => <FloatingChatActions />, []);
-  const toolbarElement = useMemo(() => <Toolbar />, []);
+  const toolbarElement = useMemo(
+    () => <Box sx={{ height: HEADER_HEIGHT, flexShrink: 0 }} />,
+    []
+  );
 
   return (
     <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
