@@ -21,12 +21,12 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    u.status,
                    u.avatar_url,
                    u.created_at,
-                   gp.full_name,
-                   gp.phone,
-                   gp.bio,
-                   gp.dob,
-                   gp.gender,
-                   gp.updated_at AS profile_updated_at,
+                   u.full_name,
+                   u.phone,
+                   u.bio,
+                   u.dob,
+                   u.gender,
+                   u.updated_at AS profile_updated_at,
                    CAST(om.started_year AS text) AS started_year,
                    CAST(om.graduated_year AS text) AS graduated_year,
                    CAST(om.graduation_status AS text) AS graduation_status,
@@ -35,7 +35,6 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
                    CAST(om.faculty AS text) AS faculty,
                    CAST(om.department AS text) AS department
             FROM users u
-            LEFT JOIN global_profiles gp ON gp.user_id = u.id
             LEFT JOIN organization_members om ON om.user_id = u.id
             WHERE u.id = :userId
             """)
@@ -43,12 +42,11 @@ public interface UserProfileRepository extends R2dbcRepository<User, Integer> {
 
     @Modifying
     @Query("""
-            INSERT INTO global_profiles (user_id, phone, gender, updated_at)
-            VALUES (:userId, :phone, :gender, CURRENT_TIMESTAMP)
-            ON CONFLICT (user_id) DO UPDATE
-            SET phone = COALESCE(:phone, global_profiles.phone),
-                gender = COALESCE(:gender, global_profiles.gender),
+            UPDATE users
+            SET phone = COALESCE(:phone, phone),
+                gender = COALESCE(:gender, gender),
                 updated_at = CURRENT_TIMESTAMP
+            WHERE id = :userId
             """)
     Mono<Integer> upsertPhoneAndGender(Integer userId, String phone, String gender);
 }

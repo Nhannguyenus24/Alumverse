@@ -5,18 +5,13 @@ CREATE TABLE "users" (
   "status" text,
   "role" text,
   "avatar_url" text,
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "global_profiles" (
-  "user_id" integer PRIMARY KEY,
   "full_name" text,
   "phone" text,
   "bio" text,
   "dob" date,
   "gender" text,
   "settings" json,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -593,8 +588,6 @@ CREATE INDEX ON "event_email_logs" ("event_id", "sent_at" DESC);
 
 CREATE UNIQUE INDEX ON "saved_items" ("member_id", "item_type", "item_id");
 
-ALTER TABLE "global_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-
 ALTER TABLE "organization_members" ADD FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id");
 
 ALTER TABLE "organization_members" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
@@ -740,7 +733,7 @@ CREATE INDEX ON "forum_post_reports" ("post_id");
 -- Add pg_trgm extension and indexes for ILIKE search queries
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX idx_users_email_trgm          ON users           USING GIN (email gin_trgm_ops);
-CREATE INDEX idx_global_profiles_name_trgm ON global_profiles USING GIN (full_name gin_trgm_ops);
+CREATE INDEX idx_users_name_trgm           ON users           USING GIN (full_name gin_trgm_ops);
 CREATE INDEX idx_forum_topics_title_trgm   ON forum_topics    USING GIN (title gin_trgm_ops);
 CREATE INDEX idx_forum_posts_content_trgm  ON forum_posts     USING GIN (content gin_trgm_ops);
 

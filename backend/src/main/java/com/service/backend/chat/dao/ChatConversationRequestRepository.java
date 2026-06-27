@@ -35,21 +35,20 @@ public interface ChatConversationRequestRepository extends ReactiveCrudRepositor
     String SEARCH_FROM_JOIN = """
             FROM chat_conversation_requests ccr
             JOIN users u             ON u.id        = ccr.requester_member_id
-            JOIN global_profiles gp  ON gp.user_id  = ccr.requester_member_id
             JOIN chat_messages cm    ON cm.id        = ccr.last_request_message_id
             """;
 
     String SEARCH_WHERE = """
             WHERE ccr.target_member_id = :currentUserId
               AND ccr.status <> 'ACCEPTED'
-              AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
+              AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName))
               AND (:status IS NULL OR ccr.status = :status)
             """;
 
     @Query("""
             SELECT ccr.id,
                    ccr.requester_member_id,
-                   gp.full_name,
+                   u.full_name,
                    u.avatar_url,
                    ccr.status,
                    cm.content       AS message,

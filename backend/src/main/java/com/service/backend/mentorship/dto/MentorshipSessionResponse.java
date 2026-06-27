@@ -39,7 +39,7 @@ public class MentorshipSessionResponse {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
 
-    // ===== Enriched display fields (joined from users + global_profiles) =====
+    // ===== Enriched display fields (joined from users) =====
     private String mentorName;
     private String mentorAvatarUrl;
     private String menteeName;

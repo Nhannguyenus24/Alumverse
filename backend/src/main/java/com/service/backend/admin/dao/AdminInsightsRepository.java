@@ -80,7 +80,7 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
     Flux<KeyCountProjection> graduationStatusDistribution();
 
     @Query("SELECT COALESCE(NULLIF(gender, ''), 'unknown') AS key, COUNT(*) AS count " +
-           "FROM global_profiles GROUP BY COALESCE(NULLIF(gender, ''), 'unknown') ORDER BY 2 DESC")
+           "FROM users GROUP BY COALESCE(NULLIF(gender, ''), 'unknown') ORDER BY 2 DESC")
     Flux<KeyCountProjection> genderDistribution();
 
     @Query("SELECT CASE " +
@@ -90,7 +90,7 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
            "WHEN date_part('year', age(dob)) < 28 THEN '23-27' " +
            "WHEN date_part('year', age(dob)) < 35 THEN '28-34' " +
            "ELSE '35+' END AS key, COUNT(*) AS count " +
-           "FROM global_profiles GROUP BY key ORDER BY key")
+           "FROM users GROUP BY key ORDER BY key")
     Flux<KeyCountProjection> ageBucketDistribution();
 
     // ========================== Engagement ==========================
