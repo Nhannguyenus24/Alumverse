@@ -66,7 +66,6 @@ public class AlumniPostService {
                             existing.setThumbnailUrl(thumbnailUrl.isEmpty() ? existing.getThumbnailUrl() : thumbnailUrl);
                             if (request.getTopic() != null) existing.setTopic(request.getTopic());
                             if (request.getUrl() != null) existing.setUrl(request.getUrl());
-                            if (existing.getPublishedAt() == null) existing.setPublishedAt(LocalDateTime.now());
                             return alumniPostRepository.save(existing);
                         }))
                 .delayUntil(res -> cacheUtils.clear("admin_content_statistics"))

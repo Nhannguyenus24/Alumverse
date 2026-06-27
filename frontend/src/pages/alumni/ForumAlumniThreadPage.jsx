@@ -200,16 +200,21 @@ const ForumReply = ({ reply, isAdmin, memberId, onReply, parentPost, onDelete, i
                 </MenuItem>
               )}
               {!isOwn && (
-                <MenuItem
-                  onClick={() => {
-                    handleCloseActionMenu();
-                    onReport?.(reply);
-                  }}
-                  sx={{ color: 'warning.main' }}
-                >
-                  <FlagOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
-                  {t('common:report')}
-                </MenuItem>
+                <Tooltip title={!memberId ? t('forum:login_required_for_action', { defaultValue: 'Login required' }) : ""} placement="left" arrow>
+                  <span>
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseActionMenu();
+                        onReport?.(reply);
+                      }}
+                      sx={{ color: 'warning.main' }}
+                      disabled={!memberId}
+                    >
+                      <FlagOutlinedIcon sx={{ fontSize: 18, mr: 1 }} />
+                      {t('common:report')}
+                    </MenuItem>
+                  </span>
+                </Tooltip>
               )}
             </Menu>
           </>

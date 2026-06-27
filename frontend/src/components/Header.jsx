@@ -142,8 +142,8 @@ const Header = () => {
     : (isAdmin ? 'primary.contrastText' : 'text.primary');
 
   const navButtonSx = useMemo(() => ({
-    color: headerTextColor, fontWeight: 600, fontSize: '0.9375rem',
-    textTransform: 'none', px: 1.5, transition: 'all 0.3s ease',
+    color: headerTextColor, fontWeight: 600, fontSize: { xs: '0.875rem', xl: '0.9375rem' },
+    textTransform: 'none', px: { xs: 1, xl: 1.5 }, transition: 'all 0.3s ease',
     position: 'relative',
     borderRadius: 1,
     '&:hover': {
@@ -193,8 +193,16 @@ const Header = () => {
           transition: 'all 0.4s ease-in-out',
         }}
       >
-        <Toolbar sx={{ minHeight: appBarMinHeight, px: { xs: 1.5, sm: 2 }, justifyContent: 'space-between', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <Toolbar
+          sx={{
+            minHeight: appBarMinHeight,
+            px: { xs: 1.5, sm: 2 },
+            justifyContent: 'space-between',
+            gap: 2,
+            position: 'relative',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, zIndex: 2 }}>
             <Link to={toOrgPath('/')} style={{ display: 'flex', alignItems: 'center' }}>
               <Logo
                 variant="image"
@@ -207,8 +215,19 @@ const Header = () => {
           </Box>
 
           {isDesktop && (
-            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-                       display: 'flex', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', zIndex: 5 }}>
+            <Box sx={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: { xs: 0.5, xl: 1 },
+              whiteSpace: 'nowrap',
+              zIndex: 1,
+              maxWidth: 'calc(100% - 520px)',
+            }}>
               {navItems.map((item) => {
                 const isLocked = item.requiresAuth && !isAuthenticated;
                 const isActive = getNavActive(item);
@@ -288,7 +307,7 @@ const Header = () => {
             </Box>
           )}
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, zIndex: 2 }}>
             {isDesktop ? (
               <>
                 <Tooltip

@@ -1,25 +1,27 @@
 export const normalizeNews = (data) => {
   if (!data) return null;
+  const publishedAt = data.publishedAt ?? data.published_at ?? data.createdAt ?? data.created_at;
   return {
     id: data.id,
     channel: "news",
     title: data.title,
     content: data.content,
     thumbnailUrl: data.thumbnailUrl,
-    publishedAt: data.publishedAt,
+    publishedAt,
     topic: data.topic,
   };
 };
 
 export const normalizeAlumniPost = (data) => {
   if (!data) return null;
+  const publishedAt = data.publishedAt ?? data.published_at ?? data.createdAt ?? data.created_at;
   return {
     id: data.id,
     channel: "alumni",
     title: data.title,
     content: data.content,
     thumbnailUrl: data.thumbnailUrl,
-    publishedAt: data.publishedAt,
+    publishedAt,
     topic: data.topic,
   };
 };
@@ -46,13 +48,14 @@ export const normalizeEvent = (data) => {
 
 export const normalizeJob = (data) => {
   if (!data) return null;
+  const publishedAt = data.createdAt ?? data.created_at;
   return {
     id: data.id,
     channel: "job",
     title: data.title,
     content: data.description,
     thumbnailUrl: null,
-    publishedAt: data.createdAt,
+    publishedAt,
     companyName: data.companyName,
     location: data.location,
     salaryRange: data.salaryRange,
@@ -64,13 +67,14 @@ export const normalizeJob = (data) => {
 
 export const normalizeAchievement = (data) => {
   if (!data) return null;
+  const publishedAt = data.awardedDate ?? data.awarded_date ?? data.createdAt ?? data.created_at;
   return {
     id: data.id,
     channel: "achievement",
     title: data.title,
     content: data.description,
     thumbnailUrl: data.imageUrl,
-    publishedAt: data.awardedDate,
+    publishedAt,
     status: data.status,
     topic: data.topic,
     memberName: data.memberName,
@@ -82,13 +86,14 @@ export const normalizeAchievement = (data) => {
 
 export const normalizeLearning = (data) => {
   if (!data) return null;
+  const publishedAt = data.createdAt ?? data.created_at;
   return {
     id: data.id,
     channel: "learning",
     title: data.title,
     content: data.description,
     thumbnailUrl: null,
-    publishedAt: data.createdAt,
+    publishedAt,
     linkUrl: data.linkUrl,
     type: data.type,
   };

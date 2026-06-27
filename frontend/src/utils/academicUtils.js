@@ -34,13 +34,15 @@ function parseAcademicList(value) {
 }
 
 export function buildAcademicRecords(source = {}) {
+  const academicSource = source ?? {};
+
   const lists = {
-    faculty: parseAcademicList(source.faculty),
-    major: parseAcademicList(source.major),
-    program: parseAcademicList(source.program),
-    startedYear: parseAcademicList(source.startedYear),
-    graduatedYear: parseAcademicList(source.graduatedYear),
-    graduationStatus: parseAcademicList(source.graduationStatus),
+    faculty: parseAcademicList(academicSource.faculty),
+    major: parseAcademicList(academicSource.major),
+    program: parseAcademicList(academicSource.program),
+    startedYear: parseAcademicList(academicSource.startedYear),
+    graduatedYear: parseAcademicList(academicSource.graduatedYear),
+    graduationStatus: parseAcademicList(academicSource.graduationStatus),
   };
 
   const recordCount = Math.max(

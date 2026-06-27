@@ -13,12 +13,13 @@ const fetchProfile = async () => {
   }
 };
 
-export const useMyMenteeProfile = () =>
+export const useMyMenteeProfile = ({ enabled = true } = {}) =>
   useQuery({
     queryKey: MENTEE_PROFILE_KEY,
     queryFn: fetchProfile,
     retry: false,
     staleTime: 5 * 60_000,
+    enabled,
   });
 
 const submit = async (payload) => {

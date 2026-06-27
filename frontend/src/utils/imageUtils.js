@@ -74,6 +74,60 @@ export const fileToBase64 = (file) =>
     reader.readAsDataURL(file);
   });
 
+const loadImage = (src) =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("image_load_error"));
+    image.src = src;
+  });
+
+export const fileToCroppedCoverBase64 = async (
+  file,
+  positionY = 50,
+  aspectRatio = 16 / 9,
+) => {
+  if (!file) return null;
+
+  const source = await fileToBase64(file);
+  const image = await loadImage(source);
+  const safePositionY = Math.min(100, Math.max(0, Number(positionY) || 50));
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+
+  let cropWidth = sourceWidth;
+  let cropHeight = cropWidth / aspectRatio;
+
+  if (cropHeight > sourceHeight) {
+    cropHeight = sourceHeight;
+    cropWidth = cropHeight * aspectRatio;
+  }
+
+  const cropX = (sourceWidth - cropWidth) / 2;
+  const cropY = ((sourceHeight - cropHeight) * safePositionY) / 100;
+  const targetWidth = Math.round(cropWidth);
+  const targetHeight = Math.round(cropHeight);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = targetHeight;
+  const context = canvas.getContext("2d");
+
+  context.drawImage(
+    image,
+    cropX,
+    cropY,
+    cropWidth,
+    cropHeight,
+    0,
+    0,
+    targetWidth,
+    targetHeight,
+  );
+
+  return canvas.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.92);
+};
+
 export const getJsonPayloadByteSize = (payload) =>
   new Blob([JSON.stringify(payload)]).size;
 
