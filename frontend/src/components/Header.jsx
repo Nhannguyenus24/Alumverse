@@ -23,6 +23,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useOrgNavigate, useOrgPath } from '../hooks/useOrgNavigate';
 import { getNormalizedPathname } from '../utils/pathUtils';
 import useThemeModeStore from '../stores/themeModeStore';
+import { HEADER_HEIGHT } from '../constants/layout';
 
 const LOGO_SRC = '/alumverse_logo/Logo_Main_Full.svg';
 const LOGO_SRC_WHITE = '/alumverse_logo/Logo_White_Full.svg';
@@ -178,7 +179,7 @@ const Header = () => {
   const logoSrc = (isTransparent || isAdmin) ? LOGO_SRC_WHITE : LOGO_SRC;
   const logoSx = shouldUseDarkAdminLogo ? { filter: 'brightness(0)' } : undefined;
 
-  const appBarMinHeight = { xs: 56, md: 64 };
+  const appBarMinHeight = HEADER_HEIGHT;
 
   return (
     <>
@@ -375,7 +376,7 @@ const Header = () => {
         <Box
           sx={{
             position: 'fixed',
-            top: { xs: 72, md: 80 },
+            top: HEADER_HEIGHT,
             left: '50%',
             transform: 'translateX(-50%)',
             width: { xs: 'calc(100% - 32px)', sm: 'max-content' },
