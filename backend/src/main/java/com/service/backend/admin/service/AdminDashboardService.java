@@ -4,6 +4,7 @@ import com.service.backend.admin.dao.AdminEventRepository;
 import com.service.backend.admin.dao.AdminOrganizationRepository;
 import com.service.backend.admin.dao.AdminAuditLogRepository;
 import com.service.backend.admin.dao.AdminUserRepository;
+import com.service.backend.admin.dao.AuditRepository;
 import com.service.backend.fundraising.dao.FundDonationsR2dbcRepository;
 import com.service.backend.admin.dto.DashboardMetricsDTO;
 import com.service.backend.admin.dto.ActivityItemDTO;
@@ -36,6 +37,7 @@ public class AdminDashboardService {
     private final AdminEventRepository adminEventRepository;
     private final FundDonationsR2dbcRepository fundDonationsRepository;
     private final AdminAuditLogRepository adminAuditLogRepository;
+    private final AuditRepository auditRepository;
     private final CacheUtils cacheUtils;
 
     public Mono<DashboardMetricsDTO> getMetrics() {
@@ -71,6 +73,12 @@ public class AdminDashboardService {
                         dto.setDonationsLast30Days(tuple.getT8());
                         return dto;
                     })
+                    .flatMap(dto -> auditRepository.countDailyActive()
+                            .defaultIfEmpty(0L)
+                            .map(dailyActive -> {
+                                dto.setDailyActive(dailyActive);
+                                return dto;
+                            }))
                     .doOnSuccess(dto -> log.info("getMetrics result: {}", JsonUtils.toJson(dto)));
         };
 
