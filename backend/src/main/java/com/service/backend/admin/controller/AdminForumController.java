@@ -21,7 +21,7 @@ import com.service.backend.admin.dto.OrganizationEngagementDTO;
 import com.service.backend.admin.dto.ReviewForumReportRequest;
 import com.service.backend.admin.dto.TopContributorDTO;
 import com.service.backend.admin.dto.UpdatePostVisibilityRequest;
-import com.service.backend.admin.dto.UpdateTopicLockRequest;
+import com.service.backend.admin.dto.UpdateForumStatusRequest;
 import com.service.backend.admin.service.AdminForumService;
 import com.service.backend.forum.dto.ForumCategoryDTO;
 import com.service.backend.forum.dto.ForumPostDTO;
@@ -164,13 +164,13 @@ public class AdminForumController {
                 .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated post visibility successfully", data)));
     }
 
-    @PutMapping("/topics/{topicId}/lock")
-    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopicLock(
+    @PutMapping("/admin/topics/{topicId}/status")
+    public Mono<ResponseEntity<ApiResponse<ForumTopicDTO>>> updateTopicStatus(
             @PathVariable Integer topicId,
-            @Valid @RequestBody UpdateTopicLockRequest request) {
+            @Valid @RequestBody UpdateForumStatusRequest request) {
         return SecurityUtils.getCurrentUserId()
-                .flatMap(adminId -> adminForumService.updateTopicLock(topicId, request.getLocked(), adminId.intValue()))
-                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic lock status successfully", data)));
+                .flatMap(adminId -> adminForumService.updateTopicStatus(topicId, request.getStatus(), adminId.intValue()))
+                .map(data -> ResponseEntity.ok(new ApiResponse<>("Updated topic status successfully", data)));
     }
 
     // ========== ADMIN CATEGORY MANAGEMENT ==========
@@ -219,11 +219,20 @@ public class AdminForumController {
                 .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category updated successfully", category)));
     }
 
+    @PutMapping("/admin/categories/{categoryId}/status")
+    public Mono<ResponseEntity<ApiResponse<ForumCategoryDTO>>> adminUpdateCategoryStatus(
+            @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer categoryId,
+            @Valid @RequestBody UpdateForumStatusRequest request) {
+        return SecurityUtils.getCurrentUserId()
+                .flatMap(adminId -> adminForumService.updateCategoryStatus(categoryId, request.getStatus(), adminId.intValue()))
+                .map(category -> ResponseEntity.ok(new ApiResponse<>("Forum category status updated successfully", category)));
+    }
+
     @DeleteMapping("/admin/categories/{categoryId}")
     public Mono<ResponseEntity<ApiResponse<Void>>> adminDeleteCategory(
             @PathVariable @Min(value = 1, message = "Category ID must be greater than 0") Integer categoryId) {
         return adminForumService.deleteCategory(categoryId)
-                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Forum category deleted successfully", null)));
+                .thenReturn(ResponseEntity.ok(new ApiResponse<Void>("Forum category and all topics/posts deleted successfully", null)));
     }
 
     // ========== ADMIN TOPIC MANAGEMENT ==========

@@ -27,6 +27,8 @@ import { useOutletContext } from 'react-router';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
@@ -37,6 +39,7 @@ import LaunchOutlinedIcon from '@mui/icons-material/LaunchOutlined';
 
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import AdminDashboardMetricTile from '../../components/admin/AdminDashboardMetricTile';
+import AdminStatusChip from '../../components/admin/AdminStatusChip';
 import { useAdminForumContext, useAdminSystemContext } from '../../stores/AdminStore';
 import { formatDate } from '../../utils/dateFormatter';
 
@@ -58,11 +61,19 @@ const buildTree = (flatList) => {
   return roots;
 };
 
-const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, activeOrganization }) => {
+const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, onToggleStatus, activeOrganization }) => {
   const theme = useTheme();
   const { t } = useTranslation(['admin']);
   const hasChildren = node.children && node.children.length > 0;
   const open = expanded[node.id];
+  const isActive = String(node.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+  const statusLabel = (s) => {
+    const k = String(s || 'ACTIVE').toUpperCase();
+    if (k === 'ACTIVE') return t('admin:forum_status_active');
+    if (k === 'INACTIVE') return t('admin:forum_status_inactive');
+    if (k === 'PENDING') return t('admin:forum_status_pending');
+    return s;
+  };
 
   return (
     <Box sx={{ pl: depth * 2.5 }}>
@@ -93,7 +104,22 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
             </Typography>
           }
         />
-        <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()}>
+        <Stack direction="row" spacing={0.5} alignItems="center" onClick={(e) => e.stopPropagation()}>
+          <AdminStatusChip
+            status={node.status || 'ACTIVE'}
+            category="forum"
+            label={statusLabel(node.status)}
+            sx={{ mr: 0.5 }}
+          />
+          <Tooltip title={isActive ? t('admin:forum_status_inactive') : t('admin:forum_status_active')}>
+            <IconButton
+              size="small"
+              color={isActive ? 'warning' : 'success'}
+              onClick={() => onToggleStatus(node)}
+            >
+              {isActive ? <VisibilityOffOutlinedIcon fontSize="small" /> : <VisibilityOutlinedIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
           <Tooltip title={t('admin:view_on_forum')}>
             <IconButton
               size="small"
@@ -131,6 +157,7 @@ const CategoryBranch = ({ node, depth = 0, expanded, toggle, onEdit, onDelete, a
                 toggle={toggle}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                onToggleStatus={onToggleStatus}
                 activeOrganization={activeOrganization}
               />
             ))}
@@ -151,6 +178,7 @@ const AdminForumCategoriesPage = () => {
     createCategory,
     updateCategory,
     deleteCategory,
+    updateCategoryStatus,
   } = useAdminForumContext();
 
   const { setBreadcrumbs } = useOutletContext();
@@ -223,6 +251,16 @@ const AdminForumCategoriesPage = () => {
     const ok = await deleteCategory?.(deleteTarget.id);
     enqueueSnackbar(ok ? t('admin:forum_cat_deleted') : t('admin:forum_cat_delete_failed'), { variant: ok ? 'success' : 'error' });
     setDeleteTarget(null);
+  };
+
+  const handleToggleStatus = async (node) => {
+    const isActive = String(node.status || 'ACTIVE').toUpperCase() === 'ACTIVE';
+    const next = isActive ? 'INACTIVE' : 'ACTIVE';
+    const ok = await updateCategoryStatus?.(node.id, next);
+    enqueueSnackbar(
+      ok ? t('admin:forum_status_updated') : t('admin:forum_status_update_failed'),
+      { variant: ok ? 'success' : 'error' },
+    );
   };
 
   const stats = {
@@ -320,6 +358,7 @@ const AdminForumCategoriesPage = () => {
                   toggle={toggle}
                   onEdit={openEdit}
                   onDelete={setDeleteTarget}
+                  onToggleStatus={handleToggleStatus}
                   activeOrganization={activeOrganization}
                 />
               ))

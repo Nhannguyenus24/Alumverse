@@ -95,6 +95,7 @@ public enum ErrorCode {
     FORUM_REPORT_NOT_FOUND("Không tìm thấy báo cáo forum", 404),
     INVALID_TOPIC_ID("ID chủ đề không hợp lệ", 400),
     FORUM_TOPIC_LOCKED("Chủ đề đã bị khóa", 400),
+    FORUM_INVALID_STATUS("Trạng thái forum không hợp lệ", 400),
 
     // Education change request module
     EDUCATION_REQUEST_NOT_FOUND("Không tìm thấy yêu cầu thay đổi học vấn", 404),

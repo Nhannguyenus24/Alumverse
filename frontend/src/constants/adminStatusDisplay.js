@@ -48,6 +48,8 @@ const formatForumStatusLabel = (status) => {
     FLAGGED: 'Flagged',
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
+    ACTIVE: 'Active',
+    INACTIVE: 'Inactive',
   };
 
   return map[key] || formatTitleCase(status);

@@ -8,6 +8,7 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Menu,
   MenuItem,
   TextField,
   Tooltip,
@@ -23,12 +24,12 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import LockOpenOutlinedIcon from "@mui/icons-material/LockOpenOutlined";
+import HourglassEmptyOutlinedIcon from "@mui/icons-material/HourglassEmptyOutlined";
 import ForumOutlinedIcon from "@mui/icons-material/ForumOutlined";
 import ChatOutlinedIcon from "@mui/icons-material/ChatOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AdminDataTable from "../../components/admin/AdminDataTable";
+import AdminStatusChip from "../../components/admin/AdminStatusChip";
 import AdminDashboardMetricTile from "../../components/admin/AdminDashboardMetricTile";
 import AdminConfirmDeleteDialog from "../../components/admin/AdminConfirmDeleteDialog";
 import { useAdminForumContext, useAdminSystemContext } from "../../stores/AdminStore";
@@ -50,7 +51,7 @@ const AdminForumTopicsPage = () => {
     createTopic,
     updateTopic,
     deleteTopic,
-    updateTopicLock,
+    updateTopicStatus,
     topicsSearch,
     setTopicsSearch,
   } = useAdminForumContext();
@@ -80,12 +81,30 @@ const AdminForumTopicsPage = () => {
   const totalElements = topicsPaginated?.totalElements ?? 0;
   const [detailTopic, setDetailTopic] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [statusMenu, setStatusMenu] = useState(null);
   const [dialog, setDialog] = useState({
     open: false,
     mode: "create",
     topic: null,
   });
   const [form, setForm] = useState({ title: "", categoryId: "" });
+
+  const TOPIC_STATUS_OPTIONS = ["ACTIVE", "PENDING", "INACTIVE"];
+  const statusLabel = (s) => {
+    const k = String(s || "").toUpperCase();
+    if (k === "ACTIVE") return t("forum_status_active");
+    if (k === "INACTIVE") return t("forum_status_inactive");
+    if (k === "PENDING") return t("forum_status_pending");
+    return s || "-";
+  };
+
+  const handleChangeStatus = async (topicId, status) => {
+    setStatusMenu(null);
+    const ok = await updateTopicStatus?.(topicId, status);
+    enqueueSnackbar(ok ? t("forum_status_updated") : t("forum_status_update_failed"), {
+      variant: ok ? "success" : "error",
+    });
+  };
 
   const columns = [
     { id: "id", label: "ID", width: 60 },
@@ -111,41 +130,23 @@ const AdminForumTopicsPage = () => {
     },
     { id: "viewCount", label: t('forum_col_views'), align: "center" },
     {
-      id: "isLocked",
+      id: "status",
       label: t('forum_col_status'),
       render: (val, row) => (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {val ? (
-            <Tooltip title={t('forum_action_unlock')}>
-              <IconButton
-                size="small"
-                color="warning"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateTopicLock?.(row.id, false, Number(user?.id));
-                }}
-              >
-                <LockOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title={t('forum_action_lock')}>
-              <IconButton
-                size="small"
-                color="inherit"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateTopicLock?.(row.id, true, Number(user?.id));
-                }}
-              >
-                <LockOpenOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
-          <Typography variant="caption" sx={{ fontWeight: 600 }}>
-            {val ? t('forum_status_locked') : t('forum_status_open')}
-          </Typography>
-        </Box>
+        <Tooltip title={t('forum_status_change')}>
+          <span>
+            <AdminStatusChip
+              status={row.status}
+              category="forum"
+              label={statusLabel(row.status)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setStatusMenu({ anchorEl: e.currentTarget, topic: row });
+              }}
+              sx={{ cursor: "pointer" }}
+            />
+          </span>
+        </Tooltip>
       ),
     },
     { id: "createdAt", label: t('forum_col_created_at_date'), render: (val) => formatDate(val) },
@@ -233,10 +234,11 @@ const AdminForumTopicsPage = () => {
 
   const stats = {
     total: totalElements,
-    locked: topicsList.filter((t) => t.isLocked).length,
+    pending: topicsList.filter((tp) => String(tp.status || "").toUpperCase() === "PENDING").length,
+    active: topicsList.filter((tp) => String(tp.status || "").toUpperCase() === "ACTIVE").length,
     mostViewed:
       topicsList.length > 0
-        ? Math.max(...topicsList.map((t) => t.viewCount || 0))
+        ? Math.max(...topicsList.map((tp) => tp.viewCount || 0))
         : 0,
     categoriesCount: categories?.length || 0,
   };
@@ -290,7 +292,7 @@ const AdminForumTopicsPage = () => {
         />
         <AdminDashboardMetricTile
           label={t('forum_stat_discussing')}
-          value={stats.total - stats.locked}
+          value={stats.active}
           icon={<ChatOutlinedIcon />}
           valueColor="success.main"
         />
@@ -301,9 +303,9 @@ const AdminForumTopicsPage = () => {
           valueColor="info.main"
         />
         <AdminDashboardMetricTile
-          label={t('forum_stat_locked')}
-          value={stats.locked}
-          icon={<LockOutlinedIcon />}
+          label={t('forum_stat_pending')}
+          value={stats.pending}
+          icon={<HourglassEmptyOutlinedIcon />}
           valueColor="warning.main"
         />
       </Box>
@@ -358,7 +360,7 @@ const AdminForumTopicsPage = () => {
             </Typography>
             <Typography variant="body2">
               <strong>{t('forum_col_status')}:</strong>{" "}
-              {detailTopic.isLocked ? t('forum_status_locked') : t('forum_status_open')}
+              {statusLabel(detailTopic.status)}
             </Typography>
             <Typography variant="body2">
               <strong>{t('forum_col_created_at_date')}:</strong> {formatDate(detailTopic.createdAt)}
@@ -424,6 +426,23 @@ const AdminForumTopicsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Menu
+        anchorEl={statusMenu?.anchorEl}
+        open={Boolean(statusMenu)}
+        onClose={() => setStatusMenu(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        {TOPIC_STATUS_OPTIONS.map((opt) => (
+          <MenuItem
+            key={opt}
+            selected={String(statusMenu?.topic?.status || "").toUpperCase() === opt}
+            onClick={() => handleChangeStatus(statusMenu.topic.id, opt)}
+          >
+            {statusLabel(opt)}
+          </MenuItem>
+        ))}
+      </Menu>
 
       <AdminConfirmDeleteDialog
         open={Boolean(deleteTarget)}
