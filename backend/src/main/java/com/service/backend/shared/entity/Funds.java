@@ -61,6 +61,9 @@ public class Funds {
     @Column("time_ended")
     private LocalDateTime timeEnded;
 
+    @Column("manager_email")
+    private String managerEmail;
+
     @CreatedDate
     @Column("created_at")
     private LocalDateTime createdAt;
