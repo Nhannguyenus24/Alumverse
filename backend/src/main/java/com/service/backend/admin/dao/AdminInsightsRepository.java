@@ -49,19 +49,34 @@ public interface AdminInsightsRepository extends R2dbcRepository<Event, Long> {
 
     // ============================ Cohort ============================
 
-    @Query("SELECT REPLACE(CAST(started_year AS text), '\"', '') AS key, COUNT(*) AS count " +
-           "FROM organization_members WHERE started_year IS NOT NULL " +
-           "GROUP BY started_year ORDER BY 1")
+    // These columns are jsonb arrays (e.g. ["2019","2020"], ["GRADUATED","STUDYING"]).
+    // Unnest each array element so members with multiple values are counted per value.
+    // A scalar value is wrapped into a single-element array first to stay robust.
+    @Query("SELECT elem AS key, COUNT(*) AS count " +
+           "FROM organization_members om " +
+           "CROSS JOIN LATERAL jsonb_array_elements_text(" +
+           "    CASE WHEN jsonb_typeof(om.started_year) = 'array' THEN om.started_year " +
+           "         ELSE jsonb_build_array(om.started_year) END) AS elem " +
+           "WHERE om.started_year IS NOT NULL " +
+           "GROUP BY elem ORDER BY elem")
     Flux<KeyCountProjection> startedYearDistribution();
 
-    @Query("SELECT REPLACE(CAST(graduated_year AS text), '\"', '') AS key, COUNT(*) AS count " +
-           "FROM organization_members WHERE graduated_year IS NOT NULL " +
-           "GROUP BY graduated_year ORDER BY 1")
+    @Query("SELECT elem AS key, COUNT(*) AS count " +
+           "FROM organization_members om " +
+           "CROSS JOIN LATERAL jsonb_array_elements_text(" +
+           "    CASE WHEN jsonb_typeof(om.graduated_year) = 'array' THEN om.graduated_year " +
+           "         ELSE jsonb_build_array(om.graduated_year) END) AS elem " +
+           "WHERE om.graduated_year IS NOT NULL " +
+           "GROUP BY elem ORDER BY elem")
     Flux<KeyCountProjection> graduatedYearDistribution();
 
-    @Query("SELECT REPLACE(CAST(graduation_status AS text), '\"', '') AS key, COUNT(*) AS count " +
-           "FROM organization_members WHERE graduation_status IS NOT NULL " +
-           "GROUP BY graduation_status ORDER BY 2 DESC")
+    @Query("SELECT elem AS key, COUNT(*) AS count " +
+           "FROM organization_members om " +
+           "CROSS JOIN LATERAL jsonb_array_elements_text(" +
+           "    CASE WHEN jsonb_typeof(om.graduation_status) = 'array' THEN om.graduation_status " +
+           "         ELSE jsonb_build_array(om.graduation_status) END) AS elem " +
+           "WHERE om.graduation_status IS NOT NULL " +
+           "GROUP BY elem ORDER BY count DESC")
     Flux<KeyCountProjection> graduationStatusDistribution();
 
     @Query("SELECT COALESCE(NULLIF(gender, ''), 'unknown') AS key, COUNT(*) AS count " +

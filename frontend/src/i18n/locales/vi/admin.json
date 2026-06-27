@@ -966,6 +966,12 @@
   "cohort_verif_unverified": "Chưa xác thực",
   "cohort_verif_requested": "Đã yêu cầu",
   "cohort_verif_accepted": "Đã xác thực",
+  "grad_status_graduated": "Đã tốt nghiệp",
+  "grad_status_studying": "Đang học",
+  "grad_status_dropped": "Đã nghỉ học",
+  "gender_male": "Nam",
+  "gender_female": "Nữ",
+  "gender_other": "Khác",
 
   "engagement_section_title": "Tương tác & giữ chân",
   "engagement_section_subtitle": "Mức độ hoạt động của người dùng dựa trên lịch sử đăng nhập",

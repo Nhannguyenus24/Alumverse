@@ -62,7 +62,7 @@ const AdminPlatformSection = () => {
               <Chart type="area" title={t('admin:chart_messages_by_day_14d')} data={messagesByDay} dataKey="value" xAxisKey="name" height={260} />
             </Box>
             <Box flex={1} minWidth={0}>
-              <Chart type="pie" title={t('admin:chart_chat_groups_by_type')} data={points(chat?.groupsByType)} dataKey="value" xAxisKey="name" height={260} />
+              <Chart type="pie" title={t('admin:chart_chat_groups_by_type')} data={points(chat?.groupsByType)} dataKey="value" xAxisKey="name" height={260} showTable />
             </Box>
           </Stack>
         </Stack>

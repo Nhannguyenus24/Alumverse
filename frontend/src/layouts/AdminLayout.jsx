@@ -131,12 +131,15 @@ const AdminLayout = () => {
     slug,
   });
   const setOrganization = useOrganizationStore((state) => state.setOrganization);
-  const isUsersPage = location.pathname.includes('/users');
+  // The dashboard (admin index route) aggregates user & forum data client-side,
+  // so it needs both datasets loaded too — not just the dedicated /users & /forum pages.
+  const isDashboard = /\/admin\/?$/.test(location.pathname);
+  const isUsersPage = location.pathname.includes('/users') || isDashboard;
   const users = useAdminUsersLocal(system.stableOrgId, isUsersPage);
 
-  // Only load forum data when on forum pages — avoids firing 6 API calls
-  // unnecessarily when switching org while on Events / Users / etc.
-  const isForumPage = location.pathname.includes('/forum');
+  // Only load forum data when on forum pages or the dashboard — avoids firing 6 API
+  // calls unnecessarily when switching org while on Events / etc.
+  const isForumPage = location.pathname.includes('/forum') || isDashboard;
   const forum = useAdminForumData(system.stableOrgId, isForumPage);
 
   useEffect(() => {

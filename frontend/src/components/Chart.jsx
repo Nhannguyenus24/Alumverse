@@ -1,5 +1,15 @@
 import { useMemo } from "react";
-import { Box, Paper, Typography, useTheme } from "@mui/material";
+import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  useTheme,
+} from "@mui/material";
 import {
   AreaChart,
   Area,
@@ -35,6 +45,7 @@ const Chart = ({
   height = 300,
   showLegend = true,
   showGrid = true,
+  showTable = false,
   color,
 }) => {
   const theme = useTheme();
@@ -72,7 +83,7 @@ const Chart = ({
           <AreaChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis dataKey={xAxisKey} tickMargin={AXIS_TICK_MARGIN} />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
             <defs>
@@ -97,7 +108,7 @@ const Chart = ({
           <LineChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis dataKey={xAxisKey} tickMargin={AXIS_TICK_MARGIN} />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
             {dataKeys && dataKeys.length > 0 ? (
@@ -128,7 +139,7 @@ const Chart = ({
           <BarChart data={chartData}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
             <XAxis dataKey={xAxisKey} tickMargin={AXIS_TICK_MARGIN} />
-            <YAxis />
+            <YAxis allowDecimals={false} />
             <Tooltip />
             {showLegend && <Legend wrapperStyle={LEGEND_WRAPPER_STYLE} />}
             {dataKeys && dataKeys.length > 0 ? (
@@ -231,6 +242,56 @@ const Chart = ({
           {renderedChart}
         </ResponsiveContainer>
       </Box>
+      {type === "pie" && showTable && (() => {
+        const total = chartData.reduce(
+          (acc, row) => acc + (Number(row[dataKey]) || 0),
+          0,
+        );
+        return (
+          <Table size="small" sx={{ mt: 1.5 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, py: 0.75 }}>Name</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, py: 0.75 }}>
+                  Value
+                </TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, py: 0.75 }}>
+                  %
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {chartData.map((row, index) => {
+                const value = Number(row[dataKey]) || 0;
+                return (
+                  <TableRow key={`${row[xAxisKey]}-${index}`}>
+                    <TableCell sx={{ py: 0.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: "2px",
+                            flexShrink: 0,
+                            bgcolor: chartColors[index % chartColors.length],
+                          }}
+                        />
+                        {row[xAxisKey]}
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right" sx={{ py: 0.5, fontWeight: 600 }}>
+                      {value.toLocaleString()}
+                    </TableCell>
+                    <TableCell align="right" sx={{ py: 0.5 }}>
+                      {total > 0 ? `${((value / total) * 100).toFixed(1)}%` : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        );
+      })()}
     </Paper>
   );
 };

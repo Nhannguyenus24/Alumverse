@@ -483,6 +483,16 @@ const ForumAlumniThreadPage = () => {
     return m;
   }, [replies]);
 
+  // The reply box is a ReactQuill editor: its editable element is the
+  // contenteditable `.ql-editor` div, not a <textarea>.
+  const focusReplyEditor = useCallback(() => {
+    window.setTimeout(() => {
+      editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      const editor = editorRef.current?.querySelector?.('.ql-editor');
+      editor?.focus?.();
+    }, 0);
+  }, []);
+
   const handleReply = useCallback((reply) => {
     if (!reply?.id) return;
     setReplyTo({
@@ -490,13 +500,8 @@ const ForumAlumniThreadPage = () => {
       authorName: reply.authorName ?? '',
       content: reply.content ?? '',
     });
-
-    window.setTimeout(() => {
-      editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-      const input = editorRef.current?.querySelector?.('textarea');
-      input?.focus?.();
-    }, 0);
-  }, []);
+    focusReplyEditor();
+  }, [focusReplyEditor]);
 
   const handleCancelReply = useCallback(() => setReplyTo(null), []);
   
@@ -933,11 +938,7 @@ const ForumAlumniThreadPage = () => {
                             color="primary"
                             size="small"
                             startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                            onClick={() => {
-                              editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-                              const input = editorRef.current?.querySelector?.('textarea');
-                              input?.focus?.();
-                            }}
+                            onClick={focusReplyEditor}
                             disabled={isGuest}
                             sx={{ whiteSpace: 'nowrap' }}
                           >
@@ -998,11 +999,7 @@ const ForumAlumniThreadPage = () => {
                             color="primary"
                             size="small"
                             startIcon={<ReplyOutlinedIcon sx={{ fontSize: 18 }} />}
-                            onClick={() => {
-                              editorRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
-                              const input = editorRef.current?.querySelector?.('textarea');
-                              input?.focus?.();
-                            }}
+                            onClick={focusReplyEditor}
                             disabled={isGuest}
                           >
                             {t('forum:reply')}

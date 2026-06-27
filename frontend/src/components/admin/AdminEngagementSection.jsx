@@ -71,6 +71,7 @@ const AdminEngagementSection = () => {
               dataKey="value"
               xAxisKey="name"
               height={260}
+              showTable
             />
           </Box>
         </Stack>

@@ -942,6 +942,12 @@
   "cohort_verif_unverified": "Unverified",
   "cohort_verif_requested": "Requested",
   "cohort_verif_accepted": "Verified",
+  "grad_status_graduated": "Graduated",
+  "grad_status_studying": "Studying",
+  "grad_status_dropped": "Dropped out",
+  "gender_male": "Male",
+  "gender_female": "Female",
+  "gender_other": "Other",
 
   "engagement_section_title": "Engagement & retention",
   "engagement_section_subtitle": "User activity derived from login history",
