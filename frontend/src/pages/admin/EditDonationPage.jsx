@@ -55,6 +55,7 @@ const buildEditSchema = ({ minAllowedTime, phase, originalStartDate, originalEnd
     .object({
       name: z.string().trim().min(1, t('admin:edit_fund_name_required')),
       managerName: z.string().trim().min(1, t('admin:edit_fund_manager_required')),
+      managerEmail: z.string().trim().min(1, t('donation:validation_manager_email_required')).email(t('donation:validation_manager_email_invalid')),
       descriptionShort: z
         .string()
         .trim()
@@ -184,6 +185,7 @@ export default function EditDonationPage() {
     defaultValues: {
       name: "",
       managerName: "",
+      managerEmail: "",
       descriptionShort: "",
       descriptionFull: "",
       targetAmount: 0,
@@ -249,6 +251,7 @@ export default function EditDonationPage() {
         reset({
           name: normalizedDetail.name,
           managerName: detail?.managerName ?? "",
+          managerEmail: detail?.managerEmail ?? "",
           descriptionShort: detail?.descriptionShort ?? "",
           descriptionFull: detail?.descriptionFull ?? "",
           targetAmount: normalizedDetail.targetAmount,
@@ -308,6 +311,7 @@ export default function EditDonationPage() {
       const payload = {
         name: values.name?.trim(),
         managerName: values.managerName?.trim(),
+        managerEmail: values.managerEmail?.trim(),
         logoUrl,
         description_short: values.descriptionShort?.trim(),
         description_full: values.descriptionFull,
@@ -380,6 +384,20 @@ export default function EditDonationPage() {
                           disabled={disableAllFields}
                           error={!!errors.managerName}
                           helperText={errors.managerName?.message}
+                        />
+                      </Grid>
+                      <Grid size={12}>
+                        <TextField
+                          fullWidth
+                          required
+                          type="email"
+                          label={t('donation:field_manager_email_label')}
+                          placeholder={t('donation:field_manager_email_placeholder')}
+                          InputLabelProps={{ shrink: true }}
+                          {...register("managerEmail")}
+                          disabled={disableAllFields}
+                          error={!!errors.managerEmail}
+                          helperText={errors.managerEmail?.message}
                         />
                       </Grid>
                       <Grid size={12}>

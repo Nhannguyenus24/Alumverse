@@ -46,6 +46,7 @@ const buildSchema = (minStartTime, msgs) =>
     .object({
       fundName: z.string().trim().min(1, msgs.fundName),
       organizer: z.string().trim().min(1, msgs.organizer),
+      managerEmail: z.string().trim().min(1, msgs.managerEmailRequired).email(msgs.managerEmailInvalid),
       fundReceivingInfoId: z.coerce
         .number()
         .int()
@@ -93,6 +94,7 @@ const buildSchema = (minStartTime, msgs) =>
 const defaultValues = {
   fundName: "",
   organizer: "",
+  managerEmail: "",
   fundReceivingInfoId: "",
   targetAmount: "",
   descriptionShort: "",
@@ -146,18 +148,20 @@ export default function PostArticleDonationPage() {
   const minStartTime = useMemo(() => dayjs().add(1, "hour"), []);
 
   const validationMsgs = useMemo(() => ({
-    fundName:      t("validation_fund_name"),
-    organizer:     t("validation_organizer"),
-    receivingInfo: t("validation_receiving_info"),
-    targetNumber:  t("validation_target_number"),
-    targetPositive:t("validation_target_positive"),
-    descShort:     t("validation_desc_short"),
-    descShortMax:  t("validation_desc_short_max"),
-    descFull:      t("validation_desc_full"),
-    startDate:     t("validation_start_date"),
-    endDate:       t("validation_end_date"),
-    startDateMin:  t("validation_start_date_min"),
-    endDateMin:    t("validation_end_date_min"),
+    fundName:             t("validation_fund_name"),
+    organizer:            t("validation_organizer"),
+    managerEmailRequired: t("validation_manager_email_required"),
+    managerEmailInvalid:  t("validation_manager_email_invalid"),
+    receivingInfo:        t("validation_receiving_info"),
+    targetNumber:         t("validation_target_number"),
+    targetPositive:       t("validation_target_positive"),
+    descShort:            t("validation_desc_short"),
+    descShortMax:         t("validation_desc_short_max"),
+    descFull:             t("validation_desc_full"),
+    startDate:            t("validation_start_date"),
+    endDate:              t("validation_end_date"),
+    startDateMin:         t("validation_start_date_min"),
+    endDateMin:           t("validation_end_date_min"),
   }), [t]);
 
   const schema = useMemo(
@@ -188,6 +192,7 @@ export default function PostArticleDonationPage() {
       const payload = {
         name: values.fundName,
         managerName: values.organizer,
+        managerEmail: values.managerEmail.trim(),
         logoUrl: logoUrl ?? null,
         fundReceivingInfoId: Number(values.fundReceivingInfoId),
         targetAmount: Number(values.targetAmount),
@@ -283,6 +288,20 @@ export default function PostArticleDonationPage() {
                         {...register("organizer")}
                         error={!!errors.organizer}
                         helperText={errors.organizer?.message}
+                      />
+                    </Grid>
+
+                    {/* Email người phụ trách */}
+                    <Grid size={12}>
+                      <TextField
+                        fullWidth
+                        required
+                        label={t("field_manager_email_label")}
+                        placeholder={t("field_manager_email_placeholder")}
+                        type="email"
+                        {...register("managerEmail")}
+                        error={!!errors.managerEmail}
+                        helperText={errors.managerEmail?.message}
                       />
                     </Grid>
 
