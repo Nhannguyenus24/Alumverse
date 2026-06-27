@@ -14,6 +14,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import com.service.backend.shared.enums.UserRole;
 import com.service.backend.shared.enums.Status;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -40,6 +41,24 @@ public class User {
 
     @Column("avatar_url")
     private String avatarUrl;
+
+    @Column("full_name")
+    private String fullName;
+
+    @Column("phone")
+    private String phone;
+
+    @Column("bio")
+    private String bio;
+
+    @Column("dob")
+    private LocalDate dob;
+
+    @Column("gender")
+    private String gender;
+
+    @Column("settings")
+    private String settings;
 
     @CreatedDate
     @Column("created_at")

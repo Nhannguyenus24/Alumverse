@@ -89,13 +89,12 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     @Query("""
             SELECT et.* FROM event_tickets et
             LEFT JOIN users u ON et.member_id = u.id
-            LEFT JOIN global_profiles gp ON u.id = gp.user_id
             WHERE et.event_id = :eventId
             AND (
                 LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             ORDER BY et.registered_at DESC
@@ -106,13 +105,12 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     @Query("""
             SELECT COUNT(*) FROM event_tickets et
             LEFT JOIN users u ON et.member_id = u.id
-            LEFT JOIN global_profiles gp ON u.id = gp.user_id
             WHERE et.event_id = :eventId
             AND (
                 LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             """)
@@ -121,13 +119,12 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     @Query("""
             SELECT et.* FROM event_tickets et
             LEFT JOIN users u ON et.member_id = u.id
-            LEFT JOIN global_profiles gp ON u.id = gp.user_id
             WHERE et.event_id = :eventId AND et.status = :status
             AND (
                 LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             ORDER BY et.registered_at DESC
@@ -138,13 +135,12 @@ public interface EventTicketR2dbcRepository extends ReactiveCrudRepository<Event
     @Query("""
             SELECT COUNT(*) FROM event_tickets et
             LEFT JOIN users u ON et.member_id = u.id
-            LEFT JOIN global_profiles gp ON u.id = gp.user_id
             WHERE et.event_id = :eventId AND et.status = :status
             AND (
                 LOWER(et.ticket_code) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(et.guest_email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
-                OR LOWER(COALESCE(gp.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                OR LOWER(COALESCE(u.full_name, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
                 OR LOWER(COALESCE(u.email, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
             )
             """)
