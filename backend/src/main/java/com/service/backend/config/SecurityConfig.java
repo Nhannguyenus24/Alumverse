@@ -102,7 +102,7 @@ public class SecurityConfig {
                         Object orgIdClaim = claims.getClaim("organizationId");
                         Integer organizationId = orgIdClaim instanceof Number ? ((Number) orgIdClaim).intValue() : null;
 
-                        if (userId == null || userRole == null) {
+                        if (userRole == null) {
                             if (isPublic) return chain.filter(exchange);
                             return Mono.error(new RuntimeException("Invalid token: missing user ID or role"));
                         }
