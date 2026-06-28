@@ -41,6 +41,7 @@ import AvatarUploadDialog from "../../components/profile/AvatarUploadDialog";
 import useAvatarCrop from "../../hooks/profile/useAvatarCrop";
 import ChangeEmailModal from '../../components/profile/ChangeEmailModal';
 import { useUploadImage } from '../../utils/imageUtils';
+import { GENDER_OPTIONS, GENDER_LABEL_KEYS } from '../../constants/gender';
 
 const parseOrganizationOptions = (value) => {
   if (!value) return [];
@@ -147,6 +148,7 @@ export default function SettingPage() {
 
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const verificationLevel = useAuthStore((state) => state.verificationLevel);
   const setAuthUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
   const { uploadBase64 } = useUploadImage();
@@ -451,7 +453,7 @@ export default function SettingPage() {
               {t('edit_info')}
             </Button>
           )}
-          {user?.role === 'GUEST' && (
+          {(verificationLevel ?? 0) === 0 && (
             <Button variant="contained" color="warning" startIcon={<ShieldOutlinedIcon />}
                     onClick={() => navigate('/cs-hcmus/organization-registration')}
             >
@@ -469,9 +471,9 @@ export default function SettingPage() {
           <FormControl fullWidth>
             <InputLabel>{t('label_gender')}</InputLabel>
             <Select name="gender" value={formData.gender} label={t('label_gender')} onChange={handleFormChange} disabled={!isEditMode}>
-              <MenuItem value="male">{t('gender_male')}</MenuItem>
-              <MenuItem value="female">{t('gender_female')}</MenuItem>
-              <MenuItem value="other">{t('gender_other')}</MenuItem>
+              {GENDER_OPTIONS.map((g) => (
+                <MenuItem key={g} value={g}>{t(GENDER_LABEL_KEYS[g])}</MenuItem>
+              ))}
             </Select>
           </FormControl>
           <TextField fullWidth label={t('label_birthdate')} name="birthDate" type="date" value={formData.birthDate} InputProps={{ readOnly: !isEditMode }} InputLabelProps={{ shrink: true }} />

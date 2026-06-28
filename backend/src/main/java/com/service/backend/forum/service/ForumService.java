@@ -50,6 +50,8 @@ import com.service.backend.forum.dao.ForumPostReactionRepository;
 import com.service.backend.forum.dao.ForumPostReportRepository;
 import com.service.backend.forum.dao.ForumTopicRepository;
 import com.service.backend.forum.dao.ForumTopicSubscriptionRepository;
+import com.service.backend.shared.dao.UserDisplayInfo;
+import com.service.backend.shared.dao.UserDisplayInfoRepository;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -65,6 +67,7 @@ public class ForumService {
     private final ForumPostReactionRepository forumPostReactionRepository;
     private final ForumPostReportRepository forumPostReportRepository;
     private final ForumTopicSubscriptionRepository forumTopicSubscriptionRepository;
+    private final UserDisplayInfoRepository userDisplayInfoRepository;
     private final CacheUtils cacheUtils;
 
     private static final String FORUM_RECENT_POSTS_CACHE = "forumRecentPosts";
@@ -73,7 +76,7 @@ public class ForumService {
     public Flux<ForumCategoryDTO> findAllCategoriesByOrganizationId(Integer organizationId) {
         String cacheKey = "forum_categories_org_" + organizationId;
         return cacheUtils.getOrCompute("forum_category_cache", cacheKey, Duration.ofDays(1), () ->
-                forumCategoryRepository.findByOrganizationId(organizationId)
+                forumCategoryRepository.findByOrganizationIdAndStatus(organizationId, Status.ACTIVE.name())
                         .collectList()
                         .flatMap(this::convertCategoriesWithStats)
                         .doOnSuccess(res -> log.info("Fetched {} forum categories for organization ID: {}", res.size(), organizationId))
@@ -88,6 +91,7 @@ public class ForumService {
                 .organizationId(request.getOrganizationId())
                 .name(request.getName())
                 .description(request.getDescription())
+                .status(Status.ACTIVE.name())
                 .build();
 
         return forumCategoryRepository.save(category)
@@ -146,9 +150,9 @@ public class ForumService {
     public Mono<PaginatedResponse<ForumTopicDTO>> findTopicsByCategoryId(Integer categoryId, String keyword, int page, int size) {
         long offset = (long) page * size;
         return PaginationHelper.paginate(
-                forumTopicRepository.findByCategoryIdWithPagination(categoryId, keyword, size, offset)
+                forumTopicRepository.findActiveByCategoryIdWithPagination(categoryId, keyword, size, offset)
                         .concatMap(this::convertToTopicDTOWithPostCount),
-                forumTopicRepository.countByCategoryId(categoryId, keyword),
+                forumTopicRepository.countActiveByCategoryId(categoryId, keyword),
                 page, size)
                 .doOnSuccess(result -> log.info("findTopicsByCategoryId with keyword {} result: {}", keyword,  JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum topics for category ID: {}", categoryId, error));
@@ -167,7 +171,8 @@ public class ForumService {
                             .createdByMemberId(request.getCreatedByMemberId())
                             .categoryId(request.getCategoryId())
                             .viewCount(0)
-                            .isLocked(false)
+                            // User-created topics await admin approval before appearing publicly.
+                            .status(Status.PENDING.name())
                             .build();
 
                     return forumTopicRepository.save(topic);
@@ -236,9 +241,26 @@ public class ForumService {
                         countMono,
                         page,
                         size,
-                        posts -> Mono.just(posts.stream()
-                                .map(post -> convertToPostDTO(post, likedPostIds.contains(post.getId())))
-                                .collect(Collectors.toList()))))
+                        posts -> {
+                            Set<Integer> authorIds = posts.stream()
+                                    .map(ForumPost::getAuthorMemberId)
+                                    .filter(java.util.Objects::nonNull)
+                                    .collect(Collectors.toSet());
+                            return userDisplayInfoRepository.findByUserIds(authorIds)
+                                    .map(displayMap -> posts.stream()
+                                            .map(post -> {
+                                                ForumPostDTO dto = convertToPostDTO(post, likedPostIds.contains(post.getId()));
+                                                UserDisplayInfo info = post.getAuthorMemberId() != null
+                                                        ? displayMap.get(post.getAuthorMemberId())
+                                                        : null;
+                                                if (info != null) {
+                                                    dto.setAuthorName(info.getFullName());
+                                                    dto.setAuthorAvatarUrl(info.getAvatarUrl());
+                                                }
+                                                return dto;
+                                            })
+                                            .collect(Collectors.toList()));
+                        }))
                 .doOnSuccess(result -> log.info("findPostsByTopicId result: {}", JsonUtils.toJson(result)))
                 .doOnError(error -> log.error("Error finding forum posts for topic ID: {}", topicId, error));
     }
@@ -255,7 +277,15 @@ public class ForumService {
                     return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_NOT_FOUND));
                 }))
                 .flatMap(topic -> {
-                    if (Boolean.TRUE.equals(topic.getIsLocked())) {
+                    // ACTIVE topics accept posts from anyone. A PENDING topic (awaiting admin
+                    // approval) still accepts posts from its own creator so they can add the
+                    // opening post / follow-ups while it is pending. INACTIVE (deactivated)
+                    // topics are closed for everyone.
+                    boolean isActive = Status.ACTIVE.name().equals(topic.getStatus());
+                    boolean isPendingByOwner = Status.PENDING.name().equals(topic.getStatus())
+                            && topic.getCreatedByMemberId() != null
+                            && topic.getCreatedByMemberId().equals(request.getAuthorMemberId());
+                    if (!isActive && !isPendingByOwner) {
                         return Mono.error(new ApplicationException(ErrorCode.FORUM_TOPIC_LOCKED));
                     }
                     ForumPost post = ForumPost.builder()
@@ -487,6 +517,7 @@ public class ForumService {
                 .organizationId(category.getOrganizationId())
                 .name(category.getName())
                 .description(category.getDescription())
+                .status(category.getStatus())
                 .topicCount(null)
                 .participantCount(null)
                 .createdAt(category.getCreatedAt())
@@ -508,6 +539,7 @@ public class ForumService {
                 .createdByMemberId(topic.getCreatedByMemberId())
                 .categoryId(topic.getCategoryId())
                 .viewCount(topic.getViewCount())
+                .status(topic.getStatus())
                 .postCount(postCount)
                 .createdAt(topic.getCreatedAt())
                 .updatedAt(topic.getUpdatedAt())

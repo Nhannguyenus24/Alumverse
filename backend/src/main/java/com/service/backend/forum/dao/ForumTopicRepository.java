@@ -34,6 +34,35 @@ public interface ForumTopicRepository extends R2dbcRepository<ForumTopic, Intege
     );
 
     /**
+     * Find all forum topics in a category (any status). Used when cascade-deleting a category.
+     */
+    Flux<ForumTopic> findByCategoryId(Integer categoryId);
+
+    /**
+     * Find ACTIVE forum topics by category id with pagination and keyword (public listing).
+     * PENDING (awaiting approval) and INACTIVE (hidden) topics are excluded.
+     */
+    @Query("SELECT * FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE' " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY created_at DESC LIMIT :limit OFFSET :offset")
+    Flux<ForumTopic> findActiveByCategoryIdWithPagination(
+            @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword,
+            @Param("limit") int limit,
+            @Param("offset") long offset
+    );
+
+    /**
+     * Count ACTIVE topics by category id with keyword (public listing).
+     */
+    @Query("SELECT COUNT(*) FROM forum_topics WHERE category_id = :categoryId AND status = 'ACTIVE' " +
+           "AND (:keyword IS NULL OR LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Mono<Long> countActiveByCategoryId(
+            @Param("categoryId") Integer categoryId,
+            @Param("keyword") String keyword
+    );
+
+    /**
      * Find forum topics by organization id
      */
     Flux<ForumTopic> findByOrganizationId(Integer organizationId);

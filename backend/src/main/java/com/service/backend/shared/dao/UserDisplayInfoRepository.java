@@ -26,8 +26,8 @@ public class UserDisplayInfoRepository {
         }
         List<Integer> distinctIds = userIds.stream().distinct().toList();
         return databaseClient
-                .sql("SELECT u.id AS user_id, u.avatar_url, gp.full_name " +
-                        "FROM users u LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
+                .sql("SELECT u.id AS user_id, u.avatar_url, u.full_name " +
+                        "FROM users u " +
                         "WHERE u.id IN (:ids)")
                 .bind("ids", distinctIds)
                 .map((row, meta) -> UserDisplayInfo.builder()
@@ -48,10 +48,9 @@ public class UserDisplayInfoRepository {
         }
         List<Integer> distinctIds = memberIds.stream().distinct().toList();
         return databaseClient
-                .sql("SELECT om.id AS member_id, u.avatar_url, gp.full_name " +
+                .sql("SELECT om.id AS member_id, u.avatar_url, u.full_name " +
                         "FROM organization_members om " +
                         "JOIN users u ON om.user_id = u.id " +
-                        "LEFT JOIN global_profiles gp ON u.id = gp.user_id " +
                         "WHERE om.id IN (:ids)")
                 .bind("ids", distinctIds)
                 .map((row, meta) -> {

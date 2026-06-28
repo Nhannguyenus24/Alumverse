@@ -35,7 +35,7 @@ public class NetworkMemberSearchController {
     /**
      * Search organization members by profile and academic fields.
      *
-     * @param fullName        optional; partial match on global_profiles.full_name
+     * @param fullName        optional; partial match on users.full_name
      * @param program         optional; partial match on organization_members.program
      * @param major           optional; partial match on organization_members.major
      * @param organizationIds optional; restrict to these organizations. When omitted,

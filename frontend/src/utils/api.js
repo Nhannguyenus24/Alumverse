@@ -884,6 +884,10 @@ const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/categories/${categoryId}`);
 	},
 
+	updateCategoryStatus(categoryId, status) {
+		return apiClient.put(`${BASE_ADMIN_FORUM}/categories/${categoryId}/status`, { status });
+	},
+
 	getAllTopics(organizationId, keyword = '', page = 0, size = 10, config = {}) {
 		const params = { organizationId, page, size };
 		if (keyword) params.keyword = keyword;
@@ -906,8 +910,8 @@ const adminForumApi = {
 		return apiClient.delete(`${BASE_ADMIN_FORUM}/topics/${topicId}`);
 	},
 
-	updateTopicLock(topicId, payload) {
-		return apiClient.put(`${BASE_ADMIN_FORUM_V2}/topics/${topicId}/lock`, payload);
+	updateTopicStatus(topicId, status) {
+		return apiClient.put(`${BASE_ADMIN_FORUM}/topics/${topicId}/status`, { status });
 	},
 };
 
@@ -929,11 +933,12 @@ export const {
 	createCategory,
 	updateCategory,
 	deleteCategory,
+	updateCategoryStatus,
 	getAllTopics,
 	createTopic,
 	updateTopic,
 	deleteTopic,
-	updateTopicLock,
+	updateTopicStatus,
 } = adminForumApi;
 
 export const fundApi = {

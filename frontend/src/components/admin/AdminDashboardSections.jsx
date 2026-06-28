@@ -30,6 +30,10 @@ import AdminUserGrowthSection from './AdminUserGrowthSection';
 import AdminVerificationSection from './AdminVerificationSection';
 import AdminContentSection from './AdminContentSection';
 import AdminFeedbackSection from './AdminFeedbackSection';
+import AdminFunnelSection from './AdminFunnelSection';
+import AdminCohortSection from './AdminCohortSection';
+import AdminEngagementSection from './AdminEngagementSection';
+import AdminPlatformSection from './AdminPlatformSection';
 
 const metricRowSx = {
   '& > *': {
@@ -278,6 +282,12 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
         </Stack>
       </AdminSectionPanel>
 
+      {/* Conversion funnels (high-level insight for PO/BU) */}
+      <AdminFunnelSection />
+
+      {/* Member cohort / demographics */}
+      <AdminCohortSection />
+
       {/* User Growth */}
       <AdminUserGrowthSection />
 
@@ -299,8 +309,14 @@ const AdminDashboardSections = ({ aggregates, forumStats }) => {
       {/* Feedback */}
       <AdminFeedbackSection />
 
+      {/* Engagement & Retention */}
+      <AdminEngagementSection />
+
       {/* Security & Audit */}
       <AdminSecuritySection />
+
+      {/* Platform health: chat, cross-org, service quality */}
+      <AdminPlatformSection />
     </Box>
   );
 };

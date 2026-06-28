@@ -37,7 +37,7 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
     @Query("""
             SELECT
                 cg.id                                                                   AS id,
-                CASE WHEN cg.type = 'PRIVATE' THEN gp.full_name ELSE cg.title END      AS name,
+                CASE WHEN cg.type = 'PRIVATE' THEN u.full_name ELSE cg.title END        AS name,
                 CASE WHEN cg.type = 'PRIVATE' THEN u.avatar_url  ELSE NULL END         AS avatar_url,
                 lm.content                                                              AS preview,
                 lm.created_at                                                           AS updated_at,
@@ -57,7 +57,6 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
                AND peer_cgm.member_id <> :memberId
                AND cg.type            = 'PRIVATE'
             LEFT JOIN users           u  ON u.id         = peer_cgm.member_id
-            LEFT JOIN global_profiles gp ON gp.user_id  = peer_cgm.member_id
             WHERE my_cgm.member_id = :memberId
             ORDER BY lm.created_at DESC
             LIMIT 5
@@ -66,15 +65,14 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
 
     @Query("""
             SELECT cgm.member_id AS member_id,
-                   gp.full_name AS full_name,
+                   u.full_name AS full_name,
                    u.avatar_url AS avatar_url,
                    cgm.role AS role,
                    cgm.joined_at AS joined_at
             FROM chat_group_members cgm
             INNER JOIN users u ON u.id = cgm.member_id
-            LEFT JOIN global_profiles gp ON gp.user_id = cgm.member_id
             WHERE cgm.group_id = :groupId
-              AND (:namePattern IS NULL OR LOWER(gp.full_name) LIKE LOWER(:namePattern))
+              AND (:namePattern IS NULL OR LOWER(u.full_name) LIKE LOWER(:namePattern))
             ORDER BY CASE cgm.role WHEN 'OWNER' THEN 0 ELSE 1 END,
                      cgm.joined_at ASC
             LIMIT :limit OFFSET :offset
@@ -88,7 +86,7 @@ public interface ChatGroupMemberRepository extends ReactiveCrudRepository<ChatGr
     @Query("""
             SELECT COUNT(cgm.id)
             FROM chat_group_members cgm
-            LEFT JOIN global_profiles gp ON gp.user_id = cgm.member_id
+            LEFT JOIN users gp ON gp.id = cgm.member_id
             WHERE cgm.group_id = :groupId
               AND (:namePattern IS NULL OR LOWER(gp.full_name) LIKE LOWER(:namePattern))
             """)

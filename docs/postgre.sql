@@ -5,18 +5,13 @@ CREATE TABLE "users" (
   "status" text,
   "role" text,
   "avatar_url" text,
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE "global_profiles" (
-  "user_id" integer PRIMARY KEY,
   "full_name" text,
   "phone" text,
   "bio" text,
   "dob" date,
   "gender" text,
   "settings" json,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
   "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -30,7 +25,8 @@ CREATE TABLE "organizations" (
   "programs" json,
   "majors" json,
   "status" text DEFAULT 'ACTIVE',
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "organization_introductions" (
@@ -112,7 +108,8 @@ CREATE TABLE "events" (
   "interested_count" integer DEFAULT 0,
   "topic" text,
   "is_published" boolean DEFAULT false,
-  "created_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "event_interests" (
@@ -280,7 +277,9 @@ CREATE TABLE "news" (
   "topic" text,
   "url" text,
   "is_hidden" boolean,
-  "published_at" timestamp
+  "published_at" timestamp,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "alumni_posts" (
@@ -294,7 +293,9 @@ CREATE TABLE "alumni_posts" (
   "topic" text,
   "url" text,
   "is_hidden" boolean,
-  "published_at" timestamp
+  "published_at" timestamp,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "saved_items" (
@@ -314,7 +315,9 @@ CREATE TABLE "achievements" (
   "image_url" text,
   "awarded_date" date,
   "topic" text,
-  "status" text
+  "status" text,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "jobs" (
@@ -331,7 +334,8 @@ CREATE TABLE "jobs" (
   "how_to_apply" text,
   "deadline" date,
   "is_active" boolean,
-  "created_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "learning_resources" (
@@ -342,7 +346,8 @@ CREATE TABLE "learning_resources" (
   "type" text,
   "link_url" text,
   "description" text,
-  "created_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Thong tin cua quy
@@ -363,7 +368,10 @@ CREATE TABLE "funds" (
   "time_started" timestamp,
   "donor_count" integer DEFAULT 0, -- so luong donate, phuc vu frontend
   "topic" text,
-  "time_ended" timestamp
+  "time_ended" timestamp,
+  "manager_email" text NOT NULL,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "fund_receiving_infos" (
@@ -438,6 +446,7 @@ CREATE TABLE "forum_categories" (
   "organization_id" integer,
   "name" text,
   "description" text,
+  "status" text DEFAULT 'ACTIVE',  -- ACTIVE: visible publicly, INACTIVE: hidden, PENDING: awaiting admin approval
   "created_at" timestamp,
   "updated_at" timestamp
 );
@@ -447,9 +456,9 @@ CREATE TABLE "forum_topics" (
   "organization_id" integer,
   "title" text,
   "created_by_member_id" integer,
-  "category_id" integer, 
+  "category_id" integer,
   "view_count" integer DEFAULT 0,
-  "is_locked" boolean DEFAULT false,
+  "status" text DEFAULT 'ACTIVE',  -- PENDING: awaiting admin approval (user-created), ACTIVE: visible publicly, INACTIVE: hidden
   "created_at" timestamp,
   "updated_at" timestamp
 );
@@ -591,8 +600,6 @@ CREATE INDEX ON "event_invitations" ("event_id", "status");
 CREATE INDEX ON "event_email_logs" ("event_id", "sent_at" DESC);
 
 CREATE UNIQUE INDEX ON "saved_items" ("member_id", "item_type", "item_id");
-
-ALTER TABLE "global_profiles" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 ALTER TABLE "organization_members" ADD FOREIGN KEY ("organization_id") REFERENCES "organizations" ("id");
 
@@ -739,7 +746,7 @@ CREATE INDEX ON "forum_post_reports" ("post_id");
 -- Add pg_trgm extension and indexes for ILIKE search queries
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX idx_users_email_trgm          ON users           USING GIN (email gin_trgm_ops);
-CREATE INDEX idx_global_profiles_name_trgm ON global_profiles USING GIN (full_name gin_trgm_ops);
+CREATE INDEX idx_users_name_trgm           ON users           USING GIN (full_name gin_trgm_ops);
 CREATE INDEX idx_forum_topics_title_trgm   ON forum_topics    USING GIN (title gin_trgm_ops);
 CREATE INDEX idx_forum_posts_content_trgm  ON forum_posts     USING GIN (content gin_trgm_ops);
 

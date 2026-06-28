@@ -63,7 +63,7 @@ public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, L
             INNER JOIN chat_group_members cgm
                 ON cgm.member_id = ub.blocked_member_id
                AND cgm.group_id = :groupId
-            LEFT JOIN global_profiles gp ON gp.user_id = ub.blocked_member_id
+            LEFT JOIN users gp ON gp.id = ub.blocked_member_id
             WHERE ub.blocker_member_id = :blockerMemberId
             ORDER BY ub.created_at DESC
             """)
@@ -80,17 +80,16 @@ public interface UserBlockRepository extends ReactiveCrudRepository<UserBlock, L
     String BLOCKED_SEARCH_FROM_JOIN = """
             FROM user_blocks ub
             INNER JOIN users u ON u.id = ub.blocked_member_id
-            LEFT JOIN global_profiles gp ON gp.user_id = ub.blocked_member_id
             """;
 
     String BLOCKED_SEARCH_WHERE = """
             WHERE ub.blocker_member_id = :blockerMemberId
-              AND (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName))
+              AND (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName))
             """;
 
     @Query("""
             SELECT ub.blocked_member_id AS blocked_member_id,
-                   gp.full_name AS full_name,
+                   u.full_name AS full_name,
                    u.avatar_url AS avatar_url,
                    ub.created_at AS blocked_at
             """ + BLOCKED_SEARCH_FROM_JOIN + BLOCKED_SEARCH_WHERE + """

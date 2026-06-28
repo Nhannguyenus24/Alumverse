@@ -21,18 +21,17 @@ public interface ConnectionSearchRepository extends ReactiveCrudRepository<ChatC
             + "    AND (ccr.member_low_id = :currentUserId OR ccr.member_high_id = :currentUserId) "
             + ") conn "
             + "JOIN users u ON u.id = conn.peer_id "
-            + "LEFT JOIN global_profiles gp ON gp.user_id = conn.peer_id "
             + "JOIN organization_members om ON om.user_id = conn.peer_id "
             + "  AND om.organization_id = :organizationId ";
 
     String SEARCH_WHERE =
-            "WHERE (:fullName IS NULL OR LOWER(gp.full_name) LIKE LOWER(:fullName)) ";
+            "WHERE (:fullName IS NULL OR LOWER(u.full_name) LIKE LOWER(:fullName)) ";
 
     String SEARCH_SELECT =
             "SELECT conn.id AS connection_id, "
             + "conn.chat_group_id AS chat_group_id, "
             + "conn.peer_id AS peer_member_id, "
-            + "gp.full_name AS full_name, "
+            + "u.full_name AS full_name, "
             + "u.avatar_url AS avatar_url, "
             + "CAST(om.program AS text) AS program, "
             + "CAST(om.major AS text) AS major, "
