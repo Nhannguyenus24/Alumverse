@@ -35,4 +35,8 @@ class RouteNames {
   static String ticketDetail(String code) => '/my-tickets/$code';
   static const String savedArticles = '/saved-articles';
   static const String alumniVerification = '/alumni-verification';
+
+  // Admin/staff event check-in: picker → per-event QR scanner.
+  static const String adminCheckIn = '/admin/check-in';
+  static String adminCheckInScanner(int eventId) => '/admin/check-in/$eventId';
 }

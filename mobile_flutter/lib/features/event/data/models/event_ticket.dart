@@ -11,6 +11,10 @@ class EventTicket {
   final List<Map<String, dynamic>> registrationAnswers;
   // Optional event info if the backend embeds it; otherwise resolved separately.
   final String? eventTitle;
+  // Attendee identity — shown on the admin check-in result.
+  final int? memberId;
+  final String? guestName;
+  final String? guestEmail;
 
   const EventTicket({
     required this.id,
@@ -23,7 +27,18 @@ class EventTicket {
     this.rejectReason,
     this.registrationAnswers = const [],
     this.eventTitle,
+    this.memberId,
+    this.guestName,
+    this.guestEmail,
   });
+
+  /// Best-effort display name for the attendee (guest name → email → member id).
+  String? get attendeeLabel {
+    if (guestName != null && guestName!.trim().isNotEmpty) return guestName;
+    if (guestEmail != null && guestEmail!.trim().isNotEmpty) return guestEmail;
+    if (memberId != null) return '#$memberId';
+    return null;
+  }
 
   bool get isCancelled => status.toUpperCase() == 'CANCELLED';
   bool get isCheckedIn {
@@ -70,6 +85,9 @@ class EventTicket {
           : const [],
       eventTitle: json['eventTitle'] as String? ??
           (json['event'] is Map ? json['event']['title'] as String? : null),
+      memberId: (json['memberId'] as num?)?.toInt(),
+      guestName: json['guestName'] as String?,
+      guestEmail: json['guestEmail'] as String?,
     );
   }
 

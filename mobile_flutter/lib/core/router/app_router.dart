@@ -24,6 +24,8 @@ import '../../features/event/presentation/pages/events_page.dart';
 import '../../features/event/presentation/pages/event_detail_page.dart';
 import '../../features/event/presentation/pages/my_tickets_page.dart';
 import '../../features/event/presentation/pages/ticket_detail_page.dart';
+import '../../features/event/presentation/pages/admin_check_in_events_page.dart';
+import '../../features/event/presentation/pages/event_check_in_scanner_page.dart';
 import '../../features/event/data/models/event_ticket.dart';
 import '../../features/organization/presentation/pages/organization_introduction_page.dart';
 import '../../features/organization/presentation/pages/alumni_verification_page.dart';
@@ -300,6 +302,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           initial: state.extra is EventTicket
               ? state.extra as EventTicket
               : null,
+        ),
+      ),
+      // Admin/staff event check-in. The auth gate keeps these behind login;
+      // the picker page itself hides its content from non-staff roles.
+      GoRoute(
+        path: RouteNames.adminCheckIn,
+        builder: (_, __) => const AdminCheckInEventsPage(),
+      ),
+      GoRoute(
+        path: '${RouteNames.adminCheckIn}/:eventId',
+        builder: (_, state) => EventCheckInScannerPage(
+          eventId: int.tryParse(state.pathParameters['eventId'] ?? '') ?? 0,
+          eventTitle: state.extra as String?,
         ),
       ),
       GoRoute(

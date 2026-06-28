@@ -110,11 +110,43 @@ class EventRepository {
 
   /// A single ticket by its code (`GET /api/events/tickets/code/{code}`).
   Future<EventTicket> getTicketByCode(String code) async {
-    final res = await _dio.get('/api/events/tickets/code/$code');
+    final res = await _dio.get(ApiEndpoints.eventTicketByCode(code));
     final data = res.data is Map && res.data['data'] is Map
         ? res.data['data'] as Map<String, dynamic>
         : res.data as Map<String, dynamic>;
     return EventTicket.fromJson(data);
+  }
+
+  /// Admin/staff check-in: mark the ticket [code] as attended
+  /// (`POST /api/events/tickets/{code}/check-in`). Returns the updated ticket.
+  /// The backend rejects cancelled/expired/already-checked-in tickets, so the
+  /// caller should surface [ApiException.message] on error.
+  Future<EventTicket> checkInTicket(String code) async {
+    final res = await _dio.post(ApiEndpoints.eventCheckIn(code));
+    final data = res.data is Map && res.data['data'] is Map
+        ? res.data['data'] as Map<String, dynamic>
+        : res.data as Map<String, dynamic>;
+    return EventTicket.fromJson(data);
+  }
+
+  /// All events of an organization for the admin check-in picker, including
+  /// drafts and past events (`GET /api/admin/events?organizationId=...`).
+  /// Requires an admin/staff session. Note the admin API uses `size`, not
+  /// `limit`, for the page size.
+  Future<List<EventSummary>> getOrganizationEvents(
+    int organizationId, {
+    int page = 0,
+    int size = 100,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.adminEvents,
+      queryParameters: {
+        'organizationId': organizationId,
+        'page': page,
+        'size': size,
+      },
+    );
+    return _items(res.data);
   }
 
   /// Cancel the current user's registration for [eventId]. Looks up the user's

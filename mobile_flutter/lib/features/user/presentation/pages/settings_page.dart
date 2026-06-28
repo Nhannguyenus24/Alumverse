@@ -20,11 +20,23 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsAsync = ref.watch(notificationSettingsProvider);
+    final isStaff = ref.watch(isStaffProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text('common.settings'.tr())),
       body: ListView(
         children: [
+          if (isStaff) ...[
+            _GroupHeader('settings.admin_tools'.tr()),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner),
+              title: Text('settings.event_checkin'.tr()),
+              subtitle: Text('settings.event_checkin_subtitle'.tr()),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push(RouteNames.adminCheckIn),
+            ),
+            const Divider(),
+          ],
           _GroupHeader('settings.account'.tr()),
           ListTile(
             leading: const Icon(Icons.person_outline),
