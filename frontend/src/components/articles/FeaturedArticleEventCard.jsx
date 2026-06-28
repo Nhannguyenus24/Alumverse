@@ -8,10 +8,13 @@ import { eventApi } from '../../utils/api';
 import JoinEventDialog from '../event/JoinEventDialog';
 import { useEventQuestions, formatAnswersForApi } from '../../hooks/events/useEventQuestions';
 import { getEventRegisteredState } from '../../utils/eventRegistration';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
   const { t } = useTranslation(['common', 'event']);
   const { enqueueSnackbar } = useSnackbar();
+  const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [loadingInterest, setLoadingInterest] = useState(false);
@@ -32,7 +35,7 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
   const handleInterest = async (e) => {
     e.stopPropagation();
-    if (loadingInterest) return;
+    if (loadingInterest || !canContribute) return;
     setLoadingInterest(true);
     try {
       if (isInterested) {
@@ -51,12 +54,12 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
 
   const handleJoinClick = (e) => {
     e.stopPropagation();
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setOpenJoinDialog(true);
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -191,27 +194,31 @@ const FeaturedArticleEventCard = ({ article, isAdmin = false, onEdit }) => {
           </Stack>
         ) : (
           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-            <Button
-              fullWidth
-              variant={isInterested ? 'outlined' : 'contained'}
-              color="primary"
-              disabled={loadingInterest}
-              sx={{ bgcolor: isInterested ? 'white' : 'primary.main' }}
-              onClick={handleInterest}
-            >
-              {isInterested ? t('event:interested') : t('event:mark_interested')}
-            </Button>
+            <ContributeGuardTooltip sx={{ flex: 1 }}>
+              <Button
+                fullWidth
+                variant={isInterested ? 'outlined' : 'contained'}
+                color="primary"
+                disabled={loadingInterest || !canContribute}
+                sx={{ bgcolor: isInterested ? 'white' : 'primary.main' }}
+                onClick={handleInterest}
+              >
+                {isInterested ? t('event:interested') : t('event:mark_interested')}
+              </Button>
+            </ContributeGuardTooltip>
 
-            <Button
-              fullWidth
-              variant={isJoined ? 'outlined' : 'contained'}
-              color="success"
-              disabled={loadingJoin || isJoined}
-              sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
-              onClick={handleJoinClick}
-            >
-              {isJoined ? t('event:joined') : t('event:join')}
-            </Button>
+            <ContributeGuardTooltip sx={{ flex: 1 }}>
+              <Button
+                fullWidth
+                variant={isJoined ? 'outlined' : 'contained'}
+                color="success"
+                disabled={loadingJoin || isJoined || !canContribute}
+                sx={{ bgcolor: isJoined ? 'white' : 'success.main' }}
+                onClick={handleJoinClick}
+              >
+                {isJoined ? t('event:joined') : t('event:join')}
+              </Button>
+            </ContributeGuardTooltip>
           </Stack>
         )}
       </Box>

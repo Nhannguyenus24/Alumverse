@@ -8,11 +8,11 @@ import ForumTopicListItem from '../../components/forum/ForumTopicListItem';
 
 import { useOrganization } from '../../hooks/useOrganization';
 import { useForumCategoryLogic } from '../../hooks/forum/useForumCategoryLogic';
-import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
 
 const ForumCategoryPage = () => {
   const { t } = useTranslation(['forum', 'common']);
-  const { isAuthenticated } = useAuth();
+  const { canContribute, isAuthenticated } = useCanContribute();
   const { organization } = useOrganization();
   const organizationId = organization?.id ?? null;
 
@@ -152,14 +152,18 @@ const ForumCategoryPage = () => {
                         width: { xs: '100%', sm: 'auto' },
                       }}
                     >
-                      <Tooltip title={!isAuthenticated ? t('forum:login_required_for_action', { defaultValue: 'Login required' }) : ""} placement="top" arrow>
+                      <Tooltip
+                        title={canContribute ? "" : (!isAuthenticated ? t('common:verification_required_login') : t('common:verification_required_tooltip'))}
+                        placement="top"
+                        arrow
+                      >
                         <span>
                           <Button
                             variant="contained"
                             color="primary"
                             onClick={() => navigate('/forum/alumni/career/create-topic')}
                             sx={{ minWidth: { xs: '100%', sm: 'auto' } }}
-                            disabled={!isAuthenticated}
+                            disabled={!canContribute}
                           >
                             {t('create_post')}
                           </Button>

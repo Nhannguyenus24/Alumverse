@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import Scrollbar from '../Scrollbar';
 import SearchBar from '../SearchBar';
 import ChatAvatar from '../ChatAvatar';
+import { useCanContribute } from '../../hooks/useCanContribute';
 
 const NetworkChatSidebar = ({
   chats = [],
@@ -28,8 +29,9 @@ const NetworkChatSidebar = ({
   isPending = false,
   isFetching = false,
 }) => {
-  const { t } = useTranslation('network');
+  const { t } = useTranslation(['network', 'common']);
   const { enqueueSnackbar } = useSnackbar();
+  const { canContribute, isAuthenticated } = useCanContribute();
 
   const handleSearchKeyDown = (event) => {
     if (event.key !== 'Enter') return;
@@ -38,6 +40,7 @@ const NetworkChatSidebar = ({
   };
 
   const handleCreateGroupChat = () => {
+    if (!canContribute) return;
     if (onCreateGroupChat) {
       onCreateGroupChat();
       return;
@@ -96,15 +99,21 @@ const NetworkChatSidebar = ({
         >
           {t('chat_sidebar_title')}
         </Typography>
-        <Tooltip title={t('create_group_chat_tooltip')} placement="bottom">
-          <IconButton
-            size="small"
-            aria-label={t('create_group_chat_aria')}
-            onClick={handleCreateGroupChat}
-            sx={{ flexShrink: 0 }}
-          >
-            <GroupAddIcon />
-          </IconButton>
+        <Tooltip
+          title={canContribute ? t('create_group_chat_tooltip') : (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))}
+          placement="bottom"
+        >
+          <span>
+            <IconButton
+              size="small"
+              aria-label={t('create_group_chat_aria')}
+              onClick={handleCreateGroupChat}
+              disabled={!canContribute}
+              sx={{ flexShrink: 0 }}
+            >
+              <GroupAddIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
 

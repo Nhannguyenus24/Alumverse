@@ -10,6 +10,8 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { formatDateTime } from '../../utils/dateFormatter';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const NetworkBlockedMemberCard = ({
   member,
@@ -17,7 +19,13 @@ const NetworkBlockedMemberCard = ({
   isUnblockLoading = false,
 }) => {
   const { t } = useTranslation('network');
+  const { canContribute } = useCanContribute();
   const displayName = member.fullName || 'N/A';
+
+  const handleUnblock = (event) => {
+    if (!canContribute) return;
+    onUnblock?.(event);
+  };
 
   return (
     <Card
@@ -56,17 +64,19 @@ const NetworkBlockedMemberCard = ({
         </Stack>
 
         <Box sx={{ flexShrink: 0, alignSelf: { xs: 'flex-end', sm: 'auto' } }}>
-          <Button
-            variant="outlined"
-            color="inherit"
-            size="small"
-            type="button"
-            onClick={onUnblock}
-            disabled={isUnblockLoading}
-            sx={{ minWidth: 100 }}
-          >
-            {isUnblockLoading ? <CircularProgress size={16} color="inherit" /> : t('unblock')}
-          </Button>
+          <ContributeGuardTooltip placement="left">
+            <Button
+              variant="outlined"
+              color="inherit"
+              size="small"
+              type="button"
+              onClick={handleUnblock}
+              disabled={isUnblockLoading || !canContribute}
+              sx={{ minWidth: 100 }}
+            >
+              {isUnblockLoading ? <CircularProgress size={16} color="inherit" /> : t('unblock')}
+            </Button>
+          </ContributeGuardTooltip>
         </Box>
       </Stack>
     </Card>

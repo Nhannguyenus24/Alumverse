@@ -8,7 +8,7 @@ import Page from '../../components/Page';
 import ForumFilterPanel from '../../components/forum/ForumFilterPanel';
 import ForumSponsoredCard from '../../components/forum/ForumSponsoredCard';
 import Breadcrumb from '../../components/Breadcrumb';
-import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useForumCategories } from '../../hooks/forum/useForumCategories';
@@ -23,7 +23,7 @@ const ForumAlumniCareerPage = () => {
   const { t } = useTranslation(['forum', 'common']);
   const navigate = useOrgNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { canContribute, isAuthenticated } = useCanContribute();
   const { organization } = useOrganization();
   const { showError } = useNotification();
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -183,13 +183,16 @@ const ForumAlumniCareerPage = () => {
                         ),
                       }}
                     />
-                    <Tooltip title={!isAuthenticated ? t('forum:login_required_to_post') : ''} arrow>
+                    <Tooltip
+                      title={canContribute ? '' : (!isAuthenticated ? t('common:verification_required_login') : t('common:verification_required_tooltip'))}
+                      arrow
+                    >
                       <span>
                         <Button
                           variant="contained"
                           color="primary"
                           onClick={() => navigate('/forum/alumni/career/create-topic')}
-                          disabled={!isAuthenticated}
+                          disabled={!canContribute}
                           sx={{ minWidth: { xs: '100%', sm: 'auto' }, height: 40 }}
                         >
                           {t('forum:create_post')}
