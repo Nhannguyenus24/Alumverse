@@ -121,5 +121,8 @@
   "image_upload_error": "Could not upload the image",
   "not_updated": "Not updated",
   "fitbot_greeting": "Hello! 👋 I'm HCMUS's virtual assistant. I can help you learn more about the university, academic programs, and much more. Do you have any questions for me?",
-  "loading_org_data": "Loading organization data..."
+  "loading_org_data": "Loading organization data...",
+  "verification_required_login": "Please sign in to use this feature.",
+  "verification_required_tooltip": "You must verify your alumni status (verification level 2) to use this feature.",
+  "verification_required_alert": "Only verified alumni (verification level 2) can use this feature. Please verify your alumni status to continue."
 }

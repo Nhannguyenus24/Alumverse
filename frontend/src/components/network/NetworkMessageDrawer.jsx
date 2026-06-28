@@ -18,6 +18,8 @@ import SendIcon from '@mui/icons-material/Send';
 import Scrollbar from '../Scrollbar';
 import { useNetworkConversationActions } from '../../hooks/network/useNetworkConversationActions';
 import { useNetworkCurrentMemberId } from '../../hooks/network/useNetworkCurrentMemberId';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { VerificationRequiredAlert } from '../ContributeGuard';
 import {
   isComposerEnabled,
   resolveConnectionDrawerState,
@@ -87,10 +89,11 @@ const NetworkMessageDrawer = ({
 
   const peerUserId = peer?.userId ?? null;
   const currentMemberId = useNetworkCurrentMemberId();
+  const { canContribute } = useCanContribute();
   const { sendMessage, isSending } = useNetworkConversationActions(peerUserId);
 
   const drawerState = resolveConnectionDrawerState(connectionStatus, t);
-  const composerEnabled = isComposerEnabled({
+  const composerEnabled = canContribute && isComposerEnabled({
     canCompose: drawerState.canCompose,
     singleMessageOnly: drawerState.singleMessageOnly,
     sentInSession,
@@ -239,6 +242,8 @@ const NetworkMessageDrawer = ({
         )}
         <div ref={messagesEndRef} />
       </Scrollbar>
+
+      <VerificationRequiredAlert sx={{ borderRadius: 0 }} />
 
       <Box
         sx={{

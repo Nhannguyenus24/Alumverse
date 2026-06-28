@@ -17,6 +17,8 @@ import JoinEventDialog from "../../components/event/JoinEventDialog";
 import { eventApi, savedItemApi } from "../../utils/api";
 import { useEventQuestions, formatAnswersForApi } from "../../hooks/events/useEventQuestions";
 import { useAuth } from "../../hooks/useAuth";
+import { useCanContribute } from "../../hooks/useCanContribute";
+import { ContributeGuardTooltip, VerificationRequiredAlert } from "../../components/ContributeGuard";
 import { useOrgNavigate } from "../../hooks/useOrgNavigate";
 import { getEventRegisteredState } from "../../utils/eventRegistration";
 
@@ -62,6 +64,7 @@ const normalizeArticleHtml = (html) => {
 const SaveArticleButton = ({ itemId }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article']);
+  const { canContribute, isAuthenticated } = useCanContribute();
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -75,7 +78,7 @@ const SaveArticleButton = ({ itemId }) => {
   }, [itemId]);
 
   const toggle = async () => {
-    if (busy) return;
+    if (busy || !canContribute) return;
     setBusy(true);
     try {
       if (saved) {
@@ -94,15 +97,21 @@ const SaveArticleButton = ({ itemId }) => {
     }
   };
 
+  const guardTitle = !canContribute
+    ? (isAuthenticated ? t('common:verification_required_tooltip') : t('common:verification_required_login'))
+    : (saved ? t('article:unsave') : t('article:save_interest'));
+
   return (
-    <Tooltip title={saved ? t('article:unsave') : t('article:save_interest')}>
-      <IconButton
-        onClick={toggle}
-        disabled={busy}
-        sx={{ color: saved ? "accent.main" : "text.secondary" }}
-      >
-        {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-      </IconButton>
+    <Tooltip title={guardTitle} arrow>
+      <Box component="span" sx={{ display: "inline-flex" }}>
+        <IconButton
+          onClick={toggle}
+          disabled={busy || !canContribute}
+          sx={{ color: saved ? "accent.main" : "text.secondary" }}
+        >
+          {saved ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+        </IconButton>
+      </Box>
     </Tooltip>
   );
 };
@@ -110,6 +119,7 @@ const SaveArticleButton = ({ itemId }) => {
 const ArticleHighlightCard = ({ data, channel, eventId }) => {
   const { enqueueSnackbar } = useSnackbar();
   const { t } = useTranslation(['common', 'article', 'event', 'donation']);
+  const { canContribute } = useCanContribute();
   const [isInterested, setIsInterested] = useState(false);
   const [isJoined, setIsJoined] = useState(false);
   const [interestedCount, setInterestedCount] = useState(data.stats?.[0]?.value ?? 0);
@@ -141,7 +151,7 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   }, [channel, eventId]);
 
   const handleInterest = async () => {
-    if (loadingInterest) return;
+    if (loadingInterest || !canContribute) return;
     setLoadingInterest(true);
     try {
       if (isInterested) {
@@ -161,12 +171,12 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
   };
 
   const handleJoinClick = () => {
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setOpenJoinDialog(true);
   };
 
   const handleConfirmJoin = async (answerMap) => {
-    if (loadingJoin || isJoined) return;
+    if (loadingJoin || isJoined || !canContribute) return;
     setLoadingJoin(true);
     try {
       const payload = questions.length > 0
@@ -219,34 +229,41 @@ const ArticleHighlightCard = ({ data, channel, eventId }) => {
         </Box>
 
         {/* BUTTONS */}
+        <VerificationRequiredAlert sx={{ mb: 1 }} />
         {channel === "donation" ? (
-          <Button fullWidth variant="contained">{t('donation:donate_button')}</Button>
+          <ContributeGuardTooltip sx={{ width: "100%" }}>
+            <Button fullWidth variant="contained" disabled={!canContribute}>{t('donation:donate_button')}</Button>
+          </ContributeGuardTooltip>
         ) : (
           <Stack direction="row" spacing={1}>
-            <Button
-              fullWidth
-              variant={isInterested ? "outlined" : "contained"}
-              disabled={loadingInterest}
-              onClick={handleInterest}
-            >
-              {isInterested ? t('article:interested') : t('article:interest_action')}
-            </Button>
+            <ContributeGuardTooltip sx={{ flex: 1 }}>
+              <Button
+                fullWidth
+                variant={isInterested ? "outlined" : "contained"}
+                disabled={loadingInterest || !canContribute}
+                onClick={handleInterest}
+              >
+                {isInterested ? t('article:interested') : t('article:interest_action')}
+              </Button>
+            </ContributeGuardTooltip>
 
-            <Button
-              fullWidth
-              variant={isJoined ? "outlined" : "contained"}
-              disabled={loadingJoin || isJoined}
-              sx={{
-                bgcolor: isJoined ? "transparent" : "success.main",
-                color: isJoined ? "success.main" : "common.white",
-                "&:hover": {
-                  bgcolor: isJoined ? "transparent" : "success.dark",
-                },
-              }}
-              onClick={handleJoinClick}
-            >
-              {isJoined ? t('event:registered') : t('event:register_action')}
-            </Button>
+            <ContributeGuardTooltip sx={{ flex: 1 }}>
+              <Button
+                fullWidth
+                variant={isJoined ? "outlined" : "contained"}
+                disabled={loadingJoin || isJoined || !canContribute}
+                sx={{
+                  bgcolor: isJoined ? "transparent" : "success.main",
+                  color: isJoined ? "success.main" : "common.white",
+                  "&:hover": {
+                    bgcolor: isJoined ? "transparent" : "success.dark",
+                  },
+                }}
+                onClick={handleJoinClick}
+              >
+                {isJoined ? t('event:registered') : t('event:register_action')}
+              </Button>
+            </ContributeGuardTooltip>
           </Stack>
         )}
       </Box>
