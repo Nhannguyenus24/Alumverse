@@ -25,7 +25,8 @@ CREATE TABLE "organizations" (
   "programs" json,
   "majors" json,
   "status" text DEFAULT 'ACTIVE',
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "organization_introductions" (
@@ -107,7 +108,8 @@ CREATE TABLE "events" (
   "interested_count" integer DEFAULT 0,
   "topic" text,
   "is_published" boolean DEFAULT false,
-  "created_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "event_interests" (
@@ -275,7 +277,9 @@ CREATE TABLE "news" (
   "topic" text,
   "url" text,
   "is_hidden" boolean,
-  "published_at" timestamp
+  "published_at" timestamp,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "alumni_posts" (
@@ -289,7 +293,9 @@ CREATE TABLE "alumni_posts" (
   "topic" text,
   "url" text,
   "is_hidden" boolean,
-  "published_at" timestamp
+  "published_at" timestamp,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "saved_items" (
@@ -309,7 +315,9 @@ CREATE TABLE "achievements" (
   "image_url" text,
   "awarded_date" date,
   "topic" text,
-  "status" text
+  "status" text,
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "jobs" (
@@ -326,7 +334,8 @@ CREATE TABLE "jobs" (
   "how_to_apply" text,
   "deadline" date,
   "is_active" boolean,
-  "created_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "learning_resources" (
@@ -337,7 +346,8 @@ CREATE TABLE "learning_resources" (
   "type" text,
   "link_url" text,
   "description" text,
-  "created_at" timestamp
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Thong tin cua quy

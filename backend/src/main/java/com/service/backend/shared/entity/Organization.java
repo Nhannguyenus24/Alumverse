@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
@@ -49,4 +50,8 @@ public class Organization {
     @CreatedDate
     @ReadOnlyProperty
     private LocalDateTime createdAt;
+
+    @Column("updated_at")
+    @LastModifiedDate
+    private LocalDateTime updatedAt;
 }
