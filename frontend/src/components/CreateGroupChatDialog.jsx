@@ -27,6 +27,8 @@ import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import ChatAvatar from './ChatAvatar';
 import { usePrivateChatList } from '../hooks/chat/usePrivateChatList';
 import { useCreateGroupChat } from '../hooks/chat/useCreateGroupChat';
+import { useCanContribute } from '../hooks/useCanContribute';
+import { VerificationRequiredAlert } from './ContributeGuard';
 
 const MIN_OTHER_MEMBERS = 2;
 const MAX_OTHER_MEMBERS = 9; // 10 total including creator
@@ -34,6 +36,7 @@ const DIALOG_PAGE_SIZE = 20;
 
 const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
   const { t } = useTranslation(['network', 'common']);
+  const { canContribute } = useCanContribute();
   const [title, setTitle] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [selectedMembers, setSelectedMembers] = useState([]);
@@ -80,14 +83,14 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
   }, []);
 
   const handleSubmit = useCallback(() => {
-    if (selectedMembers.length < MIN_OTHER_MEMBERS) return;
+    if (selectedMembers.length < MIN_OTHER_MEMBERS || !canContribute) return;
     createGroup({
       title: title.trim() || null,
       memberIds: selectedMembers.map((m) => m.peerMemberId),
     });
-  }, [selectedMembers, createGroup, title]);
+  }, [selectedMembers, createGroup, title, canContribute]);
 
-  const canSubmit = selectedMembers.length >= MIN_OTHER_MEMBERS && selectedMembers.length <= MAX_OTHER_MEMBERS && !isCreating;
+  const canSubmit = canContribute && selectedMembers.length >= MIN_OTHER_MEMBERS && selectedMembers.length <= MAX_OTHER_MEMBERS && !isCreating;
 
   useEffect(() => {
     if (!open) {
@@ -115,6 +118,7 @@ const CreateGroupChatDialog = ({ open, onClose, onCreated }) => {
       <Divider />
 
       <DialogContent sx={{ px: 2.5, py: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <VerificationRequiredAlert />
         <TextField
           label={t('network:group_name_optional_label')}
           value={title}
