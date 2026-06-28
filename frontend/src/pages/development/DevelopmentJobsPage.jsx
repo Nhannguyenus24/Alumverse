@@ -20,6 +20,8 @@ import Sidebar from '../../components/Sidebar';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedJobs } from '../../hooks/articles/usePublishedJobs';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
@@ -73,6 +75,7 @@ const DevelopmentJobsPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
   const sidebar = getSidebar(t);
   const filters = getFilters(t);
@@ -150,9 +153,11 @@ const DevelopmentJobsPage = () => {
                       {t('dev:manage_opportunities')}
                     </Button>
                   ) : (
-                    <Button variant="contained" onClick={() => navigate('/post/job')}>
-                      {t('common:create')}
-                    </Button>
+                    <ContributeGuardTooltip>
+                      <Button variant="contained" disabled={!canContribute} onClick={() => navigate('/post/job')}>
+                        {t('common:create')}
+                      </Button>
+                    </ContributeGuardTooltip>
                   )}
                 </Box>
 

@@ -6,6 +6,8 @@ import IconButtonMenu from '../IconButtonMenu';
 import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetworkMemberProfileNavigation';
 import { networkCardClickableSx } from './networkCardUtils';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 /**
  * Card hiển thị một thành viên trong tab Tìm kiếm Network.
@@ -25,6 +27,7 @@ const NetworkSearchMemberCard = ({
   messageButtonLabel,
 }) => {
   const { t } = useTranslation('network');
+  const { canContribute } = useCanContribute();
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(userId);
   const displayName = fullName || 'N/A';
@@ -60,10 +63,11 @@ const NetworkSearchMemberCard = ({
           >
             {({ close }) => (
               <MenuItem
-                disabled={isBlockLoading}
+                disabled={isBlockLoading || !canContribute}
                 onClick={(event) => {
                   stopActionPropagation(event);
                   close();
+                  if (!canContribute) return;
                   onBlock();
                 }}
               >
@@ -112,23 +116,25 @@ const NetworkSearchMemberCard = ({
         </Box>
       </Stack>
 
-      <Button
-        variant="contained"
-        sx={{ mt: 3 }}
-        fullWidth
-        type="button"
-        onClick={(event) => {
-          stopActionPropagation(event);
-          onMessage?.();
-        }}
-        disabled={!onMessage || isMessageLoading}
-      >
-        {isMessageLoading ? (
-          <CircularProgress size={22} color="inherit" />
-        ) : (
-          messageButtonLabel ?? t('message')
-        )}
-      </Button>
+      <ContributeGuardTooltip sx={{ width: '100%', mt: 3 }}>
+        <Button
+          variant="contained"
+          fullWidth
+          type="button"
+          onClick={(event) => {
+            stopActionPropagation(event);
+            if (!canContribute) return;
+            onMessage?.();
+          }}
+          disabled={!onMessage || isMessageLoading || !canContribute}
+        >
+          {isMessageLoading ? (
+            <CircularProgress size={22} color="inherit" />
+          ) : (
+            messageButtonLabel ?? t('message')
+          )}
+        </Button>
+      </ContributeGuardTooltip>
     </Card>
   );
 };

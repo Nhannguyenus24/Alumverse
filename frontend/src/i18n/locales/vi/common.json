@@ -121,5 +121,8 @@
   "image_upload_error": "Không thể tải ảnh lên",
   "not_updated": "Chưa cập nhật",
   "fitbot_greeting": "Xin chào! 👋 Tôi là trợ lý ảo của HCMUS. Tôi có thể giúp bạn tìm hiểu thêm về trường, các chương trình đào tạo, và nhiều thông tin hữu ích khác. Có câu hỏi gì cho tôi không?",
-  "loading_org_data": "Đang tải dữ liệu tổ chức..."
+  "loading_org_data": "Đang tải dữ liệu tổ chức...",
+  "verification_required_login": "Vui lòng đăng nhập để sử dụng tính năng này.",
+  "verification_required_tooltip": "Bạn cần xác minh là cựu sinh viên (mức xác minh 2) để sử dụng tính năng này.",
+  "verification_required_alert": "Chỉ cựu sinh viên đã được xác minh (mức xác minh 2) mới có thể sử dụng tính năng này. Vui lòng xác minh tình trạng cựu sinh viên để tiếp tục."
 }

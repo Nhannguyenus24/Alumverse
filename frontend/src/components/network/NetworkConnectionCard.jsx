@@ -18,6 +18,8 @@ import { useNetworkMemberProfileNavigation } from '../../hooks/network/useNetwor
 import { truncateText } from '../../utils/stringUtils';
 import { networkCardClickableSx } from './networkCardUtils';
 import { buildProgramMajorRows } from '../../utils/academicUtils';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../ContributeGuard';
 
 const SUBTITLE_MAX_LEN = 72;
 
@@ -29,6 +31,7 @@ const NetworkConnectionCard = ({
 }) => {
   const { t } = useTranslation('network');
   const navigate = useOrgNavigate();
+  const { canContribute } = useCanContribute();
   const { navigateToProfile, handleCardKeyDown, stopActionPropagation } =
     useNetworkMemberProfileNavigation(connection.peerMemberId);
   const displayName = connection.fullName || 'N/A';
@@ -39,6 +42,7 @@ const NetworkConnectionCard = ({
 
   const handleMessage = (event) => {
     stopActionPropagation(event);
+    if (!canContribute) return;
     navigate(`/chat?memberId=${connection.peerMemberId}`);
   };
 
@@ -101,14 +105,17 @@ const NetworkConnectionCard = ({
           sx={{ flexShrink: 0 }}
           onClick={stopActionPropagation}
         >
-          <Button
-            variant="contained"
-            size="small"
-            type="button"
-            onClick={handleMessage}
-          >
-            {t('message')}
-          </Button>
+          <ContributeGuardTooltip>
+            <Button
+              variant="contained"
+              size="small"
+              type="button"
+              onClick={handleMessage}
+              disabled={!canContribute}
+            >
+              {t('message')}
+            </Button>
+          </ContributeGuardTooltip>
 
           {enableBlock ? (
             <IconButtonMenu
@@ -117,10 +124,11 @@ const NetworkConnectionCard = ({
             >
               {({ close }) => (
                 <MenuItem
-                  disabled={isBlockLoading}
+                  disabled={isBlockLoading || !canContribute}
                   onClick={(event) => {
                     stopActionPropagation(event);
                     close();
+                    if (!canContribute) return;
                     onBlock?.();
                   }}
                 >

@@ -19,6 +19,8 @@ import Sidebar from '../../components/Sidebar';
 import AdminConfirmDeleteDialog from '../../components/admin/AdminConfirmDeleteDialog';
 import { useOrgNavigate } from '../../hooks/useOrgNavigate';
 import { useAuth } from '../../hooks/useAuth';
+import { useCanContribute } from '../../hooks/useCanContribute';
+import { ContributeGuardTooltip } from '../../components/ContributeGuard';
 import { usePublishedAlumniPosts } from '../../hooks/articles/usePublishedAlumniPosts';
 import { toCardShape } from '../../hooks/articles/toCardShape';
 import apiClient from '../../utils/axios';
@@ -63,6 +65,7 @@ const HonorsAlumniPage = () => {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const { canContribute } = useCanContribute();
   const isAdmin = isAuthenticated && user?.role === 'ADMIN';
   const sidebar = getSidebar(t);
   const filters = getFilters(t);
@@ -136,9 +139,15 @@ const HonorsAlumniPage = () => {
                   </Typography>
 
                   {!isAdmin && isAuthenticated && (
-                    <Button variant="contained" onClick={() => navigate('/honors/request-achievements')}>
-                      {t('honors:submit_achievement_request')}
-                    </Button>
+                    <ContributeGuardTooltip>
+                      <Button
+                        variant="contained"
+                        disabled={!canContribute}
+                        onClick={() => navigate('/honors/request-achievements')}
+                      >
+                        {t('honors:submit_achievement_request')}
+                      </Button>
+                    </ContributeGuardTooltip>
                   )}
                   {isAdmin && (
                     <Button variant="outlined" color="primary" startIcon={<EmojiEventsIcon />} onClick={() => navigate('/admin/article')}>
