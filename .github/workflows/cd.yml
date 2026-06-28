@@ -19,7 +19,6 @@ jobs:
   # ─────────────────────────────────────────────
   detect-changes:
     name: "Detect Changed Paths"
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,6 +37,7 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
+              - '.github/workflows/cd.yml'
             frontend:
               - 'frontend/**'
 
