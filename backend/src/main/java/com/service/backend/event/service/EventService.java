@@ -76,31 +76,51 @@ public class EventService {
     }
 
     public Mono<Event> updateEvent(Long eventId, UpdateEventRequest request) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(existingEvent -> imageService.uploadBase64IfPresent(request.getBannerBase64())
-                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
-                        .flatMap(bannerUrl -> {
-                            Event updatedEvent = Event.builder()
-                                    .title(request.getTitle())
-                                    .description(request.getDescription())
-                                    .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
-                                    .location(request.getLocation())
-                                    .startTime(request.getStartTime())
-                                    .endTime(request.getEndTime())
-                                    .registrationStartAt(request.getRegistrationStartAt())
-                                    .registrationEndAt(request.getRegistrationEndAt())
-                                    .maxCapacity(request.getMaxCapacity())
-                                    .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
-                                    .build();
-                            return eventRepository.updateEvent(eventId, updatedEvent);
-                        }));
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
+                .flatMap(ctx -> {
+                    Long currentUserId = ctx.getT1();
+                    boolean isAdmin = ctx.getT2();
+                    return eventRepository.findEventById(eventId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                            .flatMap(existingEvent -> {
+                                if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                                }
+                                return imageService.uploadBase64IfPresent(request.getBannerBase64())
+                                        .defaultIfEmpty(request.getBannerUrl() == null ? "" : request.getBannerUrl())
+                                        .flatMap(bannerUrl -> {
+                                            Event updatedEvent = Event.builder()
+                                                    .title(request.getTitle())
+                                                    .description(request.getDescription())
+                                                    .bannerUrl(bannerUrl.isEmpty() ? existingEvent.getBannerUrl() : bannerUrl)
+                                                    .location(request.getLocation())
+                                                    .startTime(request.getStartTime())
+                                                    .endTime(request.getEndTime())
+                                                    .registrationStartAt(request.getRegistrationStartAt())
+                                                    .registrationEndAt(request.getRegistrationEndAt())
+                                                    .maxCapacity(request.getMaxCapacity())
+                                                    .topic(request.getTopic() != null ? request.getTopic() : existingEvent.getTopic())
+                                                    .build();
+                                            return eventRepository.updateEvent(eventId, updatedEvent);
+                                        });
+                            });
+                });
     }
 
     public Mono<Boolean> deleteEvent(Long eventId) {
-        return eventRepository.findEventById(eventId)
-                .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
-                .flatMap(e -> eventRepository.deleteEvent(eventId));
+        return Mono.zip(SecurityUtils.getCurrentUserId(), SecurityUtils.hasRole("ADMIN"))
+                .flatMap(ctx -> {
+                    Long currentUserId = ctx.getT1();
+                    boolean isAdmin = ctx.getT2();
+                    return eventRepository.findEventById(eventId)
+                            .switchIfEmpty(Mono.error(new ApplicationException(ErrorCode.EVENT_NOT_FOUND, "Event not found: " + eventId)))
+                            .flatMap(existingEvent -> {
+                                if (!isAdmin && !existingEvent.getCreatorMemberId().equals(currentUserId)) {
+                                    return Mono.error(new ApplicationException(ErrorCode.FORBIDDEN));
+                                }
+                                return eventRepository.deleteEvent(eventId);
+                            });
+                });
     }
 
     public Mono<Event> getEventById(Long eventId) {

@@ -21,6 +21,8 @@ import reactor.core.publisher.Mono;
 import com.service.backend.fundraising.dto.FundFilterRequest;
 import com.service.backend.shared.dto.DataWithWarnings;
 import com.service.backend.shared.annotations.PublicEndpoint;
+import com.service.backend.shared.annotations.PrivateEndpoint;
+import org.springframework.security.access.prepost.PreAuthorize;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @PublicEndpoint
@@ -33,6 +35,8 @@ public class FundController {
 
     private final FundService fundService;
 
+    @PrivateEndpoint
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @PostMapping
     public Mono<ResponseEntity<ApiResponse<Funds>>> createFund(
             @Valid @RequestBody CreateFundRequest request) {
@@ -89,6 +93,8 @@ public class FundController {
                         new ApiResponse<>("Fund retrieved successfully", response)));
     }
 
+    @PrivateEndpoint
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @PutMapping("/{fundId}")
     // co the update 1 field hoac nhieu field trong {name, manager_name, description_short, description_full, logoUrl, organizationId}
     public Mono<ResponseEntity<ApiResponse<Funds>>> updateFund(
@@ -101,6 +107,8 @@ public class FundController {
                 ));
     }
 
+    @PrivateEndpoint
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     @PutMapping("/{fundId}/close")
     public Mono<ResponseEntity<ApiResponse<Funds>>> closeFund(
             @PathVariable @Min(1) Long fundId

@@ -123,6 +123,11 @@ class MentorshipRepository {
     return _items(res.data, SessionFeedback.fromJson);
   }
 
+  Future<MentorshipSession> getMenteeSessionById(int sessionId) async {
+    final res = await _dio.get(ApiEndpoints.menteeSessionDetail(sessionId));
+    return MentorshipSession.fromJson(_dataMap(res.data));
+  }
+
   Future<MentorshipSession> cancelSession(int sessionId) async {
     final res = await _dio.post(ApiEndpoints.menteeSessionCancel(sessionId));
     return MentorshipSession.fromJson(_dataMap(res.data));
