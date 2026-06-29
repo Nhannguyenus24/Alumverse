@@ -38,9 +38,25 @@ class EventServiceTest {
     @Mock private NotificationService notificationService;
     @Mock private OrganizationRepository organizationRepository;
     @Mock private CacheUtils cacheUtils;
+    @Mock private EventQrService eventQrService;
+    @Mock private com.service.backend.event.dao.AttendeeLookupRepository attendeeLookupRepository;
 
     @InjectMocks
     private EventService eventService;
+
+    /** Reactive security context with a staff role, required by the check-in gate. */
+    private static reactor.util.context.Context staffContext() {
+        return org.springframework.security.core.context.ReactiveSecurityContextHolder.withAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "1", null,
+                        java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
+    }
+
+    private static CheckInRequest codeRequest(String code) {
+        CheckInRequest request = new CheckInRequest();
+        request.setCode(code);
+        return request;
+    }
 
     // ─── getEventById ─────────────────────────────────────────────────────────
 
@@ -290,24 +306,55 @@ class EventServiceTest {
         }
     }
 
-    // ─── checkInTicket ───────────────────────────────────────────────────────
+    // ─── checkIn (event-scoped) ──────────────────────────────────────────────
 
     @Nested
-    @DisplayName("checkInTicket()")
-    class CheckInTicket {
+    @DisplayName("checkIn()")
+    class CheckIn {
+
+        @Test
+        @DisplayName("should fail without a staff role")
+        void checkIn_forbiddenForNonStaff() {
+            // No security context → no role → gate rejects before any DB access.
+            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001")))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.FORBIDDEN)
+                    .verify();
+        }
+
+        @Test
+        @DisplayName("should fail when ticket belongs to another event")
+        void checkIn_wrongEvent() {
+            EventTicket ticket = EventTicket.builder()
+                    .id(1L)
+                    .eventId(2L)
+                    .ticketCode("TICKET-001")
+                    .status(Status.ISSUED)
+                    .build();
+
+            when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
+
+            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
+                            .contextWrite(staffContext()))
+                    .expectErrorMatches(err -> err instanceof ApplicationException &&
+                            ((ApplicationException) err).getErrorCode() == ErrorCode.TICKET_WRONG_EVENT)
+                    .verify();
+        }
 
         @Test
         @DisplayName("should fail when ticket already checked in")
-        void checkInTicket_alreadyCheckedIn() {
+        void checkIn_alreadyCheckedIn() {
             EventTicket ticket = EventTicket.builder()
                     .id(1L)
+                    .eventId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.CHECKED_IN)
                     .build();
 
             when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
-            StepVerifier.create(eventService.checkInTicket("TICKET-001"))
+            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
+                            .contextWrite(staffContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.TICKET_ALREADY_CHECKED_IN)
                     .verify();
@@ -315,32 +362,36 @@ class EventServiceTest {
 
         @Test
         @DisplayName("should fail when ticket is cancelled")
-        void checkInTicket_cancelled() {
+        void checkIn_cancelled() {
             EventTicket ticket = EventTicket.builder()
                     .id(1L)
+                    .eventId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.CANCELLED)
                     .build();
 
             when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
 
-            StepVerifier.create(eventService.checkInTicket("TICKET-001"))
+            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
+                            .contextWrite(staffContext()))
                     .expectErrorMatches(err -> err instanceof ApplicationException &&
                             ((ApplicationException) err).getErrorCode() == ErrorCode.TICKET_ALREADY_CANCELLED)
                     .verify();
         }
 
         @Test
-        @DisplayName("should check in ticket successfully when status is ISSUED")
-        void checkInTicket_success() {
+        @DisplayName("should check in successfully when status is ISSUED and event matches")
+        void checkIn_success() {
             EventTicket ticket = EventTicket.builder()
                     .id(1L)
+                    .eventId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.ISSUED)
                     .build();
 
             EventTicket checkedInTicket = EventTicket.builder()
                     .id(1L)
+                    .eventId(1L)
                     .ticketCode("TICKET-001")
                     .status(Status.CHECKED_IN)
                     .build();
@@ -348,7 +399,8 @@ class EventServiceTest {
             when(eventRepository.findTicketByCode("TICKET-001")).thenReturn(Mono.just(ticket));
             when(eventRepository.checkInTicket(1L)).thenReturn(Mono.just(checkedInTicket));
 
-            StepVerifier.create(eventService.checkInTicket("TICKET-001"))
+            StepVerifier.create(eventService.checkIn(1L, codeRequest("TICKET-001"))
+                            .contextWrite(staffContext()))
                     .assertNext(t -> assertThat(t.getStatus()).isEqualTo(Status.CHECKED_IN))
                     .verifyComplete();
         }

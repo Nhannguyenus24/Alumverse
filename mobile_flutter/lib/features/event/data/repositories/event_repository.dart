@@ -110,11 +110,52 @@ class EventRepository {
 
   /// A single ticket by its code (`GET /api/events/tickets/code/{code}`).
   Future<EventTicket> getTicketByCode(String code) async {
-    final res = await _dio.get('/api/events/tickets/code/$code');
+    final res = await _dio.get(ApiEndpoints.eventTicketByCode(code));
     final data = res.data is Map && res.data['data'] is Map
         ? res.data['data'] as Map<String, dynamic>
         : res.data as Map<String, dynamic>;
     return EventTicket.fromJson(data);
+  }
+
+  /// Admin/staff check-in for [eventId]. Provide either the scanned encrypted
+  /// [qrToken] (preferred) or the raw ticket [code] (manual fallback).
+  /// (`POST /api/events/{eventId}/tickets/check-in`). The backend decrypts/verifies
+  /// the token, enforces the event scope + status, and returns the updated ticket
+  /// enriched with the holder's profile so staff can verify the person. Rejected
+  /// tickets surface via [ApiException.message].
+  Future<EventTicket> checkIn(
+    int eventId, {
+    String? qrToken,
+    String? code,
+  }) async {
+    final res = await _dio.post(
+      ApiEndpoints.eventCheckIn(eventId),
+      data: {'qrToken': qrToken, 'code': code},
+    );
+    final data = res.data is Map && res.data['data'] is Map
+        ? res.data['data'] as Map<String, dynamic>
+        : res.data as Map<String, dynamic>;
+    return EventTicket.fromJson(data);
+  }
+
+  /// All events of an organization for the admin check-in picker, including
+  /// drafts and past events (`GET /api/admin/events?organizationId=...`).
+  /// Requires an admin/staff session. Note the admin API uses `size`, not
+  /// `limit`, for the page size.
+  Future<List<EventSummary>> getOrganizationEvents(
+    int organizationId, {
+    int page = 0,
+    int size = 100,
+  }) async {
+    final res = await _dio.get(
+      ApiEndpoints.adminEvents,
+      queryParameters: {
+        'organizationId': organizationId,
+        'page': page,
+        'size': size,
+      },
+    );
+    return _items(res.data);
   }
 
   /// Cancel the current user's registration for [eventId]. Looks up the user's

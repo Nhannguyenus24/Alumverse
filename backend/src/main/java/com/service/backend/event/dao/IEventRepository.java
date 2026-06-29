@@ -41,16 +41,10 @@ public interface IEventRepository {
     Mono<EventTicket> registerTicket(EventTicket ticketData);
     Mono<Boolean> hasRegistered(Long eventId, Long memberId);
 
-    Mono<EventTicket> approveTicket(Long ticketId, Long reviewedBy);
-    Mono<EventTicket> rejectTicket(Long ticketId, Long reviewedBy, String reason);
-    Mono<Integer> approveAllPendingTickets(Long eventId, Long reviewedBy);
-
     Flux<EventTicket> findIssuedTicketsByEvent(Long eventId);
 
     Mono<EventTicket> cancelTicket(Long ticketId, String reason);
     Mono<EventTicket> checkInTicket(Long ticketId);
-    Mono<Integer> activateTicketsForEvent(Long eventId);
-    Mono<Integer> expireTicketsForEvent(Long eventId);
 
     Mono<EventTicket> findTicketByCode(String ticketCode);
     Mono<EventTicket> findTicketById(Long ticketId);
